@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
@@ -117,6 +118,14 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 68 — Accent gradient engine](phase-68-accent-gradient-engine.md)
+*Extends Phase 39's solid-only accent into gradients (mono-shade + multi-colour) via a light in-panel builder, adds an independent secondary accent channel, and promotes the brand rainbow to the default/first option — all a web-side override layer over untouched `@midnite/ui` tokens; no gateway.*
+- ◻ **A** — Accent model: `AccentValue` union (solid | gradient) + independent `accentSecondary`; brand rainbow default; legacy string read-coercion; sync-schema round-trip
+- ◻ **B** — Appliers/CSS: `--accent-gradient` + contrast-safe `--accent-solid` + `--accent-2-*`, resolved through the theme-aware lightness path; pre-paint no-flash
+- ◻ **C** — Surfaces: gradient on buttons/CTAs, FAB glow + active states, rings/borders (solid fallback for focus), progress/badges/charts; foreground always solid
+- ◻ **D** — Builder UX: reordered accent accordion (brand first), curated presets, light builder (2–3 stops + angle + mono/multi), secondary picker, live preview
+- ◻ **E** — Motion & a11y: opt-in animated gradient (off by default) gated by `data-motion` + reduced-motion; contrast guardrails; tests
 
 ### [Phase 67 — Product guides on every page (engine v2)](phase-67-guides-everywhere.md)
 *Takes Phase 66's thin 4-route product-guide system to full-surface coverage + engine v2: versioned "seen" (edited guides re-surface), once-per-page auto-launch, mildly-interactive steps, and an "all guides" index. Almost all `packages/web`; one `shared` preference change; no gateway.*
