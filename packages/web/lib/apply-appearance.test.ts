@@ -101,6 +101,13 @@ describe('applyAccent — gradients', () => {
     expect(document.documentElement.hasAttribute('data-accent-animate')).toBe(false);
   });
 
+  it('drives the angle from --accent-angle when animated (static uses a literal)', () => {
+    const animated = accentGradientCss({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 45, animate: true }, false);
+    expect(animated).toContain('linear-gradient(var(--accent-angle)');
+    const staticG = accentGradientCss({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 45, animate: false }, false);
+    expect(staticG).toContain('linear-gradient(45deg');
+  });
+
   it('clears gradient state when switching to a solid', () => {
     applyAccent(BRAND_ACCENT);
     applyAccent(solid('emerald'));

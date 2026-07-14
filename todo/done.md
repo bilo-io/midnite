@@ -13,6 +13,14 @@ One place to browse + replay every product guide. Phase 67 → 12/30 (40%), Stat
 - [x] **C3** — the FAB unseen-dot now reflects `hasAnyUnseen` (any guide unseen at its current version), not just the current route's. `stop()` also drops a queued replay.
 - [x] Tests: `guideLaunchPath` round-trip, store pending/requestReplay/clearPending, `<GuidePendingReplay/>` route-match watcher, panel index render + on-route/off-route replay + FAB & index unseen dots. `:typecheck` · `:lint` (0 errors) · web tests green.
 
+## 2026-07-14 — feat: accent gradient engine — surfaces + animation — Phase 68 Themes C/E — **Phase 68 complete**
+
+Completes the accent gradient engine. Phase 68 → 23/23 (100%), Status ✅ DONE.
+
+- [x] **C — Surfaces (`web`):** a targeted rule paints `--accent-gradient` on every full-opacity `bg-primary` surface (primary buttons/CTAs, active nav, chips, selected states) — layered over the solid colour so `hover:bg-primary/90` + opacity variants (`/10`, `/90` are separate classes) are untouched, and foreground text stays on the solid `--primary-foreground`. Focus rings keep the solid `--ring`. Added `--accent-2` token utilities (`bg/text/border-accent-2`) + a `data-accent-surface` opt-in. **Scope calls:** the FAB glow is a `@midnite/ui` primitive (left as its brand rainbow — `ui` stays untouched per the guardrail); progress bars + charts keep their **semantic status colours** by design, so they weren't hijacked by the accent.
+- [x] **E — Motion (`web`):** opt-in animated gradient — when a gradient's `animate` flag is set, the applier builds it with `var(--accent-angle)` and a registered `@property --accent-angle` (inherits) spins the angle; off by default, gated by the Phase 39 `data-motion` setting **and** `prefers-reduced-motion` (both freeze it, `full` overrides). The builder gains an "Animate the gradient" toggle.
+- [x] **Tests + shots:** applier animated-vs-static angle test, builder Animate-toggle RTL test; light+dark Playwright shots of gradient-painted surfaces + the builder. `web:typecheck` · `web:lint` (0 errors) · `web:test` (227 files) green; `@midnite/ui` untouched.
+
 ## 2026-07-14 — feat(web): interactive guide steps — scroll-to + action-advance — Phase 67 Theme B (PR #428)
 
 Makes guide steps interactive without branching. Phase 67 → 9/30 (30%), Status 🔄 WIP (C–E remain).

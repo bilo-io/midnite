@@ -51,8 +51,12 @@ export function buildAccentCssParts(
     const hs = map[value.swatch];
     return { gradient: null, solidH: hs ? hs.h : null, solidS: hs ? hs.s : null, preset: null, animate: false };
   }
+  // When animated, the angle is driven by the `--accent-angle` custom property
+  // (spun by the keyframe in globals.css); otherwise it's a literal so static
+  // gradients need no running animation.
+  const angleExpr = value.animate ? 'var(--accent-angle)' : `${value.angle}deg`;
   if (value.preset === 'brand') {
-    const g = `conic-gradient(from ${value.angle}deg at 50% 50%, hsl(var(--node-trigger)), hsl(var(--node-action)), hsl(var(--node-logic)), hsl(var(--node-data)), hsl(var(--node-trigger)))`;
+    const g = `conic-gradient(from ${angleExpr} at 50% 50%, hsl(var(--node-trigger)), hsl(var(--node-action)), hsl(var(--node-logic)), hsl(var(--node-data)), hsl(var(--node-trigger)))`;
     const hs = map[value.stops[0] || 'default'];
     return { gradient: g, solidH: hs ? hs.h : null, solidS: hs ? hs.s : null, preset: 'brand', animate: value.animate };
   }
@@ -74,8 +78,8 @@ export function buildAccentCssParts(
   const first = parts[0] ?? 'hsl(0 0% 50%)';
   const g =
     value.type === 'conic'
-      ? `conic-gradient(from ${value.angle}deg at 50% 50%, ${parts.join(', ')}, ${first})`
-      : `linear-gradient(${value.angle}deg, ${parts.join(', ')})`;
+      ? `conic-gradient(from ${angleExpr} at 50% 50%, ${parts.join(', ')}, ${first})`
+      : `linear-gradient(${angleExpr}, ${parts.join(', ')})`;
   const primary = stopHs[0] ?? { h: 0, s: 0 };
   return { gradient: g, solidH: primary.h, solidS: primary.s, preset: value.preset, animate: value.animate };
 }
