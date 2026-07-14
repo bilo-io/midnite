@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-14 — feat(web): all-guides index in the assistant panel — Phase 67 Theme C (PR #PRNUM)
+
+One place to browse + replay every product guide. Phase 67 → 12/30 (40%), Status 🔄 WIP (D, E remain).
+
+- [x] **C1** — the "Guide" menu entry now opens an "All guides" index (new `guides` panel view) listing every guide from the `ALL_GUIDES` registry with a subtle unseen dot; the current route's guide floats to the top.
+- [x] **C2** — click-to-replay: on-route starts immediately; off-route sets `useGuide.pending` + `router.push(guideLaunchPath(guide))`, and a shell watcher `<GuidePendingReplay/>` starts it once `resolveGuide(pathname)` matches (so a guide never starts before its `data-tour` anchors mount). `guideLaunchPath` derives the home route from `GUIDE_ROUTE_MAP`.
+- [x] **C3** — the FAB unseen-dot now reflects `hasAnyUnseen` (any guide unseen at its current version), not just the current route's. `stop()` also drops a queued replay.
+- [x] Tests: `guideLaunchPath` round-trip, store pending/requestReplay/clearPending, `<GuidePendingReplay/>` route-match watcher, panel index render + on-route/off-route replay + FAB & index unseen dots. `:typecheck` · `:lint` (0 errors) · web tests green.
+
 ## 2026-07-14 — feat(web): interactive guide steps — scroll-to + action-advance — Phase 67 Theme B (PR #428)
 
 Makes guide steps interactive without branching. Phase 67 → 9/30 (30%), Status 🔄 WIP (C–E remain).
