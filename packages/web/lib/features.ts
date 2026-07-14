@@ -155,7 +155,9 @@ export const FEATURES: Feature[] = [
   },
   {
     key: 'digests',
-    href: '/digests',
+    // The feed lives on the Digest tab of /ops; the /digests route redirects
+    // there (kept for old deep-links + the gateway's search-result routes).
+    href: '/ops?tab=digest',
     label: 'Digests',
     description: 'Fleet digests — the periodic roll-up of what shipped, failed, and needs attention.',
     Icon: Newspaper,
