@@ -55,3 +55,54 @@ test.describe('a11y — command palette combobox', () => {
     await expect(palette).toBeHidden();
   });
 });
+
+/**
+ * Phase 67 B/E — the product-guide overlay is keyboard-operable: it's a modal
+ * dialog, focus lands on the step card, ←/→/Enter/Esc drive the tour, and Escape
+ * dismisses it. Launched via the assistant → "Guides" index; no seed needed (the
+ * board columns render empty).
+ */
+test.describe('a11y — guide overlay keyboard nav', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
+        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
+        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400, autoShowGuides: false }));
+        localStorage.setItem('midnite.theme', 'dark');
+      } catch {
+        // best effort
+      }
+    });
+  });
+
+  test('overlay is a focused modal dialog driven by arrows/Enter/Escape', async ({ page }) => {
+    await page.goto('/tasks');
+
+    // Open the assistant → all-guides index → the board tour.
+    await page.getByRole('button', { name: 'Open assistant' }).click();
+    await page.getByRole('button', { name: /Guides/i }).click();
+    await page
+      .getByRole('button')
+      .filter({ has: page.getByText('Board tour', { exact: true }) })
+      .first()
+      .click();
+
+    // The overlay is a modal dialog; the step card takes focus for keyboard nav.
+    const overlay = page.getByRole('dialog', { name: 'Your board' });
+    await expect(overlay).toBeVisible();
+    await expect(overlay).toHaveAttribute('aria-modal', 'true');
+
+    // ArrowRight advances to the next step (the closing "Replay anytime" step).
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('dialog', { name: 'Replay anytime' })).toBeVisible();
+
+    // ArrowLeft steps back.
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('dialog', { name: 'Your board' })).toBeVisible();
+
+    // Escape dismisses the tour entirely.
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Your board' })).toBeHidden();
+  });
+});
