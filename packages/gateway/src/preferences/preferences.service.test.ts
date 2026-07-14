@@ -29,7 +29,8 @@ describe('PreferencesService.get', () => {
       updatedAt: '2026-06-30T10:00:00.000Z',
     });
     const res = service.get('u1');
-    expect(res.preferences.accent).toBe('blue');
+    // Legacy string accent is coerced to the solid model (Phase 68).
+    expect(res.preferences.accent).toEqual({ kind: 'solid', swatch: 'blue' });
     expect(res.preferences.density).toBe('comfortable'); // default filled
     expect(res.preferences).not.toHaveProperty('bogus');
     expect(res.updatedAt).toBe('2026-06-30T10:00:00.000Z');
@@ -48,14 +49,14 @@ describe('PreferencesService.save', () => {
       data,
       updatedAt,
     }));
-    const res = service.save('u1', { ...DEFAULT_USER_PREFERENCES, accent: 'rose' });
+    const res = service.save('u1', { ...DEFAULT_USER_PREFERENCES, accent: { kind: 'solid', swatch: 'rose' } });
 
-    expect(res.preferences.accent).toBe('rose');
+    expect(res.preferences.accent).toEqual({ kind: 'solid', swatch: 'rose' });
     expect(res.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     // Stored value is canonical JSON of the parsed prefs.
     const [userId, data, updatedAt] = repo.upsert.mock.calls[0]!;
     expect(userId).toBe('u1');
-    expect(JSON.parse(data).accent).toBe('rose');
+    expect(JSON.parse(data).accent).toEqual({ kind: 'solid', swatch: 'rose' });
     expect(updatedAt).toBe(res.updatedAt);
   });
 
@@ -64,6 +65,7 @@ describe('PreferencesService.save', () => {
     // Cast: the controller validates first, but the service must also canonicalise.
     const res = service.save('u1', { accent: 'cyan' } as never);
     expect(res.preferences.density).toBe('comfortable');
-    expect(res.preferences.accent).toBe('cyan');
+    // Legacy string accent is coerced to the solid model (Phase 68).
+    expect(res.preferences.accent).toEqual({ kind: 'solid', swatch: 'cyan' });
   });
 });
