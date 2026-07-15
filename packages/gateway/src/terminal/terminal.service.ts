@@ -345,7 +345,12 @@ export class TerminalService implements OnModuleDestroy {
     if (this.config.guardrails.scrubSpawnEnv) scrubGatewaySecrets(env, this.config);
     if (spec.userId) env['MIDNITE_USER_ID'] = spec.userId;
     const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: true });
-    args.push(spec.prompt);
+    // `--` ends option parsing so the prompt is always taken as a positional
+    // argument — every supported agent CLI parses options with a POSIX-style
+    // parser, and a prompt that begins with `-` (e.g. a bullet-style
+    // "- create the game") would otherwise be read as an unknown flag and the
+    // process would exit 1 on spawn (crash-looping the task to retries-exhausted).
+    args.push('--', spec.prompt);
 
     const cwd = this.resolveCwd(sessionId);
     let proc: SpawnHandle;

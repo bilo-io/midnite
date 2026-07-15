@@ -146,27 +146,49 @@ export function LiveTerminal({
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
-    term.open(container);
-    fit.fit();
-    if (!readOnly) term.focus();
-    termRef.current = term;
-    fitRef.current = fit;
 
-    // Don't forward keystrokes on touch — the surface is read/scroll only.
-    const dataSub = readOnly ? null : term.onData((d) => sendInputRef.current(d));
-    sendResizeRef.current(term.cols, term.rows); // seed geometry for attach
-    setReady(true);
-
-    const observer = new ResizeObserver(() => {
-      if (!fitRef.current || !termRef.current) return;
+    // Fit only when the container is actually measurable. Fitting a 0×0 element
+    // (the modal is still fading/animating in, or the flex/grid parent hasn't
+    // laid out yet) leaves xterm's render service without valid `dimensions`, and
+    // a later scroll-sync then throws "Cannot read properties of undefined
+    // (reading 'dimensions')" — crashing the whole terminal (and its modal).
+    const safeFit = () => {
+      const el = containerRef.current;
+      if (!fitRef.current || !termRef.current || !el) return;
+      if (el.clientWidth === 0 || el.clientHeight === 0) return;
       try {
         fitRef.current.fit();
         sendResizeRef.current(termRef.current.cols, termRef.current.rows);
       } catch {
         // container not measurable yet
       }
+    };
+
+    // Defer open()+first fit until the container has a non-zero size. If it's
+    // already measurable we open synchronously; otherwise the ResizeObserver
+    // below opens it on the first layout pass that gives it real dimensions.
+    let dataSub: { dispose: () => void } | null = null;
+    const openWhenSized = () => {
+      if (termRef.current) return; // already opened
+      const el = containerRef.current;
+      if (!el || el.clientWidth === 0 || el.clientHeight === 0) return;
+      term.open(el);
+      termRef.current = term;
+      fitRef.current = fit;
+      safeFit();
+      if (!readOnly) term.focus();
+      // Don't forward keystrokes on touch — the surface is read/scroll only.
+      dataSub = readOnly ? null : term.onData((d) => sendInputRef.current(d));
+      sendResizeRef.current(term.cols, term.rows); // seed geometry for attach
+      setReady(true);
+    };
+
+    const observer = new ResizeObserver(() => {
+      if (!termRef.current) openWhenSized();
+      else safeFit();
     });
     observer.observe(container);
+    openWhenSized();
 
     return () => {
       observer.disconnect();
