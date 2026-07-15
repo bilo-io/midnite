@@ -15,6 +15,7 @@ import {
   type TerminalSubscriber,
 } from './terminal.service';
 import type { ApprovalService } from './approval.service';
+import type { Spawner } from './spawner/spawner';
 
 function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
   return parseConfig({ agent: {}, terminal, knowledge: {}, gateway: {} });
@@ -132,6 +133,44 @@ describe('TerminalService', () => {
   afterEach(() => {
     service?.onModuleDestroy();
     service = null;
+  });
+
+  it('passes the agent prompt after a `--` sentinel so a leading-dash prompt is not read as a flag', () => {
+    // Regression: a bullet-style prompt ("- create the game …") was passed as a
+    // bare positional, so the agent CLI's option parser rejected it ("unknown
+    // option '- …'") and the process exited 1 on spawn — crash-looping the task
+    // through its retries. `--` ends option parsing so the prompt is positional.
+    let captured: string[] = [];
+    const fakeSpawner: Spawner = {
+      spawn(spec) {
+        captured = spec.args;
+        return {
+          pid: 4242,
+          write() {},
+          resize() {},
+          onData: () => ({ dispose() {} }),
+          onExit: () => ({ dispose() {} }),
+          kill() {},
+        };
+      },
+    };
+    service = new TerminalService(
+      makeConfig({}),
+      noTasks,
+      noProjects,
+      noRepos,
+      noAgents,
+      noApprovals,
+      fakeSpawner,
+    );
+
+    const prompt = '- create the game tetris as one of the options';
+    const result = service.spawnAgentSession('task-1', { prompt }, { onExit: () => {} });
+
+    expect(result.ok).toBe(true);
+    // `--` immediately precedes the prompt (nothing between them).
+    expect(captured).toContain('--');
+    expect(captured[captured.indexOf('--') + 1]).toBe(prompt);
   });
 
   it('spawns a PTY, streams output, and echoes input back', async () => {
