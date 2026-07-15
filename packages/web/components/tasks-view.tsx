@@ -28,7 +28,7 @@ import { ListView } from '@/components/list-view';
 import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { TableView } from '@/components/table-view';
-import { TaskThreadModal } from '@/components/task-thread-modal';
+import { WorkItemModal } from '@/components/work-item-modal';
 import { COLUMNS, COLUMN_STATUSES } from '@/components/task-columns';
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
@@ -506,8 +506,8 @@ export function TasksView({
       </div>
 
       {selected ? (
-        <TaskThreadModal
-          task={selected}
+        <WorkItemModal
+          origin={{ kind: 'task', task: selected }}
           projects={projects}
           tasks={localTasks}
           onClose={closeTask}

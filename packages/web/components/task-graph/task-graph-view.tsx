@@ -22,7 +22,7 @@ import { layoutTaskGraph } from '@/lib/task-graph-layout';
 import { TASK_MODAL_PARAM } from '@/lib/task-route';
 import { StyledSelect } from '@/components/ui/styled-select';
 import { ProjectProgressBar } from '@/components/project-progress';
-import { TaskThreadModal } from '@/components/task-thread-modal';
+import { WorkItemModal } from '@/components/work-item-modal';
 import { TaskGraphNode } from '@/components/task-graph/task-graph-node';
 
 const PROJECT_PARAM = 'projectId';
@@ -208,7 +208,12 @@ export function TaskGraphView({ tasks, projects }: Props) {
       </div>
 
       {selected ? (
-        <TaskThreadModal task={selected} projects={projects} tasks={tasks} onClose={closeTask} />
+        <WorkItemModal
+          origin={{ kind: 'task', task: selected }}
+          projects={projects}
+          tasks={tasks}
+          onClose={closeTask}
+        />
       ) : null}
     </div>
   );

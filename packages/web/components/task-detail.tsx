@@ -102,14 +102,24 @@ type Props = {
    */
   variant?: 'modal' | 'page';
   /**
-   * Which detail section is active (Phase 52 E). Only meaningful on the full page
-   * for a task with a `prUrl`, where a Details|Review tab strip appears; `review`
-   * mounts the diff viewer inline. Defaults to `details`.
+   * Which detail section is active (Phase 52 E). On the full page a Details|Review
+   * tab strip appears for a task with a `prUrl`; `review` mounts the diff viewer
+   * inline. In the unified modal (Phase 70) the strip also carries a `session` tab
+   * (see {@link sessionSlot}). Defaults to `details`.
    */
-  tab?: 'details' | 'review' | 'retro';
+  tab?: TaskDetailTab;
   /** Called when the user switches tabs — the page syncs it to `?tab=`. */
-  onTabChange?: (tab: 'details' | 'review' | 'retro') => void;
+  onTabChange?: (tab: TaskDetailTab) => void;
+  /**
+   * The Session tab's body (Phase 70). When provided (the unified modal supplies
+   * a live terminal / transcript pane), a `Session` tab joins the strip and the
+   * header's Session button switches to it in-place instead of navigating. Absent
+   * on the full page, where the session lives at its own route.
+   */
+  sessionSlot?: ReactNode;
 };
+
+export type TaskDetailTab = 'details' | 'review' | 'retro' | 'session';
 
 function TabButton({
   active,
@@ -140,23 +150,37 @@ function TabButton({
 
 /**
  * The shared task-detail surface — header (status + transition controls) plus the
- * scrollable body. Consumed by `TaskThreadModal` (overlay chrome) and the
- * `/tasks/:id` full page (Phase 42). Extracted from the modal body; behaviour-preserving.
+ * scrollable body. Consumed by `WorkItemModal` (overlay chrome + Session tab) and
+ * the `/tasks/:id` full page (Phase 42). Extracted from the modal body; behaviour-preserving.
  */
-export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', tab, onTabChange }: Props) {
-  // Phase 52 E: a Details|Review tab strip on the full page for a task with a PR.
-  // The board modal keeps its "View diff" full-screen modal instead (narrow overlay).
-  // Phase 62 F: a Retro tab joins the strip once the task is terminal (a retro
-  // skeleton is always built on the terminal transition).
-  const showRetroTab = variant === 'page' && isTerminal(task.status);
-  const showTabs = variant === 'page' && (!!task.prUrl || showRetroTab);
-  const activeTab: 'details' | 'review' | 'retro' =
-    showTabs && tab === 'review' && task.prUrl
-      ? 'review'
-      : showTabs && tab === 'retro' && showRetroTab
-        ? 'retro'
-        : 'details';
-  const selectTab = (next: 'details' | 'review' | 'retro') => onTabChange?.(next);
+export function TaskDetail({
+  task,
+  projects,
+  tasks,
+  onClose,
+  variant = 'modal',
+  tab,
+  onTabChange,
+  sessionSlot,
+}: Props) {
+  // Phase 52 E: a Details|Review tab strip for a task with a PR. Phase 62 F: a
+  // Retro tab joins once the task is terminal (a retro skeleton is always built
+  // on the terminal transition). Phase 70: in the unified modal a Session tab
+  // hosts the live terminal / transcript, so the strip always shows there.
+  const inModal = variant === 'modal';
+  const showSessionTab = inModal && !!sessionSlot;
+  const showReviewTab = !!task.prUrl;
+  const showRetroTab = isTerminal(task.status);
+  const showTabs = inModal ? showSessionTab : showReviewTab || showRetroTab;
+  const activeTab: TaskDetailTab =
+    showTabs && tab === 'session' && showSessionTab
+      ? 'session'
+      : showTabs && tab === 'review' && showReviewTab
+        ? 'review'
+        : showTabs && tab === 'retro' && showRetroTab
+          ? 'retro'
+          : 'details';
+  const selectTab = (next: TaskDetailTab) => onTabChange?.(next);
 
   const kind = task.kind ?? 'unknown';
   const statusHue = STATUS_HUE_VAR[task.status];
@@ -452,10 +476,24 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
             </Button>
           ) : null}
           <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} />
-          <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
-            <SquareTerminal className="h-3.5 w-3.5" />
-            Session
-          </Button>
+          {showSessionTab ? (
+            // In the unified modal the session is a sibling tab — switch to it
+            // rather than navigating away (Phase 70).
+            <Button
+              type="button"
+              variant={activeTab === 'session' ? 'default' : 'secondary'}
+              size="sm"
+              onClick={() => selectTab('session')}
+            >
+              <SquareTerminal className="h-3.5 w-3.5" />
+              Session
+            </Button>
+          ) : (
+            <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
+              <SquareTerminal className="h-3.5 w-3.5" />
+              Session
+            </Button>
+          )}
           {task.status !== 'abandoned' ? (
             <Button
               type="button"
@@ -486,7 +524,12 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
           <TabButton active={activeTab === 'details'} onClick={() => selectTab('details')}>
             Details
           </TabButton>
-          {task.prUrl && (
+          {showSessionTab && (
+            <TabButton active={activeTab === 'session'} onClick={() => selectTab('session')}>
+              Session
+            </TabButton>
+          )}
+          {showReviewTab && (
             <TabButton active={activeTab === 'review'} onClick={() => selectTab('review')}>
               Review
             </TabButton>
@@ -499,7 +542,9 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
         </div>
       ) : null}
 
-      {activeTab === 'review' && task.prUrl ? (
+      {activeTab === 'session' && showSessionTab ? (
+        <div className="flex min-h-0 flex-1 flex-col">{sessionSlot}</div>
+      ) : activeTab === 'review' && task.prUrl ? (
         <div className="flex min-h-[60vh] flex-col">
           <PrReviewPanel taskId={task.id} prUrl={task.prUrl} />
         </div>
@@ -770,8 +815,9 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
                   {prStatus.reviewDecision.replace(/_/g, ' ')}
                 </span>
               ) : null}
-              {variant === 'page' ? (
-                // On the page the diff lives in the Review tab — deep-link to it.
+              {showTabs && showReviewTab ? (
+                // Whenever a Review tab is in the strip (full page, or the unified
+                // modal), the diff lives there — deep-link to it (Phase 70).
                 <button
                   type="button"
                   onClick={() => selectTab('review')}

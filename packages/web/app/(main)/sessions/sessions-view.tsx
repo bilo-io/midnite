@@ -8,7 +8,6 @@ import {
   type Project,
   type SessionStatus,
   type SessionSummary,
-  type SessionTranscript,
   type TaskSummary,
 } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
@@ -22,12 +21,11 @@ import {
   SessionRow,
 } from '@/components/session-card';
 import { CollapsibleStatusGroups } from '@/components/collapsible-status-groups';
-import { SessionTranscriptModal } from '@/components/session-transcript-modal';
-import { SessionTerminalModal } from '@/components/session-terminal-modal';
+import { WorkItemModal } from '@/components/work-item-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { WindowVirtualList } from '@/components/ui/window-virtual-list';
 import type { ProjectTagInfo } from '@/components/task-card';
-import { archiveSession, deleteSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
+import { archiveSession, deleteSession, unarchiveSession } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -51,12 +49,6 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-// Active sessions have a live PTY behind them; completed/idle fall back to the
-// static transcript.
-function isActive(status: SessionStatus): boolean {
-  return status === 'running' || status === 'waiting';
-}
-
 export function SessionsView({
   initial,
   tasks,
@@ -68,9 +60,6 @@ export function SessionsView({
 }) {
   const [view, setView] = useState<View>('list');
   const [selected, setSelected] = useState<SessionSummary | null>(null);
-  const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
@@ -86,27 +75,14 @@ export function SessionsView({
     }
   }, []);
 
-  const onSelect = useCallback(async (session: SessionSummary) => {
+  // The unified modal (WorkItemModal) resolves the terminal vs. transcript split
+  // itself — selection just records which session is open.
+  const onSelect = useCallback((session: SessionSummary) => {
     setSelected(session);
-    setTranscript(null);
-    setLoadError(null);
-    // Active sessions get a live terminal (no static transcript to fetch).
-    if (isActive(session.status)) return;
-    setLoading(true);
-    try {
-      const data = await getSessionTranscript(session.projectSlug, session.id);
-      setTranscript(data);
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load transcript');
-    } finally {
-      setLoading(false);
-    }
   }, []);
 
   const onClose = useCallback(() => {
     setSelected(null);
-    setTranscript(null);
-    setLoadError(null);
   }, []);
 
   const router = useRouter();
@@ -439,24 +415,14 @@ export function SessionsView({
       </div>
 
       {selected ? (
-        isActive(selected.status) ? (
-          <SessionTerminalModal
-            session={selected}
-            onClose={onClose}
-            onArchiveToggle={() => void onArchiveToggle(selected)}
-            onDelete={() => void onDelete(selected)}
-          />
-        ) : (
-          <SessionTranscriptModal
-            session={selected}
-            transcript={transcript}
-            loading={loading}
-            error={loadError}
-            onClose={onClose}
-            onArchiveToggle={() => void onArchiveToggle(selected)}
-            onDelete={() => void onDelete(selected)}
-          />
-        )
+        <WorkItemModal
+          origin={{ kind: 'session', session: selected }}
+          projects={projects}
+          tasks={tasks}
+          onClose={onClose}
+          onArchiveToggle={(s) => void onArchiveToggle(s)}
+          onDelete={(s) => void onDelete(s)}
+        />
       ) : null}
     </div>
   );
