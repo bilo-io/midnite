@@ -139,7 +139,9 @@ export function WorkItemModal({
           role="dialog"
           aria-modal="true"
           aria-label={title}
-          className="pointer-events-auto flex h-[85vh] max-h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+          // At least 6xl wide so the embedded terminal has room to render at a
+          // sensible column count — narrower and long lines wrap awkwardly.
+          className="pointer-events-auto flex h-[85vh] max-h-[85vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {task ? (
