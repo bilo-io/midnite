@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { TaskDetail } from '@/components/task-detail';
+import { TaskDetail, type TaskDetailTab } from '@/components/task-detail';
 import { ResourceNotFound } from '@/components/resource-not-found';
 import { getProjects, getTask, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
@@ -27,10 +27,13 @@ export function TaskDetailView() {
   // Keep the URL in step with the active tab so a review/retro is bookmarkable/
   // shareable at the tab it was left on (Phase 52 E, Phase 62 F). `replace` avoids
   // stacking history.
-  const setTab = (next: 'details' | 'review' | 'retro') => {
+  // The page never surfaces the modal-only `session` tab, but the handler accepts
+  // the full union to satisfy TaskDetail's contract — anything but review/retro
+  // clears the query param.
+  const setTab = (next: TaskDetailTab) => {
     const qs = new URLSearchParams(searchParams.toString());
-    if (next === 'details') qs.delete('tab');
-    else qs.set('tab', next);
+    if (next === 'review' || next === 'retro') qs.set('tab', next);
+    else qs.delete('tab');
     router.replace(`/tasks/view?${qs.toString()}`);
   };
   const { data, loading, error } = useApiData(

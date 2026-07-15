@@ -13,7 +13,7 @@ import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
 import { ProjectsTree } from '@/components/projects-tree';
 import { PlanPanel } from '@/components/plan-panel';
-import { TaskThreadModal } from '@/components/task-thread-modal';
+import { WorkItemModal } from '@/components/work-item-modal';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateModal } from '@/components/template-modal';
 import { TemplatesTable } from '@/components/templates-table';
@@ -434,8 +434,8 @@ export function ProjectsView({
       ) : null}
 
       {selectedTask ? (
-        <TaskThreadModal
-          task={selectedTask}
+        <WorkItemModal
+          origin={{ kind: 'task', task: selectedTask }}
           projects={initial}
           tasks={tasks}
           onClose={() => setSelectedTaskId(null)}

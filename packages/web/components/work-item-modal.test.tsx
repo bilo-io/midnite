@@ -25,6 +25,10 @@ vi.mock('@/lib/api', () => ({
   updateTaskStatus: vi.fn(),
   refreshPrStatus: vi.fn(),
   exportTask: vi.fn(),
+  // WorkItemModal resolves the counterpart session on mount — no session here.
+  getSession: vi.fn().mockRejectedValue(new Error('no session')),
+  getTask: vi.fn(),
+  getTasks: vi.fn().mockResolvedValue([]),
   // ChecksPanel mounts and calls this; return empty so tests are unaffected.
   getCheckRuns: vi.fn().mockResolvedValue({ runs: [] }),
   triggerCheck: vi.fn(),
@@ -34,7 +38,7 @@ vi.mock('@/lib/api', () => ({
 
 import { ConfirmProvider } from './confirm-dialog';
 import { ToastProvider } from './toast';
-import { TaskThreadModal } from './task-thread-modal';
+import { WorkItemModal } from './work-item-modal';
 import { withQueryClient } from '@/lib/test-query-wrapper';
 
 afterEach(cleanup);
@@ -44,19 +48,24 @@ function task(id: string, over: Partial<Task> = {}): Task {
   return { id, title: id, status: 'todo', priority: 1, retryCount: 0, fixAttempts: 0, tags: [], events: [], ...over };
 }
 
-function renderModal(task: Task, tasks: Task[]) {
+function renderModal(subject: Task, tasks: Task[]) {
   render(
     withQueryClient(
       <ToastProvider>
         <ConfirmProvider>
-          <TaskThreadModal task={task} projects={[]} tasks={tasks} onClose={vi.fn()} />
+          <WorkItemModal
+            origin={{ kind: 'task', task: subject }}
+            projects={[]}
+            tasks={tasks}
+            onClose={vi.fn()}
+          />
         </ConfirmProvider>
       </ToastProvider>,
     ),
   );
 }
 
-describe('TaskThreadModal — Dependencies', () => {
+describe('WorkItemModal — Dependencies (Details tab)', () => {
   it('renders each blocker with its title and done/pending state', () => {
     const blockerDone = task('blk-done', { title: 'Done blocker', status: 'done' });
     const blockerWip = task('blk-wip', { title: 'Wip blocker', status: 'wip' });
@@ -101,5 +110,15 @@ describe('TaskThreadModal — Dependencies', () => {
 
     fireEvent.click(screen.getByLabelText('Remove blocker Blocker'));
     await waitFor(() => expect(removeTaskDependency).toHaveBeenCalledWith('subj', 'blk'));
+  });
+
+  it('shows Details and Session tabs, switching to an empty Session state', async () => {
+    const subject = task('subj', { title: 'Subject' });
+    renderModal(subject, [subject]);
+
+    const sessionTab = screen.getByRole('tab', { name: 'Session' });
+    expect(screen.getByRole('tab', { name: 'Details' })).toBeInTheDocument();
+    fireEvent.click(sessionTab);
+    expect(await screen.findByText('No session yet')).toBeInTheDocument();
   });
 });

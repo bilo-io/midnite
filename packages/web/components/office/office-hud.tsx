@@ -1,12 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { ArrowLeft } from 'lucide-react';
-import type { SessionTranscript } from '@midnite/shared';
-import { SessionTerminalModal } from '@/components/session-terminal-modal';
-import { SessionTranscriptModal } from '@/components/session-transcript-modal';
-import { getSessionTranscript } from '@/lib/api';
+import { WorkItemModal } from '@/components/work-item-modal';
 import { type OfficeAgent } from '@/lib/office/agents';
 import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
@@ -185,54 +180,21 @@ function Key({ children }: { children: React.ReactNode }) {
 
 /**
  * Approaching an agent opens its session directly — no call/message menu, since
- * an office occupant *is* an agent running a known task. A live agent
- * (running/waiting) opens its session **terminal**; otherwise we open the
- * **transcript** of what it did. Both reuse the Sessions-page modals (wired to
- * the gateway). `disableNavigation` hides the terminal's "Task" deep-link so the
- * modal stays over the office — clicking through never leaves `/office`. The
- * transcript modal is portalled to <body> so a persisted page-reveal transform /
- * the stage's `overflow-hidden` can't clip it.
+ * an office occupant *is* an agent running a known task. It opens the unified
+ * work-item modal (Phase 70) on its Session tab — a live terminal for a running
+ * agent, a transcript otherwise — with the task's Details tab a click away.
+ * `disableNavigation` hides the Session tab's "Open page" link so the modal stays
+ * over the office; clicking through never leaves `/office`. The modal portals to
+ * <body> itself, so a persisted page-reveal transform / the stage's
+ * `overflow-hidden` can't clip it.
  */
 function InteractionPanel({ agent, onClose }: { agent: OfficeAgent; onClose: () => void }) {
-  const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const session = agent.session;
-  const live = session.status === 'running' || session.status === 'waiting';
-
-  // Non-live agents have no live terminal — fetch their transcript on open.
-  useEffect(() => {
-    if (live) return;
-    let cancelled = false;
-    setTranscript(null);
-    setError(null);
-    setLoading(true);
-    getSessionTranscript(session.projectSlug, session.id)
-      .then((t) => {
-        if (!cancelled) setTranscript(t);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load transcript');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [live, session.projectSlug, session.id]);
-
-  if (live) return <SessionTerminalModal session={session} onClose={onClose} disableNavigation />;
-  if (typeof document === 'undefined') return null;
-  return createPortal(
-    <SessionTranscriptModal
-      session={session}
-      transcript={transcript}
-      loading={loading}
-      error={error}
+  return (
+    <WorkItemModal
+      origin={{ kind: 'session', session: agent.session }}
+      projects={[]}
       onClose={onClose}
-    />,
-    document.body,
+      disableNavigation
+    />
   );
 }
