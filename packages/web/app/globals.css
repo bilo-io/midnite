@@ -593,6 +593,56 @@ html[data-no-glass] *::after {
   }
 }
 
+/* Screensaver title (components/screensaver.tsx) — the big cycling phrase. The
+ * text base is the theme foreground (white on dark / black on light); a per-mode
+ * tint (`--sv-tint`, an HSL triple) is woven in as two soft peaks so the state
+ * colour reads clearly without swamping the foreground base. `alternate` sweeps
+ * the peaks back and forth for a subtle living gradient. Mode → tint is set on
+ * the element: active → primary/accent, waiting → secondary accent, idle → a
+ * red-ish "error" tint. Motion is gated like the rest of the app. */
+.screensaver-title {
+  background-image: linear-gradient(
+    100deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--foreground)) 12%,
+    hsl(var(--sv-tint, var(--foreground))) 26%,
+    hsl(var(--sv-tint, var(--foreground))) 40%,
+    hsl(var(--foreground)) 54%,
+    hsl(var(--foreground)) 62%,
+    hsl(var(--sv-tint, var(--foreground))) 74%,
+    hsl(var(--sv-tint, var(--foreground))) 88%,
+    hsl(var(--foreground)) 100%
+  );
+  background-size: 200% 100%;
+  background-position: 0% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Glow hugs the glyph outlines (text-shadow, not box-shadow) and takes the
+     mode tint, so the state colour reads even on the foreground-white letters.
+     text-shadow is unaffected by background-clip, so it survives the clip. */
+  text-shadow:
+    0 0 22px hsl(var(--sv-tint, var(--foreground)) / 0.56),
+    0 0 48px hsl(var(--sv-tint, var(--foreground)) / 0.31);
+  animation: screensaver-sheen 6s ease-in-out infinite alternate;
+}
+@keyframes screensaver-sheen {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+html[data-motion='reduced'] .screensaver-title {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .screensaver-title {
+    animation: none;
+  }
+}
+
 /* Breathing halo for status dots (System health): the box-shadow swells and
    settles so a live indicator reads as "alive". `--glow-color` is set per dot so
    the halo matches the dot's own colour. */

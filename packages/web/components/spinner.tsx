@@ -6,28 +6,30 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
-// The default "orbit" spinner cycles through these phases. The sequence always
-// returns to "orbit" between phases, so the eye keeps re-anchoring on the same
-// shape. These are internal to the rAF animation — not the public `variant` prop.
-type OrbitPhase = 'orbit' | 'ellipsis' | 'ring' | 'juggle' | 'bounce' | 'conveyor';
-const ORBIT_SEQUENCE: OrbitPhase[] = [
-  'orbit',
-  'ellipsis',
-  'orbit',
-  'ring',
-  'orbit',
-  'juggle',
-  'orbit',
-  'bounce',
-  'orbit',
-  'conveyor',
-];
+// The spinner cycles through internal phases. These are not the public
+// `variant` prop — they're poses the rAF animation blends between. Which pool
+// it draws from tracks the `mode` prop: kinetic, spinning poses while agents
+// are actively working; resting ellipsis-style poses while waiting or idle.
+type OrbitPhase = 'orbit' | 'ellipsis' | 'pulse' | 'ring' | 'juggle' | 'bounce' | 'conveyor';
+
+/** What the spinner is signalling; picks the phase pool below. */
+export type SpinnerMode = 'active' | 'waiting' | 'idle';
+
+// The default sequence keeps returning to "orbit" so the eye re-anchors on the
+// same shape. The mode pools split that repertoire: active = motion (spin,
+// juggle, bounce), waiting/idle = rest (ellipsis, breathing pulse, queueing).
+const SEQUENCES: Record<'default' | SpinnerMode, OrbitPhase[]> = {
+  default: ['orbit', 'ellipsis', 'orbit', 'ring', 'orbit', 'juggle', 'orbit', 'bounce', 'orbit', 'conveyor'],
+  active: ['orbit', 'ring', 'orbit', 'juggle', 'orbit', 'bounce'],
+  waiting: ['ellipsis', 'pulse', 'ellipsis', 'conveyor'],
+  idle: ['pulse', 'ellipsis', 'pulse', 'conveyor'],
+};
 
 const DWELL_MS = { orbit: 2200, other: 3600 } as const;
-const BLEND_MS = 700; // cross-fade window between variants
+const BLEND_MS = 900; // cross-fade window between phases
 const DOT_SIZE = 9;
 
-type DotState = { x: number; y: number; o: number };
+type DotState = { x: number; y: number; o: number; s: number };
 
 // Where dot `i` should sit at time `tSec` for a given variant. Crucially, orbit
 // and ring share the exact same angular formula, so blending between them only
@@ -38,7 +40,13 @@ function dotPosition(variant: OrbitPhase, i: number, tSec: number): DotState {
     const period = 1.3;
     const angle = ((tSec - i * 0.16) / period) * Math.PI * 2;
     const bounce = Math.max(0, Math.sin(angle));
-    return { x: (i - 1) * 15, y: -11 * bounce, o: 0.4 + 0.6 * bounce };
+    return { x: (i - 1) * 15, y: -11 * bounce, o: 0.4 + 0.6 * bounce, s: 0.9 + 0.25 * bounce };
+  }
+  if (variant === 'pulse') {
+    // A breathing standing wave across a resting row — the "thinking ellipsis"
+    // without any travel. Slow on purpose: this is the calmest pose.
+    const wave = 0.5 + 0.5 * Math.sin(tSec * ((Math.PI * 2) / 2.6) - i * 0.9);
+    return { x: (i - 1) * 15, y: 0, o: 0.3 + 0.7 * wave, s: 0.72 + 0.48 * wave };
   }
   if (variant === 'juggle') {
     // Treadmill of three dots: glide left→right along the bottom, then the one
@@ -50,10 +58,10 @@ function dotPosition(variant: OrbitPhase, i: number, tSec: number): DotState {
     const p = (((tSec / period + i / 3) % 1) + 1) % 1;
     if (p < bottomShare) {
       const f = p / bottomShare;
-      return { x: -span + 2 * span * f, y: 0, o: 1 };
+      return { x: -span + 2 * span * f, y: 0, o: 1, s: 1 };
     }
     const pp = (p - bottomShare) / (1 - bottomShare);
-    return { x: span * Math.cos(Math.PI * pp), y: -arc * Math.sin(Math.PI * pp), o: 1 };
+    return { x: span * Math.cos(Math.PI * pp), y: -arc * Math.sin(Math.PI * pp), o: 1, s: 1.12 };
   }
   if (variant === 'bounce') {
     // A single bounce sweeps left→right across a row of three. Each dot's hop is
@@ -67,7 +75,7 @@ function dotPosition(variant: OrbitPhase, i: number, tSec: number): DotState {
     const local = (((tSec / period - i / 3) % 1) + 1) % 1;
     const hopWindow = 1 / 3;
     const hop = local < hopWindow ? Math.sin((local / hopWindow) * Math.PI) : 0;
-    return { x, y: -arc * hop, o: 1 };
+    return { x, y: -arc * hop, o: 1, s: 1 + 0.15 * hop };
   }
   if (variant === 'conveyor') {
     // Dots file in from the left, queue into a row at {-S, 0, +S}, then file out
@@ -98,13 +106,15 @@ function dotPosition(variant: OrbitPhase, i: number, tSec: number): DotState {
         break;
       }
     }
-    return { x, y: 0, o: clamp((OFF - Math.abs(x)) / (OFF - S), 0, 1) };
+    return { x, y: 0, o: clamp((OFF - Math.abs(x)) / (OFF - S), 0, 1), s: 1 };
   }
   const angle = (tSec / 1.5) * Math.PI * 2 + i * ((Math.PI * 2) / 3);
   // ring: fixed radius; orbit: synced breathing radius. Min kept above DOT_SIZE/√3
   // so the dots never visually merge into a single white orb at the tightest point.
   const radius = variant === 'ring' ? 20 : 15 + 6 * Math.sin((tSec / 1.5) * Math.PI * 2);
-  return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, o: 1 };
+  // The orbit swells slightly as its radius breathes out, like it's inhaling.
+  const s = variant === 'ring' ? 1 : 0.95 + 0.15 * ((radius - 9) / 12);
+  return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, o: 1, s };
 }
 
 function easeInOut(k: number): number {
@@ -116,8 +126,15 @@ function easeInOut(k: number): number {
 // the --foreground token so they track the theme).
 export type SpinnerVariant = 'orbit' | 'breathe' | 'jitter' | 'tumble';
 
-export function Spinner({ variant = 'orbit' }: { variant?: SpinnerVariant } = {}) {
+export function Spinner({
+  variant = 'orbit',
+  mode,
+}: { variant?: SpinnerVariant; mode?: SpinnerMode } = {}) {
   const dotsRef = useRef<Array<HTMLSpanElement | null>>([null, null, null]);
+  // The rAF loop reads the mode through a ref so a mode flip blends into the new
+  // pool mid-flight instead of tearing the animation down and restarting it.
+  const modeRef = useRef<SpinnerMode | undefined>(mode);
+  modeRef.current = mode;
 
   useEffect(() => {
     if (variant !== 'orbit') return;
@@ -136,19 +153,30 @@ export function Spinner({ variant = 'orbit' }: { variant?: SpinnerVariant } = {}
 
     const t0 = performance.now();
     let raf = 0;
+    let seq = SEQUENCES[modeRef.current ?? 'default'];
     let stepIdx = 0;
-    let prev: OrbitPhase = 'orbit';
-    let target: OrbitPhase = 'orbit';
+    let prev: OrbitPhase = seq[0] ?? 'orbit';
+    let target: OrbitPhase = seq[0] ?? 'orbit';
     let blendStart = -Infinity; // far in the past → start fully on `target`
-    let nextSwitchAt = t0 + DWELL_MS.orbit;
+    let nextSwitchAt = t0 + (target === 'orbit' ? DWELL_MS.orbit : DWELL_MS.other);
 
     const frame = (now: number) => {
       const tSec = (now - t0) / 1000;
 
-      if (now >= nextSwitchAt) {
-        stepIdx = (stepIdx + 1) % ORBIT_SEQUENCE.length;
+      // Mode flips (agents start/stop working) blend straight into the new
+      // pool's first pose — no restart, the dots just glide over.
+      const nextSeq = SEQUENCES[modeRef.current ?? 'default'];
+      if (nextSeq !== seq) {
+        seq = nextSeq;
+        stepIdx = 0;
         prev = target;
-        target = ORBIT_SEQUENCE[stepIdx] ?? 'orbit';
+        target = seq[0] ?? 'orbit';
+        blendStart = now;
+        nextSwitchAt = now + (target === 'orbit' ? DWELL_MS.orbit : DWELL_MS.other);
+      } else if (now >= nextSwitchAt) {
+        stepIdx = (stepIdx + 1) % seq.length;
+        prev = target;
+        target = seq[stepIdx] ?? 'orbit';
         blendStart = now;
         nextSwitchAt = now + (target === 'orbit' ? DWELL_MS.orbit : DWELL_MS.other);
       }
@@ -162,7 +190,8 @@ export function Spinner({ variant = 'orbit' }: { variant?: SpinnerVariant } = {}
         const x = a.x + (b.x - a.x) * k;
         const y = a.y + (b.y - a.y) * k;
         const o = a.o + (b.o - a.o) * k;
-        el.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`;
+        const s = a.s + (b.s - a.s) * k;
+        el.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${s.toFixed(3)})`;
         el.style.opacity = o.toFixed(3);
       }
 
@@ -193,6 +222,14 @@ export function Spinner({ variant = 'orbit' }: { variant?: SpinnerVariant } = {}
             marginLeft: -DOT_SIZE / 2,
             marginTop: -DOT_SIZE / 2,
             opacity: 0,
+            // Soft halo per dot, tinted by the screensaver's mode colour when
+            // present (--sv-tint) and the plain foreground elsewhere. It rides
+            // the element's animated opacity/scale, so the glow breathes with
+            // the motion for free — no extra animation needed.
+            boxShadow: [
+              `0 0 ${DOT_SIZE * 1.5}px hsl(var(--sv-tint, var(--foreground)) / 0.45)`,
+              `0 0 ${DOT_SIZE * 3.5}px hsl(var(--sv-tint, var(--foreground)) / 0.2)`,
+            ].join(', '),
             willChange: 'transform, opacity',
           }}
         />

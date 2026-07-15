@@ -150,8 +150,17 @@ export type ShimmerDirection = z.infer<typeof ShimmerDirectionSchema>;
 export const UserPreferencesSchema = z.object({
   theme: ThemeSchema.default('system'),
   navMode: NavModeSchema.default('auto'),
-  backgroundPattern: BackgroundPatternSchema.default('grid'),
+  /** The nebula dots are the signature backdrop — the default for fresh installs. */
+  backgroundPattern: BackgroundPatternSchema.default('dots'),
   bgIntensity: BgIntensitySchema.default('balanced'),
+  /**
+   * Dynamic motion for the background pattern: when on, the backdrop is drawn on
+   * a canvas with a subtle idle animation and reacts to the cursor (repulsed
+   * dots, swelling honeycomb cells, tracking rulers, drifting gradient clouds).
+   * On by default (the dots nebula is the flagship look); always falls back to
+   * the static pattern under reduced motion.
+   */
+  bgDynamic: z.boolean().default(true),
   /**
    * The primary accent (Phase 68): a solid swatch or a gradient. Defaults to the
    * brand rainbow. A legacy bare-string value is coerced to a solid (see

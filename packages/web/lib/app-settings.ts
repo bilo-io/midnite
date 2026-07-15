@@ -126,7 +126,7 @@ export const NAV_W_EXPANDED = '16rem';
  * The decorative backdrop drawn behind the home screen, screensaver and the
  * dashboard header. Each maps to a self-contained utility class in globals.css.
  */
-export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'grid';
+export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'dots';
 
 /** Pattern → CSS utility class drawn at each background site. */
 export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
@@ -457,6 +457,7 @@ export function appSettingsToPreferences(
     navMode: settings.navMode,
     backgroundPattern: settings.backgroundPattern,
     bgIntensity: settings.bgIntensity,
+    bgDynamic: settings.bgDynamic,
     accent: settings.accent,
     accentSecondary: settings.accentSecondary,
     motion: settings.motion,
@@ -485,6 +486,7 @@ export function applyPreferences(
     navMode: prefs.navMode,
     backgroundPattern: prefs.backgroundPattern,
     bgIntensity: prefs.bgIntensity,
+    bgDynamic: prefs.bgDynamic,
     accent: prefs.accent,
     accentSecondary: prefs.accentSecondary,
     motion: prefs.motion,

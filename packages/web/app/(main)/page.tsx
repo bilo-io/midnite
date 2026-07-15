@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { DynamicBackground } from '@/components/dynamic-background';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
 import { useBackgroundPattern } from '@/lib/use-background-pattern';
@@ -200,13 +201,19 @@ export default function HomePage() {
     if (subDone) setPillsRevealed(true);
   }, [subDone]);
 
-  const patternClass = useBackgroundPattern();
+  const { pattern, className: patternClass, dynamic } = useBackgroundPattern();
 
   return (
     <div
-      data-bg-target=""
-      className={`${patternClass} relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center`}
+      // When the dynamic canvas renders, drop the static pattern entirely —
+      // data-bg-target would repaint it via the pre-paint CSS rules.
+      data-bg-target={dynamic ? undefined : ''}
+      // `isolate` makes this a stacking context so the canvas's -z-10 stays
+      // inside it (above the body background) instead of escaping to the root
+      // and being painted underneath `body`'s bg-background.
+      className={`${dynamic ? '' : patternClass} relative isolate flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center`}
     >
+      {dynamic && <DynamicBackground pattern={pattern} className="-z-10" />}
       <Clock now={now} />
 
       <div className="mb-10">

@@ -279,9 +279,9 @@ describe('appearanceInitScript', () => {
     expect(html.getAttribute('data-accent-preset')).toBe('brand');
     expect(html.hasAttribute('data-accent-gradient')).toBe(true);
     expect(html.style.getPropertyValue('--accent-gradient')).toContain('conic-gradient');
-    // Motion defaults to system; bg defaults to grid; no uiFont override.
+    // Motion defaults to system; bg defaults to the nebula dots; no uiFont override.
     expect(html.getAttribute('data-motion')).toBe('system');
-    expect(html.getAttribute('data-bg')).toBe('grid');
+    expect(html.getAttribute('data-bg')).toBe('dots');
     expect(html.hasAttribute('data-ui-font')).toBe(false);
   });
 

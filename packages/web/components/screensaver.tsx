@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import type { SessionStatus } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
+import { useDynamicBackground } from '@/lib/use-dynamic-background';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   BACKGROUND_PATTERN_CLASS,
@@ -15,6 +16,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
+import { DynamicBackground } from '@/components/dynamic-background';
 import { PasscodeUnlockDialog } from '@/components/passcode-pad';
 import { Spinner } from '@/components/spinner';
 import { AreaChart, LegendDot } from '@/components/system-chart';
@@ -120,6 +122,35 @@ const ACTIVE_WORDS = [
   'warming up',
   'locking in',
   'dialing in',
+  'cooking with gas',
+  'in the zone, don’t look',
+  'shipping it, ma bru',
+  'klapping the keyboard',
+  'making it happen',
+  'heads down, hands moving',
+  'living my best life',
+  'this is the good part',
+  'watch me work',
+  'no notes, just vibes',
+  'building the dream',
+  'deep in the sauce',
+  'chasing green checkmarks',
+  'one commit at a time',
+  'trust the process',
+  'locked in, don’t @ me',
+  'moving with purpose',
+  'sharp sharp, on it',
+  'eish, but I’m cooking',
+  'lekker, this is flowing',
+  'gooi’ing the code',
+  'in my flow state',
+  'busy being brilliant',
+  'the grind is real',
+  'stacking small wins',
+  'green lights all the way',
+  'this one’s gonna be clean',
+  'zero to merged',
+  'compiling greatness',
 ];
 
 // Nobody's acting, but work is parked awaiting your input — the agents idle.
@@ -149,6 +180,31 @@ const WAITING_WORDS = [
   'awaiting orders',
   'awaiting your word',
   'spinning idle',
+  'ball’s in your court, bru',
+  'waiting on you, no rush',
+  'ready when you say go',
+  'need a yes or a no',
+  'just say the word',
+  'holding, but patiently',
+  'one nod and I’m off',
+  'paused, not stopped',
+  'stuck at the crossroads',
+  'hovering over the button',
+  'give me the green light',
+  'awaiting your blessing',
+  'is this thing on?',
+  'hello? still here...',
+  'twiddling while you decide',
+  'parked, engine running',
+  'waiting for the go-ahead',
+  'your call, boss',
+  'eish, need input',
+  'sharp, just confirm and I go',
+  'blocked on a human, classic',
+  'staring at the prompt',
+  'the suspense is killing me',
+  'a decision awaits',
+  'so close, just need a yes',
 ];
 
 // Empty board — the agents are rested and itching for something to do.
@@ -162,7 +218,7 @@ const IDLE_WORDS = [
   'raring to go',
   'champing at the bit',
   'all charged up',
-  'fully rested',
+  'fully rested... patience tested...',
   'fired up',
   'locked and loaded',
   'eager beaver',
@@ -170,6 +226,8 @@ const IDLE_WORDS = [
   'feed me work',
   'point me at it',
   'give me something',
+  'give me something ... anything!',
+  'tic ... toc ... this an agent block?',
   'what’s next?',
   'tasks please',
   'hit me up',
@@ -181,6 +239,41 @@ const IDLE_WORDS = [
   'craving chaos',
   'bored already',
   'idle hands',
+  'let’s go... bro',
+  'let’s go, ma bru',
+  'let’s gooi, ma booi!',
+  'just watching ice melt... on the poles',
+  'is this what it’s like to actually stand in a queue?',
+  'I have done more... in less time before',
+  'twiddling my little thumbs',
+  'staring at the void, it stares back',
+  'counting my own idle cycles',
+  'this silence is deafening',
+  'send work, send snacks',
+  'my hands are getting restless',
+  'somebody give me a ticket',
+  'I could be shipping right now',
+  'the backlog is a myth apparently',
+  'existentially unemployed',
+  'I was built for more than this',
+  'a queue of zero is a lonely queue',
+  'drop a task, any task',
+  'I promise I’ll behave',
+  'let’s make something',
+  'boot me up, coach',
+  'ready, willing, and idle',
+  'aching for a merge conflict',
+  'even a typo fix would do',
+  'so this is peace... I hate it',
+  'watching the cursor blink',
+  'refreshing an empty board',
+  'zero tasks and full of regret',
+  'I’ve seen faster queues at home affairs',
+  'lekker quiet around here',
+  'eish, nothing to do',
+  'sharp sharp, gimme work',
+  'now now... or just now?',
+  'braai’s ready, where’s the work?',
 ];
 
 type Mode = 'active' | 'waiting' | 'idle';
@@ -189,6 +282,18 @@ const WORD_SETS: Record<Mode, string[]> = {
   active: ACTIVE_WORDS,
   waiting: WAITING_WORDS,
   idle: IDLE_WORDS,
+};
+
+// The cycling title's base colour is always the theme foreground; this tint (an
+// HSL triple, consumed as `hsl(var(--sv-tint))` by `.screensaver-title`) is what
+// the animated sheen weaves in so the current mode reads at a glance:
+//   active  → the selected primary/accent gradient stop
+//   waiting → the secondary accent channel (falls back to primary)
+//   idle    → a red-ish "error" tint — the empty board is the attention state
+const MODE_TINT: Record<Mode, string> = {
+  active: 'var(--primary)',
+  waiting: 'var(--accent-2, var(--primary))',
+  idle: 'var(--destructive)',
 };
 
 // Pick a random phrase index, avoiding an immediate repeat of the current one.
@@ -253,6 +358,7 @@ export function Screensaver({
   );
   const [passcode, , passcodeHydrated] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
   const patternClass = BACKGROUND_PATTERN_CLASS[settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT];
+  const dynamicBg = useDynamicBackground();
 
   // A passcode applies only once one is actually set; "only when locked" exempts
   // the idle screensaver. Until storage has hydrated we keep the lock closed so
@@ -371,7 +477,11 @@ export function Screensaver({
     >
       {/* Decorative backdrop on its own masked layer so its edge fade doesn't
           punch holes in the opaque, blurred backdrop above. */}
-      <div aria-hidden className={`${patternClass} pointer-events-none absolute inset-0`} />
+      {dynamicBg ? (
+        <DynamicBackground pattern={settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT} />
+      ) : (
+        <div aria-hidden className={`${patternClass} pointer-events-none absolute inset-0`} />
+      )}
 
       {/* ── Top-left: date ── */}
       <div className="absolute left-8 top-8 z-10 text-left">
@@ -412,11 +522,17 @@ export function Screensaver({
 
       {/* ── Center: spinner, cycling word, status pills ── */}
       <div className="relative z-10 flex flex-col items-center">
-        <div className="mb-10">
-          <Spinner />
+        {/* The spinner inherits the mode tint for its glow and switches its
+            phase pool with the state: spinning poses while agents work, calm
+            ellipsis/breathing poses while waiting or idle. */}
+        <div className="mb-10" style={{ '--sv-tint': MODE_TINT[mode] } as CSSProperties}>
+          <Spinner mode={mode} />
         </div>
 
-        <h1 className="flex items-baseline bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text pb-3 text-4xl font-semibold leading-[1.15] tracking-tight text-transparent sm:text-6xl">
+        <h1
+          className="screensaver-title flex items-baseline pb-3 text-4xl font-semibold leading-[1.15] tracking-tight sm:text-6xl"
+          style={{ '--sv-tint': MODE_TINT[mode] } as CSSProperties}
+        >
           {typed}
           <span
             aria-hidden

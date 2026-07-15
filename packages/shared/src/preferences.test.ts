@@ -18,8 +18,9 @@ describe('UserPreferencesSchema', () => {
     expect(DEFAULT_USER_PREFERENCES).toEqual({
       theme: 'system',
       navMode: 'auto',
-      backgroundPattern: 'grid',
+      backgroundPattern: 'dots',
       bgIntensity: 'balanced',
+      bgDynamic: true,
       accent: BRAND_ACCENT,
       accentSecondary: SECONDARY_ACCENT_OFF,
       motion: 'system',
@@ -97,6 +98,7 @@ describe('UserPreferencesSchema', () => {
       navMode: 'expanded' as const,
       backgroundPattern: 'aurora' as const,
       bgIntensity: 'bold' as const,
+      bgDynamic: true,
       accent: { kind: 'solid' as const, swatch: 'emerald' as const },
       accentSecondary: { kind: 'solid' as const, swatch: 'cyan' as const },
       motion: 'reduced' as const,

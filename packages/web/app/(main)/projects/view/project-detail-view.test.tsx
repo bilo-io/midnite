@@ -10,7 +10,7 @@ beforeEach(() => {
 });
 
 // Desktop path so the rails (not drawers) render deterministically.
-vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false }));
+vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false, useMediaQuery: () => false }));
 
 let params = new URLSearchParams();
 const push = vi.fn();

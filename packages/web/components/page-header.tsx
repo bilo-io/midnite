@@ -22,6 +22,7 @@ import {
   UserRound,
   Workflow,
 } from 'lucide-react';
+import { DynamicBackground } from '@/components/dynamic-background';
 import { cn } from '@/lib/utils';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useBackgroundPattern } from '@/lib/use-background-pattern';
@@ -95,7 +96,7 @@ export function PageHeader({
   actions,
 }: PageHeaderProps) {
   const scrolled = useScrolled();
-  const patternClass = useBackgroundPattern();
+  const { pattern, className: patternClass, dynamic } = useBackgroundPattern();
   const Icon = icon ? ICONS[icon] : null;
 
   // Type the title and subtitle out together. Both run over the same duration so
@@ -128,13 +129,18 @@ export function PageHeader({
         {showGrid && (
           <div
             aria-hidden
-            data-bg-target=""
+            // The dynamic canvas replaces the static pattern — keep the wrapper
+            // (positioning + scroll fade) but drop the class and data-bg-target
+            // so the pre-paint CSS doesn't paint underneath the canvas.
+            data-bg-target={dynamic ? undefined : ''}
             className={cn(
-              patternClass,
+              !dynamic && patternClass,
               'pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 transition-opacity duration-300 motion-reduce:transition-none',
               scrolled ? 'opacity-0' : 'opacity-50',
             )}
-          />
+          >
+            {dynamic && <DynamicBackground pattern={pattern} />}
+          </div>
         )}
 
         {/* Wrap (not overflow) on a phone: if the title + actions can't share a

@@ -9,7 +9,7 @@ beforeEach(() => localStorage.clear());
 // desktop (rail) path renders deterministically. The terminal region is its own
 // unit (session-terminal-region.test.tsx) — stub it so this test stays about the
 // cockpit shell (rails, header, links) and doesn't pull in the WS terminal / API.
-vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false }));
+vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false, useMediaQuery: () => false }));
 // The terminal region (Theme C) is its own unit — stub it so this stays about the shell.
 vi.mock('@/components/session-terminal-region', () => ({
   SessionTerminalRegion: ({ session }: { session: { status: string } }) => (

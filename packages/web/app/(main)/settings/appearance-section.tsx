@@ -100,6 +100,9 @@ export function AppearanceSection() {
   const setBgIntensity = (intensity: BgIntensity) =>
     setSettings((prev) => ({ ...prev, bgIntensity: intensity }));
 
+  const bgDynamic = settings.bgDynamic ?? DEFAULT_SETTINGS.bgDynamic;
+  const setBgDynamic = (value: boolean) => setSettings((prev) => ({ ...prev, bgDynamic: value }));
+
   // Coerce on read: pre-Phase-68 blobs stored a bare swatch string (see apply-appearance.ts)
   const accent = coerceAccentValue(settings.accent, ACCENT_DEFAULT);
   const setAccent = (next: AccentValue) => setSettings((prev) => ({ ...prev, accent: next }));
@@ -276,6 +279,29 @@ export function AppearanceSection() {
                 </button>
               );
             })}
+          </div>
+
+          <div className="border-t border-border/60 pt-4">
+            <label className="flex items-center justify-between gap-4">
+              <span className="space-y-0.5">
+                <span className="block text-sm font-medium">Dynamic motion</span>
+                <span className="block text-xs text-muted-foreground">
+                  Subtly animate the pattern and let it react to your cursor — dots scatter,
+                  honeycomb cells swell, rulers track, gradients drift like clouds.
+                </span>
+              </span>
+              <Switch
+                checked={hydrated && bgDynamic}
+                onCheckedChange={setBgDynamic}
+                aria-label="Dynamic motion"
+              />
+            </label>
+            {bgDynamic && motion === 'reduced' && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Your Motion setting is &ldquo;Reduced&rdquo;, so the static pattern is shown
+                instead until motion is allowed again.
+              </p>
+            )}
           </div>
 
           {/* Intensity control — only visible when the animated gradient is selected */}
