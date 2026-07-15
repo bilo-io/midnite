@@ -71,23 +71,29 @@ terminal over the loopback origin) without needing the static export.
 
 ## Packaging (.dmg)
 
-The production renderer needs the **static export** of the web app, which is a
-deferred step (`next.config.mjs` → `output: 'export'`, `trailingSlash: true`,
-`images.unoptimized`, plus converting the `force-dynamic` pages + `[id]` routes
-to client fetching). Until that lands, dev-run works but `web/out` won't exist.
+The production renderer is served from the web app's **static export**
+(`next.config.mjs` → `output: 'export'`, `trailingSlash: true`,
+`images.unoptimized`), written to `packages/web/out` by `moon run web:build`.
 
-Once the export exists:
+electron-builder 25.x rejects any `extraResources` `from:` path outside the app
+dir (`packages/desktop/`), so both the gateway and the web export are **staged
+into `packages/desktop/build-staging/`** first — that whole dir is a build
+artifact and is git-ignored. `pnpm run stage` (`scripts/stage-gateway.mjs`) does
+the staging: `pnpm deploy` for a flat, symlink-free gateway prod `node_modules`,
+`electron-rebuild` of its native deps (better-sqlite3, node-pty) for this arch,
+and a copy of `web/out` → `build-staging/web`.
 
 ```bash
-# 1. stage a flat, symlink-free prod node_modules for the gateway
-pnpm --filter @midnite/gateway deploy --prod packages/desktop/build-staging/gateway
-# 2. rebuild the staged native deps for Electron's ABI (per arch)
-pnpm exec electron-rebuild -m packages/desktop/build-staging/gateway -f -w better-sqlite3
-pnpm exec electron-rebuild -m packages/desktop/build-staging/gateway -f -w node-pty
-# 3. build everything + the dmgs
-moon run web:build
+# 1. build the gateway (dist + hook .cjs) and the web static export (web/out)
+moon run gateway:build web:build
+# 2. stage gateway prod deps (deploy + electron-rebuild per arch) + the web export
+pnpm --filter @midnite/desktop run stage
+# 3. package the dmgs
 moon run desktop:package        # → packages/desktop/build/midnite-*-{arm64,x64}.dmg
 ```
+
+(`pnpm --filter @midnite/desktop run dist` chains `stage` + `electron-builder` in
+one step once the builds in step 1 exist.)
 
 Build the arm64 dmg on Apple Silicon and the x64 dmg on (or cross from) Intel —
 native modules are arch-specific; a universal binary is fragile for these and is

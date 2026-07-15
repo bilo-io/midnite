@@ -15,30 +15,40 @@ artifactName: ${productName}-${version}-${arch}.${ext}
 files:
   - dist/**/*
   - package.json
+  # Workspace deps are symlinked into node_modules (@midnite/gateway, @midnite/shared);
+  # electron-builder follows those symlinks into the asar and fails on their
+  # sibling-path files. The gateway runs from extraResources (not the asar) and
+  # @midnite/shared is type-only, so neither is needed inside the asar.
+  - '!node_modules/@midnite/**'
 
+# Every extraResources source lives under build-staging/ INSIDE packages/desktop.
+# electron-builder 25.x runs the asarUnpack (**/*.node) filter over extraResources
+# and rejects any `from:` outside the app dir with "must be under packages/desktop/",
+# so sibling paths like ../gateway/* or ../web/out don't work. `pnpm run stage`
+# (scripts/stage-gateway.mjs) populates build-staging/{gateway,web} before packaging;
+# CI does the same (.github/workflows/release.yml). See README "Packaging".
 extraResources:
-  - from: ../gateway/dist
+  - from: build-staging/gateway/dist
     to: gateway/dist
     # tsc -b leaves a .tsbuildinfo manifest in dist that electron-builder trips on
     # (and it's not needed at runtime), so drop it from the copy.
     filter:
       - '**/*'
       - '!**/*.tsbuildinfo'
-  - from: ../gateway/drizzle
+  - from: build-staging/gateway/drizzle
     to: gateway/drizzle
-  # tsc doesn't copy the hook .cjs files; gateway:build does, but stage them
-  # explicitly too in case the build step is bypassed.
-  - from: ../gateway/src/terminal/hooks
+  # gateway:build copies the hook .cjs into dist; stage them explicitly too as a
+  # belt-and-suspenders against a bypassed build step.
+  - from: build-staging/gateway/dist/terminal/hooks
     to: gateway/dist/terminal/hooks
     filter:
       - '*.cjs'
   # A flat, symlink-free production node_modules for the gateway, produced by
-  # `pnpm --filter @midnite/gateway deploy` and electron-rebuilt for this arch.
-  # See README "Packaging".
+  # `pnpm deploy` + electron-rebuilt for this arch (see stage-gateway.mjs).
   - from: build-staging/gateway/node_modules
     to: gateway/node_modules
-  # The Next.js static export (output: 'export').
-  - from: ../web/out
+  # The Next.js static export (output: 'export'), staged from packages/web/out.
+  - from: build-staging/web
     to: web
 
 asar: true
