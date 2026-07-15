@@ -19,7 +19,7 @@ import type {
 } from '@midnite/shared';
 import { getMetricsRollups, getUsageAttribution } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
-import { SectionCard } from './ops-view';
+import { SectionCard, WindowToggle } from './ops-view';
 
 // ── Shared bits ─────────────────────────────────────────────────────────────────
 
@@ -104,9 +104,11 @@ function Swatch({ color, label }: { color: string; label: string }) {
 export function CostTrendSection({
   data,
   loading,
+  windowControl,
 }: {
   data: MetricsRollupResponse | null;
   loading: boolean;
+  windowControl?: React.ReactNode;
 }) {
   const rows = useMemo(() => trendRows(data), [data]);
   const total = rows.reduce((s, r) => s + r.llm + r.measured + r.estimated, 0);
@@ -116,11 +118,14 @@ export function CostTrendSection({
     <SectionCard
       title="Cost over time"
       action={
-        !empty ? (
-          <span className="text-xs tabular-nums text-muted-foreground">
-            <span className="font-medium text-foreground">{fmtUsd(total)}</span> in window
-          </span>
-        ) : undefined
+        <div className="flex items-center gap-2">
+          {!empty && (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              <span className="font-medium text-foreground">{fmtUsd(total)}</span> in window
+            </span>
+          )}
+          {windowControl}
+        </div>
       }
       loading={loading && !data}
       empty={empty}
@@ -236,12 +241,14 @@ export function CostBreakdownSection({
   attribution,
   rollups,
   loading,
+  windowControl,
 }: {
   groupBy: CostGroupBy;
   onGroupByChange: (g: CostGroupBy) => void;
   attribution: UsageAttributionResponse | null;
   rollups: MetricsRollupResponse | null;
   loading: boolean;
+  windowControl?: React.ReactNode;
 }) {
   const rows = useMemo(
     () => breakdownRows(groupBy, attribution, rollups),
@@ -251,21 +258,24 @@ export function CostBreakdownSection({
   const unpriced = rows.reduce((s, r) => s + r.unpriced, 0);
 
   const selector = (
-    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className="sr-only">Group cost by</span>
-      <select
-        aria-label="Group cost by"
-        value={groupBy}
-        onChange={(e) => onGroupByChange(e.target.value as CostGroupBy)}
-        className="rounded-md border bg-background px-2 py-1 text-xs text-foreground"
-      >
-        {(Object.keys(GROUP_BY_LABEL) as CostGroupBy[]).map((k) => (
-          <option key={k} value={k}>
-            {GROUP_BY_LABEL[k]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="flex items-center gap-2">
+      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="sr-only">Group cost by</span>
+        <select
+          aria-label="Group cost by"
+          value={groupBy}
+          onChange={(e) => onGroupByChange(e.target.value as CostGroupBy)}
+          className="rounded-md border bg-background px-2 py-1 text-xs text-foreground"
+        >
+          {(Object.keys(GROUP_BY_LABEL) as CostGroupBy[]).map((k) => (
+            <option key={k} value={k}>
+              {GROUP_BY_LABEL[k]}
+            </option>
+          ))}
+        </select>
+      </label>
+      {windowControl}
+    </div>
   );
 
   return (
@@ -329,9 +339,30 @@ export function CostBreakdownSection({
   );
 }
 
-// ── Panel (self-fetching, window + groupBy owner) ────────────────────────────────
+// ── Panels (self-fetching, one card each — one grid cell each) ───────────────────
 
-export function CostPanel() {
+/** Cost-over-time as its own board cell: owns its window + rollups poll. */
+export function CostTrendPanel() {
+  const [windowDays, setWindowDays] = useState<WindowDays>(30);
+  const from = windowFrom(windowDays);
+
+  const { data: rollups, loading } = usePolling<MetricsRollupResponse>(
+    () => getMetricsRollups({ period: 'daily', from }),
+    COST_POLL_MS,
+    [windowDays],
+  );
+
+  return (
+    <CostTrendSection
+      data={rollups}
+      loading={loading}
+      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label="Cost time window" />}
+    />
+  );
+}
+
+/** Cost-by-dimension as its own board cell: owns its window + groupBy + attribution poll. */
+export function CostBreakdownPanel() {
   const [windowDays, setWindowDays] = useState<WindowDays>(30);
   const [groupBy, setGroupBy] = useState<CostGroupBy>('repo');
   const from = windowFrom(windowDays);
@@ -341,7 +372,6 @@ export function CostPanel() {
     COST_POLL_MS,
     [windowDays],
   );
-
   // repo/project read attribution; provider derives from rollups, so fall back to
   // a repo query (unused for the chart) to keep the hook call unconditional.
   const attrGroupBy: UsageAttributionGroupBy = groupBy === 'provider' ? 'repo' : groupBy;
@@ -352,34 +382,13 @@ export function CostPanel() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <div className="flex gap-1 rounded-lg border p-1 text-xs" role="group" aria-label="Cost time window">
-          {WINDOWS.map((w) => (
-            <button
-              key={w}
-              type="button"
-              aria-pressed={windowDays === w}
-              onClick={() => setWindowDays(w)}
-              className={
-                windowDays === w
-                  ? 'rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground'
-                  : 'rounded-md px-2.5 py-1 text-muted-foreground transition-colors hover:text-foreground'
-              }
-            >
-              {w}d
-            </button>
-          ))}
-        </div>
-      </div>
-      <CostTrendSection data={rollups} loading={rollupsLoading} />
-      <CostBreakdownSection
-        groupBy={groupBy}
-        onGroupByChange={setGroupBy}
-        attribution={attribution}
-        rollups={rollups}
-        loading={groupBy === 'provider' ? rollupsLoading : attrLoading}
-      />
-    </div>
+    <CostBreakdownSection
+      groupBy={groupBy}
+      onGroupByChange={setGroupBy}
+      attribution={attribution}
+      rollups={rollups}
+      loading={groupBy === 'provider' ? rollupsLoading : attrLoading}
+      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label="Cost time window" />}
+    />
   );
 }
