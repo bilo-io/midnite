@@ -29,8 +29,10 @@ export type OpsWidgetType =
   | 'outcomes'
   | 'duration'
   | 'spend'
-  | 'cost'
-  | 'cycle-fleet'
+  | 'cost-trend'
+  | 'cost-breakdown'
+  | 'cycle-time'
+  | 'fleet-trend'
   | 'run-timeline'
   | 'task-health'
   | 'runtime-health'
@@ -76,11 +78,12 @@ const chartSizes: Record<Breakpoint, WidgetSize> = {
   sm: { w: 4, h: 5, minW: 2, minH: 4 },
 };
 
-/** A tall, full-width composite panel (two stacked cards + its own controls). */
-const compositeSizes: Record<Breakpoint, WidgetSize> = {
-  lg: { w: 12, h: 12, minW: 5, minH: 8 },
-  md: { w: 8, h: 12, minW: 5, minH: 8 },
-  sm: { w: 4, h: 14, minW: 2, minH: 8 },
+/** A half-width chart card that also carries a legend/footer row — a touch taller
+ *  than a bare chart so the chart + its stats fill the cell without scrolling. */
+const chartTallSizes: Record<Breakpoint, WidgetSize> = {
+  lg: { w: 6, h: 7, minW: 3, minH: 5 },
+  md: { w: 4, h: 7, minW: 3, minH: 5 },
+  sm: { w: 4, h: 7, minW: 2, minH: 5 },
 };
 
 /** A full-width panel (table / list). */
@@ -126,19 +129,33 @@ export const OPS_WIDGETS: Record<OpsWidgetType, OpsWidgetMeta> = {
     category: 'cost',
     sizes: chartSizes,
   },
-  cost: {
-    label: 'Cost by dimension',
-    description: 'Agent-session spend trend and per-repo/project/provider breakdown',
+  'cost-trend': {
+    label: 'Cost over time',
+    description: 'Agent-session spend trend (measured/estimated/LLM) across the window',
     icon: Coins,
     category: 'cost',
-    sizes: compositeSizes,
+    sizes: chartTallSizes,
   },
-  'cycle-fleet': {
-    label: 'Cycle time & fleet trend',
-    description: 'Wait-vs-work percentiles and a gauge series over time',
+  'cost-breakdown': {
+    label: 'Cost by dimension',
+    description: 'Per-repo / project / provider spend breakdown',
+    icon: PieChart,
+    category: 'cost',
+    sizes: chartTallSizes,
+  },
+  'cycle-time': {
+    label: 'Cycle time',
+    description: 'Wait-vs-work percentiles for completed tasks',
     icon: Activity,
     category: 'runs',
-    sizes: compositeSizes,
+    sizes: chartTallSizes,
+  },
+  'fleet-trend': {
+    label: 'Fleet trends',
+    description: 'Queue depth, slot utilization and tick latency over time',
+    icon: Activity,
+    category: 'runs',
+    sizes: chartTallSizes,
   },
   'run-timeline': {
     label: 'Run timeline',
@@ -201,11 +218,43 @@ export const DEFAULT_OPS_WIDGETS: OpsWidgetInstance[] = [
   { type: 'duration' },
   { type: 'spend' },
   { type: 'run-timeline' },
-  { type: 'cost' },
-  { type: 'cycle-fleet' },
+  { type: 'cost-trend' },
+  { type: 'cost-breakdown' },
+  { type: 'cycle-time' },
+  { type: 'fleet-trend' },
   { type: 'task-health' },
   { type: 'runtime-health' },
 ];
+
+/**
+ * Split the old composite widgets into their per-card successors on read, so
+ * boards saved before the split keep rendering (they stored `cost` / `cycle-fleet`
+ * instances that no longer have a widget). Order-preserving; a no-op once migrated.
+ */
+const LEGACY_SPLIT: Record<string, OpsWidgetType[]> = {
+  cost: ['cost-trend', 'cost-breakdown'],
+  'cycle-fleet': ['cycle-time', 'fleet-trend'],
+};
+
+/** True when `widgets` still references a retired composite type. */
+export function opsWidgetsNeedMigration(widgets: OpsWidgetInstance[]): boolean {
+  return widgets.some((w) => w.type in LEGACY_SPLIT);
+}
+
+/** Expand any retired composite instances into their successors, de-duped. */
+export function migrateOpsWidgets(widgets: OpsWidgetInstance[]): OpsWidgetInstance[] {
+  const seen = new Set<string>();
+  const out: OpsWidgetInstance[] = [];
+  for (const w of widgets) {
+    const successors = LEGACY_SPLIT[w.type] ?? [w.type as OpsWidgetType];
+    for (const type of successors) {
+      if (seen.has(type)) continue;
+      seen.add(type);
+      out.push({ type });
+    }
+  }
+  return out;
+}
 
 /** A catalogue entry: registry metadata plus whether it's already on the board. */
 export type OpsWidgetCatalogEntry = { type: OpsWidgetType; added: boolean } & OpsWidgetMeta;

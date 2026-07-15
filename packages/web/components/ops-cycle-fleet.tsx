@@ -17,7 +17,7 @@ import {
 import type { CycleTimeGroupBy, CycleTimeResponse, GaugeHistoryResponse } from '@midnite/shared';
 import { getCycleTime, getGaugeHistory } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
-import { SectionCard } from './ops-view';
+import { SectionCard, WindowToggle } from './ops-view';
 
 // ── Window control ─────────────────────────────────────────────────────────────
 
@@ -87,11 +87,13 @@ export function CycleTimeSection({
   loading,
   groupBy,
   onGroupByChange,
+  windowControl,
 }: {
   data: CycleTimeResponse | null;
   loading: boolean;
   groupBy: CycleTimeGroupBy;
   onGroupByChange: (g: CycleTimeGroupBy) => void;
+  windowControl?: React.ReactNode;
 }) {
   const rows = useMemo(() => {
     if (!data) return [];
@@ -104,21 +106,24 @@ export function CycleTimeSection({
   const empty = !loading && totalTasks === 0;
 
   const selector = (
-    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className="sr-only">Group cycle-time by</span>
-      <select
-        aria-label="Group cycle-time by"
-        value={groupBy}
-        onChange={(e) => onGroupByChange(e.target.value as CycleTimeGroupBy)}
-        className="rounded-md border bg-background px-2 py-1 text-xs text-foreground"
-      >
-        {(Object.keys(GROUP_BY_LABEL) as CycleTimeGroupBy[]).map((k) => (
-          <option key={k} value={k}>
-            {GROUP_BY_LABEL[k]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="flex items-center gap-2">
+      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="sr-only">Group cycle-time by</span>
+        <select
+          aria-label="Group cycle-time by"
+          value={groupBy}
+          onChange={(e) => onGroupByChange(e.target.value as CycleTimeGroupBy)}
+          className="rounded-md border bg-background px-2 py-1 text-xs text-foreground"
+        >
+          {(Object.keys(GROUP_BY_LABEL) as CycleTimeGroupBy[]).map((k) => (
+            <option key={k} value={k}>
+              {GROUP_BY_LABEL[k]}
+            </option>
+          ))}
+        </select>
+      </label>
+      {windowControl}
+    </div>
   );
 
   return (
@@ -202,9 +207,11 @@ function MiniChart({
 export function FleetTrendSection({
   data,
   loading,
+  windowControl,
 }: {
   data: GaugeHistoryResponse | null;
   loading: boolean;
+  windowControl?: React.ReactNode;
 }) {
   const samples = data?.samples ?? [];
   const empty = !loading && samples.length === 0;
@@ -226,9 +233,12 @@ export function FleetTrendSection({
     <SectionCard
       title="Fleet trends"
       action={
-        data?.truncated ? (
-          <span className="text-[10px] text-muted-foreground">showing recent samples</span>
-        ) : undefined
+        <div className="flex items-center gap-2">
+          {data?.truncated && (
+            <span className="text-[10px] text-muted-foreground">showing recent samples</span>
+          )}
+          {windowControl}
+        </div>
       }
       loading={loading && !data}
       empty={empty}
@@ -310,54 +320,48 @@ export function FleetTrendSection({
   );
 }
 
-// ── Panel (self-fetching, window + groupBy owner) ────────────────────────────────
+// ── Panels (self-fetching, one card each — one grid cell each) ───────────────────
 
 const CYCLE_POLL_MS = 60_000;
 const GAUGE_POLL_MS = 10_000;
 
-export function CycleFleetPanel() {
+/** Cycle-time as its own board cell: owns its window + groupBy + cycle poll. */
+export function CycleTimePanel() {
   const [windowDays, setWindowDays] = useState<WindowDays>(30);
   const [groupBy, setGroupBy] = useState<CycleTimeGroupBy>('none');
 
-  const { data: cycle, loading: cycleLoading } = usePolling<CycleTimeResponse>(
+  const { data: cycle, loading } = usePolling<CycleTimeResponse>(
     () => getCycleTime({ groupBy, windowDays }),
     CYCLE_POLL_MS,
     [groupBy, windowDays],
   );
-  const { data: gauges, loading: gaugesLoading } = usePolling<GaugeHistoryResponse>(
+
+  return (
+    <CycleTimeSection
+      data={cycle}
+      loading={loading}
+      groupBy={groupBy}
+      onGroupByChange={setGroupBy}
+      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} />}
+    />
+  );
+}
+
+/** Fleet trends as its own board cell: owns its window + gauge-history poll. */
+export function FleetTrendPanel() {
+  const [windowDays, setWindowDays] = useState<WindowDays>(30);
+
+  const { data: gauges, loading } = usePolling<GaugeHistoryResponse>(
     () => getGaugeHistory({ from: windowFrom(windowDays) }),
     GAUGE_POLL_MS,
     [windowDays],
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <div className="flex gap-1 rounded-lg border p-1 text-xs" role="group" aria-label="Time window">
-          {WINDOWS.map((w) => (
-            <button
-              key={w}
-              type="button"
-              aria-pressed={windowDays === w}
-              onClick={() => setWindowDays(w)}
-              className={
-                windowDays === w
-                  ? 'rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground'
-                  : 'rounded-md px-2.5 py-1 text-muted-foreground transition-colors hover:text-foreground'
-              }
-            >
-              {w}d
-            </button>
-          ))}
-        </div>
-      </div>
-      <CycleTimeSection
-        data={cycle}
-        loading={cycleLoading}
-        groupBy={groupBy}
-        onGroupByChange={setGroupBy}
-      />
-      <FleetTrendSection data={gauges} loading={gaugesLoading} />
-    </div>
+    <FleetTrendSection
+      data={gauges}
+      loading={loading}
+      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} />}
+    />
   );
 }

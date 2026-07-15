@@ -44,6 +44,40 @@ export function SectionCard({
   );
 }
 
+/** A compact day-window segmented control, shared by the cost/cycle cards. */
+export function WindowToggle<T extends number>({
+  windows,
+  value,
+  onChange,
+  label = 'Time window',
+}: {
+  windows: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+  label?: string;
+}) {
+  return (
+    <div className="flex gap-1 rounded-lg border p-1 text-xs" role="group" aria-label={label}>
+      {windows.map((w) => (
+        <button
+          key={w}
+          type="button"
+          aria-pressed={value === w}
+          onClick={() => onChange(w)}
+          className={cn(
+            'rounded-md px-2.5 py-1 transition-colors',
+            value === w
+              ? 'bg-accent font-medium text-accent-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {w}d
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="flex flex-col gap-0.5">

@@ -12,10 +12,12 @@ import type {
 } from '@midnite/shared';
 import {
   DEFAULT_OPS_WIDGETS,
+  migrateOpsWidgets,
   OPS_LAYOUT_STORAGE_KEY,
   OPS_WIDGETS,
   OPS_WIDGETS_STORAGE_KEY,
   opsSizeForKey,
+  opsWidgetsNeedMigration,
   type Breakpoint,
   type OpsWidgetInstance,
   type OpsWidgetType,
@@ -30,8 +32,8 @@ import {
   SpendSection,
   ThroughputSection,
 } from './ops-view';
-import { CostPanel } from './ops-cost';
-import { CycleFleetPanel } from './ops-cycle-fleet';
+import { CostBreakdownPanel, CostTrendPanel } from './ops-cost';
+import { CycleTimePanel, FleetTrendPanel } from './ops-cycle-fleet';
 import { TaskHealthPanel } from './task-health-panel';
 import { RuntimeHealthPanel } from './runtime-health-panel';
 
@@ -54,11 +56,13 @@ function defaultLayouts(): ResponsiveLayouts {
     item('duration', 0, 9, 6, 5, { minW: 3, minH: 4 }),
     item('spend', 6, 9, 6, 5, { minW: 3, minH: 4 }),
     item('run-timeline', 0, 14, 12, 6, { minW: 4, minH: 4 }),
-    item('cost', 0, 20, 12, 12, { minW: 5, minH: 8 }),
-    item('cycle-fleet', 0, 32, 12, 12, { minW: 5, minH: 8 }),
-    item('task-health', 0, 44, 12, 8, { minW: 4, minH: 5 }),
-    item('runtime-health', 0, 52, 6, 6, { minW: 3, minH: 4 }),
-    item('decisions', 0, 58, 12, 10, { minW: 4, minH: 6 }),
+    item('cost-trend', 0, 20, 6, 7, { minW: 3, minH: 5 }),
+    item('cost-breakdown', 6, 20, 6, 7, { minW: 3, minH: 5 }),
+    item('cycle-time', 0, 27, 6, 7, { minW: 3, minH: 5 }),
+    item('fleet-trend', 6, 27, 6, 7, { minW: 3, minH: 5 }),
+    item('task-health', 0, 34, 12, 8, { minW: 4, minH: 5 }),
+    item('runtime-health', 0, 42, 6, 6, { minW: 3, minH: 4 }),
+    item('decisions', 0, 48, 12, 10, { minW: 4, minH: 6 }),
   ];
 
   const md: LayoutItem[] = [
@@ -68,11 +72,13 @@ function defaultLayouts(): ResponsiveLayouts {
     item('duration', 0, 9, 4, 5, { minW: 3, minH: 4 }),
     item('spend', 4, 9, 4, 5, { minW: 3, minH: 4 }),
     item('run-timeline', 0, 14, 8, 6, { minW: 4, minH: 4 }),
-    item('cost', 0, 20, 8, 12, { minW: 5, minH: 8 }),
-    item('cycle-fleet', 0, 32, 8, 12, { minW: 5, minH: 8 }),
-    item('task-health', 0, 44, 8, 8, { minW: 4, minH: 5 }),
-    item('runtime-health', 0, 52, 8, 6, { minW: 4, minH: 4 }),
-    item('decisions', 0, 58, 8, 10, { minW: 4, minH: 6 }),
+    item('cost-trend', 0, 20, 4, 7, { minW: 3, minH: 5 }),
+    item('cost-breakdown', 4, 20, 4, 7, { minW: 3, minH: 5 }),
+    item('cycle-time', 0, 27, 4, 7, { minW: 3, minH: 5 }),
+    item('fleet-trend', 4, 27, 4, 7, { minW: 3, minH: 5 }),
+    item('task-health', 0, 34, 8, 8, { minW: 4, minH: 5 }),
+    item('runtime-health', 0, 42, 8, 6, { minW: 4, minH: 4 }),
+    item('decisions', 0, 48, 8, 10, { minW: 4, minH: 6 }),
   ];
 
   // Single-column stack on the narrowest breakpoint.
@@ -83,8 +89,10 @@ function defaultLayouts(): ResponsiveLayouts {
     ['duration', 5],
     ['spend', 5],
     ['run-timeline', 6],
-    ['cost', 14],
-    ['cycle-fleet', 14],
+    ['cost-trend', 7],
+    ['cost-breakdown', 7],
+    ['cycle-time', 7],
+    ['fleet-trend', 7],
     ['task-health', 8],
     ['runtime-health', 6],
     ['decisions', 10],
@@ -148,6 +156,14 @@ export function OpsGrid({ pool, summary, usage, doctor, loading }: OpsGridProps)
     DEFAULT_OPS_WIDGETS,
   );
 
+  // Boards saved before the cost/cycle composites were split still store the
+  // retired `cost`/`cycle-fleet` instances — expand them into per-card widgets on
+  // mount so those cells render (reconcile then positions the new keys). One-shot.
+  useEffect(() => {
+    if (opsWidgetsNeedMigration(widgets)) setWidgets((prev) => migrateOpsWidgets(prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- migrate once on mount
+  }, []);
+
   // A stable random entrance delay per card key, so cards fade in staggered.
   const cardDelaysRef = useRef(new Map<string, number>());
   const cardDelayMs = (key: string): number => {
@@ -203,10 +219,14 @@ export function OpsGrid({ pool, summary, usage, doctor, loading }: OpsGridProps)
         return <DurationSection summary={summary} loading={loading} />;
       case 'spend':
         return <SpendSection usage={usage} loading={loading} />;
-      case 'cost':
-        return <CostPanel />;
-      case 'cycle-fleet':
-        return <CycleFleetPanel />;
+      case 'cost-trend':
+        return <CostTrendPanel />;
+      case 'cost-breakdown':
+        return <CostBreakdownPanel />;
+      case 'cycle-time':
+        return <CycleTimePanel />;
+      case 'fleet-trend':
+        return <FleetTrendPanel />;
       case 'run-timeline':
         return <RunTimelineDrilldown />;
       case 'task-health':
