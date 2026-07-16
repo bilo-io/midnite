@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CircleDot, Pause, PlayCircle, XCircle, type LucideIcon } from 'lucide-react';
+import { CircleDot, Pause, PlayCircle, RotateCcw, XCircle, type LucideIcon } from 'lucide-react';
 import type { Status, Task, TaskSummary } from '@midnite/shared';
 
 import { useConfirm } from '@/components/confirm-dialog';
 import { useToast } from '@/components/toast';
+import { reopenTask } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useRegisterPaletteCommands, type PaletteCommand } from '@/lib/palette-commands';
 import { unmetBlockerCount } from '@/lib/task-dependencies';
@@ -67,15 +68,46 @@ export function useTaskPaletteCommands(task: Task, tasks: TaskSummary[]): void {
       }
     };
 
+    // Reopen a terminal task (Phase 69 E) — a dedicated verb, not a "move to",
+    // since done/abandoned have no legal outgoing edge.
+    const reopen = async () => {
+      const ok = await confirm({
+        title: 'Reopen this task?',
+        description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
+        confirmLabel: 'Reopen',
+      });
+      if (!ok) return;
+      try {
+        await reopenTask(task.id);
+        invalidateData();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to reopen task');
+      }
+    };
+
     // Skip the command that matches the task's current status — moving to where it
     // already is would be a no-op.
-    return MOVE_COMMANDS.filter((c) => c.target !== task.status).map((c) => ({
-      id: `task-move-${c.target}`,
-      label: c.label,
-      Icon: c.Icon,
-      keywords: ['move', 'status', c.target, task.title],
-      action: () => void apply(c.target),
-    }));
+    const commands: PaletteCommand[] = MOVE_COMMANDS.filter((c) => c.target !== task.status).map(
+      (c) => ({
+        id: `task-move-${c.target}`,
+        label: c.label,
+        Icon: c.Icon,
+        keywords: ['move', 'status', c.target, task.title],
+        action: () => void apply(c.target),
+      }),
+    );
+
+    if (task.status === 'done' || task.status === 'abandoned') {
+      commands.push({
+        id: 'task-reopen',
+        label: 'Reopen task',
+        Icon: RotateCcw,
+        keywords: ['reopen', 'revive', 'restart', 'todo', task.title],
+        action: () => void reopen(),
+      });
+    }
+
+    return commands;
   }, [task, tasks, confirm, toast]);
 
   useRegisterPaletteCommands('task-detail', commands);

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
-import { deleteTask, getTask, updateTaskStatus } from '@/lib/api';
+import { deleteTask, getTask, reopenTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { moveTask, spawnsSession } from '@/lib/task-transitions';
 import { TASK_MODAL_PARAM, TASK_MODAL_LEGACY_PARAM } from '@/lib/task-route';
@@ -261,6 +261,29 @@ export function TasksView({
     [localTasks, toast, confirm],
   );
 
+  // Reopen a terminal task (Phase 69 E). The board owns the confirm; here we
+  // optimistically flip it to todo, hit the dedicated endpoint, and roll back on
+  // failure — mirroring `onMove`, but reopen isn't a legal `ALLOWED_TRANSITIONS`
+  // edge so it can't route through `moveTask`.
+  const onReopen = useCallback(
+    async (taskId: string) => {
+      const current = localTasks.find((t) => t.id === taskId);
+      if (!current) return;
+      const prevStatus = current.status;
+      setLocalTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: 'todo' } : t)));
+      try {
+        await reopenTask(taskId);
+        invalidateData();
+      } catch (e) {
+        setLocalTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)),
+        );
+        toast.error(e instanceof Error ? e.message : 'Failed to reopen task');
+      }
+    },
+    [localTasks, toast],
+  );
+
   const onSetView = useCallback((next: TaskView) => {
     setView(next);
     try {
@@ -426,6 +449,7 @@ export function TasksView({
     onSelect: openTask,
     showAbandoned: showAllStatuses,
     onMove,
+    onReopen,
     isSelected,
     onToggleSelect: (id: string, sk: boolean) => toggleSelect(id, sk, orderedIds),
     blockedCounts: blocked,

@@ -90,3 +90,26 @@ export const FilteredColumns: Story = {
     showAbandoned: false,
   },
 };
+
+/**
+ * Phase 69 E — terminal tasks (done in a column, abandoned in the tucked-away
+ * section) expose a hover "Reopen task" affordance; active tasks never do.
+ */
+export const ReopenAffordance: Story = {
+  args: {
+    tasks,
+    columns: COLUMNS,
+    projectsById,
+    showAbandoned: true,
+    onMove: fn(),
+    onReopen: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Done-column cards each expose a (hover-revealed, always-in-DOM) Reopen
+    // affordance; the fixtures carry ≥2 done tasks. Active cards never do.
+    await waitFor(() =>
+      expect(canvas.getAllByRole('button', { name: 'Reopen task' }).length).toBeGreaterThanOrEqual(2),
+    );
+  },
+};

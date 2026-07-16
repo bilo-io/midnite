@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowUpRight, Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
+import { ArrowUpRight, Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, RotateCcw, SquareTerminal, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
@@ -43,6 +43,7 @@ import {
   refreshPrStatus,
   removeTaskDependency,
   removeTaskLink,
+  reopenTask,
   setTaskTags,
   startTask,
   updateTaskProject,
@@ -379,6 +380,28 @@ export function TaskDetail({
     }
   };
 
+  // Reopen a terminal task (Phase 69 E): done/abandoned → todo. Clears the
+  // session binding + retry state and re-blocks dependents; PR history is kept.
+  const reopen = async () => {
+    const ok = await confirm({
+      title: 'Reopen this task?',
+      description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
+      confirmLabel: 'Reopen',
+    });
+    if (!ok) return;
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      await reopenTask(task.id);
+      invalidateData();
+      onClose();
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : 'Failed to reopen task');
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
   // Permanent delete — only offered once the task is archived (e.g. abandoned).
   const remove = async () => {
     setStatusBusy(true);
@@ -494,6 +517,18 @@ export function TaskDetail({
             >
               <Play className="h-3.5 w-3.5" />
               Start
+            </Button>
+          ) : null}
+          {task.status === 'done' || task.status === 'abandoned' ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void reopen()}
+              disabled={statusBusy}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reopen
             </Button>
           ) : null}
           <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} iconOnly={inModal} />
