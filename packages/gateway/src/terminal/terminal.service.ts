@@ -639,6 +639,19 @@ export class TerminalService implements OnModuleDestroy {
     handle.proc.write(Buffer.from(base64, 'base64').toString('utf8'));
   }
 
+  /**
+   * Phase 69 C — reply transport. Write a line of `text` + Enter to a live
+   * session's PTY stdin, as if a human typed it in the terminal. Trailing
+   * newlines are stripped so exactly one Enter is sent (a submitted reply, not a
+   * newline-per-line paste). No-op if the session has no live handle — the
+   * caller (session-prompt controller) already guards liveness and returns 409.
+   */
+  sendPrompt(sessionId: string, text: string): void {
+    const handle = this.handles.get(sessionId);
+    if (!handle) return;
+    handle.proc.write(`${text.replace(/[\r\n]+$/, '')}\r`);
+  }
+
   resize(sessionId: string, cols: number, rows: number): void {
     const handle = this.handles.get(sessionId);
     if (!handle) return;

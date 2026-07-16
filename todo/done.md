@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-16 — feat: reply transport — `POST /sessions/:id/prompt` + `midnite reply` — Phase 69 Theme C (PR #443)
+
+One authenticated write path from text → a waiting agent's PTY stdin, so you can answer it from the CLI (and, next, the board — Theme D) without opening its terminal. The `waiting → wip` flip is *earned* by Theme B's `UserPromptSubmit` hook round-trip, never optimistically written here. Phase 69 → 15/26 (58%), Status 🔄 WIP (D E remain).
+
+- [x] **`shared`** — `SessionPromptRequestSchema` (`{ text }`, trimmed / non-empty / ≤8000 chars) + `SessionPromptResponseSchema` (`{ ok: true }`); typed client method `sendSessionPrompt(sessionId, text)` on the CLI's `GatewayClient`.
+- [x] **`POST /sessions/:sessionId/prompt`** served from the **terminal** module (Decision §2 — terminal owns the PTY write; `sessions/` stays a reader). `TerminalService.sendPrompt()` strips trailing newlines and writes `text + \r` (one Enter). **Dumb pipe** — no status gate; the `wip` flip comes only from the hook round-trip.
+- [x] **Guards** — 400 bad payload · 404 unknown/out-of-scope task (RBAC via scoped `getTask`; agent `sessionId === taskId`, and TerminalModule can't import SessionsModule — that edge is a cycle) · 409 no live agent session (ad-hoc/dead → steer to `resolve`).
+- [x] **CLI** — `midnite reply <id> <text>` (inline in `cli/src/index.ts`, matching the repo's command layout) — send immediately; the 404/409 distinction surfaces in the thrown gateway message.
+- [x] Gate: `moon run :typecheck` · `:lint` green; shared `session.test.ts` (+3), gateway `session-prompt.controller.test.ts` (8) + `terminal.service.test.ts` (+3), cli `client.test.ts` (+2). No visual change → no screenshots/e2e (that's Theme D).
+
 ## 2026-07-16 — docs(gateway): lifecycle signal→edge audit + writer-matrix spec — Phase 69 Theme A (PR #442)
 
 The audit that makes the task state machine legible before more edges land. Phase 69 → 11/26 (42%), Status 🔄 WIP (C D E remain).

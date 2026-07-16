@@ -47,14 +47,14 @@ The missing driver. Status truth comes from the hook round-trip — no optimisti
 
 ---
 
-## Theme C — Reply transport: REST + typed client + CLI — **M**
+## Theme C — Reply transport: REST + typed client + CLI — **M** — ✅ DONE (PR #443, 2026-07-16)
 
 One authenticated write path from "text" to the PTY's stdin, usable by web and CLI alike.
 
-- [ ] `shared`: `SessionPromptRequestSchema` (`{ text }`) + response shape, and a typed API-client method (`sendSessionPrompt(sessionId, text)`).
-- [ ] `POST /sessions/:sessionId/prompt` served from the **terminal** module (thin controller → `TerminalService.sendPrompt()` writes text + Enter to the live PTY). `sessions/` stays a reader; terminal owns the write.
-- [ ] Guards: session must be a **live agent session** (404 unknown, 409 dead/non-agent); auth/RBAC consistent with existing session-scoped endpoints (owner/team visibility, Phase 33/35 rules).
-- [ ] CLI: `midnite reply <task-id> "text"` in [`cli/src/commands/`](../packages/cli/src/commands/) — thin: resolve task → typed client → confirm; errors surface the 404/409 distinction ("no live session — task needs resolve, not reply").
+- [x] `shared`: `SessionPromptRequestSchema` (`{ text }`, trimmed / non-empty / ≤8000) + `SessionPromptResponseSchema` (`{ ok: true }`), and a typed API-client method (`sendSessionPrompt(sessionId, text)`).
+- [x] `POST /sessions/:sessionId/prompt` served from the **terminal** module (thin controller → `TerminalService.sendPrompt()` writes text + one Enter to the live PTY, trailing newlines stripped). `sessions/` stays a reader; terminal owns the write. Dumb pipe: no status gate — the `wip` flip is earned by Theme B's hook round-trip.
+- [x] Guards: session must be a **live agent session** (404 unknown/out-of-scope, 409 dead/non-agent); RBAC via scoped `getTask` (agent `sessionId === taskId`; TerminalModule can't import SessionsModule — that edge is a cycle), consistent with existing session-scoped visibility (Phase 33/35).
+- [x] CLI: `midnite reply <task-id> "text"` (inline in `cli/src/index.ts`, matching the repo's command layout) — thin: send immediately → typed client; errors surface the 404/409 distinction ("no live session — resolve the task instead of replying").
 
 ---
 
