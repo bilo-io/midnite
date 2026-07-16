@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-16 — test(e2e): Phase 69 Verification — stub-agent reply→resume round-trip (PR #446)
+
+Closes out Phase 69: a stub `claude` in the Playwright harness makes the "whole point" e2e real — the reply→resume round-trip now runs end-to-end against a live, driveable agent session (previously impossible with the pool-disabled e2e gateway). No production source touched — a test fixture + one PATH entry.
+
+- [x] **Stub agent** ([`packages/web/e2e/fixtures/stub-agent/claude`](../packages/web/e2e/fixtures/stub-agent/claude)) — a dependency-free CJS fake whose argv[0] basename is `claude`, so `terminal.service` `applyHookWiring` injects the per-session secret + `MIDNITE_*` env exactly as for a real agent. On launch it POSTs the Notification hook (→ `waiting`); each reply written to its stdin POSTs `UserPromptSubmit` (→ `wip`); it never self-exits (would trip the runner requeue).
+- [x] **Harness wiring** — `playwright.config.ts` prepends the stub dir to the gateway `webServer` PATH (composed from the inherited PATH so `node`/tsx still resolve), so the bare `claude` node-pty spawns resolves to the fake. `POST /tasks/:id/start` spawns it even with `poolEnabled:false` (the slot pool is independent of the scheduler).
+- [x] **The e2e** ([`reply-resume.e2e.ts`](../packages/web/e2e/reply-resume.e2e.ts)) — seed → start → wait for `waiting` → board card's live-wait reply box → type + send → assert the card moves Waiting → In progress **without a reload**. Passes; the gateway log shows the Theme B notification-hygiene auto-resolve firing on resume.
+- [x] **Checklist signed off** — criteria 1 (this e2e), 2 (writer-matrix green), 3 (`:typecheck`/`:lint`/`:test` green; `ui:test` browser flake is concurrent-load-only, clean in isolation), 5 (`docs/LIFECYCLE.md` + CLAUDE.md link) all ticked. Criterion 4 (live-tmux manual ping-pong) left as an environment-gated note — covered by Theme B unit/controller specs. **Phase 69 fully closed.**
+
 ## 2026-07-16 — feat: explicit reopen for terminal tasks — Phase 69 Theme E (PR #445)
 
 The deliberate "reopen" Phase 60 E promised: revive a `done`/`abandoned` task to `todo` as a dedicated verb, without loosening `ALLOWED_TRANSITIONS` (board drags still can't revive a terminal task). **Completes Phase 69** (26/26; end-to-end Verification checklist remains as closeout).

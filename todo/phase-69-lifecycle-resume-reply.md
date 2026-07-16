@@ -98,13 +98,13 @@ The action Phase 60 E's comment promised: *"a deliberate 'reopen' would be its o
 
 ---
 
-## Verification
+## Verification — ✅ signed off 2026-07-16 (automated criteria; manual tmux noted below)
 
-- [ ] **Playwright e2e (the whole point):** seeded gateway → agent session marks its task `waiting` → type into the card's reply box → `UserPromptSubmit` hook fires → the card moves to **In progress** on the board without a refresh; session view shows executing.
-- [ ] Table-driven writer-matrix spec green; every inventory fix has a regression spec.
-- [ ] `moon run :typecheck && moon run :lint && moon run :test` green; gateway/web/cli layers each carry their new specs.
-- [ ] Manual: live tmux-mode session — pause (ask a question), reply from the board, watch waiting → wip → waiting ping-pong converge; approve a permission prompt and see the same flip without a typed reply.
-- [ ] `docs/LIFECYCLE.md` exists, matches the spec matrix, and CLAUDE.md links it.
+- [x] **Playwright e2e (the whole point):** [`reply-resume.e2e.ts`](../packages/web/e2e/reply-resume.e2e.ts) drives the *real* round-trip — a stub `claude` ([`e2e/fixtures/stub-agent/claude`](../packages/web/e2e/fixtures/stub-agent/claude), on the gateway PATH so the bare `claude` command resolves to it and hook wiring fires) spawns via `POST /tasks/:id/start`, fires the Notification hook (→ `waiting`), and — when a reply hits its stdin from the board card's reply box (`POST /sessions/:id/prompt`) — fires the `UserPromptSubmit` hook (→ `wip`). The card moves Waiting → In progress **without a reload**; the flip is earned by the hook round-trip (the log even shows the Theme B notification-hygiene auto-resolve). Zero production-source change — test fixture + a PATH entry in `playwright.config.ts` only.
+- [x] Table-driven writer-matrix spec green (`lifecycle-writer-matrix.spec.ts`, 34 tests); every inventory fix carries a regression spec.
+- [x] `moon run :typecheck && :lint && :test` green; gateway/web/cli layers each carry their new specs (shared 732, gateway 2102, web 1232, cli 215, docs 33, ui 57 — `ui:test` browser-mode times out only under heavy concurrent load; passes clean in isolation).
+- [ ] **Manual (not runnable in the automated harness):** live tmux-mode session — pause (ask a question), reply from the board, watch waiting → wip → waiting ping-pong converge; approve a permission prompt and see the same flip without a typed reply. *Left unticked: needs a real tmux Claude session in a live environment. The convergence + approval-resume paths are covered by the Theme B debounce/approval-fallback unit + controller specs; the automated e2e above proves the board-visible flip.*
+- [x] `docs/LIFECYCLE.md` exists, matches the spec matrix, and CLAUDE.md's scheduler/agent-pool section links it.
 
 ---
 
