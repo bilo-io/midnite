@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
+import { ArrowUpRight, Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
@@ -117,6 +117,12 @@ type Props = {
    * where the session lives at its own route (the nav button stays there).
    */
   sessionSlot?: ReactNode;
+  /**
+   * Suppress the modal's "Open page" affordance (Phase 70). Set from contexts
+   * that must not navigate away — e.g. the office overlay, which stays on
+   * `/office`.
+   */
+  disableNavigation?: boolean;
 };
 
 export type TaskDetailTab = 'details' | 'review' | 'retro' | 'session';
@@ -162,6 +168,7 @@ export function TaskDetail({
   tab,
   onTabChange,
   sessionSlot,
+  disableNavigation = false,
 }: Props) {
   // Phase 52 E: a Details|Review tab strip for a task with a PR. Phase 62 F: a
   // Retro tab joins once the task is terminal (a retro skeleton is always built
@@ -310,6 +317,19 @@ export function TaskDetail({
   const goToSession = () => {
     onClose();
     router.push(`/sessions/view?id=${encodeURIComponent(task.id)}`);
+  };
+
+  // "Open page" (tab-strip level, Phase 70): expand the modal into the full page
+  // for whatever's active — the session cockpit on the Session tab, otherwise the
+  // task page (carrying the review/retro sub-tab).
+  const openPage = () => {
+    onClose();
+    if (activeTab === 'session') {
+      router.push(`/sessions/view?id=${encodeURIComponent(task.id)}`);
+      return;
+    }
+    const suffix = activeTab === 'review' || activeTab === 'retro' ? `&tab=${activeTab}` : '';
+    router.push(`/tasks/view?id=${encodeURIComponent(task.id)}${suffix}`);
   };
 
   // Manual kickoff: spawn an agent session now (todo/backlog → wip). The gateway
@@ -475,7 +495,7 @@ export function TaskDetail({
               Start
             </Button>
           ) : null}
-          <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} />
+          <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} iconOnly={inModal} />
           {/* On the full page the session lives at its own route, so a nav button
               is useful; in the unified modal the Session tab makes it redundant
               (Phase 70), so it's dropped there. */}
@@ -511,7 +531,7 @@ export function TaskDetail({
       </header>
 
       {showTabs ? (
-        <div className="flex gap-1 border-b border-border/60 px-5" role="tablist" aria-label="Task detail sections">
+        <div className="flex items-center gap-1 border-b border-border/60 px-5" role="tablist" aria-label="Task detail sections">
           <TabButton active={activeTab === 'details'} onClick={() => selectTab('details')}>
             Details
           </TabButton>
@@ -530,6 +550,19 @@ export function TaskDetail({
               Retro
             </TabButton>
           )}
+          {inModal && !disableNavigation ? (
+            // Far-right on the tab row — expands the active tab into its full page.
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={openPage}
+              className="ml-auto"
+            >
+              <ArrowUpRight className="h-3.5 w-3.5" />
+              Open page
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Archive, ArchiveRestore, ArrowUpRight } from 'lucide-react';
+import { Archive, ArchiveRestore } from 'lucide-react';
 import type { SessionSummary, SessionStatus, SessionTranscript } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmButton } from '@/components/delete-confirm-button';
@@ -23,31 +22,15 @@ type Props = {
   loading?: boolean;
   onArchiveToggle?: () => void;
   onDelete?: () => void;
-  /**
-   * Hide the "Open page" deep-link. Set from contexts that must not navigate away
-   * (e.g. the office overlay, which stays on `/office`).
-   */
-  disableNavigation?: boolean;
-  /** Called before navigating away, so the host modal can close itself. */
-  onNavigate?: () => void;
 };
 
 /**
  * The Session tab body of the unified work-item modal (Phase 70): a live terminal
  * for an active session, a replayed transcript for a completed one, or an empty
- * state when the task has yet to spawn a session. Owns its own session-scoped
- * actions (archive / delete / open the full cockpit) so the modal header stays
- * task-focused.
+ * state when the task has yet to spawn a session. Owns its session-scoped
+ * archive/delete actions; "Open page" lives on the modal's tab strip.
  */
-export function SessionPane({
-  session,
-  loading = false,
-  onArchiveToggle,
-  onDelete,
-  disableNavigation = false,
-  onNavigate,
-}: Props) {
-  const router = useRouter();
+export function SessionPane({ session, loading = false, onArchiveToggle, onDelete }: Props) {
   const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +59,6 @@ export function SessionPane({
     };
   }, [session, live]);
 
-  const openPage = () => {
-    if (!session) return;
-    onNavigate?.();
-    router.push(`/sessions/view?id=${encodeURIComponent(session.id)}`);
-  };
-
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center px-5 py-10 text-sm text-muted-foreground">
@@ -103,14 +80,8 @@ export function SessionPane({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {(onArchiveToggle || (onDelete && session.archivedAt) || !disableNavigation) && (
+      {(onArchiveToggle || (onDelete && session.archivedAt)) && (
         <div className="flex shrink-0 items-center justify-end gap-1.5 border-b border-border/60 px-5 py-2">
-          {!disableNavigation ? (
-            <Button type="button" variant="secondary" size="sm" onClick={openPage}>
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              Open page
-            </Button>
-          ) : null}
           {onArchiveToggle ? (
             <Button
               type="button"
