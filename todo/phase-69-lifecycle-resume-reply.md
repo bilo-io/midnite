@@ -71,15 +71,15 @@ Answer a waiting agent where you see it waiting. The status flip is *earned* via
 
 ---
 
-## Theme E — Explicit reopen for terminal states — **M**
+## Theme E — Explicit reopen for terminal states — **M** — ✅ DONE (PR #445, 2026-07-16)
 
 The action Phase 60 E's comment promised: *"a deliberate 'reopen' would be its own explicit action that also clears `archivedAt`/`sessionId`."* The transition table stays strict; reopen is a dedicated verb, not a loosened edge.
 
-- [ ] `TasksService.reopen(id)`: only from `done`/`abandoned` → `todo`; clears `sessionId`, `archivedAt`, `waitReason`, retry/backoff state; inserts a **`task.reopened`** event; emits `task.updated`. `ALLOWED_TRANSITIONS` and generic `updateStatus` remain unchanged (drags still can't revive terminal tasks).
-- [ ] `POST /tasks/:id/reopen` + shared schema/client method; RBAC: same actor rules as abandon.
-- [ ] **Dependency semantics:** reopening a `done` blocker re-blocks its dependents — re-broadcast dependents (`task.updated`) exactly like Phase 27's terminal-transition path, so "blocked by N" chips refresh; scheduler readiness self-corrects on the next tick.
-- [ ] Web: "Reopen" in the done/abandoned card context menu + task detail actions (and command palette verb where the pattern is cheap).
-- [ ] Specs: reopen clears bindings, rejects non-terminal callers, re-blocks dependents, search index + board reflect the revived task.
+- [x] `TasksService.reopen(id)`: only from `done`/`abandoned` → `todo`; clears `sessionId`, `archivedAt`, `waitReason`, and the full retry state (`retryCount`→0 + `nextRetryAt`, via `resetRetryState`); inserts a **`task.reopened`** event + audit action; emits `task.updated`. Writes status via `repo.updateStatus` directly (deliberately bypasses `canTransition`); `ALLOWED_TRANSITIONS` and generic `updateStatus` unchanged (drags still can't revive terminal tasks). PR/check state preserved.
+- [x] `POST /tasks/:id/reopen` (returns the revived `Task`) + `reopenTask()` on the CLI client (`midnite reopen <id>`) and the web data layer; RBAC `@RequiresRole('member')` (same as abandon/resolve).
+- [x] **Dependency semantics:** reopening a `done` blocker re-blocks its dependents via `notifyDependents` — re-broadcast (`task.updated`), so "blocked by N" chips refresh and the SQL ready-set drops them on the next tick (integration-tested). (Decision §6 confirmed: re-block, not snapshot.)
+- [x] Web: "Reopen" hover affordance on done-column cards + the Abandoned section, task-detail header action, and a command-palette verb — all behind a confirm dialog (Decision). `task.reopened` renders in the detail timeline.
+- [x] Specs: service reopen matrix (clears bindings/retry, rejects non-terminal, 404s unknown, preserves PR) + real-DB dependents re-block + controller delegate + CLI client + a board-view `play` story + a seeded Playwright reopen flow (Done→Todo, no reload).
 
 ---
 

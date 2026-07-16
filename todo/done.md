@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-16 — feat: explicit reopen for terminal tasks — Phase 69 Theme E (PR #445)
+
+The deliberate "reopen" Phase 60 E promised: revive a `done`/`abandoned` task to `todo` as a dedicated verb, without loosening `ALLOWED_TRANSITIONS` (board drags still can't revive a terminal task). **Completes Phase 69** (26/26; end-to-end Verification checklist remains as closeout).
+
+- [x] **`TasksService.reopen(id)`** — done/abandoned → todo only (400 otherwise); clears `sessionId`, `archivedAt`, `waitReason`, and the full retry state (`retryCount`→0 + `nextRetryAt`, new `resetRetryState` repo helper); inserts a `task.reopened` event + audit action; emits `task.updated`. Writes status via `repo.updateStatus` directly — deliberately bypasses `canTransition`; the table + generic `updateStatus` are untouched. PR/check history preserved.
+- [x] **Re-block dependents (Decision §6)** — reopening a `done` blocker re-broadcasts its dependents via `notifyDependents` (Phase 27 path); the SQL ready-set drops them on the next tick (real-DB integration test).
+- [x] **`POST /tasks/:id/reopen`** (`@RequiresRole('member')`, returns the revived `Task`) + `reopenTask()` on the CLI client (`midnite reopen <id>`) and the web data layer.
+- [x] **Web** — confirm-gated Reopen: hover affordance on done-column cards + the Abandoned section, task-detail header action, ⌘K palette verb; board mutation prop-driven (`onReopen`) + optimistic w/ rollback. `task.reopened` renders in the detail timeline.
+- [x] Gate green: `:typecheck` · `:lint` · `:test` (gateway +reopen matrix & dependents; cli +2; web +story). Seeded Playwright flow captures Done→Todo. Merged on local-green (CI billing-blocked).
+
 ## 2026-07-16 — feat(web): reply UX — ReplyBox on board cards & detail surfaces — Phase 69 Theme D (PR #444)
 
 Answer a waiting agent where you see it waiting, no terminal needed. Phase 69 → 21/26 (81%), Status 🔄 WIP (E remains).
