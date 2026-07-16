@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E |
+| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | 🔄 WIP | 0/26 | `░░░░░░░░░░` | 0% | B | A C D E |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
