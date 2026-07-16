@@ -112,6 +112,28 @@ describe('WaitingNudgeService', () => {
     await svc.tick(T0 + 100 * HOUR);
     expect(notifyNeedsAttention).not.toHaveBeenCalled();
   });
+
+  // Phase 69 B — once a task leaves `waiting` (resumed → wip) it drops out of the
+  // waiting set, so the nudge loop stands down and won't reminder it again.
+  it('stands down once the task is no longer waiting (resumed → wip)', async () => {
+    const t = waitingTask('a', 'agent-failed', new Date(T0).toISOString());
+    const store = [t];
+    const listTasks = vi.fn((status?: string) =>
+      status ? store.filter((x) => x.status === status) : store,
+    );
+    const tasksService = { listTasks } as unknown as TasksService;
+    const notifyNeedsAttention = vi.fn(async () => {});
+    const notifications = { notifyNeedsAttention } as unknown as NotificationsService;
+    const svc = new WaitingNudgeService(config(), tasksService, notifications);
+
+    await svc.tick(T0 + 2 * HOUR); // first nudge while waiting
+    expect(notifyNeedsAttention).toHaveBeenCalledTimes(1);
+
+    // Resume flips it to wip → it leaves the waiting set entirely.
+    store[0] = { ...t, status: 'wip' } as Task;
+    await svc.tick(T0 + 30 * HOUR); // would have repeated — but it's no longer waiting
+    expect(notifyNeedsAttention).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('WaitingNudgeService — aged-todo flag (Phase 53 C)', () => {

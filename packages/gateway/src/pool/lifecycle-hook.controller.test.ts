@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { ApprovalService } from '../terminal/approval.service';
 import type { TerminalService } from '../terminal/terminal.service';
@@ -11,11 +11,17 @@ function setup(output: string) {
   const markWaiting = vi.fn();
   const emitActivity = vi.fn();
   const emitAttention = vi.fn();
+  const resumeFromWaiting = vi.fn();
   const completeWithChecks = vi.fn().mockResolvedValue(undefined);
   const approvals = {
     verifySecret: (id: string, secret: string) => secret === 'good',
   } as unknown as ApprovalService;
-  const tasks = { markWaiting, emitActivity, emitAttention } as unknown as TasksService;
+  const tasks = {
+    markWaiting,
+    emitActivity,
+    emitAttention,
+    resumeFromWaiting,
+  } as unknown as TasksService;
   const terminal = { readOutput: () => output } as unknown as TerminalService;
   const runner = { completeWithChecks } as unknown as AgentRunnerService;
   const harvestFromTranscript = vi.fn().mockResolvedValue(null);
@@ -26,6 +32,7 @@ function setup(output: string) {
     markWaiting,
     emitActivity,
     emitAttention,
+    resumeFromWaiting,
     completeWithChecks,
     harvestFromTranscript,
   };
@@ -88,5 +95,31 @@ describe('LifecycleHookController', () => {
     const { controller, emitAttention } = setup('');
     controller.notification('t1', 'good', {});
     expect(emitAttention).toHaveBeenCalledWith('t1', 'waiting', undefined);
+  });
+
+  // Phase 69 B — the resume edge (UserPromptSubmit hook).
+  it('rejects an invalid secret on user-prompt-submit with 404', () => {
+    const { controller, resumeFromWaiting } = setup('');
+    expect(() => controller.userPromptSubmit('t1', 'bad', {})).toThrow(NotFoundException);
+    expect(resumeFromWaiting).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-object user-prompt-submit payload with 400', () => {
+    const { controller, resumeFromWaiting } = setup('');
+    expect(() => controller.userPromptSubmit('t1', 'good', 'nope')).toThrow(BadRequestException);
+    expect(resumeFromWaiting).not.toHaveBeenCalled();
+  });
+
+  it('resumes the task and emits agent.activity(running) on UserPromptSubmit', () => {
+    const { controller, resumeFromWaiting, emitActivity } = setup('');
+    expect(controller.userPromptSubmit('t1', 'good', { prompt: 'keep going' })).toEqual({ ok: true });
+    expect(resumeFromWaiting).toHaveBeenCalledWith('t1');
+    expect(emitActivity).toHaveBeenCalledWith('t1', 'running');
+  });
+
+  it('tolerates an empty UserPromptSubmit payload (all fields optional)', () => {
+    const { controller, resumeFromWaiting } = setup('');
+    expect(controller.userPromptSubmit('t1', 'good', {})).toEqual({ ok: true });
+    expect(resumeFromWaiting).toHaveBeenCalledWith('t1');
   });
 });

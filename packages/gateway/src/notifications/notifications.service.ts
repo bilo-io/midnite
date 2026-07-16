@@ -277,6 +277,23 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   private onTaskEvent(event: TaskBoardEvent): void {
     if (event.type !== 'task.updated') return;
+    // Phase 69 B — resume hygiene. Once a task leaves `waiting` (resumed by a
+    // reply/approval via Theme B, requeued, or completed) its "needs your input"
+    // alerts are stale, so auto-resolve them and stop the feed nagging about an
+    // already-answered agent. Generalises the resume signal to every un-wait path
+    // (they all end at a non-`waiting` `task.updated`); a re-entry into `waiting`
+    // mints a fresh alert. Pure read-model cleanup — no new emit path.
+    if (event.task.status !== 'waiting') {
+      const cleared = this.repo.markReadForEntity(
+        'task',
+        event.task.id,
+        ['task.waiting', 'task.needs-attention'],
+        new Date().toISOString(),
+      );
+      if (cleared > 0) {
+        this.logger.debug(`resolved ${cleared} stale attention notification(s) for task ${event.task.id}`);
+      }
+    }
     const decision = notifyForTask(event.task, this.config.notifications.events);
     if (decision) this.enqueue(decision, event.task);
   }

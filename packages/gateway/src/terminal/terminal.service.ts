@@ -904,6 +904,19 @@ export class TerminalService implements OnModuleDestroy {
           ],
         },
       ];
+      // Phase 69 B — the resume signal: a new prompt to a blocked session drives
+      // `waiting → wip` via POST /hooks/sessions/:id/user-prompt-submit.
+      hooks['UserPromptSubmit'] = [
+        {
+          matcher: '*',
+          hooks: [
+            {
+              type: 'command',
+              command: `node "${resolveHookScriptPath('user-prompt-submit-hook.cjs')}"`,
+            },
+          ],
+        },
+      ];
     }
     writeFileSync(file, JSON.stringify({ hooks }, null, 2), 'utf8');
     return file;

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { MAX_BULK_LINES, parseConfig } from '@midnite/shared';
 
@@ -847,6 +847,144 @@ describe('TasksService.createBulk', () => {
       const out = service.startTask(t.id);
       expect(out.status).toBe('wip');
       expect(out.waitReason ?? null).toBeNull();
+    });
+  });
+});
+
+// --- Phase 69 B: the resume edge + wip⇄waiting ping-pong debounce ---
+describe('TasksService — resume edge (Phase 69 B)', () => {
+  const buildWith = (agent: Record<string, unknown> = {}) => {
+    const repo = new InMemoryRepo();
+    const config = parseConfig({ agent, terminal: {}, gateway: {} });
+    const service = new TasksService(
+      repo,
+      stubFailures,
+      new StubClassifier(),
+      stubPlanner,
+      new TaskEventBus(),
+      stubRepos,
+      config,
+    );
+    return { repo, service };
+  };
+
+  // Seed a live needs-input wait: a wip task blocked via markWaiting.
+  const seedWaiting = (repo: InMemoryRepo, service: TasksService) => {
+    seed(repo, ['wip']);
+    service.markWaiting('t0'); // → waiting, needs-input
+  };
+
+  describe('resumeFromWaiting transition matrix', () => {
+    it('waiting(needs-input) → wip: clears the reason and records agent.resumed', () => {
+      const { repo, service } = buildWith();
+      seedWaiting(repo, service);
+      const out = service.resumeFromWaiting('t0');
+      expect(out.status).toBe('wip');
+      expect(out.waitReason ?? null).toBeNull();
+      expect(repo.events.some((e) => e.kind === 'agent.resumed')).toBe(true);
+    });
+
+    it('is a no-op on a wip task (no agent.resumed event)', () => {
+      const { repo, service } = buildWith();
+      seed(repo, ['wip']);
+      const out = service.resumeFromWaiting('t0');
+      expect(out.status).toBe('wip');
+      expect(repo.events.some((e) => e.kind === 'agent.resumed')).toBe(false);
+    });
+
+    it('leaves a done/abandoned task untouched (terminal, no revival)', () => {
+      const { repo, service } = buildWith();
+      seed(repo, ['wip', 'wip']);
+      service.markDone('t0');
+      service.updateStatus('t1', 'abandoned');
+      expect(service.resumeFromWaiting('t0').status).toBe('done');
+      expect(service.resumeFromWaiting('t1').status).toBe('abandoned');
+      expect(repo.events.some((e) => e.kind === 'agent.resumed')).toBe(false);
+    });
+
+    it('does not resume a needs-attention (escalated) wait — resolve-only', () => {
+      const { repo, service } = buildWith();
+      seed(repo, ['wip']);
+      service.escalate('t0', 'agent-failed'); // dead-session wait, not needs-input
+      const out = service.resumeFromWaiting('t0');
+      expect(out.status).toBe('waiting');
+      expect(out.waitReason).toBe('agent-failed');
+      expect(repo.events.some((e) => e.kind === 'agent.resumed')).toBe(false);
+    });
+
+    it('404s for an unknown task', () => {
+      const { service } = buildWith();
+      expect(() => service.resumeFromWaiting('nope')).toThrow();
+    });
+
+    it('emits task.updated(wip) on a real resume', () => {
+      const bus = new TaskEventBus();
+      const repo = new InMemoryRepo();
+      const service = new TasksService(
+        repo,
+        stubFailures,
+        new StubClassifier(),
+        stubPlanner,
+        bus,
+        stubRepos,
+        stubConfig,
+      );
+      seed(repo, ['wip']);
+      service.markWaiting('t0');
+      const events: TaskBoardEvent[] = [];
+      bus.subscribe((e) => events.push(e));
+      service.resumeFromWaiting('t0');
+      expect(events.some((e) => e.type === 'task.updated' && e.task.status === 'wip')).toBe(true);
+    });
+  });
+
+  describe('wip ⇄ waiting ping-pong debounce', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('defers the Stop-driven wait after a resume, then settles once the window lapses', () => {
+      const { repo, service } = buildWith({ resumeDebounceMs: 1000 });
+      seedWaiting(repo, service);
+      service.resumeFromWaiting('t0'); // → wip, arms the window
+      // Stop fires immediately (fast turn): the flip is held, task still wip.
+      expect(service.markWaiting('t0').status).toBe('wip');
+      expect(repo.getTask('t0')!.status).toBe('wip');
+      // window lapses → the deferred flip lands.
+      vi.advanceTimersByTime(1000);
+      expect(repo.getTask('t0')!.status).toBe('waiting');
+    });
+
+    it('a follow-up resume within the window cancels the pending wait (collapses the oscillation)', () => {
+      const { repo, service } = buildWith({ resumeDebounceMs: 1000 });
+      seedWaiting(repo, service);
+      service.resumeFromWaiting('t0');
+      service.markWaiting('t0'); // deferred
+      vi.advanceTimersByTime(500);
+      service.resumeFromWaiting('t0'); // reply again → cancels the pending flip
+      vi.advanceTimersByTime(1000);
+      expect(repo.getTask('t0')!.status).toBe('wip'); // never flipped back
+    });
+
+    it('a genuine wait past the window still settles immediately', () => {
+      const { repo, service } = buildWith({ resumeDebounceMs: 1000 });
+      seedWaiting(repo, service);
+      service.resumeFromWaiting('t0');
+      vi.advanceTimersByTime(2000); // long turn — outside the window
+      expect(service.markWaiting('t0').status).toBe('waiting'); // no recent resume → immediate
+    });
+
+    it('the first-ever wait (never resumed) flips immediately — behaviour-preserving', () => {
+      const { repo, service } = buildWith({ resumeDebounceMs: 1000 });
+      seed(repo, ['wip']);
+      expect(service.markWaiting('t0').status).toBe('waiting');
+      expect(repo.getTask('t0')!.status).toBe('waiting');
+    });
+
+    it('disabled (resumeDebounceMs=0) flips immediately even right after a resume', () => {
+      const { repo, service } = buildWith({ resumeDebounceMs: 0 });
+      seedWaiting(repo, service);
+      service.resumeFromWaiting('t0');
+      expect(service.markWaiting('t0').status).toBe('waiting');
     });
   });
 });

@@ -136,6 +136,15 @@ same repo (by `task.repo`) at once: the scheduler skips a `todo` task whose repo
 is already at the cap and picks the next eligible one, so two agents don't race
 on one working tree. Tasks without a repo are never capped.
 
+`agent.resumeDebounceMs` (default `1500`) coalesces the `wip ⇄ waiting` resume
+ping-pong. Claude fires its Stop hook at the end of *every* turn, so a task just
+resumed by a reply (its `UserPromptSubmit` hook drives `waiting → wip`) flips
+straight back to `waiting` the instant that turn ends. When the Stop-driven wait
+lands within this window of a resume, the flip is held: a quick follow-up reply
+cancels it and collapses the oscillation, while a genuine end-of-turn wait still
+settles once the window lapses. Only the post-resume path debounces — a task's
+first wait (never resumed) flips immediately. Set `0` to disable (immediate flip).
+
 `gateway.webDir` (unset by default) points the gateway at the web app's static
 export so a **single process serves both the API and the browser UI** in prod.
 Build the UI with `moon run web:build` (Next `output: 'export'` → `packages/web/out`),

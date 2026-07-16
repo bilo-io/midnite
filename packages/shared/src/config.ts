@@ -33,6 +33,16 @@ export const AgentConfigSchema = z.object({
   // pool slot. On by default — the session's PTY is literally still alive and
   // blocked on stdin, so freeing the slot would orphan it.
   waitingHoldsSlot: z.boolean().default(true),
+  // Phase 69 B — coalescing window for the `wip ⇄ waiting` resume ping-pong.
+  // Claude fires Stop at the end of *every* turn, so a task resumed by a reply
+  // (waiting → wip) flips straight back to `waiting` the instant that turn ends.
+  // When a Stop-driven `markWaiting` lands within this many ms of a resume, the
+  // flip is held: a quick follow-up reply (another resume) cancels it, collapsing
+  // the oscillation, while a genuine end-of-turn wait still settles after the
+  // window. Only the post-resume path debounces — a task's *first* wait (never
+  // resumed) flips immediately, so this is behaviour-preserving. 0 = OFF (no
+  // coalescing, pre-Phase-69 immediate flip).
+  resumeDebounceMs: z.number().int().nonnegative().default(1500),
   // Hard ceiling per autonomous agent run; the session is cancelled on expiry
   // and the task requeued. Mirrors councils.runTimeoutMs.
   runTimeoutMs: z.number().int().positive().default(1800000),

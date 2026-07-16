@@ -1,4 +1,12 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  type OnModuleDestroy,
+  Optional,
+} from '@nestjs/common';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -91,8 +99,16 @@ export interface CreateTaskInput {
 }
 
 @Injectable()
-export class TasksService {
+export class TasksService implements OnModuleDestroy {
   private readonly logger = new Logger(TasksService.name);
+
+  // Phase 69 B — resume-edge bookkeeping (in-memory; a coalescing hint, not a
+  // durable ledger — it resets on restart, which at worst drops one debounce
+  // window). `lastResumeAt`: when each task was last resumed (waiting → wip),
+  // read by {@link markWaiting} to size the post-resume debounce window.
+  // `pendingWaiting`: deferred wip → waiting flips a follow-up resume can cancel.
+  private readonly lastResumeAt = new Map<string, number>();
+  private readonly pendingWaiting = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(
     @Inject(TasksRepository) private readonly repo: TasksRepository,
@@ -111,6 +127,25 @@ export class TasksService {
     // held task's derived `heldReason` is attached on read (never persisted).
     @Optional() @Inject(HeldTasksRegistry) private readonly heldTasks?: HeldTasksRegistry,
   ) {}
+
+  onModuleDestroy(): void {
+    // Phase 69 B — drop any deferred wip → waiting timers on shutdown.
+    for (const timer of this.pendingWaiting.values()) clearTimeout(timer);
+    this.pendingWaiting.clear();
+    this.lastResumeAt.clear();
+  }
+
+  // Phase 69 B — end a task's resume episode: cancel any pending debounced wait
+  // and forget its resume timestamp. Called from every genuine transition so a
+  // stale timer can't flip a task that has since moved on, and the maps can't leak.
+  private endResumeEpisode(id: string): void {
+    const pending = this.pendingWaiting.get(id);
+    if (pending) {
+      clearTimeout(pending);
+      this.pendingWaiting.delete(id);
+    }
+    this.lastResumeAt.delete(id);
+  }
 
   // Attach the scheduler's derived `heldReason` (Phase 50 Theme B) to a hydrated
   // task. Only ready `todo` tasks are ever held; a stale entry for a task that
@@ -346,6 +381,7 @@ export class TasksService {
         `illegal task transition: ${before.status} → ${status}`,
       );
     }
+    this.endResumeEpisode(id); // Phase 69 B — a manual move ends any resume episode
     const row = this.repo.updateStatus(id, status, now);
     if (!row) throw new NotFoundException(`task ${id} not found`);
     // Leaving `waiting` clears its reason (Phase 53 D) — e.g. a manual board move
@@ -393,6 +429,7 @@ export class TasksService {
   startTask(id: string): Task {
     const now = new Date().toISOString();
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.endResumeEpisode(id); // Phase 69 B — a fresh run clears any stale resume state
     this.repo.updateStatus(id, 'wip', now);
     this.repo.setSession(id, id, now);
     // The backoff gate is spent once the task actually starts (Phase 53 B): clear
@@ -410,6 +447,7 @@ export class TasksService {
   requeue(id: string, target: 'todo' | 'backlog' = 'todo'): Task {
     const now = new Date().toISOString();
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.endResumeEpisode(id); // Phase 69 B
     this.repo.updateStatus(id, target, now);
     this.repo.setSession(id, null, now);
     // A human-returned task is eligible now — drop any pending backoff (Phase 53 B)
@@ -427,6 +465,7 @@ export class TasksService {
   retry(id: string, nextRetryAt: string | null = null): Task {
     const now = new Date().toISOString();
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.endResumeEpisode(id); // Phase 69 B
     this.repo.incrementRetry(id, now, nextRetryAt);
     this.repo.updateStatus(id, 'todo', now);
     this.repo.setSession(id, null, now);
@@ -454,7 +493,6 @@ export class TasksService {
    *  `waitReason` (Phase 53 D; defaults to `needs-input`, the live-input block).
    *  Idempotent on both status and reason. */
   markWaiting(id: string, waitReason: WaitReason = 'needs-input'): Task {
-    const now = new Date().toISOString();
     const row = this.repo.getTask(id);
     if (!row) throw new NotFoundException(`task ${id} not found`);
     // Phase 60 E — a terminal task is done with. A late/trailing Notification or
@@ -462,6 +500,53 @@ export class TasksService {
     // `done`/`abandoned` task into `waiting`. No-op instead.
     if (isTerminal(row.status as Status)) return this.getTask(id);
     if (row.status === 'waiting' && row.waitReason === waitReason) return this.getTask(id);
+    // Phase 69 B — coalesce the resume ping-pong. Claude fires Stop at the end of
+    // *every* turn, so a task just resumed by a reply (waiting → wip) flips
+    // straight back to `waiting` the instant that turn ends. When this markWaiting
+    // lands within the debounce window of a resume, hold the flip: a quick
+    // follow-up reply (another resume) cancels the pending timer and collapses the
+    // oscillation, while a genuine end-of-turn wait still settles once the window
+    // lapses. Only the live `needs-input` path debounces (escalate() + manual
+    // moves are untouched), and a task never resumed has no window → immediate
+    // flip, so the normal first-wait path is behaviour-preserving.
+    const debounceMs = this.config.agent.resumeDebounceMs;
+    const resumedAt = this.lastResumeAt.get(id);
+    const withinWindow =
+      debounceMs > 0 &&
+      waitReason === 'needs-input' &&
+      resumedAt !== undefined &&
+      Date.now() - resumedAt < debounceMs;
+    if (withinWindow) {
+      const existing = this.pendingWaiting.get(id);
+      if (existing) clearTimeout(existing);
+      const timer = setTimeout(() => {
+        this.pendingWaiting.delete(id);
+        try {
+          this.applyWaiting(id, waitReason);
+        } catch (err) {
+          this.logger.warn(
+            `deferred markWaiting for ${id} failed: ${err instanceof Error ? err.message : 'unknown'}`,
+          );
+        }
+      }, debounceMs);
+      timer.unref?.();
+      this.pendingWaiting.set(id, timer);
+      return this.getTask(id); // stays `wip` for now — the flip is deferred
+    }
+    return this.applyWaiting(id, waitReason);
+  }
+
+  /** The actual wip → waiting flip (Phase 69 B — extracted so {@link markWaiting}
+   *  can debounce it). Re-checks the guards because a deferred invocation may run
+   *  after the task has since moved on (terminal / resumed again). Ends the resume
+   *  episode, since the wait has genuinely settled. */
+  private applyWaiting(id: string, waitReason: WaitReason): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (isTerminal(row.status as Status)) return this.getTask(id);
+    if (row.status === 'waiting' && row.waitReason === waitReason) return this.getTask(id);
+    this.endResumeEpisode(id);
     this.repo.updateStatus(id, 'waiting', now);
     this.repo.setWaitReason(id, waitReason, now);
     this.repo.insertEvent({
@@ -471,6 +556,40 @@ export class TasksService {
       kind: 'agent.waiting',
       data: JSON.stringify({ waitReason }),
     });
+    return this.emit('task.updated', this.getTask(id));
+  }
+
+  /**
+   * Phase 69 B — the resume edge (`waiting → wip`), the driver `ALLOWED_TRANSITIONS`
+   * has always legalised but nothing drove. Fired by the UserPromptSubmit hook (a
+   * new prompt reaches a blocked session) and, as a fallback, by PreToolUse (a
+   * permission-wait resumes mid-turn with *no* fresh prompt, so the tool-use signal
+   * is the only one that fires). Idempotent: only a **live `needs-input` wait**
+   * transitions — terminal states, `wip`, and dead needs-attention/escalated waits
+   * (resolve-only, no live PTY) are left untouched. Records an `agent.resumed`
+   * event and emits `task.updated`; notification hygiene rides the board event
+   * (NotificationsService clears stale "needs input" alerts on leaving `waiting`).
+   */
+  resumeFromWaiting(id: string): Task {
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    // Cancel any deferred wait + arm the debounce window BEFORE the status guard:
+    // even when the task already reads `wip` (its flip-to-waiting was still
+    // pending), a fresh prompt must clear that timer and re-arm the window so the
+    // ping-pong collapses instead of racing.
+    const pending = this.pendingWaiting.get(id);
+    if (pending) {
+      clearTimeout(pending);
+      this.pendingWaiting.delete(id);
+    }
+    this.lastResumeAt.set(id, Date.now());
+    // Only a live `needs-input` wait resumes (Decision: resume guard). Everything
+    // else is a safe no-op — the window arming above still applies.
+    if (row.status !== 'waiting' || row.waitReason !== 'needs-input') return this.getTask(id);
+    const now = new Date().toISOString();
+    this.repo.updateStatus(id, 'wip', now);
+    this.repo.setWaitReason(id, null, now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.resumed' });
     return this.emit('task.updated', this.getTask(id));
   }
 
@@ -488,6 +607,7 @@ export class TasksService {
     // Phase 60 E — never escalate a terminal task back into `waiting` (defence in
     // depth; callers already guard on wip/waiting, but the invariant lives here).
     if (isTerminal(row.status as Status)) return this.getTask(id);
+    this.endResumeEpisode(id); // Phase 69 B — an escalated wait ends any resume episode
     this.repo.updateStatus(id, 'waiting', now);
     this.repo.setWaitReason(id, waitReason, now);
     // The session is dead (the runner released the slot around this call), so
@@ -534,6 +654,7 @@ export class TasksService {
     // (PR URL in its output) arriving after a `cancel()` must not flip
     // `abandoned`→`done` and fire notifyDependents off cancelled work.
     if (isTerminal(row.status as Status)) return this.getTask(id);
+    this.endResumeEpisode(id); // Phase 69 B
     this.repo.updateStatus(id, 'done', now);
     if (row.waitReason) this.repo.setWaitReason(id, null, now); // Phase 53 D
     if (prUrl) this.repo.setPrUrl(id, prUrl, now);

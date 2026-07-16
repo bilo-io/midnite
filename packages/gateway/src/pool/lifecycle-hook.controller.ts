@@ -12,6 +12,7 @@ import {
 import {
   NotificationHookRequestSchema,
   StopHookRequestSchema,
+  UserPromptSubmitHookRequestSchema,
   type HookAck,
 } from '@midnite/shared';
 import { ApprovalService } from '../terminal/approval.service';
@@ -86,6 +87,27 @@ export class LifecycleHookController {
     // show an unmistakable "needs you" state.
     const summary = typeof parsed.data.message === 'string' ? parsed.data.message : undefined;
     this.tasks.emitAttention(sessionId, 'waiting', summary);
+    return { ok: true };
+  }
+
+  @Post(':sessionId/user-prompt-submit')
+  @HttpCode(200)
+  userPromptSubmit(
+    @Param('sessionId') sessionId: string,
+    @Headers('x-midnite-hook-secret') secret: string | undefined,
+    @Body() body: unknown,
+  ): HookAck {
+    this.verify(sessionId, secret);
+    const parsed = UserPromptSubmitHookRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException('invalid UserPromptSubmit payload');
+    }
+    // Phase 69 B — the resume edge. A new prompt to a blocked session drives
+    // `waiting → wip` (idempotent no-op unless it's a live `needs-input` wait), and
+    // the running signal clears the office's blocked pose immediately, mirroring
+    // the Stop hook's `idle` emit.
+    this.tasks.resumeFromWaiting(sessionId);
+    this.tasks.emitActivity(sessionId, 'running');
     return { ok: true };
   }
 

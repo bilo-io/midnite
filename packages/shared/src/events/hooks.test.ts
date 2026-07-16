@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NotificationHookRequestSchema,
   StopHookRequestSchema,
+  UserPromptSubmitHookRequestSchema,
 } from './hooks.js';
 
 describe('lifecycle hook request schemas', () => {
@@ -25,7 +26,19 @@ describe('lifecycle hook request schemas', () => {
     expect(parsed.message).toBe('Claude needs your input');
   });
 
+  it('parses a UserPromptSubmit payload and preserves unknown fields', () => {
+    const parsed = UserPromptSubmitHookRequestSchema.parse({
+      session_id: 's3',
+      prompt: 'keep going',
+      extra_field: 'kept',
+    });
+    expect(parsed.session_id).toBe('s3');
+    expect(parsed.prompt).toBe('keep going');
+    expect((parsed as Record<string, unknown>)['extra_field']).toBe('kept');
+  });
+
   it('tolerates an empty payload (all fields optional)', () => {
     expect(() => StopHookRequestSchema.parse({})).not.toThrow();
+    expect(() => UserPromptSubmitHookRequestSchema.parse({})).not.toThrow();
   });
 });
