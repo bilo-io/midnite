@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseConfig, type MidniteConfig } from '@midnite/shared';
 import {
   TerminalService,
@@ -79,5 +79,39 @@ describe('ad-hoc terminals', () => {
 
   it('does not recognise unregistered ids', () => {
     expect(service.hasAdHoc('some-task-id')).toBe(false);
+  });
+});
+
+describe('sendPrompt (Phase 69 C)', () => {
+  const service = new TerminalService(
+    {} as MidniteConfig,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+  );
+
+  function withHandle(id: string) {
+    const write = vi.fn();
+    // The reply write path only touches `handle.proc.write`; stub just that.
+    (service as unknown as { handles: Map<string, unknown> }).handles.set(id, { proc: { write } });
+    return write;
+  }
+
+  it('writes the text plus a single Enter to the live PTY', () => {
+    const write = withHandle('t1');
+    service.sendPrompt('t1', 'keep going');
+    expect(write).toHaveBeenCalledWith('keep going\r');
+  });
+
+  it('strips trailing newlines so exactly one Enter is sent', () => {
+    const write = withHandle('t2');
+    service.sendPrompt('t2', 'run tests\n\n');
+    expect(write).toHaveBeenCalledWith('run tests\r');
+  });
+
+  it('is a no-op when the session has no live handle', () => {
+    expect(() => service.sendPrompt('missing', 'hi')).not.toThrow();
   });
 });
