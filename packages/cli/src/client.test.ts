@@ -167,6 +167,27 @@ describe('createClient', () => {
     await expect(createClient('http://gw').moveTask('t9', 'wip')).rejects.toThrow(/task t9 not found/);
   });
 
+  it('reopenTask posts to the reopen endpoint and parses the revived task', async () => {
+    let seenUrl = '';
+    let seenMethod = '';
+    stubFetch((url, init) => {
+      seenUrl = url;
+      seenMethod = init?.method ?? '';
+      return new Response(JSON.stringify({ ...TASK, status: 'todo' }), { status: 200 });
+    });
+    const task = await createClient('http://gw').reopenTask('t1');
+    expect(seenUrl).toBe('http://gw/tasks/t1/reopen');
+    expect(seenMethod).toBe('POST');
+    expect(task.status).toBe('todo');
+  });
+
+  it('reopenTask surfaces the 400 non-terminal message', async () => {
+    stubFetch(
+      () => new Response(JSON.stringify({ message: 'cannot reopen a wip task' }), { status: 400 }),
+    );
+    await expect(createClient('http://gw').reopenTask('t1')).rejects.toThrow(/cannot reopen a wip task/);
+  });
+
   it('sendSessionPrompt posts the reply text to the session prompt endpoint', async () => {
     let seenUrl = '';
     let seenInit: RequestInit | undefined;

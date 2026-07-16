@@ -435,6 +435,19 @@ program
     console.log(`resolved ${task.id} (${action}) → ${colourStatus(task.status)}`);
   });
 
+// ── Phase 69 E — reopen a terminal task (done/abandoned → todo) ──────────────
+program
+  .command('reopen <id>')
+  .description('Reopen a done/abandoned task → To do (clears bindings, re-blocks dependents) (Phase 69)')
+  .action(async (id: string) => {
+    const task = await withSpinner('Reopening…', () => client().reopenTask(id));
+    if (isJsonMode()) {
+      printJson(task);
+      return;
+    }
+    console.log(`reopened ${task.id} → ${colourStatus(task.status)}`);
+  });
+
 // ── Phase 69 C — reply to a waiting agent (writes to its live session PTY) ────
 program
   .command('reply <id> <text>')
