@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -101,9 +102,10 @@
 **Headline:** phases **0–65 are complete** — incl. Fable analysis/observability/digest **60/61/62**
 (Phase 62's Verification pass signed off 2026-07-13, which also built the two remaining deferrals:
 needs-attention retros + the P44 `digest.generated` webhook, and fixed a real "seed templates aren't
-installable" bug), performance/scale **57**, and the office trio **63/64/65**. The live frontier is
-**66** (Floating assistant menu) — a logo-anchored FAB assistant (docs/guide/chat/agent) that
-overturns Phase 59's "no FAB", in flight (Theme F WIP). (An *earlier* Phase 42 was a
+installable" bug), performance/scale **57**, and the office trio **63/64/65**. Phases **66/67/68** (assistant FAB, guides v2, accent gradients)
+are also complete. The live frontier is **69** (Lifecycle edges: resume & reply) — drive the
+undriven `waiting → wip` edge via a `UserPromptSubmit` hook, audit every status writer, add
+reply-from-board + explicit reopen; all themes open. (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
@@ -118,6 +120,14 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 69 — Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md)
+*Closes the task state machine's undriven edges: a `UserPromptSubmit` hook finally drives `waiting → wip` when a session resumes executing, a signal→edge audit (`docs/LIFECYCLE.md`) accounts for every status writer, a reply affordance (board card + detail + `midnite reply`) answers waiting agents without opening a terminal, and terminal states get the long-promised explicit reopen action.*
+- ◻ **A** — Signal→edge audit: writer inventory → `docs/LIFECYCLE.md` table, table-driven writer-matrix spec, race audit (fix everything found within the inventory), dead-edge accounting
+- ◻ **B** — Resume edge: `resumeFromWaiting()` + `user-prompt-submit-hook.cjs` + `POST /hooks/sessions/:id/user-prompt-submit`, PreToolUse approval-resume fallback, notification hygiene (stale needs-input auto-resolve, nudge stands down)
+- ◻ **C** — Reply transport: `POST /sessions/:id/prompt` (terminal module writes to the PTY), shared schema + typed client, `midnite reply` CLI command
+- ◻ **D** — Reply UX: shared `ReplyBox` on live-wait board cards + task/session detail (dead waits stay resolve-only), `agent.resumed` timeline rendering
+- ◻ **E** — Reopen: explicit `reopen()` action for `done`/`abandoned` → `todo` (clears bindings, re-blocks dependents), endpoint + card context menu; `ALLOWED_TRANSITIONS` stays strict
 
 ### [Phase 68 — Accent gradient engine](phase-68-accent-gradient-engine.md)
 *Extends Phase 39's solid-only accent into gradients (mono-shade + multi-colour) via a light in-panel builder, adds an independent secondary accent channel, and promotes the brand rainbow to the default/first option — all a web-side override layer over untouched `@midnite/ui` tokens; no gateway.*
