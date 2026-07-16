@@ -105,7 +105,7 @@ needs-attention retros + the P44 `digest.generated` webhook, and fixed a real "s
 installable" bug), performance/scale **57**, and the office trio **63/64/65**. Phases **66/67/68** (assistant FAB, guides v2, accent gradients)
 are also complete. **Phase 69** (Lifecycle edges: resume & reply) has now landed **all five themes** —
 A (signal→edge audit, #442), B (resume edge, #441), C (reply transport, #443), D (reply UX, #444),
-E (explicit reopen, #445); the phase's end-to-end Verification checklist is the remaining closeout.
+E (explicit reopen, #445); the end-to-end **Verification checklist is signed off** (2026-07-16, PR #446) — a stub-`claude` e2e harness drives the real reply→resume round-trip (waiting→wip on the board, no reload); only the live-tmux *manual* ping-pong check is left as an environment-gated note.
 (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
