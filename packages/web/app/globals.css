@@ -598,7 +598,7 @@ html[data-no-glass] *::after {
  * tint (`--sv-tint`, an HSL triple) is woven in as two soft peaks so the state
  * colour reads clearly without swamping the foreground base. `alternate` sweeps
  * the peaks back and forth for a subtle living gradient. Mode → tint is set on
- * the element: active → primary/accent, waiting → secondary accent, idle → a
+ * the element: active → primary/accent, waiting → an orange tint, idle → a
  * red-ish "error" tint. Motion is gated like the rest of the app. */
 .screensaver-title {
   background-image: linear-gradient(

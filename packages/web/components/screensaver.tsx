@@ -288,11 +288,11 @@ const WORD_SETS: Record<Mode, string[]> = {
 // HSL triple, consumed as `hsl(var(--sv-tint))` by `.screensaver-title`) is what
 // the animated sheen weaves in so the current mode reads at a glance:
 //   active  → the selected primary/accent gradient stop
-//   waiting → the secondary accent channel (falls back to primary)
+//   waiting → an orange tint — work is parked awaiting your input
 //   idle    → a red-ish "error" tint — the empty board is the attention state
 const MODE_TINT: Record<Mode, string> = {
   active: 'var(--primary)',
-  waiting: 'var(--accent-2, var(--primary))',
+  waiting: '24 95% 53%',
   idle: 'var(--destructive)',
 };
 
