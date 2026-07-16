@@ -138,6 +138,7 @@ import {
   SessionSummarySchema,
   SessionDetailSchema,
   SessionTranscriptSchema,
+  SessionPromptResponseSchema,
   SubAgentResponseSchema,
   PrDiffSchema,
   PrReviewDraftSchema,
@@ -1115,6 +1116,22 @@ export async function getPresenceSummary(signal?: AbortSignal): Promise<Presence
 /** One session's detail (`GET /sessions/:id`); throws on a 404 for an unknown id. */
 export async function getSession(id: string, signal?: AbortSignal): Promise<SessionDetail> {
   return fetchJson(`/sessions/${encodeURIComponent(id)}`, { signal }, SessionDetailSchema);
+}
+
+/**
+ * Phase 69 D — reply to a waiting agent by writing `text` to its live session PTY
+ * (`POST /sessions/:id/prompt`, Phase 69 C transport). `sessionId === taskId` for
+ * agent sessions. The status flip is *earned*: the gateway's UserPromptSubmit hook
+ * drives `waiting → wip` and the board's WS `task.updated` moves the card — this
+ * call only delivers the text. Throws `ApiError` (404 unknown / 409 no live
+ * session) surfaced to the caller.
+ */
+export async function sendSessionPrompt(sessionId: string, text: string): Promise<void> {
+  await fetchJson(
+    `/sessions/${encodeURIComponent(sessionId)}/prompt`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }) },
+    SessionPromptResponseSchema,
+  );
 }
 
 export async function getSessionTranscript(
