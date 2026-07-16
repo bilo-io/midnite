@@ -481,6 +481,52 @@ export class TasksService implements OnModuleDestroy {
     return this.emit('task.updated', this.getTask(id));
   }
 
+  /**
+   * Phase 69 E — the deliberate "reopen" the Phase 60 E comment promised. A
+   * dedicated verb (NOT a loosened `ALLOWED_TRANSITIONS` edge — board drags still
+   * can't revive a terminal task): only `done`/`abandoned` → `todo`, clearing the
+   * session binding, archive timestamp, wait reason, and the full retry state so
+   * the revived task re-enters the queue as if fresh. Inserts a `task.reopened`
+   * event and re-broadcasts dependents (a reopened `done` blocker re-blocks them,
+   * mirroring Phase 27's derived-blocked model — scheduler readiness self-corrects
+   * on the next tick; Decision §6). Preserves PR/check history.
+   */
+  reopen(id: string): Task {
+    const now = new Date().toISOString();
+    const before = this.repo.getTask(id);
+    if (!before) throw new NotFoundException(`task ${id} not found`);
+    if (before.status !== 'done' && before.status !== 'abandoned') {
+      throw new BadRequestException(
+        `cannot reopen a ${before.status} task — reopen only revives done/abandoned tasks`,
+      );
+    }
+    this.endResumeEpisode(id);
+    this.repo.updateStatus(id, 'todo', now); // direct write — deliberately bypasses canTransition
+    this.repo.setSession(id, null, now);
+    this.repo.setArchived(id, null, now); // clear the abandon/complete archive stamp
+    this.repo.setWaitReason(id, null, now);
+    this.repo.resetRetryState(id, now); // fresh start — zero the retry budget + backoff
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.reopened',
+      data: JSON.stringify({ from: before.status }),
+    });
+    this.audit?.record({
+      entityType: 'task',
+      entityId: id,
+      userId: before.createdBy,
+      action: 'task.reopened',
+      payload: { from: before.status },
+    });
+    const updated = this.emit('task.updated', this.getTask(id));
+    // Reviving a `done` blocker changes its dependents' readiness back to blocked;
+    // refresh their derived "blocked by N" chip (Phase 27 Theme B path).
+    this.notifyDependents(id);
+    return updated;
+  }
+
   /** Increment the auto-fix attempt counter (Phase 30 C). Does not change status. */
   incrementFixAttempts(id: string): Task {
     const now = new Date().toISOString();

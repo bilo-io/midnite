@@ -135,6 +135,21 @@ describe('Task dependencies (Phase 27 Theme A)', () => {
       expect(repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id)).toContain(b.id);
     });
 
+    it('reopening a done blocker re-blocks its dependents in the ready-set (Phase 69 E, Decision §6)', async () => {
+      const a = await make('blocker');
+      const b = await make('dependent');
+      service.addDependency(b.id, a.id);
+      setStatus(a.id, 'done');
+      // A done → B ready.
+      expect(repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id)).toContain(b.id);
+      // Reopen A → it's todo again, so B is blocked once more (derived, not stored).
+      const reopened = service.reopen(a.id);
+      expect(reopened.status).toBe('todo');
+      expect(repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id)).not.toContain(b.id);
+      // A itself has no blocker → it's ready.
+      expect(repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id)).toContain(a.id);
+    });
+
     it('keeps priority-desc, age-asc ordering among ready tasks', async () => {
       const first = await make('older normal'); // priority 1 (default)
       const second = await service.createFromPrompt({ prompt: 'newer urgent', priority: 3, images: [] });

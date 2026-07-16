@@ -15,6 +15,7 @@ export const AuditEntityTypeSchema = z.enum([
 export const AuditActionSchema = z.enum([
   'task.created',
   'task.status_changed',
+  'task.reopened',
   'task.deleted',
   'task.pr_reviewed',
   'task.pr_merged',

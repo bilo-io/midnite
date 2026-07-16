@@ -48,6 +48,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     listTasks: vi.fn(() => [fakeTask]),
     getTask: vi.fn(() => fakeTask),
     updateStatus: vi.fn(() => fakeTask),
+    reopen: vi.fn(() => fakeTask),
     setProject: vi.fn(() => fakeTask),
     setTags: vi.fn(() => fakeTask),
     addLink: vi.fn(() => fakeTask),
@@ -114,6 +115,12 @@ describe('TasksController — valid input delegates to the service', () => {
     const { controller, service } = build();
     controller.updateStatus('t1', { status: 'wip' });
     expect(service.updateStatus).toHaveBeenCalledWith('t1', 'wip');
+  });
+
+  it('delegates reopen to the service (Phase 69 E)', () => {
+    const { controller, service } = build();
+    controller.reopen('t1');
+    expect(service.reopen).toHaveBeenCalledWith('t1');
   });
 
   it('passes a null projectId through (clear assignment)', () => {

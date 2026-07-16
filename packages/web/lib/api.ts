@@ -827,6 +827,13 @@ export async function startTask(id: string): Promise<Task> {
   return fetchJson(`/tasks/${encodeURIComponent(id)}/start`, { method: 'POST' }, TaskSchema);
 }
 
+/** Reopen a terminal task (Phase 69 E): `done`/`abandoned` → `todo`, clearing the
+ *  session binding + retry state and re-blocking dependents. A dedicated verb, not
+ *  a board drag — rejects (400) for a non-terminal task. Bodyless POST (see startTask). */
+export async function reopenTask(id: string): Promise<Task> {
+  return fetchJson(`/tasks/${encodeURIComponent(id)}/reopen`, { method: 'POST' }, TaskSchema);
+}
+
 /** Stop a running task: interrupt the agent (Ctrl+C) and return it to the queue
  *  (→ `to`, default todo), idling its session. Rejects (409) if it isn't running. */
 export async function stopTask(id: string, to: 'todo' | 'backlog' = 'todo'): Promise<Task> {

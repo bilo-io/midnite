@@ -12,7 +12,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Play, Square } from 'lucide-react';
+import { Play, RotateCcw, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Status, TaskSummary } from '@midnite/shared';
@@ -64,6 +64,7 @@ export function BoardView({
   onSelect,
   showAbandoned,
   onMove,
+  onReopen,
   isSelected,
   onToggleSelect,
   blockedCounts,
@@ -132,6 +133,24 @@ export function BoardView({
   // while a modal/dialog is open (its own focus trap owns the keys then).
   const confirm = useConfirm();
   const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  // Reopen a terminal task (Phase 69 E). Not a status move — done/abandoned have
+  // no legal `onMove` edge — so the board confirms (it clears the session +
+  // re-blocks dependents), then delegates the mutation to the `onReopen` prop.
+  const handleReopen = useCallback(
+    async (id: string) => {
+      if (!onReopen) return;
+      const ok = await confirm({
+        title: 'Reopen this task?',
+        description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
+        confirmLabel: 'Reopen',
+        destructive: false,
+      });
+      if (!ok) return;
+      await onReopen(id);
+    },
+    [confirm, onReopen],
+  );
 
   // The visible grid, in render order, rebuilt each render from the same grouping
   // the columns use — so navigation always matches what's on screen.
@@ -284,6 +303,7 @@ export function BoardView({
                     onSelect={() => onSelect(t)}
                     onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
                     onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
+                    onReopen={onReopen ? () => void handleReopen(t.id) : undefined}
                     selected={isSelected?.(t.id) ?? false}
                     onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
                     blockedBy={blockedCounts?.get(t.id)}
@@ -304,6 +324,7 @@ export function BoardView({
             onSelect={onSelect}
             projectsById={projectsById}
             blockedCounts={blockedCounts}
+            onReopen={onReopen ? (id) => void handleReopen(id) : undefined}
           />
         )}
 
@@ -401,6 +422,7 @@ function DraggableCard({
   onSelect,
   onStart,
   onStop,
+  onReopen,
   selected = false,
   onToggleSelect,
   blockedBy,
@@ -413,6 +435,7 @@ function DraggableCard({
   onSelect: () => void;
   onStart?: () => void;
   onStop?: () => void;
+  onReopen?: () => void;
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
   blockedBy?: number;
@@ -434,6 +457,8 @@ function DraggableCard({
   // A running task (its session is live) can be stopped: interrupt the agent and
   // send the task back to todo. Mirrors the Start affordance on idle cards.
   const canStop = task.status === 'wip' || task.status === 'waiting';
+  // A terminal task can be reopened back to todo (Phase 69 E).
+  const canReopen = task.status === 'done' || task.status === 'abandoned';
 
   // Bring the keyboard-focused card into view as focus walks the board.
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -495,6 +520,15 @@ function DraggableCard({
           className="text-muted-foreground hover:border-destructive/50 hover:text-destructive"
         >
           <Square className="h-3 w-3 fill-current" />
+        </CardActionButton>
+      ) : canReopen && onReopen ? (
+        <CardActionButton
+          onClick={onReopen}
+          label="Reopen task"
+          title="Reopen"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <RotateCcw className="h-3 w-3" />
         </CardActionButton>
       ) : null}
     </div>

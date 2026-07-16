@@ -17,6 +17,9 @@ export type TaskViewProps = {
    *  `wip` from todo/backlog spawns an agent session; other moves just restatus.
    *  Only the board wires this; list/table ignore it. */
   onMove?: (taskId: string, target: Status) => void;
+  /** Reopen a terminal task (done/abandoned → todo, Phase 69 E). A dedicated verb,
+   *  not a status move — the board confirms, then calls this. Only the board wires it. */
+  onReopen?: (taskId: string) => void | Promise<void>;
   // Bulk selection (optional; wired by TasksView across all three views).
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
