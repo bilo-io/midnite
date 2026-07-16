@@ -72,3 +72,17 @@ export const SessionTranscriptSchema = z.object({
   taskEvents: z.array(TaskEventSchema).optional(),
 });
 export type SessionTranscript = z.infer<typeof SessionTranscriptSchema>;
+
+/**
+ * Phase 69 C — reply transport. The body of `POST /sessions/:id/prompt`: a line
+ * of text written to a live agent session's PTY stdin, as if a human typed it in
+ * the terminal. `.trim()` strips surrounding whitespace (so a whitespace-only
+ * reply is rejected by `.min(1)`); the cap keeps a runaway payload out of the PTY.
+ */
+export const SessionPromptRequestSchema = z.object({
+  text: z.string().trim().min(1, 'reply text is required').max(8000, 'reply text too long (max 8000 chars)'),
+});
+export type SessionPromptRequest = z.infer<typeof SessionPromptRequestSchema>;
+
+export const SessionPromptResponseSchema = z.object({ ok: z.literal(true) });
+export type SessionPromptResponse = z.infer<typeof SessionPromptResponseSchema>;

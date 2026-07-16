@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SessionPromptRequestSchema,
   SessionStatusSchema,
   SessionSummarySchema,
   SessionTranscriptSchema,
@@ -45,6 +46,21 @@ describe('TranscriptMessageSchema', () => {
         text: 'hi',
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('SessionPromptRequestSchema', () => {
+  it('trims surrounding whitespace and accepts non-empty text', () => {
+    expect(SessionPromptRequestSchema.parse({ text: '  keep going  ' })).toEqual({ text: 'keep going' });
+  });
+
+  it('rejects empty and whitespace-only text', () => {
+    expect(SessionPromptRequestSchema.safeParse({ text: '' }).success).toBe(false);
+    expect(SessionPromptRequestSchema.safeParse({ text: '   ' }).success).toBe(false);
+  });
+
+  it('rejects text over the length cap', () => {
+    expect(SessionPromptRequestSchema.safeParse({ text: 'x'.repeat(8001) }).success).toBe(false);
   });
 });
 
