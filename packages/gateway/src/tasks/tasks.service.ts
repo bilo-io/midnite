@@ -582,9 +582,13 @@ export class TasksService implements OnModuleDestroy {
       clearTimeout(pending);
       this.pendingWaiting.delete(id);
     }
+    // A terminal task is done with — never revive it, and don't leak a resume
+    // stamp it can never consume (terminal tasks can't `markWaiting`).
+    if (isTerminal(row.status as Status)) return this.getTask(id);
     this.lastResumeAt.set(id, Date.now());
     // Only a live `needs-input` wait resumes (Decision: resume guard). Everything
-    // else is a safe no-op — the window arming above still applies.
+    // else is a safe no-op — the window arming above still applies (e.g. a `wip`
+    // task whose flip-to-waiting was pending).
     if (row.status !== 'waiting' || row.waitReason !== 'needs-input') return this.getTask(id);
     const now = new Date().toISOString();
     this.repo.updateStatus(id, 'wip', now);
