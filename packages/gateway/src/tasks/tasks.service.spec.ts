@@ -151,6 +151,15 @@ class InMemoryRepo extends TasksRepository {
     return task;
   }
 
+  override resetRetryState(id: string, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.retryCount = 0;
+    task.nextRetryAt = null;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
   override insertEvent(row: TaskEventInsert): void {
     this.events.push(row);
   }
@@ -555,6 +564,52 @@ describe('TasksService', () => {
     expect(() => service.updateStatus('t0', 'todo')).toThrow(BadRequestException);
     expect(() => service.updateStatus('t0', 'wip')).toThrow(BadRequestException);
     expect(repo.tasks[0]!.status).toBe('abandoned');
+  });
+
+  it('reopen revives a done task → todo, clears bindings + retry state, emits task.reopened (Phase 69 E)', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['done']);
+    // Simulate the state a completed run leaves behind: a bound session, a retry
+    // history, an archive stamp, and a PR url — to prove which clear and which persist.
+    const row = repo.tasks[0]!;
+    row.sessionId = 't0';
+    row.retryCount = 3;
+    row.nextRetryAt = '2999-01-01T00:00:00.000Z';
+    row.archivedAt = '2026-07-01T00:00:00.000Z';
+    row.prUrl = 'https://example.test/pr/1';
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+
+    const reopened = service.reopen('t0');
+    expect(reopened.status).toBe('todo');
+    expect(reopened.sessionId).toBeFalsy();
+    expect(reopened.archivedAt).toBeUndefined();
+    expect(reopened.waitReason).toBeFalsy();
+    expect(repo.tasks[0]!.retryCount).toBe(0);
+    expect(repo.tasks[0]!.nextRetryAt).toBeFalsy();
+    expect(repo.events.some((e) => e.kind === 'task.reopened')).toBe(true);
+    // PR history is preserved (Decision: reopen doesn't touch PR/check state).
+    expect(reopened.prUrl).toBe('https://example.test/pr/1');
+  });
+
+  it('reopen revives an abandoned task → todo (Phase 69 E)', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['wip']);
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+    service.updateStatus('t0', 'abandoned');
+    expect(repo.tasks[0]!.archivedAt).toBeDefined();
+    const reopened = service.reopen('t0');
+    expect(reopened.status).toBe('todo');
+    expect(reopened.archivedAt).toBeUndefined();
+  });
+
+  it('reopen rejects a non-terminal task and 404s an unknown one (Phase 69 E)', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['todo', 'wip', 'waiting']);
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+    expect(() => service.reopen('t0')).toThrow(BadRequestException);
+    expect(() => service.reopen('t1')).toThrow(BadRequestException);
+    expect(() => service.reopen('t2')).toThrow(BadRequestException);
+    expect(() => service.reopen('nope')).toThrow();
   });
 
   it('rejects a done→wip board drag but allows legal moves + same-status no-op (Phase 60 E)', () => {

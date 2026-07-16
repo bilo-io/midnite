@@ -213,6 +213,15 @@ export class TasksController {
     return this.service.resolveNeedsAttention(id, parsed.data.action, parsed.data.prompt);
   }
 
+  /** Reopen a terminal task (Phase 69 E): `done`/`abandoned` → `todo`, clearing
+   *  bindings + retry state and re-blocking dependents. A dedicated verb, not a
+   *  status PATCH — `ALLOWED_TRANSITIONS` stays strict. Same actor role as abandon. */
+  @Post(':id/reopen')
+  @RequiresRole('member')
+  reopen(@Param('id') id: string): Task {
+    return this.service.reopen(id);
+  }
+
   @Patch(':id/project')
   @RequiresRole('member')
   updateProject(@Param('id') id: string, @Body() body: unknown): Task {

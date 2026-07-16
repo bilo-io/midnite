@@ -254,6 +254,18 @@ export class TasksRepository {
       .get();
   }
 
+  // Reset the full retry state (Phase 69 E) — zero the counter AND drop any
+  // pending backoff. A reopened terminal task re-enters the queue as if fresh,
+  // so its prior crash-retry budget must not carry over.
+  resetRetryState(id: string, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ retryCount: 0, nextRetryAt: null, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   // Set (or clear, with null) the typed reason a task is parked in `waiting`
   // (Phase 53 D). Set on the transition into `waiting`, cleared on any exit.
   setWaitReason(id: string, waitReason: WaitReason | null, updatedAt: string): TaskRow | undefined {
