@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-16 — feat(gateway): the resume edge — `UserPromptSubmit` → `waiting → wip` — Phase 69 Theme B (PR #441)
+
+Closes the state machine's undriven resume edge: a session that goes from *requiring input* back to *executing* now drives its task out of `waiting`. Phase 69 → 6/26 (23%), Status 🔄 WIP (A C D E remain).
+
+- [x] **`TasksService.resumeFromWaiting(id)`** — idempotent `waiting(needs-input) → wip` (terminal-guarded like `markWaiting`); clears `waitReason`, inserts an `agent.resumed` event, emits `task.updated`. Resume guard: **needs-input only** — dead/escalated needs-attention waits stay resolve-only.
+- [x] **The hook** — new `terminal/hooks/user-prompt-submit-hook.cjs` (fire-and-forget POST, secret header) + `UserPromptSubmit` registered under `opts.lifecycle` in `writeHookSettings()`; new authenticated `POST /hooks/sessions/:id/user-prompt-submit` (permissive `UserPromptSubmitHookRequestSchema` in `shared`) → `resumeFromWaiting` + `emitActivity('running')`.
+- [x] **Approval-resume fallback** — `ApprovalController.preToolUse` also calls `resumeFromWaiting` (a permission-wait resumes mid-turn with no fresh prompt; idempotence makes double-wiring safe).
+- [x] **Ping-pong debounce** — `agent.resumeDebounceMs` (default 1500) coalesces the `wip ⇄ waiting` oscillation Claude's per-turn Stop hook causes, held in `markWaiting`; a follow-up reply cancels it. Only the post-resume `needs-input` path debounces — first wait flips immediately (behaviour-preserving). *(Decision §7 resolved to debounce in review.)*
+- [x] **Notification hygiene** — a task leaving `waiting` auto-resolves its stale `task.waiting`/`task.needs-attention` alerts (`NotificationsRepository.markReadForEntity`, driven off the board event; generalised to every un-wait path); nudge loop stands down once `wip`.
+- [x] Tests: controller (secret/payload/no-op/happy), service resume matrix + debounce convergence (defer/cancel/settle/first-wait/disabled), approval fallback, notification hygiene + repo, nudge stand-down. Gate: `:typecheck` · `:lint` · gateway `:test` (2052) green; `ui:test` green in isolation (parallel-run flake unrelated — gateway/shared only).
+
 ## 2026-07-14 — test(web): guide tests, stories, e2e shots & verification — Phase 67 Theme E (PR #433) — **Phase 67 complete**
 
 The final theme closes Phase 67 (Product guides on every page). Phase 67 → 30/30 (100%), Status ✅ DONE.
