@@ -7,6 +7,7 @@ import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
 import { RunTimeline } from '@/components/run-timeline';
+import { ReplyBox } from '@/components/reply-box';
 import { RetroTab } from '@/components/retro-tab';
 import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
@@ -589,6 +590,17 @@ export function TaskDetail({
             {statusError}
           </div>
         ) : null}
+        {/* Phase 69 D — answer a live wait (`needs-input`, session bound) inline,
+            without opening the terminal. Dead/needs-attention waits keep their
+            resolve actions (failure history below) instead. */}
+        {task.status === 'waiting' && task.waitReason === 'needs-input' && task.sessionId ? (
+          <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-primary">
+              Agent is waiting on you
+            </h3>
+            <ReplyBox sessionId={task.sessionId} />
+          </section>
+        ) : null}
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Tags
@@ -958,6 +970,21 @@ export function TaskDetail({
   );
 }
 
+// Friendly labels for the lifecycle event kinds (docs/LIFECYCLE.md). Anything not
+// listed falls back to the raw kind. Phase 69 D adds `agent.resumed` — a waiting
+// agent picked back up by a reply or an approval.
+const EVENT_KIND_LABEL: Record<string, string> = {
+  'agent.started': 'Agent started',
+  'agent.waiting': 'Agent waiting on input',
+  'agent.resumed': 'Resumed by reply / approval',
+  'agent.escalated': 'Escalated — needs attention',
+  'agent.requeued': 'Requeued',
+  'agent.retried': 'Retried',
+  'agent.done': 'Agent finished',
+  'task.reopened': 'Reopened',
+  'task.replanned': 'Re-planned',
+};
+
 function Timeline({ events }: { events: TaskEvent[] }) {
   if (events.length === 0) {
     return <p className="text-sm text-muted-foreground">No activity recorded yet.</p>;
@@ -974,7 +1001,7 @@ function Timeline({ events }: { events: TaskEvent[] }) {
           </div>
           <div className="min-w-0 flex-1 pb-1">
             <p className="text-sm font-medium leading-snug">
-              {ev.kind === ANSWER_EVENT_KIND ? 'Answer' : ev.kind}
+              {ev.kind === ANSWER_EVENT_KIND ? 'Answer' : (EVENT_KIND_LABEL[ev.kind] ?? ev.kind)}
             </p>
             <p className="text-[11px] text-muted-foreground">{formatTime(ev.at)}</p>
             {ev.kind === ANSWER_EVENT_KIND && typeof ev.data?.text === 'string' ? (

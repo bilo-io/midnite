@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react';
 import { isTerminal, type ApprovalLogEntry, type Project, type SessionDetail, type Task } from '@midnite/shared';
+import { ReplyBox } from '@/components/reply-box';
 import { listApprovalLog } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
@@ -46,8 +47,21 @@ export function SessionLeftPanel({
   );
   const history = log?.entries ?? [];
 
+  // Phase 69 D — a live `needs-input` wait can be answered right here, next to the
+  // terminal. `sessionId === session.id` for agent sessions. Dead/needs-attention
+  // waits (a failure reason) fall through to the resolve actions elsewhere.
+  const liveWait = task?.status === 'waiting' && task.waitReason === 'needs-input';
+
   return (
     <div className="space-y-5 text-sm">
+      {liveWait ? (
+        <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+            Agent is waiting on you
+          </h3>
+          <ReplyBox sessionId={session.id} />
+        </section>
+      ) : null}
       {/* Live pending approvals for this session. */}
       <section>
         <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

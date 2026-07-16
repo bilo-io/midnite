@@ -6,6 +6,7 @@ import {
   type TaskSummary,
 } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
+import { WaitingQuickReply } from '@/components/waiting-quick-reply';
 import { PrStatusChip } from '@/components/pr-status-chip';
 import { ProjectTag } from '@/components/project-tag';
 import { RepoChip } from '@/components/repo-chip';
@@ -187,22 +188,38 @@ export function TaskCard({
     isBlocked && 'opacity-60',
   );
 
-  if (onSelect) {
-    return (
-      <button
-        type="button"
-        onClick={onSelect}
-        className={className}
-        style={{ ['--kind-hue' as string]: `var(${hue})` }}
-      >
-        {body}
-      </button>
-    );
-  }
+  // Phase 69 D — a *live* wait (`needs-input`) can be answered from the board
+  // without opening the terminal. `needs-input` implies a bound live session
+  // (escalate() clears the session + uses a needs-attention reason), so it's a
+  // safe proxy for "reply-able" on the lean board DTO. Dead/needs-attention waits
+  // keep their resolve actions (rendered elsewhere) — no reply box that goes nowhere.
+  const liveWait = task.status === 'waiting' && task.waitReason === 'needs-input';
 
-  return (
+  const card = onSelect ? (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={className}
+      style={{ ['--kind-hue' as string]: `var(${hue})` }}
+    >
+      {body}
+    </button>
+  ) : (
     <div className={className} style={{ ['--kind-hue' as string]: `var(${hue})` }}>
       {body}
+    </div>
+  );
+
+  if (!liveWait) return card;
+
+  // The quick-reply sits *outside* the card button (interactives can't nest) as a
+  // compact action row beneath it.
+  return (
+    <div className="space-y-1">
+      {card}
+      <div className="px-0.5">
+        <WaitingQuickReply sessionId={task.id} />
+      </div>
     </div>
   );
 }

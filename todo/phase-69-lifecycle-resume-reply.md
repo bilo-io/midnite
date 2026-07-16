@@ -58,16 +58,16 @@ One authenticated write path from "text" to the PTY's stdin, usable by web and C
 
 ---
 
-## Theme D — Reply UX on the board & detail surfaces — **M**
+## Theme D — Reply UX on the board & detail surfaces — **M** — ✅ DONE (PR #444, 2026-07-16)
 
 Answer a waiting agent where you see it waiting. The status flip is *earned* via Theme B's hook round-trip — the UI just sends the prompt and watches the WS event move the card.
 
-- [ ] Shared **`ReplyBox`** web component (input + send, pending/disabled state, error surface) calling the typed client; lives with the task components in `web`.
-- [ ] **Waiting card quick-reply** on the board: renders **only for live waits** (session bound + `waitReason === 'needs-input'`); collapsed-to-icon affordance so cards stay compact.
-- [ ] **Detail surfaces:** the same `ReplyBox` in the unified task/session detail (Phases 42/51) next to the embedded terminal, and on the session detail page.
-- [ ] **Dead waits stay resolve-only:** escalated/needs-attention waits (dead session) keep the existing requeue/replan/abandon actions — no reply box that goes nowhere.
-- [ ] Timeline: render the `agent.resumed` event kind in the task timeline (icon + "resumed by reply/approval" copy).
-- [ ] Tests: RTL for `ReplyBox` (live vs dead wait gating, pending state) + a story with a `play` interaction.
+- [x] Shared **`ReplyBox`** web component (input + send, pending/disabled state, error surface) calling `sendSessionPrompt` (Theme C transport); lives with the task components in `web`. Enter-to-send; 409 → friendly "no live session — needs resolve, not reply".
+- [x] **Waiting card quick-reply** on the board: renders **only for live waits** (`waitReason === 'needs-input'`, a reliable proxy for a bound live session on the lean board DTO); collapsed-to-icon affordance, rendered outside the card `<button>` (interactives can't nest).
+- [x] **Detail surfaces:** the same `ReplyBox` in the unified task/session detail (gated on `sessionId` + `needs-input`) and the session cockpit's left rail.
+- [x] **Dead waits stay resolve-only:** the box only renders for `needs-input`; escalated/needs-attention waits keep requeue/replan/abandon.
+- [x] Timeline: `agent.resumed` (+ sibling lifecycle kinds) render with friendly copy via an `EVENT_KIND_LABEL` map instead of the raw kind.
+- [x] Tests: `reply-box.test.tsx` (6 RTL — gating, trimmed send + clear + onSent, Enter/Shift+Enter, 409 friendly + text retained) + `reply-box.stories.tsx` (4 stories, 2 with `play`). Visual proof via the stories (the board/detail UI is gated on a live `needs-input` wait, not seedable via the public move API).
 
 ---
 

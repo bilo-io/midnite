@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-16 — feat(web): reply UX — ReplyBox on board cards & detail surfaces — Phase 69 Theme D (PR #444)
+
+Answer a waiting agent where you see it waiting, no terminal needed. Phase 69 → 21/26 (81%), Status 🔄 WIP (E remains).
+
+- [x] **Shared `ReplyBox`** (`components/reply-box.tsx`) — input + send, pending/disabled/error, Enter-to-send; calls `sendSessionPrompt` → `POST /sessions/:id/prompt` (Theme C). Status flip is **earned** via the UserPromptSubmit hook + WS event (no optimistic flip); a 409 surfaces "no live session — needs resolve, not reply".
+- [x] **Board quick-reply** — collapsed-to-icon "Reply" pill on live waits only (`waitReason === 'needs-input'`, a bound-live-session proxy on the lean board DTO), expands to a compact box; rendered outside the card `<button>`.
+- [x] **Detail surfaces** — the same box in the unified task/session detail (gated on `sessionId` + `needs-input`) and the session cockpit left rail; dead/needs-attention waits keep resolve actions.
+- [x] **Timeline** — `agent.resumed` (+ sibling lifecycle kinds) render with friendly copy via `EVENT_KIND_LABEL`.
+- [x] `web/lib/api.ts` `sendSessionPrompt` validating C's `SessionPromptResponseSchema`.
+- [x] Tests: `reply-box.test.tsx` (6 RTL) + `reply-box.stories.tsx` (4 stories, 2 play). `web:test` **1231 passed**; `:typecheck` + `:lint` green. Visual proof via stories (the board/detail UI is gated on a live `needs-input` wait, not seedable via the public move API).
+
 ## 2026-07-16 — feat: reply transport — `POST /sessions/:id/prompt` + `midnite reply` — Phase 69 Theme C (PR #443)
 
 One authenticated write path from text → a waiting agent's PTY stdin, so you can answer it from the CLI (and, next, the board — Theme D) without opening its terminal. The `waiting → wip` flip is *earned* by Theme B's `UserPromptSubmit` hook round-trip, never optimistically written here. Phase 69 → 15/26 (58%), Status 🔄 WIP (D E remain).

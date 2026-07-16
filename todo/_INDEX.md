@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | D E | — |
+| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | 🔄 WIP | 21/26 | `████████░░` | 81% | E | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -126,7 +126,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Signal→edge audit: writer inventory → `docs/LIFECYCLE.md` table, table-driven `lifecycle-writer-matrix.spec.ts` (+ programmatic dead-edge cross-check), race audit (no new defects — all hazards pre-guarded, pinned), CLAUDE.md pointer (PR #442)
 - ✅ **B** — Resume edge: `resumeFromWaiting()` + `user-prompt-submit-hook.cjs` + `POST /hooks/sessions/:id/user-prompt-submit`, PreToolUse approval-resume fallback, notification hygiene (stale needs-input auto-resolve, nudge stands down); + `agent.resumeDebounceMs` ping-pong debounce (PR #441)
 - ✅ **C** — Reply transport: `POST /sessions/:id/prompt` (terminal module writes to the PTY), shared schema + typed client, `midnite reply` CLI command (PR #443)
-- ◻ **D** — Reply UX: shared `ReplyBox` on live-wait board cards + task/session detail (dead waits stay resolve-only), `agent.resumed` timeline rendering
+- ✅ **D** — Reply UX: shared `ReplyBox` (earned WS flip, no optimistic) on live-wait board cards (collapsed icon) + task/session detail + session cockpit; dead waits stay resolve-only; `agent.resumed` (+ siblings) timeline copy (PR #444)
 - ◻ **E** — Reopen: explicit `reopen()` action for `done`/`abandoned` → `todo` (clears bindings, re-blocks dependents), endpoint + card context menu; `ALLOWED_TRANSITIONS` stays strict
 
 ### [Phase 68 — Accent gradient engine](phase-68-accent-gradient-engine.md)
