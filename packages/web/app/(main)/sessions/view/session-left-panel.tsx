@@ -50,8 +50,7 @@ export function SessionLeftPanel({
   // Phase 69 D — a live `needs-input` wait can be answered right here, next to the
   // terminal. `sessionId === session.id` for agent sessions. Dead/needs-attention
   // waits (a failure reason) fall through to the resolve actions elsewhere.
-  const liveWait =
-    task?.status === 'waiting' && task.waitReason === 'needs-input' && !isTerminal(task.status);
+  const liveWait = task?.status === 'waiting' && task.waitReason === 'needs-input';
 
   return (
     <div className="space-y-5 text-sm">
