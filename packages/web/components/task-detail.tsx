@@ -113,8 +113,8 @@ type Props = {
   /**
    * The Session tab's body (Phase 70). When provided (the unified modal supplies
    * a live terminal / transcript pane), a `Session` tab joins the strip and the
-   * header's Session button switches to it in-place instead of navigating. Absent
-   * on the full page, where the session lives at its own route.
+   * header's redundant Session nav button is dropped. Absent on the full page,
+   * where the session lives at its own route (the nav button stays there).
    */
   sessionSlot?: ReactNode;
 };
@@ -476,19 +476,10 @@ export function TaskDetail({
             </Button>
           ) : null}
           <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} />
-          {showSessionTab ? (
-            // In the unified modal the session is a sibling tab — switch to it
-            // rather than navigating away (Phase 70).
-            <Button
-              type="button"
-              variant={activeTab === 'session' ? 'default' : 'secondary'}
-              size="sm"
-              onClick={() => selectTab('session')}
-            >
-              <SquareTerminal className="h-3.5 w-3.5" />
-              Session
-            </Button>
-          ) : (
+          {/* On the full page the session lives at its own route, so a nav button
+              is useful; in the unified modal the Session tab makes it redundant
+              (Phase 70), so it's dropped there. */}
+          {showSessionTab ? null : (
             <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
               <SquareTerminal className="h-3.5 w-3.5" />
               Session
