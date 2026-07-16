@@ -38,6 +38,9 @@ type Props = {
   buildHtml?: () => Promise<{ filename: string; html: string }>;
   /** Disable the trigger (e.g. while a run is still in progress). */
   disabled?: boolean;
+  /** Render the trigger as a compact download icon button (no "Export" label),
+   *  while keeping the same dropdown. Used where header space is tight. */
+  iconOnly?: boolean;
   className?: string;
 };
 
@@ -73,7 +76,7 @@ function triggerDownload(filename: string, content: string, mimeType: string): v
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, className }: Props) {
+export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, iconOnly, className }: Props) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | 'html' | null>(null);
@@ -215,11 +218,22 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
         aria-label="Export"
+        title={iconOnly ? 'Export' : undefined}
         aria-expanded={open}
-        className="flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className={
+          iconOnly
+            ? 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+            : 'flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+        }
       >
-        <FileText className="h-3.5 w-3.5" />
-        Export
+        {iconOnly ? (
+          <Download className="h-4 w-4" />
+        ) : (
+          <>
+            <FileText className="h-3.5 w-3.5" />
+            Export
+          </>
+        )}
       </button>
 
       {open && (

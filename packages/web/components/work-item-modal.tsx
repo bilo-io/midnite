@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowUpRight, X } from 'lucide-react';
 import type { Project, SessionSummary, Task, TaskSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SessionStatusDot } from '@/components/session-card';
@@ -52,6 +53,7 @@ export function WorkItemModal({
   onArchiveToggle,
   onDelete,
 }: Props) {
+  const router = useRouter();
   const id = origin.kind === 'task' ? origin.task.id : origin.session.id;
 
   const [task, setTask] = useState<Task | null>(origin.kind === 'task' ? origin.task : null);
@@ -120,12 +122,18 @@ export function WorkItemModal({
     <SessionPane
       session={session}
       loading={sessionLoading}
-      disableNavigation={disableNavigation}
-      onNavigate={onClose}
       onArchiveToggle={onArchiveToggle && session ? () => onArchiveToggle(session) : undefined}
       onDelete={onDelete && session ? () => onDelete(session) : undefined}
     />
   );
+
+  // Session-only shell (no linked task) has no tab strip to host "Open page", so
+  // it carries its own — unless navigation is suppressed (e.g. the office).
+  const openSessionPage = () => {
+    if (!session) return;
+    onClose();
+    router.push(`/sessions/view?id=${encodeURIComponent(session.id)}`);
+  };
 
   return createPortal(
     <>
@@ -154,6 +162,7 @@ export function WorkItemModal({
               tab={tab}
               onTabChange={setTab}
               sessionSlot={sessionSlot}
+              disableNavigation={disableNavigation}
             />
           ) : (
             // Session with no linked task — no task surface to show, so the modal
@@ -170,6 +179,12 @@ export function WorkItemModal({
                     {session ? <span className="truncate font-mono">{session.projectDisplay}</span> : null}
                   </div>
                 </div>
+                {session && !disableNavigation ? (
+                  <Button type="button" variant="secondary" size="sm" onClick={openSessionPage}>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    Open page
+                  </Button>
+                ) : null}
                 <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
                   <X className="h-4 w-4" />
                 </Button>

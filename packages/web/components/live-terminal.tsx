@@ -1,7 +1,7 @@
 'use client';
 
 import '@xterm/xterm/css/xterm.css';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Terminal, type ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import type {
@@ -43,6 +43,12 @@ type Props = {
   attachId: string;
   /** Shown in the status header (e.g. a project path or CLI name). */
   label: string;
+  /**
+   * Overrides the header's left side entirely. When set, it replaces the default
+   * `{label} · {command}` text — used by session terminals to show
+   * `{folder} {agent icon} {agent name}` instead of the live foreground process.
+   */
+  headerLeft?: ReactNode;
   /** Whether to surface Claude Code tool-approval prompts (session terminals only). */
   approvals?: boolean;
   /** Accessible label for the terminal region. */
@@ -60,6 +66,7 @@ type Props = {
 export function LiveTerminal({
   attachId,
   label,
+  headerLeft,
   approvals = false,
   ariaLabel,
   loaderUntilOutput = false,
@@ -211,10 +218,12 @@ export function LiveTerminal({
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span className="font-mono">
-          {label}
-          {command ? ` · ${command.split('/').pop()}` : ''}
-        </span>
+        {headerLeft ?? (
+          <span className="font-mono">
+            {label}
+            {command ? ` · ${command.split('/').pop()}` : ''}
+          </span>
+        )}
         <span className="flex items-center gap-1.5">
           <span
             className="h-1.5 w-1.5 rounded-full"
