@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | A C | D E |
+| [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | 🔄 WIP | 11/26 | `████░░░░░░` | 42% | C | D E |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -123,7 +123,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 69 — Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md)
 *Closes the task state machine's undriven edges: a `UserPromptSubmit` hook finally drives `waiting → wip` when a session resumes executing, a signal→edge audit (`docs/LIFECYCLE.md`) accounts for every status writer, a reply affordance (board card + detail + `midnite reply`) answers waiting agents without opening a terminal, and terminal states get the long-promised explicit reopen action.*
-- ◻ **A** — Signal→edge audit: writer inventory → `docs/LIFECYCLE.md` table, table-driven writer-matrix spec, race audit (fix everything found within the inventory), dead-edge accounting
+- ✅ **A** — Signal→edge audit: writer inventory → `docs/LIFECYCLE.md` table, table-driven `lifecycle-writer-matrix.spec.ts` (+ programmatic dead-edge cross-check), race audit (no new defects — all hazards pre-guarded, pinned), CLAUDE.md pointer (PR #442)
 - ✅ **B** — Resume edge: `resumeFromWaiting()` + `user-prompt-submit-hook.cjs` + `POST /hooks/sessions/:id/user-prompt-submit`, PreToolUse approval-resume fallback, notification hygiene (stale needs-input auto-resolve, nudge stands down); + `agent.resumeDebounceMs` ping-pong debounce (PR #441)
 - ◻ **C** — Reply transport: `POST /sessions/:id/prompt` (terminal module writes to the PTY), shared schema + typed client, `midnite reply` CLI command
 - ◻ **D** — Reply UX: shared `ReplyBox` on live-wait board cards + task/session detail (dead waits stay resolve-only), `agent.resumed` timeline rendering

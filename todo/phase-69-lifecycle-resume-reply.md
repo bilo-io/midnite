@@ -20,15 +20,15 @@
 
 ---
 
-## Theme A — Signal→edge audit & writer inventory — **M**
+## Theme A — Signal→edge audit & writer inventory — **M** — ✅ DONE (PR #442, 2026-07-16)
 
 Every status writer enumerated, every edge accounted for: driven, guarded, or deliberately dead. "Fix everything found" is bounded to this inventory — it's a finite commitment, not an open hunt.
 
-- [ ] **Writer inventory:** enumerate every status-mutation site — all `TasksService` writers (`updateStatus`, `startTask`, `markWaiting`, `markDone`, `escalate`, `requeue`, `resolveNeedsAttention`, abandon/archive paths…), [`LifecycleHookController`](../packages/gateway/src/pool/lifecycle-hook.controller.ts) (stop/notification), [`ApprovalController`](../packages/gateway/src/terminal/approval.controller.ts), [`AgentRunnerService`](../packages/gateway/src/pool/agent-runner.service.ts) (`onExit`, run-timeout, `completeWithChecks`, boot recovery), the scheduler tick, the doctor service, and REST/board-drag `updateStatus` — into a **signal→edge table** in a new `docs/LIFECYCLE.md` (signal, writer, edge, guard, event emitted).
-- [ ] **Pin current behavior:** one table-driven spec asserting each writer's edge + guard (from-status check, terminal guard, idempotency) so the matrix in the doc and the tests can't drift apart.
-- [ ] **Race audit:** Stop-vs-Notification ordering, late hooks after a terminal transition (Phase 60 E guard — verify coverage), Stop firing right after a resume (the intended `wip ⇄ waiting` ping-pong — assert it converges), `onExit` racing `markDone`, boot recovery vs in-flight hooks. **Fix every broken/racy edge found within the inventory**; each fix gets a regression spec.
-- [ ] **Dead-edge accounting:** every legal-but-undriven edge in `ALLOWED_TRANSITIONS` either gains a driver in this phase (`waiting → wip` → Theme B; terminal reopen → Theme E) or gets a written "deliberately no driver" rationale in `docs/LIFECYCLE.md`.
-- [ ] Link `docs/LIFECYCLE.md` from the CLAUDE.md scheduler/agent-pool section so future writers land on the table before adding an edge.
+- [x] **Writer inventory:** enumerate every status-mutation site — all `TasksService` writers (`updateStatus`, `startTask`, `markWaiting`, `markDone`, `escalate`, `requeue`, `resolveNeedsAttention`, abandon/archive paths…), [`LifecycleHookController`](../packages/gateway/src/pool/lifecycle-hook.controller.ts) (stop/notification), [`ApprovalController`](../packages/gateway/src/terminal/approval.controller.ts), [`AgentRunnerService`](../packages/gateway/src/pool/agent-runner.service.ts) (`onExit`, run-timeout, `completeWithChecks`, boot recovery), the scheduler tick, the doctor service, and REST/board-drag `updateStatus` — into a **signal→edge table** in a new `docs/LIFECYCLE.md` (signal, writer, edge, guard, event emitted). *(Scheduler + doctor confirmed read-only / delegating — scheduler only calls `startTask` via the runner; doctor never writes status.)*
+- [x] **Pin current behavior:** one table-driven spec (`lifecycle-writer-matrix.spec.ts`) asserting each writer's edge + guard (from-status check, terminal guard, idempotency) so the matrix in the doc and the tests can't drift apart.
+- [x] **Race audit:** Stop-vs-Notification ordering, late hooks after a terminal transition (Phase 60 E guard — verified), Stop firing right after a resume (the `wip ⇄ waiting` ping-pong — convergence asserted), `onExit` racing `markDone`, boot recovery vs in-flight hooks. **No new defects found** — each hazard is already covered (terminal guard / Phase 69 B debounce / idempotency / dead-session-only requeue) and pinned by a regression test in the matrix spec's `race convergence` block.
+- [x] **Dead-edge accounting:** all 18 legal edges in `ALLOWED_TRANSITIONS` are driven (documented in `docs/LIFECYCLE.md` §3); a programmatic cross-check in the matrix spec fails CI if a legal edge is neither driven nor in the `deliberately-dead` allowlist (empty today). `waiting → wip` → Theme B; terminal reopen stays Theme E's dedicated action.
+- [x] Link `docs/LIFECYCLE.md` from the CLAUDE.md scheduler/agent-pool section so future writers land on the table before adding an edge.
 
 ---
 

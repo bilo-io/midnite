@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-16 — docs(gateway): lifecycle signal→edge audit + writer-matrix spec — Phase 69 Theme A (PR #442)
+
+The audit that makes the task state machine legible before more edges land. Phase 69 → 11/26 (42%), Status 🔄 WIP (C D E remain).
+
+- [x] **`docs/LIFECYCLE.md`** — signal→edge map: a writers table (every `TasksService` edge-decider + edge + guard + event), a signals table (scheduler tick / Stop / Notification / UserPromptSubmit / PreToolUse / onExit / onTimeout / watchdog / stop / cancel / boot recovery / REST drag → writer → edge), dead-edge accounting (all **18** legal `ALLOWED_TRANSITIONS` edges driven; terminal states edge-free, reopen = Theme E), and the race audit.
+- [x] **`lifecycle-writer-matrix.spec.ts`** (34 tests) — 23 writer→edge cases + guard assertions (canTransition / terminal-guard / idempotency / needs-input-only resume) + a **programmatic cross-check** that every legal edge is driven or explicitly `deliberately-dead` (fails CI on drift) + race-convergence pins.
+- [x] **Race audit — no new defects.** Stop-vs-Notification ordering, late-hook-post-terminal, resume↔Stop ping-pong, onExit-vs-markDone, boot-recovery-vs-in-flight-hooks all verified safe (Phase 60 E terminal guard / Phase 69 B debounce / idempotency / dead-session-only requeue); each pinned.
+- [x] Scheduler + doctor confirmed non-writers (scheduler only `startTask` via runner; doctor read-only). CLAUDE.md scheduler/agent-pool section now points edge-writers at the doc.
+- [x] Gate: `moon run :typecheck` · `:lint` green; gateway `:test` **2086 passed** (+34). Docs + one gateway spec + CLAUDE.md only — no product code changed.
+
 ## 2026-07-16 — feat(gateway): the resume edge — `UserPromptSubmit` → `waiting → wip` — Phase 69 Theme B (PR #441)
 
 Closes the state machine's undriven resume edge: a session that goes from *requiring input* back to *executing* now drives its task out of `waiting`. Phase 69 → 6/26 (23%), Status 🔄 WIP (A C D E remain).
