@@ -167,6 +167,32 @@ describe('createClient', () => {
     await expect(createClient('http://gw').moveTask('t9', 'wip')).rejects.toThrow(/task t9 not found/);
   });
 
+  it('sendSessionPrompt posts the reply text to the session prompt endpoint', async () => {
+    let seenUrl = '';
+    let seenInit: RequestInit | undefined;
+    stubFetch((url, init) => {
+      seenUrl = url;
+      seenInit = init;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    await createClient('http://gw').sendSessionPrompt('t1', 'keep going');
+    expect(seenUrl).toBe('http://gw/sessions/t1/prompt');
+    expect(seenInit?.method).toBe('POST');
+    expect(JSON.parse(String(seenInit?.body))).toEqual({ text: 'keep going' });
+  });
+
+  it('sendSessionPrompt surfaces the 409 no-live-session message', async () => {
+    stubFetch(
+      () =>
+        new Response(JSON.stringify({ message: 'session t1 has no live agent session — resolve the task instead of replying' }), {
+          status: 409,
+        }),
+    );
+    await expect(createClient('http://gw').sendSessionPrompt('t1', 'hi')).rejects.toThrow(
+      /resolve the task instead of replying/,
+    );
+  });
+
   it('explains a connection failure', async () => {
     stubFetch(() => {
       throw new Error('ECONNREFUSED');

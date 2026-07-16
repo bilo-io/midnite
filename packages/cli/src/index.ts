@@ -435,6 +435,19 @@ program
     console.log(`resolved ${task.id} (${action}) → ${colourStatus(task.status)}`);
   });
 
+// ── Phase 69 C — reply to a waiting agent (writes to its live session PTY) ────
+program
+  .command('reply <id> <text>')
+  .description('Reply to a waiting agent — writes text to its live session (Phase 69). Use `resolve` for a dead session.')
+  .action(async (id: string, text: string) => {
+    await withSpinner('Sending reply…', () => client().sendSessionPrompt(id, text));
+    if (isJsonMode()) {
+      printJson({ ok: true, id });
+      return;
+    }
+    console.log(success(`replied to ${id}`));
+  });
+
 // ── Phase 49 D — data portability: full-store backup export ──────────────────
 program
   .command('export')

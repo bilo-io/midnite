@@ -108,6 +108,10 @@ export interface GatewayClient {
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
   resolveTask(id: string, action: ResolveTaskAction, prompt?: string): Promise<Task>;
+  /** Phase 69 C — reply to a waiting agent by writing `text` to its live session
+   *  PTY. `sessionId === taskId` for agent sessions. Rejects with a 404 (unknown /
+   *  out-of-scope) or 409 (no live session) surfaced in the thrown error message. */
+  sendSessionPrompt(sessionId: string, text: string): Promise<void>;
   listRecentFailures(opts?: { class?: FailureClass; limit?: number }): Promise<TaskFailure[]>;
   tasksDoctor(): Promise<TasksDoctorReport>;
   /** Download a full-store backup archive (Phase 49 D). Returns the server-named
@@ -327,6 +331,13 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
     },
 
     /** Recent failures across tasks (Phase 53 E), newest-first. */
+    async sendSessionPrompt(sessionId: string, text: string): Promise<void> {
+      await request(`/sessions/${encodeURIComponent(sessionId)}/prompt`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+    },
     async listRecentFailures(opts?: { class?: FailureClass; limit?: number }): Promise<TaskFailure[]> {
       const qs = new URLSearchParams();
       if (opts?.class) qs.set('class', opts.class);
