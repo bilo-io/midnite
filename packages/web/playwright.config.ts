@@ -20,6 +20,10 @@ const webDir = process.cwd();
 const gatewayDir = path.join(webDir, '..', 'gateway');
 const e2eConfigPath = path.join(webDir, 'e2e', 'fixtures', 'midnite.e2e.json');
 const uploadsDir = path.join(os.tmpdir(), 'midnite-e2e-uploads');
+// Phase 69 Verification — a stub `claude` (basename must be `claude` so the
+// gateway's hook wiring fires) prepended to the gateway's PATH, so `POST
+// /tasks/:id/start` spawns a real, driveable agent session in the harness.
+const stubAgentDir = path.join(webDir, 'e2e', 'fixtures', 'stub-agent');
 // A dedicated, throwaway SQLite file (absolute — DbFactory resolves a relative
 // path against cwd and treats ":memory:" as a literal filename, so neither is
 // safe). Deleted before each run for a clean store; never the dev/primary DB.
@@ -157,6 +161,11 @@ export default defineConfig({
         MIDNITE_GATEWAY_PORT: String(E2E_GATEWAY_PORT),
         MIDNITE_GATEWAY_DB_PATH: e2eDbPath,
         MIDNITE_GATEWAY_UPLOADS_DIR: uploadsDir,
+        // Prepend the stub-agent dir so the bare `claude` command node-pty spawns
+        // resolves to our fake (Phase 69). `webServer.env` replaces (not merges)
+        // the keys it sets, so PATH must be composed from the inherited one — and
+        // it must keep `node` reachable for `node --import tsx src/main.ts`.
+        PATH: `${stubAgentDir}${path.delimiter}${process.env.PATH ?? ''}`,
         // Force the LLM off so task creation never makes an external call and
         // titles are deterministic (placeholder = the prompt's first line). The
         // config has no key, but the Anthropic adapter otherwise falls back to a

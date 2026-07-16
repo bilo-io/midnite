@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+/**
+ * Phase 69 Verification — a stub `claude` agent for the Playwright e2e harness.
+ *
+ * The real reply→resume round-trip is fully wired in the gateway, but the e2e
+ * gateway has no real Claude, so nothing ever spawns a live session that can be
+ * driven to `waiting` and resumed. This fake stands in: the gateway spawns it
+ * exactly like a real agent (its argv[0] basename is `claude`, so hook wiring +
+ * the per-session `MIDNITE_*` env are injected — see terminal.service
+ * `applyHookWiring`). It then behaves like an agent that immediately asks a
+ * question and waits for a reply:
+ *
+ *   1. On launch, POST the Notification hook → gateway `markWaiting` (wip→waiting).
+ *   2. Read stdin. Every line the gateway writes (a reply via `sendPrompt`, i.e.
+ *      `POST /sessions/:id/prompt`) fires the UserPromptSubmit hook →
+ *      `resumeFromWaiting` (waiting→wip).
+ *   3. Never exit on its own — a premature exit would trip the runner's onExit
+ *      requeue. It exits only on SIGTERM/SIGINT (gateway kill / harness teardown).
+ *
+ * It POSTs the callbacks directly (echoing the inherited plaintext secret in the
+ * `x-midnite-hook-secret` header) rather than shelling out to the real hook
+ * scripts — same wire contract, fewer moving parts. Dependency-free CJS.
+ */
+'use strict';
+
+const sessionId = process.env.MIDNITE_SESSION_ID;
+const secret = process.env.MIDNITE_HOOK_SECRET;
+const gatewayUrl = process.env.MIDNITE_GATEWAY_URL;
+
+// Not a wired agent session (no hook env) — nothing to drive; idle until killed
+// so we never masquerade as a live session we can't authenticate for.
+if (!sessionId || !secret || !gatewayUrl) {
+  process.stdin.resume();
+} else {
+  const base = gatewayUrl.replace(/\/$/, '');
+  const post = async (event) => {
+    try {
+      await fetch(`${base}/hooks/sessions/${encodeURIComponent(sessionId)}/${event}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-midnite-hook-secret': secret },
+        body: '{}',
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch {
+      // Fire-and-forget, exactly like the real hook scripts.
+    }
+  };
+
+  // Ask a question → park in `waiting`. A small delay lets the gateway finish
+  // binding the session (startTask + spawn) before the first callback lands.
+  setTimeout(() => void post('notification'), 200);
+
+  // Each reply written to our stdin resumes the turn (waiting→wip).
+  let buffered = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => {
+    buffered += chunk;
+    // A submitted reply arrives as `<text>\r` (TerminalService.sendPrompt).
+    if (/[\r\n]/.test(buffered)) {
+      buffered = '';
+      void post('user-prompt-submit');
+    }
+  });
+  process.stdin.resume();
+}
+
+const exit = () => process.exit(0);
+process.on('SIGTERM', exit);
+process.on('SIGINT', exit);
+// Keep the event loop alive even if stdin closes, so the PTY session persists.
+setInterval(() => {}, 1 << 30);
