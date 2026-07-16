@@ -184,4 +184,46 @@ describe('NotificationsService', () => {
     expect(feed[0]!.readAt).toBeNull();
     expect(feed[1]!.readAt).not.toBeNull();
   });
+
+  // Phase 69 B — resume hygiene: a task leaving `waiting` auto-resolves its stale
+  // "needs your input" alerts so the feed doesn't nag about an already-answered agent.
+  describe('resume hygiene (Phase 69 B)', () => {
+    it('marks a task.waiting alert read once the task leaves waiting', async () => {
+      const h = makeHarness();
+      h.taskBus.emit(updated(task('t1', 'waiting')));
+      await settle();
+      expect(h.svc.list({}).unread).toBe(1);
+
+      // Resume (waiting → wip) emits a non-waiting task.updated → hygiene clears it.
+      h.taskBus.emit(updated(task('t1', 'wip')));
+      await settle();
+      expect(h.svc.list({}).unread).toBe(0);
+      expect(h.svc.list({}).notifications[0]!.readAt).not.toBeNull();
+    });
+
+    it('only clears the resumed task — a different waiting task keeps its alert', async () => {
+      const h = makeHarness();
+      h.taskBus.emit(updated(task('t1', 'waiting')));
+      await settle();
+      h.taskBus.emit(updated(task('t2', 'waiting')));
+      await settle();
+      expect(h.svc.list({}).unread).toBe(2);
+
+      h.taskBus.emit(updated(task('t1', 'wip')));
+      await settle();
+      expect(h.svc.list({}).unread).toBe(1);
+    });
+
+    it('does not touch unrelated kinds when a task leaves waiting', async () => {
+      const h = makeHarness();
+      h.taskBus.emit(updated(task('t1', 'done'))); // a task.done alert (unread)
+      await settle();
+      expect(h.svc.list({}).unread).toBe(1);
+
+      // A different task leaving waiting must not clear the done alert.
+      h.taskBus.emit(updated(task('t9', 'wip')));
+      await settle();
+      expect(h.svc.list({}).unread).toBe(1);
+    });
+  });
 });

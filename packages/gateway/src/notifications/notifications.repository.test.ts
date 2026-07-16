@@ -100,4 +100,33 @@ describe('NotificationsRepository — TeamScope', () => {
       expect(repo.countUnread({ userId: 'u', teamId: 'team-1' })).toBe(2); // u-team1 + u-legacy, not u-read
     });
   });
+
+  describe('markReadForEntity (Phase 69 B)', () => {
+    beforeEach(() => {
+      const { db } = createTestDb();
+      repo = new NotificationsRepository(db);
+      // Two unread alerts for task-1: one waiting, one done. Plus a waiting alert
+      // for task-2, and an already-read waiting alert for task-1.
+      repo.insert(note('w1', { kind: 'task.waiting', entityId: 'task-1', readAt: null }));
+      repo.insert(note('d1', { kind: 'task.done', entityId: 'task-1', readAt: null }));
+      repo.insert(note('w2', { kind: 'task.waiting', entityId: 'task-2', readAt: null }));
+      repo.insert(note('wr', { kind: 'task.waiting', entityId: 'task-1', readAt: NOW }));
+    });
+
+    it('marks only the matching entity + kinds read, returning the count changed', () => {
+      const changed = repo.markReadForEntity('task', 'task-1', ['task.waiting'], NOW);
+      expect(changed).toBe(1); // only the unread w1 (wr already read, d1 wrong kind, w2 wrong entity)
+      const byId = Object.fromEntries(repo.list(100, 0).map((n) => [n.id, n.readAt]));
+      expect(byId['w1']).not.toBeNull();
+      expect(byId['d1']).toBeNull(); // untouched — different kind
+      expect(byId['w2']).toBeNull(); // untouched — different entity
+    });
+
+    it('accepts multiple kinds and is a no-op when nothing matches', () => {
+      expect(repo.markReadForEntity('task', 'task-1', ['task.waiting', 'task.needs-attention'], NOW)).toBe(1);
+      expect(repo.markReadForEntity('task', 'task-1', ['task.waiting'], NOW)).toBe(0); // already cleared
+      expect(repo.markReadForEntity('task', 'nope', ['task.waiting'], NOW)).toBe(0);
+      expect(repo.markReadForEntity('task', 'task-1', [], NOW)).toBe(0); // empty kind list
+    });
+  });
 });

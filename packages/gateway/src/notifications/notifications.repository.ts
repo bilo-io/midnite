@@ -54,6 +54,29 @@ export class NotificationsRepository {
     this.db.update(notifications).set({ readAt: at }).where(isNull(notifications.readAt)).run();
   }
 
+  /**
+   * Phase 69 B — mark every still-unread notification for one entity (and one of
+   * the given kinds) read. Used for resume hygiene: once a task leaves `waiting`
+   * its "needs your input" alerts are stale. Returns the number cleared (0 = none
+   * matched), so callers can skip logging on a no-op.
+   */
+  markReadForEntity(entityType: string, entityId: string, kinds: string[], at: string): number {
+    if (kinds.length === 0) return 0;
+    return this.db
+      .update(notifications)
+      .set({ readAt: at })
+      .where(
+        and(
+          eq(notifications.entityType, entityType),
+          eq(notifications.entityId, entityId),
+          inArray(notifications.kind, kinds),
+          isNull(notifications.readAt),
+        ),
+      )
+      .returning({ id: notifications.id })
+      .all().length;
+  }
+
   /** Delete a single notification by id; no-op if it doesn't exist. */
   remove(id: string): void {
     this.db.delete(notifications).where(eq(notifications.id, id)).run();

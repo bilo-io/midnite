@@ -32,16 +32,18 @@ Every status writer enumerated, every edge accounted for: driven, guarded, or de
 
 ---
 
-## Theme B — The resume edge: `UserPromptSubmit` → `waiting → wip` — **M**
+## Theme B — The resume edge: `UserPromptSubmit` → `waiting → wip` — **M** — ✅ DONE (PR #441, 2026-07-16)
 
 The missing driver. Status truth comes from the hook round-trip — no optimistic client flips.
 
-- [ ] `TasksService.resumeFromWaiting(id)`: idempotent no-op unless `status === 'waiting'` (terminal-guarded like `markWaiting`); sets `wip`, clears `waitReason`, inserts an **`agent.resumed`** task event, emits `task.updated`.
-- [ ] New [`terminal/hooks/`](../packages/gateway/src/terminal/hooks/) script `user-prompt-submit-hook.cjs` (fire-and-forget POST with the secret header, mirroring `notification-hook.cjs`); register **`UserPromptSubmit`** under `opts.lifecycle` in `writeHookSettings()`.
-- [ ] `POST /hooks/sessions/:sessionId/user-prompt-submit` on [`LifecycleHookController`](../packages/gateway/src/pool/lifecycle-hook.controller.ts): verify secret, parse a new `UserPromptSubmitHookRequestSchema` (in `shared/src/events/`), then `resumeFromWaiting(sessionId)` + `emitActivity(sessionId, 'running')`.
-- [ ] **Approval-resume fallback:** `ApprovalController.preToolUse` also calls `resumeFromWaiting()` — a permission-wait resumes mid-turn with *no* new prompt, so the tool-use signal is the only one that fires. Idempotence makes the double-wiring safe.
-- [ ] **Notification hygiene:** on resume, auto-resolve stale unread needs-input notifications for the task, and spec that the Phase 53 D waiting-nudge loop stands down once the task is `wip` again.
-- [ ] Specs: controller (bad secret 404, bad payload 400, terminal-status no-op, happy path) + service transition matrix (`waiting→wip` ✓, `wip` no-op, `done`/`abandoned` untouched, `waitReason` cleared, event emitted).
+- [x] `TasksService.resumeFromWaiting(id)`: idempotent no-op unless `status === 'waiting'` (terminal-guarded like `markWaiting`); sets `wip`, clears `waitReason`, inserts an **`agent.resumed`** task event, emits `task.updated`.
+- [x] New [`terminal/hooks/`](../packages/gateway/src/terminal/hooks/) script `user-prompt-submit-hook.cjs` (fire-and-forget POST with the secret header, mirroring `notification-hook.cjs`); register **`UserPromptSubmit`** under `opts.lifecycle` in `writeHookSettings()`.
+- [x] `POST /hooks/sessions/:sessionId/user-prompt-submit` on [`LifecycleHookController`](../packages/gateway/src/pool/lifecycle-hook.controller.ts): verify secret, parse a new `UserPromptSubmitHookRequestSchema` (in `shared/src/events/`), then `resumeFromWaiting(sessionId)` + `emitActivity(sessionId, 'running')`.
+- [x] **Approval-resume fallback:** `ApprovalController.preToolUse` also calls `resumeFromWaiting()` — a permission-wait resumes mid-turn with *no* new prompt, so the tool-use signal is the only one that fires. Idempotence makes the double-wiring safe.
+- [x] **Notification hygiene:** on resume, auto-resolve stale unread needs-input notifications for the task (via a `task.updated`-driven `markReadForEntity` in `NotificationsService`, generalised to every un-wait path), and spec that the Phase 53 D waiting-nudge loop stands down once the task is `wip` again.
+- [x] Specs: controller (bad secret 404, bad payload 400, terminal-status no-op, happy path) + service transition matrix (`waiting→wip` ✓, `wip` no-op, `done`/`abandoned` untouched, `waitReason` cleared, event emitted).
+
+> **Ping-pong debounce (Decision §7 — resolved to *debounce* in review, overriding the doc's "no debounce v1" recommendation):** `agent.resumeDebounceMs` (default 1500) coalesces the `wip ⇄ waiting` oscillation Claude's per-turn Stop hook causes. A Stop-driven wait within the window of a resume is held in `markWaiting`; a follow-up reply cancels it. Only the post-resume `needs-input` path debounces — a first wait flips immediately (behaviour-preserving). Set `0` to disable.
 
 ---
 

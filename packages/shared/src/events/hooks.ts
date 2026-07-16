@@ -34,6 +34,23 @@ export const NotificationHookRequestSchema = z
   .passthrough();
 export type NotificationHookRequest = z.infer<typeof NotificationHookRequestSchema>;
 
+/**
+ * Body posted by the UserPromptSubmit hook (Phase 69 B). Claude Code fires this
+ * when a new prompt is submitted to an active session — the missing resume
+ * signal that drives `waiting → wip`. Kept permissive (`.passthrough()`) like the
+ * other hook bridges; the gateway keys only off the session (via the URL + secret
+ * header), so no field here is required to be trusted.
+ */
+export const UserPromptSubmitHookRequestSchema = z
+  .object({
+    session_id: z.string().optional(),
+    transcript_path: z.string().optional(),
+    cwd: z.string().optional(),
+    prompt: z.string().optional(),
+  })
+  .passthrough();
+export type UserPromptSubmitHookRequest = z.infer<typeof UserPromptSubmitHookRequestSchema>;
+
 /** Fire-and-forget acknowledgement returned to the hook script. */
 export const HookAckSchema = z.object({
   ok: z.boolean(),

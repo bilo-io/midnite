@@ -48,6 +48,12 @@ export class ApprovalController {
     const toolName = parsed.data.tool_name;
     const label = summarizeToolCall(toolName, parsed.data.tool_input);
 
+    // Phase 69 B — approval-resume fallback. A permission-wait resumes mid-turn
+    // with *no* new prompt, so UserPromptSubmit never fires; the tool-use signal
+    // is the only resume trigger. Idempotent (no-op unless a live `needs-input`
+    // wait), so double-wiring with the UserPromptSubmit path is safe.
+    this.tasks.resumeFromWaiting(sessionId);
+
     if (this.approvals.willAutoApprove(sessionId, toolName)) {
       // Fast path — no human needed, just signal the current activity.
       this.tasks.emitActivity(sessionId, 'running', toolName, label);

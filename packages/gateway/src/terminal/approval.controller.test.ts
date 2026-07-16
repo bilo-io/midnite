@@ -16,11 +16,12 @@ function build({ autoApprove = true }: { autoApprove?: boolean } = {}) {
   } as unknown as ApprovalService;
   const emitActivity = vi.fn();
   const emitAttention = vi.fn();
-  const tasks = { emitActivity, emitAttention } as unknown as TasksService;
+  const resumeFromWaiting = vi.fn();
+  const tasks = { emitActivity, emitAttention, resumeFromWaiting } as unknown as TasksService;
   const controller = new ApprovalController(approvals, tasks);
   const req = { raw: { on: vi.fn() } } as unknown as FastifyRequest;
   const validBody = { tool_name: 'Bash', tool_input: { command: 'ls' } };
-  return { controller, requestDecision, emitActivity, emitAttention, req, validBody };
+  return { controller, requestDecision, emitActivity, emitAttention, resumeFromWaiting, req, validBody };
 }
 
 describe('ApprovalController — authenticated hook path', () => {
@@ -72,6 +73,20 @@ describe('ApprovalController — authenticated hook path', () => {
     await controller.preToolUse('s1', 'good', validBody, req);
     expect(emitActivity).toHaveBeenCalledWith('s1', 'running', 'Bash', expect.any(String));
     expect(emitAttention).toHaveBeenCalledWith('s1', 'approval', expect.any(String));
+  });
+
+  // Phase 69 B — approval-resume fallback: a permission-wait resumes mid-turn
+  // with no fresh prompt, so the tool-use signal is the only resume trigger.
+  it('resumes a waiting task on a tool-use signal (approval-resume fallback)', async () => {
+    const { controller, resumeFromWaiting, req, validBody } = build({ autoApprove: true });
+    await controller.preToolUse('s1', 'good', validBody, req);
+    expect(resumeFromWaiting).toHaveBeenCalledWith('s1');
+  });
+
+  it('does not resume when the secret is wrong (guarded before any service call)', async () => {
+    const { controller, resumeFromWaiting, req, validBody } = build();
+    await expect(controller.preToolUse('s1', 'bad', validBody, req)).rejects.toThrow();
+    expect(resumeFromWaiting).not.toHaveBeenCalled();
   });
 
   it('never includes raw tool_input in the emitted label', async () => {
