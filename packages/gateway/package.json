@@ -1,6 +1,6 @@
 {
   "name": "@midnite/gateway",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "midnite gateway — Nest.js daemon (REST + WS) + SQLite store + scheduler + agent pool",
   "main": "dist/main.js",

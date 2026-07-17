@@ -3,7 +3,12 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    // Emit CommonJS: the compiled gateway (module: commonjs) require()s this
+    // package at runtime, and require() of an ESM build throws ERR_REQUIRE_ESM.
+    // CLI (ESM) and web (bundler) consume the CJS build without issue.
+    "module": "commonjs",
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"]

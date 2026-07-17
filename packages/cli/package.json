@@ -1,6 +1,6 @@
 {
   "name": "@midnite/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "midnite CLI client",
   "type": "module",
