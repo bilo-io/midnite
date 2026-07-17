@@ -6,9 +6,10 @@ order: 1
 
 # Getting started
 
-midnite ships as a single desktop download for macOS, Windows, and Linux. Grab the
-build for your platform, open it, and you're running — the app bundles everything
-it needs (the gateway and the UI) and runs entirely on your machine.
+midnite ships as a single desktop download for macOS (Apple Silicon) and Linux,
+with a Windows build on the way. Grab the build for your platform, open it, and
+you're running — the app bundles everything it needs (the gateway and the UI) and
+runs entirely on your machine.
 
 ## Download
 
@@ -21,14 +22,14 @@ Pick the asset for your platform:
 | Platform | File |
 | --- | --- |
 | macOS (Apple Silicon) | `midnite-<version>-arm64.dmg` |
-| macOS (Intel) | `midnite-<version>-x64.dmg` |
-| Windows | `midnite-<version>-x64.exe` |
-| Linux | `midnite-<version>-x64.AppImage` |
+| Linux (x64) | `midnite-<version>-x86_64.AppImage` |
+
+> Windows is coming soon. Intel Macs aren't supported in the current release.
 
 ## Install from the command line
 
 Prefer the terminal? This grabs the latest macOS (Apple Silicon) build and opens
-the installer — swap `arm64` for `x64` on an Intel Mac:
+the installer:
 
 ```bash
 curl -fsSL https://api.github.com/repos/bilo-io/midnite-app/releases/latest \
