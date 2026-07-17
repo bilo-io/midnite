@@ -37,12 +37,10 @@ extraResources:
       - '!**/*.tsbuildinfo'
   - from: build-staging/gateway/drizzle
     to: gateway/drizzle
-  # gateway:build copies the hook .cjs into dist; stage them explicitly too as a
-  # belt-and-suspenders against a bypassed build step.
-  - from: build-staging/gateway/dist/terminal/hooks
-    to: gateway/dist/terminal/hooks
-    filter:
-      - '*.cjs'
+  # NB: the gateway hooks (dist/terminal/hooks/*.cjs) are already copied by the
+  # `dist → gateway/dist` entry above. Do NOT add a second entry for them — a
+  # second copy to the same destination makes electron-builder's hard-link step
+  # fail with EEXIST on CI (it copied fine locally, masking the bug).
   # A flat, symlink-free production node_modules for the gateway, produced by
   # `pnpm deploy` + electron-rebuilt for this arch (see stage-gateway.mjs).
   - from: build-staging/gateway/node_modules
