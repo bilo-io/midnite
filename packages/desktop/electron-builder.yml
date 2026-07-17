@@ -51,6 +51,13 @@ extraResources:
   - from: build-staging/web
     to: web
 
+# The app asar carries no native modules of its own — the gateway's native deps
+# (better-sqlite3, node-pty) are electron-rebuilt in `pnpm run stage` and ride
+# along as extraResources. So skip electron-builder's own @electron/rebuild pass,
+# which otherwise walks pnpm's virtual store (node_modules/.pnpm) and dies on
+# dangling/optional entries like @fastify/forwarded.
+npmRebuild: false
+
 asar: true
 asarUnpack:
   - '**/*.node'

@@ -89,17 +89,16 @@ importers:
         version: 3.2.4(@types/debug@4.1.13)(@types/node@22.19.19)(@vitest/browser@3.2.4)(jiti@1.21.7)(jsdom@29.1.1)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0)
 
   packages/desktop:
-    dependencies:
+    devDependencies:
+      '@electron/rebuild':
+        specifier: ^3.7.0
+        version: 3.7.2
       '@midnite/gateway':
         specifier: workspace:*
         version: link:../gateway
       '@midnite/shared':
         specifier: workspace:*
         version: link:../shared
-    devDependencies:
-      '@electron/rebuild':
-        specifier: ^3.7.0
-        version: 3.7.2
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.19

@@ -14,12 +14,10 @@
     "package:win": "electron-builder --win --config electron-builder.yml",
     "package:linux": "electron-builder --linux --config electron-builder.yml"
   },
-  "dependencies": {
-    "@midnite/gateway": "workspace:*",
-    "@midnite/shared": "workspace:*"
-  },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
+    "@midnite/gateway": "workspace:*",
+    "@midnite/shared": "workspace:*",
     "@types/node": "^22.10.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
