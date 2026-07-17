@@ -157,7 +157,7 @@ export function NavBar() {
           // icon-rail/expanded states stay for tablet and desktop.
           'fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width] duration-200 md:flex',
           expandedView
-            ? 'w-64 items-stretch bg-background/95 px-2 shadow-xl'
+            ? 'w-[17rem] items-stretch bg-background/95 px-2 shadow-xl'
             : 'w-14 items-center bg-background/70 supports-[backdrop-filter]:bg-background/50',
         )}
       >
