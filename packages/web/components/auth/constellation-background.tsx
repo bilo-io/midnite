@@ -20,13 +20,17 @@ import { cn } from '@/lib/utils';
  *
  * Interaction (animated mode only; the canvas itself stays `pointer-events-none`
  * — listeners live on `window`, so the form is never blocked):
- *   - The cursor is a gravity well: nearby neurons are drawn in and swirl into
- *     orbit around it — a soft core repulsion keeps them from ever reaching the
- *     centre (a little black hole), and a home-spring pulls them back when the
- *     cursor moves on.
- *   - A click detonates a shockwave — a radiating ring that shoves neurons
- *     outward — and *excites* the neurons around the point: several long-lived
- *     thought paths radiate away from the click and slowly decay.
+ *   - Passive hover is a *subtle* gravity well: nearby neurons lean in and
+ *     drift into a soft orbit; a core repulsion keeps them from ever reaching
+ *     the centre (a little black hole), and a home-spring pulls them back when
+ *     the cursor moves on.
+ *   - Holding the mouse button *gathers*: the well strengthens, and neurons
+ *     drawn within the capture radius are kept — they detach from their home
+ *     springs and swirl with the cursor as it moves.
+ *   - Releasing detonates the shockwave (an invisible pressure wave — no drawn
+ *     ring) that flings the captured neurons outward, and *excites* thought
+ *     paths radiating from the release point — the more neurons captured, the
+ *     more thoughts fire. They decay slowly.
  *
  * Motion gating lives with the caller (see `useAnimationPrefs`): pass
  * `animate={false}` for the reduced-motion path and the canvas paints **once** —
@@ -72,8 +76,11 @@ type Shockwave = { x: number; y: number; born: number };
 
 // ── Tuning ────────────────────────────────────────────────────────────────────
 const WELL_RADIUS = 280; // px — reach of the cursor gravity well
-const WELL_PULL = 950; // radial attraction (px/s²) at the well's edge falloff
-const WELL_SWIRL = 750; // tangential (orbit) acceleration
+const HOVER_PULL = 320; // subtle passive well: radial attraction (px/s²)
+const HOVER_SWIRL = 260; // …and its tangential (orbit) acceleration
+const HOLD_PULL = 1500; // button-down gathering pull (captured neurons follow)
+const HOLD_SWIRL = 1000; // …and its swirl
+const CAPTURE_RADIUS = 150; // px — neurons this close while held become captured
 const WELL_CORE = 38; // px — hard core: inside this, neurons are pushed out
 const CORE_PUSH = 3200;
 const SPRING = 6; // home spring (s⁻²)
@@ -81,7 +88,7 @@ const DAMPING = 2.4; // velocity damping (s⁻¹)
 const MAX_SPEED = 340; // px/s
 const SW_SPEED = 430; // shockwave front speed (px/s)
 const SW_LIFE = 1.5; // seconds
-const SW_KICK = 2400; // shockwave impulse strength
+const SW_KICK = 1200; // shockwave impulse strength (invisible — pure physics)
 const MAX_PATHWAYS = 24;
 
 /** Deterministic PRNG (mulberry32) so the seeded star field is stable across frames/resizes. */
@@ -191,6 +198,12 @@ export function ConstellationBackground({
     let py: number[] = [];
     let vx: number[] = [];
     let vy: number[] = [];
+    // Cursor state (animated mode wires the listeners; declared here so the
+    // shared draw helpers can read them without TDZ issues on the static path).
+    let mouse: { x: number; y: number } | null = null;
+    let held = false;
+    // Neuron indices currently gathered by the held cursor (kept until release).
+    const capturedSet = new Set<number>();
     // Set by the static path so a resize / theme change repaints the frozen frame
     // (the animated path repaints every RAF tick, so it leaves this null).
     let repaint: (() => void) | null = null;
@@ -205,6 +218,7 @@ export function ConstellationBackground({
       py = [...hy];
       vx = new Array<number>(stars.length).fill(0);
       vy = new Array<number>(stars.length).fill(0);
+      capturedSet.clear(); // indices are re-dealt on reseed
     };
 
     const resize = () => {
@@ -306,8 +320,10 @@ export function ConstellationBackground({
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i]!;
         const twinkle = animate ? 0.6 + 0.4 * Math.sin(t * s.tw + s.ph) : 1;
-        const a = s.a * twinkle;
-        const r = s.r * (s.bright ? 0.9 + 0.2 * twinkle : 1);
+        // Gathered neurons burn brighter while the cursor holds them.
+        const gathered = held && capturedSet.has(i);
+        const a = Math.min(1, s.a * twinkle * (gathered ? 1.8 : 1));
+        const r = s.r * (s.bright ? 0.9 + 0.2 * twinkle : 1) * (gathered ? 1.25 : 1);
         // Gentle idle drift layered over the physics so the cloud never sits still.
         const dxi = animate ? Math.sin(t * 0.31 + s.ph * 2.1) * 1.6 : 0;
         const dyi = animate ? Math.cos(t * 0.24 + s.ph * 1.7) * 1.6 : 0;
@@ -432,9 +448,8 @@ export function ConstellationBackground({
     let nextAmbientAt = 0;
     let shockwaves: Shockwave[] = [];
 
-    // Cursor gravity well + click shockwaves. The canvas stays
+    // Cursor gravity well + press-to-gather. The canvas stays
     // pointer-events-none, so listeners live on window and map into canvas space.
-    let mouse: { x: number; y: number } | null = null;
     const toLocal = (e: PointerEvent): { x: number; y: number } | null => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -442,34 +457,62 @@ export function ConstellationBackground({
       return x >= 0 && y >= 0 && x <= rect.width && y <= rect.height ? { x, y } : null;
     };
     const onMove = (e: PointerEvent) => {
-      mouse = toLocal(e);
+      const at = toLocal(e);
+      // While gathering, keep the last in-bounds position so the swarm doesn't
+      // drop the moment the pointer grazes the canvas edge.
+      if (at) mouse = at;
+      else if (!held) mouse = null;
     };
     const onLeave = () => {
-      mouse = null;
+      if (!held) mouse = null;
     };
     const onDown = (e: PointerEvent) => {
       const at = toLocal(e);
       if (!at) return;
+      mouse = at;
+      held = true;
+    };
+    // Release: fling the gathered neurons outward (the shockwave — pure
+    // physics, no drawn ring) and fire thought paths from the release point;
+    // the bigger the catch, the more thoughts.
+    const onUp = () => {
+      if (!held) return;
+      held = false;
+      const at = mouse;
+      const seeds = [...capturedSet];
+      capturedSet.clear();
+      if (!at) return;
       const t = now();
       shockwaves.push({ x: at.x, y: at.y, born: t });
-      // Excite the neurons around the click: thought paths radiating outward,
-      // long-lived with a slow decay.
-      const bursts = 3 + Math.floor(Math.random() * 3);
-      const byDist = stars
-        .map((_, i) => i)
-        .sort((a, b) => {
-          const da = (px[a]! - at.x) ** 2 + (py[a]! - at.y) ** 2;
-          const db = (px[b]! - at.x) ** 2 + (py[b]! - at.y) ** 2;
-          return da - db;
-        })
-        .slice(0, bursts * 3);
-      for (let k = 0; k < bursts; k++) {
-        const start = byDist[k * 3]!;
+      for (const i of seeds) {
+        const ox = px[i]! - at.x;
+        const oy = py[i]! - at.y;
+        const d = Math.hypot(ox, oy) || 1;
+        const kick = 300 + Math.random() * 240;
+        vx[i] = vx[i]! + (ox / d) * kick;
+        vy[i] = vy[i]! + (oy / d) * kick;
+      }
+      // Path count scales with the catch (a bare click still sparks a couple).
+      const nPaths = Math.min(10, Math.max(2, Math.round(seeds.length / 12)));
+      // Seed from the captured swarm when there is one, else the nearest stars.
+      const starts =
+        seeds.length > 0
+          ? seeds
+          : stars
+              .map((_, i) => i)
+              .sort((a, b) => {
+                const da = (px[a]! - at.x) ** 2 + (py[a]! - at.y) ** 2;
+                const db = (px[b]! - at.x) ** 2 + (py[b]! - at.y) ** 2;
+                return da - db;
+              })
+              .slice(0, nPaths * 3);
+      for (let k = 0; k < nPaths; k++) {
+        const start = starts[Math.floor((k / nPaths) * starts.length)]!;
         let ox = px[start]! - at.x;
         let oy = py[start]! - at.y;
         const d = Math.hypot(ox, oy);
         if (d < 1) {
-          const ang = (k / bursts) * TAU;
+          const ang = (k / nPaths) * TAU;
           ox = Math.cos(ang);
           oy = Math.sin(ang);
         } else {
@@ -489,27 +532,48 @@ export function ConstellationBackground({
     };
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerdown', onDown, { passive: true });
+    window.addEventListener('pointerup', onUp, { passive: true });
     window.addEventListener('pointerout', onLeave, { passive: true });
 
     const step = (t: number, dt: number) => {
       for (let i = 0; i < stars.length; i++) {
-        let ax = (hx[i]! - px[i]!) * SPRING;
-        let ay = (hy[i]! - py[i]!) * SPRING;
+        const gathered = held && mouse != null && capturedSet.has(i);
+        // Captured neurons detach from their home spring — they belong to the
+        // cursor until release.
+        let ax = gathered ? 0 : (hx[i]! - px[i]!) * SPRING;
+        let ay = gathered ? 0 : (hy[i]! - py[i]!) * SPRING;
 
         if (mouse) {
           const mx = mouse.x - px[i]!;
           const my = mouse.y - py[i]!;
           const d = Math.hypot(mx, my);
-          if (d < WELL_RADIUS && d > 0.5) {
+          if (gathered && d > 0.5) {
+            // Follow the cursor from any distance; the core keeps the swarm a
+            // swirling ball rather than a point.
+            const ux = mx / d;
+            const uy = my / d;
+            ax += ux * HOLD_PULL;
+            ay += uy * HOLD_PULL;
+            ax += -uy * HOLD_SWIRL;
+            ay += ux * HOLD_SWIRL;
+            if (d < WELL_CORE) {
+              const push = CORE_PUSH * (1 - d / WELL_CORE);
+              ax -= ux * push;
+              ay -= uy * push;
+            }
+          } else if (d < WELL_RADIUS && d > 0.5) {
             const q = 1 - d / WELL_RADIUS;
             const f = q * q;
             const ux = mx / d;
             const uy = my / d;
-            // Pull inward + swirl sideways → orbits, not head-on capture.
-            ax += ux * WELL_PULL * f;
-            ay += uy * WELL_PULL * f;
-            ax += -uy * WELL_SWIRL * f;
-            ay += ux * WELL_SWIRL * f;
+            // Passive hover leans in gently; holding the button gathers hard.
+            const pull = held ? HOLD_PULL : HOVER_PULL;
+            const swirl = held ? HOLD_SWIRL : HOVER_SWIRL;
+            ax += ux * pull * f;
+            ay += uy * pull * f;
+            ax += -uy * swirl * f;
+            ay += ux * swirl * f;
+            if (held && d < CAPTURE_RADIUS) capturedSet.add(i);
             if (d < WELL_CORE) {
               // Event horizon: nothing reaches the cursor itself.
               const push = CORE_PUSH * (1 - d / WELL_CORE);
@@ -547,20 +611,6 @@ export function ConstellationBackground({
       }
     };
 
-    const drawShockwaves = (t: number) => {
-      shockwaves = shockwaves.filter((sw) => t - sw.born < SW_LIFE);
-      for (const sw of shockwaves) {
-        const age = t - sw.born;
-        const front = age * SW_SPEED;
-        const fade = 1 - age / SW_LIFE;
-        ctx.beginPath();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = `hsl(${starColor} / ${(0.3 * fade).toFixed(3)})`;
-        ctx.arc(sw.x, sw.y, front, 0, TAU);
-        ctx.stroke();
-      }
-    };
-
     let last = performance.now();
     let raf = 0;
     const loop = () => {
@@ -574,9 +624,10 @@ export function ConstellationBackground({
       last = performance.now();
 
       step(t, dt);
+      // The wave itself is invisible — only its push on the neurons shows.
+      shockwaves = shockwaves.filter((sw) => t - sw.born < SW_LIFE);
       ctx.clearRect(0, 0, w, h);
       drawStars(t);
-      drawShockwaves(t);
       pathways = pathways.filter((p) => drawPathway(p, t));
       // Keep a few ambient firings alive on a gentle stagger.
       const ambient = pathways.reduce((n, p) => n + (p.click ? 0 : 1), 0);
@@ -591,6 +642,7 @@ export function ConstellationBackground({
       cancelAnimationFrame(raf);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointerout', onLeave);
       ro.disconnect();
       mo.disconnect();

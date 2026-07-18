@@ -146,7 +146,9 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
   return (
     <div
       ref={heroRef}
-      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-14 xl:px-20"
+      // select-none: press-and-drag is a neuro-cloud gesture (gather/release) —
+      // without it, dragging across the marketing copy selects text.
+      className="relative flex h-full w-full select-none flex-col justify-center overflow-hidden px-14 xl:px-20"
       style={{
         // Theme-aware, neutral wash (no blue cast) — a soft radial from the muted
         // surface to the page background, so the hero follows light/dark like the
