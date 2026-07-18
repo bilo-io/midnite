@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 26/34 | `████████░░` | 76% | G H | — |
+| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 30/34 | `█████████░` | 88% | H | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -132,7 +132,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Web apply: skipWaiting → controllerchange → force reload on click; hard-reload fallback (pulled forward so C is functional) (PR #455)
 - ✅ **E** — Electron auto-update + code-signing: `electron-updater` publish block + feed, `checkForUpdates`→`downloadUpdate`→`quitAndInstall`, preload `window.midnite.updates` bridge, progress→restart states, env-gated notarization/signing (user-timed, never auto-nag) (PR #457)
 - ✅ **F** — Release notes on the version: banner version → CHANGELOG-section popover (raw-fetch + parse, fail-soft) + "Full changelog" (new docs `/changelog` page, deep-linked `?v=`) + "Release page" links; one-shot `vX available` echo toast (PR #458)
-- ◻ **G** — Release-flow wiring: emit `packages/web/public/version.json` on every tag via `/release-complete` + a moon task, `version-check` guard against a stale manifest
+- ✅ **G** — Release-flow wiring: `emit-version-manifest` writes `packages/web/public/version.json` (single writer) in the `chore(release)` commit via `/release-complete` + a moon task; `version-check` guards the manifest tracks the web version (PR #460)
 - ◻ **H** — Channels, force-update floor & CLI notice: stable/beta channel (Phase 43 pref), non-dismissable banner below `minSupported`, `midnite` startup out-of-date notice (fail-soft, `--json`-aware)
 
 ### [Phase 70 — Google & GitHub SSO](phase-70-google-github-sso.md)

@@ -76,14 +76,14 @@ The version is a link, not just a label — clicking it tells you *what's* new.
 - [x] Docs `/changelog` page ([`changelog-page.tsx`](../packages/docs/src/components/changelog-page.tsx)) renders the repo CHANGELOG (imported `?raw`) under Guides and scrolls to the `?v=` version (HashRouter-safe heading-text match).
 - [x] Tests: `release-notes` parse/fetch, popover (open → notes, links, fail-soft, Escape), `shouldEchoUpdate` matrix, docs changelog page (render + `?v=` scroll/focus).
 
-## Theme G — Release-flow wiring: emit `version.json` on tag — **M**
+## Theme G — Release-flow wiring: emit `version.json` on tag — **M** — ✅ DONE (PR #460, 2026-07-18)
 
 Make "bumps on every tag" real end-to-end — the release flow is the single writer.
 
-- [ ] A build/release step writes [`packages/web/public/version.json`](../packages/web/public/version.json) (served at web-origin `/version.json`) conforming to `VersionManifestSchema`, stamped with the released version + channel + `minSupported` + `notesUrl`. Also emit/copy the manifest into the Electron resource so desktop has a bundled baseline.
-- [ ] Wire it into the [`/release-complete`](../.claude/skills/release-complete) skill (and/or a `moon` task) so cutting a tag updates the manifest atomically with the version bump — not a manual step. Update [`docs/RELEASING.md`](../docs/RELEASING.md) to document the manifest as part of the release contract.
-- [ ] Guard: `root:version-check` (or a sibling) asserts `version.json` matches the `package.json` version so a tag can't ship a stale manifest.
-- [ ] Tests: the emit step produces a schema-valid manifest matching the bumped version; the version-check guard fails on a mismatch.
+- [x] `scripts/emit-version-manifest.mjs` writes [`packages/web/public/version.json`](../packages/web/public/version.json) (served at web-origin `/version.json`) conforming to `VersionManifestSchema`, from the **web** package version (matches `NEXT_PUBLIC_APP_VERSION`) + channel=`stable` + `releasedAt` + `notesUrl` (public release page). `minSupported` left for Theme H; no Electron copy (desktop uses the electron-updater feed). A `moon run root:emit-version-manifest` task runs it.
+- [x] Wired into [`/release-complete`](../.claude/skills/release-complete) §3 so the emit lands in the `chore(release)` commit — atomic with the version bump. [`docs/RELEASING.md`](../docs/RELEASING.md) documents the manifest as part of the release contract.
+- [x] Guard: `scripts/version-check.mjs` (the `moon ci` `root:version-check` task) now asserts `version.json`'s `version` equals the web package version + is well-formed — a stale manifest fails CI.
+- [x] Tests (shared): `buildManifest` output satisfies `VersionManifestSchema` + field derivation; `checkManifestFreshness` passes on match, fails on stale/malformed/bad-channel/non-object (both scripts' pure helpers imported test-only via a `main()` guard).
 
 ## Theme H — Channels, force-update floor & CLI notice — **M**
 

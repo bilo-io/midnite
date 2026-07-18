@@ -25,16 +25,32 @@ tasks:
       cache: false
 
   # version-check: assert the lockstep invariant (every package.json shares one
-  # MAJOR.MINOR). Pure static check — no build deps, no network — so it runs in
-  # `moon ci` (runInCI defaults true) right alongside typecheck/test/build/lint.
+  # MAJOR.MINOR) AND that packages/web/public/version.json tracks the web version
+  # (Phase 71 Theme G). Pure static check — no build deps, no network — so it runs
+  # in `moon ci` (runInCI defaults true) right alongside typecheck/test/build/lint.
   version-check:
     command: 'node scripts/version-check.mjs'
     inputs:
       - 'scripts/version-check.mjs'
       - 'package.json'
       - 'packages/*/package.json'
+      - 'packages/web/public/version.json'
     options:
       runInCI: true
+
+  # emit-version-manifest: write packages/web/public/version.json from the web
+  # package version (Phase 71 Theme G). The RELEASE flow is the single writer —
+  # `/release-complete` runs this in the `chore(release)` commit so the manifest
+  # bumps atomically with the version. NOT a CI check (it mutates a file); the
+  # version-check guard above enforces freshness in CI.
+  emit-version-manifest:
+    command: 'node scripts/emit-version-manifest.mjs'
+    inputs:
+      - 'scripts/emit-version-manifest.mjs'
+      - 'packages/web/package.json'
+    options:
+      runInCI: false
+      cache: false
 
   clean:
     command: 'echo "Build outputs cleaned."'

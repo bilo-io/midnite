@@ -114,8 +114,10 @@ so the asset filenames line up.
    `root:version-check` + `moon ci` green, the `## [X.Y.Z]` changelog section
    present and dated.
 2. Finalise — re-run `planVersionBump` to confirm the bumps are applied lockstep;
-   move `## [Unreleased]` → the dated `## [X.Y.Z] - YYYY-MM-DD` section.
-3. Commit + tag — `chore(release): vX.Y.Z`, then the tag(s) per the scheme above.
+   move `## [Unreleased]` → the dated `## [X.Y.Z] - YYYY-MM-DD` section; run
+   `moon run root:emit-version-manifest` to refresh the version manifest (below).
+3. Commit + tag — `chore(release): vX.Y.Z` (including `packages/web/public/version.json`),
+   then the tag(s) per the scheme above.
 4. Publish — push the branch + tags and merge the release PR to `main`. Pushing the
    `v*` tag is what publishes the public GitHub Release (installers + notes) to
    `bilo-io/midnite-app` via `release.yml`; `/release-complete` then overwrites that
@@ -124,6 +126,30 @@ so the asset filenames line up.
    in this private repo.
 5. Confirm — print the released version, the tag, the release URL, and re-seed the
    next `## [Unreleased]` stub.
+
+### The version manifest (`version.json`) — Phase 71 Theme G
+
+`packages/web/public/version.json` (served at the web origin's `/version.json`) is
+the runtime **"latest version" manifest** a running client polls to show the
+"update available" banner. It conforms to `VersionManifestSchema`
+([`packages/shared/src/update.ts`](../packages/shared/src/update.ts)):
+`{ version, channel, releasedAt?, notesUrl?, minSupported? }`.
+
+- **The release flow is the single writer.** `scripts/emit-version-manifest.mjs`
+  (run via `moon run root:emit-version-manifest`) writes it from the **web**
+  package's version — that's what the web build inlines as `NEXT_PUBLIC_APP_VERSION`
+  and the client compares against. `/release-complete` runs it in the
+  `chore(release)` commit so the manifest bumps atomically with the version. Never
+  hand-edit it.
+- **`version-check` guards freshness.** `scripts/version-check.mjs` (the CI
+  `root:version-check` task) asserts `version.json`'s `version` equals the web
+  package version and that it's well-formed — so a release that forgets to
+  re-emit the manifest fails CI instead of shipping a client that polls a version
+  that never lands.
+- `channel` defaults to `stable`; `notesUrl` points at the public release page
+  (`bilo-io/midnite-app/releases/tag/vX.Y.Z`); `minSupported` (the force-update
+  floor) is set by hand only for a hard cutover. Desktop uses the `electron-updater`
+  feed (not this file) for detection, so no bundled desktop copy is emitted.
 
 ## Out of scope
 
