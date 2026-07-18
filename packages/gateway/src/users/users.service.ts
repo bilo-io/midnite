@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import type { LoginProvider, SsoIdentity, User } from '@midnite/shared';
+import type { LoginProvider, MidniteConfig, SsoIdentity, User } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
 import { UserIdentitiesRepository } from '../auth/user-identities.repository';
+import { MIDNITE_CONFIG } from '../config.token';
 import type { UserRow } from '../db/schema';
 import { TeamsService } from '../teams/teams.service';
 import { UsersRepository } from './users.repository';
@@ -91,9 +92,24 @@ export class SsoSignupClosedError extends Error {
   }
 }
 
+/**
+ * Thrown when an email is not on the configured access allowlist
+ * (`gateway.auth.allowlist`). Gates password login, registration, and SSO
+ * provisioning alike (Phase 71) so a locked-down deployment admits only known
+ * addresses. Only fires when the allowlist is non-empty.
+ */
+export class EmailNotAllowlistedError extends Error {
+  constructor(email: string) {
+    super(`${email} is not permitted to access this instance`);
+    this.name = 'EmailNotAllowlistedError';
+  }
+}
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
+  /** Lower-cased access allowlist; empty ⇒ no restriction (Phase 71). */
+  private readonly allowlist: ReadonlySet<string>;
 
   constructor(
     private readonly repo: UsersRepository,
@@ -104,10 +120,27 @@ export class UsersService {
     // so pre-SSO unit tests that `new UsersService(repo)` still construct. The SSO
     // methods guard on its presence.
     @Optional() private readonly identities?: UserIdentitiesRepository,
-  ) {}
+    // Phase 71 — access allowlist source. Optional so unit tests that construct
+    // the service by hand (no config) impose no restriction.
+    @Optional() @Inject(MIDNITE_CONFIG) config?: MidniteConfig,
+  ) {
+    this.allowlist = new Set(
+      (config?.gateway.auth.allowlist ?? []).map((e) => e.toLowerCase()),
+    );
+  }
+
+  /**
+   * Refuse an email that isn't on a non-empty allowlist. A no-op when the
+   * allowlist is empty (the default), so open deployments are unaffected.
+   */
+  private assertAllowlisted(email: string): void {
+    if (this.allowlist.size === 0) return;
+    if (!this.allowlist.has(email.toLowerCase())) throw new EmailNotAllowlistedError(email);
+  }
 
   async register(email: string, name: string, password: string): Promise<User> {
     const normalizedEmail = email.toLowerCase();
+    this.assertAllowlisted(normalizedEmail);
     const existing = this.repo.findByEmail(normalizedEmail);
     if (existing) throw new UserAlreadyExistsError(email);
 
@@ -154,6 +187,7 @@ export class UsersService {
   }
 
   async validateCredentials(email: string, password: string): Promise<User> {
+    this.assertAllowlisted(email);
     const row = this.repo.findByEmail(email.toLowerCase());
     if (!row) throw new InvalidCredentialsError();
     // A pure-SSO user has no password hash: reject with a distinct, helpful error
@@ -176,6 +210,9 @@ export class UsersService {
    */
   async findOrCreateFromSso(profile: SsoProfile, opts: { signupOpen: boolean }): Promise<User> {
     if (!this.identities) throw new Error('UserIdentitiesRepository is not wired');
+    // Allowlist gates SSO too — a permitted provider identity is still refused if
+    // its email isn't allowed (checked before any find/link/provision).
+    this.assertAllowlisted(profile.email);
 
     // (1) Known identity → its user.
     const linked = this.identities.findByProviderIdentity(profile.provider, profile.providerUserId);

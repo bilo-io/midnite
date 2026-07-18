@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { UserIdentitiesRepository } from '../auth/user-identities.repository';
 import * as schema from '../db/schema';
 import { UsersRepository } from './users.repository';
+import type { MidniteConfig } from '@midnite/shared';
 import {
+  EmailNotAllowlistedError,
   InvalidCredentialsError,
   PasswordLoginUnavailableError,
   SsoEmailConflictError,
@@ -17,13 +19,17 @@ import {
   UsersService,
 } from './users.service';
 
-function makeService(): UsersService {
+function makeService(allowlist?: string[]): UsersService {
   const sqlite = new Database(':memory:');
   const db = drizzle(sqlite, { schema });
   migrate(db, { migrationsFolder: resolve(__dirname, '../../drizzle') });
   const repo = new UsersRepository(db);
   const identities = new UserIdentitiesRepository(db);
-  return new UsersService(repo, undefined, undefined, identities);
+  // Only the allowlist is read from config; a minimal cast keeps the test terse.
+  const config = allowlist
+    ? ({ gateway: { auth: { allowlist } } } as unknown as MidniteConfig)
+    : undefined;
+  return new UsersService(repo, undefined, undefined, identities, config);
 }
 
 const googleProfile = (over: Partial<SsoProfile> = {}): SsoProfile => ({
@@ -195,6 +201,45 @@ describe('UsersService', () => {
         { provider: 'google', email: 'sso@example.com' },
         { provider: 'github', email: 'sso@example.com' },
       ]);
+    });
+  });
+
+  describe('access allowlist', () => {
+    it('permits an allowlisted email (case-insensitive) to register + log in', async () => {
+      const gated = makeService(['Allowed@Example.com']);
+      const user = await gated.register('allowed@example.com', 'Al', 'Password123!');
+      expect(user.email).toBe('allowed@example.com');
+      const back = await gated.validateCredentials('ALLOWED@example.com', 'Password123!');
+      expect(back.id).toBe(user.id);
+    });
+
+    it('refuses registration for an email not on the allowlist', async () => {
+      const gated = makeService(['allowed@example.com']);
+      await expect(gated.register('intruder@example.com', 'No', 'Password123!')).rejects.toThrow(
+        EmailNotAllowlistedError,
+      );
+    });
+
+    it('refuses password login for a non-allowlisted email', async () => {
+      const gated = makeService(['allowed@example.com']);
+      await expect(gated.validateCredentials('intruder@example.com', 'x')).rejects.toThrow(
+        EmailNotAllowlistedError,
+      );
+    });
+
+    it('refuses SSO provisioning for a non-allowlisted email', async () => {
+      const gated = makeService(['allowed@example.com']);
+      await expect(
+        gated.findOrCreateFromSso(googleProfile({ email: 'intruder@example.com' }), {
+          signupOpen: true,
+        }),
+      ).rejects.toThrow(EmailNotAllowlistedError);
+    });
+
+    it('imposes no restriction when the allowlist is empty', async () => {
+      const open = makeService([]);
+      const user = await open.register('anyone@example.com', 'Any', 'Password123!');
+      expect(user.email).toBe('anyone@example.com');
     });
   });
 });

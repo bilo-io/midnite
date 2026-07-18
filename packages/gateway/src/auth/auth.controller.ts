@@ -12,6 +12,7 @@ import {
   UserAlreadyExistsError,
   InvalidCredentialsError,
   PasswordLoginUnavailableError,
+  EmailNotAllowlistedError,
 } from '../users/users.service';
 import { TeamsService } from '../teams/teams.service';
 import { JwtService, RefreshTokenRevokedError, TokenInvalidError } from './jwt.service';
@@ -47,6 +48,7 @@ export class AuthController {
       const refreshToken = this.jwtSvc.issueRefreshToken(user.id);
       return AuthResponseSchema.parse({ accessToken, refreshToken, user });
     } catch (err) {
+      if (err instanceof EmailNotAllowlistedError) throw new ForbiddenException(err.message);
       if (err instanceof UserAlreadyExistsError) throw new BadRequestException(err.message);
       throw err;
     }
@@ -71,6 +73,9 @@ export class AuthController {
       // A pure-SSO account tried to password-login: 403 with a provider hint,
       // distinct from the generic 401 for a bad password (Phase 70 B).
       if (err instanceof PasswordLoginUnavailableError) throw new ForbiddenException(err.message);
+      // Email not on the access allowlist (Phase 71) → 403, distinct from a bad
+      // password (401).
+      if (err instanceof EmailNotAllowlistedError) throw new ForbiddenException(err.message);
       if (err instanceof InvalidCredentialsError) throw new UnauthorizedException(err.message);
       throw err;
     }

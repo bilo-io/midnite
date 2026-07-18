@@ -12,7 +12,10 @@
   },
   "repos": [],
   "gateway": {
-    "port": 7777
+    "port": 7777,
+    "auth": {
+      "allowlist": ["bilo.lwabona@gmail.com", "bilo.lwabona@ekko.earth"]
+    }
   },
   "workflows": {
     "allowLoopbackHttp": true

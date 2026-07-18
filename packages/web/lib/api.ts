@@ -2690,6 +2690,7 @@ export const SSO_ERROR_MESSAGES: Record<string, string> = {
   provider_unavailable: 'That sign-in provider is not available right now.',
   provider_error: "We couldn't complete sign-in with that provider. Please try again.",
   signup_closed: 'Sign-ups are closed on this instance — ask an admin for an invite.',
+  not_allowed: 'This account is not permitted to access this instance.',
   email_conflict: 'An account with that email already exists — sign in with your password.',
   missing_code: 'The sign-in link was incomplete. Please try again.',
   exchange_failed: "We couldn't complete sign-in. Please try again.",

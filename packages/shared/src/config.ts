@@ -249,6 +249,12 @@ export const GatewayAuthConfigSchema = z.object({
   // configured provider whose `clientSecretEnv` is unset fails the boot preflight.
   // SSO issues our JWTs, so it also needs `jwt.secretEnv` resolved to work.
   sso: GatewaySsoConfigSchema.optional(),
+  // Email allowlist (Phase 71). When **non-empty**, only these addresses may log
+  // in, register, or provision via SSO — everyone else is refused (403). Empty
+  // (the default) imposes no restriction, so local / open deployments are
+  // unaffected. Compared case-insensitively. Only meaningful when JWT auth is on
+  // (a JWT-disabled local gateway has no login to gate).
+  allowlist: z.array(z.string().email()).default([]),
 });
 
 export const GatewayConfigSchema = z.object({
