@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Moon, Sun } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { AuthHero } from '@/components/auth/auth-hero';
+import { ConstellationBackground } from '@/components/auth/constellation-background';
 import { introAtLeast, useAuthIntro } from '@/components/auth/use-auth-intro';
 import { Wordmark } from '@/components/wordmark';
 import { Button } from '@/components/ui/button';
@@ -13,41 +14,80 @@ import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { cn } from '@/lib/utils';
 
 /**
- * Split-screen auth shell (login / register / invite): the form lives in a left
- * column, the living neuro-cloud hero fills the right two-thirds on desktop.
- * On desktop the logo + wordmark sit above the hero title (2× size); below `lg`
- * (no hero) a compact logo + wordmark sits atop the form so branding never
- * disappears. A theme toggle floats in the top-right corner of the screen.
+ * Split-screen auth shell (login / register / invite): the neuro-cloud starfield
+ * fills the *entire* viewport behind everything, the form floats over it in a
+ * frosted-glass panel on the left, and the hero text (logo + wordmark + cycling
+ * marketing line) sits on the right two-thirds on desktop. Below `lg` (no hero)
+ * a compact logo + wordmark sits atop the form so branding never disappears. A
+ * theme toggle floats in the top-right corner of the screen.
  *
- * The hero is gated on `useIsDesktop()` (not just a `hidden lg:block` class) so
- * its canvas + RAF loop never mount below `lg` — the animation never ships to
- * phones/tablets, which see the form full-width. `useIsDesktop` is `false` on the
- * server and first paint, so the form is always usable while the hero settles in.
+ * The starfield is gated on `useIsDesktop()` (not just a `hidden lg:block` class)
+ * so its canvas + RAF loop never mount below `lg` — the animation never ships to
+ * phones/tablets, which see the form on a plain background. `useIsDesktop` is
+ * `false` on the server and first paint, so the form is always usable while the
+ * backdrop settles in.
  *
- * Entry choreography (`useAuthIntro`): once per session the hero plays its
- * logo → caret → wordmark → glide intro, and the form column stays hidden
- * (inert, so nothing invisible is tabbable) until the final beat, when it
- * cascades in (`.auth-form-cascade` — grandchild blocks stagger, the heading
- * dropping from above and the rest rising from below). Skipped intros land on
- * 'done' at mount + one tick, so the cascade doubles as the ordinary page-load
- * reveal.
+ * Entry choreography (`useAuthIntro`): once per session the starfield fades in,
+ * the hero plays its logo → caret → wordmark → glide intro, and the form column
+ * stays hidden (inert, so nothing invisible is tabbable) until the final beat,
+ * when it cascades in (`.auth-form-cascade` — grandchild blocks stagger, the
+ * heading dropping from above and the rest rising from below). Skipped intros
+ * land on 'done' at mount + one tick, so the cascade doubles as the ordinary
+ * page-load reveal.
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
   const isDesktop = useIsDesktop();
   const { animate } = useAnimationPrefs();
   const intro = useAuthIntro(animate);
   const formShown = introAtLeast(intro, 'done');
+  // The starfield (and its wash) fade in on the intro's first beat.
+  const backdropShown = introAtLeast(intro, 'starfield');
 
   return (
-    <div className="relative flex min-h-screen bg-background">
-      {/* Theme toggle — top-right corner of the whole screen (over the hero). */}
+    <div className="relative flex min-h-screen overflow-hidden bg-background">
+      {/* Full-viewport neuro-cloud backdrop (desktop only): a soft radial wash for
+          depth, then the starfield canvas over it. Both fade in on the first
+          intro beat; the form + hero float above at z-10. */}
+      {isDesktop && (
+        <>
+          <div
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute inset-0 z-0 transition-opacity duration-1000',
+              backdropShown ? 'opacity-100' : 'opacity-0',
+            )}
+            style={{
+              // Neutral wash (no blue cast) so the field follows light/dark and
+              // the `--foreground` stars read in both themes.
+              background:
+                'radial-gradient(ellipse 110% 90% at 64% 40%, hsl(var(--muted)) 0%, hsl(var(--background)) 60%, hsl(var(--background)) 100%)',
+            }}
+          />
+          <ConstellationBackground
+            animate={animate}
+            className={cn(
+              'z-0 transition-opacity duration-1000',
+              backdropShown ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+        </>
+      )}
+
+      {/* Theme toggle — top-right corner of the whole screen (over everything). */}
       <div className="absolute right-4 top-4 z-20">
         <AuthThemeToggle />
       </div>
 
-      <div className="flex w-full flex-col items-center justify-center px-4 py-10 lg:w-1/3">
+      <div className="relative z-10 flex w-full flex-col items-center justify-center px-4 py-10 lg:w-1/3">
         <div
-          className={cn('w-full max-w-sm', formShown ? 'auth-form-cascade' : 'opacity-0')}
+          className={cn(
+            'w-full max-w-sm',
+            // Frosted-glass panel over the starfield (desktop): ~50% transparent
+            // with a fair blur radius, a hairline border and soft shadow. Mobile
+            // has no starfield, so it stays a plain (transparent) block.
+            'lg:rounded-2xl lg:border lg:border-border/40 lg:bg-background/50 lg:p-8 lg:shadow-2xl lg:backdrop-blur-2xl',
+            formShown ? 'auth-form-cascade' : 'opacity-0',
+          )}
           inert={!formShown}
         >
           {/* Compact branding for small screens only — desktop shows it in the hero. */}
@@ -67,7 +107,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       </div>
 
       {isDesktop && (
-        <div className="relative hidden lg:block lg:w-2/3">
+        <div className="relative z-10 hidden lg:block lg:w-2/3">
           <AuthHero intro={intro} />
         </div>
       )}

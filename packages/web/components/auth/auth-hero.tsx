@@ -4,28 +4,27 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useTypewriter } from '@/lib/use-typewriter';
-import { ConstellationBackground } from '@/components/auth/constellation-background';
 import { introAtLeast, type AuthIntroStage } from '@/components/auth/use-auth-intro';
 import { Wordmark } from '@/components/wordmark';
 import { cn } from '@/lib/utils';
 
 /**
  * Right two-thirds of the split-screen auth hero (desktop-only — the layout gates
- * it below `lg`). A theme-aware panel with the living neuro-cloud starfield
- * behind a 2×-size logo + wordmark and a cycling marketing line: the title is
- * *typed out* — the primary gradient woven across the glyphs with a soft glow
- * (`.auth-hero-title`, echoing the screensaver) plus a blinking cursor — and once
- * the title finishes typing the subtitle fades in beneath it. A fresh line swaps
- * in every 7–10s. Reduced motion (Motion setting or OS) freezes on one line —
- * full copy shown at once, no typing, no cycle, no cursor blink — and the
- * starfield paints a static frame.
+ * it below `lg`). Text-only now: a 2×-size logo + wordmark over a cycling
+ * marketing line, floating on the shared full-viewport neuro-cloud starfield the
+ * layout paints behind everything. The title is *typed out* — the primary
+ * gradient woven across the glyphs with a soft glow (`.auth-hero-title`, echoing
+ * the screensaver) plus a blinking cursor — and once the title finishes typing
+ * the subtitle fades in beneath it. A fresh line swaps in every 7–10s. Reduced
+ * motion (Motion setting or OS) freezes on one line — full copy shown at once,
+ * no typing, no cycle, no cursor blink.
  *
  * `intro` (see `useAuthIntro`) drives the once-per-session entry choreography:
- * the starfield fades in, the logo fades in at the hero's centre, a caret blinks
- * beside it, the wordmark types out, then the pair glides (FLIP-style — measured
- * once, transform-only) to its resting spot, at which point the title starts
- * typing. Standalone mounts (stories/tests) default to 'done': everything shown,
- * no choreography.
+ * once the starfield has faded in (layer owned by the layout), the logo fades in
+ * at the hero's centre, a caret blinks beside it, the wordmark types out, then
+ * the pair glides (FLIP-style — measured once, transform-only) to its resting
+ * spot, at which point the title starts typing. Standalone mounts (stories/tests)
+ * default to 'done': everything shown, no choreography.
  */
 
 export type AuthHeroCopy = { title: string; subtitle: string };
@@ -146,23 +145,12 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
   return (
     <div
       ref={heroRef}
-      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-14 xl:px-20"
-      style={{
-        // Theme-aware, neutral wash (no blue cast) — a soft radial from the muted
-        // surface to the page background, so the hero follows light/dark like the
-        // rest of the app and the `--foreground` starfield reads in both.
-        background:
-          'radial-gradient(ellipse 120% 90% at 64% 38%, hsl(var(--muted)) 0%, hsl(var(--background)) 58%, hsl(var(--background)) 100%)',
-      }}
+      // select-none: press-and-drag is a neuro-cloud gesture (gather/release) —
+      // without it, dragging across the marketing copy selects text. The
+      // starfield is a full-viewport layer owned by the layout; the hero is
+      // just the text floating over it (transparent, no own background).
+      className="relative flex h-full w-full select-none flex-col justify-center overflow-hidden px-14 xl:px-20"
     >
-      <ConstellationBackground
-        animate={animate}
-        className={cn(
-          'transition-opacity duration-1000',
-          introAtLeast(intro, 'starfield') ? 'opacity-100' : 'opacity-0',
-        )}
-      />
-
       <div className="relative z-10 max-w-xl">
         {/* Logo + wordmark, 2× the form's compact size, above the title. */}
         <div
