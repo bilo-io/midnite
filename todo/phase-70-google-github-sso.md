@@ -33,16 +33,16 @@ The contract lands first so gateway and web agree on shapes. Everything new goes
 
 ---
 
-## Theme B — Identity persistence: `user_identities` + nullable password — **M**
+## Theme B — Identity persistence: `user_identities` + nullable password — **M** — ✅ DONE (PR #449, 2026-07-18)
 
-Link an external identity to a user, and let pure-SSO users exist. Consistent with the repo's "one concern per row, no cross-domain FK" convention (see the `user_preferences` sibling table).
+Link an external identity to a user, and let pure-SSO users exist. Consistent with the repo's "one concern per row, no cross-domain FK" convention (see the `user_preferences` sibling table). **Decisions (`/exec` Stage 2.5):** repo under `auth/` (registered by `UsersModule`, no Auth↔Users cycle) · `findOrCreateFromSso` on `UsersService` · extract a shared `provisionUserWithTeam()` · null-hash → typed `PasswordLoginUnavailableError` mapped to 403 · unique `(provider, providerUserId)` + non-unique `userId` idx, email a nullable snapshot · closed-signup + verified-email rules enforced at the persistence layer · two forward-only migrations.
 
-- [ ] New `user_identities` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `{ id, userId, provider, providerUserId, email, createdAt }`, **unique index on `(provider, providerUserId)`**, index on `userId`. Forward-only Drizzle migration.
-- [ ] Migration making `users.password_hash` **nullable** (Decision §2 — passwordless SSO users). Guard `validateCredentials`/password-login to **reject** password login for a null-hash user with a clear "use Google/GitHub to sign in" error (not a generic invalid-credentials leak).
-- [ ] `UserIdentitiesRepository` (Drizzle-only, under `auth/` or `users/`): `findByProviderIdentity(provider, providerUserId)`, `insertIdentity(...)`, `listForUser(userId)`.
-- [ ] `UsersService` gains `findOrCreateFromSso({ provider, providerUserId, email, name })`: (1) lookup by `(provider, providerUserId)` → existing user; (2) else **auto-link on verified email** (Decision §1) — match an existing `users.email` and insert the identity link; (3) else **provision** (Decision §4) — create the user (null password) **+ a team** mirroring `POST /auth/register`'s bootstrap, gated by the open-signup policy.
-- [ ] Only trust **provider-verified** emails for auto-link (Google `email_verified`, GitHub primary+verified email) — an unverified provider email must not silently take over an existing account.
-- [ ] Repository integration tests (real `:memory:` SQLite): unique-constraint on duplicate identity, link-by-email, provision path, null-hash password-login rejection.
+- [x] New `user_identities` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `{ id, userId, provider, providerUserId, email, createdAt }`, **unique index on `(provider, providerUserId)`**, index on `userId`. Forward-only Drizzle migration (`0084`).
+- [x] Migration (`0085`) making `users.password_hash` **nullable** (Decision §2 — passwordless SSO users). Guards `validateCredentials` **and** `updatePassword` to **reject** a null-hash user with a distinct `PasswordLoginUnavailableError` ("use Google/GitHub") — `auth.controller` maps login → **403**, not a generic invalid-credentials leak.
+- [x] `UserIdentitiesRepository` (Drizzle-only, under `auth/`): `findByProviderIdentity(provider, providerUserId)`, `insertIdentity(...)`, `listForUser(userId)`.
+- [x] `UsersService.findOrCreateFromSso(profile, { signupOpen })`: (1) lookup by `(provider, providerUserId)` → existing user; (2) else **auto-link on verified email** (Decision §1) — match an existing `users.email` and insert the identity link; (3) else **provision** (Decision §4) — `provisionUserWithTeam` creates the user (null password) **+ a team** mirroring `POST /auth/register`, gated by the open-signup policy. Records a `user.sso_linked` audit entry on link/provision; `listIdentities()` surfaces linked accounts for Theme D.
+- [x] Only trust **provider-verified** emails for auto-link — an unverified email that collides with an existing account is **rejected** (`SsoEmailConflictError`), never silently taking over the account nor duplicating the unique email; a non-colliding unverified email provisions a fresh account. Closed signup → `SsoSignupClosedError`.
+- [x] Repository integration tests (real `:memory:` SQLite): unique-constraint on duplicate identity, provider-independence, link-by-email, provision path, null-hash password-login rejection + service-level SSO scenarios.
 
 ---
 

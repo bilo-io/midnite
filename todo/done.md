@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(gateway): Phase 70 Theme B — SSO identity persistence (PR #449)
+
+Links external Google/GitHub identities to users and lets pure-SSO (passwordless) users exist — the persistence + resolution layer Theme C's SSO flow issues JWTs over. Gateway + one shared audit action; no web.
+
+- [x] **`user_identities` table** ([`db/schema.ts`](../packages/gateway/src/db/schema.ts)) `{ id, userId, provider, providerUserId, email, createdAt }` — **unique `(provider, providerUserId)`** + `userId` index; email a nullable denormalized snapshot. Forward-only migration `0084`.
+- [x] **Nullable `users.password_hash`** (migration `0085`, SQLite table rebuild). `validateCredentials` + `updatePassword` reject a null-hash user with a distinct `PasswordLoginUnavailableError`; `auth.controller` maps password login → **403** with a "use Google/GitHub" hint (not a generic 401 leak).
+- [x] **`UserIdentitiesRepository`** (`auth/user-identities.repository.ts`, registered by `UsersModule` so no Auth↔Users cycle): `findByProviderIdentity` / `insertIdentity` / `listForUser`.
+- [x] **`UsersService.findOrCreateFromSso(profile, { signupOpen })`**: known-identity lookup → auto-link on a **provider-verified** matching email → else provision user+team (null password) via the extracted shared `provisionUserWithTeam()`, gated by open-signup. Emits a `user.sso_linked` audit entry; `listIdentities()` surfaces linked accounts for Theme D.
+- [x] **Safety rules at the persistence layer**: an *unverified* email colliding with an existing account is rejected (`SsoEmailConflictError`) — never takes over the account or duplicates the unique email; a non-colliding unverified email provisions fresh; closed signup → `SsoSignupClosedError`.
+- [x] **`user.sso_linked` shared audit action** ([`shared/src/audit.ts`](../packages/shared/src/audit.ts)) + tests.
+- [x] Tests: repository integration (`:memory:` SQLite — unique constraint, provider-independence, list, null email) + service SSO scenarios (provision, idempotent re-login, verified auto-link, unverified rejection, closed-signup, cross-provider link).
+
+---
+
 ## 2026-07-18 — feat(web): Phase 70 Theme F — split-screen login hero (PR #448)
 
 Turns the bare centered auth pages into a split-screen hero — form left third, a deep-space panel right two-thirds on desktop with login-specific typewriter copy over a galaxy starfield that lights up constellations as knowledge-graph edges. Pure `packages/web`, no gateway.
