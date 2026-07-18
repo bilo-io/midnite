@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 5/36 | `█░░░░░░░░░` | 14% | B F | C D E |
+| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 11/36 | `███░░░░░░░` | 31% | B | C D E |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -130,7 +130,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Gateway flow: `auth/sso.service.ts` + `SsoController` (`/auth/sso/:provider/{start,callback}`), Google `id_token` verify + GitHub `/user`+`/user/emails`, encrypted state **+ single-use nonce store w/ TTL**, issues our JWTs; never touches the vault `OAuthService`
 - ◻ **D** — Web UX: Google/GitHub buttons on login/register, web callback route that sets `__midnite_rt` httpOnly cookie via one-time code (no tokens in URL), open-redirect guard, linked-accounts display
 - ◻ **E** — Config + docs: `gateway.auth.sso` block (reuse `OAuthClientConfigSchema`, `clientSecretEnv` env-name-only, + `redirectUri`/`webBaseUrl`), fail-closed boot check, README/schema setup docs
-- 🔄 **F** — Login hero: split-screen (form left ⅓, hero right ⅔), login-specific typewriter title/subtitle, galaxy starfield that periodically lights up constellations as knowledge-graph edges (node-palette tokens) + semi-realistic twinkle; desktop-only, reduced-motion static fallback
+- ✅ **F** — Login hero: split-screen (form left ⅓, hero right ⅔), login-specific typewriter title/subtitle, galaxy starfield that periodically lights up constellations as knowledge-graph edges (node-palette tokens) + semi-realistic twinkle; desktop-only, reduced-motion static fallback (PR #448)
 
 ### [Phase 69 — Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md)
 *Closes the task state machine's undriven edges: a `UserPromptSubmit` hook finally drives `waiting → wip` when a session resumes executing, a signal→edge audit (`docs/LIFECYCLE.md`) accounts for every status writer, a reply affordance (board card + detail + `midnite reply`) answers waiting agents without opening a terminal, and terminal states get the long-promised explicit reopen action.*

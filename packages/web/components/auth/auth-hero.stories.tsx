@@ -1,0 +1,78 @@
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { expect, within } from 'storybook/test';
+
+import { AUTH_HERO_COPY, AuthHero } from './auth-hero';
+import { SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
+
+const TITLES = AUTH_HERO_COPY.map((c) => c.title);
+
+const meta = {
+  title: 'Auth/AuthHero',
+  component: AuthHero,
+  parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <div className="h-[700px] w-full">
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof AuthHero>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+async function expectLoginCopy(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  const heading = await canvas.findByRole('heading', { level: 2 });
+  // The hero renders one of the curated *login* pairs — not dashboard/quote copy.
+  await expect(TITLES.some((t) => t.startsWith(heading.textContent ?? ''))).toBe(true);
+  await expect(canvas.getByText('midnite')).toBeInTheDocument();
+}
+
+/** The living knowledge-graph starfield behind the animated login copy. */
+export const Default: Story = {
+  play: async ({ canvasElement }) => expectLoginCopy(canvasElement),
+};
+
+/** Reduced motion: static star field + a few pre-lit constellations, copy resolves at once. */
+export const ReducedMotion: Story = {
+  beforeEach: () => {
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ motion: 'reduced' }));
+    return () => window.localStorage.removeItem(SETTINGS_STORAGE_KEY);
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const heading = await canvas.findByRole('heading', { level: 2 });
+    // With motion off the typewriter short-circuits — a full title, not a prefix.
+    await expect(TITLES).toContain(heading.textContent);
+  },
+};
+
+/**
+ * The full split: form column (left ⅓) beside the hero (right ⅔). Composed
+ * directly here so the shot is deterministic; the desktop-only *gating* is unit-
+ * tested in `layout.test.tsx`.
+ */
+export const SplitScreen: Story = {
+  render: () => (
+    <div className="flex h-[700px] w-full bg-background">
+      <div className="flex w-1/3 flex-col items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">
+            Sign in to midnite
+          </h1>
+          <div className="h-40 rounded-md border border-dashed border-border" aria-label="form" />
+        </div>
+      </div>
+      <div className="relative w-2/3">
+        <AuthHero />
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Sign in to midnite')).toBeInTheDocument();
+    await expectLoginCopy(canvasElement);
+  },
+};
