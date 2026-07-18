@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -40,84 +39,80 @@ export default function RegisterPage() {
 
   if (!registrationOpen) {
     return (
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Registration closed</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            New account registration is not available on this instance.
-          </p>
-          <Link href="/login">
-            <Button variant="outline" className="w-full">Back to sign in</Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="w-full">
+        <h1 className="mb-3 text-2xl font-semibold tracking-tight text-foreground">
+          Registration closed
+        </h1>
+        <p className="mb-6 text-sm text-muted-foreground">
+          New account registration is not available on this instance.
+        </p>
+        <Link href="/login">
+          <Button variant="outline" className="w-full">
+            Back to sign in
+          </Button>
+        </Link>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-xl">Create account</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="name" className="text-sm font-medium text-foreground">
-              Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              autoComplete="name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-sm font-medium text-foreground">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 8 characters"
-            />
-          </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button type="submit" disabled={pending} className="w-full">
-            {pending ? 'Creating account…' : 'Create account'}
-          </Button>
-          <p className="text-sm text-center text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="underline hover:text-foreground">
-              Sign in
-            </Link>
-          </p>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="w-full">
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">Create account</h1>
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="name" className="text-sm font-medium text-foreground">
+            Name
+          </label>
+          <Input
+            id="name"
+            type="text"
+            autoComplete="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            Email
+          </label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            Password
+          </label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Min 8 characters"
+          />
+        </div>
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        <Button type="submit" disabled={pending} className="w-full">
+          {pending ? 'Creating account…' : 'Create account'}
+        </Button>
+        <p className="text-sm text-center text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/login" className="underline hover:text-foreground">
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }
