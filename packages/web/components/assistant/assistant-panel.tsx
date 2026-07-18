@@ -75,17 +75,15 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
     // current page's guide and its arrow opens the index; it never routes here.
   };
 
-  // Split "Guide" main-area click: play the active page's guide immediately. When
-  // the page has no guide, fall back to the browse-all index so the button never
-  // dead-ends.
+  // Split "Guide" main-area click: play the active page's guide immediately. The
+  // primary control is *play only* — browsing all guides is the trailing arrow's
+  // job. When the page has no guide, show the transient "no tour here" notice
+  // (via `start(null)`) rather than opening the index, so the two controls stay
+  // distinct (the arrow → browse; the button → play the current page's guide).
   const playCurrentGuide = () => {
     const guide = pathname ? resolveGuide(pathname) : null;
-    if (guide) {
-      useGuide.getState().start(guide);
-      onClose();
-    } else {
-      onView('guides');
-    }
+    useGuide.getState().start(guide);
+    onClose();
   };
 
   // Replay a guide from the index: start immediately if we're already on its

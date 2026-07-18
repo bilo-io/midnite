@@ -55,6 +55,19 @@ describe('AssistantFab', () => {
     expect(screen.getByRole('button', { name: /^Chat/i })).not.toBeDisabled();
   });
 
+  it('the primary Guide button plays the current route’s guide (not the index)', async () => {
+    const { useGuide } = await import('@/lib/guide/use-guide');
+    useGuide.getState().stop();
+    render(<AssistantFab />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
+    // The main area (not the "Browse all guides" arrow) plays the page's guide
+    // directly and closes — it must never open the guides index.
+    fireEvent.click(screen.getByRole('button', { name: /^Guide/i }));
+    expect(useGuide.getState().active?.id).toBe('board');
+    expect(screen.queryByRole('dialog', { name: 'Guides' })).not.toBeInTheDocument();
+    useGuide.getState().stop();
+  });
+
   it('Guides opens the index; replaying the current route’s guide starts it (Theme C)', async () => {
     const { useGuide } = await import('@/lib/guide/use-guide');
     useGuide.getState().stop();
