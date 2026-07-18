@@ -46,18 +46,18 @@ Link an external identity to a user, and let pure-SSO users exist. Consistent wi
 
 ---
 
-## Theme C — Gateway SSO flow: `SsoService` + `SsoController` — **L**
+## Theme C — Gateway SSO flow: `SsoService` + `SsoController` — **L** — ✅ DONE (PR #451, 2026-07-18)
 
-The heart of the phase. A dedicated auth-module service that runs the authorization-code dance and issues our JWTs. Reuses `CryptoService` for state; **does not** touch the workflow `OAuthService`.
+The heart of the phase. A dedicated auth-module service that runs the authorization-code dance and issues our JWTs. Reuses `CryptoService` for state; **does not** touch the workflow `OAuthService`. **Decisions (`/exec` Stage 2.5):** Google id_token verified offline via **jose** local JWKS · single-use nonce + one-time code in a `sso_auth_state` **DB table** (TTL) · read Theme E's `gateway.auth.sso` config · exempt `/auth/sso/*` **+ `/auth/{login,register,refresh}`** (closes the same latent JWT-on gap) · native `fetch` mocked in specs · GitHub **primary+verified** email · 302 to `login?sso_error=<code>` on failure · full endpoint set (start/callback/exchange/providers).
 
-- [ ] `auth/sso.service.ts`: `buildAuthorizationUrl(provider, statePayload)` and `handleCallback(provider, code, state)`. State = `crypto.encrypt(JSON.stringify({ provider, nonce, redirect, exp }))`, decrypted + provider-matched on callback (mirroring the vault pattern).
-- [ ] **State hardening beyond the vault flow (Decision §5):** a **single-use nonce store with a short TTL** (~10 min) — a small table (or bounded in-memory map) written at `start`, consumed+deleted at `callback`; reject replayed/expired/unknown nonces. Closes the replay gap the vault flow leaves open.
-- [ ] **Google**: auth `https://accounts.google.com/o/oauth2/v2/auth` (scope `openid email profile`, `access_type=offline`); token `https://oauth2.googleapis.com/token`; **verify the `id_token`** (signature + `aud` + `email_verified`) rather than trusting the access token — resolve `sub` → `providerUserId`, `email`, `name`.
-- [ ] **GitHub**: auth `https://github.com/login/oauth/authorize` (scope `read:user user:email`); token `https://github.com/login/oauth/access_token` (send `Accept: application/json`); then `GET https://api.github.com/user` + `GET /user/emails` → resolve `id` → `providerUserId`, **primary+verified** email, name.
-- [ ] `auth/sso.controller.ts` (thin, `@Controller('auth/sso')`): `GET /auth/sso/:provider/start` (302 → provider consent, provider validated via `LoginProviderSchema`) and `GET /auth/sso/:provider/callback` → `handleCallback` → `usersService.findOrCreateFromSso` → `jwtSvc.issue{Access,Refresh}Token` → hand tokens to web (Decision §3: 302 to a web callback carrying a **one-time code**, not tokens-in-URL). Provider `error=` param handled → friendly redirect.
-- [ ] **JWT-disabled guardrail:** when `!jwtSvc.enabled`, SSO endpoints return a clean 503 (consistent with login's degraded mode) rather than half-authenticating.
-- [ ] Wire into `AuthModule`; register the new controller. Reuse the existing rate-limit + auth-policy exemptions so the SSO routes are reachable pre-auth (like `/auth/login`).
-- [ ] Specs: service (state encrypt/decrypt round-trip, nonce single-use + expiry, provider identity resolution with mocked token/userinfo responses, `email_verified=false` rejection) + controller (unknown provider 400, provider `error` redirect, JWT-disabled 503, happy-path issue+redirect).
+- [x] `auth/sso.service.ts`: `buildAuthorizationUrl` + `handleCallback`. State = `crypto.encrypt(JSON.stringify({ provider, nonce, redirect, exp }))`, decrypted + provider-matched + `exp`-checked on callback (mirroring the vault pattern).
+- [x] **State hardening (Decision §5):** a **single-use nonce** in the `sso_auth_state` table (~10-min TTL) written at `start`, consumed+deleted (`delete…returning`) at `callback`; replayed/expired/unknown nonces rejected. Table opportunistically pruned on each `start`.
+- [x] **Google**: auth `…/o/oauth2/v2/auth` (scope `openid email profile`, `access_type=offline`); token `oauth2.googleapis.com/token`; **`id_token` verified via jose** against Google's JWKS (signature + `aud` + `iss`), `email_verified` gate → `sub`/`email`/`name`.
+- [x] **GitHub**: auth `github.com/login/oauth/authorize` (scope `read:user user:email`); token exchange with `Accept: application/json`; `GET /user` + `GET /user/emails` → `id` → `providerUserId`, **primary+verified** email, name.
+- [x] `auth/sso.controller.ts` (thin, `@Controller('auth/sso')`): `providers`, `:provider/start` (302 → consent, `LoginProviderSchema`-validated), `:provider/callback` → `handleCallback` → `findOrCreateFromSso` → one-time **code** 302'd to the web app (Decision §3, no tokens-in-URL), `POST /exchange` (code → `jwtSvc.issue{Access,Refresh}Token` → `AuthResponse`). Provider `error=` + all failures → safe `sso_error` redirect.
+- [x] **JWT-disabled guardrail:** `!jwtSvc.enabled` → clean 503 on start/callback/exchange; `providers` returns `[]`.
+- [x] Wired into `AuthModule`; `isAuthExemptPath` now covers `/auth/sso/*` **and** `/auth/{login,register,refresh}` so pre-auth credential routes are reachable when JWT auth is on.
+- [x] Specs: service (state round-trip, nonce single-use + replay, **real jose id_token verification**, GitHub primary+verified, unverified-collision) + controller (unknown provider 400, `error` redirect, JWT-disabled 503, happy-path) + `sso_auth_state` repo + auth-policy exemptions.
 
 ---
 

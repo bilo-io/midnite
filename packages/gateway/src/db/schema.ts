@@ -1233,6 +1233,35 @@ export const userIdentities = sqliteTable(
 export type UserIdentityRow = typeof userIdentities.$inferSelect;
 export type UserIdentityInsert = typeof userIdentities.$inferInsert;
 
+// Phase 70 C: short-lived, single-use SSO handshake state. Two kinds share one
+// table (both are opaque random ids consumed exactly once, with a TTL):
+//   - `kind='nonce'` — written at `GET /auth/sso/:provider/start`, embedded in the
+//     encrypted CSRF `state`, and consumed+deleted at the callback (replay guard;
+//     the encrypted state alone can't be replayed once its nonce row is gone).
+//   - `kind='code'` — the one-time exchange code the callback 302s to the web app
+//     (Decision §3: no tokens in the URL). `POST /auth/sso/exchange` consumes it and
+//     issues fresh JWTs for `user_id` — tokens are **never** persisted here.
+// `redirect` is the validated same-origin resume path (nonce rows). Rows past
+// `expires_at` (epoch ms) are rejected and pruned. No cross-domain FK (CLAUDE.md).
+export const ssoAuthState = sqliteTable(
+  'sso_auth_state',
+  {
+    id: text('id').primaryKey(),
+    kind: text('kind').notNull(),
+    provider: text('provider').notNull(),
+    redirect: text('redirect'),
+    userId: text('user_id'),
+    expiresAt: integer('expires_at').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    expiresIdx: index('sso_auth_state_expires_idx').on(t.expiresAt),
+  }),
+);
+
+export type SsoAuthStateRow = typeof ssoAuthState.$inferSelect;
+export type SsoAuthStateInsert = typeof ssoAuthState.$inferInsert;
+
 // Phase 43 Theme B: server-synced user preferences. One row per user (userId PK),
 // holding the JSON-encoded `UserPreferences` blob from `shared`. Kept off the
 // auth-critical `users` row; no FK (cross-domain FKs are avoided per CLAUDE.md).

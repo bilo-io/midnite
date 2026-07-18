@@ -55,7 +55,17 @@ export function isAuthExemptPath(url: string): boolean {
     path === '/hooks' ||
     path.startsWith('/hooks/') ||
     path === '/playground' ||
-    path.startsWith('/playground/')
+    path.startsWith('/playground/') ||
+    // Pre-auth credential endpoints: you can't present a session bearer *before*
+    // you have one. Login/register/refresh mint tokens; the SSO routes (Phase 70)
+    // run the OAuth dance + one-time-code exchange. All are self-authenticating
+    // (password, refresh token, or provider round-trip), so the session-bearer
+    // guard must not gate them when JWT auth is enabled.
+    path === '/auth/login' ||
+    path === '/auth/register' ||
+    path === '/auth/refresh' ||
+    path === '/auth/sso' ||
+    path.startsWith('/auth/sso/')
   );
 }
 

@@ -40,6 +40,7 @@
     "fastify": "^4.28.1",
     "fflate": "^0.8.3",
     "html-to-text": "^10.0.0",
+    "jose": "^5",
     "jsonwebtoken": "^9.0.3",
     "node-pty": "^1.0.0",
     "nodemailer": "^9.0.1",

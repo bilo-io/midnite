@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(gateway): Phase 70 Theme C — gateway SSO flow (PR #451)
+
+The heart of Phase 70: a dedicated auth-module SSO flow that runs the Google/GitHub authorization-code dance and issues our own JWTs, reusing `CryptoService` for encrypted CSRF state and never touching the workflow-vault `OAuthService`.
+
+- [x] **`sso_auth_state` table** (migration `0086`): single-use `nonce` (replay guard) + the one-time exchange `code` (Decision §3 — no tokens in the URL); epoch-ms TTL, opportunistically pruned. `SsoStateRepository` with atomic single-use `take()` (`delete…returning`).
+- [x] **`SsoService`**: `buildAuthorizationUrl` (encrypted state + nonce) + `handleCallback` (decrypt/provider-match/`exp`-check → single-use nonce → resolve identity → `findOrCreateFromSso` → mint one-time code). `exchangeCode` issues fresh access+refresh JWTs.
+- [x] **Google**: token exchange → **`id_token` verified offline via jose** against Google's JWKS (signature + `aud` + `iss`), `email_verified` gate → `sub`/`email`/`name`. JWKS resolver is injectable so specs verify a real self-signed id_token offline.
+- [x] **GitHub**: token exchange (`Accept: application/json`) → `GET /user` + `GET /user/emails` → `id` → `providerUserId`, **primary+verified** email, name.
+- [x] **`SsoController`** (`/auth/sso`): `providers`, `:provider/start` (302→consent), `:provider/callback` (302 one-time code → web app, safe `sso_error` redirects on every failure), `POST /exchange` (code → `AuthResponse`). Clean **503** when JWT disabled; unknown provider **400**.
+- [x] Reads Theme E's `gateway.auth.sso` config (per-provider `redirectUri`, `webBaseUrl`); `enabledProviders` requires the client secret env resolved.
+- [x] **`isAuthExemptPath`** now covers `/auth/sso/*` **and** `/auth/{login,register,refresh}` — the pre-auth credential endpoints are reachable when JWT auth is enabled (closed a latent gap). Added `jose` dependency.
+- [x] Tests: `SsoService` (real jose id_token round-trip, state single-use/replay/tamper, GitHub primary+verified, unverified-collision) + `SsoController` (routing/status/redirects) + `SsoStateRepository` (single-use, prune) + `auth-policy` exemptions.
+
 ## 2026-07-18 — feat(gateway): Phase 70 Theme B — SSO identity persistence (PR #449)
 
 Links external Google/GitHub identities to users and lets pure-SSO (passwordless) users exist — the persistence + resolution layer Theme C's SSO flow issues JWTs over. Gateway + one shared audit action; no web.
