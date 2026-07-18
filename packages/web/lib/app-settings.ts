@@ -183,7 +183,7 @@ export const ACCENT_SWATCH_HS: Record<AccentId, { h: number; s: number }> = Obje
 ) as Record<AccentId, { h: number; s: number }>;
 
 /**
- * The default primary accent (Phase 68): the brand rainbow gradient. Re-exported
+ * The default primary accent (Phase 68): the brand gradient. Re-exported
  * from the shared contract so web and the wire agree. Existing users keep their
  * saved solid (coerced from the legacy string); only fresh installs get brand.
  */
@@ -195,8 +195,9 @@ export const ACCENT_SOLID_OPTIONS: { value: AccentValue; label: string; swatch: 
 
 /**
  * Curated gradient presets (Phase 68 D), brand first. `brand` renders the
- * signature `--node-*` conic rainbow (special-cased in the applier/CSS); the rest
- * are contrast-checked multi-colour gradients built from palette swatches. A
+ * signature Dusk-like blue→violet→rose linear sweep with extra blue on the purple
+ * side (special-cased in the applier); the rest are contrast-checked multi-colour
+ * gradients built from palette swatches. A
  * single palette swatch rendered as a gradient is a *mono-shade* (hue-adjacent
  * tonal sweep) — offered per-swatch in the builder, not enumerated here.
  */

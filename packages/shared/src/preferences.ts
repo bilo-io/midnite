@@ -98,16 +98,17 @@ export const AccentValueSchema = z.preprocess(
 export type AccentValue = z.infer<typeof AccentValueSchema>;
 
 /**
- * The default accent: the signature brand rainbow (the `--node-*` conic sweep,
- * promoted from the animated-gradient background). New installs get this; existing
- * users keep whatever solid swatch they saved (coerced from the legacy string).
+ * The default accent: the signature brand gradient — a Dusk-like linear sweep
+ * (blue → violet → rose) that holds extra blue on the purple side (special-cased
+ * in the applier/CSS). New installs get this; existing users keep whatever solid
+ * swatch they saved (coerced from the legacy string).
  */
 export const BRAND_ACCENT: AccentValue = {
   kind: 'gradient',
   preset: 'brand',
-  type: 'conic',
-  stops: ['cyan', 'violet', 'amber'],
-  angle: 0,
+  type: 'linear',
+  stops: ['blue', 'violet', 'rose'],
+  angle: 135,
   animate: false,
 };
 

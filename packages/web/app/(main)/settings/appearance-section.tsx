@@ -325,7 +325,7 @@ export function AppearanceSection() {
       <Accordion title="Accent" icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <p className="text-xs text-muted-foreground">
-            Retints buttons, links, and focus rings across the app. Pick the brand rainbow, a
+            Retints buttons, links, and focus rings across the app. Pick the brand gradient, a
             gradient preset, or a solid — or build your own. Adapts to light and dark.
           </p>
           <AccentBuilder

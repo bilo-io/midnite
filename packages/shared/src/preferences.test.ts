@@ -63,7 +63,7 @@ describe('UserPreferencesSchema', () => {
   it('defaults the primary accent to the brand rainbow gradient (Phase 68)', () => {
     const prefs = UserPreferencesSchema.parse({});
     expect(prefs.accent).toEqual(BRAND_ACCENT);
-    expect(prefs.accent).toMatchObject({ kind: 'gradient', preset: 'brand', type: 'conic' });
+    expect(prefs.accent).toMatchObject({ kind: 'gradient', preset: 'brand', type: 'linear' });
   });
 
   it('defaults officeView to 2d and accepts 3d (Phase 63 F)', () => {
