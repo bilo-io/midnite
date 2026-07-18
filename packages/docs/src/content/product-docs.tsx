@@ -1,3 +1,4 @@
+import { ChangelogPage } from '../components/changelog-page';
 import { MarkdownPage } from '../components/markdown-page';
 import type { ResolvedRoute } from './registry';
 
@@ -9,7 +10,11 @@ import type { ResolvedRoute } from './registry';
 //
 // Paths are relative to this file (packages/docs/src/content/): `../../../..` is
 // the repo root.
+import changelog from '../../../../CHANGELOG.md?raw';
 import memoryWorkspace from '../../../../docs/MEMORY_WORKSPACE.md?raw';
+
+/** The changelog is deep-linked from the app's update banner, so it gets a scroll-to-version page. */
+const CHANGELOG_PATH = '/changelog';
 
 export type ProductDoc = {
   path: string;
@@ -25,9 +30,15 @@ export type ProductDoc = {
 // index (content/search-index.ts) reads the same raw source.
 export const productDocs: ProductDoc[] = [
   { path: '/guides/memory-workspace', title: 'Memory workspace', section: 'Guides', order: 0, source: memoryWorkspace },
+  { path: CHANGELOG_PATH, title: 'Changelog', section: 'Guides', order: 1, source: changelog },
 ];
 
+// The changelog needs a scroll-to-version page (it's deep-linked per release from
+// the app's update banner); every other product doc is a plain MarkdownPage.
 export const productRoutes: ResolvedRoute[] = productDocs.map(({ source, ...route }) => ({
   ...route,
-  Component: () => <MarkdownPage source={source} />,
+  Component:
+    route.path === CHANGELOG_PATH
+      ? () => <ChangelogPage source={source} />
+      : () => <MarkdownPage source={source} />,
 }));
