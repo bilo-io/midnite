@@ -1,7 +1,6 @@
 'use client';
 
 import { PageHeader } from '@/components/page-header';
-import { SearchBar } from '@/components/search-bar';
 import { getMemories, getProjects, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
@@ -20,7 +19,6 @@ export default function ProjectsPage() {
         title="Projects"
         icon="Folder"
         description="Group related work, attach sources, and draft a plan that becomes tasks."
-        actions={<SearchBar placeholder="Search projects" />}
       />
       <div className="reveal-staged container space-y-6 pb-8 pt-2">
         <ProjectsView initial={projects} tasks={tasks} memories={memories} />

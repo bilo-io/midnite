@@ -11,9 +11,9 @@ export default function SearchPage() {
         title="Search"
         icon="Search"
         description="Full-text search across tasks, projects, memory, notes, councils & workflows."
-        actions={<SearchBar placeholder="Search everything" />}
       />
       <div className="reveal-staged container space-y-5 pb-8 pt-2" data-tour="search">
+        <SearchBar placeholder="Search everything" />
         <SearchResults />
       </div>
     </>

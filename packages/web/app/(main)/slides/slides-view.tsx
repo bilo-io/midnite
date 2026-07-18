@@ -11,6 +11,7 @@ import { StyledSelect } from '@/components/ui/styled-select';
 import { EmptyState } from '@/components/empty-state';
 import type { FilterOption } from '@/components/filter-pills';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
+import { SearchBar } from '@/components/search-bar';
 import { DeckCard, DeckRow } from '@/components/slides/deck-card';
 import { useDecks } from '@/lib/slides/use-decks';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -40,9 +41,9 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
   const [view, setView] = useLocalStorage<View>('midnite.slides.view', 'grid');
   const [sort, setSort] = useLocalStorage<Sort>('midnite.slides.sort', 'recent');
 
-  // Search (`?q=`) and project filter (`?project=`) are URL-backed so the header
-  // SearchBar and the ProjectMultiSelect are the source of truth — consistent
-  // with the other list pages.
+  // Search (`?q=`) and project filter (`?project=`) are URL-backed so the
+  // control-bar SearchBar and the ProjectMultiSelect are the source of truth —
+  // consistent with the other list pages.
   const searchParams = useSearchParams();
   const query = searchParams.get('q') ?? '';
 
@@ -135,7 +136,11 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
           className="w-44"
         />
 
-        <div className="ml-auto inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
+        <div className="ml-auto">
+          <SearchBar placeholder="Search decks" />
+        </div>
+
+        <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
           {VIEW_OPTIONS.map(({ value, label, Icon }) => (
             <Button
               key={value}

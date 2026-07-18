@@ -27,6 +27,7 @@ import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ListView } from '@/components/list-view';
 import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
+import { SearchBar } from '@/components/search-bar';
 import { TableView } from '@/components/table-view';
 import { WorkItemModal } from '@/components/work-item-modal';
 import { COLUMNS, COLUMN_STATUSES } from '@/components/task-columns';
@@ -469,6 +470,7 @@ export function TasksView({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
+          <SearchBar placeholder="Search tasks" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             {VIEW_OPTIONS.map(({ value, label, Icon }) => (
               <Button

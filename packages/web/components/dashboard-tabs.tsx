@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -28,8 +28,9 @@ import { cn } from '@/lib/utils';
  * fixed anchor; the rest can be pinned (locked to the front zone, no close) and
  * dragged to reorder — within their zone only (pinned amongst pinned, unpinned
  * amongst unpinned). Double-click a tab to rename; "+" adds up to {@link MAX_DASHBOARDS}.
+ * `trailing` renders far-right on the same line (e.g. the add-widget button).
  */
-export function DashboardTabs() {
+export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
   const { tabs, activeId, hydrated, setActiveId, addTab, closeTab, renameTab, togglePin, reorderTabs } =
     useDashboardTabs();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -158,6 +159,8 @@ export function DashboardTabs() {
           <Plus className="h-4 w-4" />
         </button>
       )}
+
+      {trailing ? <div className="ml-auto">{trailing}</div> : null}
     </div>
   );
 }

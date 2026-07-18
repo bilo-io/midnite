@@ -43,7 +43,7 @@ type FetchStatus = 'idle' | 'loading' | 'done' | 'error';
 
 /**
  * The dedicated `/search` results surface (Phase 20 Theme D). Reads `?q=` (the
- * URL-backed SearchBar in the header writes it) + `?type=` (the FilterPills), runs
+ * URL-backed SearchBar above the results writes it) + `?type=` (the FilterPills), runs
  * a single `GET /search` at a high limit, and renders the hits grouped by type
  * with highlighted snippets. Type filtering is client-side over the one response,
  * so toggling pills never refetches. Deep-linkable + shareable via the query.

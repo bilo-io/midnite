@@ -13,6 +13,7 @@ import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { MemoryCard } from '@/components/memory-card';
 import { MemoriesTree } from '@/components/memories-tree';
 import { MemoryModal } from '@/components/memory-modal';
+import { SearchBar } from '@/components/search-bar';
 import { deleteMemory, updateMemory } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { memoryPageHref } from '@/lib/memory-route';
@@ -180,6 +181,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
           <FilterPills options={scopeOptions} paramKey="scope" allLabel="All scopes" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <SearchBar placeholder="Search memories" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"

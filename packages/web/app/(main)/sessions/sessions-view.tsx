@@ -31,6 +31,7 @@ import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-a
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { NewSessionButton } from '@/components/new-session-button';
+import { SearchBar } from '@/components/search-bar';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { cn } from '@/lib/utils';
 
@@ -321,6 +322,7 @@ export function SessionsView({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <SearchBar placeholder="Search sessions" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"

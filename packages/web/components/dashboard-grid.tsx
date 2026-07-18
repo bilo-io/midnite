@@ -22,6 +22,7 @@ import {
 import { layoutKey, useDashboardTabs, widgetsKey } from '@/lib/dashboard-tabs';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { DashboardAddWidget } from './dashboard-add-widget';
 import { DashboardTabs } from './dashboard-tabs';
 import { DashboardTile, TILES } from './dashboard-tiles';
 import { ClockWidget } from './clock-widget';
@@ -562,7 +563,7 @@ export function DashboardGrid({
 
   return (
     <div className="container pb-48 pt-2" ref={containerRef}>
-      <DashboardTabs />
+      <DashboardTabs trailing={<DashboardAddWidget />} />
       {mounted && (
         <ResponsiveGridLayout
           width={width}
