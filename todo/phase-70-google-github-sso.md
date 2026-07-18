@@ -4,7 +4,7 @@
 >
 > **Scope guardrails (CLAUDE.md).** `shared` is the contract: a new `LoginProviderSchema` (`google | github`) and SSO request/response schemas live in [`shared/src/user.ts`](../packages/shared/src/user.ts); `web`/`cli` speak only the typed client and **never** import gateway internals. The login SSO service lives in **`gateway/src/auth/`** (alongside `JwtService`) — it must **not** extend or import the workflow-vault `OAuthService` (that class is wired to `WorkflowCredentialsService` and writes vault rows; sharing the `@Global` `CryptoService` is fine, sharing the class is not). Login providers are a **separate enum** from the credential-vault `OAuthProvider` (`google | slack`) — don't overload it. Client secrets stay **env-name-only** (`clientSecretEnv`, mirroring `jwt.secretEnv`) — never inline a secret in config. The web layer keeps setting the `__midnite_rt` httpOnly cookie; the gateway must not set browser cookies. **Out of scope:** SAML / generic OIDC / enterprise IdPs, Slack or other social providers as *login*, MFA, org-domain auto-join, and identity **un**-linking UI beyond the minimum.
 >
-> Effort tags: **S** small · **M** medium · **L** large. **A** (contract) unblocks everything; **B** (persistence) and **C** (gateway flow) are the core and land in sequence (C needs B's linking); **D** (web UX) rides on C's endpoints; **E** (config + docs) can land in parallel with A. B+C+D form the user-visible core.
+> Effort tags: **S** small · **M** medium · **L** large. **A** (contract) unblocks everything; **B** (persistence) and **C** (gateway flow) are the core and land in sequence (C needs B's linking); **D** (web UX) rides on C's endpoints; **E** (config + docs) can land in parallel with A; **F** (login hero) is an independent web-only visual layer that can land any time (it dresses the pages the D buttons live on). B+C+D form the auth core; F is the front-door polish.
 
 ---
 
@@ -85,6 +85,21 @@ Where the client IDs/secrets live, and how an operator turns SSO on. Lands in pa
 
 ---
 
+## Theme F — Login hero: split-screen + living knowledge-graph starfield — **L**
+
+Turn the bare auth pages into a hero: a **left third** carrying the form (email/password + the Theme D provider buttons) and a **right two-thirds** with animated typewriter copy over a galaxy-like starfield that periodically lights up constellations as knowledge-graph edges — a visual echo of what midnite *is* (a live graph of tasks/agents/repos). Builds on the existing canvas + typewriter + motion primitives; no gateway, pure `packages/web` (plus maybe one `@midnite/ui` extraction).
+
+- [ ] **Split layout** on [`app/(auth)/layout.tsx`](../packages/web/app/(auth)/layout.tsx) (shared by login/register/invite): left `1/3` form column, right `2/3` hero. Responsive — the hero collapses **below `lg`** (mobile/tablet show the form full-width, per [`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts) / `useIsDesktop`), so the canvas never ships to small screens.
+- [ ] **Typewriter title + subtitle** in the hero via the existing [`lib/use-typewriter.ts`](../packages/web/lib/use-typewriter.ts): a **login-specific** randomised copy set (a small curated array of `{ title, subtitle }` pairs picked once per mount) — distinct from the dashboard/quote copy. Respects reduced-motion (renders the final string immediately when motion is off).
+- [ ] **Galaxy starfield background** — a new canvas component (`components/auth/constellation-background.tsx` or a new `'galaxy'` `BackgroundPattern` twin alongside the `dots` case in [`dynamic-background.tsx`](../packages/web/components/dynamic-background.tsx)): stars scattered on a **galaxy-like radial/clustered distribution** (not the `dots` grid), with **semi-realistic twinkle** (per-star phase-offset opacity/size shimmer on a subset). Colours read live from theme tokens so it re-tints on theme/accent switch, matching the existing canvas convention.
+- [ ] **Constellation lighting = dynamic knowledge graph:** periodically pick a random subset of nearby stars, **light them up** and briefly draw the **connection-graph edges** between them (fading in/out over ~1–2s), then move on to a different constellation — a lively, ever-changing graph. Edge/node colours reuse the `--node-trigger`/`--node-action`/`--node-logic`/`--node-data` tokens (the same four the canvas already reads) so it literally renders midnite's node palette.
+- [ ] **Motion & a11y gating:** the whole animation runs only when motion is allowed — reuse [`lib/use-animation-prefs.ts`](../packages/web/lib/use-animation-prefs.ts) / the `useDynamicBackground()` gate pattern (Motion setting + OS `prefers-reduced-motion`); reduced-motion falls back to a **static** star field (no twinkle, no constellation cycling). RAF loop cleaned up on unmount; pause when the tab is hidden.
+- [ ] Tests/stories: an RTL test that the hero is desktop-only (not rendered `< lg`) and the form is always present; a `play` story for the split layout (light+dark); assert the typewriter copy is login-specific + reduced-motion short-circuits. Canvas motion itself proven via a Storybook shot rather than pixel assertions.
+
+> **Scope note:** the starfield is decorative — it must **never** block or delay the form (form is fully usable while the canvas is still warming up, and with JS/canvas unavailable). Keep the star/edge counts modest so it's cheap on a login screen; this is a backdrop, not the office-3D scene.
+
+---
+
 ## Files this phase touches
 
 **shared**
@@ -106,6 +121,10 @@ Where the client IDs/secrets live, and how an operator turns SSO on. Lands in pa
 - `app/api/auth/sso/callback/route.ts` — **new** (cookie handoff)
 - [`contexts/auth-context.tsx`](../packages/web/contexts/auth-context.tsx) — absorb SSO session
 - Settings — linked-accounts display
+- [`app/(auth)/layout.tsx`](../packages/web/app/(auth)/layout.tsx) — split-screen hero shell (Theme F)
+- `components/auth/constellation-background.tsx` — **new** galaxy/knowledge-graph starfield (or a `'galaxy'` twin in [`dynamic-background.tsx`](../packages/web/components/dynamic-background.tsx))
+- `components/auth/auth-hero.tsx` — **new** typewriter title/subtitle + login copy set
+- [`lib/use-typewriter.ts`](../packages/web/lib/use-typewriter.ts) · [`lib/use-animation-prefs.ts`](../packages/web/lib/use-animation-prefs.ts) — reused as-is (Theme F)
 
 **docs**
 - `README.md` + `midnite.json` schema docs — SSO setup
@@ -124,6 +143,7 @@ Where the client IDs/secrets live, and how an operator turns SSO on. Lands in pa
 - [ ] **Degraded modes:** JWT disabled ⇒ SSO endpoints 503 cleanly; no `sso` config ⇒ no provider buttons, password login unaffected; missing `clientSecretEnv` ⇒ fail-closed at boot.
 - [ ] **Boundaries:** `web`/`cli` import only `@midnite/shared`; `auth/sso.service.ts` does not import `workflows/credentials`; new wire shapes all have zod schemas in `shared`.
 - [ ] Repository, service, and controller specs land per theme; web button + callback tests pass.
+- [ ] **Login hero (F):** on desktop (`≥ lg`) the split screen renders (form left third, starfield hero right two-thirds with typewriter title/subtitle); below `lg` the hero is gone and the form is full-width. Reduced-motion (Motion setting or OS) shows a static star field — no twinkle, no constellation cycling — and the typewriter copy resolves immediately. The form is fully usable while/if the canvas doesn't animate; the RAF loop stops on unmount + tab-hidden.
 
 ---
 
@@ -137,3 +157,5 @@ Where the client IDs/secrets live, and how an operator turns SSO on. Lands in pa
 6. **Provider set → resolved: Google + GitHub only.** SAML/OIDC/Slack-login and other socials are out of scope; the `LoginProviderSchema` enum is the seam a later phase widens.
 7. **Redirect URI: configured vs. header-derived → recommend: configured.** The vault flow derives the callback base from request headers; login apps register a pinned redirect URI with the provider, so add an explicit `redirectUri`/`webBaseUrl` to config rather than trusting `Host`/`X-Forwarded-Proto` (which are spoofable and mismatch the registered URI). *Confirm during Theme E.*
 8. **SSO ↔ JWT coupling → recommend: SSO requires JWT enabled.** With JWT off, midnite runs in unauthenticated local mode; SSO only makes sense once `MIDNITE_JWT_SECRET` is set. Endpoints 503 when disabled rather than inventing a second session model. *Confirm.*
+9. **Starfield: new standalone component vs. new `BackgroundPattern` twin → recommend: standalone `constellation-background.tsx`.** The constellation/knowledge-graph behaviour (lighting up random subsets, drawing+fading edges, per-star twinkle) is login-specific and richer than the cursor-repulsion `dots` twin — a standalone auth component keeps it out of the Settings background gallery and avoids bloating `dynamic-background.tsx`. It still borrows that file's token-reading + RAF conventions. *Reconsider only if we later want "galaxy" as a user-selectable app-wide background.*
+10. **Login hero copy → recommend: a small curated in-repo array**, picked at random once per mount (not LLM-generated per load — keeps it offline, fast, and reviewable). ~6–10 `{ title, subtitle }` pairs in the copy set.
