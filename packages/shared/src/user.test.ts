@@ -48,6 +48,17 @@ describe('UserSchema.identities', () => {
     expect(user.identities).toEqual([{ provider: 'github', email: 'a@x.com' }]);
   });
 
+  it('stays valid with no avatarUrl (backward-compatible with pre-avatar rows)', () => {
+    expect(UserSchema.parse(base).avatarUrl).toBeUndefined();
+  });
+
+  it('parses an avatarUrl and rejects a non-URL value', () => {
+    expect(UserSchema.parse({ ...base, avatarUrl: 'https://cdn.example.com/a.png' }).avatarUrl).toBe(
+      'https://cdn.example.com/a.png',
+    );
+    expect(UserSchema.safeParse({ ...base, avatarUrl: 'not-a-url' }).success).toBe(false);
+  });
+
   it('rejects an identity with a non-login provider', () => {
     expect(
       UserSchema.safeParse({ ...base, identities: [{ provider: 'slack', email: 'a@x.com' }] })

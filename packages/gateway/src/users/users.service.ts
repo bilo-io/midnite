@@ -23,6 +23,9 @@ export type SsoProfile = {
   email: string;
   emailVerified: boolean;
   name?: string;
+  /** Provider profile picture (Google `picture` / GitHub `avatar_url`), if any —
+   *  persisted on the user and refreshed on each SSO login (Phase 71). */
+  avatarUrl?: string;
 };
 
 export class UserAlreadyExistsError extends Error {
@@ -125,6 +128,7 @@ export class UsersService {
     email: string;
     name: string;
     passwordHash: string | null;
+    avatarUrl?: string;
   }): UserRow {
     const now = new Date().toISOString();
     const row = this.repo.insert({
@@ -132,6 +136,7 @@ export class UsersService {
       email: input.email,
       name: input.name,
       passwordHash: input.passwordHash,
+      avatarUrl: input.avatarUrl ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -177,7 +182,7 @@ export class UsersService {
     if (linked) {
       const row = this.repo.findById(linked.userId);
       if (!row) throw new UserDoesNotExistError(linked.userId);
-      return this.repo.hydrate(row);
+      return this.repo.hydrate(this.syncAvatar(row, profile));
     }
 
     const normalizedEmail = profile.email.toLowerCase();
@@ -187,7 +192,7 @@ export class UsersService {
       const byEmail = this.repo.findByEmail(normalizedEmail);
       if (byEmail) {
         this.linkIdentity(byEmail.id, profile, normalizedEmail);
-        return this.repo.hydrate(byEmail);
+        return this.repo.hydrate(this.syncAvatar(byEmail, profile));
       }
     }
 
@@ -198,9 +203,23 @@ export class UsersService {
     // can neither take it over nor duplicate the unique email, so we reject.
     if (this.repo.findByEmail(normalizedEmail)) throw new SsoEmailConflictError(normalizedEmail);
     const name = profile.name?.trim() || normalizedEmail.split('@')[0] || normalizedEmail;
-    const row = this.provisionUserWithTeam({ email: normalizedEmail, name, passwordHash: null });
+    const row = this.provisionUserWithTeam({
+      email: normalizedEmail,
+      name,
+      passwordHash: null,
+      avatarUrl: profile.avatarUrl,
+    });
     this.linkIdentity(row.id, profile, normalizedEmail);
     return this.repo.hydrate(row);
+  }
+
+  /** Refresh a returning SSO user's avatar to the provider's current picture, so
+   *  a changed profile photo propagates on next login. No-op when the provider
+   *  gave no picture or it already matches. Returns the (possibly updated) row. */
+  private syncAvatar(row: UserRow, profile: SsoProfile): UserRow {
+    if (!profile.avatarUrl || profile.avatarUrl === row.avatarUrl) return row;
+    this.repo.updateAvatar(row.id, profile.avatarUrl);
+    return { ...row, avatarUrl: profile.avatarUrl };
   }
 
   /** Linked SSO identities for a user (Settings "linked accounts"). Rows without a

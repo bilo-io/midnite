@@ -120,6 +120,27 @@ describe('UsersService', () => {
       expect(svc.listIdentities(first.id)).toHaveLength(1);
     });
 
+    it('persists the SSO avatar URL on a freshly-provisioned user', async () => {
+      const user = await svc.findOrCreateFromSso(
+        googleProfile({ avatarUrl: 'https://cdn.example.com/a.png' }),
+        { signupOpen: true },
+      );
+      expect(user.avatarUrl).toBe('https://cdn.example.com/a.png');
+    });
+
+    it('refreshes the avatar to the provider picture on a returning login', async () => {
+      const first = await svc.findOrCreateFromSso(
+        googleProfile({ avatarUrl: 'https://cdn.example.com/old.png' }),
+        { signupOpen: true },
+      );
+      const second = await svc.findOrCreateFromSso(
+        googleProfile({ avatarUrl: 'https://cdn.example.com/new.png' }),
+        { signupOpen: true },
+      );
+      expect(second.id).toBe(first.id);
+      expect(second.avatarUrl).toBe('https://cdn.example.com/new.png');
+    });
+
     it('auto-links to an existing user on a provider-verified matching email', async () => {
       const existing = await svc.register('sso@example.com', 'Pw User', 'Password123!');
       const linked = await svc.findOrCreateFromSso(googleProfile(), { signupOpen: false });

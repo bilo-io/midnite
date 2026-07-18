@@ -92,14 +92,18 @@ export function ConnectionStatus({
 }
 
 /**
- * The floating live-connection indicator: a pip pinned to the top-right corner
- * over a semi-transparent tint of the status colour. Collapsed it shows only the
- * dot; on hover (or briefly whenever the status changes) the pill grows to the
- * LEFT to reveal the label — the dot itself never moves (the pill is
- * right-anchored). While reconnecting/stale, a bright border segment orbits the
- * pill's perimeter (see `.status-orbit` in globals.css).
+ * The live-connection indicator pill: a pip over a semi-transparent tint of the
+ * status colour. Collapsed it shows only the dot; on hover (or briefly whenever
+ * the status changes) the pill grows to the LEFT to reveal the label — the dot
+ * itself never moves (the pill is right-anchored). While reconnecting/stale, a
+ * bright border segment orbits the pill's perimeter (see `.status-orbit` in
+ * globals.css).
+ *
+ * This is layout-agnostic (no positioning of its own) — the header-actions
+ * cluster positions it as the leftmost item; {@link ConnectionStatusFloat} wraps
+ * it in a fixed top-right anchor for standalone use.
  */
-export function ConnectionStatusFloat({ className }: { className?: string }) {
+export function ConnectionStatusPill({ className }: { className?: string }) {
   const status = useConnectionStore((s) => worstStatus(s.statuses));
   const meta = META[status];
   const tint = `hsl(var(${meta.token}) / 0.1)`;
@@ -120,7 +124,7 @@ export function ConnectionStatusFloat({ className }: { className?: string }) {
     <div
       role="status"
       aria-label={`Connection: ${meta.label}`}
-      className={cn('group fixed right-4 top-7 z-50', className)}
+      className={cn('group', className)}
     >
       {/* h-7 + symmetric px keeps the collapsed state a perfect circle (28×28):
           the zero-width label mustn't be allowed to stretch the height. */}
@@ -148,6 +152,15 @@ export function ConnectionStatusFloat({ className }: { className?: string }) {
       </div>
     </div>
   );
+}
+
+/**
+ * The floating live-connection indicator: {@link ConnectionStatusPill} pinned to
+ * the top-right corner. Retained for standalone use; the app chrome now renders
+ * the pill inside the header-actions cluster instead.
+ */
+export function ConnectionStatusFloat({ className }: { className?: string }) {
+  return <ConnectionStatusPill className={cn('fixed right-4 top-7 z-50', className)} />;
 }
 
 /**

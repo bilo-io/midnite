@@ -219,7 +219,13 @@ export class SsoService {
     if (!tokens.id_token) throw new SsoProviderError('Google response had no id_token');
 
     // Verify signature (Google JWKS) + audience + issuer offline, then trust claims.
-    let claims: { sub?: unknown; email?: unknown; email_verified?: unknown; name?: unknown };
+    let claims: {
+      sub?: unknown;
+      email?: unknown;
+      email_verified?: unknown;
+      name?: unknown;
+      picture?: unknown;
+    };
     try {
       const verified = await jwtVerify(tokens.id_token, this.googleKeyResolver(), {
         issuer: GOOGLE_ISSUERS,
@@ -238,6 +244,7 @@ export class SsoService {
       email: claims.email,
       emailVerified: claims.email_verified === true,
       name: typeof claims.name === 'string' ? claims.name : undefined,
+      avatarUrl: typeof claims.picture === 'string' ? claims.picture : undefined,
     };
   }
 
@@ -267,7 +274,12 @@ export class SsoService {
       fetch(GITHUB_EMAILS_URL, { headers: authHeaders }),
     ]);
     if (!userResp.ok) throw new SsoProviderError('GitHub /user request failed');
-    const ghUser = (await userResp.json()) as { id?: number; login?: string; name?: string | null };
+    const ghUser = (await userResp.json()) as {
+      id?: number;
+      login?: string;
+      name?: string | null;
+      avatar_url?: string | null;
+    };
     if (typeof ghUser.id !== 'number') throw new SsoProviderError('GitHub /user missing id');
 
     // Primary + verified email only (Decision §1 safety) → auto-linkable.
@@ -291,6 +303,7 @@ export class SsoService {
       email,
       emailVerified,
       name: ghUser.name ?? ghUser.login ?? undefined,
+      avatarUrl: typeof ghUser.avatar_url === 'string' ? ghUser.avatar_url : undefined,
     };
   }
 

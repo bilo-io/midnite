@@ -1172,6 +1172,9 @@ export const users = sqliteTable(
     // is rejected for a null-hash user with a "use Google/GitHub" message rather
     // than a generic invalid-credentials failure (see UsersService).
     passwordHash: text('password_hash'),
+    // Avatar image URL (Phase 71) — captured from the SSO provider's profile
+    // picture on login; null for password-only users (UI falls back to initials).
+    avatarUrl: text('avatar_url'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
