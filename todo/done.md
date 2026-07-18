@@ -18,6 +18,16 @@ Links external Google/GitHub identities to users and lets pure-SSO (passwordless
 
 ---
 
+## 2026-07-18 — feat(gateway): Phase 70 Theme E — SSO config + boot check + docs (PR #450)
+
+Where the Google/GitHub SSO client IDs/secrets live and how an operator turns SSO on — the config contract + a fail-closed boot check + setup docs, ahead of the gateway flow (Theme C). Pure `shared` + `gateway` + README; no web/CLI behaviour yet.
+
+- [x] **`gateway.auth.sso` schema** ([`shared/src/config.ts`](../packages/shared/src/config.ts)) — `SsoProviderConfigSchema` reuses `OAuthClientConfigSchema` (`clientId` + env-name-only `clientSecretEnv` + `scopes`) + an optional pinned `redirectUri`; `GatewaySsoConfigSchema = { google?, github?, webBaseUrl? }`, hung off `GatewayAuthConfigSchema.sso` as **optional** (absent ⇒ no buttons, password login unaffected). `OAuthClientConfigSchema` relocated above the auth schema so SSO reuses it (workflow vault still does too).
+- [x] **`enabledSsoProviders(config)`** pure helper — which providers have a configured block, stable order; for Theme C's providers endpoint + Theme D's buttons.
+- [x] **Fail-closed boot check** (`health.service` `checkSso` → `bootChecks`): configured provider whose `clientSecretEnv` is unset ⇒ **fail**; secrets present but JWT disabled ⇒ **warn** (SSO issues our JWTs); else **ok**. Mirrors the `secret-key` check; surfaces via `midnite doctor` / startup preflight.
+- [x] **Docs** — README `gateway.auth.sso` bullet + a full "Setting up Google / GitHub SSO" walkthrough (register each OAuth app, callback URLs, env vars, `midnite.json` block, the `sso` preflight states).
+- [x] **Tests** — `config.test.ts` (absent-default, google+github parse, non-URL rejection, `enabledSsoProviders` ordering) + `health.service.spec.ts` (`sso` check: ok/fail/warn/ok matrix). Gate: `:typecheck` · eslint · `shared:test` · `gateway:test` (2120) green; CI web reds are the pre-existing `@midnite/shared` CJS-barrel issue (shared changed ⇒ web affected), not this PR.
+
 ## 2026-07-18 — feat(web): Phase 70 Theme F — split-screen login hero (PR #448)
 
 Turns the bare centered auth pages into a split-screen hero — form left third, a deep-space panel right two-thirds on desktop with login-specific typewriter copy over a galaxy starfield that lights up constellations as knowledge-graph edges. Pure `packages/web`, no gateway.

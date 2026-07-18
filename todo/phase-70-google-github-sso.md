@@ -73,15 +73,15 @@ The heart of the phase. A dedicated auth-module service that runs the authorizat
 
 ---
 
-## Theme E — Config, secrets & docs — **S**
+## Theme E — Config, secrets & docs — **S** — ✅ DONE (PR #450, 2026-07-18)
 
-Where the client IDs/secrets live, and how an operator turns SSO on. Lands in parallel with A.
+Where the client IDs/secrets live, and how an operator turns SSO on. Lands in parallel with A. **Decisions (`/exec` Stage 2.5):** per-provider `redirectUri` + shared `webBaseUrl` · extend `OAuthClientConfigSchema` (keep `scopes`) · hard fail-closed boot check · warn on SSO-without-JWT · ship `enabledSsoProviders` now · full setup walkthrough.
 
-- [ ] New `gateway.auth.sso` block in [`shared/src/config.ts`](../packages/shared/src/config.ts): `{ google?: OAuthClientConfig, github?: OAuthClientConfig }`, **reusing `OAuthClientConfigSchema`** (`clientId` + `clientSecretEnv` env-name-only + `scopes`). Add an optional `redirectUri` (Google/GitHub app registrations pin a callback) and/or a shared `webBaseUrl` so the callback→web redirect target is explicit, not purely header-derived.
-- [ ] Default config object updated; SSO **absent by default** (a deployment with no `sso` block simply shows no provider buttons — behaviour-preserving).
-- [ ] Boot validation: if an `sso.<provider>` block is present but its `clientSecretEnv` var is unset, fail-closed with a clear message (mirroring the JWT/crypto env checks).
-- [ ] Docs: README + `midnite.json` schema docs — how to register a Google OAuth client + a GitHub OAuth app, which redirect URI to whitelist, which env vars to set. Note SSO requires JWT enabled (`MIDNITE_JWT_SECRET`) and `MIDNITE_SECRET_KEY` (state encryption).
-- [ ] Config-schema unit test (parse with/without the `sso` block; env-name resolution).
+- [x] New `gateway.auth.sso` block in [`shared/src/config.ts`](../packages/shared/src/config.ts): `SsoProviderConfigSchema = OAuthClientConfigSchema.extend({ redirectUri? })` per `{ google?, github? }` + a shared `webBaseUrl`, **reusing `OAuthClientConfigSchema`** (`clientId` + `clientSecretEnv` env-name-only + `scopes`). `OAuthClientConfigSchema` moved above the auth schema so SSO can reuse it. Plus a pure `enabledSsoProviders(config)` helper for Themes C/D.
+- [x] Default config object updated; SSO **absent by default** (`sso` is `.optional()` — a deployment with no `sso` block simply shows no provider buttons, behaviour-preserving).
+- [x] Boot validation: `health.service` `checkSso` (in `bootChecks`) — an `sso.<provider>` present but its `clientSecretEnv` unset is **fail-closed**; secrets present but JWT off **warns**; mirrors the `secret-key` check.
+- [x] Docs: README `gateway.auth.sso` bullet + a full "Setting up Google / GitHub SSO" walkthrough — register a Google OAuth client + a GitHub OAuth app, which redirect URI to whitelist, which env vars to set, and the note that SSO requires `MIDNITE_JWT_SECRET` + `MIDNITE_SECRET_KEY`.
+- [x] Config-schema unit test (`config.test.ts`: parse with/without the `sso` block, non-URL rejection, `enabledSsoProviders` ordering) + boot-check spec (`health.service.spec.ts`).
 
 ---
 
