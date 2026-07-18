@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 0/34 | `░░░░░░░░░░` | 0% | A B C D | E F G H |
+| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 16/34 | `█████░░░░░` | 47% | — | E F G H |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -126,10 +126,10 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 71 — App update banner & per-platform update](phase-71-app-update-banner.md)
 *A build-emitted `version.json` published on every tag, a client that polls + folds in the service-worker signal to detect a newer build, and a prominent-but-subtle theme-inverted **top banner** that lets the user take the update when they choose — web force-refreshes, desktop runs a full `electron-updater` download → restart-to-install. Plus release-notes on the version, stable/beta channel, a force-update floor, and a CLI out-of-date notice. Golive-readiness. Never blindly auto-updates.*
-- ◻ **A** — Version manifest & compare: `VersionManifestSchema` + `isUpdateAvailable`/`isBelowFloor` in shared, per-app current-version constant, typed `fetchVersionManifest`
-- ◻ **B** — Detection: `useUpdateAvailable` poll (~5min) + focus + navigation, fold in the SW waiting-worker signal (stop silent skipWaiting), own-origin `/version.json` no-store
-- ◻ **C** — `UpdateBanner` (web): top-of-layout, theme-inverted, **layout push-down not overlay**, ease-in-out show/hide (reduced-motion aware), `×` dismiss that re-surfaces on reload, mobile + desktop
-- ◻ **D** — Web apply: skipWaiting → controllerchange → force reload on click; no-waiting-worker fallback; verify the new build actually landed
+- ✅ **A** — Version manifest & compare: `VersionManifestSchema` + `isUpdateAvailable`/`isBelowFloor` + `compareSemVer` in shared, typed `fetchVersionManifest`/`getCurrentVersion` (PR #455)
+- ✅ **B** — Detection: `useVersionPoll` (~5min + focus + navigation) folded with the SW waiting-worker signal; SW drops silent skipWaiting (survives for user-timed apply); own-origin `/version.json` no-store (PR #455)
+- ✅ **C** — `UpdateBanner` (web): top-of-layout, theme-inverted, **layout push-down not overlay** (nav offsets `top` by `--update-banner-h`), ease-in-out show/hide (reduced-motion aware, genuinely hidden when collapsed), `×` dismiss that re-surfaces on nav, floor removes `×`, mobile + desktop (PR #455)
+- ✅ **D** — Web apply: skipWaiting → controllerchange → force reload on click; hard-reload fallback (pulled forward so C is functional) (PR #455)
 - ◻ **E** — Electron auto-update + code-signing: `electron-updater` publish block + feed, `checkForUpdates`→`downloadUpdate`→`quitAndInstall`, preload `window.midnite.updates` bridge, progress→restart states, notarization/signing (user-timed, never auto-nag)
 - ◻ **F** — Release notes on the version: version link → CHANGELOG-section popover (fallback to release page), optional Phase 21 notification echo
 - ◻ **G** — Release-flow wiring: emit `packages/web/public/version.json` on every tag via `/release-complete` + a moon task, `version-check` guard against a stale manifest

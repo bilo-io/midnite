@@ -19,41 +19,41 @@
 
 ---
 
-## Theme A — Version manifest & semver compare (contract) — **S**
+## Theme A — Version manifest & semver compare (contract) — **S** — ✅ DONE (PR #455, 2026-07-18)
 
 The shared shape both a running client and the release flow agree on, plus the "what am I?" constant baked into each build.
 
-- [ ] `shared`: `VersionManifestSchema` in `shared/src/version.ts` (or a new `shared/src/update/`): `{ version: string (semver), channel: 'stable' | 'beta', minSupported?: string, releasedAt?: string, notesUrl?: string }`, validated against the existing semver rules; export an `isUpdateAvailable(current, latest)` + `isBelowFloor(current, minSupported)` pure helper (reuse `version.ts` compare, don't hand-roll).
-- [ ] A build-time **current-version constant** for each app: `web` exposes it via `NEXT_PUBLIC_APP_VERSION` (read from `package.json` at build), `desktop` from `app.getVersion()`; a single `getCurrentVersion()` accessor in `web` so the banner never guesses.
-- [ ] Typed access only: a `fetchVersionManifest(url)` helper (in `web`) that fetches + `VersionManifestSchema.parse`es — no raw `.json()` consumers. Unit tests for the compare/floor helpers (equal, patch-ahead, minor-behind, malformed, channel mismatch).
+- [x] `shared`: `VersionManifestSchema` in `shared/src/version.ts` (or a new `shared/src/update/`): `{ version: string (semver), channel: 'stable' | 'beta', minSupported?: string, releasedAt?: string, notesUrl?: string }`, validated against the existing semver rules; export an `isUpdateAvailable(current, latest)` + `isBelowFloor(current, minSupported)` pure helper (reuse `version.ts` compare, don't hand-roll).
+- [x] A build-time **current-version constant** for each app: `web` exposes it via `NEXT_PUBLIC_APP_VERSION` (read from `package.json` at build), `desktop` from `app.getVersion()`; a single `getCurrentVersion()` accessor in `web` so the banner never guesses.
+- [x] Typed access only: a `fetchVersionManifest(url)` helper (in `web`) that fetches + `VersionManifestSchema.parse`es — no raw `.json()` consumers. Unit tests for the compare/floor helpers (equal, patch-ahead, minor-behind, malformed, channel mismatch).
 
-## Theme B — Detection: poll + focus + SW signal (web) — **M**
+## Theme B — Detection: poll + focus + SW signal (web) — **M** — ✅ DONE (PR #455, 2026-07-18)
 
 Belt-and-suspenders freshness: the version manifest is the source of truth, the SW waiting-worker is a corroborating signal, neither blindly reloads.
 
-- [ ] `useUpdateAvailable()` hook: polls `fetchVersionManifest()` on mount + on an interval (`~5min`, config const) + on `window` focus + on route navigation; compares against `getCurrentVersion()`; exposes `{ available, latest, belowFloor, source }`. Guarded against overlapping fetches + offline (fail-soft, no error toast).
-- [ ] Fold in the **SW signal**: rework [`pwa-register.tsx`](../packages/web/components/pwa-register.tsx) so a `waiting` worker (via `updatefound` → `installed` while controlled) also flips `available` — detection only; it must **stop auto-`skipWaiting`ing** on install so the waiting worker survives for the user to trigger (Theme D applies it on click). Preserve the "never touch gateway origin" invariant + production-only activation.
-- [ ] Manifest hosting: web polls its **own origin** `/version.json` (static, from Theme G). Document the cache-busting (`cache: 'no-store'` + query nonce) so a CDN can't pin a stale manifest.
-- [ ] Tests: hook units (available on minor bump, no-op when equal, focus/interval re-check, offline fail-soft), SW-signal unit (waiting worker → available), updated `pwa-register.test.tsx` for the no-longer-silent lifecycle.
+- [x] `useUpdateAvailable()` hook: polls `fetchVersionManifest()` on mount + on an interval (`~5min`, config const) + on `window` focus + on route navigation; compares against `getCurrentVersion()`; exposes `{ available, latest, belowFloor, source }`. Guarded against overlapping fetches + offline (fail-soft, no error toast).
+- [x] Fold in the **SW signal**: rework [`pwa-register.tsx`](../packages/web/components/pwa-register.tsx) so a `waiting` worker (via `updatefound` → `installed` while controlled) also flips `available` — detection only; it must **stop auto-`skipWaiting`ing** on install so the waiting worker survives for the user to trigger (Theme D applies it on click). Preserve the "never touch gateway origin" invariant + production-only activation.
+- [x] Manifest hosting: web polls its **own origin** `/version.json` (static, from Theme G). Document the cache-busting (`cache: 'no-store'` + query nonce) so a CDN can't pin a stale manifest.
+- [x] Tests: hook units (available on minor bump, no-op when equal, focus/interval re-check, offline fail-soft), SW-signal unit (waiting worker → available), updated `pwa-register.test.tsx` for the no-longer-silent lifecycle.
 
-## Theme C — The `UpdateBanner` (web) — **M**
+## Theme C — The `UpdateBanner` (web) — **M** — ✅ DONE (PR #455, 2026-07-18)
 
 The whole point: a top banner that is impossible to miss but doesn't shout, and **pushes the app down** rather than floating over it.
 
-- [ ] `UpdateBanner` component (in `web`, e.g. `components/update/`): mounted at the **top of the root layout** ([`layout.tsx`](../packages/web/app/layout.tsx)), rendered only when `useUpdateAvailable().available`. **Theme-inverted** surface (dark chrome in light mode / light chrome in dark mode via tokens) for contrast; prominent yet subtle (one line of copy, the version as a link/button, the update action, a right-aligned `×`).
-- [ ] **Layout push-down, not overlay:** the banner occupies real flow height so the entire app shifts down and nothing is occluded (a CSS custom property / layout slot the app chrome respects — verify against the fixed sidenav/header). Works at both mobile (`< md`) and desktop widths; copy + controls reflow (icon-only actions on narrow screens).
-- [ ] **Ease-in-out show/hide:** appearing and disappearing animate height + opacity with an ease-in-out curve (respect `prefers-reduced-motion` → instant). No layout jank — reserve/animate the slot so the push-down is smooth.
-- [ ] **Dismiss semantics:** the `×` hides the banner **for the current view only** — it is *not* persisted; any reload or navigation re-surfaces it while an update is still available (ephemeral in-memory state, never localStorage). Once the update is applied (version matches), it stops appearing.
-- [ ] Platform-aware action label: web → "Update" (force refresh); desktop → "Update" that downloads then becomes "Restart to install" (Theme E drives the state). The action + label come from a platform detector so one component serves both.
-- [ ] Tests + stories: `update-banner.stories.tsx` (light/dark inverted, mobile/desktop, downloading/ready-to-restart states) with `play` for dismiss + click; RTL for dismiss-reappears-on-remount and applied → hidden.
+- [x] `UpdateBanner` component (in `web`, e.g. `components/update/`): mounted at the **top of the root layout** ([`layout.tsx`](../packages/web/app/layout.tsx)), rendered only when `useUpdateAvailable().available`. **Theme-inverted** surface (dark chrome in light mode / light chrome in dark mode via tokens) for contrast; prominent yet subtle (one line of copy, the version as a link/button, the update action, a right-aligned `×`).
+- [x] **Layout push-down, not overlay:** the banner occupies real flow height so the entire app shifts down and nothing is occluded (a CSS custom property / layout slot the app chrome respects — verify against the fixed sidenav/header). Works at both mobile (`< md`) and desktop widths; copy + controls reflow (icon-only actions on narrow screens).
+- [x] **Ease-in-out show/hide:** appearing and disappearing animate height + opacity with an ease-in-out curve (respect `prefers-reduced-motion` → instant). No layout jank — reserve/animate the slot so the push-down is smooth.
+- [x] **Dismiss semantics:** the `×` hides the banner **for the current view only** — it is *not* persisted; any reload or navigation re-surfaces it while an update is still available (ephemeral in-memory state, never localStorage). Once the update is applied (version matches), it stops appearing.
+- [x] Platform-aware action label: web → "Update" (force refresh); desktop → "Update" that downloads then becomes "Restart to install" (Theme E drives the state). The action + label come from a platform detector so one component serves both.
+- [x] Tests + stories: `update-banner.stories.tsx` (light/dark inverted, mobile/desktop, downloading/ready-to-restart states) with `play` for dismiss + click; RTL for dismiss-reappears-on-remount and applied → hidden.
 
-## Theme D — Web apply: SW handoff → force refresh — **S**
+## Theme D — Web apply: SW handoff → force refresh — **S** — ✅ DONE (PR #455, 2026-07-18)
 
 Take the waiting worker live and hard-refresh from server, exactly once, on the user's click.
 
-- [ ] On "Update" (web): post `skipWaiting` to the waiting SW, listen for `controllerchange`, then `location.reload()` (force server fetch). Idempotent + guarded (no double-reload); fall back to a plain hard reload if there's no waiting worker (version-only detection case).
-- [ ] Verify the reload actually lands the new build (post-reload `getCurrentVersion()` matches `latest`) — otherwise keep the banner up rather than declaring success.
-- [ ] Tests: the skipWaiting → controllerchange → reload sequence (mocked SW), and the no-waiting-worker fallback path.
+- [x] On "Update" (web): post `skipWaiting` to the waiting SW, listen for `controllerchange`, then `location.reload()` (force server fetch). Idempotent + guarded (no double-reload); fall back to a plain hard reload if there's no waiting worker (version-only detection case).
+- [x] Verify the reload actually lands the new build (post-reload `getCurrentVersion()` matches `latest`) — otherwise keep the banner up rather than declaring success.
+- [x] Tests: the skipWaiting → controllerchange → reload sequence (mocked SW), and the no-waiting-worker fallback path.
 
 ## Theme E — Electron auto-update + code-signing (desktop) — **L**
 
