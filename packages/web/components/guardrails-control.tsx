@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { OctagonX, Pause, Play, ShieldCheck } from 'lucide-react';
+import { OctagonX, Pause, Play } from 'lucide-react';
 import type { GuardrailSettings } from '@midnite/shared';
 import { emergencyStopGuardrails, pauseGuardrails } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { HoverExpandButton } from '@/components/hover-expand-button';
 import { useConfirm } from '@/components/confirm-dialog';
 import { useToast } from '@/components/toast';
-import { cn } from '@/lib/utils';
 
 const GLOBAL = { kind: 'global' } as const;
 
@@ -30,7 +30,6 @@ export function GuardrailsControl({ guardrails, onChange }: Props) {
   const confirm = useConfirm();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const run = async (fn: () => Promise<GuardrailSettings>, ok: string) => {
     setBusy(true);
@@ -41,82 +40,55 @@ export function GuardrailsControl({ guardrails, onChange }: Props) {
       toast.error(errMsg(e));
     } finally {
       setBusy(false);
-      setOpen(false);
     }
   };
 
+  // Paused: a single amber Resume affordance (the full-width banner announces the
+  // paused state below the toolbar).
   if (guardrails.pausedGlobal) {
     return (
-      <Button
-        type="button"
-        size="sm"
+      <HoverExpandButton
+        icon={<Play className="h-3.5 w-3.5" />}
+        label="Resume scheduling"
         variant="secondary"
         disabled={busy}
         onClick={() => void run(() => pauseGuardrails(GLOBAL, false), 'Scheduling resumed')}
-        className="h-8 gap-1.5 border border-amber-500/40 text-amber-600 dark:text-amber-400"
-      >
-        <Play className="h-3.5 w-3.5" /> Resume
-      </Button>
+        className="border border-amber-500/40 text-amber-600 dark:text-amber-400"
+      />
     );
   }
 
-  return (
-    <div className="relative">
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        aria-label="Safety controls"
-        disabled={busy}
-        onClick={() => setOpen((v) => !v)}
-        className="h-8 w-8 text-muted-foreground"
-      >
-        <ShieldCheck className="h-4 w-4" />
-      </Button>
+  // Running: pause + emergency-stop surfaced directly (Phase 50 A) as icon-only
+  // controls that reveal their label on hover/focus — no dropdown.
+  const emergencyStop = () =>
+    void (async () => {
+      const okd = await confirm({
+        title: 'Emergency stop?',
+        description:
+          'Pauses all scheduling and aborts every in-flight agent. Aborted tasks return to Todo and re-run when you resume.',
+        confirmLabel: 'Emergency stop',
+      });
+      if (okd) await run(() => emergencyStopGuardrails(GLOBAL), 'Emergency stop — agents aborted');
+    })();
 
-      {open ? (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <div
-            role="menu"
-            className="absolute right-0 z-50 mt-1 w-52 overflow-hidden rounded-md border border-border bg-popover p-1 shadow-lg"
-          >
-            <button
-              type="button"
-              role="menuitem"
-              disabled={busy}
-              onClick={() => void run(() => pauseGuardrails(GLOBAL, true), 'Scheduling paused')}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-accent"
-            >
-              <Pause className="h-3.5 w-3.5 text-muted-foreground" />
-              Pause scheduling
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              disabled={busy}
-              onClick={() =>
-                void (async () => {
-                  const okd = await confirm({
-                    title: 'Emergency stop?',
-                    description:
-                      'Pauses all scheduling and aborts every in-flight agent. Aborted tasks return to Todo and re-run when you resume.',
-                    confirmLabel: 'Emergency stop',
-                  });
-                  if (okd) await run(() => emergencyStopGuardrails(GLOBAL), 'Emergency stop — agents aborted');
-                })()
-              }
-              className={cn(
-                'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs',
-                'text-red-600 hover:bg-destructive/15 dark:text-red-400',
-              )}
-            >
-              <OctagonX className="h-3.5 w-3.5" />
-              Emergency stop
-            </button>
-          </div>
-        </>
-      ) : null}
+  return (
+    <div className="flex items-center gap-1">
+      <HoverExpandButton
+        icon={<Pause className="h-3.5 w-3.5" />}
+        label="Pause scheduling"
+        variant="ghost"
+        disabled={busy}
+        onClick={() => void run(() => pauseGuardrails(GLOBAL, true), 'Scheduling paused')}
+        className="text-muted-foreground"
+      />
+      <HoverExpandButton
+        icon={<OctagonX className="h-3.5 w-3.5" />}
+        label="Emergency stop"
+        variant="ghost"
+        disabled={busy}
+        onClick={emergencyStop}
+        className="text-red-600 hover:bg-destructive/15 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400"
+      />
     </div>
   );
 }

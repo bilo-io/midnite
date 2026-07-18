@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { GuardrailSettings } from '@midnite/shared';
 import { GuardrailsBanner, GuardrailsControl } from './guardrails-control';
 import { ConfirmProvider } from './confirm-dialog';
@@ -59,25 +59,27 @@ describe('GuardrailsBanner', () => {
 });
 
 describe('GuardrailsControl', () => {
-  it('opens the menu and pauses scheduling', async () => {
+  it('surfaces pause + emergency-stop directly (no dropdown) and pauses on click', async () => {
     const onChange = vi.fn();
     wrap(<GuardrailsControl guardrails={running} onChange={onChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /safety controls/i }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /pause scheduling/i }));
+    // Both actions are present as top-level buttons — no menu to open.
+    expect(screen.getByRole('button', { name: /pause scheduling/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /emergency stop/i })).toBeTruthy();
 
+    fireEvent.click(screen.getByRole('button', { name: /pause scheduling/i }));
     await waitFor(() => expect(pauseGuardrails).toHaveBeenCalledWith({ kind: 'global' }, true));
   });
 
   it('confirms before an emergency stop, then aborts', async () => {
     wrap(<GuardrailsControl guardrails={running} onChange={() => {}} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /safety controls/i }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /emergency stop/i }));
+    fireEvent.click(screen.getByRole('button', { name: /emergency stop/i }));
 
-    // The confirm dialog appears; accept it.
-    const confirmBtn = await screen.findByRole('button', { name: /^emergency stop$/i });
-    fireEvent.click(confirmBtn);
+    // The confirm dialog appears; accept it (scoped to the dialog, since the
+    // toolbar trigger shares the "Emergency stop" accessible name).
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /^emergency stop$/i }));
     await waitFor(() => expect(emergencyStopGuardrails).toHaveBeenCalledWith({ kind: 'global' }));
   });
 
