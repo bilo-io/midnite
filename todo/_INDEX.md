@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [71 · App update banner](phase-71-app-update-banner.md) | ◻ TODO | 0/34 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
+| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 0/34 | `░░░░░░░░░░` | 0% | A B C D | E F G H |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
