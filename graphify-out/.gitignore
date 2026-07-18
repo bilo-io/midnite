@@ -1,0 +1,5 @@
+# Machine-local graphify state (absolute paths / regeneration cache) — not portable
+.graphify_python
+.graphify_root
+.needs_update
+cache/
