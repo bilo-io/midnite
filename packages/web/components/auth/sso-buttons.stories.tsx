@@ -37,12 +37,13 @@ export const SingleProvider: Story = {
   },
 };
 
-/** SSO not configured — renders nothing (password-only login is unaffected). */
-export const NotConfigured: Story = {
+/** Gateway reports no configured providers — the buttons still show (fallback to
+ *  both) so SSO stays visible; an unconfigured click gets a friendly error. */
+export const UnconfiguredFallback: Story = {
   beforeEach: () => installMockFetch([{ match: '/auth/sso/providers', json: { providers: [] } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.queryByText('Continue with Google')).toBeNull();
-    await expect(canvas.queryByText('Continue with GitHub')).toBeNull();
+    await expect(await canvas.findByText('Continue with Google')).toBeInTheDocument();
+    await expect(canvas.getByText('Continue with GitHub')).toBeInTheDocument();
   },
 };

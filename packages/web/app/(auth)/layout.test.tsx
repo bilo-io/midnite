@@ -10,6 +10,10 @@ vi.mock('@/hooks/use-media-query', () => ({ useIsDesktop: () => mockIsDesktop })
 vi.mock('@/components/auth/auth-hero', () => ({
   AuthHero: () => <div data-testid="auth-hero" />,
 }));
+// The layout's theme toggle reads the theme context; stub it (no provider here).
+vi.mock('@/app/theme/theme-context', () => ({
+  useTheme: () => ({ resolved: 'light', setPreference: vi.fn() }),
+}));
 
 afterEach(cleanup);
 
@@ -34,5 +38,16 @@ describe('AuthLayout', () => {
     );
     expect(screen.getByLabelText('sign-in')).toBeInTheDocument();
     expect(screen.getByTestId('auth-hero')).toBeInTheDocument();
+  });
+
+  it('shows the logo/wordmark and a theme toggle in the form header', () => {
+    mockIsDesktop = false;
+    render(
+      <AuthLayout>
+        <form aria-label="sign-in" />
+      </AuthLayout>,
+    );
+    expect(screen.getByText('midnite')).toBeInTheDocument();
+    expect(screen.getByLabelText(/switch to (light|dark) theme/i)).toBeInTheDocument();
   });
 });
