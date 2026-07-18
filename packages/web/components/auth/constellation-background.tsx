@@ -128,9 +128,10 @@ function spawnConstellation(
   py: number[],
   colorIdx: 0 | 1 | 2 | 3,
   born: number,
+  rnd: () => number = Math.random,
 ): Constellation {
-  const anchor = Math.floor(Math.random() * stars.length);
-  const k = 3 + Math.floor(Math.random() * 3); // 3–5 neighbours
+  const anchor = Math.floor(rnd() * stars.length);
+  const k = 3 + Math.floor(rnd() * 3); // 3–5 neighbours
   const near = stars
     .map((_, i) => i)
     .filter((i) => i !== anchor)
@@ -180,6 +181,9 @@ export function ConstellationBackground({
     let stars: Star[] = [];
     let px: number[] = [];
     let py: number[] = [];
+    // Set by the static path so a resize / theme change repaints the frozen frame
+    // (the animated path repaints every RAF tick, so it leaves this null).
+    let repaint: (() => void) | null = null;
 
     const reseed = () => {
       const count = Math.min(230, Math.max(90, Math.round((w * h) / 5200)));
@@ -197,6 +201,7 @@ export function ConstellationBackground({
       canvas.height = Math.max(1, Math.round(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       reseed();
+      repaint?.();
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -205,6 +210,7 @@ export function ConstellationBackground({
     let nodes = readNodeColors();
     const mo = new MutationObserver(() => {
       nodes = readNodeColors();
+      repaint?.();
     });
     mo.observe(document.documentElement, {
       attributes: true,
@@ -249,14 +255,20 @@ export function ConstellationBackground({
       }
     };
 
-    // ── Static (reduced-motion) path: paint once and stop ──────────────────────
+    // ── Static (reduced-motion) path: paint one frame, repaint on resize/theme ──
     if (!animate) {
-      ctx.clearRect(0, 0, w, h);
-      drawStars(0);
-      // A few pre-lit constellations so the graph identity survives with no motion.
-      for (let i = 0; i < 3; i++) {
-        drawConstellation(spawnConstellation(stars, px, py, (i % 4) as 0 | 1 | 2 | 3, 0), 0.9);
-      }
+      const paintStatic = () => {
+        ctx.clearRect(0, 0, w, h);
+        drawStars(0);
+        // A few pre-lit constellations so the graph identity survives with no
+        // motion — seeded per-slot so they stay put across repaints.
+        for (let i = 0; i < 3; i++) {
+          const seeded = mulberry32(0x51ed + i * 0x2545);
+          drawConstellation(spawnConstellation(stars, px, py, (i % 4) as 0 | 1 | 2 | 3, 0, seeded), 0.9);
+        }
+      };
+      repaint = paintStatic;
+      paintStatic();
       return () => {
         ro.disconnect();
         mo.disconnect();
