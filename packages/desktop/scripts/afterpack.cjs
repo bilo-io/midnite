@@ -47,9 +47,10 @@ exports.default = async function afterPack(context) {
   }
   if (broken.length) console.log(`[afterPack] pruned ${broken.length} dangling symlink(s)`);
 
-  // Ad-hoc code-sign the whole .app on macOS. electron-builder.yml sets
-  // `identity: null` (no Developer ID cert), which leaves Electron's own
-  // signature in place but invalidates it once our extraResources are copied in
+  // Ad-hoc code-sign the whole .app on macOS. When packaging UNSIGNED (no
+  // Developer ID cert — CSC_IDENTITY_AUTO_DISCOVERY=false or no identity found),
+  // electron-builder leaves Electron's own signature in place, but that is
+  // invalidated once our extraResources are copied in
   // ("code has no resources but signature indicates they must be present"),
   // so Gatekeeper refuses to launch. A `--force --deep --sign -` ad-hoc
   // signature over the final, resource-complete bundle is valid and lets the

@@ -1,5 +1,11 @@
 import { app, ipcMain, type BrowserWindow } from 'electron';
-import electronUpdater from 'electron-updater';
+// Named import: electron-updater is CJS with `__esModule: true` and no `default`
+// export, so under `module: commonjs` a default import resolves to `undefined`
+// (`__importDefault` unwraps the already-flagged module) and destructuring
+// `autoUpdater` off it throws at load. `autoUpdater` is a lazy getter — accessed
+// only inside the functions below (after app-ready, and skipped when unpackaged),
+// never at module load.
+import { autoUpdater } from 'electron-updater';
 
 import {
   availableState,
@@ -15,10 +21,6 @@ import {
   UPDATE_STATE_CHANNEL,
   type UpdateState,
 } from '../updates/update-state';
-
-// electron-updater is CommonJS; the autoUpdater singleton is a property of the
-// default export (the named-import form breaks under some interop settings).
-const { autoUpdater } = electronUpdater;
 
 /**
  * Wire electron-updater to the renderer (Phase 71 Theme E). **User-timed only** —

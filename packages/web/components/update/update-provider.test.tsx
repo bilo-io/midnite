@@ -131,6 +131,32 @@ describe('UpdateProvider — desktop (electron-updater) branch', () => {
     expect(h.restartToInstall).toHaveBeenCalledOnce();
   });
 
+  it('keeps the banner up on a download error (version known) so Retry is reachable', () => {
+    const h = installBridge();
+    render(
+      <UpdateProvider>
+        <Probe />
+      </UpdateProvider>,
+    );
+    // available first → a version is now known; then the download errors.
+    h.emit({ phase: 'available', version: '0.2.0', percent: null, error: null });
+    h.emit({ phase: 'error', version: '0.2.0', percent: null, error: 'download failed' });
+    const btn = screen.getByRole('button', { name: 'probe' });
+    expect(btn).toHaveAttribute('data-available', 'true');
+    expect(btn).toHaveAttribute('data-phase', 'error');
+  });
+
+  it('stays hidden on a boot-time feed error with no known version (fail-soft)', () => {
+    const h = installBridge();
+    render(
+      <UpdateProvider>
+        <Probe />
+      </UpdateProvider>,
+    );
+    h.emit({ phase: 'error', version: null, percent: null, error: 'feed unreachable' });
+    expect(screen.getByRole('button', { name: 'probe' })).toHaveAttribute('data-available', 'false');
+  });
+
   it('re-checks (retries) on applyUpdate after an error', () => {
     const h = installBridge();
     render(

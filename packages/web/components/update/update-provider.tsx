@@ -98,8 +98,14 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
 
   const isDesktop = bridge !== null;
   const desktopPhase: UpdatePhase | null = isDesktop ? desktop?.phase ?? 'idle' : null;
+  // Keep the banner up for an error only once an update was actually known (a
+  // version was seen) — so a *download* failure surfaces "Update failed / Retry",
+  // but a boot-time unreachable-feed error (no version yet) stays fail-soft/hidden.
   const desktopActive =
-    desktopPhase === 'available' || desktopPhase === 'downloading' || desktopPhase === 'downloaded';
+    desktopPhase === 'available' ||
+    desktopPhase === 'downloading' ||
+    desktopPhase === 'downloaded' ||
+    (desktopPhase === 'error' && desktop?.version != null);
 
   // On desktop the electron-updater feed is authoritative; the web poll + SW
   // signal only drive the banner in a plain browser.
