@@ -35,11 +35,20 @@ describe('SsoButtons', () => {
     expect(screen.queryByTestId('sso-github')).toBeNull();
   });
 
-  it('renders nothing when SSO is not configured', async () => {
+  it('falls back to showing both providers when the gateway reports none', async () => {
     fetchSsoProviders.mockResolvedValue([]);
-    const { container } = render(<SsoButtons />);
+    render(<SsoButtons />);
     await waitFor(() => expect(fetchSsoProviders).toHaveBeenCalled());
-    expect(container.querySelector('[data-testid^="sso-"]')).toBeNull();
-    expect(container.textContent).not.toContain('or');
+    // Always visible + wired: an unconfigured provider click gets a friendly
+    // sso_error from the gateway rather than a missing button.
+    expect(screen.getByTestId('sso-google')).toBeInTheDocument();
+    expect(screen.getByTestId('sso-github')).toBeInTheDocument();
+  });
+
+  it('shows both providers immediately while the providers fetch is pending', () => {
+    fetchSsoProviders.mockReturnValue(new Promise(() => {}));
+    render(<SsoButtons />);
+    expect(screen.getByTestId('sso-google')).toBeInTheDocument();
+    expect(screen.getByTestId('sso-github')).toBeInTheDocument();
   });
 });

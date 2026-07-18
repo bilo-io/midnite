@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import Image from 'next/image';
-import { Wordmark } from '@/components/wordmark';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useTypewriter } from '@/lib/use-typewriter';
 import { ConstellationBackground } from '@/components/auth/constellation-background';
@@ -74,18 +72,6 @@ export function AuthHero() {
       <ConstellationBackground animate={animate} />
 
       <div className="relative z-10 max-w-xl">
-        <div className="mb-10 flex items-center gap-3">
-          <Image
-            src="/logo.PNG"
-            alt=""
-            width={40}
-            height={40}
-            priority
-            className="h-10 w-10 rounded-full object-cover ring-1 ring-white/15"
-          />
-          <Wordmark className="text-2xl text-white" />
-        </div>
-
         <h2
           className="min-h-[2.5em] text-4xl font-semibold leading-tight text-white xl:text-5xl"
           aria-live="polite"

@@ -44,9 +44,7 @@ export default function LoginPage() {
 
   return (
     <div className="w-full">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">
-        Sign in to midnite
-      </h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">Sign in</h1>
       {ssoError && (
         <p role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-500">
           {ssoError}

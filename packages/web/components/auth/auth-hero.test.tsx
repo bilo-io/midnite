@@ -43,9 +43,4 @@ describe('AuthHero', () => {
     const idx = TITLES.indexOf(heading.textContent ?? '');
     expect(screen.getByText(SUBTITLES[idx]!)).toBeInTheDocument();
   });
-
-  it('shows the brand wordmark', () => {
-    render(<AuthHero />);
-    expect(screen.getByText('midnite')).toBeInTheDocument();
-  });
 });

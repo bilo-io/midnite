@@ -3,6 +3,7 @@
 import { useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { NavBar } from '@/components/nav-bar';
+import { AuthGuard } from '@/components/auth-guard';
 import { FeatureGate } from '@/components/feature-gate';
 import { LiveData } from '@/components/live-data';
 import { PreferenceSync } from '@/components/preference-sync';
@@ -30,6 +31,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     <NotificationsProvider>
     <PaletteCommandsProvider>
       <div className="min-h-screen">
+        <AuthGuard />
         <LiveData />
         <PreferenceSync />
         <CommandPalette />
