@@ -25,6 +25,11 @@ import {
   checkForWaitingWorker,
   watchWaitingWorker,
 } from '@/lib/service-worker-update';
+import { useToast } from '@/components/toast';
+
+import { UPDATE_ECHO_KEY, shouldEchoUpdate } from './update-echo';
+
+export { UPDATE_ECHO_KEY, shouldEchoUpdate };
 
 export type UpdateContextValue = {
   /** A newer build is available (version.json poll / waiting SW / desktop feed). */
@@ -64,6 +69,7 @@ const UpdateContext = createContext<UpdateContextValue | null>(null);
 export function UpdateProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const poll = useVersionPoll(pathname ?? undefined);
+  const toast = useToast();
   const [swWaiting, setSwWaiting] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -122,6 +128,28 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     }
     void applyServiceWorkerUpdate();
   }, [bridge, desktop?.phase]);
+
+  // Echo a detected update into the notification surface (a one-shot toast) so a
+  // dismissed banner still leaves a trail. Reuses the existing toast channel, not a
+  // new one; gated once-per-version via localStorage so navigation doesn't re-nag.
+  // (A durable notification-center entry would need a gateway-side notification —
+  // the feed is server-authoritative — logged as a Theme F follow-up.)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let lastEchoed: string | null = null;
+    try {
+      lastEchoed = window.localStorage.getItem(UPDATE_ECHO_KEY);
+    } catch {
+      // private-mode / disabled storage — fall through, treat as not-yet-echoed
+    }
+    if (!shouldEchoUpdate(available, poll.latest, lastEchoed)) return;
+    try {
+      window.localStorage.setItem(UPDATE_ECHO_KEY, poll.latest as string);
+    } catch {
+      // ignore write failure; worst case the toast repeats on a later mount
+    }
+    toast.success(`Version ${poll.latest} is available`);
+  }, [available, poll.latest, toast]);
 
   const value = useMemo<UpdateContextValue>(
     () => ({

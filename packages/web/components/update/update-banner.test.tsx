@@ -26,10 +26,11 @@ describe('UpdateBannerView', () => {
     expect(container.firstChild).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('links the version to release notes when a notesUrl is given', () => {
+  it('exposes the version as a release-notes popover trigger', () => {
     render(<UpdateBannerView {...base} notesUrl="https://example.com/notes" />);
-    const link = screen.getByRole('link', { name: 'v0.2.0' });
-    expect(link).toHaveAttribute('href', 'https://example.com/notes');
+    // The version is a button that opens the release-notes popover (not a bare link).
+    const trigger = screen.getByRole('button', { name: 'v0.2.0' });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
   it('calls onUpdate when Update is clicked', () => {
