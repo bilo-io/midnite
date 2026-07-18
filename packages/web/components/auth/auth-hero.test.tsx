@@ -1,14 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
 import { AUTH_HERO_COPY, AuthHero, pickAuthHeroCopy } from './auth-hero';
 import { SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 
-// The starfield canvas is proven via a Storybook shot, not pixel asserts — stub it
-// so these DOM-level tests stay fast and don't touch a jsdom canvas.
-vi.mock('@/components/auth/constellation-background', () => ({
-  ConstellationBackground: () => null,
-}));
+// The hero is text-only now — the starfield moved to the layout as a
+// full-viewport backdrop, so there's no canvas to stub here.
 
 const TITLES = AUTH_HERO_COPY.map((c) => c.title);
 const SUBTITLES = AUTH_HERO_COPY.map((c) => c.subtitle);

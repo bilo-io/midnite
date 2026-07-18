@@ -10,6 +10,11 @@ vi.mock('@/hooks/use-media-query', () => ({ useIsDesktop: () => mockIsDesktop })
 vi.mock('@/components/auth/auth-hero', () => ({
   AuthHero: () => <div data-testid="auth-hero" />,
 }));
+// The full-viewport starfield mounts at the layout level now — stub it so these
+// DOM-level tests don't touch a jsdom canvas.
+vi.mock('@/components/auth/constellation-background', () => ({
+  ConstellationBackground: () => <div data-testid="starfield" />,
+}));
 // The layout's theme toggle reads the theme context; stub it (no provider here).
 vi.mock('@/app/theme/theme-context', () => ({
   useTheme: () => ({ resolved: 'light', setPreference: vi.fn() }),
@@ -18,7 +23,7 @@ vi.mock('@/app/theme/theme-context', () => ({
 afterEach(cleanup);
 
 describe('AuthLayout', () => {
-  it('renders the form full-width and no hero below lg (canvas never ships)', () => {
+  it('renders the form full-width, no hero and no starfield below lg (canvas never ships)', () => {
     mockIsDesktop = false;
     render(
       <AuthLayout>
@@ -27,9 +32,10 @@ describe('AuthLayout', () => {
     );
     expect(screen.getByLabelText('sign-in')).toBeInTheDocument();
     expect(screen.queryByTestId('auth-hero')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('starfield')).not.toBeInTheDocument();
   });
 
-  it('mounts the split-screen hero on desktop, form still present', () => {
+  it('mounts the full-viewport starfield + hero on desktop, form still present', () => {
     mockIsDesktop = true;
     render(
       <AuthLayout>
@@ -38,6 +44,7 @@ describe('AuthLayout', () => {
     );
     expect(screen.getByLabelText('sign-in')).toBeInTheDocument();
     expect(screen.getByTestId('auth-hero')).toBeInTheDocument();
+    expect(screen.getByTestId('starfield')).toBeInTheDocument();
   });
 
   it('shows the logo/wordmark and a theme toggle in the form header', () => {

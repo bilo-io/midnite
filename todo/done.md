@@ -4275,3 +4275,9 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] **Shockwave**: the drawn white ring is gone (the wave is pure physics now) and the push is half strength (`SW_KICK` 2400→1200).
 - [x] **Gather/release mechanic**: passive hover is a *subtle* well (`HOVER_PULL/SWIRL` ≈⅓ strength); holding the button gathers — neurons within 150px are captured, detach from their home springs, brighten, and swirl with the cursor; release flings the swarm outward (the shockwave) and fires thought paths from the release point, count scaled to the catch (2–10, ~1 per 12 captured). Hero copy is `select-none` so the drag gesture doesn't select text.
 - [x] Gates: web typecheck + lint green; auth/lib unit suites green (561). Verified via Playwright: solid-accent gradient text, swirling capture ball, ring-free release burst, scaled thought-path storm.
+
+### Follow-up (same branch): full-viewport starfield + glass form panel + alignment
+- [x] **Starfield hoisted to full-viewport**: the neuro-cloud + its radial wash moved from the hero (right 2/3) to a layout-level backdrop spanning the whole screen (desktop-only, intro-gated fade); `AuthHero` is now text-only (transparent, no own background).
+- [x] **Frosted-glass form panel** (lg+): the form's `max-w-sm` container gained `bg-background/50` + `backdrop-blur-2xl` + hairline border + shadow, floating over the starfield. Mobile keeps the plain block (no starfield to blur). Content lifted to `z-10` above the `z-0` canvas.
+- [x] **Vertical alignment**: the glass panel's padding rebalanced the column so the hero subtitle now bottom-aligns with the "Continue with email" button (measured delta ~3px at 1440/1920) — no nudge needed.
+- [x] Layout test asserts the full-viewport starfield mounts on desktop / never below `lg`; hero test drops the now-unused canvas stub. Gates green.
