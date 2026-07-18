@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(web): Phase 70 Theme F — split-screen login hero (PR #448)
+
+Turns the bare centered auth pages into a split-screen hero — form left third, a deep-space panel right two-thirds on desktop with login-specific typewriter copy over a galaxy starfield that lights up constellations as knowledge-graph edges. Pure `packages/web`, no gateway.
+
+- [x] **Split shell** — [`app/(auth)/layout.tsx`](../packages/web/app/(auth)/layout.tsx) now a client component: form left `1/3`, hero right `2/3`, **gated on `useIsDesktop()`** so the canvas + RAF never mount `< lg` (form full-width on mobile/tablet). Shared by login/register/invite.
+- [x] **`components/auth/constellation-background.tsx`** — galaxy starfield: stars on a radial density falloff around one off-centre core, per-star twinkle, 2–3 overlapping constellations that fade edges in/out and respawn. Edge/node colours read the live `--node-*` tokens (re-tints on theme/accent). Reduced-motion → one static frame (stars + a few pre-lit constellations), repainted on resize/theme; no RAF. Follows `dynamic-background.tsx` conventions (DPR cap, tab-hidden pause, cleanup).
+- [x] **`components/auth/auth-hero.tsx`** — logo + wordmark + login-specific typewriter title/subtitle from a curated in-repo `AUTH_HERO_COPY` set (one pair per mount), gated by `useAnimationPrefs`.
+- [x] **Bare forms** — login/register drop the `Card` chrome so they sit cleanly in the column; invite keeps its self-contained action panel.
+- [x] **Tests/stories** — `layout.test.tsx` (desktop-only gate), `auth-hero.test.tsx` (login-copy set + reduced-motion), `constellation-background.test.tsx` (decorative canvas + static-path safety), `auth-hero.stories.tsx` (Default/ReducedMotion/SplitScreen play stories). Local gate green (typecheck · lint · unit vitest 1081); the CI `web:test` storybook-browser + `web:build-storybook` failures are the **pre-existing `@midnite/shared` CJS-barrel** issue (identical on main web-commits), not this PR.
+
 ## 2026-07-18 — feat(shared): Phase 70 Theme A — SSO login contract (PR #447)
 
 The wire contract for Google/GitHub user SSO, landed first (Golden Rule) so themes B–F build against settled shapes. Pure `shared` + the typed `cli` client; no gateway/web behaviour yet.
