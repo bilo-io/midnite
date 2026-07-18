@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
+import { ssoErrorMessage } from '@/lib/api';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -14,7 +16,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [ssoError, setSsoError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // A failed SSO round-trip returns here with ?sso_error=<code> (Phase 70 C).
+  // Read it off the URL (avoids a Suspense boundary under `output: 'export'`).
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('sso_error');
+    setSsoError(ssoErrorMessage(code));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -37,6 +47,14 @@ export default function LoginPage() {
       <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">
         Sign in to midnite
       </h1>
+      {ssoError && (
+        <p role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-500">
+          {ssoError}
+        </p>
+      )}
+      <div className="mb-4">
+        <SsoButtons redirect="/" />
+      </div>
       <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className="text-sm font-medium text-foreground">

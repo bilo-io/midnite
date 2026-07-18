@@ -277,6 +277,8 @@ import {
   type CreateApprovalRule,
   type UpdateApprovalRule,
   type OAuthProvider,
+  type LoginProvider,
+  LoginProviderSchema,
   CreateServiceTokenResponseSchema,
   ListServiceTokensResponseSchema,
   type CreateServiceTokenRequest,
@@ -2645,6 +2647,68 @@ export function getOAuthStartUrl(
 ): string {
   const params = new URLSearchParams({ credential_name: credentialName, redirect_uri: redirectUri });
   return `${gatewayUrl()}/oauth/${encodeURIComponent(provider)}/start?${params.toString()}`;
+}
+
+// ---- Login SSO (Phase 70 D) ----
+
+/**
+ * Browser URL that starts the Google/GitHub login flow. Navigate the browser here
+ * (an anchor, like {@link getOAuthStartUrl}) — the gateway 302s to the provider's
+ * consent screen, then back to the web callback with a one-time code. `redirect` is
+ * the same-origin path to land on after login (guarded by the gateway + callback).
+ */
+export function ssoStartUrl(provider: LoginProvider, redirect?: string): string {
+  const qs = redirect ? `?${new URLSearchParams({ redirect }).toString()}` : '';
+  return `${gatewayUrl()}/auth/sso/${encodeURIComponent(provider)}/start${qs}`;
+}
+
+/**
+ * Which SSO providers the gateway is configured for (server-authoritative — only
+ * providers with a resolvable client secret + JWT enabled). Returns `[]` on any
+ * failure so the login page simply shows no buttons (password login unaffected).
+ */
+export async function fetchSsoProviders(): Promise<LoginProvider[]> {
+  try {
+    const res = await fetch(`${gatewayUrl()}/auth/sso/providers`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { providers?: unknown };
+    const parsed = LoginProviderSchema.array().safeParse(data.providers);
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Friendly copy for each `sso_error` code the gateway callback can redirect with
+ * (Phase 70 C). Unknown codes fall back to a generic message.
+ */
+export const SSO_ERROR_MESSAGES: Record<string, string> = {
+  access_denied: 'Sign-in was cancelled. Please try again.',
+  invalid_callback: 'The sign-in link was incomplete. Please try again.',
+  invalid_state: 'Your sign-in session expired. Please try again.',
+  provider_unavailable: 'That sign-in provider is not available right now.',
+  provider_error: "We couldn't complete sign-in with that provider. Please try again.",
+  signup_closed: 'Sign-ups are closed on this instance — ask an admin for an invite.',
+  email_conflict: 'An account with that email already exists — sign in with your password.',
+  missing_code: 'The sign-in link was incomplete. Please try again.',
+  exchange_failed: "We couldn't complete sign-in. Please try again.",
+  gateway_unavailable: 'The server is unavailable right now. Please try again shortly.',
+};
+
+export function ssoErrorMessage(code: string | null | undefined): string | null {
+  if (!code) return null;
+  return SSO_ERROR_MESSAGES[code] ?? 'Sign-in failed. Please try again.';
+}
+
+/**
+ * The authenticated user, enriched with linked SSO identities (Phase 70 D). Used by
+ * Settings to show linked accounts — the context user (from /refresh) stays lean, so
+ * this dedicated `/auth/me` read is where identities surface.
+ */
+export async function getCurrentUser(): Promise<User> {
+  const data = await fetchJson<{ user: User }>('/auth/me');
+  return data.user;
 }
 
 // ---- Teams (Phase 33 B) ----

@@ -107,7 +107,12 @@ export class AuthController {
   me(@CurrentUser() currentUser: AuthenticatedUser) {
     if (!currentUser?.userId) throw new UnauthorizedException('not authenticated');
     try {
-      return { user: UserSchema.parse(this.users.getUser(currentUser.userId)) };
+      // Enrich with linked SSO identities (Phase 70 D) so Settings can show them.
+      // Only /me carries them — login/refresh stay lean on their hot path.
+      const user = this.users.getUser(currentUser.userId);
+      return {
+        user: UserSchema.parse({ ...user, identities: this.users.listIdentities(currentUser.userId) }),
+      };
     } catch (err) {
       if (err instanceof TokenInvalidError) throw new UnauthorizedException('not authenticated');
       throw err;

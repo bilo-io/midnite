@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
 
 // This page is behind NEXT_PUBLIC_REGISTRATION_OPEN=true. When the flag is
@@ -58,6 +59,9 @@ export default function RegisterPage() {
   return (
     <div className="w-full">
       <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">Create account</h1>
+      <div className="mb-4">
+        <SsoButtons redirect="/" />
+      </div>
       <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="name" className="text-sm font-medium text-foreground">

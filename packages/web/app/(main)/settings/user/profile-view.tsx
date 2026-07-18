@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, FolderOpen, Sparkles, UserRound } from 'lucide-react';
+import { Check, FolderOpen, Link2, Sparkles, UserRound } from 'lucide-react';
+import type { SsoIdentity } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
-import { getAgentsConfig, updatePrimaryAgent } from '@/lib/api';
+import { getAgentsConfig, getCurrentUser, updatePrimaryAgent } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_PROFILE, PROFILE_STORAGE_KEY, type Profile } from '@/lib/app-settings';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,15 @@ export function ProfileView() {
     getAgentsConfig()
       .then((c) => setWorkDir(c.primary.defaultWorkDir ?? ''))
       .catch(() => setWorkDir(''));
+  }, []);
+
+  // Linked SSO identities (Phase 70 D). `null` = unknown/not applicable (JWT off or
+  // the /auth/me read failed) → the section is hidden. `[]` = enabled but none linked.
+  const [identities, setIdentities] = useState<SsoIdentity[] | null>(null);
+  useEffect(() => {
+    getCurrentUser()
+      .then((u) => setIdentities(u.identities ?? []))
+      .catch(() => setIdentities(null));
   }, []);
 
   const saveWorkDir = (next: string) => {
@@ -147,6 +157,34 @@ export function ProfileView() {
           />
         </div>
       </Accordion>
+
+      {identities !== null ? (
+        <Accordion title="Linked accounts" icon={<Link2 className="h-3.5 w-3.5" />}>
+          <div className="space-y-3 p-5">
+            <p className="text-xs text-muted-foreground">
+              Third-party providers you can sign in with. Linked automatically the first time you
+              use &ldquo;Continue with Google / GitHub&rdquo;.
+            </p>
+            {identities.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No linked accounts yet.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {identities.map((id) => (
+                  <li
+                    key={`${id.provider}-${id.email}`}
+                    className="flex items-center gap-2 text-sm text-foreground"
+                  >
+                    <span className="w-16 shrink-0 font-medium capitalize">{id.provider}</span>
+                    <span className="truncate text-muted-foreground" title={id.email}>
+                      {id.email}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Accordion>
+      ) : null}
 
       {picking ? (
         <FolderPicker
