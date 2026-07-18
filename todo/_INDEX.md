@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -121,6 +122,14 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 70 — Google & GitHub SSO](phase-70-google-github-sso.md)
+*"Continue with Google / GitHub" login+signup by lifting the workflow-vault OAuth pattern (not the class) into a dedicated `SsoService` in the auth module — resolves/provisions a user, links the external identity, and issues the same JWTs `POST /auth/login` does. No Firebase, self-hosted. Auto-link on verified email, passwordless SSO users, nonce+expiry replay guard, provision user+team on first login.*
+- ◻ **A** — Shared contract: `LoginProviderSchema` (`google | github`, distinct from the vault `OAuthProvider`), SSO start/exchange schemas, optional `UserSchema.identities`, typed client methods
+- ◻ **B** — Persistence: `user_identities` table (unique `(provider, providerUserId)`) + nullable `password_hash` migration; `findOrCreateFromSso` (lookup → auto-link on verified email → provision user+team)
+- ◻ **C** — Gateway flow: `auth/sso.service.ts` + `SsoController` (`/auth/sso/:provider/{start,callback}`), Google `id_token` verify + GitHub `/user`+`/user/emails`, encrypted state **+ single-use nonce store w/ TTL**, issues our JWTs; never touches the vault `OAuthService`
+- ◻ **D** — Web UX: Google/GitHub buttons on login/register, web callback route that sets `__midnite_rt` httpOnly cookie via one-time code (no tokens in URL), open-redirect guard, linked-accounts display
+- ◻ **E** — Config + docs: `gateway.auth.sso` block (reuse `OAuthClientConfigSchema`, `clientSecretEnv` env-name-only, + `redirectUri`/`webBaseUrl`), fail-closed boot check, README/schema setup docs
 
 ### [Phase 69 — Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md)
 *Closes the task state machine's undriven edges: a `UserPromptSubmit` hook finally drives `waiting → wip` when a session resumes executing, a signal→edge audit (`docs/LIFECYCLE.md`) accounts for every status writer, a reply affordance (board card + detail + `midnite reply`) answers waiting agents without opening a terminal, and terminal states get the long-promised explicit reopen action.*
