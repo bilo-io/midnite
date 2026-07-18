@@ -30,6 +30,7 @@ import {
   TasksDoctorReportSchema,
   TemplateSlotsResponseSchema,
   TerminalTokenResponseSchema,
+  SsoProvidersResponseSchema,
   TriggerCheckResponseSchema,
   UserSchema,
   WorkflowRunSchema,
@@ -51,6 +52,8 @@ import {
   type ImportPreview,
   type ImportResult,
   type InstallTemplateRequest,
+  type LoginProvider,
+  type SsoExchangeRequest,
   type PauseScope,
   type PreflightReport,
   type BackupSummary,
@@ -99,6 +102,16 @@ export interface GatewayClient {
   logout(): Promise<void>;
   /** Return the currently authenticated user, or throw on 401. */
   whoami(): Promise<User>;
+  /** Phase 70 A — build the browser-navigation URL for `GET /auth/sso/:provider/start`.
+   *  SSO start is a full-page redirect to the provider, not a fetch, so this is a
+   *  pure URL builder; `redirect` is an optional same-origin return path. */
+  ssoStartUrl(provider: LoginProvider, redirect?: string): string;
+  /** Phase 70 A — exchange the gateway's single-use SSO code for tokens + user
+   *  (`POST /auth/sso/exchange`). Mirrors `login`'s `AuthResponse`. */
+  exchangeSsoCode(code: string): Promise<AuthResponse>;
+  /** Phase 70 A — which SSO providers the gateway is configured for
+   *  (`GET /auth/sso/providers`), so callers render only usable buttons. */
+  ssoProviders(): Promise<LoginProvider[]>;
   /** Lean, paginated board list (Phase 57 C) — `TaskSummary` page + total. */
   listTasks(
     status?: string,
@@ -272,6 +285,27 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
       return UserSchema.parse(
         (await request('/auth/me', { method: 'GET' })) as unknown,
       );
+    },
+
+    ssoStartUrl(provider: LoginProvider, redirect?: string): string {
+      const qs = redirect ? `?${new URLSearchParams({ redirect }).toString()}` : '';
+      return `${baseUrl}/auth/sso/${provider}/start${qs}`;
+    },
+
+    async exchangeSsoCode(code: string): Promise<AuthResponse> {
+      return AuthResponseSchema.parse(
+        await request('/auth/sso/exchange', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ code } satisfies SsoExchangeRequest),
+        }),
+      );
+    },
+
+    async ssoProviders(): Promise<LoginProvider[]> {
+      return SsoProvidersResponseSchema.parse(
+        await request('/auth/sso/providers', { method: 'GET' }),
+      ).providers;
     },
 
     async listTasks(status?: string, opts?: { page?: number; limit?: number }) {

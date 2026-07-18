@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 0/36 | `░░░░░░░░░░` | 0% | A F | B C D E |
+| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 5/36 | `█░░░░░░░░░` | 14% | F | B C D E |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -125,7 +125,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 70 — Google & GitHub SSO](phase-70-google-github-sso.md)
 *"Continue with Google / GitHub" login+signup by lifting the workflow-vault OAuth pattern (not the class) into a dedicated `SsoService` in the auth module — resolves/provisions a user, links the external identity, and issues the same JWTs `POST /auth/login` does. No Firebase, self-hosted. Auto-link on verified email, passwordless SSO users, nonce+expiry replay guard, provision user+team on first login.*
-- ◻ **A** — Shared contract: `LoginProviderSchema` (`google | github`, distinct from the vault `OAuthProvider`), SSO start/exchange schemas, optional `UserSchema.identities`, typed client methods
+- ✅ **A** — Shared contract: `LoginProviderSchema` (`google | github`, distinct from the vault `OAuthProvider`), SSO start/exchange/providers schemas, optional `UserSchema.identities`, same-origin redirect guard, typed client methods (PR #447)
 - ◻ **B** — Persistence: `user_identities` table (unique `(provider, providerUserId)`) + nullable `password_hash` migration; `findOrCreateFromSso` (lookup → auto-link on verified email → provision user+team)
 - ◻ **C** — Gateway flow: `auth/sso.service.ts` + `SsoController` (`/auth/sso/:provider/{start,callback}`), Google `id_token` verify + GitHub `/user`+`/user/emails`, encrypted state **+ single-use nonce store w/ TTL**, issues our JWTs; never touches the vault `OAuthService`
 - ◻ **D** — Web UX: Google/GitHub buttons on login/register, web callback route that sets `__midnite_rt` httpOnly cookie via one-time code (no tokens in URL), open-redirect guard, linked-accounts display

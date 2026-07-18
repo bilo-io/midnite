@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(shared): Phase 70 Theme A — SSO login contract (PR #447)
+
+The wire contract for Google/GitHub user SSO, landed first (Golden Rule) so themes B–F build against settled shapes. Pure `shared` + the typed `cli` client; no gateway/web behaviour yet.
+
+- [x] **`LoginProviderSchema`** (`google | github`) + `LoginProvider` in [`shared/src/user.ts`](../packages/shared/src/user.ts) — deliberately **distinct** from the credential-vault `OAuthProvider` (`google | slack`) so login and vault provider sets never imply cross combinations.
+- [x] **`UserSchema.identities?`** — optional `SsoIdentitySchema` array (`{ provider, email }`), backward-compatible with pre-SSO rows; Settings can show "Google (a@x.com)".
+- [x] **`SsoStartParamsSchema`** with `SsoRedirectPathSchema` — same-origin relative path only; the **open-redirect guard lives in the contract** (rejects `//`, schemes, backslashes). **`SsoExchangeRequestSchema`** `{ code }` (one-time-code handoff, Decision §3; exchange reuses `AuthResponseSchema`). **`SsoProvidersResponseSchema`** `{ providers }` so web renders only configured buttons.
+- [x] **Typed client** (`cli/src/client.ts`): `ssoStartUrl(provider, redirect?)` (pure URL builder — SSO start is a browser navigation, not a fetch), `exchangeSsoCode(code)`, `ssoProviders()`.
+- [x] **Tests** — `user.test.ts` (30 assertions: provider enum incl. slack-rejection, identity backward-compat, redirect open-redirect guard, exchange, providers list, `AuthResponse` reuse). Gate green (`ui:test` Storybook-runner flake, unrelated, clean on retry).
+
 ## 2026-07-16 — test(e2e): Phase 69 Verification — stub-agent reply→resume round-trip (PR #446)
 
 Closes out Phase 69: a stub `claude` in the Playwright harness makes the "whole point" e2e real — the reply→resume round-trip now runs end-to-end against a live, driveable agent session (previously impossible with the pool-disabled e2e gateway). No production source touched — a test fixture + one PATH entry.
