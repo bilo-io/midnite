@@ -1,4 +1,4 @@
-import type { Notification } from '@midnite/shared';
+import type { Notification, UpdateChannel } from '@midnite/shared';
 
 /**
  * Bridge the Electron preload exposes on `window.midniteDesktop` when the web app
@@ -36,6 +36,13 @@ export type UpdateState = {
   /** Download progress 0–100 while `phase === 'downloading'`, else null. */
   percent: number | null;
   error: string | null;
+  /**
+   * This build is below the channel manifest's `minSupported` force-update floor
+   * (Phase 71 Theme H). The main process fetches the channel's `version.json` for
+   * `minSupported` — electron-updater's own feed doesn't carry it — so the desktop
+   * banner enforces the same floor as the web. Absent on older payloads → false.
+   */
+  belowFloor?: boolean;
 };
 
 /**
@@ -53,6 +60,12 @@ export type UpdatesBridge = {
   download: () => void;
   /** Quit and install the downloaded update. */
   restartToInstall: () => void;
+  /**
+   * Set the release channel (Phase 71 Theme H) — the main process points
+   * `autoUpdater.channel` + its floor-manifest fetch at the channel, then
+   * re-checks. Optional so an older preload without it degrades gracefully.
+   */
+  setChannel?: (channel: UpdateChannel) => void;
 };
 
 declare global {

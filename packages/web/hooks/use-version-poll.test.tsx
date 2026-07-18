@@ -12,6 +12,8 @@ const { fetchVersionManifest, getCurrentVersion } = vi.hoisted(() => ({
 
 vi.mock('@/lib/version', () => ({
   VERSION_MANIFEST_PATH: '/version.json',
+  versionManifestPath: (channel: string) =>
+    channel === 'beta' ? '/version.beta.json' : '/version.json',
   fetchVersionManifest,
   getCurrentVersion,
 }));
@@ -41,6 +43,18 @@ describe('useVersionPoll', () => {
     const { result } = renderHook(() => useVersionPoll());
     await waitFor(() => expect(fetchVersionManifest).toHaveBeenCalled());
     expect(result.current.available).toBe(false);
+  });
+
+  it('polls the beta manifest when the channel is beta (Phase 71 H)', async () => {
+    fetchVersionManifest.mockResolvedValue(manifest());
+    renderHook(() => useVersionPoll(undefined, 'beta'));
+    await waitFor(() => expect(fetchVersionManifest).toHaveBeenCalledWith('/version.beta.json'));
+  });
+
+  it('polls the stable manifest by default', async () => {
+    fetchVersionManifest.mockResolvedValue(manifest());
+    renderHook(() => useVersionPoll());
+    await waitFor(() => expect(fetchVersionManifest).toHaveBeenCalledWith('/version.json'));
   });
 
   it('flags belowFloor when under minSupported', async () => {

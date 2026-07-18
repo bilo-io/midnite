@@ -37,7 +37,7 @@ export const ForceUpdateFloor: Story = {
     const canvas = within(canvasElement);
     // No dismiss affordance below the floor.
     expect(canvas.queryByRole('button', { name: /dismiss update notice/i })).toBeNull();
-    expect(canvas.getByText(/required update is available/i)).toBeInTheDocument();
+    expect(canvas.getByText(/update required to keep using midnite/i)).toBeInTheDocument();
   },
 };
 

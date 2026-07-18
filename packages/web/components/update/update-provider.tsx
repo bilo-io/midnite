@@ -14,6 +14,8 @@ import { usePathname } from 'next/navigation';
 import type { VersionManifest } from '@midnite/shared';
 
 import { useVersionPoll } from '@/hooks/use-version-poll';
+import type { AppSettings } from '@/lib/app-settings';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 import {
   getUpdatesBridge,
   type UpdatePhase,
@@ -25,6 +27,7 @@ import {
   checkForWaitingWorker,
   watchWaitingWorker,
 } from '@/lib/service-worker-update';
+import { useLocalStorage } from '@/lib/use-local-storage';
 import { useToast } from '@/components/toast';
 
 import { UPDATE_ECHO_KEY, shouldEchoUpdate } from './update-echo';
@@ -68,7 +71,9 @@ const UpdateContext = createContext<UpdateContextValue | null>(null);
  */
 export function UpdateProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const poll = useVersionPoll(pathname ?? undefined);
+  const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+  const channel = settings.updateChannel ?? DEFAULT_SETTINGS.updateChannel;
+  const poll = useVersionPoll(pathname ?? undefined, channel);
   const toast = useToast();
   const [swWaiting, setSwWaiting] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -87,6 +92,14 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     found.check();
     return off;
   }, []);
+
+  // Push the selected channel to the desktop updater (Theme H): it re-points
+  // `autoUpdater.channel` + its floor-manifest fetch and re-checks. Runs whenever
+  // the bridge appears or the channel changes; the browser path uses the poll's
+  // channel-aware path instead.
+  useEffect(() => {
+    bridge?.setChannel?.(channel);
+  }, [bridge, channel]);
 
   // Watch the service worker for a waiting (installed-but-not-active) update.
   useEffect(() => watchWaitingWorker(() => setSwWaiting(true)), []);
@@ -114,8 +127,12 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     (desktopPhase === 'error' && desktop?.version != null);
 
   // On desktop the electron-updater feed is authoritative; the web poll + SW
-  // signal only drive the banner in a plain browser.
-  const available = isDesktop ? desktopActive : poll.available || swWaiting;
+  // signal only drive the banner in a plain browser. Below the floor the desktop
+  // banner shows even before the feed reports an available build (the user must
+  // update to proceed) — Theme H.
+  const available = isDesktop
+    ? desktopActive || (desktop?.belowFloor ?? false)
+    : poll.available || swWaiting;
   const latest = isDesktop ? desktop?.version ?? null : poll.latest;
 
   const applyUpdate = useCallback(() => {
@@ -154,8 +171,10 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<UpdateContextValue>(
     () => ({
       available,
-      // The force-update floor is a web-manifest concept; desktop has no floor yet.
-      belowFloor: isDesktop ? false : poll.belowFloor,
+      // The floor: web computes it from the polled manifest; desktop reads the
+      // main process's `belowFloor` (it fetches the channel manifest's minSupported,
+      // since electron-updater's feed doesn't carry it — Theme H).
+      belowFloor: isDesktop ? desktop?.belowFloor ?? false : poll.belowFloor,
       latest,
       manifest: isDesktop ? null : poll.manifest,
       dismissed,

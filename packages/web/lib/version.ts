@@ -1,11 +1,26 @@
-import { VersionManifestSchema, type VersionManifest } from '@midnite/shared';
+import {
+  VersionManifestSchema,
+  versionManifestFile,
+  type UpdateChannel,
+  type VersionManifest,
+} from '@midnite/shared';
 
 /**
  * The version.json the running build polls for a newer release. Served static
  * from the web origin (Phase 71 Theme G emits it on every tag). Cache-busted so
- * a CDN can't pin a stale manifest.
+ * a CDN can't pin a stale manifest. This is the `stable` path; `beta` clients
+ * poll `version.beta.json` — see {@link versionManifestPath}.
  */
 export const VERSION_MANIFEST_PATH = '/version.json';
+
+/**
+ * Same-origin manifest path for a channel (Phase 71 Theme H): `stable` →
+ * `/version.json`, `beta` → `/version.beta.json`. The filename mapping lives in
+ * `shared` so web, desktop, and the CLI resolve the same per-channel file.
+ */
+export function versionManifestPath(channel: UpdateChannel): string {
+  return `/${versionManifestFile(channel)}`;
+}
 
 /**
  * This build's version, inlined at build time by next.config from the web

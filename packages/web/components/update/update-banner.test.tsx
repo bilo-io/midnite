@@ -50,7 +50,12 @@ describe('UpdateBannerView', () => {
   it('removes the dismiss button below the force-update floor', () => {
     render(<UpdateBannerView {...base} belowFloor />);
     expect(screen.queryByRole('button', { name: /dismiss update notice/i })).toBeNull();
-    expect(screen.getByText(/required update is available/i)).toBeInTheDocument();
+    expect(screen.getByText(/update required to keep using midnite/i)).toBeInTheDocument();
+  });
+
+  it('shows emphatic "no longer supported" copy below the floor (Phase 71 H)', () => {
+    render(<UpdateBannerView {...base} belowFloor />);
+    expect(screen.getByText(/no longer supported, please update to continue/i)).toBeInTheDocument();
   });
 
   // Desktop (electron-updater) states — the container feeds these props per phase.
