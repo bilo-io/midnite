@@ -18,6 +18,9 @@ vi.mock('@/lib/service-worker-update', () => ({
   watchWaitingWorker: () => () => {},
 }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
+// The provider echoes a detected update as a toast; stub the channel so the desktop
+// branch renders without a real ToastProvider.
+vi.mock('@/components/toast', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
 
 afterEach(() => {
   cleanup();
