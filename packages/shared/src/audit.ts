@@ -22,6 +22,9 @@ export const AuditActionSchema = z.enum([
   'user.registered',
   'user.login',
   'user.logout',
+  // Phase 70 B — an external login identity (Google/GitHub) linked to a user,
+  // whether by auto-link on a verified email or on first-time provisioning.
+  'user.sso_linked',
   'team.created',
   'team.member_added',
   'team.member_removed',
