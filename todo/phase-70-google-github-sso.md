@@ -21,15 +21,15 @@
 
 ---
 
-## Theme A — Shared contract: login-provider enum + SSO schemas — **S**
+## Theme A — Shared contract: login-provider enum + SSO schemas — **S** — ✅ DONE (PR #447, 2026-07-18)
 
-The contract lands first so gateway and web agree on shapes. Everything new goes in `shared`, per the Golden Rule.
+The contract lands first so gateway and web agree on shapes. Everything new goes in `shared`, per the Golden Rule. **Decisions (`/exec` Stage 2.5):** rich `identities` array · one-time-code exchange · `enabledProviders` in the contract · schemas in `user.ts` · URL-builder client methods · same-origin relative `redirect` (open-redirect guard in the contract).
 
-- [ ] `LoginProviderSchema = z.enum(['google', 'github'])` + `LoginProvider` type in [`shared/src/user.ts`](../packages/shared/src/user.ts) — **distinct** from the credential-vault `OAuthProviderSchema` (`google | slack`) so the two provider sets stay independent.
-- [ ] `SsoStartParamsSchema` (`{ redirect?: string }` — the post-login web path to return to, defaulted + same-origin-validated on the web side) and, if we use the one-time-code handoff (Decision §3), `SsoExchangeRequestSchema` (`{ code }`) + response reusing `AuthResponseSchema`.
-- [ ] Extend `UserSchema` with an **optional** `identities?: { provider: LoginProvider; email: string }[]` (or a lean `authProviders?: LoginProvider[]`) — optional so existing `UserSchema.parse` callers in `auth.controller.ts` stay valid, and so the settings UI can show "linked accounts".
-- [ ] Typed API-client methods on the shared client for the SSO endpoints web/cli consume (start-URL builder + exchange), keeping web a pure HTTP client.
-- [ ] Unit tests for the new schemas (enum, params validation, `AuthResponse` reuse).
+- [x] `LoginProviderSchema = z.enum(['google', 'github'])` + `LoginProvider` type in [`shared/src/user.ts`](../packages/shared/src/user.ts) — **distinct** from the credential-vault `OAuthProviderSchema` (`google | slack`) so the two provider sets stay independent.
+- [x] `SsoStartParamsSchema` (`{ redirect?: SsoRedirectPathSchema }` — same-origin relative path, open-redirect guard in the contract) + `SsoExchangeRequestSchema` (`{ code }`, one-time-code handoff Decision §3) + `SsoProvidersResponseSchema` (`{ providers }` = enabledProviders); exchange reuses `AuthResponseSchema`.
+- [x] Extended `UserSchema` with an **optional** `identities?: { provider, email }[]` (`SsoIdentitySchema`) — optional so existing `UserSchema.parse` callers stay valid, and so Settings can show "linked accounts".
+- [x] Typed client methods (`cli/src/client.ts`): `ssoStartUrl(provider, redirect?)` (URL builder — SSO start is a browser nav), `exchangeSsoCode(code)`, `ssoProviders()`.
+- [x] Unit tests for the new schemas (`user.test.ts` — enum, identity/backward-compat, redirect guard, exchange, providers, `AuthResponse` reuse).
 
 ---
 
