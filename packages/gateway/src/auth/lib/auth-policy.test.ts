@@ -61,8 +61,23 @@ describe('isAuthExemptPath', () => {
     }
   });
 
+  it('exempts the pre-auth credential + SSO routes (Phase 70 C)', () => {
+    for (const p of [
+      '/auth/login',
+      '/auth/register',
+      '/auth/refresh',
+      '/auth/sso',
+      '/auth/sso/providers',
+      '/auth/sso/google/start?redirect=/board',
+      '/auth/sso/github/callback?code=x&state=y',
+      '/auth/sso/exchange',
+    ]) {
+      expect(isAuthExemptPath(p)).toBe(true);
+    }
+  });
+
   it('protects everything else', () => {
-    for (const p of ['/tasks', '/healthy', '/hooksy', '/playgrounds', '/projects?type=x', '/']) {
+    for (const p of ['/tasks', '/healthy', '/hooksy', '/playgrounds', '/projects?type=x', '/', '/auth/me', '/auth/logout']) {
       expect(isAuthExemptPath(p)).toBe(false);
     }
   });

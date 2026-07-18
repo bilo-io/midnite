@@ -10,6 +10,9 @@ import { OwnershipService } from './ownership.service';
 import { RateLimitGuard } from './rate-limit.guard';
 import { RefreshTokensRepository } from './refresh-tokens.repository';
 import { RoleGuard } from './role.guard';
+import { SsoController } from './sso.controller';
+import { SsoService } from './sso.service';
+import { SsoStateRepository } from './sso-state.repository';
 
 /**
  * Auth module (Phase 7 A5 + Phase 33 A3 + Phase 35 B1).
@@ -24,10 +27,12 @@ import { RoleGuard } from './role.guard';
  */
 @Module({
   imports: [DbModule, UsersModule, TeamsModule],
-  controllers: [AuthController],
+  controllers: [AuthController, SsoController],
   providers: [
     RefreshTokensRepository,
     JwtService,
+    SsoService,
+    SsoStateRepository,
     RoleGuard,
     OwnershipService,
     { provide: APP_GUARD, useClass: RateLimitGuard },
