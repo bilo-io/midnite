@@ -39,6 +39,38 @@ function majorMinor(version, name) {
   return `${parts[0]}.${parts[1]}`;
 }
 
+/**
+ * Assert the published web manifest (`packages/web/public/version.json`, Phase 71
+ * Theme G) is fresh: it must be well-formed and its `version` must equal the web
+ * package's version. The release flow (`/release-complete` → `emit-version-manifest`)
+ * bumps both together, so a mismatch here means the manifest was left stale — a
+ * running client would poll a version that never ships. Pure + import-free (mirrors
+ * `VersionManifestSchema`'s constraints) so it runs in `moon ci` before any build.
+ *
+ * @param {unknown} manifest parsed `version.json`
+ * @param {string} webVersion `packages/web/package.json` version
+ * @returns {{ ok: boolean, message: string }}
+ */
+export function checkManifestFreshness(manifest, webVersion) {
+  if (typeof manifest !== 'object' || manifest === null) {
+    return { ok: false, message: 'version.json is not a JSON object' };
+  }
+  const { version, channel } = manifest;
+  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
+    return { ok: false, message: `version.json "version" is invalid: ${JSON.stringify(version)}` };
+  }
+  if (channel !== undefined && channel !== 'stable' && channel !== 'beta') {
+    return { ok: false, message: `version.json "channel" must be stable|beta, got ${JSON.stringify(channel)}` };
+  }
+  if (version !== webVersion) {
+    return {
+      ok: false,
+      message: `version.json is stale: manifest ${version} ≠ @midnite/web ${webVersion} — run \`moon run root:emit-version-manifest\``,
+    };
+  }
+  return { ok: true, message: `version.json fresh at ${version} (channel ${channel ?? 'stable'})` };
+}
+
 async function main() {
   const packagesDir = path.join(repoRoot, 'packages');
   const entries = await readdir(packagesDir, { withFileTypes: true });
@@ -50,8 +82,9 @@ async function main() {
   ];
 
   const packages = await Promise.all(pkgPaths.map(readPackage));
+  let failed = false;
 
-  // Group packages by their MAJOR.MINOR prefix; lockstep means exactly one group.
+  // 1) Lockstep: group packages by MAJOR.MINOR prefix; lockstep = exactly one group.
   const groups = new Map();
   for (const pkg of packages) {
     const prefix = majorMinor(pkg.version, pkg.name);
@@ -62,17 +95,37 @@ async function main() {
   if (groups.size <= 1) {
     const prefix = groups.size === 1 ? [...groups.keys()][0] : 'n/a';
     console.log(`version-check OK: ${packages.length} packages in lockstep at ${prefix}.x`);
-    return;
+  } else {
+    const expected = mostCommonPrefix(groups);
+    console.error('version-check FAILED: packages do not share one MAJOR.MINOR (lockstep broken).');
+    for (const [prefix, pkgs] of [...groups.entries()].sort()) {
+      const tag = prefix === expected ? '' : '  <-- diverges';
+      console.error(`  ${prefix}.x: ${pkgs.map((p) => `${p.name}@${p.version}`).join(', ')}${tag}`);
+    }
+    failed = true;
   }
 
-  // Violation: report every diverging MAJOR.MINOR group and its packages.
-  const expected = mostCommonPrefix(groups);
-  console.error('version-check FAILED: packages do not share one MAJOR.MINOR (lockstep broken).');
-  for (const [prefix, pkgs] of [...groups.entries()].sort()) {
-    const tag = prefix === expected ? '' : '  <-- diverges';
-    console.error(`  ${prefix}.x: ${pkgs.map((p) => `${p.name}@${p.version}`).join(', ')}${tag}`);
+  // 2) Manifest freshness: public/version.json must track the web package version.
+  const webPkg = packages.find((p) => p.name === '@midnite/web');
+  const manifestPath = path.join(repoRoot, 'packages/web/public/version.json');
+  let manifest;
+  try {
+    manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  } catch (err) {
+    console.error(`version-check FAILED: cannot read packages/web/public/version.json — ${err.message}`);
+    failed = true;
   }
-  process.exitCode = 1;
+  if (manifest !== undefined) {
+    const result = checkManifestFreshness(manifest, webPkg?.version);
+    if (result.ok) {
+      console.log(`version-check OK: ${result.message}`);
+    } else {
+      console.error(`version-check FAILED: ${result.message}`);
+      failed = true;
+    }
+  }
+
+  if (failed) process.exitCode = 1;
 }
 
 /** The MAJOR.MINOR prefix backing the most packages (the presumed intended one). */
@@ -88,8 +141,12 @@ function mostCommonPrefix(groups) {
   return best;
 }
 
-main().catch((err) => {
-  console.error(`version-check errored: ${err.message}`);
-  if (err.cause) console.error(err.cause);
-  process.exit(1);
-});
+// Run only when invoked directly, so tests can import `checkManifestFreshness`
+// without executing the checker (which would read the repo + set exit codes).
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`version-check errored: ${err.message}`);
+    if (err.cause) console.error(err.cause);
+    process.exit(1);
+  });
+}
