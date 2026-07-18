@@ -289,7 +289,7 @@ export function ConstellationBackground({
       const t = (performance.now() - t0) / 1000;
       ctx.clearRect(0, 0, w, h);
       drawStars(t);
-      constellations = constellations.map((c, i) => {
+      constellations = constellations.map((c) => {
         const age = t - c.born;
         if (age >= c.life) {
           // Respawn elsewhere, keeping the palette slot rotating.
