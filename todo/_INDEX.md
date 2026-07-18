@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -123,6 +124,15 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 72 — SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md)
+*Phase 70 built the whole Google/GitHub SSO flow but it's never been turned on, and the config that would turn it on (client IDs, redirect URIs, JWT, allowlist) sits in the **committed, user-facing** `midnite.json`. Carve the whole `gateway.auth` subtree into a **gitignored operator-owned source** (fail-closed if it leaks back), add a **server web-build target** so the BFF auth cookie routes actually run hosted (today `output:'export'` drops them), wire the **two real OAuth apps** with pinned redirect URIs, plug the health-preflight config leak, and ship turnkey DX (samples, `midnite doctor`, a go-live runbook). Makes SSO real, local + hosted; no Firebase.*
+- ◻ **A** — Operator config source & loader: `loadOperatorConfig()` (`.midnite/operator.json`, `MIDNITE_OPERATOR_CONFIG` override) deep-merged into `gateway.auth`; `MidniteConfig` shape + consumers unchanged; absent-ok / broken-fails-closed
+- ◻ **B** — Migrate `gateway.auth` out + fail-closed boundary: strip it from committed `midnite.json`; `loadConfig` errors if operator keys reappear there; no-regression auth-off baseline
+- ◻ **C** — Redact health readiness leak: `/health/preflight` + `/health/ready` status-only for anon; provider + secret-env-var names behind auth
+- ◻ **D** — Web server build target: `MIDNITE_WEB_TARGET=server` drops `output:'export'` so `/api/auth/*` BFF POST handlers run hosted; default static keeps desktop parity
+- ◻ **E** — Real provider wiring & explicit redirect URIs: pinned per-env `redirectUri`, register the two OAuth apps, full local Google + GitHub sign-in verified end-to-end
+- ◻ **F** — DX, readiness & docs: `operator.example.json` + `.env.example`, `midnite doctor` SSO readiness, `docs/SSO.md` register-apps → local + hosted runbook
 
 ### [Phase 71 — App update banner & per-platform update](phase-71-app-update-banner.md)
 *A build-emitted `version.json` published on every tag, a client that polls + folds in the service-worker signal to detect a newer build, and a prominent-but-subtle theme-inverted **top banner** that lets the user take the update when they choose — web force-refreshes, desktop runs a full `electron-updater` download → restart-to-install. Plus release-notes on the version, stable/beta channel, a force-update floor, and a CLI out-of-date notice. Golive-readiness. Never blindly auto-updates.*
