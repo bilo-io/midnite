@@ -106,7 +106,7 @@ intentionally avoided.
 hook that `chmod 0o755`s it inside the built `.app` before shipping, or verify
 the bit survived.
 
-## Distribution (v1, unsigned) — automated on a version tag
+## Distribution — automated on a version tag
 
 Pushing a `v*` tag runs [`.github/workflows/release.yml`](../../.github/workflows/release.yml):
 a per-OS matrix (macOS arm64 + x64, Windows x64, Linux x64) builds and uploads
@@ -127,10 +127,45 @@ To build a single OS locally: `pnpm --filter @midnite/desktop run stage`, then
 
 Unsigned builds trip Gatekeeper (macOS) and SmartScreen (Windows) — document
 right-click → Open, or `xattr -dr com.apple.quarantine /Applications/midnite.app`.
-To sign + notarize: set `mac.identity`, add an `afterSign` notarize hook, and
-provide the Apple credentials in CI env. To auto-update: keep the `zip` target,
-add a `publish` block (GitHub provider), and call
-`autoUpdater.checkForUpdatesAndNotify()`.
+
+## Code signing & auto-update (Phase 71 Theme E)
+
+In-app updates use **electron-updater**, driven by the shared web `UpdateBanner`
+(never auto-nag/auto-restart — the user clicks). The main-process wiring is
+[`src/main/updater.ts`](src/main/updater.ts): `checkForUpdates()` on boot (no
+auto-download), then `downloadUpdate()` / `quitAndInstall()` on request, with state
+emitted over IPC. The renderer reaches it through the preload bridge
+[`window.midnite.updates`](src/preload/index.ts) → [`packages/web`'s
+`getUpdatesBridge()`](../web/lib/desktop-bridge.ts). Unpackaged (dev) builds have
+no feed, so the bridge is a safe no-op and the web service-worker reload path is
+used instead.
+
+**Update feed.** [`electron-builder.yml`](electron-builder.yml) has a `publish:`
+block (GitHub provider → the public `bilo-io/midnite-app` repo). On a release build
+electron-builder emits `latest-mac.yml` / `latest.yml` / `latest-linux.yml`
+(+ `*.blockmap`) alongside the installers; the release workflow uploads them so the
+running app can poll `releases/latest`. macOS auto-update installs from the `.zip`
+target (kept in `mac.target`), not the `.dmg`.
+
+**Signing is env-gated** (real signing is the golive prerequisite — an unsigned
+build cannot install an update):
+
+| Env | Effect |
+| --- | --- |
+| `CSC_LINK` + `CSC_KEY_PASSWORD` | electron-builder signs the macOS `.app` with the Developer ID cert |
+| `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` + `APPLE_TEAM_ID` | the afterSign hook ([`scripts/notarize.cjs`](scripts/notarize.cjs)) notarizes the signed `.app` |
+| `WIN_CSC_LINK` (or `CSC_LINK`) + `CSC_KEY_PASSWORD` on the Windows job | signs the NSIS installer |
+| none | `CSC_IDENTITY_AUTO_DISCOVERY=false` (set by the release workflow) → a clean **unsigned** build; `afterpack.cjs` ad-hoc signs it so it still launches locally |
+
+Store the cert/creds as repo secrets of the same names (see
+[`release.yml`](../../.github/workflows/release.yml)); notarization uses hardened
+runtime + [`resources/entitlements.mac.plist`](resources/entitlements.mac.plist).
+
+**Manual smoke (two real builds — not runnable in the unit harness):** build vX,
+publish a vY release to `bilo-io/midnite-app`, launch the signed vX → the banner
+appears, **Update** downloads (progress shown), **Restart to install** relaunches
+into vY, and the downloaded artifact passes signature verification. The pure
+event→state mapping is unit-covered in [`src/updates/update-state.test.ts`](src/updates/update-state.test.ts).
 
 ## Verification checklist (on a clean Mac)
 
