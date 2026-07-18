@@ -16,6 +16,17 @@ Makes the update banner's version tell you *what's* new. The version becomes a b
 
 ---
 
+## 2026-07-18 — feat(release): Phase 71 Theme G — emit version.json on release + freshness guard (PR #460)
+
+Makes "bumps on every tag" real: the release flow becomes the single writer of the runtime version manifest the update banner polls. H remains (the parallel loop's slice).
+
+- [x] **Emitter** — `scripts/emit-version-manifest.mjs` writes `packages/web/public/version.json` from the **web** package version (matches the build's `NEXT_PUBLIC_APP_VERSION`), conforming to `VersionManifestSchema`: `channel='stable'`, `releasedAt` (ISO), `notesUrl` → public release page (`bilo-io/midnite-app/releases/tag/vX.Y.Z`). `minSupported` omitted (hand-set for a hard floor — Theme H); no Electron copy (desktop detects via the electron-updater feed). Runnable as `moon run root:emit-version-manifest`.
+- [x] **Freshness guard** — `scripts/version-check.mjs` (the `moon ci` `root:version-check` task) now also asserts `version.json`'s `version` equals the web package version + is well-formed, so a release that forgets to re-emit fails CI instead of shipping a client polling a version that never lands.
+- [x] **Release wiring** — `/release-complete` §3 runs the emit in the `chore(release)` commit (atomic with the version bump); `docs/RELEASING.md` documents the manifest as part of the release contract.
+- [x] **Tests** (shared) — `buildManifest` output satisfies `VersionManifestSchema` + field derivation; `checkManifestFreshness` passes on match, fails on stale/malformed/bad-channel/non-object. Both scripts guard `main()` so their pure helpers import cleanly (test-only, no runtime dep on `shared`).
+
+---
+
 ## 2026-07-18 — feat(desktop): Phase 71 Theme E — Electron auto-update + code-signing (PR #457)
 
 The desktop half of the update banner: a real in-app `electron-updater` pipeline the shared `UpdateBanner` drives — **user-timed**, never auto-nag/auto-restart. On desktop the electron-updater feed is authoritative (the web `version.json` poll is ignored there — one source of truth). F/G/H (release notes, release-flow `version.json` emission, channels/floor/CLI) remain open.
