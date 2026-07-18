@@ -12,15 +12,23 @@ import sessionsLight from '../assets/sessions-light.png';
 
 ## What it is
 
-A **session** is one agent run with an embedded terminal. There's one session per
-task, and its status follows the task's. Sessions list both **live** runs (with a
-live terminal you can watch) and **past** runs (with a full transcript).
+A **session** is one agent run, wrapped around an embedded terminal. There's one
+session per [task](/app/tasks), and its status mirrors that task's — so a session
+is really the *execution view* of a card on the board. The screen lists two kinds:
+
+- **Live runs** — currently executing, with a real terminal you can watch stream
+  in real time.
+- **Past runs** — finished, each with a full **transcript** you can read end to
+  end.
 
 ## Purpose
 
-Sessions are your window into what an agent is actually doing. Open the live
-terminal to watch a run in real time, read the transcript afterwards to see every
-step, and archive the ones worth keeping. It's the detail layer beneath the board.
+Sessions are your window into what an agent is *actually doing*, keystroke by
+keystroke. The [board](/app/tasks) tells you a task is running; the session shows
+you how. Open the live terminal to watch a run unfold, read the transcript
+afterwards to audit every step it took, and archive the runs worth keeping for
+reference. It's the detail layer beneath the board — and the same stream the
+[Office](/overview/office) floor lets you walk up to.
 
 <Screenshot dark={sessionsDark} light={sessionsLight} alt="Sessions list" caption="The Sessions screen — live and past agent runs." />
 

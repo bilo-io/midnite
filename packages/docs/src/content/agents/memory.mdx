@@ -19,10 +19,20 @@ global or scoped to a project.
 
 ## Purpose
 
-Agents start each session fresh. Memory is how you give them durable context —
-conventions, domain facts, a house style — so they don't have to rediscover it
-every run. You can also **chat with a memory** to interrogate what it knows before
-wiring it into agents.
+Agents start each [session](/agents/sessions) fresh. Memory is how you give them
+durable context — coding conventions, domain facts, a house style, API docs — so
+they don't have to rediscover it every run. A **global** memory applies everywhere;
+a **project-scoped** memory rides along with one [project's](/app/projects) tasks.
+
+Reach for a memory when:
+
+- Agents keep making the same wrong assumption about your stack or conventions.
+- A body of reference material (a spec, a style guide, an API) should inform every run.
+- You want the same house style across a whole [project's](/app/projects) tasks.
+
+You can also **chat with a memory** to interrogate what it knows before wiring it
+into agents — a quick way to sanity-check that a source was ingested the way you
+expected.
 
 <Screenshot dark={memoryDark} light={memoryLight} alt="Memory bases" caption="The Memory screen — your knowledge bases." />
 

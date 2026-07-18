@@ -7,9 +7,23 @@ order: 1
 # Getting started
 
 midnite ships as a single desktop download for macOS (Apple Silicon), Windows,
-and Linux. Grab the build for your platform, open it, and you're running — the
-app bundles everything it needs (the gateway and the UI) and runs entirely on
-your machine.
+and Linux. Grab the build for your platform, open it, and you're running — the app
+bundles everything it needs (the local [gateway](/) and the UI) and runs entirely
+on your machine. There's no server to stand up, no account to create, and no data
+that leaves your device except the agents' own calls to their model provider.
+
+The rest of this page walks you from download to a running agent in a few minutes.
+
+## What you'll need
+
+- A supported machine: **macOS (Apple Silicon)**, **Windows (x64)**, or **Linux (x64)**.
+- An **agent CLI** installed and on your `PATH` — midnite drives coding agents like
+  Claude Code rather than shipping its own. You'll point midnite at it under
+  [Settings → Agents](/settings/settings).
+- A **model-provider account** for whichever agent you use (e.g. an API key), so
+  the agent can actually call a model.
+- A **git repository or two** you want agents to work in — registered under
+  [Settings → Repos](/settings/settings).
 
 ## Download
 
@@ -41,8 +55,9 @@ open ~/Downloads/midnite.dmg
 
 ## First launch
 
-The desktop builds aren't code-signed yet, so your OS will warn you the first time.
-This is expected — here's how to get past it:
+The desktop builds are **ad-hoc signed but not yet notarized by Apple** (and
+unsigned on Windows), so your OS will warn you the first time you open one. This is
+expected for an early release — here's how to get past it:
 
 - **macOS** — right-click the app in Applications and choose **Open** (instead of
   double-clicking), then confirm. If it's still blocked, run:
@@ -57,14 +72,41 @@ This is expected — here's how to get past it:
   ```
 
 On first run midnite creates its local data folder (on macOS,
-`~/Library/Application Support/midnite`) — that's where your tasks, sessions, and
-settings live. Everything stays on your machine.
+`~/Library/Application Support/@midnite/desktop`) — that's where your tasks,
+sessions, and settings live, in a local SQLite database. Everything stays on your
+machine, and you can back it up or move it from [Settings →
+Data](/settings/settings).
+
+## Set up your workspace
+
+Before you queue any work, spend a minute in [Settings](/settings/settings) so
+agents have what they need:
+
+1. **Agents** — choose the CLI and provider that will run your tasks.
+2. **Repos** — register the git repositories agents are allowed to work in.
+3. **Safety** — pick an autonomy mode and the guardrails that go with it, so you
+   decide how much an agent can do on its own.
+
+Then create your first bit of work:
+
+1. Open **[Projects](/app/projects)** and create a project (optionally let AI
+   expand a rough description into a plan).
+2. Add a **[task](/app/tasks)** — describe what you want done and pick a repo. The
+   scheduler hands it to an agent automatically.
+3. Watch it run in **[Sessions](/agents/sessions)**, and review the pull request it
+   opens right from the task card.
 
 ## Next steps
+
+Once you're up and running, each feature has its own page:
 
 - **[Projects](/app/projects)** and **[Tasks](/app/tasks)** — organise work and put
   agents to it.
 - **[Sessions](/agents/sessions)** — watch an agent run in a live terminal.
+- **[Memory](/agents/memory)** — give agents durable context so they stop
+  rediscovering your conventions every run.
+- **[Ops](/overview/ops)** — track fleet health, spend, and the periodic
+  [digests](/overview/digests).
 - **[Settings](/settings/settings)** — point midnite at your repos, pick the agent
   CLI, and set safety guardrails.
 

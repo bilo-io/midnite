@@ -12,17 +12,24 @@ import workflowsLight from '../assets/workflows-light.png';
 
 ## What it is
 
-A **workflow** is a multi-step automation built on a visual canvas. Nodes wire
-together into a graph that can run on a **schedule**, be triggered by an inbound
-**webhook**, or launched **on demand**. Each run is recorded with its output so you
-can inspect what happened.
+A **workflow** is a multi-step automation built on a visual canvas. You wire
+**nodes** into a graph, and that graph can start three ways:
+
+- **On a schedule** — run it every hour, every morning, every week.
+- **From a webhook** — an inbound HTTP call (with a rotatable secret) kicks it off.
+- **On demand** — hit **Run** whenever you want it.
+
+Every run is recorded with its output, so you can open any past run and see exactly
+what each node produced.
 
 ## Purpose
 
-Workflows let you automate recurring agent and data work — enrich a task, poll a
-data source, fan out to several steps, post a result — without hand-running it
-each time. The **Templates** gallery turns a proven workflow into something you (or
-others) can install in one click.
+Workflows automate the recurring agent and data work you'd otherwise run by hand —
+enrich a [task](/app/tasks), poll a data source, fan out across several steps, post
+a result to Slack. Where a task is a one-off unit of work and a
+[council](/agents/councils) is a one-off deliberation, a workflow is the piece you
+set up **once and let run on its own**. The **Templates** gallery then turns a
+proven workflow into something you (or others) can install in a single click.
 
 <Screenshot dark={workflowsDark} light={workflowsLight} alt="Workflows canvas" caption="The Workflows editor — nodes on the canvas." />
 

@@ -12,25 +12,42 @@ import opsLight from '../assets/ops-light.png';
 
 ## What it is
 
-The **fleet-health** dashboard: live agent-slot utilisation, run throughput,
-duration distribution, and LLM spend. It's an analytics surface — read-only —
-parameterised by a query and a timeframe.
+Ops is the **fleet-health** dashboard — a read-only analytics surface that reads
+the same run history the scheduler and agents write, and charts it over a
+timeframe you choose. It covers four questions:
+
+- **Utilisation** — how many agent slots are in use versus idle.
+- **Throughput** — how many runs are completing per interval.
+- **Duration** — how long runs take, as a distribution rather than a single average.
+- **Spend** — LLM cost over the window, so surprises show up early.
+
+It also hosts the **[Digest](/overview/digests) tab** — the periodic roll-up of
+what shipped and failed — so system-level views and their summaries share one
+screen.
 
 ## Purpose
 
-Ops is where you watch the fleet as a system: are slots saturated, is throughput
-healthy, how long are runs taking, and what are they costing? Use it to spot
-bottlenecks and track spend rather than to act on any single task.
+Ops is where you watch the fleet as a **system** rather than as individual
+[tasks](/app/tasks): are slots saturated, is throughput healthy, are runs getting
+slower, and what are they costing? Use it to spot bottlenecks, right-size how many
+agents you run at once, and keep an eye on spend — then jump to the
+[board](/app/tasks) or [Sessions](/agents/sessions) to act on whatever it
+surfaces.
 
 <Screenshot dark={opsDark} light={opsLight} alt="Ops dashboard" caption="The Ops screen — fleet-health analytics." />
 
 ## Using it
+
+Everything is driven by the header controls: pick a **timeframe** to set the
+window, refine the **query** to scope what's counted, and the charts and rollup
+panels update together.
 
 | Action | How | Behind the scenes |
 | --- | --- | --- |
 | View live metrics | Ops screen | `getOpsMetrics` |
 | Adjust timeframe / query | Header controls | `getOpsMetrics` |
 | View rollups | Rollup panels | `getMetricsRollups` |
+| Read fleet digests | **Digest** tab | `getDigests` |
 
 > Ops is read-only analytics — there's nothing to create or edit here. For
 > per-run cost attribution by repo/project/task, the CLI's `usage` command reads

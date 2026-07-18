@@ -12,15 +12,26 @@ import officeLight from '../assets/office-light.png';
 
 ## What it is
 
-A **pixel-art floor** of your agents. Each agent has a desk; the floor is driven by
-live presence, so you can see who's active and walk up to a desk to call or
-message them. Office is **desktop-only** — it's gated behind the desktop breakpoint.
+Office is a **pixel-art floor** of your agents — a spatial, game-like take on the
+fleet. Each agent has a desk, and the room is driven by **live presence**, so the
+scene changes as work starts and stops:
+
+- **Desks** map one-to-one to your agents.
+- **Presence** lights up a desk when its agent is active, so a busy floor is a busy
+  fleet — no list to parse.
+- **Walking up** to a desk is how you reach that agent: call it, or drop into its
+  live [session](/agents/sessions).
+
+Office is **desktop-only** — it's gated behind the desktop breakpoint, since the
+floor needs room to move around in.
 
 ## Purpose
 
-Office is the playful, spatial view of your fleet. Instead of a list, you get a
-room you can move around; stepping up to a desk is a quick way to reach a specific
-agent. It turns "which agents are running" into something you can see at a glance.
+Office is the playful counterpart to the [board](/app/tasks) and
+[Sessions](/agents/sessions). Where those are lists and terminals, Office is a
+room you can move through — a quick, human way to answer "who's working right
+now?" and to reach a specific agent by walking over to it rather than hunting
+through a table. It's the same fleet, seen spatially.
 
 <Screenshot dark={officeDark} light={officeLight} alt="Office floor" caption="The Office — a pixel-art floor of your agents." />
 

@@ -12,17 +12,29 @@ import tasksLight from '../assets/tasks-light.png';
 
 ## What it is
 
-The **kanban board** for orchestrating agent work. Each card is a task with a
-status, a priority, an optional repo and project, and its own agent session once
-it starts running. Tasks flow left-to-right through statuses; the scheduler picks
-up ready `todo` tasks and hands them to an agent.
+The **kanban board** for orchestrating agent work, and the heart of midnite. Each
+card is a task with a status, a priority, an optional repo and
+[project](/app/projects), and its own [agent session](/agents/sessions) once it
+starts running. Cards flow left-to-right through statuses; the scheduler picks up
+ready `todo` tasks and hands each to an agent.
+
+A task moves through a lifecycle you can follow at a glance:
+
+- **Todo** — described and waiting; the scheduler will pick it up when it's *ready*
+  (priority + age ordered, and not blocked by an unfinished dependency).
+- **Running** — an agent is executing it in a live [session](/agents/sessions).
+- **Needs attention** — the agent paused for you: a question, an approval, a review.
+- **Done / abandoned** — terminal states; done work often carries a merged pull request.
 
 ## Purpose
 
 Tasks are the unit of execution in midnite. You describe what you want done, and
-the board schedules it to an agent, tracks it through review, and — when it opens
-a pull request — lets you review and merge without leaving the app. Dependencies,
-priority, and readiness all feed the scheduler so the right work runs first.
+the board schedules it to an agent, tracks it through review, and — when the agent
+opens a pull request — lets you review and merge it without leaving the app.
+**Dependencies**, **priority**, and **readiness** all feed the scheduler, so the
+right work runs first and a card never starts before its blockers finish. Batch up
+a dozen and the board becomes a team you supervise rather than a terminal you
+babysit.
 
 <Screenshot dark={tasksDark} light={tasksLight} alt="Kanban board" caption="The Tasks board — cards grouped by status." />
 
