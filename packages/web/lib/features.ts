@@ -19,7 +19,6 @@ import {
   Images,
   LayoutDashboard,
   ListChecks,
-  Newspaper,
   Presentation,
   Workflow,
   type LucideIcon,
@@ -36,7 +35,6 @@ export type FeatureKey =
   | 'councils'
   | 'slides'
   | 'media'
-  | 'digests'
   | 'ops';
 
 /**
@@ -154,16 +152,6 @@ export const FEATURES: Feature[] = [
     category: 'overview',
   },
   {
-    key: 'digests',
-    // The feed lives on the Digest tab of /ops; the /digests route redirects
-    // there (kept for old deep-links + the gateway's search-result routes).
-    href: '/ops?tab=digest',
-    label: 'Digests',
-    description: 'Fleet digests — the periodic roll-up of what shipped, failed, and needs attention.',
-    Icon: Newspaper,
-    category: 'overview',
-  },
-  {
     key: 'ops',
     href: '/ops',
     label: 'Ops',
@@ -204,7 +192,6 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   councils: true,
   slides: true,
   media: true,
-  digests: true,
   ops: true,
 };
 

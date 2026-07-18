@@ -15,7 +15,7 @@ describe('groupNavSections', () => {
     const byKey = Object.fromEntries(sections.map((s) => [s.key, keysOf(s.features)]));
     expect(byKey['app']).toEqual(['projects', 'tasks', 'slides', 'workflows']);
     expect(byKey['agents']).toEqual(['memory', 'sessions', 'councils', 'media']);
-    expect(byKey['overview']).toEqual(['office', 'digests', 'ops']);
+    expect(byKey['overview']).toEqual(['office', 'ops']);
   });
 
   it('drops sections whose features are all filtered out', () => {
