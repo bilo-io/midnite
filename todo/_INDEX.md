@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 17/36 | `█████░░░░░` | 47% | — | C D E |
+| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 17/36 | `█████░░░░░` | 47% | E | C D |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -129,7 +129,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Persistence: `user_identities` table (unique `(provider, providerUserId)`) + nullable `password_hash` migration; `findOrCreateFromSso` (lookup → auto-link on verified email → provision user+team); null-hash password login → 403; unverified-collision + closed-signup rejected (PR #449)
 - ◻ **C** — Gateway flow: `auth/sso.service.ts` + `SsoController` (`/auth/sso/:provider/{start,callback}`), Google `id_token` verify + GitHub `/user`+`/user/emails`, encrypted state **+ single-use nonce store w/ TTL**, issues our JWTs; never touches the vault `OAuthService`
 - ◻ **D** — Web UX: Google/GitHub buttons on login/register, web callback route that sets `__midnite_rt` httpOnly cookie via one-time code (no tokens in URL), open-redirect guard, linked-accounts display
-- ◻ **E** — Config + docs: `gateway.auth.sso` block (reuse `OAuthClientConfigSchema`, `clientSecretEnv` env-name-only, + `redirectUri`/`webBaseUrl`), fail-closed boot check, README/schema setup docs
+- 🔄 **E** — Config + docs: `gateway.auth.sso` block (reuse `OAuthClientConfigSchema`, `clientSecretEnv` env-name-only, + `redirectUri`/`webBaseUrl`), fail-closed boot check, README/schema setup docs
 - ✅ **F** — Login hero: split-screen (form left ⅓, hero right ⅔), login-specific typewriter title/subtitle, galaxy starfield that periodically lights up constellations as knowledge-graph edges (node-palette tokens) + semi-realistic twinkle; desktop-only, reduced-motion static fallback (PR #448)
 
 ### [Phase 69 — Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md)
