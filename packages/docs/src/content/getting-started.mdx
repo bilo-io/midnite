@@ -23,7 +23,7 @@ Pick the asset for your platform:
 | --- | --- |
 | macOS (Apple Silicon) | `midnite-<version>-arm64.dmg` |
 | Windows (x64) | `midnite-<version>-x64.exe` |
-| Linux (x64) | `midnite-<version>-x64.AppImage` |
+| Linux (x64) | `midnite-<version>-x86_64.AppImage` |
 
 > Intel Macs aren't supported in the current release — the macOS build is Apple Silicon only.
 
@@ -52,8 +52,8 @@ This is expected — here's how to get past it:
 - **Windows** — on the SmartScreen prompt, click **More info → Run anyway**.
 - **Linux** — make the AppImage executable, then run it:
   ```bash
-  chmod +x midnite-*-x64.AppImage
-  ./midnite-*-x64.AppImage
+  chmod +x midnite-*.AppImage
+  ./midnite-*.AppImage
   ```
 
 On first run midnite creates its local data folder (on macOS,
