@@ -155,7 +155,10 @@ export function NavBar() {
         className={cn(
           // Hidden on phones (the bottom-tab bar takes over below `md`); the
           // icon-rail/expanded states stay for tablet and desktop.
-          'fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width] duration-200 md:flex',
+          // `top` follows the update banner's height (Phase 71) so the fixed
+          // rail is pushed down with the rest of the app instead of being
+          // occluded; `bottom-0` keeps it anchored.
+          'fixed bottom-0 left-0 top-[var(--update-banner-h,0px)] z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width,top] duration-200 md:flex',
           expandedView
             ? 'w-64 items-stretch bg-background/95 px-2 shadow-xl'
             : 'w-14 items-center bg-background/70 supports-[backdrop-filter]:bg-background/50',

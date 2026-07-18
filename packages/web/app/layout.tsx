@@ -5,6 +5,8 @@ import './globals.css';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { PwaRegister } from '@/components/pwa-register';
 import { ToastProvider } from '@/components/toast';
+import { UpdateProvider } from '@/components/update/update-provider';
+import { UpdateBanner } from '@/components/update/update-banner';
 import { ThemeProvider } from './theme/theme-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { themeInitScript } from './theme/theme-script';
@@ -135,7 +137,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>
-              <ConfirmProvider>{children}</ConfirmProvider>
+              <ConfirmProvider>
+                <UpdateProvider>
+                  {/* Flex column so the update banner pushes the whole app down
+                      rather than overlaying it (Phase 71). */}
+                  <div className="flex min-h-screen flex-col">
+                    <UpdateBanner />
+                    <div className="flex-1">{children}</div>
+                  </div>
+                </UpdateProvider>
+              </ConfirmProvider>
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
