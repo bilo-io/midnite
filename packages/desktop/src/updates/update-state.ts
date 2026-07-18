@@ -24,14 +24,24 @@ export type UpdateState = {
   percent: number | null;
   /** Human-readable error message when `phase === 'error'`, else null. */
   error: string | null;
+  /**
+   * This build is below the channel manifest's `minSupported` force-update floor
+   * (Phase 71 Theme H). The main process fetches the channel's `version.json` for
+   * `minSupported` (electron-updater's own feed doesn't carry it) and merges the
+   * result into every pushed state, so the desktop banner enforces the same floor
+   * as the web. Omitted on the state constructors → treated as `false`.
+   */
+  belowFloor?: boolean;
 };
 
 // IPC channels. State flows main→renderer on UPDATE_STATE_CHANNEL; the renderer
-// drives the flow with the three command channels (never auto — user-timed).
+// drives the flow with the command channels (never auto — user-timed).
 export const UPDATE_STATE_CHANNEL = 'midnite:update-state'; // main → renderer
 export const UPDATE_CHECK_CHANNEL = 'midnite:update-check'; // renderer → main
 export const UPDATE_DOWNLOAD_CHANNEL = 'midnite:update-download';
 export const UPDATE_RESTART_CHANNEL = 'midnite:update-restart';
+/** renderer → main: set the release channel (`stable`/`beta`), then re-check (Theme H). */
+export const UPDATE_CHANNEL_CHANNEL = 'midnite:update-channel';
 
 export const IDLE_STATE: UpdateState = { phase: 'idle', version: null, percent: null, error: null };
 

@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 30/34 | `█████████░` | 88% | H | — |
+| [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -133,7 +133,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Electron auto-update + code-signing: `electron-updater` publish block + feed, `checkForUpdates`→`downloadUpdate`→`quitAndInstall`, preload `window.midnite.updates` bridge, progress→restart states, env-gated notarization/signing (user-timed, never auto-nag) (PR #457)
 - ✅ **F** — Release notes on the version: banner version → CHANGELOG-section popover (raw-fetch + parse, fail-soft) + "Full changelog" (new docs `/changelog` page, deep-linked `?v=`) + "Release page" links; one-shot `vX available` echo toast (PR #458)
 - ✅ **G** — Release-flow wiring: `emit-version-manifest` writes `packages/web/public/version.json` (single writer) in the `chore(release)` commit via `/release-complete` + a moon task; `version-check` guards the manifest tracks the web version (PR #460)
-- ◻ **H** — Channels, force-update floor & CLI notice: stable/beta channel (Phase 43 pref), non-dismissable banner below `minSupported`, `midnite` startup out-of-date notice (fail-soft, `--json`-aware)
+- ✅ **H** — Channels, force-update floor & CLI notice: synced stable/beta channel (Phase 43 pref) → per-channel manifest (web) + `autoUpdater.channel` (desktop), non-dismissable emphatic banner below `minSupported` (web + desktop `belowFloor` from a channel-manifest fetch), fail-soft cached `midnite` startup out-of-date notice (`--json`-aware, `--no-update-check`) (PR #462)
 
 ### [Phase 70 — Google & GitHub SSO](phase-70-google-github-sso.md)
 *"Continue with Google / GitHub" login+signup by lifting the workflow-vault OAuth pattern (not the class) into a dedicated `SsoService` in the auth module — resolves/provisions a user, links the external identity, and issues the same JWTs `POST /auth/login` does. No Firebase, self-hosted. Auto-link on verified email, passwordless SSO users, nonce+expiry replay guard, provision user+team on first login.*

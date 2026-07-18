@@ -85,14 +85,14 @@ Make "bumps on every tag" real end-to-end — the release flow is the single wri
 - [x] Guard: `scripts/version-check.mjs` (the `moon ci` `root:version-check` task) now asserts `version.json`'s `version` equals the web package version + is well-formed — a stale manifest fails CI.
 - [x] Tests (shared): `buildManifest` output satisfies `VersionManifestSchema` + field derivation; `checkManifestFreshness` passes on match, fails on stale/malformed/bad-channel/non-object (both scripts' pure helpers imported test-only via a `main()` guard).
 
-## Theme H — Channels, force-update floor & CLI notice — **M**
+## Theme H — Channels, force-update floor & CLI notice — **M** — ✅ DONE (PR #462, 2026-07-18)
 
 The golive extras: a beta/stable channel, a hard floor that forces the update, and a CLI heads-up.
 
-- [ ] **Channel:** `channel: 'stable' | 'beta'` in the manifest + a user/preference toggle (reuse [Phase 43](phase-43-server-side-preference-sync.md) preference sync) so testers can opt into `beta`; the web poll + Electron feed both respect it. Default `stable`.
-- [ ] **Force-update floor:** when `getCurrentVersion() < minSupported`, the banner becomes **non-dismissable** (no `×`, blocking overlay copy) — the user can still read release notes but must update to proceed. Applies to web + desktop; drives home "you're too far behind to test against."
-- [ ] **CLI out-of-date notice:** on `midnite` startup, fetch the manifest (fail-soft, cached, `--json`-aware, suppressible via env/flag) and print a one-line "midnite CLI vX is behind vY — update" using the Phase 47 chrome; a hard notice if below `minSupported`.
-- [ ] Tests: channel selection (beta sees a newer manifest, stable doesn't), floor makes the banner non-dismissable, CLI notice prints/suppresses correctly + fails soft when the manifest is unreachable.
+- [x] **Channel:** synced `updateChannel: 'stable' | 'beta'` preference ([Phase 43](phase-43-server-side-preference-sync.md)) + a **Settings → System → Updates** toggle; the web poll fetches the channel's manifest (`version.json` vs `version.beta.json` via `versionManifestFile`) and the desktop sets `autoUpdater.channel` to match. Default `stable`; switching re-checks immediately.
+- [x] **Force-update floor:** below `minSupported` the banner is **non-dismissable** (no `×`) with emphatic copy ("Update required to keep using midnite — this version is no longer supported…"). Web computes it from the polled manifest; the desktop main process fetches the channel's `version.json` for `minSupported` (the electron-updater feed doesn't carry it) and merges `belowFloor` into every pushed state — fail-open on any fetch error.
+- [x] **CLI out-of-date notice:** `midnite` startup prints a one-line "CLI vX is behind vY" (a louder hard notice below `minSupported`) from the GitHub-raw manifest, cached (6h TTL). Fail-soft, `--json`-aware, suppressible via `--no-update-check` / `$MIDNITE_NO_UPDATE_CHECK`; never blocks or slows a command.
+- [x] Tests: channel-aware poll path (stable/beta), floor copy + non-dismissable, `UpdatesAccordion`, desktop `floor` module (ok/non-ok/throw), CLI `buildNotice`/`isSuppressed`/cached-notice.
 
 ---
 

@@ -8,6 +8,7 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { EnvironmentAccordion } from './environment-accordion';
 import { RealtimeAccordion } from './realtime-accordion';
+import { UpdatesAccordion } from './updates-accordion';
 import { SetupStatusPanel } from './setup-status-panel';
 
 export function SystemSection() {
@@ -127,6 +128,8 @@ export function SystemSection() {
       </Accordion>
 
       <RealtimeAccordion />
+
+      <UpdatesAccordion />
     </div>
   );
 }

@@ -33,6 +33,17 @@ export const VersionManifestSchema = z.object({
 export type VersionManifest = z.infer<typeof VersionManifestSchema>;
 
 /**
+ * The published manifest **filename** for a channel: `stable` → `version.json`,
+ * `beta` → `version.beta.json`. One helper so the web poll path, the desktop
+ * floor fetch, and the CLI's raw URL all resolve the same per-channel file
+ * (Phase 71 Theme H). Returns a bare filename — callers prefix it with their
+ * origin (`/`, a web URL, or the GitHub-raw base).
+ */
+export function versionManifestFile(channel: UpdateChannel): string {
+  return channel === 'beta' ? 'version.beta.json' : 'version.json';
+}
+
+/**
  * True when `latest` is strictly newer than `current` (a real update is
  * available). Equal or ahead → false. Throws on a malformed version so a bad
  * manifest surfaces loudly rather than silently nagging.

@@ -2,9 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { isBelowFloor, isUpdateAvailable, type VersionManifest } from '@midnite/shared';
+import {
+  isBelowFloor,
+  isUpdateAvailable,
+  type UpdateChannel,
+  type VersionManifest,
+} from '@midnite/shared';
 
-import { fetchVersionManifest, getCurrentVersion } from '@/lib/version';
+import { fetchVersionManifest, getCurrentVersion, versionManifestPath } from '@/lib/version';
 
 /** How often (ms) to re-poll `version.json` for a newer build. */
 export const VERSION_POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -36,8 +41,12 @@ const IDLE: VersionPollState = {
  *
  * This is the version-manifest half of detection; the service-worker
  * waiting-worker signal is folded in by the provider.
+ *
+ * `channel` (Phase 71 Theme H) selects which manifest is polled — `beta` opts
+ * into `version.beta.json`. Switching channels re-checks immediately (it's in the
+ * effect deps), so opting into beta surfaces a newer build without a reload.
  */
-export function useVersionPoll(pollKey?: string): VersionPollState {
+export function useVersionPoll(pollKey?: string, channel: UpdateChannel = 'stable'): VersionPollState {
   const [state, setState] = useState<VersionPollState>(IDLE);
   const inFlight = useRef(false);
 
@@ -45,7 +54,7 @@ export function useVersionPoll(pollKey?: string): VersionPollState {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const manifest = await fetchVersionManifest();
+      const manifest = await fetchVersionManifest(versionManifestPath(channel));
       const current = getCurrentVersion();
       setState({
         available: isUpdateAvailable(current, manifest.version),
@@ -58,9 +67,9 @@ export function useVersionPoll(pollKey?: string): VersionPollState {
     } finally {
       inFlight.current = false;
     }
-  }, []);
+  }, [channel]);
 
-  // Check on mount + whenever the route (pollKey) changes.
+  // Check on mount + whenever the route (pollKey) or channel changes.
   useEffect(() => {
     void check();
   }, [check, pollKey]);

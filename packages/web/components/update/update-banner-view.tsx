@@ -85,7 +85,9 @@ export function UpdateBannerView({
   }, [visible, height]);
 
   const versionLabel = latest ? `v${latest}` : 'the latest version';
-  const defaultHeadline = belowFloor ? 'A required update is available' : 'A new version is available';
+  const defaultHeadline = belowFloor
+    ? 'Update required to keep using midnite'
+    : 'A new version is available';
   const showProgress = downloadPercent !== null;
 
   return (
@@ -121,6 +123,11 @@ export function UpdateBannerView({
                   <ReleaseNotesPopover version={latest} notesUrl={notesUrl} />
                 ) : (
                   <span className="font-semibold">{versionLabel}</span>
+                )}
+                {belowFloor && (
+                  <span className="opacity-80">
+                    {' — this version is no longer supported, please update to continue'}
+                  </span>
                 )}
               </span>
             </p>

@@ -31,11 +31,18 @@ describe('UserPreferencesSchema', () => {
       inactivityTimeoutS: 30,
       cycleDurationS: 5,
       officeView: '2d',
+      updateChannel: 'stable',
       features: {},
       collapsedNavSections: [],
       seenGuides: {},
       autoShowGuides: true,
     });
+  });
+
+  it('defaults updateChannel to stable and accepts beta (Phase 71 H)', () => {
+    expect(UserPreferencesSchema.parse({}).updateChannel).toBe('stable');
+    expect(UserPreferencesSchema.parse({ updateChannel: 'beta' }).updateChannel).toBe('beta');
+    expect(UserPreferencesSchema.safeParse({ updateChannel: 'nightly' }).success).toBe(false);
   });
 
   it('accepts a versioned seenGuides map and defaults to empty (Phase 67 A)', () => {
@@ -109,6 +116,7 @@ describe('UserPreferencesSchema', () => {
       inactivityTimeoutS: 120,
       cycleDurationS: 8,
       officeView: '3d' as const,
+      updateChannel: 'beta' as const,
       features: { office: true, workflows: false },
       collapsedNavSections: ['agents'],
       seenGuides: { board: 1, memory: 3 },

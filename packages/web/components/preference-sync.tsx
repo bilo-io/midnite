@@ -36,6 +36,7 @@ function prefsKey(p: UserPreferences): string {
     effects: { glass: p.effects.glass, pageReveal: p.effects.pageReveal, typewriter: p.effects.typewriter },
     inactivityTimeoutS: p.inactivityTimeoutS,
     cycleDurationS: p.cycleDurationS,
+    updateChannel: p.updateChannel,
     features: Object.fromEntries(Object.keys(p.features).sort().map((k) => [k, p.features[k]])),
     seenGuides: Object.fromEntries(Object.keys(p.seenGuides).sort().map((k) => [k, p.seenGuides[k]])),
     autoShowGuides: p.autoShowGuides,

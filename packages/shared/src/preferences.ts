@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { UpdateChannelSchema } from './update.js';
+
 /**
  * Server-syncable user preferences (Phase 43).
  *
@@ -195,6 +197,14 @@ export const UserPreferencesSchema = z.object({
    * default to `2d`.
    */
   officeView: OfficeViewSchema.default('2d'),
+  /**
+   * Which app-update channel this user follows (Phase 71 Theme H). `stable`
+   * (default) tracks tagged releases; `beta` opts into pre-release builds — the
+   * web poll fetches the channel's manifest (`version.json` vs `version.beta.json`)
+   * and the desktop updater sets `autoUpdater.channel` to match. Additive —
+   * existing blobs default to `stable`.
+   */
+  updateChannel: UpdateChannelSchema.default('stable'),
   /**
    * Which optional features (and their nav items) are enabled. A generic
    * `key → enabled` map — the canonical feature-key set lives in the web app
