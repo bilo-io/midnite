@@ -1,17 +1,3 @@
-// Where the docs site (packages/docs) lives, resolved per environment.
-//
-// In dev the docs SPA runs on its fixed, strict port — see docs/vite.config.ts
-// (`server.port: 5173`, `strictPort: true`) and docs/moon.yml — so we point
-// straight at it. In a deployed build the URL comes from `NEXT_PUBLIC_DOCS_URL`,
-// falling back to '#' so the link degrades gracefully when docs aren't hosted.
-//
-// `process.env.NODE_ENV` and `NEXT_PUBLIC_*` are inlined by Next at build time,
-// so this stays correct in server and client components alike.
-export const DOCS_URL =
-  process.env.NODE_ENV === 'development'
-    ? 'http://localhost:5173'
-    : (process.env.NEXT_PUBLIC_DOCS_URL ?? '#');
-
 // --- GitHub / release links (Phase 71 Theme F) -----------------------------
 //
 // The public repo slug drives the raw-content + releases URLs the update banner
@@ -20,6 +6,23 @@ export const DOCS_URL =
 
 /** Public repo slug — the single source for raw-content + release URLs. */
 export const GITHUB_REPO = 'bilo-io/midnite';
+
+// Where the docs site (packages/docs) lives, resolved per environment.
+//
+// In dev the docs SPA runs on its fixed, strict port — see docs/vite.config.ts
+// (`server.port: 5173`, `strictPort: true`) and docs/moon.yml — so we point
+// straight at it. In a deployed build the URL comes from `NEXT_PUBLIC_DOCS_URL`
+// when set, else the GitHub Pages deploy the docs CI publishes (preview.yml →
+// `destination_dir: docs` on `<owner>.github.io/<repo>`). Falling back to the
+// real hosted URL — not '#' — keeps the assistant's Docs link off the webapp
+// origin (a bare '#' resolves to the current page, i.e. the app itself).
+const [GITHUB_OWNER, GITHUB_REPO_NAME] = GITHUB_REPO.split('/');
+export const DOCS_PAGES_URL = `https://${GITHUB_OWNER}.github.io/${GITHUB_REPO_NAME}/docs`;
+
+export const DOCS_URL =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5173'
+    : (process.env.NEXT_PUBLIC_DOCS_URL ?? DOCS_PAGES_URL);
 
 /**
  * Raw CHANGELOG on the default branch. `main`'s changelog already contains every
