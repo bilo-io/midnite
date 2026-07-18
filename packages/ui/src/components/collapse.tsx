@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 
 /**
@@ -14,9 +14,15 @@ import { cn } from '../lib/cn';
  * region is marked `inert` while collapsed — without it, controls inside a
  * closed accordion stay in the tab order and readable by screen readers even
  * though they're visually hidden.
+ *
+ * `bleed`: content that paints outside its box (e.g. the `gradient-border`
+ * glow halo) is clipped by the inner `overflow-hidden`. With `bleed`, the clip
+ * is released once the expand transition settles — the box no longer needs it
+ * when fully open — and reinstated the moment it starts collapsing.
  */
 export function Collapse({
   open,
+  bleed = false,
   children,
   className,
   id,
@@ -25,6 +31,7 @@ export function Collapse({
   'aria-labelledby': ariaLabelledby,
 }: {
   open: boolean;
+  bleed?: boolean;
   children: ReactNode;
   className?: string;
   id?: string;
@@ -32,6 +39,18 @@ export function Collapse({
   'aria-label'?: string;
   'aria-labelledby'?: string;
 }) {
+  // Tracks "fully open" — flips true a beat after the 200ms expand transition
+  // completes (timer, not transitionend, so reduced-motion still settles).
+  const [settled, setSettled] = useState(open);
+  useEffect(() => {
+    if (!open) {
+      setSettled(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => setSettled(true), 240);
+    return () => clearTimeout(timer);
+  }, [open]);
+
   return (
     <div
       id={id}
@@ -46,7 +65,10 @@ export function Collapse({
     >
       {/* `inert` (React 19) drops the collapsed content out of the tab order +
           the accessibility tree, matching what `overflow-hidden` does visually. */}
-      <div className="min-h-0 overflow-hidden" inert={!open}>
+      <div
+        className={cn('min-h-0', bleed && open && settled ? 'overflow-visible' : 'overflow-hidden')}
+        inert={!open}
+      >
         {children}
       </div>
     </div>

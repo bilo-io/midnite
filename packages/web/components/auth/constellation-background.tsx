@@ -4,24 +4,35 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Login-hero backdrop: a galaxy-like starfield that periodically lights up small
- * constellations as knowledge-graph edges — a visual echo of what midnite is (a
- * live graph of tasks/agents/repos). Stars scatter with a radial density falloff
- * around one off-centre galactic core (denser at the core, thinning outward),
+ * Login-hero backdrop: a neuro-cloud — a dense, galaxy-like field of "neurons"
+ * that periodically fire, sending pulses down winding multi-hop "thought paths"
+ * (a visual echo of what midnite is: a live graph of tasks/agents/repos).
+ * Neurons scatter with a radial density falloff around one off-centre core,
  * twinkle on their own phase, and a few read as brighter anchors.
  *
- * Every ~few seconds 2–3 overlapping constellations pick a random cluster of
- * nearby stars, light them, draw the connection edges between them (fading in and
- * out over ~1–2s), then respawn elsewhere — an ever-changing graph. Edge/node
- * colours reuse the `--node-trigger` / `--node-action` / `--node-logic` /
- * `--node-data` tokens (the same four the app's canvas backgrounds read), so it
- * literally renders midnite's node palette and re-tints on theme/accent switch.
+ * Firing: every so often an anchor neuron sparks a branching thought path — a
+ * chain of nearby neurons lit segment by segment as a bright pulse travels the
+ * edges, each neuron flaring (a pulsating glow) as the signal arrives, then the
+ * whole path slowly fades. Edge/node colours reuse the `--node-trigger` /
+ * `--node-action` / `--node-logic` / `--node-data` tokens (the same four the
+ * app's canvas backgrounds read), so it literally renders midnite's node palette
+ * and re-tints on theme/accent switch.
+ *
+ * Interaction (animated mode only; the canvas itself stays `pointer-events-none`
+ * — listeners live on `window`, so the form is never blocked):
+ *   - The cursor is a gravity well: nearby neurons are drawn in and swirl into
+ *     orbit around it — a soft core repulsion keeps them from ever reaching the
+ *     centre (a little black hole), and a home-spring pulls them back when the
+ *     cursor moves on.
+ *   - A click detonates a shockwave — a radiating ring that shoves neurons
+ *     outward — and *excites* the neurons around the point: several long-lived
+ *     thought paths radiate away from the click and slowly decay.
  *
  * Motion gating lives with the caller (see `useAnimationPrefs`): pass
  * `animate={false}` for the reduced-motion path and the canvas paints **once** —
- * a static star field plus a few pre-lit constellation edges, no twinkle, no RAF.
- * Purely decorative (`aria-hidden`, `pointer-events-none`); it never blocks the
- * form and is safe to mount after the page is interactive.
+ * a static field plus a few pre-lit thought paths, no twinkle, no physics, no
+ * RAF, no listeners. Purely decorative (`aria-hidden`, `pointer-events-none`);
+ * it never blocks the form and is safe to mount after the page is interactive.
  */
 
 const TAU = Math.PI * 2;
@@ -33,7 +44,7 @@ const STAR_FALLBACK = '0 0% 90%';
 type NodeColors = [string, string, string, string];
 
 type Star = {
-  /** Position as a fraction of the canvas, so a resize re-scales without reseeding. */
+  /** Home position as a fraction of the canvas, so a resize re-scales without reseeding. */
   fx: number;
   fy: number;
   /** Base radius (px) + base alpha. */
@@ -45,17 +56,33 @@ type Star = {
   bright: boolean;
 };
 
-type Constellation = {
-  /** Indices into the star array. */
-  members: number[];
-  /** Edges as pairs of star indices. */
-  edges: [number, number][];
-  /** Which node token this constellation is drawn in. */
+/** A firing thought path: a chain of neuron indices lit by a travelling pulse. */
+type Pathway = {
+  nodes: number[];
   colorIdx: 0 | 1 | 2 | 3;
-  /** Birth time (seconds) + total lifetime (seconds). */
+  /** Birth time (seconds), total lifetime (seconds), pulse speed (segments/s). */
   born: number;
   life: number;
+  speed: number;
+  /** Click-born paths decay slowly instead of the ambient in/out envelope. */
+  click: boolean;
 };
+
+type Shockwave = { x: number; y: number; born: number };
+
+// ── Tuning ────────────────────────────────────────────────────────────────────
+const WELL_RADIUS = 280; // px — reach of the cursor gravity well
+const WELL_PULL = 950; // radial attraction (px/s²) at the well's edge falloff
+const WELL_SWIRL = 750; // tangential (orbit) acceleration
+const WELL_CORE = 38; // px — hard core: inside this, neurons are pushed out
+const CORE_PUSH = 3200;
+const SPRING = 6; // home spring (s⁻²)
+const DAMPING = 2.4; // velocity damping (s⁻¹)
+const MAX_SPEED = 340; // px/s
+const SW_SPEED = 430; // shockwave front speed (px/s)
+const SW_LIFE = 1.5; // seconds
+const SW_KICK = 2400; // shockwave impulse strength
+const MAX_PATHWAYS = 24;
 
 /** Deterministic PRNG (mulberry32) so the seeded star field is stable across frames/resizes. */
 function mulberry32(seed: number): () => number {
@@ -89,8 +116,8 @@ function readStarColor(): string {
 }
 
 /**
- * Seed the star field: most stars cluster around one off-centre galactic core with
- * a radius^1.7 density bias (denser at the core), plus a thin uniform dust layer so
+ * Seed the field: most neurons cluster around one off-centre core with a
+ * radius^1.7 density bias (denser at the core), plus a thin uniform dust layer so
  * the corners aren't empty.
  */
 function seedStars(count: number): Star[] {
@@ -99,16 +126,17 @@ function seedStars(count: number): Star[] {
   const coreY = 0.4;
   const stars: Star[] = [];
   for (let i = 0; i < count; i++) {
-    const dust = rnd() < 0.22;
+    const dust = rnd() < 0.26;
     let fx: number;
     let fy: number;
     if (dust) {
       fx = rnd();
       fy = rnd();
     } else {
-      // Bias toward the core: radius^1.7 pulls the distribution inward.
+      // Bias toward the core: radius^1.4 pulls the distribution inward (gentler
+      // than the old ^1.7 — at 5× density a tighter bias reads as a hard blob).
       const ang = rnd() * TAU;
-      const rad = Math.pow(rnd(), 1.7) * 0.62;
+      const rad = Math.pow(rnd(), 1.4) * 0.72;
       fx = coreX + Math.cos(ang) * rad;
       fy = coreY + Math.sin(ang) * rad * 0.82;
     }
@@ -116,8 +144,8 @@ function seedStars(count: number): Star[] {
     stars.push({
       fx,
       fy,
-      r: bright ? 1.6 + rnd() * 0.9 : 0.5 + rnd() * 1.0,
-      a: bright ? 0.85 : 0.28 + rnd() * 0.4,
+      r: bright ? 1.6 + rnd() * 0.9 : 0.45 + rnd() * 0.9,
+      a: bright ? 0.85 : 0.22 + rnd() * 0.38,
       tw: 0.5 + rnd() * 1.6,
       ph: rnd() * TAU,
       bright,
@@ -126,40 +154,7 @@ function seedStars(count: number): Star[] {
   return stars;
 }
 
-/**
- * Build a small connected graph from a random anchor + its nearest neighbours (in
- * px space): connect the anchor to each neighbour and chain consecutive neighbours,
- * yielding ~members edges — a little constellation.
- */
-function spawnConstellation(
-  stars: Star[],
-  px: number[],
-  py: number[],
-  colorIdx: 0 | 1 | 2 | 3,
-  born: number,
-  rnd: () => number = Math.random,
-): Constellation {
-  const anchor = Math.floor(rnd() * stars.length);
-  const k = 3 + Math.floor(rnd() * 3); // 3–5 neighbours
-  const near = stars
-    .map((_, i) => i)
-    .filter((i) => i !== anchor)
-    .sort((i, j) => {
-      const di = (px[i]! - px[anchor]!) ** 2 + (py[i]! - py[anchor]!) ** 2;
-      const dj = (px[j]! - px[anchor]!) ** 2 + (py[j]! - py[anchor]!) ** 2;
-      return di - dj;
-    })
-    .slice(0, k);
-  const members = [anchor, ...near];
-  const edges: [number, number][] = near.map((n) => [anchor, n]);
-  // Chain a couple of neighbours together so it reads as a graph, not a star burst.
-  for (let i = 0; i < near.length - 1; i += 2) {
-    edges.push([near[i]!, near[i + 1]!]);
-  }
-  return { members, edges, colorIdx, born, life: 2.4 + Math.random() * 1.6 };
-}
-
-/** Envelope: 0 → 1 → 0 over the constellation's lifetime, with smooth ends. */
+/** Envelope: 0 → 1 → 0 over a lifetime, with smooth ends (ambient pathways). */
 function envelope(age: number, life: number): number {
   const t = age / life;
   if (t <= 0 || t >= 1) return 0;
@@ -188,17 +183,28 @@ export function ConstellationBackground({
     let w = 0;
     let h = 0;
     let stars: Star[] = [];
+    // Parallel physics arrays (hot path — avoids per-star object churn):
+    // home px, current px, velocity.
+    let hx: number[] = [];
+    let hy: number[] = [];
     let px: number[] = [];
     let py: number[] = [];
+    let vx: number[] = [];
+    let vy: number[] = [];
     // Set by the static path so a resize / theme change repaints the frozen frame
     // (the animated path repaints every RAF tick, so it leaves this null).
     let repaint: (() => void) | null = null;
 
     const reseed = () => {
-      const count = Math.min(230, Math.max(90, Math.round((w * h) / 5200)));
+      // ~5× the old galaxy density — a proper cloud, capped for perf.
+      const count = Math.min(1150, Math.max(400, Math.round((w * h) / 1050)));
       stars = seedStars(count);
-      px = stars.map((s) => s.fx * w);
-      py = stars.map((s) => s.fy * h);
+      hx = stars.map((s) => s.fx * w);
+      hy = stars.map((s) => s.fy * h);
+      px = [...hx];
+      py = [...hy];
+      vx = new Array<number>(stars.length).fill(0);
+      vy = new Array<number>(stars.length).fill(0);
     };
 
     const resize = () => {
@@ -228,42 +234,166 @@ export function ConstellationBackground({
       attributeFilter: ['class', 'data-accent', 'data-accent-2'],
     });
 
+    /**
+     * Grow a winding chain of nearby neurons from `start`, biased along `dir`
+     * (thought paths radiate rather than double back). Greedy nearest-with-bias
+     * over current positions; O(len·n) only at spawn time.
+     */
+    const buildChain = (
+      start: number,
+      dirX: number,
+      dirY: number,
+      len: number,
+      rnd: () => number,
+    ): number[] => {
+      const chain = [start];
+      const used = new Set<number>([start]);
+      let cx = px[start]!;
+      let cy = py[start]!;
+      let dx = dirX;
+      let dy = dirY;
+      const maxHop = 110;
+      for (let step = 1; step < len; step++) {
+        let best = -1;
+        let bestScore = Infinity;
+        for (let i = 0; i < stars.length; i++) {
+          if (used.has(i)) continue;
+          const ox = px[i]! - cx;
+          const oy = py[i]! - cy;
+          const d2 = ox * ox + oy * oy;
+          if (d2 > maxHop * maxHop || d2 < 16) continue;
+          const d = Math.sqrt(d2);
+          // Directional bias: hops along `dir` score better than reversals.
+          const dot = (ox / d) * dx + (oy / d) * dy;
+          const score = d * (1.7 - dot) * (0.8 + rnd() * 0.4);
+          if (score < bestScore) {
+            bestScore = score;
+            best = i;
+          }
+        }
+        if (best < 0) break;
+        const stepX = px[best]! - cx;
+        const stepY = py[best]! - cy;
+        const stepD = Math.hypot(stepX, stepY) || 1;
+        // Blend the heading so the path winds smoothly instead of zig-zagging.
+        dx = dx * 0.45 + (stepX / stepD) * 0.55;
+        dy = dy * 0.45 + (stepY / stepD) * 0.55;
+        const dl = Math.hypot(dx, dy) || 1;
+        dx /= dl;
+        dy /= dl;
+        cx = px[best]!;
+        cy = py[best]!;
+        chain.push(best);
+        used.add(best);
+      }
+      return chain;
+    };
+
+    const spawnAmbient = (born: number, colorIdx: 0 | 1 | 2 | 3, rnd: () => number): Pathway => {
+      const start = Math.floor(rnd() * stars.length);
+      const ang = rnd() * TAU;
+      return {
+        nodes: buildChain(start, Math.cos(ang), Math.sin(ang), 5 + Math.floor(rnd() * 4), rnd),
+        colorIdx,
+        born,
+        life: 3 + rnd() * 1.6,
+        speed: 2.6 + rnd() * 1.6,
+        click: false,
+      };
+    };
+
     const drawStars = (t: number) => {
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i]!;
         const twinkle = animate ? 0.6 + 0.4 * Math.sin(t * s.tw + s.ph) : 1;
         const a = s.a * twinkle;
         const r = s.r * (s.bright ? 0.9 + 0.2 * twinkle : 1);
+        // Gentle idle drift layered over the physics so the cloud never sits still.
+        const dxi = animate ? Math.sin(t * 0.31 + s.ph * 2.1) * 1.6 : 0;
+        const dyi = animate ? Math.cos(t * 0.24 + s.ph * 1.7) * 1.6 : 0;
+        const x = px[i]! + dxi;
+        const y = py[i]! + dyi;
         ctx.beginPath();
         ctx.fillStyle = `hsl(${starColor} / ${a.toFixed(3)})`;
-        ctx.arc(px[i]!, py[i]!, r, 0, TAU);
+        ctx.arc(x, y, r, 0, TAU);
         ctx.fill();
+        if (s.bright) {
+          // Cheap halo for anchors (no gradient): one large, faint disc.
+          ctx.beginPath();
+          ctx.fillStyle = `hsl(${starColor} / ${(a * 0.12).toFixed(3)})`;
+          ctx.arc(x, y, r * 3.2, 0, TAU);
+          ctx.fill();
+        }
       }
     };
 
-    const drawConstellation = (c: Constellation, alpha: number) => {
-      if (alpha <= 0.001) return;
-      const color = nodes[c.colorIdx];
-      // Edges first, then relight the member stars on top.
+    /** Draw one thought path at time `t`; returns false once fully decayed. */
+    const drawPathway = (p: Pathway, t: number): boolean => {
+      const age = t - p.born;
+      if (age < 0) return true;
+      const decay = p.click
+        ? Math.pow(Math.max(0, 1 - age / p.life), 1.5) // slow ember fade
+        : envelope(age, p.life);
+      if (age >= p.life || decay <= 0.001) return false;
+      const segs = p.nodes.length - 1;
+      if (segs < 1) return false;
+      const progress = age * p.speed;
+      const color = nodes[p.colorIdx];
+
+      // Edges light segment by segment as the pulse travels.
       ctx.lineWidth = 1;
-      ctx.strokeStyle = `hsl(${color} / ${(alpha * 0.5).toFixed(3)})`;
-      ctx.beginPath();
-      for (const [a, b] of c.edges) {
-        ctx.moveTo(px[a]!, py[a]!);
-        ctx.lineTo(px[b]!, py[b]!);
+      for (let i = 0; i < segs; i++) {
+        const lit = Math.min(1, Math.max(0, progress - i));
+        if (lit <= 0) break;
+        const ax = px[p.nodes[i]!]!;
+        const ay = py[p.nodes[i]!]!;
+        const bx = px[p.nodes[i + 1]!]!;
+        const by = py[p.nodes[i + 1]!]!;
+        ctx.strokeStyle = `hsl(${color} / ${(0.55 * lit * decay).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + (bx - ax) * lit, ay + (by - ay) * lit);
+        ctx.stroke();
       }
-      ctx.stroke();
-      for (const m of c.members) {
-        const glow = ctx.createRadialGradient(px[m]!, py[m]!, 0, px[m]!, py[m]!, 7);
-        glow.addColorStop(0, `hsl(${color} / ${(alpha * 0.9).toFixed(3)})`);
+
+      // Neurons flare as the pulse arrives, then linger with a soft pulsating glow.
+      for (let j = 0; j < p.nodes.length; j++) {
+        const phase = progress - j;
+        if (phase < 0) break;
+        const flash = Math.exp(-phase * 1.6);
+        const glowA = (0.3 + 0.7 * flash) * decay * (0.85 + 0.15 * Math.sin(t * 5 + j));
+        if (glowA <= 0.01) continue;
+        const gx = px[p.nodes[j]!]!;
+        const gy = py[p.nodes[j]!]!;
+        const gr = 7 + 5 * flash;
+        const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        glow.addColorStop(0, `hsl(${color} / ${(glowA * 0.9).toFixed(3)})`);
         glow.addColorStop(1, `hsl(${color} / 0)`);
         ctx.fillStyle = glow;
-        ctx.fillRect(px[m]! - 7, py[m]! - 7, 14, 14);
+        ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
         ctx.beginPath();
-        ctx.fillStyle = `hsl(${color} / ${alpha.toFixed(3)})`;
-        ctx.arc(px[m]!, py[m]!, 1.7, 0, TAU);
+        ctx.fillStyle = `hsl(${color} / ${Math.min(1, glowA * 1.2).toFixed(3)})`;
+        ctx.arc(gx, gy, 1.7, 0, TAU);
         ctx.fill();
       }
+
+      // The travelling pulse itself — a bright bead sliding along the live edge.
+      if (progress > 0 && progress < segs) {
+        const i = Math.floor(progress);
+        const f = progress - i;
+        const ax = px[p.nodes[i]!]!;
+        const ay = py[p.nodes[i]!]!;
+        const bx = px[p.nodes[i + 1]!]!;
+        const by = py[p.nodes[i + 1]!]!;
+        const sx = ax + (bx - ax) * f;
+        const sy = ay + (by - ay) * f;
+        const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, 10);
+        glow.addColorStop(0, `hsl(${color} / ${(0.95 * decay).toFixed(3)})`);
+        glow.addColorStop(1, `hsl(${color} / 0)`);
+        ctx.fillStyle = glow;
+        ctx.fillRect(sx - 10, sy - 10, 20, 20);
+      }
+      return true;
     };
 
     // ── Static (reduced-motion) path: paint one frame, repaint on resize/theme ──
@@ -271,11 +401,16 @@ export function ConstellationBackground({
       const paintStatic = () => {
         ctx.clearRect(0, 0, w, h);
         drawStars(0);
-        // A few pre-lit constellations so the graph identity survives with no
-        // motion — seeded per-slot so they stay put across repaints.
+        // A few pre-lit thought paths so the graph identity survives with no
+        // motion — seeded per-slot so they stay put across repaints. `born` is
+        // pushed far into the past so every segment/node renders fully lit
+        // (progress > segs) under a mid-life ambient envelope.
         for (let i = 0; i < 3; i++) {
           const seeded = mulberry32(0x51ed + i * 0x2545);
-          drawConstellation(spawnConstellation(stars, px, py, (i % 4) as 0 | 1 | 2 | 3, 0, seeded), 0.9);
+          const p = spawnAmbient(0, (i % 4) as 0 | 1 | 2 | 3, seeded);
+          p.born = -p.life / 2;
+          p.speed = 1000; // fully lit instantly
+          drawPathway(p, 0);
         }
       };
       repaint = paintStatic;
@@ -288,32 +423,175 @@ export function ConstellationBackground({
 
     // ── Animated path ──────────────────────────────────────────────────────────
     const t0 = performance.now();
-    // 3 overlapping constellations on staggered births, each in a distinct colour.
-    let constellations: Constellation[] = [0, 1, 2].map((i) =>
-      spawnConstellation(stars, px, py, (i % 4) as 0 | 1 | 2 | 3, -i * 0.9),
-    );
+    const now = () => (performance.now() - t0) / 1000;
 
+    let pathways: Pathway[] = [0, 1, 2].map((i) =>
+      spawnAmbient(-i * 0.9, (i % 4) as 0 | 1 | 2 | 3, Math.random),
+    );
+    let nextColor = 3;
+    let nextAmbientAt = 0;
+    let shockwaves: Shockwave[] = [];
+
+    // Cursor gravity well + click shockwaves. The canvas stays
+    // pointer-events-none, so listeners live on window and map into canvas space.
+    let mouse: { x: number; y: number } | null = null;
+    const toLocal = (e: PointerEvent): { x: number; y: number } | null => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      return x >= 0 && y >= 0 && x <= rect.width && y <= rect.height ? { x, y } : null;
+    };
+    const onMove = (e: PointerEvent) => {
+      mouse = toLocal(e);
+    };
+    const onLeave = () => {
+      mouse = null;
+    };
+    const onDown = (e: PointerEvent) => {
+      const at = toLocal(e);
+      if (!at) return;
+      const t = now();
+      shockwaves.push({ x: at.x, y: at.y, born: t });
+      // Excite the neurons around the click: thought paths radiating outward,
+      // long-lived with a slow decay.
+      const bursts = 3 + Math.floor(Math.random() * 3);
+      const byDist = stars
+        .map((_, i) => i)
+        .sort((a, b) => {
+          const da = (px[a]! - at.x) ** 2 + (py[a]! - at.y) ** 2;
+          const db = (px[b]! - at.x) ** 2 + (py[b]! - at.y) ** 2;
+          return da - db;
+        })
+        .slice(0, bursts * 3);
+      for (let k = 0; k < bursts; k++) {
+        const start = byDist[k * 3]!;
+        let ox = px[start]! - at.x;
+        let oy = py[start]! - at.y;
+        const d = Math.hypot(ox, oy);
+        if (d < 1) {
+          const ang = (k / bursts) * TAU;
+          ox = Math.cos(ang);
+          oy = Math.sin(ang);
+        } else {
+          ox /= d;
+          oy /= d;
+        }
+        pathways.push({
+          nodes: buildChain(start, ox, oy, 6 + Math.floor(Math.random() * 4), Math.random),
+          colorIdx: (nextColor++ % 4) as 0 | 1 | 2 | 3,
+          born: t,
+          life: 5.5 + Math.random() * 2,
+          speed: 4.5,
+          click: true,
+        });
+      }
+      if (pathways.length > MAX_PATHWAYS) pathways = pathways.slice(-MAX_PATHWAYS);
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerdown', onDown, { passive: true });
+    window.addEventListener('pointerout', onLeave, { passive: true });
+
+    const step = (t: number, dt: number) => {
+      for (let i = 0; i < stars.length; i++) {
+        let ax = (hx[i]! - px[i]!) * SPRING;
+        let ay = (hy[i]! - py[i]!) * SPRING;
+
+        if (mouse) {
+          const mx = mouse.x - px[i]!;
+          const my = mouse.y - py[i]!;
+          const d = Math.hypot(mx, my);
+          if (d < WELL_RADIUS && d > 0.5) {
+            const q = 1 - d / WELL_RADIUS;
+            const f = q * q;
+            const ux = mx / d;
+            const uy = my / d;
+            // Pull inward + swirl sideways → orbits, not head-on capture.
+            ax += ux * WELL_PULL * f;
+            ay += uy * WELL_PULL * f;
+            ax += -uy * WELL_SWIRL * f;
+            ay += ux * WELL_SWIRL * f;
+            if (d < WELL_CORE) {
+              // Event horizon: nothing reaches the cursor itself.
+              const push = CORE_PUSH * (1 - d / WELL_CORE);
+              ax -= ux * push;
+              ay -= uy * push;
+            }
+          }
+        }
+
+        for (const sw of shockwaves) {
+          const oxx = px[i]! - sw.x;
+          const oyy = py[i]! - sw.y;
+          const d = Math.hypot(oxx, oyy) || 1;
+          const front = (t - sw.born) * SW_SPEED;
+          const band = d - front;
+          // Kick outward as the ring front sweeps past, fading with age.
+          const k =
+            SW_KICK *
+            Math.exp(-(band * band) / (2 * 42 * 42)) *
+            Math.exp(-(t - sw.born) / 0.7);
+          ax += (oxx / d) * k;
+          ay += (oyy / d) * k;
+        }
+
+        vx[i] = (vx[i]! + ax * dt) * Math.max(0, 1 - DAMPING * dt);
+        vy[i] = (vy[i]! + ay * dt) * Math.max(0, 1 - DAMPING * dt);
+        const sp2 = vx[i]! * vx[i]! + vy[i]! * vy[i]!;
+        if (sp2 > MAX_SPEED * MAX_SPEED) {
+          const sc = MAX_SPEED / Math.sqrt(sp2);
+          vx[i]! *= sc;
+          vy[i]! *= sc;
+        }
+        px[i] = px[i]! + vx[i]! * dt;
+        py[i] = py[i]! + vy[i]! * dt;
+      }
+    };
+
+    const drawShockwaves = (t: number) => {
+      shockwaves = shockwaves.filter((sw) => t - sw.born < SW_LIFE);
+      for (const sw of shockwaves) {
+        const age = t - sw.born;
+        const front = age * SW_SPEED;
+        const fade = 1 - age / SW_LIFE;
+        ctx.beginPath();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = `hsl(${starColor} / ${(0.3 * fade).toFixed(3)})`;
+        ctx.arc(sw.x, sw.y, front, 0, TAU);
+        ctx.stroke();
+      }
+    };
+
+    let last = performance.now();
     let raf = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      if (document.hidden || w === 0 || h === 0) return;
-      const t = (performance.now() - t0) / 1000;
+      if (document.hidden || w === 0 || h === 0) {
+        last = performance.now();
+        return;
+      }
+      const t = now();
+      const dt = Math.min(0.05, (performance.now() - last) / 1000);
+      last = performance.now();
+
+      step(t, dt);
       ctx.clearRect(0, 0, w, h);
       drawStars(t);
-      constellations = constellations.map((c) => {
-        const age = t - c.born;
-        if (age >= c.life) {
-          // Respawn elsewhere, keeping the palette slot rotating.
-          return spawnConstellation(stars, px, py, ((c.colorIdx + 1) % 4) as 0 | 1 | 2 | 3, t);
-        }
-        drawConstellation(c, envelope(age, c.life));
-        return c;
-      });
+      drawShockwaves(t);
+      pathways = pathways.filter((p) => drawPathway(p, t));
+      // Keep a few ambient firings alive on a gentle stagger.
+      const ambient = pathways.reduce((n, p) => n + (p.click ? 0 : 1), 0);
+      if (ambient < 3 && t >= nextAmbientAt) {
+        pathways.push(spawnAmbient(t, (nextColor++ % 4) as 0 | 1 | 2 | 3, Math.random));
+        nextAmbientAt = t + 0.5 + Math.random() * 1.2;
+      }
     };
     raf = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(raf);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerout', onLeave);
       ro.disconnect();
       mo.disconnect();
     };

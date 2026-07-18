@@ -47,7 +47,9 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
               onBlur?.(e);
             }}
             className={cn(
-              'w-full rounded-lg bg-transparent px-3 py-2 text-sm text-foreground outline-none',
+              // Solid theme background (not transparent) so the field reads as a
+              // real surface over the card fill the gradient frame paints.
+              'w-full rounded-lg bg-background px-3 py-2 text-sm text-foreground outline-none',
               className,
             )}
             {...rest}
