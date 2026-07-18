@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { OctagonX, Pause, Workflow } from 'lucide-react';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, within } from 'storybook/test';
 
 import { HoverExpandButton } from './hover-expand-button';
 
@@ -38,22 +38,20 @@ export const EmergencyStop: Story = {
   },
 };
 
-/** Collapsed the label is zero-width; hovering reveals it (the control widens). */
-export const RevealsOnHover: Story = {
+/**
+ * Collapsed by default: the control is icon-only, its label present in the DOM
+ * (so it keeps an accessible name) but clipped to zero width. The label reveals on
+ * hover / keyboard focus via CSS — a pointer-driven behavior best verified visually
+ * (see the Playwright screenshots in the PR), not through synthetic events, which
+ * don't engage `:hover`.
+ */
+export const CollapsedByDefault: Story = {
   args: { icon: <Pause className="h-3.5 w-3.5" />, label: 'Pause scheduling', variant: 'ghost' },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // The control is reachable by its label as its accessible name even collapsed.
-    const btn = canvas.getByRole('button', { name: 'Pause scheduling' });
-    const label = canvas.getByText('Pause scheduling');
-    await step('collapsed: label is clipped to zero width', async () => {
-      await expect(label.getBoundingClientRect().width).toBe(0);
-    });
-    await step('hover: label reveals (control widens)', async () => {
-      await userEvent.hover(btn);
-      // Wait past the 200ms width transition.
-      await new Promise((r) => setTimeout(r, 350));
-      await expect(label.getBoundingClientRect().width).toBeGreaterThan(0);
-    });
+    // Reachable by its label as accessible name even while collapsed…
+    expect(canvas.getByRole('button', { name: 'Pause scheduling' })).toBeTruthy();
+    // …and the visible label is clipped to zero width until revealed.
+    expect(canvas.getByText('Pause scheduling').getBoundingClientRect().width).toBe(0);
   },
 };
