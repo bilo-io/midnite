@@ -201,6 +201,51 @@
   .border-accent-2 {
     border-color: hsl(var(--accent-2, var(--primary)));
   }
+
+  /*
+   * Phase 71 — clip the active primary/accent gradient to text (the login "Sign
+   * in" heading, and the base for the animated auth-hero title). Falls back to the
+   * solid primary when no gradient accent is set, so it always reads.
+   */
+  .text-accent-gradient {
+    background-image: var(
+      --accent-gradient,
+      linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /*
+   * The cycling auth-hero title: the primary gradient woven across the glyphs with
+   * a soft primary glow and a slow sheen — mirrors `.screensaver-title`, but driven
+   * by the accent gradient rather than a single tint. text-shadow survives the clip
+   * (it's unaffected by background-clip), so the glow shows on the transparent fill.
+   */
+  .auth-hero-title {
+    background-image: var(
+      --accent-gradient,
+      linear-gradient(100deg, hsl(var(--primary)) 0%, hsl(var(--foreground)) 50%, hsl(var(--primary)) 100%)
+    );
+    background-size: 220% 100%;
+    background-position: 0% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow:
+      0 0 24px hsl(var(--primary) / 0.45),
+      0 0 52px hsl(var(--primary) / 0.25);
+    animation: auth-hero-sheen 7s ease-in-out infinite alternate;
+  }
+  html[data-motion='reduced'] .auth-hero-title {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) .auth-hero-title {
+      animation: none;
+    }
+  }
 }
 
 /*
@@ -590,6 +635,26 @@ html[data-no-glass] *::after {
   }
   50% {
     opacity: 0;
+  }
+}
+
+/* Auth-hero title sheen + copy crossfade (components/auth/auth-hero.tsx). */
+@keyframes auth-hero-sheen {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+@keyframes auth-hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

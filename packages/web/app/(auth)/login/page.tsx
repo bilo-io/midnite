@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
+import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Collapse } from '@/components/ui/collapse';
+import { FloatingLabelInput } from '@/components/auth/floating-label-input';
 import { SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
 import { ssoErrorMessage } from '@/lib/api';
@@ -18,6 +20,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // The email/password form is tucked behind a "Continue with email" button.
+  const [emailOpen, setEmailOpen] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   // A failed SSO round-trip returns here with ?sso_error=<code> (Phase 70 C).
   // Read it off the URL (avoids a Suspense boundary under `output: 'export'`).
@@ -25,6 +30,11 @@ export default function LoginPage() {
     const code = new URLSearchParams(window.location.search).get('sso_error');
     setSsoError(ssoErrorMessage(code));
   }, []);
+
+  // Move focus into the form the moment it expands.
+  useEffect(() => {
+    if (emailOpen) emailRef.current?.focus();
+  }, [emailOpen]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -40,61 +50,79 @@ export default function LoginPage() {
     }
   }
 
-  const registrationOpen = process.env.NEXT_PUBLIC_REGISTRATION_OPEN === 'true';
-
   return (
     <div className="w-full">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">Sign in</h1>
+      <h1 className="mb-6 inline-block text-2xl font-semibold tracking-tight text-accent-gradient">
+        Sign in
+      </h1>
       {ssoError && (
-        <p role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-500">
+        <p
+          role="alert"
+          className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-500"
+        >
           {ssoError}
         </p>
       )}
-      <div className="mb-4">
+      <div className="mb-3">
         <SsoButtons redirect="/" />
       </div>
-      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
-          </label>
-          <Input
+
+      {!emailOpen && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => setEmailOpen(true)}
+          aria-expanded={emailOpen}
+          aria-controls="email-login-form"
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Continue with email
+        </Button>
+      )}
+
+      <Collapse open={emailOpen} id="email-login-form">
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3 pt-1">
+          <FloatingLabelInput
+            ref={emailRef}
             id="email"
+            label="Email"
             type="email"
             autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-foreground">
-            Password
-          </label>
-          <Input
+          <FloatingLabelInput
             id="password"
+            label="Password"
             type="password"
             autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
           />
-        </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit" disabled={pending} className="w-full">
-          {pending ? 'Signing in…' : 'Sign in'}
-        </Button>
-        {registrationOpen && (
-          <p className="text-sm text-center text-muted-foreground">
-            No account?{' '}
-            <Link href="/register" className="underline hover:text-foreground">
-              Register
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <Button type="submit" disabled={pending} className="w-full">
+            {pending ? 'Signing in…' : 'Sign in'}
+          </Button>
+          {/* Signup + forgot-password on either side, below the form. */}
+          <div className="flex items-center justify-between pt-0.5 text-sm">
+            <Link
+              href="/register"
+              className="text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
+              Sign up
             </Link>
-          </p>
-        )}
-      </form>
+            <Link
+              href="/forgot-password"
+              className="text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        </form>
+      </Collapse>
     </div>
   );
 }
