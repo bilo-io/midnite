@@ -1,7 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { Notification as MidniteNotification } from '@midnite/shared';
 
+import type { UpdateChannel } from '../updates/floor';
 import {
+  UPDATE_CHANNEL_CHANNEL,
   UPDATE_CHECK_CHANNEL,
   UPDATE_DOWNLOAD_CHANNEL,
   UPDATE_RESTART_CHANNEL,
@@ -62,6 +64,7 @@ try {
       check: () => ipcRenderer.send(UPDATE_CHECK_CHANNEL),
       download: () => ipcRenderer.send(UPDATE_DOWNLOAD_CHANNEL),
       restartToInstall: () => ipcRenderer.send(UPDATE_RESTART_CHANNEL),
+      setChannel: (channel: UpdateChannel) => ipcRenderer.send(UPDATE_CHANNEL_CHANNEL, channel),
     },
   });
 } catch {
