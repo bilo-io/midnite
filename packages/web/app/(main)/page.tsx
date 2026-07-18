@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { DynamicBackground } from '@/components/dynamic-background';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
+import { LandingClock } from '@/components/landing-clock';
+import { LandingWeather } from '@/components/landing-weather';
 import { useBackgroundPattern } from '@/lib/use-background-pattern';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -214,7 +216,8 @@ export default function HomePage() {
       className={`${dynamic ? '' : patternClass} relative isolate flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center`}
     >
       {dynamic && <DynamicBackground pattern={pattern} className="-z-10" />}
-      <Clock now={now} />
+      <LandingWeather />
+      <LandingClock now={now} />
 
       <div className="mb-10">
         <Spinner />
@@ -255,44 +258,6 @@ export default function HomePage() {
           pillsRevealed ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
-    </div>
-  );
-}
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-function pad(n: number): string {
-  return n.toString().padStart(2, '0');
-}
-
-function Clock({ now }: { now: Date | null }) {
-  if (now === null) {
-    return <div className="absolute right-6 top-6 h-10" aria-hidden />;
-  }
-
-  const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const date = `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
-
-  return (
-    <div className="absolute right-6 top-6 text-right font-mono">
-      <div className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-        {time}
-      </div>
-      <div className="mt-0.5 text-xs text-muted-foreground">{date}</div>
     </div>
   );
 }
