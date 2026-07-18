@@ -2,10 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { GitBranch } from 'lucide-react';
 
-import { buttonVariants } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { cn } from '@/lib/utils';
-import { APP_URL, DOCS_URL, GITHUB_URL } from '@/lib/site';
+import { DOCS_URL, GITHUB_URL } from '@/lib/site';
 
 const LINKS = [
   { href: '#how', label: 'How it works' },
@@ -65,14 +63,6 @@ export function Nav() {
             className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <GitBranch className="h-4 w-4" />
-          </a>
-          <a
-            href={APP_URL}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(buttonVariants({ size: 'sm' }), 'gradient-border')}
-          >
-            Go to App
           </a>
         </div>
       </nav>

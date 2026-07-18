@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import type { NavGroup } from '../content/nav';
-import { APP_URL } from '../lib/app-links';
+import logoUrl from '../assets/logo.png';
 import { DocSearch } from './doc-search';
 import { Sidebar } from './sidebar';
 import { TableOfContents } from './table-of-contents';
@@ -42,8 +42,11 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
             </svg>
           </button>
 
-          <Link to="/" className="font-semibold tracking-tight">
-            midnite <span className="font-normal text-muted-foreground">/ docs</span>
+          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
+            <img src={logoUrl} alt="midnite logo" width={28} height={28} className="h-7 w-7 rounded-lg shadow" />
+            <span>
+              midnite <span className="font-normal text-muted-foreground">/ docs</span>
+            </span>
           </Link>
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
@@ -54,12 +57,6 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
             >
               Download
             </Link>
-            <a
-              href={APP_URL}
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
-            >
-              Open app
-            </a>
             <a
               href="https://github.com/bilo-io/midnite"
               className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
