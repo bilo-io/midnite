@@ -589,6 +589,20 @@
       "when": 1784200000000,
       "tag": "0083_drop_ideas",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "6",
+      "when": 1784300000000,
+      "tag": "0084_phase70b_user_identities",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "6",
+      "when": 1784400000000,
+      "tag": "0085_phase70b_nullable_password_hash",
+      "breakpoints": true
     }
   ]
 }

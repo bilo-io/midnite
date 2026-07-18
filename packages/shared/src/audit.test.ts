@@ -15,6 +15,7 @@ describe('audit taxonomy (Phase 50 D additions)', () => {
       'project.created',
       'project.updated',
       'project.deleted',
+      'user.sso_linked',
     ]) {
       expect(AuditActionSchema.parse(action)).toBe(action);
     }
