@@ -1,6 +1,10 @@
 import type { ComponentProps } from 'react';
+import { Link } from 'react-router-dom';
 
 import { cn } from '@midnite/ui';
+
+const LINK_CLASS =
+  'font-medium text-foreground underline underline-offset-4 hover:text-foreground/70';
 
 // Maps MDX prose elements (the lowercase h1/p/code/… the markdown compiles to)
 // onto the design system's type + spacing + token classes, so authored docs read
@@ -28,12 +32,30 @@ export const mdxComponents = {
   p: (props: ComponentProps<'p'>) => (
     <p {...props} className={cn('my-4 leading-7 text-foreground/90', props.className)} />
   ),
-  a: (props: ComponentProps<'a'>) => (
-    <a
-      {...props}
-      className={cn('font-medium text-foreground underline underline-offset-4 hover:text-foreground/70', props.className)}
-    />
-  ),
+  // Root-relative links (`/app/tasks`) are in-app routes: render them through
+  // react-router's Link so the HashRouter prefixes the `#` — a raw <a href="/…">
+  // would navigate to a real path the static host can't serve. External links
+  // (http, mailto, #anchor) stay as plain anchors, opening off-site in a new tab.
+  a: ({ href, className, children, ...props }: ComponentProps<'a'>) => {
+    if (href?.startsWith('/')) {
+      return (
+        <Link to={href} className={cn(LINK_CLASS, className)}>
+          {children}
+        </Link>
+      );
+    }
+    const external = /^https?:\/\//.test(href ?? '');
+    return (
+      <a
+        {...props}
+        href={href}
+        className={cn(LINK_CLASS, className)}
+        {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
+      >
+        {children}
+      </a>
+    );
+  },
   ul: (props: ComponentProps<'ul'>) => (
     <ul {...props} className={cn('my-4 ml-6 list-disc space-y-1.5 text-foreground/90', props.className)} />
   ),

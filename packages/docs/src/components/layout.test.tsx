@@ -32,7 +32,8 @@ function renderLayout() {
 describe('Layout', () => {
   it('renders the grouped sidebar nav + content from the @midnite/ui-built shell', () => {
     renderLayout();
-    expect(screen.getByRole('heading', { name: 'Components' })).toBeInTheDocument();
+    // Each section is a collapsible accordion — its header is a toggle button.
+    expect(screen.getByRole('button', { name: 'Components' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Button' })).toHaveAttribute('href', '/components/button');
     expect(screen.getByText('page body')).toBeInTheDocument();
   });
@@ -42,19 +43,24 @@ describe('Layout', () => {
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('href', '/getting-started');
   });
 
-  it('renders the theme switcher (a @midnite/ui Tabs primitive)', () => {
+  it('renders the theme switcher (an icon button that opens a dropdown menu)', () => {
     renderLayout();
-    expect(screen.getByRole('tablist', { name: 'Theme' })).toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: 'Theme' });
+    expect(trigger).toBeInTheDocument();
+    // Closed by default; clicking reveals the radio menu of theme options.
+    expect(screen.queryByRole('menu', { name: 'Theme' })).not.toBeInTheDocument();
+    fireEvent.click(trigger);
+    expect(screen.getByRole('menuitemradio', { name: 'Dark' })).toBeInTheDocument();
   });
 
   it('opens the mobile nav drawer (a second sidebar instance) on the hamburger', () => {
     renderLayout();
     // Closed: only the in-flow (md+) sidebar is mounted.
-    expect(screen.getAllByRole('heading', { name: 'Components' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Components' })).toHaveLength(1);
 
     fireEvent.click(screen.getByLabelText('Open navigation'));
 
-    expect(screen.getAllByRole('heading', { name: 'Components' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Components' })).toHaveLength(2);
     expect(screen.getByLabelText('Close navigation')).toBeInTheDocument();
   });
 

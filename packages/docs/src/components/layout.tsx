@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Download, GitBranch } from 'lucide-react';
 
 import type { NavGroup } from '../content/nav';
 import logoUrl from '../assets/logo.png';
@@ -53,14 +54,18 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
             <DocSearch />
             <Link
               to="/getting-started"
-              className="hidden rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:block"
+              className="hidden items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:inline-flex"
             >
+              <Download className="h-4 w-4" />
               Download
             </Link>
             <a
-              href="https://github.com/bilo-io/midnite"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
+              href="https://github.com/bilo-io/midnite-app"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:inline-flex"
             >
+              <GitBranch className="h-4 w-4" />
               GitHub
             </a>
             <ThemeToggle />
