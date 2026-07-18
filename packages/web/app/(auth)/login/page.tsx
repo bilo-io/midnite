@@ -71,7 +71,7 @@ export default function LoginPage() {
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="h-11 w-full"
           onClick={() => setEmailOpen(true)}
           aria-expanded={emailOpen}
           aria-controls="email-login-form"
@@ -82,7 +82,7 @@ export default function LoginPage() {
       )}
 
       <Collapse open={emailOpen} id="email-login-form">
-        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3 pt-1">
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-5 pt-3">
           <FloatingLabelInput
             ref={emailRef}
             id="email"

@@ -638,23 +638,15 @@ html[data-no-glass] *::after {
   }
 }
 
-/* Auth-hero title sheen + copy crossfade (components/auth/auth-hero.tsx). */
+/* Auth-hero title sheen (components/auth/auth-hero.tsx) — the gradient woven
+ * across the typed-out title. The title itself types in and the subtitle fades
+ * (both driven in JS), so no copy-crossfade keyframe is needed. */
 @keyframes auth-hero-sheen {
   from {
     background-position: 0% 0;
   }
   to {
     background-position: 100% 0;
-  }
-}
-@keyframes auth-hero-fade {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

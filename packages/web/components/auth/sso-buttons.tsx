@@ -46,7 +46,7 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
           <a
             key={provider}
             href={ssoStartUrl(provider, redirect)}
-            className={cn(buttonVariants({ variant: 'outline' }), 'w-full gap-2.5')}
+            className={cn(buttonVariants({ variant: 'outline' }), 'h-11 w-full gap-2.5')}
             data-testid={`sso-${provider}`}
           >
             <ProviderIcon provider={provider} />

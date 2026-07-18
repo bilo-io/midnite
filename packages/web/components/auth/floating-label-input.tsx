@@ -1,18 +1,21 @@
 'use client';
 
 import { forwardRef, useState, type CSSProperties, type InputHTMLAttributes } from 'react';
+import { GradientGlow } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 
 type FloatingLabelInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'placeholder'> & {
-  /** The label text — floats to a smaller position when focused or filled. */
+  /** The label text — floats to just above the field when focused or filled. */
   label: string;
 };
 
 /**
- * A text field with a floating label: the label sits inside the field like a
- * value, then transitions up + shrinks once the input is focused or holds a
- * value. On focus the 1.5px frame paints the active primary/accent gradient (the
- * same gradient the buttons use); at rest it's a subtle border.
+ * A text field with a floating label. At rest the label sits inside the field
+ * like a placeholder; on focus or once the input holds a value it floats up to
+ * sit *just outside* the field's top edge, so the input itself stays a compact
+ * single-line height. On focus the field wears the app's signature rotating +
+ * pulsating gradient border (`<GradientGlow>`, the same treatment the composers
+ * use), driven by `:focus-within` — no per-instance state needed for the border.
  */
 export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInputProps>(
   function FloatingLabelInput({ label, id, value, onFocus, onBlur, className, ...rest }, ref) {
@@ -20,20 +23,16 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
     const hasValue = value != null && String(value).length > 0;
     const floated = focused || hasValue;
 
-    // The frame's 1.5px padding shows as the field border: a muted line at rest,
-    // the accent gradient while focused (falls back to the solid primary when no
-    // gradient accent is set).
-    const frameStyle: CSSProperties = focused
-      ? {
-          backgroundColor: 'transparent',
-          backgroundImage:
-            'var(--accent-gradient, linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%))',
-        }
-      : { backgroundColor: 'hsl(var(--border))' };
+    // Transform-only float (origin top-left) so the transition stays buttery: at
+    // rest the label rides centred inside the field; floated, it lifts fully clear
+    // of the top border and shrinks. `bg-background`/`px-1` keep it legible.
+    const labelStyle: CSSProperties = {
+      transform: floated ? 'translateY(-1.15rem) scale(0.82)' : 'translateY(0.55rem) scale(1)',
+    };
 
     return (
-      <div className="rounded-lg p-[1.5px] transition-colors duration-200" style={frameStyle}>
-        <div className="relative rounded-[calc(0.5rem-1.5px)] bg-background">
+      <div className="relative">
+        <GradientGlow className="rounded-lg">
           <input
             ref={ref}
             id={id}
@@ -48,23 +47,24 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
               onBlur?.(e);
             }}
             className={cn(
-              'w-full rounded-[inherit] bg-transparent px-3 pb-1.5 pt-5 text-sm text-foreground outline-none',
+              'w-full rounded-lg bg-transparent px-3 py-2 text-sm text-foreground outline-none',
               className,
             )}
             {...rest}
           />
-          <label
-            htmlFor={id}
-            className={cn(
-              'pointer-events-none absolute left-3 origin-left transition-all duration-150 ease-out',
-              floated
-                ? 'top-1.5 text-[11px] font-medium text-muted-foreground'
-                : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground',
-            )}
-          >
-            {label}
-          </label>
-        </div>
+        </GradientGlow>
+        <label
+          htmlFor={id}
+          style={labelStyle}
+          className={cn(
+            'pointer-events-none absolute left-2.5 top-0 z-10 origin-top-left px-1 text-sm transition-[transform,color] duration-200 ease-out',
+            // Floated: a small `bg-background` pill so it reads cleanly above the
+            // field. At rest it's a plain placeholder over the field interior.
+            floated ? 'bg-background font-medium text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          {label}
+        </label>
       </div>
     );
   },
