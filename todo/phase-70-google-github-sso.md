@@ -61,15 +61,15 @@ The heart of the phase. A dedicated auth-module service that runs the authorizat
 
 ---
 
-## Theme D — Web sign-in UI + callback handoff — **M**
+## Theme D — Web sign-in UI + callback handoff — **M** — ✅ DONE (PR #452, 2026-07-18)
 
-"Continue with Google / GitHub" where users already sign in, completing the token handoff without leaking tokens into browser history.
+"Continue with Google / GitHub" where users already sign in, completing the token handoff without leaking tokens into browser history. **Decisions (`/exec` Stage 2.5):** direct gateway link via `gatewayUrl()` (matches `getOAuthStartUrl`) · providers fetched from `GET /auth/sso/providers` · **no** auth-context change (existing refresh-on-mount restores the SSO session from the cookie) · SSO helpers in `web/lib/api.ts` · shared `<SsoButtons>` · GET callback route handler exchanging server-side · read-only linked-accounts in Settings · login maps `sso_error` codes.
 
-- [ ] **Provider buttons** on [`app/(auth)/login/page.tsx`](../packages/web/app/(auth)/login/page.tsx) (and the register page) — plain links/anchors to `${gateway}/auth/sso/:provider/start?redirect=…`, styled with the existing button primitives; hidden when SSO isn't configured (surfaced via `/auth/me`-style capability or a `NEXT_PUBLIC_*` flag).
-- [ ] **Web callback route** `app/api/auth/sso/callback/route.ts`: receives the gateway's one-time code, **exchanges it server-side** for `{ accessToken, refreshToken, user }`, sets the `__midnite_rt` httpOnly cookie **exactly like** [`app/api/auth/login/route.ts`](../packages/web/app/api/auth/login/route.ts) (secure in prod, `sameSite: lax`, 7-day), and redirects to the validated `redirect` path (default `/`). No token ever lands in a URL query string.
-- [ ] `auth-context.tsx`: absorb the SSO-returned session identically to `login()` (`applyTokens` + `loadTeams`) — SSO and password login converge on the same client state. Same-origin validation on the `redirect` param (open-redirect guard).
-- [ ] **Linked-accounts** (minimal) in Settings: show `user.identities`/`authProviders` (from Theme A) so a user can see which providers are linked. Full unlink UI is out of scope.
-- [ ] Tests: RTL for the login page buttons (render/gating on configured providers), a `play` story for the SSO button row, and a route-handler test for the callback cookie-set + open-redirect rejection.
+- [x] **Provider buttons** — [`components/auth/sso-buttons.tsx`](../packages/web/components/auth/sso-buttons.tsx): fetches configured providers (`fetchSsoProviders` → `GET /auth/sso/providers`) and renders a direct-nav anchor per provider (`ssoStartUrl`, like `getOAuthStartUrl`); renders nothing when SSO isn't configured. Wired into [`login`](../packages/web/app/(auth)/login/page.tsx) + [`register`](../packages/web/app/(auth)/register/page.tsx) above the email form with an "or" divider.
+- [x] **Web callback route** [`app/auth/sso/callback/route.ts`](../packages/web/app/auth/sso/callback/route.ts) (matches Theme C's 302 target `/auth/sso/callback`): GET handler re-validates the same-origin `redirect` (`SsoRedirectPathSchema`), exchanges the one-time code server-side (`POST /auth/sso/exchange`), sets `__midnite_rt` httpOnly **exactly like** the login route (secure in prod, `sameSite: lax`, 7-day), 303s to the validated path. No token in a URL.
+- [x] **No `auth-context.tsx` change needed** — SSO converges on the existing mount-time `POST /api/auth/refresh` (cookie → access token + user + teams), identical to a returning user. Open-redirect guard lives in the callback route (Decision).
+- [x] **Linked-accounts** (minimal) in Settings → profile: read-only list of `user.identities` from `GET /auth/me` (enriched with identities; login/refresh stay lean). Unlink UI out of scope.
+- [x] Tests: RTL for the button row (gating on configured providers + hrefs), a `play` story (mocked providers), a route-handler test (cookie-set + open-redirect rejection + error paths), and `ssoStartUrl`/`ssoErrorMessage` units.
 
 ---
 
