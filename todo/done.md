@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(web): landing hero — clock to top-centre + top-left weather (PR #466)
+
+Direct UX request: the landing hero's clock/date sat in the top-right, which is now the home of the header-actions cluster (status · approvals · notifications · avatar), so the two overlapped. Moved the clock to the top-centre and put the empty top-left to work with a weather readout.
+
+- [x] **Clock → top-centre**, centre-aligned. Hovering/keyboard-focusing it reveals an icon button that cycles **digital ⇆ analogue**; the choice persists in `localStorage` (`midnite.landing.clockMode`).
+- [x] **Weather → top-left** (`landing-weather.tsx`): reuses the dashboard weather widget's saved location + units (read-only from `midnite.dashboard.widgets`) so it **never prompts**; falls back to a one-time silent geolocation, else stays hidden. Shows icon + temp + condition + hi/lo + precip (icon + temp only on mobile, sharing the top row with the cluster).
+- [x] **Shared extractions**: a presentational `AnalogClockFace` now backs both `ClockWidget` and the landing clock; `describe`/`deg`/`temp` are exported from `weather-widget` so the WMO→icon map + unit formatting live in one place.
+- [x] Tests: `landing-clock` (cycle + persist), `landing-weather` (hidden vs. saved-location readout), `saved-weather-location` parser. SHOTS Playwright spec `e2e/landing-corners.shots.ts` captures both corners (light + dark, hover + analogue), self-contained (stubs `/weather`, seeds a saved location). Screenshots in the PR.
+
 ## 2026-07-18 — feat: Phase 71 Theme H — Channels, force-update floor & CLI notice (PR #462) — **completes Phase 71 🎉**
 
 The golive extras that finish the update system. Testers can opt into pre-release builds, a client too far behind is forced to update, and CLI users get the same heads-up the web/desktop banner gives.
