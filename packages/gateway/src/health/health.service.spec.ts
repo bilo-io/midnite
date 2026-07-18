@@ -32,11 +32,18 @@ beforeAll(() => {
   writeFileSync(configPath, JSON.stringify({ agent: {}, terminal: {}, gateway: {} }));
 });
 
-function config(overrides: Partial<{ poolEnabled: boolean; mode: 'pty' | 'tmux'; repos: { name: string; path: string }[] }> = {}): MidniteConfig {
+function config(
+  overrides: Partial<{
+    poolEnabled: boolean;
+    mode: 'pty' | 'tmux';
+    repos: { name: string; path: string }[];
+    sso: unknown;
+  }> = {},
+): MidniteConfig {
   return parseConfig({
     agent: { poolEnabled: overrides.poolEnabled ?? false },
     terminal: { mode: overrides.mode ?? 'pty' },
-    gateway: {},
+    gateway: overrides.sso ? { auth: { sso: overrides.sso } } : {},
     repos: overrides.repos ?? [],
   });
 }
@@ -79,7 +86,16 @@ describe('HealthService.bootChecks', () => {
     process.env['MIDNITE_SECRET_KEY'] = 'a'.repeat(64); // valid hex
     const checks = await svc(config()).bootChecks();
     const names = checks.map((c) => c.name).sort();
-    expect(names).toEqual(['agent-cli', 'config', 'database', 'gh-cli', 'repo-paths', 'secret-key', 'spawner']);
+    expect(names).toEqual([
+      'agent-cli',
+      'config',
+      'database',
+      'gh-cli',
+      'repo-paths',
+      'secret-key',
+      'spawner',
+      'sso',
+    ]);
     expect(checks.every((c) => c.status === 'ok')).toBe(true);
   });
 
@@ -87,6 +103,39 @@ describe('HealthService.bootChecks', () => {
     expect(byName(await svc(config()).bootChecks(), 'secret-key').status).toBe('warn');
     process.env['MIDNITE_SECRET_KEY'] = 'too-short';
     expect(byName(await svc(config()).bootChecks(), 'secret-key').status).toBe('fail');
+  });
+
+  describe('sso (Phase 70 E)', () => {
+    const GOOGLE = { clientId: 'g', clientSecretEnv: 'SSO_GOOGLE_SECRET' };
+    afterEach(() => {
+      delete process.env['SSO_GOOGLE_SECRET'];
+      delete process.env['MIDNITE_JWT_SECRET'];
+    });
+
+    it('is ok when no providers are configured', async () => {
+      expect(byName(await svc(config()).bootChecks(), 'sso').status).toBe('ok');
+    });
+
+    it('fails closed when a configured provider secret env is unset', async () => {
+      const check = byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso');
+      expect(check.status).toBe('fail');
+      expect(check.detail).toContain('SSO_GOOGLE_SECRET');
+    });
+
+    it('warns when secrets are present but JWT is disabled', async () => {
+      process.env['SSO_GOOGLE_SECRET'] = 'shh';
+      expect(byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso').status).toBe(
+        'warn',
+      );
+    });
+
+    it('is ok when secrets and JWT are both set', async () => {
+      process.env['SSO_GOOGLE_SECRET'] = 'shh';
+      process.env['MIDNITE_JWT_SECRET'] = 'jwt';
+      expect(byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso').status).toBe(
+        'ok',
+      );
+    });
   });
 
   it('missing agent CLI warns when the pool is off but fails when on', async () => {

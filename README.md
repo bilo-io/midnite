@@ -304,8 +304,75 @@ loopback by default**:
     fixed-window limit; `max: 0` disables it (the default). `/health` is never
     throttled. *(WS streams aren't yet token-guarded — the terminal WS uses
     one-time tokens; the board/workflow WS is a follow-on.)*
+  - `auth.sso` — **"Continue with Google / GitHub" login (off by default)**. Absent
+    ⇒ no provider buttons and password login is unaffected. Each provider block reuses
+    the OAuth client shape — `clientId` + `clientSecretEnv` (the **name** of the env
+    var holding the secret, never the secret itself) + optional `scopes` — plus an
+    optional `redirectUri` (the callback URL you registered with the provider). A
+    shared `webBaseUrl` is the browser origin the callback returns to. SSO **requires
+    JWT** (`jwt.secretEnv` / `MIDNITE_JWT_SECRET`) since it issues the same JWTs as
+    password login, and it uses `MIDNITE_SECRET_KEY` to sign the OAuth state. A
+    configured provider whose `clientSecretEnv` is unset **fails the boot preflight**
+    (fail-closed); if JWT is off the preflight **warns**. See
+    [Setting up Google / GitHub SSO](#setting-up-google--github-sso) below.
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
+
+### Setting up Google / GitHub SSO
+
+SSO is opt-in. Register an OAuth app with each provider, point it at the gateway's
+callback, then reference the client secrets by **env-var name** in `midnite.json`.
+
+**Prerequisites** — SSO issues midnite's own JWTs over an encrypted OAuth state, so both
+must be set:
+
+- `MIDNITE_JWT_SECRET` — enables JWT auth (see `gateway.auth.jwt`).
+- `MIDNITE_SECRET_KEY` — 32 bytes (hex/base64) used to encrypt the OAuth `state`.
+
+**1 · Register a Google OAuth client**
+
+1. In the [Google Cloud console](https://console.cloud.google.com/apis/credentials) →
+   *APIs & Services → Credentials → Create credentials → OAuth client ID → Web application*.
+2. Add an **Authorized redirect URI**: `https://<your-host>/auth/sso/google/callback`
+   (for local dev, `http://127.0.0.1:7777/auth/sso/google/callback`).
+3. Copy the **Client ID** and **Client secret**. Export the secret under a name of your
+   choosing, e.g. `export MIDNITE_SSO_GOOGLE_SECRET=…`.
+
+**2 · Register a GitHub OAuth app**
+
+1. GitHub → *Settings → Developer settings → OAuth Apps → New OAuth App*.
+2. Set the **Authorization callback URL** to `https://<your-host>/auth/sso/github/callback`.
+3. Copy the **Client ID**, generate a **Client secret**, and export it, e.g.
+   `export MIDNITE_SSO_GITHUB_SECRET=…`.
+
+**3 · Configure `midnite.json`** — reference the secrets by env-var name only:
+
+```jsonc
+{
+  "gateway": {
+    "auth": {
+      "sso": {
+        "webBaseUrl": "https://app.example.com",
+        "google": {
+          "clientId": "1234567890-abc.apps.googleusercontent.com",
+          "clientSecretEnv": "MIDNITE_SSO_GOOGLE_SECRET",
+          "redirectUri": "https://app.example.com/auth/sso/google/callback"
+        },
+        "github": {
+          "clientId": "Iv1.0123456789abcdef",
+          "clientSecretEnv": "MIDNITE_SSO_GITHUB_SECRET",
+          "redirectUri": "https://app.example.com/auth/sso/github/callback"
+        }
+      }
+    }
+  }
+}
+```
+
+Only the providers you list appear as sign-in buttons. Omit `google` or `github` to
+offer just one. On boot, `midnite doctor` / the startup preflight reports an `sso`
+check: **fail** if a listed provider's `clientSecretEnv` is unset, **warn** if JWT is
+disabled, **ok** once both are in place.
 
 The optional `workflows` block configures the [workflow builder](todo/phase-6-workflows-mvp.md). It ships **off** (`enabled: false`); set `enabled: true` to start the engine and its cron scheduler. Workflows run manually, on a cron schedule, on a signed webhook, or on a task event. `webhookBaseUrl` is the public URL used to build copyable webhook trigger URLs; `http.request` nodes may call the gateway's own origin (the demo `/playground/*` API) even on loopback. Secrets are referenced by env-var name (e.g. `encryptionKeyEnv`, OAuth `clientSecretEnv`), never inlined.
 

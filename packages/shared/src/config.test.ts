@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseConfig } from './config.js';
+import { enabledSsoProviders, parseConfig } from './config.js';
 
 describe('retro config (Phase 62)', () => {
   it('defaults auto-skeleton ON with a 700-token narrative cap', () => {
@@ -257,5 +257,64 @@ describe('usage config defaults', () => {
     expect(config.usage.dailyBudgetUsd).toBe(5);
     expect(config.usage.monthlyBudgetUsd).toBe(100);
     expect(config.usage.warnAtRatio).toBe(0.5);
+  });
+});
+
+describe('login SSO config (Phase 70 E)', () => {
+  it('is absent by default — no sso block, no behaviour change', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(config.gateway.auth.sso).toBeUndefined();
+    expect(enabledSsoProviders(config)).toEqual([]);
+  });
+
+  it('parses a google + github block, env-name-only secrets', () => {
+    const config = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {
+        auth: {
+          sso: {
+            google: {
+              clientId: 'g-id',
+              clientSecretEnv: 'MIDNITE_SSO_GOOGLE_SECRET',
+              redirectUri: 'https://midnite.example.com/auth/sso/google/callback',
+            },
+            github: { clientId: 'gh-id', clientSecretEnv: 'MIDNITE_SSO_GITHUB_SECRET' },
+            webBaseUrl: 'https://midnite.example.com',
+          },
+        },
+      },
+    });
+    expect(config.gateway.auth.sso?.google?.clientSecretEnv).toBe('MIDNITE_SSO_GOOGLE_SECRET');
+    // scopes default to [] (reused OAuthClientConfigSchema); redirectUri optional.
+    expect(config.gateway.auth.sso?.github?.scopes).toEqual([]);
+    expect(config.gateway.auth.sso?.github?.redirectUri).toBeUndefined();
+    expect(config.gateway.auth.sso?.webBaseUrl).toBe('https://midnite.example.com');
+  });
+
+  it('rejects a non-URL redirectUri / webBaseUrl', () => {
+    expect(() =>
+      parseConfig({
+        agent: {},
+        terminal: {},
+        gateway: {
+          auth: { sso: { google: { clientId: 'x', clientSecretEnv: 'E', redirectUri: 'not-a-url' } } },
+        },
+      }),
+    ).toThrow();
+  });
+
+  it('enabledSsoProviders lists only configured providers, stable order', () => {
+    const config = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {
+        auth: {
+          sso: { github: { clientId: 'gh', clientSecretEnv: 'E' } },
+        },
+      },
+    });
+    // github-only configured → github alone; google omitted.
+    expect(enabledSsoProviders(config)).toEqual(['github']);
   });
 });

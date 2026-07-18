@@ -50,6 +50,7 @@ export class HealthService {
       this.checkConfig(),
       this.checkDatabase(),
       this.checkSecretKey(),
+      this.checkSso(),
       this.checkAgentCli(),
       this.checkGhCli(),
       this.checkSpawner(),
@@ -167,6 +168,45 @@ export class HealthService {
       detail,
       remedy: 'set MIDNITE_SECRET_KEY to store provider API keys / credentials at rest',
     };
+  }
+
+  /**
+   * Login SSO preflight (Phase 70 E). Absent `gateway.auth.sso` ⇒ ok (no providers).
+   * A configured provider whose `clientSecretEnv` resolves to nothing is **fail-closed**
+   * (a half-configured OAuth app shouldn't half-boot). When every secret is present but
+   * JWT is disabled we only **warn**: SSO issues our JWTs, so sign-in would 503 without
+   * `jwt.secretEnv` — a coupling hint, not a secret leak.
+   */
+  private checkSso(): PreflightCheck {
+    const auth = this.config.gateway.auth;
+    const configured: { provider: string; secretEnv: string }[] = [];
+    if (auth.sso?.google) configured.push({ provider: 'google', secretEnv: auth.sso.google.clientSecretEnv });
+    if (auth.sso?.github) configured.push({ provider: 'github', secretEnv: auth.sso.github.clientSecretEnv });
+    if (configured.length === 0) {
+      return { name: 'sso', status: 'ok', detail: 'no SSO login providers configured' };
+    }
+
+    const missing = configured.filter((c) => !process.env[c.secretEnv]?.trim());
+    if (missing.length > 0) {
+      const names = missing.map((m) => `${m.provider} (${m.secretEnv})`).join(', ');
+      return {
+        name: 'sso',
+        status: 'fail',
+        detail: `SSO provider client secret env unset: ${names}`,
+        remedy: `set ${missing.map((m) => m.secretEnv).join(' and ')} to the OAuth client secret(s)`,
+      };
+    }
+
+    const providers = configured.map((c) => c.provider).join(', ');
+    if (!process.env[auth.jwt.secretEnv]?.trim()) {
+      return {
+        name: 'sso',
+        status: 'warn',
+        detail: `SSO configured (${providers}) but JWT is disabled — SSO issues our JWTs, so sign-in will 503`,
+        remedy: `set ${auth.jwt.secretEnv} to enable JWT auth (SSO requires it)`,
+      };
+    }
+    return { name: 'sso', status: 'ok', detail: `SSO providers ready: ${providers}` };
   }
 
   private checkAgentCli(): PreflightCheck {
