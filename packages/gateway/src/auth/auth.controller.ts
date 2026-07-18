@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Optional, Post, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Optional, Post, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponseSchema,
   CreateUserRequestSchema,
@@ -7,7 +7,12 @@ import {
   UserSchema,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
-import { UsersService, UserAlreadyExistsError, InvalidCredentialsError } from '../users/users.service';
+import {
+  UsersService,
+  UserAlreadyExistsError,
+  InvalidCredentialsError,
+  PasswordLoginUnavailableError,
+} from '../users/users.service';
 import { TeamsService } from '../teams/teams.service';
 import { JwtService, RefreshTokenRevokedError, TokenInvalidError } from './jwt.service';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -63,6 +68,9 @@ export class AuthController {
       const refreshToken = this.jwtSvc.issueRefreshToken(user.id);
       return AuthResponseSchema.parse({ accessToken, refreshToken, user });
     } catch (err) {
+      // A pure-SSO account tried to password-login: 403 with a provider hint,
+      // distinct from the generic 401 for a bad password (Phase 70 B).
+      if (err instanceof PasswordLoginUnavailableError) throw new ForbiddenException(err.message);
       if (err instanceof InvalidCredentialsError) throw new UnauthorizedException(err.message);
       throw err;
     }

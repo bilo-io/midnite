@@ -1168,7 +1168,10 @@ export const users = sqliteTable(
     id: text('id').primaryKey(),
     email: text('email').notNull().unique(),
     name: text('name').notNull(),
-    passwordHash: text('password_hash').notNull(),
+    // Nullable since Phase 70 B: pure-SSO users have no password. Password login
+    // is rejected for a null-hash user with a "use Google/GitHub" message rather
+    // than a generic invalid-credentials failure (see UsersService).
+    passwordHash: text('password_hash'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -1198,6 +1201,37 @@ export const refreshTokens = sqliteTable(
 
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
+
+// Phase 70 B: external login identities (Google / GitHub SSO). One row per linked
+// provider identity. `provider` is a shared `LoginProvider` (validated at the app
+// layer); `provider_user_id` is the provider's stable subject id (Google `sub`,
+// GitHub numeric `id` — both stored as text). `email` is a denormalized snapshot
+// of the address the provider authenticated — nullable and **not** unique (the
+// same address can legitimately appear under two providers). The unique index on
+// `(provider, provider_user_id)` is the identity key `findOrCreateFromSso` looks
+// up; `user_id` is a plain intra-domain id ref (no cross-domain FK, per CLAUDE.md),
+// cleared when the user is deleted.
+export const userIdentities = sqliteTable(
+  'user_identities',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    provider: text('provider').notNull(),
+    providerUserId: text('provider_user_id').notNull(),
+    email: text('email'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    providerIdentityIdx: uniqueIndex('user_identities_provider_identity_idx').on(
+      t.provider,
+      t.providerUserId,
+    ),
+    userIdx: index('user_identities_user_idx').on(t.userId),
+  }),
+);
+
+export type UserIdentityRow = typeof userIdentities.$inferSelect;
+export type UserIdentityInsert = typeof userIdentities.$inferInsert;
 
 // Phase 43 Theme B: server-synced user preferences. One row per user (userId PK),
 // holding the JSON-encoded `UserPreferences` blob from `shared`. Kept off the
