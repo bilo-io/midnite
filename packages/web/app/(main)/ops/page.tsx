@@ -90,10 +90,9 @@ function OpsPageInner() {
         title="Ops"
         icon="ActivitySquare"
         description="Fleet health — live slot utilization, run throughput, duration distribution, retry/abandon rates, and LLM spend."
-        actions={tab === 'metrics' ? <OpsAddWidget /> : undefined}
       />
 
-      <div className="container pt-2">
+      <div className="container flex items-center justify-between gap-2 pt-2">
         <div role="tablist" aria-label="Ops sections" className="flex w-fit gap-1 rounded-lg border p-1 text-sm">
           {TABS.map(({ value, label }) => (
             <button
@@ -111,6 +110,7 @@ function OpsPageInner() {
             </button>
           ))}
         </div>
+        {tab === 'metrics' ? <OpsAddWidget /> : null}
       </div>
 
       {tab === 'metrics' && (

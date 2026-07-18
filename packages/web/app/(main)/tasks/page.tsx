@@ -1,7 +1,6 @@
 'use client';
 
 import { PageHeader } from '@/components/page-header';
-import { SearchBar } from '@/components/search-bar';
 import { TasksView } from '@/components/tasks-view';
 import { getProjects, getRepos, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
@@ -20,7 +19,6 @@ export default function TasksPage() {
         title="Tasks"
         icon="ListChecks"
         description="Tasks grouped by status. Switch between board and table, and filter by status or project."
-        actions={<SearchBar placeholder="Search tasks" />}
       />
       <TasksView tasks={tasks} error={error} projects={projects} repos={repos} />
     </div>

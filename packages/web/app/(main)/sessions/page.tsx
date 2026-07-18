@@ -1,7 +1,6 @@
 'use client';
 
 import { PageHeader } from '@/components/page-header';
-import { SearchBar } from '@/components/search-bar';
 import { getProjects, getSessions, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
@@ -20,7 +19,6 @@ export default function SessionsPage() {
         title="Sessions"
         icon="BotMessageSquare"
         description="One session per task — its status follows the task (in progress, awaiting input, completed, or idle)."
-        actions={<SearchBar placeholder="Search sessions" />}
       />
       <div className="reveal-staged container space-y-6 pb-8 pt-2">
         <SessionsView initial={sessions} tasks={tasks} projects={projects} />

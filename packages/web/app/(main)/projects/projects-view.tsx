@@ -13,6 +13,7 @@ import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
 import { ProjectsTree } from '@/components/projects-tree';
 import { PlanPanel } from '@/components/plan-panel';
+import { SearchBar } from '@/components/search-bar';
 import { WorkItemModal } from '@/components/work-item-modal';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateModal } from '@/components/template-modal';
@@ -267,6 +268,7 @@ export function ProjectsView({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <SearchBar placeholder="Search projects" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"

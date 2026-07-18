@@ -10,6 +10,7 @@ import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-a
 import { EmptyState } from '@/components/empty-state';
 import { useConfirm } from '@/components/confirm-dialog';
 import { CollapsibleStatusGroups, type StatusGroup } from '@/components/collapsible-status-groups';
+import { SearchBar } from '@/components/search-bar';
 import { WindowVirtualList } from '@/components/ui/window-virtual-list';
 import { WorkflowCard } from '@/components/workflow-card';
 import { WorkflowsTable, TRIGGER_SECTIONS } from '@/components/workflows-table';
@@ -171,6 +172,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <CountPill count={filtered.length} noun="workflow" />
         <div className="flex items-center gap-2">
+          <SearchBar placeholder="Search workflows" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"

@@ -6,8 +6,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 /**
  * A URL-backed search box (writes `?q=`). Each page's view reads `q` and filters
- * its own content, so the bar lives in the (sticky) page header and the view
- * stays the source of truth — consistent with the filter pills.
+ * its own content, so the bar lives in the view's control bar (left of the view
+ * toggles) and the view stays the source of truth — consistent with the filter pills.
  */
 export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string }) {
   const router = useRouter();

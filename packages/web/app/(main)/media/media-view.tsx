@@ -9,6 +9,7 @@ import { MEDIA_TYPES } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
+import { SearchBar } from '@/components/search-bar';
 import { NewMediaButton } from './new-media-button';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -440,6 +441,7 @@ export function MediaView({ items, projects, error }: Props) {
         <div className="mb-4 flex items-center justify-between gap-3">
           <CountPill count={filtered.length} noun="item" />
           <div className="flex items-center gap-2">
+            <SearchBar placeholder="Search media" />
             <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
               {VIEW_OPTIONS.map(({ value, label, Icon }) => (
                 <Button

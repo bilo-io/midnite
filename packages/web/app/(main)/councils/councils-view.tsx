@@ -12,6 +12,7 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { CouncilCard } from '@/components/council-card';
 import { CouncilTable } from '@/components/council-table';
 import { CouncilCreateModal } from '@/components/council-create-modal';
+import { SearchBar } from '@/components/search-bar';
 import { deleteCouncil, updateCouncil } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
@@ -128,6 +129,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
       <div className="reveal-controls flex items-center justify-between gap-3">
         <CountPill count={filtered.length} noun="council" />
         <div className="flex items-center gap-2">
+          <SearchBar placeholder="Search councils" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             {VIEW_OPTIONS.map(({ value, label, Icon }) => (
               <Button

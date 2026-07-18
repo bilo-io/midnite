@@ -1,7 +1,6 @@
 'use client';
 
 import type { TaskCounts } from '@midnite/shared';
-import { DashboardAddWidget } from '@/components/dashboard-add-widget';
 import dynamic from 'next/dynamic';
 
 const DashboardGrid = dynamic(
@@ -43,7 +42,6 @@ export default function DashboardPage() {
         size="lg"
         showGrid
         description="An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."
-        actions={<DashboardAddWidget />}
       />
 
       <div data-tour="dashboard">

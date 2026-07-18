@@ -3,7 +3,6 @@
 import { getProjects, listMedia } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { PageHeader } from '@/components/page-header';
-import { SearchBar } from '@/components/search-bar';
 import { MediaView } from './media-view';
 
 export default function MediaPage() {
@@ -13,7 +12,7 @@ export default function MediaPage() {
 
   return (
     <>
-      <PageHeader title="Media" icon="Images" actions={<SearchBar placeholder="Search media" />} />
+      <PageHeader title="Media" icon="Images" />
       <MediaView items={items} projects={projects} error={error} />
     </>
   );
