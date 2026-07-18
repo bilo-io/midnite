@@ -31,7 +31,7 @@ type WeatherWidgetProps = {
 };
 
 // WMO weather codes → icon + label. Buckets cover Open-Meteo's full code range.
-function describe(code: number): { icon: LucideIcon; label: string } {
+export function describe(code: number): { icon: LucideIcon; label: string } {
   if (code === 0) return { icon: Sun, label: 'Clear' };
   if (code <= 2) return { icon: CloudSun, label: 'Partly cloudy' };
   if (code === 3) return { icon: Cloud, label: 'Overcast' };
@@ -46,12 +46,12 @@ function describe(code: number): { icon: LucideIcon; label: string } {
 
 // Bare degrees — no unit letter. Used for the high/low range, where the unit is
 // already implied by the headline temperature and the °C/°F toggle.
-function deg(celsius: number, units: WeatherUnits): string {
+export function deg(celsius: number, units: WeatherUnits): string {
   const value = units === 'f' ? celsius * 1.8 + 32 : celsius;
   return `${Math.round(value)}°`;
 }
 
-function temp(celsius: number, units: WeatherUnits): string {
+export function temp(celsius: number, units: WeatherUnits): string {
   return `${deg(celsius, units)}${units === 'f' ? 'F' : 'C'}`;
 }
 
