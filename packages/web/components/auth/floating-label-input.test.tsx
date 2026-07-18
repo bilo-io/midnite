@@ -17,19 +17,23 @@ describe('FloatingLabelInput', () => {
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
   });
 
-  it('floats the label (smaller) when focused, and paints the accent-gradient frame', () => {
+  it('wraps the field in the app gradient-border glow', () => {
     const { container } = render(<Harness />);
-    const frame = container.firstElementChild as HTMLElement;
+    expect(container.querySelector('.gradient-border')).not.toBeNull();
+  });
+
+  it('floats the label (up + smaller) when focused', () => {
+    render(<Harness />);
     const input = screen.getByLabelText('Email');
     const label = screen.getByText('Email');
 
-    // At rest: label centred, frame is a solid border, no gradient.
-    expect(label.className).toContain('top-1/2');
-    expect(frame.style.backgroundImage).toBe('');
+    // At rest: sits inside the field at full size.
+    expect(label.style.transform).toContain('scale(1)');
 
     fireEvent.focus(input);
-    expect(label.className).toContain('top-1.5');
-    expect(frame.style.backgroundImage).toContain('--accent-gradient');
+    // Floated: lifts clear of the top edge and shrinks.
+    expect(label.style.transform).toContain('translateY(-1.15rem)');
+    expect(label.style.transform).toContain('scale(0.82)');
   });
 
   it('keeps the label floated when the field holds a value even after blur', () => {
@@ -37,6 +41,6 @@ describe('FloatingLabelInput', () => {
     const input = screen.getByLabelText('Email') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'ada@x.com' } });
     fireEvent.blur(input);
-    expect(screen.getByText('Email').className).toContain('top-1.5');
+    expect(screen.getByText('Email').style.transform).toContain('scale(0.82)');
   });
 });
