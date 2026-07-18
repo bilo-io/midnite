@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { RefreshCw, Workflow } from 'lucide-react';
+import { Check, RefreshCw, Workflow, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { getNodeTypeDefinition, type RunStatus, type WorkflowSummary } from '@midnite/shared';
 import { listWorkflows } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
@@ -19,6 +20,12 @@ const RUN_BADGE: Record<RunStatus, string> = {
   succeeded: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
   failed: 'bg-destructive/15 text-destructive',
   canceled: 'bg-muted text-muted-foreground',
+};
+
+// Succeeded/failed collapse to a glyph; the rest keep their (capitalized) label.
+const RUN_ICON: Partial<Record<RunStatus, LucideIcon>> = {
+  succeeded: Check,
+  failed: X,
 };
 
 export function WorkflowsWidget() {
@@ -102,11 +109,14 @@ function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
             </span>
           )}
         </div>
-        {w.lastRunStatus && (
-          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', RUN_BADGE[w.lastRunStatus])}>
-            {w.lastRunStatus}
-          </span>
-        )}
+        {w.lastRunStatus && (() => {
+          const Icon = RUN_ICON[w.lastRunStatus];
+          return (
+            <span className={cn('inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', RUN_BADGE[w.lastRunStatus])}>
+              {Icon ? <Icon className="h-3 w-3" aria-label={w.lastRunStatus} /> : w.lastRunStatus}
+            </span>
+          );
+        })()}
       </Link>
     </li>
   );
