@@ -22,6 +22,7 @@ export * from './source.js';
 export * from './pr-diff.js';
 export * from './pr-review.js';
 export * from './version.js';
+export * from './update.js';
 export * from './release.js';
 export * from './checks.js';
 export * from './retro.js';

@@ -38,6 +38,21 @@ function parseSemVer(version: string): SemVer {
 const formatSemVer = ({ major, minor, patch }: SemVer): string => `${major}.${minor}.${patch}`;
 
 /**
+ * Order two `MAJOR.MINOR.PATCH` versions: `-1` if `a < b`, `1` if `a > b`, `0` if
+ * equal. Pure comparison (no pre-release/build metadata — midnite versions are
+ * plain triples). Throws on a malformed version, like the bump math above.
+ */
+export function compareSemVer(a: string, b: string): -1 | 0 | 1 {
+  const va = parseSemVer(a);
+  const vb = parseSemVer(b);
+  for (const key of ['major', 'minor', 'patch'] as const) {
+    if (va[key] < vb[key]) return -1;
+    if (va[key] > vb[key]) return 1;
+  }
+  return 0;
+}
+
+/**
  * True when every version shares one MAJOR.MINOR (patch may differ). The lockstep
  * invariant `version-check` asserts; an empty or single-version list is trivially
  * true. Throws on a malformed version so a bad edit surfaces loudly.

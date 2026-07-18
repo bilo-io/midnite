@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planVersionBump, sharesLockstepMajorMinor } from './version.js';
+import { compareSemVer, planVersionBump, sharesLockstepMajorMinor } from './version.js';
 
 const REPO = {
   midnite: '0.3.0',
@@ -84,5 +84,18 @@ describe('sharesLockstepMajorMinor', () => {
 
   it('throws on a malformed version', () => {
     expect(() => sharesLockstepMajorMinor(['0.3', '0.3.0'])).toThrow(/invalid semver/);
+  });
+});
+
+describe('compareSemVer', () => {
+  it('orders by major, then minor, then patch', () => {
+    expect(compareSemVer('0.1.3', '0.1.4')).toBe(-1);
+    expect(compareSemVer('0.2.0', '0.1.9')).toBe(1);
+    expect(compareSemVer('1.0.0', '0.9.9')).toBe(1);
+    expect(compareSemVer('0.1.3', '0.1.3')).toBe(0);
+  });
+
+  it('throws on a malformed version', () => {
+    expect(() => compareSemVer('0.1', '0.1.0')).toThrow(/invalid semver/);
   });
 });
