@@ -2,13 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { type LoginProvider, LOGIN_PROVIDERS } from '@midnite/shared';
+import { GradientGlow } from '@midnite/ui';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { fetchSsoProviders, ssoStartUrl } from '@/lib/api';
+import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
 
 const PROVIDER_LABEL: Record<LoginProvider, string> = {
   google: 'Continue with Google',
   github: 'Continue with GitHub',
+};
+
+/** Per-provider glow palette: Google wears the full rainbow (the default
+ *  `gradient-border` conic), GitHub a grayscale override (globals.css). */
+const PROVIDER_GLOW: Record<LoginProvider, string | undefined> = {
+  google: undefined,
+  github: 'gradient-border--mono',
 };
 
 /**
@@ -21,11 +30,19 @@ const PROVIDER_LABEL: Record<LoginProvider, string> = {
  * (SSO not yet configured / JWT off), we fall back to both — a click on an
  * unconfigured provider gets a friendly `sso_error` from the gateway rather than a
  * missing button. `redirect` is the same-origin path to return to after login.
+ *
+ * Hovering a button lights the app's gradient glow in the provider's palette
+ * (Google rainbow, GitHub grayscale). The method last used to sign in (stored in
+ * localStorage, incl. 'email' — see `last-login-method.ts`) keeps its button's
+ * glow lit on arrival with a small "Last used" tag.
  */
 export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
   const [providers, setProviders] = useState<LoginProvider[] | null>(null);
+  // Read after mount — localStorage is unavailable during the static prerender.
+  const [lastUsed, setLastUsed] = useState<string | null>(null);
 
   useEffect(() => {
+    setLastUsed(readLastLoginMethod());
     let active = true;
     void fetchSsoProviders().then((p) => {
       if (active) setProviders(p);
@@ -43,15 +60,31 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
         {shown.map((provider) => (
-          <a
+          <GradientGlow
             key={provider}
-            href={ssoStartUrl(provider, redirect)}
-            className={cn(buttonVariants({ variant: 'outline' }), 'h-11 w-full gap-2.5')}
-            data-testid={`sso-${provider}`}
+            trigger="hover"
+            className={cn(
+              'rounded-lg',
+              PROVIDER_GLOW[provider],
+              lastUsed === provider && 'gradient-border--always',
+            )}
           >
-            <ProviderIcon provider={provider} />
-            {PROVIDER_LABEL[provider]}
-          </a>
+            <a
+              href={ssoStartUrl(provider, redirect)}
+              onClick={() => writeLastLoginMethod(provider)}
+              className={cn(
+                buttonVariants({ variant: 'ghost' }),
+                // Neutral hover (not the accent wash) — the glow border is the
+                // hover affordance here.
+                'relative h-11 w-full gap-2.5 rounded-lg bg-background hover:bg-muted/60 hover:text-foreground',
+              )}
+              data-testid={`sso-${provider}`}
+            >
+              <ProviderIcon provider={provider} />
+              {PROVIDER_LABEL[provider]}
+              {lastUsed === provider && <LastUsedTag />}
+            </a>
+          </GradientGlow>
         ))}
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
@@ -60,6 +93,15 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
         <span className="h-px flex-1 bg-border" />
       </div>
     </div>
+  );
+}
+
+/** Small right-aligned "Last used" tag inside a highlighted login button. */
+export function LastUsedTag() {
+  return (
+    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      Last used
+    </span>
   );
 }
 

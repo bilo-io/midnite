@@ -650,6 +650,141 @@ html[data-no-glass] *::after {
   }
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * Login-screen treatments (components/auth/*, app/(auth)/*).
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* GitHub's grayscale take on the gradient glow: same spin/pulse machinery as
+ * `.gradient-border` (@midnite/ui), palette swapped to monochrome. Google keeps
+ * the default rainbow. Later in the cascade than the ui import, so these win at
+ * equal specificity; the lit selectors mirror `--hover:hover` / `--always`. */
+.gradient-border--mono {
+  background:
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    conic-gradient(
+        from var(--gradient-angle),
+        hsl(var(--foreground) / 0.35),
+        hsl(var(--foreground) / 0.12),
+        hsl(var(--foreground) / 0.45),
+        hsl(var(--foreground) / 0.15),
+        hsl(var(--foreground) / 0.35)
+      )
+      border-box;
+}
+.gradient-border--mono.gradient-border--hover:hover,
+.gradient-border--mono.gradient-border--always {
+  background:
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    conic-gradient(
+        from var(--gradient-angle),
+        hsl(var(--foreground) / 0.9),
+        hsl(var(--foreground) / 0.25),
+        hsl(var(--foreground) / 1),
+        hsl(var(--foreground) / 0.3),
+        hsl(var(--foreground) / 0.9)
+      )
+      border-box;
+}
+.gradient-border--mono::after {
+  background: conic-gradient(
+    from var(--gradient-angle),
+    hsl(var(--foreground) / 0.9),
+    hsl(var(--foreground) / 0.2),
+    hsl(var(--foreground) / 1),
+    hsl(var(--foreground) / 0.25),
+    hsl(var(--foreground) / 0.9)
+  );
+}
+/* The mono halo reads hotter than the rainbow at the same opacity — dim it. */
+.gradient-border--mono.gradient-border--hover:hover::after,
+.gradient-border--mono.gradient-border--always::after {
+  opacity: 0.35;
+}
+
+/* "Continue with email" — a static border in the *active brand accent* gradient
+ * (falls back to the solid primary), same padding-box/border-box trick as
+ * `.gradient-border`. `--lit` adds a soft accent halo (the last-used state). */
+.accent-gradient-border {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
+    var(
+        --accent-gradient,
+        linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)
+      )
+      border-box;
+}
+.accent-gradient-border--lit::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  background: var(
+    --accent-gradient,
+    linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)
+  );
+  filter: blur(24px);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Entry cascade — the sign-in column reveal, final beat of the auth intro
+ * (use-auth-intro.ts). Applied to the form wrapper once the intro reaches
+ * 'done': the heading drops in from above, everything after rises from below,
+ * staggered ~90ms per block. Gated off under reduced motion. */
+@keyframes auth-cascade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes auth-cascade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.auth-form-cascade > * > * {
+  opacity: 0;
+  animation: auth-cascade-up 0.55s ease-out forwards;
+}
+.auth-form-cascade > * > *:nth-child(1) {
+  animation-name: auth-cascade-down;
+}
+.auth-form-cascade > * > *:nth-child(2) {
+  animation-delay: 90ms;
+}
+.auth-form-cascade > * > *:nth-child(3) {
+  animation-delay: 180ms;
+}
+.auth-form-cascade > * > *:nth-child(4) {
+  animation-delay: 270ms;
+}
+.auth-form-cascade > * > *:nth-child(n + 5) {
+  animation-delay: 360ms;
+}
+html[data-motion='reduced'] .auth-form-cascade > * > * {
+  animation: none;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .auth-form-cascade > * > * {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Screensaver title (components/screensaver.tsx) — the big cycling phrase. The
  * text base is the theme foreground (white on dark / black on light); a per-mode
  * tint (`--sv-tint`, an HSL triple) is woven in as two soft peaks so the state

@@ -5,13 +5,16 @@ import Image from 'next/image';
 import { Moon, Sun } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { AuthHero } from '@/components/auth/auth-hero';
+import { introAtLeast, useAuthIntro } from '@/components/auth/use-auth-intro';
 import { Wordmark } from '@/components/wordmark';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/app/theme/theme-context';
+import { useAnimationPrefs } from '@/lib/use-animation-prefs';
+import { cn } from '@/lib/utils';
 
 /**
  * Split-screen auth shell (login / register / invite): the form lives in a left
- * column, the living knowledge-graph hero fills the right two-thirds on desktop.
+ * column, the living neuro-cloud hero fills the right two-thirds on desktop.
  * On desktop the logo + wordmark sit above the hero title (2× size); below `lg`
  * (no hero) a compact logo + wordmark sits atop the form so branding never
  * disappears. A theme toggle floats in the top-right corner of the screen.
@@ -20,9 +23,20 @@ import { useTheme } from '@/app/theme/theme-context';
  * its canvas + RAF loop never mount below `lg` — the animation never ships to
  * phones/tablets, which see the form full-width. `useIsDesktop` is `false` on the
  * server and first paint, so the form is always usable while the hero settles in.
+ *
+ * Entry choreography (`useAuthIntro`): once per session the hero plays its
+ * logo → caret → wordmark → glide intro, and the form column stays hidden
+ * (inert, so nothing invisible is tabbable) until the final beat, when it
+ * cascades in (`.auth-form-cascade` — grandchild blocks stagger, the heading
+ * dropping from above and the rest rising from below). Skipped intros land on
+ * 'done' at mount + one tick, so the cascade doubles as the ordinary page-load
+ * reveal.
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
   const isDesktop = useIsDesktop();
+  const { animate } = useAnimationPrefs();
+  const intro = useAuthIntro(animate);
+  const formShown = introAtLeast(intro, 'done');
 
   return (
     <div className="relative flex min-h-screen bg-background">
@@ -32,7 +46,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       </div>
 
       <div className="flex w-full flex-col items-center justify-center px-4 py-10 lg:w-1/3">
-        <div className="w-full max-w-sm">
+        <div
+          className={cn('w-full max-w-sm', formShown ? 'auth-form-cascade' : 'opacity-0')}
+          inert={!formShown}
+        >
           {/* Compact branding for small screens only — desktop shows it in the hero. */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <Image
@@ -51,7 +68,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       {isDesktop && (
         <div className="relative hidden lg:block lg:w-2/3">
-          <AuthHero />
+          <AuthHero intro={intro} />
         </div>
       )}
     </div>

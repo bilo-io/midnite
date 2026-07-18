@@ -11,7 +11,17 @@ import { WORDMARK_LOGO_FONT, wordmarkFontVar } from '@/lib/wordmark-fonts';
 // SignPainter and Quantum Sector render small for their point size, so they bump up
 // to `text-2xl`. Pickers override these with their own `text-*` (tailwind-merge
 // keeps the caller's size).
-export function Wordmark({ font, className }: { font?: string; className?: string }) {
+// `text` overrides the rendered string — the auth intro types the wordmark out
+// character by character; everything else renders the full default.
+export function Wordmark({
+  font,
+  className,
+  text = 'midnite',
+}: {
+  font?: string;
+  className?: string;
+  text?: string;
+}) {
   const active = font ?? WORDMARK_LOGO_FONT;
   const baseSize =
     active === 'cannet'
@@ -24,7 +34,7 @@ export function Wordmark({ font, className }: { font?: string; className?: strin
       className={cn(baseSize, 'font-semibold', className)}
       style={{ fontFamily: `var(${wordmarkFontVar(active)})` }}
     >
-      midnite
+      {text}
     </span>
   );
 }

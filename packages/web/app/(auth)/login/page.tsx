@@ -7,9 +7,11 @@ import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
 import { FloatingLabelInput } from '@/components/auth/floating-label-input';
-import { SsoButtons } from '@/components/auth/sso-buttons';
+import { LastUsedTag, SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
 import { ssoErrorMessage } from '@/lib/api';
+import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
+import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -22,6 +24,8 @@ export default function LoginPage() {
   const [pending, setPending] = useState(false);
   // The email/password form is tucked behind a "Continue with email" button.
   const [emailOpen, setEmailOpen] = useState(false);
+  // Last-used highlight for the email trigger (SSO buttons handle their own).
+  const [emailLastUsed, setEmailLastUsed] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
   // A failed SSO round-trip returns here with ?sso_error=<code> (Phase 70 C).
@@ -29,6 +33,7 @@ export default function LoginPage() {
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('sso_error');
     setSsoError(ssoErrorMessage(code));
+    setEmailLastUsed(readLastLoginMethod() === 'email');
   }, []);
 
   // Move focus into the form the moment it expands.
@@ -42,6 +47,7 @@ export default function LoginPage() {
     setPending(true);
     try {
       await login(email, password);
+      writeLastLoginMethod('email');
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -68,20 +74,33 @@ export default function LoginPage() {
       </div>
 
       {!emailOpen && (
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 w-full"
-          onClick={() => setEmailOpen(true)}
-          aria-expanded={emailOpen}
-          aria-controls="email-login-form"
+        // The trigger wears the *active brand accent* gradient as its border
+        // (SSO buttons wear their provider palettes), lit with a halo when
+        // email was the last-used sign-in method.
+        <div
+          className={cn(
+            'accent-gradient-border rounded-lg',
+            emailLastUsed && 'accent-gradient-border--lit',
+          )}
         >
-          <Mail className="mr-2 h-4 w-4" />
-          Continue with email
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="relative h-11 w-full rounded-lg bg-background hover:bg-muted/60 hover:text-foreground"
+            onClick={() => setEmailOpen(true)}
+            aria-expanded={emailOpen}
+            aria-controls="email-login-form"
+          >
+            <Mail className="mr-2 h-4 w-4" />
+            Continue with email
+            {emailLastUsed && <LastUsedTag />}
+          </Button>
+        </div>
       )}
 
-      <Collapse open={emailOpen} id="email-login-form">
+      {/* `bleed` releases the clip once open so the fields' gradient glow halo
+          isn't cut off at the collapse edges. */}
+      <Collapse open={emailOpen} bleed id="email-login-form">
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-5 pt-3">
           <FloatingLabelInput
             ref={emailRef}
