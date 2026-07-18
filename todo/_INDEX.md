@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [71 · App update banner](phase-71-app-update-banner.md) | ◻ TODO | 0/34 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 28/36 | `████████░░` | 78% | D | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -122,6 +123,17 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 71 — App update banner & per-platform update](phase-71-app-update-banner.md)
+*A build-emitted `version.json` published on every tag, a client that polls + folds in the service-worker signal to detect a newer build, and a prominent-but-subtle theme-inverted **top banner** that lets the user take the update when they choose — web force-refreshes, desktop runs a full `electron-updater` download → restart-to-install. Plus release-notes on the version, stable/beta channel, a force-update floor, and a CLI out-of-date notice. Golive-readiness. Never blindly auto-updates.*
+- ◻ **A** — Version manifest & compare: `VersionManifestSchema` + `isUpdateAvailable`/`isBelowFloor` in shared, per-app current-version constant, typed `fetchVersionManifest`
+- ◻ **B** — Detection: `useUpdateAvailable` poll (~5min) + focus + navigation, fold in the SW waiting-worker signal (stop silent skipWaiting), own-origin `/version.json` no-store
+- ◻ **C** — `UpdateBanner` (web): top-of-layout, theme-inverted, **layout push-down not overlay**, ease-in-out show/hide (reduced-motion aware), `×` dismiss that re-surfaces on reload, mobile + desktop
+- ◻ **D** — Web apply: skipWaiting → controllerchange → force reload on click; no-waiting-worker fallback; verify the new build actually landed
+- ◻ **E** — Electron auto-update + code-signing: `electron-updater` publish block + feed, `checkForUpdates`→`downloadUpdate`→`quitAndInstall`, preload `window.midnite.updates` bridge, progress→restart states, notarization/signing (user-timed, never auto-nag)
+- ◻ **F** — Release notes on the version: version link → CHANGELOG-section popover (fallback to release page), optional Phase 21 notification echo
+- ◻ **G** — Release-flow wiring: emit `packages/web/public/version.json` on every tag via `/release-complete` + a moon task, `version-check` guard against a stale manifest
+- ◻ **H** — Channels, force-update floor & CLI notice: stable/beta channel (Phase 43 pref), non-dismissable banner below `minSupported`, `midnite` startup out-of-date notice (fail-soft, `--json`-aware)
 
 ### [Phase 70 — Google & GitHub SSO](phase-70-google-github-sso.md)
 *"Continue with Google / GitHub" login+signup by lifting the workflow-vault OAuth pattern (not the class) into a dedicated `SsoService` in the auth module — resolves/provisions a user, links the external identity, and issues the same JWTs `POST /auth/login` does. No Firebase, self-hosted. Auto-link on verified email, passwordless SSO users, nonce+expiry replay guard, provision user+team on first login.*
