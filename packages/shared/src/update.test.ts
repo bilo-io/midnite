@@ -3,7 +3,15 @@ import {
   VersionManifestSchema,
   isBelowFloor,
   isUpdateAvailable,
+  versionManifestFile,
 } from './update.js';
+
+describe('versionManifestFile', () => {
+  it('maps each channel to its manifest filename (Phase 71 H)', () => {
+    expect(versionManifestFile('stable')).toBe('version.json');
+    expect(versionManifestFile('beta')).toBe('version.beta.json');
+  });
+});
 
 describe('isUpdateAvailable', () => {
   it('is true when latest is strictly newer', () => {
