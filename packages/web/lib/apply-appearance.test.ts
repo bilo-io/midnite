@@ -73,13 +73,17 @@ describe('applyAccent — gradients', () => {
     expect(html.getAttribute('data-accent')).toBe('custom');
   });
 
-  it('renders the brand rainbow as a node-colour conic', () => {
+  it('renders the brand gradient as a Dusk-like blue→violet→rose linear sweep', () => {
     applyAccent(BRAND_ACCENT);
     const html = document.documentElement;
     expect(html.getAttribute('data-accent-preset')).toBe('brand');
     const g = html.style.getPropertyValue('--accent-gradient');
-    expect(g).toContain('conic-gradient');
-    expect(g).toContain('--node-trigger');
+    expect(g).toContain('linear-gradient');
+    // Blue holds to 28% before the transition (extra blue on the purple side).
+    expect(g).toContain(`hsl(${ACCENT_SWATCH_HS.blue.h} ${ACCENT_SWATCH_HS.blue.s}%`);
+    expect(g).toMatch(/28%/);
+    expect(g).toContain(`hsl(${ACCENT_SWATCH_HS.violet.h}`);
+    expect(g).toContain(`hsl(${ACCENT_SWATCH_HS.rose.h}`);
   });
 
   it('expands a single-stop gradient into a mono-shade (hue-adjacent) sweep', () => {
@@ -269,16 +273,16 @@ describe('appearanceInitScript', () => {
     localStorage.clear();
   });
 
-  it('applies the brand rainbow gradient before paint when nothing is stored', () => {
+  it('applies the brand gradient before paint when nothing is stored', () => {
     localStorage.clear();
     expect(() => {
       eval(appearanceInitScript);
     }).not.toThrow();
     const html = document.documentElement;
-    // No accent stored → the brand rainbow default applies pre-paint (Phase 68).
+    // No accent stored → the brand gradient default applies pre-paint (Phase 68).
     expect(html.getAttribute('data-accent-preset')).toBe('brand');
     expect(html.hasAttribute('data-accent-gradient')).toBe(true);
-    expect(html.style.getPropertyValue('--accent-gradient')).toContain('conic-gradient');
+    expect(html.style.getPropertyValue('--accent-gradient')).toContain('linear-gradient');
     // Motion defaults to system; bg defaults to the nebula dots; no uiFont override.
     expect(html.getAttribute('data-motion')).toBe('system');
     expect(html.getAttribute('data-bg')).toBe('dots');

@@ -86,7 +86,7 @@ function SwatchRow({
 }
 
 /**
- * The Phase 68 accent builder: pick the brand rainbow, a curated gradient preset,
+ * The Phase 68 accent builder: pick the brand gradient, a curated gradient preset,
  * or a solid — or build a custom gradient (linear/conic, mono/multi, 2–3 stops,
  * angle) — plus an independent secondary accent channel. Everything applies live.
  */

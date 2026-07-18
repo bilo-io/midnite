@@ -69,9 +69,19 @@ export function buildAccentCssParts(
   // gradients need no running animation.
   const angleExpr = value.animate ? 'var(--accent-angle)' : `${value.angle}deg`;
   if (value.preset === 'brand') {
-    const g = `conic-gradient(from ${angleExpr} at 50% 50%, hsl(var(--node-trigger)), hsl(var(--node-action)), hsl(var(--node-logic)), hsl(var(--node-data)), hsl(var(--node-trigger)))`;
-    const hs = map[value.stops[0] || 'default'];
-    return { gradient: g, solidH: hs ? hs.h : null, solidS: hs ? hs.s : null, preset: 'brand', animate: value.animate };
+    // The signature brand gradient: a Dusk-like blue → violet → rose sweep that
+    // holds extra blue before the purple (blue runs to 28% before the transition).
+    // Built from the palette hues with a theme-aware lightness ramp; kept
+    // self-contained (only `map`/`isDark`/`angleExpr`) for the pre-paint embed.
+    const b = map['blue'] ?? { h: 217, s: 80 };
+    const v = map['violet'] ?? { h: 263, s: 70 };
+    const r = map['rose'] ?? { h: 347, s: 75 };
+    const l0 = isDark ? 66 : 52;
+    const lm = isDark ? 58 : 46;
+    const l1 = isDark ? 50 : 40;
+    const g = `linear-gradient(${angleExpr}, hsl(${b.h} ${b.s}% ${l0}%) 0%, hsl(${b.h} ${b.s}% ${l0}%) 28%, hsl(${v.h} ${v.s}% ${lm}%) 62%, hsl(${r.h} ${r.s}% ${l1}%) 100%)`;
+    const hs = map[value.stops[0] || 'blue'];
+    return { gradient: g, solidH: hs ? hs.h : b.h, solidS: hs ? hs.s : b.s, preset: 'brand', animate: value.animate };
   }
   const stopHs: { h: number; s: number }[] = [];
   if (value.stops.length === 1) {
