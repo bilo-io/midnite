@@ -35,6 +35,17 @@ tasks:
       - 'scripts/**/*'
       - '/eslint.config.mjs'
 
+  # Only the electron-free modules (src/updates/*) are unit-tested — anything that
+  # imports `electron`/`electron-updater` can't run outside the Electron runtime.
+  # See vitest.config.ts. Runs in `moon ci` (plain node; no Electron binary).
+  test:
+    command: 'pnpm exec vitest run'
+    deps:
+      - 'root:install'
+    inputs:
+      - 'src/**/*'
+      - 'vitest.config.ts'
+
   # Rebuild native deps (better-sqlite3, node-pty) against Electron's ABI.
   # Run on the target machine before `start`/`package`.
   rebuild:

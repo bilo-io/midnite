@@ -55,16 +55,16 @@ Take the waiting worker live and hard-refresh from server, exactly once, on the 
 - [x] Verify the reload actually lands the new build (post-reload `getCurrentVersion()` matches `latest`) — otherwise keep the banner up rather than declaring success.
 - [x] Tests: the skipWaiting → controllerchange → reload sequence (mocked SW), and the no-waiting-worker fallback path.
 
-## Theme E — Electron auto-update + code-signing (desktop) — **L**
+## Theme E — Electron auto-update + code-signing (desktop) — **L** — ✅ DONE (PR #457, 2026-07-18)
 
 The desktop half: a real in-app `electron-updater` pipeline the banner drives — download on click, restart-to-install when the user is ready. Never `checkForUpdatesAndNotify` (that auto-nags/auto-restarts); this is user-timed.
 
-- [ ] `electron-builder.yml`: add the `publish:` block (GitHub provider) + keep the `zip`/target `electron-updater` needs; generate the update feed (`latest*.yml`) on release.
-- [ ] Main process: wire `electron-updater` `autoUpdater` — `checkForUpdates()` (no auto-download), then `downloadUpdate()` on request, `quitAndInstall()` on request; emit `checking` / `available` / `download-progress` / `downloaded` / `error` over IPC. Feed the renderer the same `available` signal so the banner shows for desktop too (independent of the web `version.json` poll, or reconciled with it).
-- [ ] Preload bridge: expose a minimal typed `window.midnite.updates` API (`onState`, `download`, `restartToInstall`) so the shared `UpdateBanner` can call into the updater without Node access; the platform detector routes desktop clicks here.
-- [ ] Banner desktop states: "Update" → progress (percent from `download-progress`) → "Restart to install" → `quitAndInstall`. Errors fail-soft (banner offers retry, never blocks the app).
-- [ ] **Code-signing / notarization:** configure signing (macOS notarization + Windows signing) so `electron-updater` accepts the downloaded artifact — this is a real prerequisite for updates to install, done here (with the certs/secrets sourced from env/CI, documented in [`desktop/README.md`](../packages/desktop/README.md)).
-- [ ] Tests: main-process updater state machine (mocked `autoUpdater`), preload bridge contract, banner desktop-state rendering; document the manual "build two versions, update across them" smoke (not runnable in the unit harness).
+- [x] `electron-builder.yml`: add the `publish:` block (GitHub provider → public `midnite-app`) + keep the `zip`/target `electron-updater` needs; generate the update feed (`latest*.yml` + `*.blockmap`) on release (uploaded by `release.yml`).
+- [x] Main process ([`updater.ts`](../packages/desktop/src/main/updater.ts)): wire `electron-updater` `autoUpdater` — `checkForUpdates()` on boot (no auto-download), then `downloadUpdate()` / `quitAndInstall()` on request; emit `checking`/`available`/`download-progress`/`downloaded`/`error` over IPC. No-op when unpackaged (dev).
+- [x] Preload bridge: `window.midnite.updates` (`onState`, `check`, `download`, `restartToInstall`) so the shared `UpdateBanner` drives the updater without Node access; the provider feature-detects it.
+- [x] Banner desktop states: "Update" → "Downloading NN%" (progress bar, disabled) → "Restart to install" → `quitAndInstall`. Errors fail-soft → "Retry".
+- [x] **Code-signing / notarization:** env-gated macOS signing + afterSign notarize hook + Windows signing (certs/secrets from env/CI), with a clean unsigned fallback (`CSC_IDENTITY_AUTO_DISCOVERY=false`); documented in [`desktop/README.md`](../packages/desktop/README.md).
+- [x] Tests: pure event→state mapper unit (desktop vitest), provider desktop-branch + banner desktop-state RTL/stories, e2e flow (download→progress→restart via a fake preload bridge); manual two-build smoke documented.
 
 ## Theme F — Release notes on the version (web + desktop) — **S**
 

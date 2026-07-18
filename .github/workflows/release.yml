@@ -63,9 +63,28 @@ jobs:
       - name: Stage gateway prod deps (deploy + electron-rebuild for this arch)
         run: pnpm --filter @midnite/desktop run stage
 
+      # `--publish never`: electron-builder still generates the electron-updater
+      # feed files (latest*.yml + *.blockmap) from the `publish:` block, but does
+      # NOT auto-upload them — the `release` job below publishes everything to the
+      # PUBLIC downloads repo via a cross-repo PAT (the default GITHUB_TOKEN can't).
+      # Signing is env-gated (Phase 71 Theme E): when CSC_LINK is set electron-builder
+      # signs (+ notarizes via the afterSign hook when APPLE_* are set); when it's
+      # empty, CSC_IDENTITY_AUTO_DISCOVERY=false makes the macOS build cleanly
+      # unsigned instead of failing. Populate these repo secrets to ship signed
+      # builds that can actually auto-update; see packages/desktop/README.md.
       - name: Package desktop app
-        run: pnpm --filter @midnite/desktop exec electron-builder ${{ matrix.eb }} --config electron-builder.yml
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' && 'true' || 'false' }}
+        run: pnpm --filter @midnite/desktop exec electron-builder ${{ matrix.eb }} --config electron-builder.yml --publish never
 
+      # Upload the installers AND the electron-updater feed metadata — the running
+      # app polls latest*.yml (+ *.blockmap) to detect and delta-download updates,
+      # and macOS auto-update installs from the .zip (not the .dmg).
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -74,6 +93,9 @@ jobs:
             packages/desktop/build/*.dmg
             packages/desktop/build/*.exe
             packages/desktop/build/*.AppImage
+            packages/desktop/build/*.zip
+            packages/desktop/build/*.yml
+            packages/desktop/build/*.blockmap
           if-no-files-found: error
 
   release:

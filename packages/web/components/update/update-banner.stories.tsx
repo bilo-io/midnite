@@ -60,3 +60,38 @@ export const DismissCollapses: Story = {
     });
   },
 };
+
+/**
+ * Desktop (electron-updater) states — the container maps the update phase to these
+ * props. Downloading shows a progress bar + a disabled action.
+ */
+export const Downloading: Story = {
+  args: {
+    headline: 'Downloading update…',
+    actionLabel: 'Downloading 42%',
+    actionDisabled: true,
+    downloadPercent: 42,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.getByRole('progressbar', { name: /downloading update/i })).toHaveAttribute(
+      'aria-valuenow',
+      '42',
+    );
+    expect(canvas.getByRole('button', { name: 'Downloading 42%' })).toBeDisabled();
+  },
+};
+
+/** Desktop: the update is downloaded and a restart installs it. */
+export const ReadyToRestart: Story = {
+  args: {
+    headline: 'An update is ready to install',
+    actionLabel: 'Restart to install',
+    downloadPercent: 100,
+  },
+};
+
+/** Desktop: the update failed — fail-soft, the action becomes Retry. */
+export const Failed: Story = {
+  args: { headline: 'Update failed', actionLabel: 'Retry' },
+};

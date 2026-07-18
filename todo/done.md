@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(desktop): Phase 71 Theme E — Electron auto-update + code-signing (PR #457)
+
+The desktop half of the update banner: a real in-app `electron-updater` pipeline the shared `UpdateBanner` drives — **user-timed**, never auto-nag/auto-restart. On desktop the electron-updater feed is authoritative (the web `version.json` poll is ignored there — one source of truth). F/G/H (release notes, release-flow `version.json` emission, channels/floor/CLI) remain open.
+
+- [x] **Main + preload** (`packages/desktop`): `src/updates/update-state.ts` is the electron-free event→state mapper + IPC channel names (unit-tested in a new desktop vitest task); `src/main/updater.ts` binds `autoUpdater` (`autoDownload`/`autoInstallOnAppQuit` off), `checkForUpdates()` on boot, `downloadUpdate()`/`quitAndInstall()` on request, pushing `checking`/`available`/`downloading`/`downloaded`/`error` over IPC — and no-ops when unpackaged so `next dev` isn't broken. Preload exposes `window.midnite.updates` (`onState`/`check`/`download`/`restartToInstall`).
+- [x] **Web** (`packages/web`): `desktop-bridge.ts` gains the `UpdatesBridge` contract + `getUpdatesBridge()`; `UpdateProvider` feature-detects the bridge and, on desktop, drives the banner off the feed with a platform-aware `applyUpdate` (download → restart, retry-on-error). The banner renders the desktop phases: "Downloading NN%" (progress bar, disabled), "Restart to install", "Retry".
+- [x] **Signing / feed** (`electron-builder.yml`, `release.yml`): GitHub `publish:` block (→ public `midnite-app`) so electron-builder emits `latest*.yml` + `*.blockmap`; the release job uploads them + the mac `.zip`. Code signing is env-gated — cert + Apple creds sign+notarize in CI (afterSign `notarize.cjs`, hardened-runtime entitlements); absent, `CSC_IDENTITY_AUTO_DISCOVERY=false` yields a clean unsigned build. Documented in `desktop/README.md` ("Code signing & auto-update") incl. the manual two-build smoke.
+- [x] Tests: `update-state` mapper unit (desktop), `UpdateProvider` desktop-branch + `UpdateBannerView` desktop-state RTL/stories (web), and an e2e flow (`update-banner.e2e.ts`) driving download→progress→restart via a fake preload bridge. Screenshots: desktop downloading/downloaded, light + dark.
+
+---
+
 ## 2026-07-18 — feat(web): Phase 71 Themes A–D — app update banner + per-platform apply (PR #455)
 
 The web core of the "App update available" banner (golive readiness). A build-emitted `version.json` is polled and folded with the service-worker waiting signal to detect a newer build; a theme-inverted top banner lets the user take the update when they choose — never blind. D was pulled forward so the banner is functional end-to-end. E–H (Electron auto-update, release notes, release-flow emission, channels/floor/CLI) remain open.

@@ -39,4 +39,51 @@ test.describe('Update banner shots', () => {
     await page.waitForTimeout(500);
     await page.screenshot({ path: `${OUT}/mobile-light.png` });
   });
+
+  // Desktop (electron-updater) states via a fake preload bridge (Theme E).
+  for (const theme of ['light', 'dark'] as const) {
+    test(`desktop updater states ${theme}`, async ({ page }) => {
+      await page.addInitScript(() => {
+        let handler: ((s: unknown) => void) | null = null;
+        let last: unknown = null;
+        (window as unknown as { __pushUpdate: (s: unknown) => void }).__pushUpdate = (s) => {
+          last = s;
+          handler?.(s);
+        };
+        (window as unknown as { midnite: unknown }).midnite = {
+          updates: {
+            onState: (h: (s: unknown) => void) => {
+              handler = h;
+              if (last) h(last);
+              return () => {
+                handler = null;
+              };
+            },
+            check: () => {},
+            download: () => {},
+            restartToInstall: () => {},
+          },
+        };
+      });
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.emulateMedia({ colorScheme: theme });
+      await page.goto('/dashboard');
+
+      const push = (state: unknown) =>
+        page.evaluate(
+          (s) => (window as unknown as { __pushUpdate: (v: unknown) => void }).__pushUpdate(s),
+          state,
+        );
+
+      await push({ phase: 'downloading', version: '99.0.0', percent: 60, error: null });
+      await page.getByRole('progressbar').waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/desktop-downloading-${theme}.png` });
+
+      await push({ phase: 'downloaded', version: '99.0.0', percent: 100, error: null });
+      await page.getByText(/ready to install/i).waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/desktop-downloaded-${theme}.png` });
+    });
+  }
 });

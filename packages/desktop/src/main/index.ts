@@ -7,6 +7,7 @@ import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
 import { serveStatic } from './static-server';
+import { registerUpdater, startUpdateCheck } from './updater';
 
 let gateway: ChildProcess | null = null;
 let win: BrowserWindow | null = null;
@@ -18,6 +19,10 @@ if (!app.requestSingleInstanceLock()) {
 
 // Renderer notifications → native OS notifications (reads `win` lazily, per click).
 registerNotificationBridge(() => win);
+
+// electron-updater bridge: the web UpdateBanner drives check → download → restart
+// over IPC (user-timed; never auto). No-op when unpackaged. Reads `win` lazily.
+registerUpdater(() => win);
 
 /** Locate the web static export: packaged extraResources first, else the dev build. */
 function webRoot(): string | null {
@@ -66,6 +71,10 @@ async function boot(): Promise<void> {
     await serveStatic(root, webPort);
     await win.loadURL(`http://127.0.0.1:${webPort}/`);
   }
+
+  // First update check once the window is up (no auto-download; user-timed).
+  // No-op in dev/unpackaged. The renderer re-checks on focus/navigation.
+  startUpdateCheck();
 }
 
 app.on('second-instance', () => {

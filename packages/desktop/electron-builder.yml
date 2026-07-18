@@ -70,6 +70,22 @@ asarUnpack:
 # Re-assert +x on node-pty's spawn-helper after packaging (it can lose the bit).
 afterPack: scripts/afterpack.cjs
 
+# Env-gated notarization (macOS). Runs after electron-builder's own signing step;
+# no-ops unless APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID are all in
+# the environment, so unsigned local/CI builds still succeed. See scripts/notarize.cjs.
+afterSign: scripts/notarize.cjs
+
+# electron-updater feed (Phase 71 Theme E). electron-builder writes the app's
+# app-update.yml from this block and, on a publish/release build, emits the update
+# metadata (latest-mac.yml / latest.yml / latest-linux.yml + *.blockmap) the running
+# app polls. Points at the PUBLIC downloads repo so anonymous update checks resolve
+# (the release workflow uploads the installers + these feed files there).
+publish:
+  provider: github
+  owner: bilo-io
+  repo: midnite-app
+  releaseType: release
+
 mac:
   category: public.app-category.developer-tools
   # Apple-Silicon only (see release.yml matrix): x64 native modules would need an
@@ -82,13 +98,22 @@ mac:
       arch:
         - arm64
   icon: resources/icon.icns
-  # Required for notarization later; harmless while unsigned.
+  # Required for notarization; harmless while unsigned.
   hardenedRuntime: true
   gatekeeperAssess: false
-  # Unsigned for now. To sign + notarize later: set `identity`, add an
-  # `afterSign` notarize hook, and provide CSC_LINK / APPLE_ID /
-  # APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID in the environment.
-  identity: null
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+  # Code signing is env-gated (Phase 71 Theme E — see README "Code signing & auto-update"):
+  #   • Cert present (CSC_LINK + CSC_KEY_PASSWORD): electron-builder signs the .app;
+  #     the afterSign hook (scripts/notarize.cjs) notarizes when APPLE_ID /
+  #     APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID are also set. A signed +
+  #     notarized build is what electron-updater requires to install.
+  #   • No cert: the release workflow sets CSC_IDENTITY_AUTO_DISCOVERY=false so
+  #     electron-builder cleanly produces an UNSIGNED build (afterpack.cjs ad-hoc
+  #     signs it so it still launches locally). Updates can't install across
+  #     unsigned builds — real signing is the golive prerequisite.
+  # `notarize: false` disables the built-in notarizer so our env-gated hook owns it.
+  notarize: false
 
 win:
   # Unsigned NSIS installer (x64). Triggers a SmartScreen warning until signed.
