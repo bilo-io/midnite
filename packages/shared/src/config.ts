@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ChecksConfigSchema } from './checks.js';
 import { LLM_PROVIDER_DEFAULT, LlmProviderSchema } from './llm.js';
+import type { LoginProvider } from './user.js';
 import { UsageConfigSchema } from './usage.js';
 
 export const RepoConfigSchema = z.object({
@@ -180,6 +181,37 @@ export const TerminalConfigSchema = z.object({
   hookCallbackUrl: z.string().optional(),
 });
 
+// OAuth client config for an integration provider. Secrets are referenced by env-var
+// name (clientSecretEnv), never inlined into committed config. Defined here (above
+// GatewayAuthConfigSchema) so login SSO can reuse the shape; also used by the
+// workflow credential vault (`workflows.oauth`).
+export const OAuthClientConfigSchema = z.object({
+  clientId: z.string(),
+  clientSecretEnv: z.string(),
+  scopes: z.array(z.string()).default([]),
+});
+
+// Login SSO provider config (Phase 70 E) — one per Google/GitHub. Reuses the OAuth
+// client shape (clientId + env-name-only clientSecretEnv + scopes) and adds the
+// pinned `redirectUri` the provider's app registration expects. Deliberately the
+// *login* seam, distinct from the workflow credential vault's `workflows.oauth`.
+export const SsoProviderConfigSchema = OAuthClientConfigSchema.extend({
+  // The callback URL registered with the provider (e.g.
+  // https://midnite.example.com/auth/sso/google/callback). Optional — when unset the
+  // gateway derives it from the request / `webBaseUrl`; set it to pin an exact match.
+  redirectUri: z.string().url().optional(),
+});
+
+// `gateway.auth.sso` (Phase 70 E). Absent by default ⇒ no provider buttons, password
+// login unaffected (behaviour-preserving). `webBaseUrl` is the browser origin the
+// callback redirects back to for the one-time-code handoff (Themes C/D); when unset
+// it is header-derived.
+export const GatewaySsoConfigSchema = z.object({
+  google: SsoProviderConfigSchema.optional(),
+  github: SsoProviderConfigSchema.optional(),
+  webBaseUrl: z.string().url().optional(),
+});
+
 // Optional remote-access auth (Phase 7 A5). Off by default — midnite is local-only
 // out of the box. When a bearer token is configured (or the gateway binds a
 // non-loopback host), a Nest guard requires `Authorization: Bearer <token>` on the
@@ -213,6 +245,10 @@ export const GatewayAuthConfigSchema = z.object({
       refreshTtlDays: z.number().int().positive().default(7),
     })
     .default({}),
+  // Login SSO (Phase 70). Absent ⇒ no provider buttons (behaviour-preserving); a
+  // configured provider whose `clientSecretEnv` is unset fails the boot preflight.
+  // SSO issues our JWTs, so it also needs `jwt.secretEnv` resolved to work.
+  sso: GatewaySsoConfigSchema.optional(),
 });
 
 export const GatewayConfigSchema = z.object({
@@ -249,14 +285,6 @@ export const GatewayConfigSchema = z.object({
    * `next` server — the dev setup. Override at runtime with `MIDNITE_WEB_DIR`.
    */
   webDir: z.string().optional(),
-});
-
-// OAuth client config for an integration provider. Secrets are referenced by env-var
-// name (clientSecretEnv), never inlined into committed config.
-export const OAuthClientConfigSchema = z.object({
-  clientId: z.string(),
-  clientSecretEnv: z.string(),
-  scopes: z.array(z.string()).default([]),
 });
 
 // Phase 56 A — realtime WebSocket reliability. The gateway keeps a bounded event
@@ -576,11 +604,29 @@ export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
 export type CouncilsConfig = z.infer<typeof CouncilsConfigSchema>;
 export type OAuthClientConfig = z.infer<typeof OAuthClientConfigSchema>;
+export type SsoProviderConfig = z.infer<typeof SsoProviderConfigSchema>;
+export type GatewaySsoConfig = z.infer<typeof GatewaySsoConfigSchema>;
 export type PrStatusConfig = z.infer<typeof PrStatusConfigSchema>;
 export type { UsageConfig } from './usage.js';
 
 export function parseConfig(raw: unknown): MidniteConfig {
   return MidniteConfigSchema.parse(raw);
+}
+
+/**
+ * Login SSO providers the gateway has configured — a `gateway.auth.sso.<provider>`
+ * block with a client id. Reused by the providers endpoint (Phase 70 C) and the web
+ * sign-in buttons (Theme D) so only configured providers surface. Stable order
+ * (google, then github). Whether each provider's `clientSecretEnv` is actually set
+ * is a boot-preflight concern, not a "show the button" one.
+ */
+export function enabledSsoProviders(config: MidniteConfig): LoginProvider[] {
+  const sso = config.gateway.auth.sso;
+  if (!sso) return [];
+  const providers: LoginProvider[] = [];
+  if (sso.google?.clientId) providers.push('google');
+  if (sso.github?.clientId) providers.push('github');
+  return providers;
 }
 
 // The runtime loader (reads midnite.json from disk) lives in the node-only
