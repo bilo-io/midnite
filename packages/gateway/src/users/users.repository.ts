@@ -34,6 +34,12 @@ export class UsersRepository {
     this.db.update(users).set({ passwordHash, updatedAt }).where(eq(users.id, id)).run();
   }
 
+  /** Refresh the stored SSO avatar URL (Phase 71) — used to keep it current on
+   *  each SSO login. Does not bump `updatedAt` (a cosmetic sync, not a profile edit). */
+  updateAvatar(id: string, avatarUrl: string): void {
+    this.db.update(users).set({ avatarUrl }).where(eq(users.id, id)).run();
+  }
+
   hydrate(row: UserRow): User {
     return {
       id: row.id,
@@ -41,6 +47,7 @@ export class UsersRepository {
       name: row.name,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      ...(row.avatarUrl ? { avatarUrl: row.avatarUrl } : {}),
     };
   }
 }

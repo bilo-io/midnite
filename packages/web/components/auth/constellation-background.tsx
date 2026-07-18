@@ -26,8 +26,9 @@ import { cn } from '@/lib/utils';
 
 const TAU = Math.PI * 2;
 
-/** Soft star white (with a faint cool tint) — the hero panel is always deep-space dark. */
-const STAR_HSL = '222 40% 92%';
+/** Fallback star colour before the theme token resolves — the neutral foreground
+ *  (no blue tint), matching the `bg-dots` pattern rather than a cool white. */
+const STAR_FALLBACK = '0 0% 90%';
 
 type NodeColors = [string, string, string, string];
 
@@ -77,6 +78,14 @@ function readNodeColors(): NodeColors {
     v('--node-logic', '280 65% 60%'),
     v('--node-data', '142 71% 45%'),
   ];
+}
+
+/** Star colour follows the theme's neutral `--foreground` token (the same colour
+ *  the `bg-dots` pattern draws), so the field re-tints light↔dark instead of being
+ *  a fixed cool white and carries no blue cast. */
+function readStarColor(): string {
+  const cs = getComputedStyle(document.documentElement);
+  return cs.getPropertyValue('--foreground').trim() || STAR_FALLBACK;
 }
 
 /**
@@ -208,8 +217,10 @@ export function ConstellationBackground({
     ro.observe(canvas);
 
     let nodes = readNodeColors();
+    let starColor = readStarColor();
     const mo = new MutationObserver(() => {
       nodes = readNodeColors();
+      starColor = readStarColor();
       repaint?.();
     });
     mo.observe(document.documentElement, {
@@ -224,7 +235,7 @@ export function ConstellationBackground({
         const a = s.a * twinkle;
         const r = s.r * (s.bright ? 0.9 + 0.2 * twinkle : 1);
         ctx.beginPath();
-        ctx.fillStyle = `hsl(${STAR_HSL} / ${a.toFixed(3)})`;
+        ctx.fillStyle = `hsl(${starColor} / ${a.toFixed(3)})`;
         ctx.arc(px[i]!, py[i]!, r, 0, TAU);
         ctx.fill();
       }

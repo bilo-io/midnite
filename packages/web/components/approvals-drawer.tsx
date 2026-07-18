@@ -34,7 +34,7 @@ function useCountdown(deadlineAt: string | null): string | null {
 
 // ---- single pending request row ----
 
-function PendingRow({
+export function PendingRow({
   approval,
   onDecide,
   onMakeRule,

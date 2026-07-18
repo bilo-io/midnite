@@ -2,7 +2,7 @@
 
 import { forwardRef, type ComponentType } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, Compass, MessageSquare, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronRight, Compass, MessageSquare, Sparkles, X } from 'lucide-react';
 
 import { GradientGlow } from '@midnite/ui';
 
@@ -26,12 +26,14 @@ type Entry = {
   icon: ComponentType<{ className?: string }>;
   /** Themes E (agent) + F (guide) land later — shown but not yet wired. */
   soon?: boolean;
+  /** Shows a "Beta" pill on the right of the entry. */
+  beta?: boolean;
 };
 
 const ENTRIES: readonly Entry[] = [
   { key: 'docs', label: 'Docs', description: "This page's documentation", icon: BookOpen },
-  { key: 'guide', label: 'Guides', description: 'Tour this page — or browse them all', icon: Compass },
-  { key: 'chat', label: 'Chat to board', description: 'Change the board in words', icon: MessageSquare },
+  { key: 'guide', label: 'Guide', description: 'Play this page — or browse all', icon: Compass },
+  { key: 'chat', label: 'Chat', description: 'Change the board in words', icon: MessageSquare, beta: true },
   { key: 'agent', label: 'Agent', description: 'Ask about your fleet', icon: Sparkles, soon: true },
 ];
 
@@ -68,9 +70,20 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
       onClose();
     } else if (entry.key === 'chat') {
       onView('chat');
-    } else if (entry.key === 'guide') {
-      // Open the "All guides" index (Theme C): browse + replay any guide, with
-      // the current route's tour emphasised at the top.
+    }
+    // 'guide' is a split control (see the menu render) — its main area plays the
+    // current page's guide and its arrow opens the index; it never routes here.
+  };
+
+  // Split "Guide" main-area click: play the active page's guide immediately. When
+  // the page has no guide, fall back to the browse-all index so the button never
+  // dead-ends.
+  const playCurrentGuide = () => {
+    const guide = pathname ? resolveGuide(pathname) : null;
+    if (guide) {
+      useGuide.getState().start(guide);
+      onClose();
+    } else {
       onView('guides');
     }
   };
@@ -134,7 +147,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
             <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden />
           )}
           <h2 id={headingId} className="flex-1 text-sm font-semibold">
-            {view === 'chat' ? 'Chat to board' : view === 'guides' ? 'Guides' : 'Assistant'}
+            {view === 'chat' ? 'Chat' : view === 'guides' ? 'Guides' : 'Assistant'}
           </h2>
           <button
             type="button"
@@ -148,33 +161,69 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
 
         {view === 'menu' ? (
           <ul className="p-2">
-            {ENTRIES.map((entry) => (
-              <li key={entry.key}>
-                <button
-                  type="button"
-                  onClick={() => activate(entry)}
-                  disabled={entry.soon}
-                  aria-disabled={entry.soon}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors',
-                    entry.soon
-                      ? 'cursor-not-allowed opacity-55'
-                      : 'hover:bg-accent/60',
-                  )}
-                >
-                  <entry.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="flex-1">
-                    <span className="block text-sm font-medium">{entry.label}</span>
-                    <span className="block text-xs text-muted-foreground">{entry.description}</span>
-                  </span>
-                  {entry.soon && (
-                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Soon
+            {ENTRIES.map((entry) => {
+              // "Guide" is a split control: the main area plays the current page's
+              // guide, the trailing arrow opens the browse-all index.
+              if (entry.key === 'guide') {
+                return (
+                  <li key={entry.key}>
+                    <div className="flex w-full items-stretch overflow-hidden rounded-lg">
+                      <button
+                        type="button"
+                        onClick={playCurrentGuide}
+                        className="flex flex-1 items-center gap-3 px-2.5 py-2 text-left transition-colors hover:bg-accent/60"
+                      >
+                        <entry.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className="flex-1">
+                          <span className="block text-sm font-medium">{entry.label}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {entry.description}
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onView('guides')}
+                        aria-label="Browse all guides"
+                        className="flex items-center border-l border-border/40 px-2.5 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+                      >
+                        <ChevronRight className="h-4 w-4" aria-hidden />
+                      </button>
+                    </div>
+                  </li>
+                );
+              }
+              return (
+                <li key={entry.key}>
+                  <button
+                    type="button"
+                    onClick={() => activate(entry)}
+                    disabled={entry.soon}
+                    aria-disabled={entry.soon}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors',
+                      entry.soon ? 'cursor-not-allowed opacity-55' : 'hover:bg-accent/60',
+                    )}
+                  >
+                    <entry.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="flex-1">
+                      <span className="block text-sm font-medium">{entry.label}</span>
+                      <span className="block text-xs text-muted-foreground">{entry.description}</span>
                     </span>
-                  )}
-                </button>
-              </li>
-            ))}
+                    {entry.beta && (
+                      <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                        Beta
+                      </span>
+                    )}
+                    {entry.soon && (
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Soon
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : view === 'guides' ? (
           <ul className="max-h-[min(24rem,60vh)] overflow-y-auto p-2">

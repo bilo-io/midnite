@@ -20,6 +20,7 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import {
+  EmailNotAllowlistedError,
   SsoEmailConflictError,
   SsoSignupClosedError,
 } from '../users/users.service';
@@ -125,6 +126,7 @@ export class SsoController {
   /** Map a callback failure to a safe, fixed `sso_error` code (no internals leak). */
   private errorCode(err: unknown): string {
     if (err instanceof SsoStateInvalidError) return 'invalid_state';
+    if (err instanceof EmailNotAllowlistedError) return 'not_allowed';
     if (err instanceof SsoSignupClosedError) return 'signup_closed';
     if (err instanceof SsoEmailConflictError) return 'email_conflict';
     if (err instanceof SsoNotConfiguredError) return 'provider_unavailable';

@@ -28,13 +28,12 @@ import {
   type AppSettings,
 } from '@/lib/app-settings';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { NotificationCenter } from '@/components/notification-center';
 import { PresenceNavPill } from '@/components/office/presence-nav-pill';
-import { ApprovalsDrawer } from '@/components/approvals-drawer';
 import { Screensaver } from '@/components/screensaver';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
 import { Wordmark } from '@/components/wordmark';
-import { ConnectionStatusFloat, ConnectionToaster } from '@/components/connection-status';
+import { ConnectionToaster } from '@/components/connection-status';
+import { HeaderActions } from '@/components/header/header-actions';
 import { MobileNav } from '@/components/mobile-nav';
 
 type NavLink = {
@@ -266,10 +265,10 @@ export function NavBar() {
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
           {/* "Chat to board" moved into the assistant FAB (Phase 66 Theme D); the
-              palette keeps its own `>` chat mode for keyboard users. */}
+              palette keeps its own `>` chat mode for keyboard users. Approvals +
+              Notifications moved to the top-right header-actions cluster (Phase 71),
+              so they no longer live in the sidebar. */}
           <PresenceNavPill expanded={expandedView} />
-          <ApprovalsDrawer expanded={expandedView} />
-          <NotificationCenter expanded={expandedView} />
           <ThemeToggle expanded={expandedView} />
           {/* Docs moved into the assistant FAB (Phase 66 Theme C) — it opens the
               current route's docs, so the path-less sidenav Docs link is retired
@@ -298,8 +297,9 @@ export function NavBar() {
         </div>
       </aside>
 
-      {/* Live-connection indicator, floating top-right across every surface. */}
-      <ConnectionStatusFloat />
+      {/* Top-right header-actions cluster (status · approvals · notifications ·
+          avatar), floating across every surface. */}
+      <HeaderActions />
 
       <MobileNav pathname={pathname} features={navFeatures} onLock={lock} />
 

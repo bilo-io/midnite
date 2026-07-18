@@ -38,17 +38,21 @@ describe('AssistantFab', () => {
     const dialog = screen.getByRole('dialog', { name: 'Assistant' });
     expect(dialog).toBeInTheDocument();
     expect(fab).toHaveAttribute('aria-expanded', 'true');
-    for (const label of ['Docs', 'Guide', 'Chat to board', 'Agent']) {
+    for (const label of ['Docs', 'Chat', 'Agent']) {
       expect(screen.getByRole('button', { name: new RegExp(label, 'i') })).toBeInTheDocument();
     }
+    // "Guide" is a split control: a main "play this page" button + a trailing
+    // "Browse all guides" arrow.
+    expect(screen.getByRole('button', { name: /^Guide/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Browse all guides' })).toBeInTheDocument();
   });
 
   it('disables only the not-yet-built Agent entry (Guide is live in Theme F)', () => {
     render(<AssistantFab />);
     fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
     expect(screen.getByRole('button', { name: /Agent/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Guide/i })).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: /Chat to board/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Guide/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Chat/i })).not.toBeDisabled();
   });
 
   it('Guides opens the index; replaying the current route’s guide starts it (Theme C)', async () => {
@@ -113,10 +117,10 @@ describe('AssistantFab', () => {
   it('swaps to the chat view and back (Theme D)', () => {
     render(<AssistantFab />);
     fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
-    fireEvent.click(screen.getByRole('button', { name: /Chat to board/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Chat/i }));
 
     expect(screen.getByTestId('chat-bar')).toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: 'Chat to board' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Chat' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to assistant menu' }));
     expect(screen.queryByTestId('chat-bar')).not.toBeInTheDocument();

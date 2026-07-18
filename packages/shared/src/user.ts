@@ -27,6 +27,11 @@ export const UserSchema = z.object({
   name: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  /** Avatar image URL (Phase 71). Populated from the SSO provider's profile
+   *  picture (Google `picture` / GitHub `avatar_url`) when available; absent for
+   *  password-only users, whose UI falls back to initials. Optional so existing
+   *  `UserSchema.parse` callers (and pre-avatar rows) stay valid. */
+  avatarUrl: z.string().url().optional(),
   /** Linked SSO identities (Phase 70). Optional so existing `UserSchema.parse`
    *  callers (and pre-SSO rows) stay valid; absent means none/unknown. */
   identities: z.array(SsoIdentitySchema).optional(),

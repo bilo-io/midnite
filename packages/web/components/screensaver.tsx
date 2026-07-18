@@ -21,7 +21,8 @@ import { PasscodeUnlockDialog } from '@/components/passcode-pad';
 import { Spinner } from '@/components/spinner';
 import { AreaChart, LegendDot } from '@/components/system-chart';
 import { useSystemTelemetry } from '@/lib/use-system-telemetry';
-import { clamp } from '@/lib/utils';
+import { useSystemStats } from '@/lib/use-system-stats';
+import { clamp, formatBytes } from '@/lib/utils';
 
 // Playful phrases shown one at a time in the big title slot. Which set we draw
 // from tracks what the agents are doing: at least one acting → ACTIVE; none
@@ -376,6 +377,9 @@ export function Screensaver({
 
   // Corner widgets: live clock plus real host telemetry (gateway /system/stats).
   const { cpu, ram, cpuNow, ramNow, available: telemetryAvailable } = useSystemTelemetry();
+  // Real host disk (primary volume) for the bottom-right storage ring.
+  const { stats: systemStats } = useSystemStats();
+  const disk = systemStats?.disks[0] ?? null;
   const [now, setNow] = useState(() => new Date());
   const [quota, setQuota] = useState(() => clamp(58 + (Math.random() - 0.5) * 20, 35, 90));
 
@@ -514,10 +518,19 @@ export function Screensaver({
         </div>
       )}
 
-      {/* ── Bottom-right: usage quotas ── */}
+      {/* ── Bottom-right: usage quotas + host disk ── */}
       <div className="absolute bottom-8 right-8 z-10 flex items-end gap-6">
         <Ring value={agentsPct} hueVar="--status-waiting" label="Agents" display={`${active}/${poolSize}`} />
         <Ring value={quota} hueVar="--status-done" label="Quota" display={`${Math.round(quota)}%`} />
+        {disk ? (
+          // Arc = used fraction; centre = free space, caption = total (Phase 71).
+          <Ring
+            value={disk.usagePct}
+            hueVar="--status-todo"
+            label={`free of ${formatBytes(disk.totalBytes)}`}
+            display={formatBytes(disk.freeBytes)}
+          />
+        ) : null}
       </div>
 
       {/* ── Center: spinner, cycling word, status pills ── */}
@@ -647,7 +660,9 @@ function Ring({
           {display}
         </span>
       </div>
-      <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+      <span className="whitespace-nowrap text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+        {label}
+      </span>
     </div>
   );
 }
