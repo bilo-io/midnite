@@ -66,14 +66,15 @@ The desktop half: a real in-app `electron-updater` pipeline the banner drives �
 - [x] **Code-signing / notarization:** env-gated macOS signing + afterSign notarize hook + Windows signing (certs/secrets from env/CI), with a clean unsigned fallback (`CSC_IDENTITY_AUTO_DISCOVERY=false`); documented in [`desktop/README.md`](../packages/desktop/README.md).
 - [x] Tests: pure event→state mapper unit (desktop vitest), provider desktop-branch + banner desktop-state RTL/stories, e2e flow (download→progress→restart via a fake preload bridge); manual two-build smoke documented.
 
-## Theme F — Release notes on the version (web + desktop) — **S**
+## Theme F — Release notes on the version (web + desktop) — **S** — ✅ DONE (PR #458, 2026-07-18)
 
 The version is a link, not just a label — clicking it tells you *what's* new.
 
-- [ ] The version string in the banner links/opens the **release notes**: a lightweight popover (or route) rendering the tag's [`CHANGELOG.md`](../CHANGELOG.md) section for `latest` (fetched alongside the manifest, or `notesUrl` from Theme A). Markdown-rendered, dismissable, keyboard-accessible.
-- [ ] Fail-soft: if notes can't be fetched, the version still links to the GitHub release page; the update action is never blocked on notes.
-- [ ] Optional echo into the [Phase 21](phase-21-notifications.md) notification center ("vX.Y.Z available") so a dismissed banner still leaves a trail — reuse, not a new channel.
-- [ ] Tests: notes popover renders the changelog section, fallback-to-release-page path, a11y (focus/escape).
+- [x] The version string in the banner opens the **release notes**: a portal popover ([`release-notes-popover.tsx`](../packages/web/components/update/release-notes-popover.tsx)) rendering just that version's `## [x.y.z]` [`CHANGELOG.md`](../CHANGELOG.md) section, fetched from the public repo's raw `main` CHANGELOG and parsed client-side ([`release-notes.ts`](../packages/web/lib/release-notes.ts)). Markdown via `MarkdownPreview`, dialog role + focus move + Escape/outside-click close.
+- [x] Fail-soft: notes fetch never throws (non-OK / offline / missing section → a short fallback note); two always-present links stand regardless — **Full changelog** (the new docs `/changelog` page, deep-linked `#/changelog?v=<version>`) and **Release page** (`notesUrl` or GitHub releases). The update action is never blocked on notes.
+- [x] Echo: a detected update raises a one-shot `vX available` toast (once per version via localStorage — [`update-echo.ts`](../packages/web/components/update/update-echo.ts)), reusing the Phase 21 toast channel. *(A durable notification-center entry needs a gateway-side notification — the feed is server-authoritative — logged as a follow-up.)*
+- [x] Docs `/changelog` page ([`changelog-page.tsx`](../packages/docs/src/components/changelog-page.tsx)) renders the repo CHANGELOG (imported `?raw`) under Guides and scrolls to the `?v=` version (HashRouter-safe heading-text match).
+- [x] Tests: `release-notes` parse/fetch, popover (open → notes, links, fail-soft, Escape), `shouldEchoUpdate` matrix, docs changelog page (render + `?v=` scroll/focus).
 
 ## Theme G — Release-flow wiring: emit `version.json` on tag — **M**
 

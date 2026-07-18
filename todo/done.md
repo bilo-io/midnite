@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(web+docs): Phase 71 Theme F — Release notes on the update banner (PR #458)
+
+Makes the update banner's version tell you *what's* new. The version becomes a button that opens a release-notes popover; a new docs `/changelog` page carries the full, deep-linkable history. Every path fails soft — the update is never blocked on notes. G (release-flow `version.json` emission) and H (channels/floor/CLI) remain open.
+
+- [x] **Release-notes popover** (`packages/web/components/update/release-notes-popover.tsx`): the banner version is a button that opens a portal popover (like `FilterPills`) rendering just that version's `## [x.y.z]` CHANGELOG section. `release-notes.ts` fetches the public repo's raw `main` CHANGELOG and extracts the section client-side — fail-soft (non-OK / offline / missing section → `null`, never throws). Rendered with `MarkdownPreview`; `role="dialog"` + focus move + Escape/outside-click close.
+- [x] **Two always-present links**: "Full changelog" → the new docs `/changelog` page deep-linked to the version; "Release page" → `notesUrl` (Theme A) or GitHub releases. Both stand even when notes can't be fetched, so the update is never blocked on notes.
+- [x] **Docs `/changelog` page** (`packages/docs/src/components/changelog-page.tsx`): renders the repo `CHANGELOG.md` (imported `?raw`, like the memory-workspace guide) under Guides, indexed for docs search. The banner opens `#/changelog?v=<version>`; the page reads `?v=` and scrolls to that version's section (matched by heading text — HashRouter can't carry a native `#anchor` alongside the route hash).
+- [x] **Notification echo**: `UpdateProvider` raises a one-shot `vX available` toast when an update is first detected (once per version via `localStorage`, `update-echo.ts`), reusing the Phase 21 toast channel. A durable notification-center entry would need a gateway-side notification (the feed is server-authoritative) — logged as a follow-up.
+- [x] Tests: `release-notes` parse/fetch (section extraction, prefix-version safety, non-OK/reject → null), popover (open → notes, always-present links, fail-soft note, Escape), `shouldEchoUpdate` matrix, docs changelog page (render + `?v=` scroll/focus + no-scroll). Screenshots: popover + docs page, light + dark.
+
+---
+
 ## 2026-07-18 — feat(desktop): Phase 71 Theme E — Electron auto-update + code-signing (PR #457)
 
 The desktop half of the update banner: a real in-app `electron-updater` pipeline the shared `UpdateBanner` drives — **user-timed**, never auto-nag/auto-restart. On desktop the electron-updater feed is authoritative (the web `version.json` poll is ignored there — one source of truth). F/G/H (release notes, release-flow `version.json` emission, channels/floor/CLI) remain open.
