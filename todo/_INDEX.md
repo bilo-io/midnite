@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [71 · App update banner](phase-71-app-update-banner.md) | ◻ TODO | 0/34 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
-| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 28/36 | `████████░░` | 78% | D | — |
+| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -140,7 +140,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Shared contract: `LoginProviderSchema` (`google | github`, distinct from the vault `OAuthProvider`), SSO start/exchange/providers schemas, optional `UserSchema.identities`, same-origin redirect guard, typed client methods (PR #447)
 - ✅ **B** — Persistence: `user_identities` table (unique `(provider, providerUserId)`) + nullable `password_hash` migration; `findOrCreateFromSso` (lookup → auto-link on verified email → provision user+team); null-hash password login → 403; unverified-collision + closed-signup rejected (PR #449)
 - ✅ **C** — Gateway flow: `auth/sso.service.ts` + `SsoController` (`/auth/sso/{providers,:provider/start,:provider/callback,exchange}`), Google `id_token` verify (jose JWKS) + GitHub `/user`+`/user/emails` (primary+verified), encrypted state **+ single-use nonce/code in `sso_auth_state` (TTL)**, one-time-code handoff issues our JWTs; 503 when JWT off; exempts `/auth/sso/*`+login/register/refresh; never touches the vault `OAuthService` (PR #451)
-- ◻ **D** — Web UX: Google/GitHub buttons on login/register, web callback route that sets `__midnite_rt` httpOnly cookie via one-time code (no tokens in URL), open-redirect guard, linked-accounts display
+- ✅ **D** — Web UX: `<SsoButtons>` on login/register (fetch `/auth/sso/providers`, direct-nav via `ssoStartUrl`), GET `app/auth/sso/callback/route.ts` that exchanges the one-time code server-side + sets `__midnite_rt` httpOnly (no tokens in URL) + open-redirect guard, `sso_error` messages, linked-accounts in Settings (no auth-context change — refresh-on-mount restores the session) (PR #452)
 - ✅ **E** — Config + docs: `gateway.auth.sso` block (reuse `OAuthClientConfigSchema`, `clientSecretEnv` env-name-only, + `redirectUri`/`webBaseUrl`), fail-closed boot check, README/schema setup docs (PR #450)
 - ✅ **F** — Login hero: split-screen (form left ⅓, hero right ⅔), login-specific typewriter title/subtitle, galaxy starfield that periodically lights up constellations as knowledge-graph edges (node-palette tokens) + semi-realistic twinkle; desktop-only, reduced-motion static fallback (PR #448)
 

@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(web): Phase 70 Theme D — Google/GitHub sign-in UI + callback handoff (PR #452) — **Phase 70 complete**
+
+The front-of-house for SSO: "Continue with Google / GitHub" on the login + register pages, plus the web callback that completes the one-time-code handoff without leaking tokens. Pure `packages/web` + one tiny gateway `/auth/me` enrichment. **With D in, Phase 70 (Google & GitHub SSO) is 36/36 — all themes A–F landed.**
+
+- [x] **`components/auth/sso-buttons.tsx`** — fetches configured providers (`GET /auth/sso/providers`) and renders a direct-nav anchor per provider (`ssoStartUrl`, mirroring `getOAuthStartUrl`); renders nothing when SSO isn't configured (password-only unchanged). Shared by login + register, above the email form with an "or" divider.
+- [x] **`app/auth/sso/callback/route.ts`** (matches Theme C's 302 target) — GET handler re-validates the same-origin `redirect` (`SsoRedirectPathSchema`), exchanges the one-time code server-side (`POST /auth/sso/exchange`), sets `__midnite_rt` httpOnly exactly like the login route (secure/`lax`/7-day), 303s to the resume path. No token ever in client JS or a URL.
+- [x] **Login `?sso_error=` mapping** — friendly copy for every code Theme C emits (email_conflict, signup_closed, provider_error, invalid_state, access_denied, …).
+- [x] **`lib/api.ts`** — `ssoStartUrl` / `fetchSsoProviders` / `ssoErrorMessage` / `getCurrentUser`. **No `auth-context` change** — the existing mount-time `POST /api/auth/refresh` restores the SSO session from the cookie identically to a returning user.
+- [x] **Settings → profile** — read-only "Linked accounts" list from `GET /auth/me` (enriched with `identities`; login/refresh stay lean).
+- [x] Tests: SsoButtons RTL (gating + hrefs), callback route handler (cookie + open-redirect + error paths), `ssoStartUrl`/`ssoErrorMessage` units, a `play` story (mocked providers). Screenshots: login light + dark in the split-screen hero.
+
+---
+
 ## 2026-07-18 — feat(gateway): Phase 70 Theme C — gateway SSO flow (PR #451)
 
 The heart of Phase 70: a dedicated auth-module SSO flow that runs the Google/GitHub authorization-code dance and issues our own JWTs, reusing `CryptoService` for encrypted CSRF state and never touching the workflow-vault `OAuthService`.
