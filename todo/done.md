@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat: Phase 71 Theme H — Channels, force-update floor & CLI notice (PR #462) — **completes Phase 71 🎉**
+
+The golive extras that finish the update system. Testers can opt into pre-release builds, a client too far behind is forced to update, and CLI users get the same heads-up the web/desktop banner gives.
+
+- [x] **Stable/beta channel** — a synced `updateChannel` preference (`shared` schema + `app-settings` projections + `prefsKey`), toggled in **Settings → System → Updates**. The web poll fetches the channel's manifest (`version.json` vs `version.beta.json`, via a shared `versionManifestFile` helper); the desktop provider pushes the channel to the main process, which sets `autoUpdater.channel` + re-checks. Switching re-checks immediately.
+- [x] **Force-update floor (web + desktop)** — below `minSupported` the banner is non-dismissable (no ×) with emphatic copy ("Update required to keep using midnite — this version is no longer supported…"). Web computes `belowFloor` from the polled manifest; the desktop main process fetches the channel's `version.json` for `minSupported` (electron-updater's feed doesn't carry it — a pure, tested `updates/floor.ts`) and merges `belowFloor` into every pushed `UpdateState`, fail-open on any fetch error. New renderer→main `setChannel` IPC + preload bridge method.
+- [x] **CLI out-of-date notice** — `midnite` startup (`lib/version-check.ts`, hooked into the pre-action + bare-invoke paths) prints a one-line "CLI vX is behind vY" (a louder hard notice below `minSupported`) read from the GitHub-raw manifest and cached to a temp file (6h TTL). Fail-soft (never throws, bounded timeout, never touches stdout), `--json`-aware, suppressible via `--no-update-check` / `$MIDNITE_NO_UPDATE_CHECK`.
+- [x] Tests: `shared` (channel default/round-trip, `versionManifestFile`), `web` (channel-aware poll path, floor copy, `UpdatesAccordion`, `versionManifestPath`), `desktop` (`floor` ok/non-ok/throw), `cli` (`buildNotice` floor/behind/current/precedence, `isSuppressed`, cached notice + suppression). Screenshots: force-floor banner, light + dark.
+
 ## 2026-07-18 — feat(web+docs): Phase 71 Theme F — Release notes on the update banner (PR #458)
 
 Makes the update banner's version tell you *what's* new. The version becomes a button that opens a release-notes popover; a new docs `/changelog` page carries the full, deep-linkable history. Every path fails soft — the update is never blocked on notes. G (release-flow `version.json` emission) and H (channels/floor/CLI) remain open.
