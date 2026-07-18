@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-18 — feat(web): Phase 71 Themes A–D — app update banner + per-platform apply (PR #455)
+
+The web core of the "App update available" banner (golive readiness). A build-emitted `version.json` is polled and folded with the service-worker waiting signal to detect a newer build; a theme-inverted top banner lets the user take the update when they choose — never blind. D was pulled forward so the banner is functional end-to-end. E–H (Electron auto-update, release notes, release-flow emission, channels/floor/CLI) remain open.
+
+- [x] **A — Version manifest contract** (`shared/src/update.ts`): `VersionManifestSchema` (version/channel/minSupported/notesUrl) + `isUpdateAvailable`/`isBelowFloor`; `compareSemVer` added to `version.ts`. Units for compare/floor/schema.
+- [x] **B — Detection** (`web`): `useVersionPoll` (poll ~5min + window focus + route navigation) via `fetchVersionManifest`/`getCurrentVersion` (`NEXT_PUBLIC_APP_VERSION` inlined in `next.config`); SW **waiting-worker** signal folded in. `public/sw.js` no longer `skipWaiting()`s silently on install — the waiting worker survives for a user-timed update, taken live by a `SKIP_WAITING` message. Baseline `public/version.json`.
+- [x] **C — `UpdateBanner`** (`web`): top-mounted in a flex column so it pushes the whole app down (the fixed nav offsets its `top` by `--update-banner-h` — nothing occluded); theme-inverted surface, ease-in-out height animation (reduced-motion aware; genuinely `hidden` once collapsed), `×` dismiss that re-surfaces on navigation, force-update floor removes the `×`. Presentational view split from the context container so stories stay free of the `@midnite/shared` import chain.
+- [x] **D — Apply**: "Update" runs the SW `skipWaiting → controllerchange → reload` handoff, hard-reload fallback when no worker is waiting. (Pulled forward from its own theme so C is functional; post-reload "did it land" is handled implicitly by re-detection on load.)
+- [x] Tests: shared units, `use-version-poll` + `service-worker-update` units, `UpdateBannerView` RTL + Storybook stories (light/dark/floor/dismiss `play`), and a Playwright flow (`e2e/update-banner.e2e.ts`: appears → dismiss hides → reload re-surfaces; hidden when up to date). Screenshots: desktop light/dark + mobile.
+
+---
+
 ## 2026-07-18 — feat(web): Phase 70 Theme D — Google/GitHub sign-in UI + callback handoff (PR #452) — **Phase 70 complete**
 
 The front-of-house for SSO: "Continue with Google / GitHub" on the login + register pages, plus the web callback that completes the one-time-code handoff without leaking tokens. Pure `packages/web` + one tiny gateway `/auth/me` enrichment. **With D in, Phase 70 (Google & GitHub SSO) is 36/36 — all themes A–F landed.**
