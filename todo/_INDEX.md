@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 17/36 | `█████░░░░░` | 47% | E | C D |
+| [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | 🔄 WIP | 17/36 | `█████░░░░░` | 47% | C E | D |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
