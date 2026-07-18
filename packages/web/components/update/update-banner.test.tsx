@@ -51,4 +51,43 @@ describe('UpdateBannerView', () => {
     expect(screen.queryByRole('button', { name: /dismiss update notice/i })).toBeNull();
     expect(screen.getByText(/required update is available/i)).toBeInTheDocument();
   });
+
+  // Desktop (electron-updater) states — the container feeds these props per phase.
+  it('renders a custom headline + action label (e.g. desktop "Restart to install")', () => {
+    render(
+      <UpdateBannerView
+        {...base}
+        headline="An update is ready to install"
+        actionLabel="Restart to install"
+      />,
+    );
+    expect(screen.getByText('An update is ready to install')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restart to install' })).toBeInTheDocument();
+  });
+
+  it('shows a download progress bar and disables the action while downloading', () => {
+    render(
+      <UpdateBannerView
+        {...base}
+        headline="Downloading update…"
+        actionLabel="Downloading 42%"
+        actionDisabled
+        downloadPercent={42}
+      />,
+    );
+    const bar = screen.getByRole('progressbar', { name: /downloading update/i });
+    expect(bar).toHaveAttribute('aria-valuenow', '42');
+    expect(screen.getByRole('button', { name: 'Downloading 42%' })).toBeDisabled();
+  });
+
+  it('offers Retry when the desktop update failed', () => {
+    render(<UpdateBannerView {...base} headline="Update failed" actionLabel="Retry" />);
+    expect(screen.getByText('Update failed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('has no progress bar when downloadPercent is null', () => {
+    render(<UpdateBannerView {...base} />);
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
 });

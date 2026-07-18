@@ -14,22 +14,35 @@ export type UpdateBannerViewProps = {
   latest: string | null;
   /** Optional release-notes URL — turns the version into a link. */
   notesUrl?: string;
+  /** Override the default headline (desktop states: downloading / ready / failed). */
+  headline?: string;
+  /** Action button label (defaults to "Update"; e.g. "Restart to install", "Retry"). */
+  actionLabel?: string;
+  /** Disable the action (e.g. mid-download). */
+  actionDisabled?: boolean;
+  /** Desktop download progress 0–100 — renders a progress bar when set. */
+  downloadPercent?: number | null;
   onUpdate: () => void;
   onDismiss: () => void;
 };
 
 /**
- * Presentational "App update available" banner (Phase 71 Theme C). Theme-*inverted*
+ * Presentational "App update available" banner (Phase 71 Theme C + E). Theme-*inverted*
  * surface (`bg-foreground`/`text-background`) for contrast, animates in/out with an
  * ease-in-out height transition (grid-rows 0fr↔1fr, reduced-motion aware), and
  * publishes its measured height as `--update-banner-h` so the fixed nav can offset
- * its `top` and nothing is occluded. Stateless — the container wires it to context.
+ * its `top` and nothing is occluded. Stateless — the container wires it to context
+ * and, on desktop, feeds the electron-updater phase in via headline/label/percent.
  */
 export function UpdateBannerView({
   visible,
   belowFloor,
   latest,
   notesUrl,
+  headline,
+  actionLabel = 'Update',
+  actionDisabled = false,
+  downloadPercent = null,
   onUpdate,
   onDismiss,
 }: UpdateBannerViewProps) {
@@ -60,7 +73,7 @@ export function UpdateBannerView({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [visible, latest, belowFloor]);
+  }, [visible, latest, belowFloor, downloadPercent]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -71,6 +84,8 @@ export function UpdateBannerView({
   }, [visible, height]);
 
   const versionLabel = latest ? `v${latest}` : 'the latest version';
+  const defaultHeadline = belowFloor ? 'A required update is available' : 'A new version is available';
+  const showProgress = downloadPercent !== null;
 
   return (
     <div
@@ -93,56 +108,75 @@ export function UpdateBannerView({
           ref={innerRef}
           role="status"
           aria-live="polite"
-          className="flex items-center gap-3 bg-foreground px-4 py-2.5 text-background shadow-sm"
+          className="bg-foreground text-background shadow-sm"
         >
-          <ArrowUpCircle aria-hidden className="hidden h-5 w-5 shrink-0 opacity-90 sm:block" />
-          <p className="min-w-0 flex-1 text-sm">
-            <span className="font-medium">
-              {belowFloor ? 'A required update is available' : 'A new version is available'}
-            </span>
-            <span className="hidden sm:inline">
-              {' — '}
-              {notesUrl ? (
-                <a
-                  href={notesUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-semibold underline underline-offset-2 hover:opacity-80"
-                >
-                  {versionLabel}
-                </a>
-              ) : (
-                <span className="font-semibold">{versionLabel}</span>
-              )}
-            </span>
-          </p>
+          <div className="flex items-center gap-3 px-4 py-2.5">
+            <ArrowUpCircle aria-hidden className="hidden h-5 w-5 shrink-0 opacity-90 sm:block" />
+            <p className="min-w-0 flex-1 text-sm">
+              <span className="font-medium">{headline ?? defaultHeadline}</span>
+              <span className="hidden sm:inline">
+                {' — '}
+                {notesUrl ? (
+                  <a
+                    href={notesUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold underline underline-offset-2 hover:opacity-80"
+                  >
+                    {versionLabel}
+                  </a>
+                ) : (
+                  <span className="font-semibold">{versionLabel}</span>
+                )}
+              </span>
+            </p>
 
-          <button
-            type="button"
-            onClick={onUpdate}
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-background px-3 py-1.5',
-              'text-xs font-semibold text-foreground transition-opacity hover:opacity-90',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70',
-            )}
-          >
-            <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-            Update
-          </button>
-
-          {!belowFloor && (
             <button
               type="button"
-              onClick={onDismiss}
-              aria-label="Dismiss update notice"
+              onClick={onUpdate}
+              disabled={actionDisabled}
               className={cn(
-                'inline-flex shrink-0 items-center justify-center rounded-md p-1',
-                'text-background/70 transition-colors hover:text-background',
+                'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-background px-3 py-1.5',
+                'text-xs font-semibold text-foreground transition-opacity hover:opacity-90',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70',
+                'disabled:cursor-default disabled:opacity-60',
               )}
             >
-              <X aria-hidden className="h-4 w-4" />
+              <RefreshCw aria-hidden className="h-3.5 w-3.5" />
+              {actionLabel}
             </button>
+
+            {!belowFloor && (
+              <button
+                type="button"
+                onClick={onDismiss}
+                aria-label="Dismiss update notice"
+                className={cn(
+                  'inline-flex shrink-0 items-center justify-center rounded-md p-1',
+                  'text-background/70 transition-colors hover:text-background',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70',
+                )}
+              >
+                <X aria-hidden className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Desktop download progress — a thin inverted-surface bar under the row. */}
+          {showProgress && (
+            <div
+              className="h-1 w-full bg-background/20"
+              role="progressbar"
+              aria-label="Downloading update"
+              aria-valuenow={downloadPercent ?? 0}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full bg-background transition-[width] duration-200 ease-out motion-reduce:transition-none"
+                style={{ width: `${downloadPercent ?? 0}%` }}
+              />
+            </div>
           )}
         </div>
       </div>
