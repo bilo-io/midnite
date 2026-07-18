@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 16/34 | `█████░░░░░` | 47% | E F | G H |
+| [71 · App update banner](phase-71-app-update-banner.md) | 🔄 WIP | 22/34 | `██████░░░░` | 65% | F | G H |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -130,7 +130,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Detection: `useVersionPoll` (~5min + focus + navigation) folded with the SW waiting-worker signal; SW drops silent skipWaiting (survives for user-timed apply); own-origin `/version.json` no-store (PR #455)
 - ✅ **C** — `UpdateBanner` (web): top-of-layout, theme-inverted, **layout push-down not overlay** (nav offsets `top` by `--update-banner-h`), ease-in-out show/hide (reduced-motion aware, genuinely hidden when collapsed), `×` dismiss that re-surfaces on nav, floor removes `×`, mobile + desktop (PR #455)
 - ✅ **D** — Web apply: skipWaiting → controllerchange → force reload on click; hard-reload fallback (pulled forward so C is functional) (PR #455)
-- ◻ **E** — Electron auto-update + code-signing: `electron-updater` publish block + feed, `checkForUpdates`→`downloadUpdate`→`quitAndInstall`, preload `window.midnite.updates` bridge, progress→restart states, notarization/signing (user-timed, never auto-nag)
+- ✅ **E** — Electron auto-update + code-signing: `electron-updater` publish block + feed, `checkForUpdates`→`downloadUpdate`→`quitAndInstall`, preload `window.midnite.updates` bridge, progress→restart states, env-gated notarization/signing (user-timed, never auto-nag) (PR #457)
 - ◻ **F** — Release notes on the version: version link → CHANGELOG-section popover (fallback to release page), optional Phase 21 notification echo
 - ◻ **G** — Release-flow wiring: emit `packages/web/public/version.json` on every tag via `/release-complete` + a moon task, `version-check` guard against a stale manifest
 - ◻ **H** — Channels, force-update floor & CLI notice: stable/beta channel (Phase 43 pref), non-dismissable banner below `minSupported`, `midnite` startup out-of-date notice (fail-soft, `--json`-aware)
