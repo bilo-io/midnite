@@ -9,18 +9,24 @@
     "start": "electron .",
     "rebuild": "electron-rebuild",
     "stage": "tsc -b && node scripts/stage-gateway.mjs",
+    "test": "vitest run",
     "dist": "pnpm stage && electron-builder --mac --config electron-builder.yml",
     "package": "electron-builder --mac --config electron-builder.yml",
     "package:win": "electron-builder --win --config electron-builder.yml",
     "package:linux": "electron-builder --linux --config electron-builder.yml"
   },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@electron/rebuild": "^3.7.0",
     "@midnite/gateway": "workspace:*",
     "@midnite/shared": "workspace:*",
     "@types/node": "^22.10.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
   }
 }

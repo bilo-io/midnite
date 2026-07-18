@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { Notification as MidniteNotification } from '@midnite/shared';
 
+import {
+  UPDATE_CHECK_CHANNEL,
+  UPDATE_DOWNLOAD_CHANNEL,
+  UPDATE_RESTART_CHANNEL,
+  UPDATE_STATE_CHANNEL,
+  type UpdateState,
+} from '../updates/update-state';
+
 // The static web bundle bakes NEXT_PUBLIC_* at build time, so the gateway URL
 // (a dynamic loopback port) is injected here instead. gatewayUrl()/gatewayWsUrl()
 // in the web app prefer window.__NEXT_PUBLIC_GATEWAY_URL when present.
@@ -32,6 +40,28 @@ try {
       return () => {
         ipcRenderer.removeListener(NAVIGATE_CHANNEL, listener);
       };
+    },
+  });
+} catch {
+  // contextIsolation disabled or already exposed — ignore.
+}
+
+// Update bridge: the web UpdateBanner (Phase 71 Theme E) drives electron-updater
+// through here — subscribe to state, then check/download/restart on user clicks.
+// Shape mirrors `UpdatesBridge` in packages/web/lib/desktop-bridge.ts.
+try {
+  contextBridge.exposeInMainWorld('midnite', {
+    updates: {
+      onState: (handler: (state: UpdateState) => void): (() => void) => {
+        const listener = (_event: unknown, state: UpdateState): void => handler(state);
+        ipcRenderer.on(UPDATE_STATE_CHANNEL, listener);
+        return () => {
+          ipcRenderer.removeListener(UPDATE_STATE_CHANNEL, listener);
+        };
+      },
+      check: () => ipcRenderer.send(UPDATE_CHECK_CHANNEL),
+      download: () => ipcRenderer.send(UPDATE_DOWNLOAD_CHANNEL),
+      restartToInstall: () => ipcRenderer.send(UPDATE_RESTART_CHANNEL),
     },
   });
 } catch {
