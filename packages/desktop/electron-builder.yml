@@ -37,6 +37,13 @@ extraResources:
       - '!**/*.tsbuildinfo'
   - from: build-staging/gateway/drizzle
     to: gateway/drizzle
+  # The gateway reads its own version at runtime (portability.service.js does
+  # `require("../../package.json")`, resolving to Resources/gateway/package.json).
+  # pnpm deploy stages this file; without copying it in, the gateway crashes on
+  # boot with "Cannot find module '../../package.json'" and the app shows
+  # "gateway did not become healthy".
+  - from: build-staging/gateway/package.json
+    to: gateway/package.json
   # NB: the gateway hooks (dist/terminal/hooks/*.cjs) are already copied by the
   # `dist → gateway/dist` entry above. Do NOT add a second entry for them — a
   # second copy to the same destination makes electron-builder's hard-link step

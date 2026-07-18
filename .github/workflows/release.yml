@@ -20,9 +20,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Apple-Silicon only: correct x64 native modules need a real macos-13
+          # (Intel) runner, whose queue times were unreliable — dropped the
+          # mac-x64 job and build arm64-only Macs (electron-builder.yml
+          # mac.target arch: [arm64]).
           - { os: macos-14, label: mac-arm64, eb: '--mac --arm64' }
-          - { os: macos-13, label: mac-x64, eb: '--mac --x64' }
-          - { os: windows-latest, label: win-x64, eb: '--win --x64' }
+          # windows-2022 (not windows-latest=2025): @electron/node-gyp's Visual
+          # Studio probe overflows node-gyp's stdout maxBuffer on the 2025 image
+          # ("Could not find any Visual Studio installation"), failing the native
+          # rebuild. VS 2022 on the 2022 image detects cleanly.
+          - { os: windows-2022, label: win-x64, eb: '--win --x64' }
           - { os: ubuntu-latest, label: linux-x64, eb: '--linux --x64' }
     steps:
       - uses: actions/checkout@v4
