@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowUpCircle, RefreshCw, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { ReleaseNotesPopover } from './release-notes-popover';
 
 export type UpdateBannerViewProps = {
   /** Render the banner open (animates in) vs collapsed (animates out). */
@@ -116,15 +117,8 @@ export function UpdateBannerView({
               <span className="font-medium">{headline ?? defaultHeadline}</span>
               <span className="hidden sm:inline">
                 {' — '}
-                {notesUrl ? (
-                  <a
-                    href={notesUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-semibold underline underline-offset-2 hover:opacity-80"
-                  >
-                    {versionLabel}
-                  </a>
+                {latest ? (
+                  <ReleaseNotesPopover version={latest} notesUrl={notesUrl} />
                 ) : (
                   <span className="font-semibold">{versionLabel}</span>
                 )}
