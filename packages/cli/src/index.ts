@@ -86,6 +86,7 @@ import {
 } from './lib/palette.js';
 import { wasReported, withSpinner } from './lib/spinner.js';
 import { isJsonMode, printJson, printJsonError, setJsonMode } from './lib/output.js';
+import { maybeNotifyOutOfDate } from './lib/version-check.js';
 import {
   canPrompt,
   confirmPrompt,
@@ -204,7 +205,8 @@ program
   .version(getVersion())
   .option('--gateway <url>', 'gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)')
   .option('--token <token>', 'bearer token (overrides stored JWT and $MIDNITE_AUTH_TOKEN)')
-  .option('--json', 'machine-readable JSON output (forces colour/spinner/chrome off; errors → stderr)');
+  .option('--json', 'machine-readable JSON output (forces colour/spinner/chrome off; errors → stderr)')
+  .option('--no-update-check', 'skip the "CLI is out of date" startup notice (also $MIDNITE_NO_UPDATE_CHECK)');
 
 // Brand the help output (and the bare-invoke help below) with the entry banner.
 program.addHelpText('beforeAll', () => `${banner()}\n`);
@@ -215,6 +217,9 @@ program.hook('preAction', async () => {
   // Set JSON mode first: it flips NO_COLOR, which the shared `isInteractive()`
   // gate reads to silence colour / spinners / logo for the rest of the run.
   setJsonMode(Boolean(opts.json));
+  // A fail-soft, cached out-of-date heads-up (Phase 71 Theme H) — suppressed in
+  // JSON mode and by --no-update-check / $MIDNITE_NO_UPDATE_CHECK.
+  await maybeNotifyOutOfDate();
   _resolvedToken = await resolveToken(opts.token);
 });
 
@@ -1456,20 +1461,24 @@ program
   });
 
 // Bare `midnite` (no subcommand) → show the branded help instead of commander's
-// "missing command" error.
+// "missing command" error. This path skips the pre-action hook, so surface the
+// out-of-date notice here too (Phase 71 Theme H) before the help + exit.
 if (process.argv.length <= 2) {
-  program.outputHelp();
-  process.exit(0);
+  void (async () => {
+    await maybeNotifyOutOfDate();
+    program.outputHelp();
+    process.exit(0);
+  })();
+} else {
+  program.parseAsync(process.argv).catch((err) => {
+    // Under --json, errors go to stderr as `{ "error": "…" }` so stdout stays clean
+    // (spinners don't print in json mode, so there's nothing already reported).
+    if (isJsonMode()) {
+      printJsonError(err);
+    } else if (!wasReported(err)) {
+      // A failed spinner already printed the message; don't print it twice.
+      console.error(err instanceof Error ? err.message : err);
+    }
+    process.exit(1);
+  });
 }
-
-program.parseAsync(process.argv).catch((err) => {
-  // Under --json, errors go to stderr as `{ "error": "…" }` so stdout stays clean
-  // (spinners don't print in json mode, so there's nothing already reported).
-  if (isJsonMode()) {
-    printJsonError(err);
-  } else if (!wasReported(err)) {
-    // A failed spinner already printed the message; don't print it twice.
-    console.error(err instanceof Error ? err.message : err);
-  }
-  process.exit(1);
-});
