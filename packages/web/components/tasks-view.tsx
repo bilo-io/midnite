@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
@@ -17,10 +16,10 @@ import { DELIVERY_STATES, matchesDelivery } from '@/lib/pr-delivery';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
-import { buttonVariants } from '@midnite/ui';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
+import { HoverExpandButton } from '@/components/hover-expand-button';
 import { useGuardrails } from '@/hooks/use-guardrails';
 import { useConfirm } from '@/components/confirm-dialog';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
@@ -470,6 +469,14 @@ export function TasksView({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
+          {/* Phase 58 B — the dependency DAG (read-only) for the current scope.
+              Icon-only left of search; reveals its label on hover/focus. */}
+          <HoverExpandButton
+            href="/tasks/graph"
+            icon={<Workflow className="h-3.5 w-3.5" />}
+            label="Graph"
+            variant="outline"
+          />
           <SearchBar placeholder="Search tasks" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             {VIEW_OPTIONS.map(({ value, label, Icon }) => (
@@ -487,15 +494,6 @@ export function TasksView({
               </Button>
             ))}
           </div>
-          {/* Phase 58 B — the dependency DAG (read-only) for the current scope. */}
-          <Link
-            href="/tasks/graph"
-            aria-label="View dependency graph"
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-8 gap-1.5')}
-          >
-            <Workflow className="h-3.5 w-3.5" />
-            Graph
-          </Link>
           <Button
             type="button"
             size="sm"
