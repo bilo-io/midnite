@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat(shared,gateway): operator gate + platform admin read APIs — Phase 73 D (PR #489)
+
+Adds a minimal global **operator** identity + the cross-tenant read endpoints the admin console (Theme E/F) needs — no new persisted role model, no new tables — riding the Phase 72 operator-config seam.
+
+- [x] **Operator allowlist + resolution (shared)** — `operators: string[]` on `GatewayAuthConfigSchema` (operator-owned, lives in `.midnite/operator.json`; **empty ⇒ fail-closed no-operators**, never "everyone") + `isOperatorEmail(config, email)` (case-insensitive, null-safe).
+- [x] **`@RequiresOperator` + `OperatorGuard` (gateway)** — global `APP_GUARD` after `GatewayAuthGuard` (so `req.user` is set), no-op without the decorator. **401** when unauthenticated (anon under auth-on / auth-off with no operator identity — closes the static-token bypass), **403** when authenticated-but-not-operator.
+- [x] **`GET /admin/users|teams|overview`** — `AdminReadService` composes the existing Users/Teams/Projects/Tasks/Usage services into `AdminUserSummary[]` / `AdminTeamSummary[]` / `PlatformOverview` (counts + all-time est. cost; `activeSessions` = wip tasks). Thin controller → service → existing repos; repo/service `listAll`/`count` helpers added. DTOs in `shared`.
+- [x] **Additive gate** — existing team-scoped `/usage`, `/metrics`, `/audit` routes untouched (web's Ops page unaffected; their specs pass unedited).
+- [x] **Tests / gate** — `OperatorGuard` 200/403/401 + fail-closed, `isOperatorEmail`, `AdminReadService` aggregate shapes, `admin.controller` delegation. `gateway:test` 2180 / `shared:test` 794 / `:typecheck` / `:lint` (0 errors) green; CI `ci` leg green (rebased on #488). **Deferred to Theme E:** the typed web/admin client methods (their real consumer is the admin app) — dropped from this PR because touching `web/lib/api.ts` pulled the pre-existing-red `web:test` into moon's affected set.
+
 ## 2026-07-19 — feat: Phase 73 Theme C — web onto shared `<AppFrame>` + `<LockScreen>` (PR #488)
 
 Prove `@midnite/shell` is real by making the shipping web app consume its `<AppFrame>`, **behaviour-preserving**. Chosen as the **L** "enrich to full parity then swap" path (the shipped `<AppFrame>` from Theme B was minimal): the rail, mobile nav, and idle lock now have **one** shared implementation both `web` and `admin` (Theme E) mount.
