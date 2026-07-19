@@ -115,7 +115,10 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
   // as the brand block lands. Under reduced motion the hook returns the full
   // string immediately (done=true).
   const showCopy = introAtLeast(intro, 'copy');
-  const { typed: typedTitle, done: titleDone } = useTypewriter(showCopy ? copy.title : '', {
+  // Drop the trailing full stop — the hero title reads as a headline, not a
+  // sentence (the copy set keeps the periods so it stays grammatical as data).
+  const titleText = copy.title.replace(/\.$/, '');
+  const { typed: typedTitle, done: titleDone } = useTypewriter(showCopy ? titleText : '', {
     duration: 900,
     enabled: typewriter,
   });
@@ -170,20 +173,27 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
                 : undefined,
           }}
         >
-          <Image
-            src="/logo.PNG"
-            alt="midnite"
-            width={72}
-            height={72}
-            priority
-            className="h-[72px] w-[72px] rounded-full object-cover ring-1 ring-border"
-          />
+          {/* Round pulsating gradient bloom sits behind the logo icon (::after on
+              the wrapper — replaced <img> elements can't host pseudo-elements). */}
+          <span className="auth-hero-logo-glow relative inline-flex rounded-full">
+            <Image
+              src="/logo.PNG"
+              alt="midnite"
+              width={72}
+              height={72}
+              priority
+              className="h-[72px] w-[72px] rounded-full object-cover ring-1 ring-border"
+            />
+          </span>
           {/* The full wordmark reserves the width (so the centring never shifts
               as glyphs land); the visible copy types out in an overlay. */}
           <span className="relative inline-block">
             <Wordmark className="invisible text-4xl" />
             <span className="absolute inset-y-0 left-0 flex items-center">
-              <Wordmark text={typedWordmark} className="text-4xl text-foreground" />
+              <Wordmark
+                text={typedWordmark}
+                className="auth-hero-wordmark-glow text-4xl text-foreground"
+              />
               {showCaret && (
                 <span
                   aria-hidden
@@ -202,7 +212,7 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
             <span
               aria-hidden
               className={cn(
-                'ml-1 inline-block w-[0.06em] self-stretch bg-[hsl(var(--primary))] text-transparent animate-[blink_1s_step-end_infinite] motion-reduce:animate-none',
+                'auth-hero-caret ml-1.5 inline-block w-[0.12em] self-stretch text-transparent animate-[blink_1s_step-end_infinite] motion-reduce:animate-none',
                 showCopy ? 'opacity-100' : 'opacity-0',
               )}
             >
@@ -211,7 +221,7 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
           </div>
           <p
             className={cn(
-              'mt-5 min-h-[3em] text-lg leading-relaxed text-muted-foreground transition-opacity duration-700 ease-out',
+              'mt-8 min-h-[3em] text-lg leading-relaxed text-muted-foreground transition-opacity duration-700 ease-out',
               showCopy && titleDone ? 'opacity-100' : 'opacity-0',
             )}
           >

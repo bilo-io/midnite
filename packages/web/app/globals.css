@@ -255,6 +255,9 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    /* Descenders (g, y, p) need headroom below the baseline: leading-tight + the
+     * gradient clip crops them otherwise, so pad the block a touch on top/bottom. */
+    padding-block: 0.12em 0.22em;
     text-shadow:
       0 0 24px hsl(var(--primary) / 0.45),
       0 0 52px hsl(var(--primary) / 0.25);
@@ -265,6 +268,49 @@
   }
   @media (prefers-reduced-motion: reduce) {
     html:not([data-motion='full']) .auth-hero-title {
+      animation: none;
+    }
+  }
+
+  /* The title's typing caret: the same accent gradient as the glyphs (clipped to
+   * the bar) with a soft primary glow, thicker than a hairline so it reads as a
+   * deliberate cursor rather than a stray pixel column. */
+  .auth-hero-caret {
+    background-image: var(--accent-gradient, var(--brand-gradient));
+    background-size: 220% 100%;
+    box-shadow:
+      0 0 10px hsl(var(--primary) / 0.5),
+      0 0 22px hsl(var(--primary) / 0.3);
+    border-radius: 1px;
+  }
+
+  /* Pulsating glow behind the auth-hero brand: a round bloom under the logo icon
+   * and a text-glow around the wordmark, both breathing on the same slow cadence. */
+  .auth-hero-logo-glow::after {
+    content: '';
+    position: absolute;
+    inset: -22%;
+    z-index: -1;
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      hsl(var(--primary) / 0.5) 0%,
+      hsl(var(--primary) / 0.18) 45%,
+      transparent 70%
+    );
+    filter: blur(6px);
+    animation: auth-hero-glow-pulse 4s ease-in-out infinite;
+  }
+  .auth-hero-wordmark-glow {
+    animation: auth-hero-wordmark-pulse 4s ease-in-out infinite;
+  }
+  html[data-motion='reduced'] .auth-hero-logo-glow::after,
+  html[data-motion='reduced'] .auth-hero-wordmark-glow {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) .auth-hero-logo-glow::after,
+    html:not([data-motion='full']) .auth-hero-wordmark-glow {
       animation: none;
     }
   }
@@ -669,6 +715,32 @@ html[data-no-glass] *::after {
   }
   to {
     background-position: 100% 0;
+  }
+}
+
+/* Slow "breathing" glow shared by the auth-hero logo bloom and wordmark text-glow. */
+@keyframes auth-hero-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@keyframes auth-hero-wordmark-pulse {
+  0%,
+  100% {
+    text-shadow:
+      0 0 10px hsl(var(--primary) / 0.35),
+      0 0 26px hsl(var(--primary) / 0.15);
+  }
+  50% {
+    text-shadow:
+      0 0 16px hsl(var(--primary) / 0.55),
+      0 0 40px hsl(var(--primary) / 0.3);
   }
 }
 

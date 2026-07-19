@@ -7,7 +7,9 @@ import { SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 // The hero is text-only now — the starfield moved to the layout as a
 // full-viewport backdrop, so there's no canvas to stub here.
 
-const TITLES = AUTH_HERO_COPY.map((c) => c.title);
+// The hero drops the trailing full stop when rendering the title (headline, not
+// a sentence), so compare against the de-punctuated form.
+const TITLES = AUTH_HERO_COPY.map((c) => c.title.replace(/\.$/, ''));
 const SUBTITLES = AUTH_HERO_COPY.map((c) => c.subtitle);
 
 /** Force reduced motion so the typewriter resolves the copy immediately. */
