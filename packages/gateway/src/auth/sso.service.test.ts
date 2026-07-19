@@ -59,7 +59,13 @@ type Harness = {
   users: UsersService;
 };
 
-function makeHarness(): Harness {
+/** The default both-providers sso block; overridable per-test to pin redirect URIs or drop a provider. */
+const DEFAULT_SSO = {
+  google: { clientId: GOOGLE_CLIENT_ID, clientSecretEnv: 'GOOGLE_SECRET' },
+  github: { clientId: 'gh-client-id', clientSecretEnv: 'GITHUB_SECRET' },
+};
+
+function makeHarness(ssoConfig: Record<string, unknown> = DEFAULT_SSO): Harness {
   const sqlite = new Database(':memory:');
   const db = drizzle(sqlite, { schema });
   migrate(db, { migrationsFolder: resolve(__dirname, '../../drizzle') });
@@ -72,14 +78,7 @@ function makeHarness(): Harness {
   const config = parseConfig({
     agent: {},
     terminal: {},
-    gateway: {
-      auth: {
-        sso: {
-          google: { clientId: GOOGLE_CLIENT_ID, clientSecretEnv: 'GOOGLE_SECRET' },
-          github: { clientId: 'gh-client-id', clientSecretEnv: 'GITHUB_SECRET' },
-        },
-      },
-    },
+    gateway: { auth: { sso: ssoConfig } },
   });
 
   const teams = new TeamsService(new TeamsRepository(db));
@@ -198,5 +197,90 @@ describe('SsoService', () => {
 
   it('rejects an expired exchange code', () => {
     expect(() => h.sso.exchangeCode('never-issued')).toThrow(SsoStateInvalidError);
+  });
+
+  // Phase 72 E — a config-pinned `redirectUri` must be the exact string sent to the
+  // provider in BOTH the authorize URL and the token exchange. A mismatch in the latter
+  // is the classic silent go-live failure (auth step succeeds, exchange 400s). Fixtures
+  // cover a local (localhost) and a hosted (https) URI to prove both shapes flow through.
+  describe('pinned redirectUri', () => {
+    const LOCAL_URI = 'http://localhost:7777/auth/sso/google/callback';
+    const HOSTED_URI = 'https://midnite.example.com/auth/sso/github/callback';
+
+    it('pins the configured redirectUri in the Google authorize URL (local fixture)', () => {
+      const h2 = makeHarness({ google: { clientId: GOOGLE_CLIENT_ID, clientSecretEnv: 'GOOGLE_SECRET', redirectUri: LOCAL_URI } });
+      const url = new URL(h2.sso.buildAuthorizationUrl('google', '/board', 'http://gw.test'));
+      expect(url.searchParams.get('redirect_uri')).toBe(LOCAL_URI);
+    });
+
+    it('pins the configured redirectUri in the GitHub authorize URL (hosted fixture)', () => {
+      const h2 = makeHarness({ github: { clientId: 'gh-client-id', clientSecretEnv: 'GITHUB_SECRET', redirectUri: HOSTED_URI } });
+      const url = new URL(h2.sso.buildAuthorizationUrl('github', undefined, 'http://gw.test'));
+      expect(url.searchParams.get('redirect_uri')).toBe(HOSTED_URI);
+    });
+
+    it('sends the pinned redirectUri in the Google token exchange, not the request-derived one', async () => {
+      const h2 = makeHarness({ google: { clientId: GOOGLE_CLIENT_ID, clientSecretEnv: 'GOOGLE_SECRET', redirectUri: LOCAL_URI } });
+      const idToken = await googleIdToken({ sub: 'g-pin', email: 'pin@example.com', email_verified: true });
+      let sentRedirect: string | null = null;
+      vi.stubGlobal('fetch', vi.fn(async (input: unknown, init?: RequestInit) => {
+        const url = String(input instanceof Request ? input.url : input);
+        if (url.startsWith('https://oauth2.googleapis.com/token')) {
+          sentRedirect = new URLSearchParams(String(init?.body)).get('redirect_uri');
+          return json({ id_token: idToken });
+        }
+        throw new Error(`unexpected fetch ${url}`);
+      }));
+      const state = stateFrom(h2.sso.buildAuthorizationUrl('google', undefined, 'http://gw.test'));
+      await h2.sso.handleCallback('google', 'code', state, 'http://gw.test');
+      expect(sentRedirect).toBe(LOCAL_URI);
+    });
+
+    it('sends the pinned redirectUri in the GitHub token exchange, not the request-derived one', async () => {
+      const h2 = makeHarness({ github: { clientId: 'gh-client-id', clientSecretEnv: 'GITHUB_SECRET', redirectUri: HOSTED_URI } });
+      let sentRedirect: string | null = null;
+      vi.stubGlobal('fetch', vi.fn(async (input: unknown, init?: RequestInit) => {
+        const url = String(input instanceof Request ? input.url : input);
+        if (url.startsWith('https://github.com/login/oauth/access_token')) {
+          sentRedirect = new URLSearchParams(String(init?.body)).get('redirect_uri');
+          return json({ access_token: 'gh-token' });
+        }
+        if (url.startsWith('https://api.github.com/user/emails')) return json([{ email: 'octo@example.com', primary: true, verified: true }]);
+        if (url.startsWith('https://api.github.com/user')) return json({ id: 999, login: 'octo' });
+        throw new Error(`unexpected fetch ${url}`);
+      }));
+      const state = stateFrom(h2.sso.buildAuthorizationUrl('github', undefined, 'http://gw.test'));
+      await h2.sso.handleCallback('github', 'code', state, 'http://gw.test');
+      expect(sentRedirect).toBe(HOSTED_URI);
+    });
+
+    it('derives the callback from the request origin when no redirectUri is pinned', () => {
+      const h2 = makeHarness(); // default block, no redirectUri
+      const url = new URL(h2.sso.buildAuthorizationUrl('github', undefined, 'https://gw.host'));
+      expect(url.searchParams.get('redirect_uri')).toBe('https://gw.host/auth/sso/github/callback');
+    });
+  });
+
+  // Phase 72 E — reassert the resolveClient enablement gate against operator-sourced
+  // config: a provider is enabled iff its config block AND its client-secret env are
+  // both present; either missing ⇒ it never appears. (The allowlist gate governing
+  // first-login provisioning is covered in users.service.test.ts.)
+  describe('resolveClient gate (operator-sourced config)', () => {
+    it('enables a provider when its config + secret env are both present', () => {
+      const h2 = makeHarness();
+      expect(h2.sso.enabledProviders().sort()).toEqual(['github', 'google']);
+    });
+
+    it('drops a provider whose config is present but secret env is unset', () => {
+      const h2 = makeHarness();
+      delete process.env['GITHUB_SECRET'];
+      expect(h2.sso.enabledProviders()).toEqual(['google']);
+    });
+
+    it('drops a provider with no config block even when a matching secret env exists', () => {
+      // github omitted from config; GITHUB_SECRET is still set in the environment.
+      const h2 = makeHarness({ google: { clientId: GOOGLE_CLIENT_ID, clientSecretEnv: 'GOOGLE_SECRET' } });
+      expect(h2.sso.enabledProviders()).toEqual(['google']);
+    });
   });
 });

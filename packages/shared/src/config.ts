@@ -196,9 +196,15 @@ export const OAuthClientConfigSchema = z.object({
 // pinned `redirectUri` the provider's app registration expects. Deliberately the
 // *login* seam, distinct from the workflow credential vault's `workflows.oauth`.
 export const SsoProviderConfigSchema = OAuthClientConfigSchema.extend({
-  // The callback URL registered with the provider (e.g.
-  // https://midnite.example.com/auth/sso/google/callback). Optional — when unset the
-  // gateway derives it from the request / `webBaseUrl`; set it to pin an exact match.
+  // The exact callback URL registered with the provider's OAuth app. Pin it so
+  // `sso.service.callbackUri()` never guesses — a redirect-URI mismatch is silent and
+  // fails the token exchange, not the authorize step. One value per provider, per env:
+  //   local:  http://localhost:7777/auth/sso/<provider>/callback   (gateway default port)
+  //   hosted: https://<gateway-host>/auth/sso/<provider>/callback
+  // Register the *same* string in the Google Cloud Console / GitHub OAuth App. GitHub
+  // allows one callback per app, so dev + prod use two separate apps. Optional — when
+  // unset the gateway derives `${requestOrigin}/auth/sso/<provider>/callback` (or
+  // `webBaseUrl` for the browser handoff). Full go-live runbook: docs/SSO.md (Phase 72 F).
   redirectUri: z.string().url().optional(),
 });
 
