@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, GitBranch } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { GithubIcon } from '@midnite/ui';
 
 import { Button } from '@/components/ui/button';
 import { Reveal } from '@/components/ui/section';
@@ -30,7 +31,7 @@ export function Footer() {
               </a>
               <a href={GITHUB_URL} target="_blank" rel="noreferrer">
                 <Button size="lg" variant="outline">
-                  <GitBranch className="h-4 w-4" />
+                  <GithubIcon className="h-4 w-4" />
                   GitHub
                 </Button>
               </a>

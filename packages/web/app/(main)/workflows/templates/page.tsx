@@ -9,7 +9,6 @@ import {
   Clock,
   Database,
   ExternalLink,
-  GitBranch,
   Loader2,
   Package,
   Search,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { WorkflowTemplateSummary, WorkflowTemplateCategory, TemplateSlotsResponse } from '@midnite/shared';
 import { WORKFLOW_TEMPLATE_CATEGORIES } from '@midnite/shared';
+import { GithubIcon } from '@midnite/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/page-header';
@@ -39,7 +39,7 @@ const CATEGORY_META: Record<
   monitoring: { label: 'Monitoring', Icon: Zap },
   notifications: { label: 'Notifications', Icon: Webhook },
   scheduling: { label: 'Scheduling', Icon: Clock },
-  github: { label: 'GitHub', Icon: GitBranch },
+  github: { label: 'GitHub', Icon: GithubIcon },
   ai: { label: 'AI', Icon: Bot },
   data: { label: 'Data', Icon: Database },
 };
