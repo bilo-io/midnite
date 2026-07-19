@@ -6,7 +6,7 @@
 // path is fail-soft: a network error or a missing section yields `null`, and the
 // popover falls back to the docs page + the GitHub releases link.
 
-import { GITHUB_RAW_CHANGELOG_URL } from './site-links';
+import { GITHUB_RAW_CHANGELOG_URL } from '@midnite/shared';
 
 /** Escape a version string for use inside a `RegExp` (dots are the only meta char here). */
 function escapeRegExp(value: string): string {

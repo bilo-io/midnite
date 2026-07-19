@@ -11,7 +11,7 @@ import { LastUsedTag, SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
 import { ssoErrorMessage } from '@/lib/api';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
-import { docsChangelogUrl } from '@/lib/site-links';
+import { docsChangelogUrl } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
 

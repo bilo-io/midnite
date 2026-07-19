@@ -6,7 +6,7 @@ import { ExternalLink, FileText, Loader2 } from 'lucide-react';
 
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { fetchReleaseNotes } from '@/lib/release-notes';
-import { docsChangelogUrl, GITHUB_RELEASES_URL } from '@/lib/site-links';
+import { docsChangelogUrl, GITHUB_RELEASES_URL } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
 type Rect = { top: number; left: number };

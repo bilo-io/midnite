@@ -17,7 +17,7 @@
  * sync when pages are added/renamed under packages/docs/src/content/.
  */
 
-import { DOCS_PAGES_URL } from './site-links';
+import { DOCS_PAGES_URL } from '@midnite/shared';
 
 /**
  * The docs site's base URL (trailing slash trimmed), resolved per environment.

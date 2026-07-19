@@ -9,7 +9,7 @@ import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
 import { PasscodeSetupDialog, ThemeToggle } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
-import { docsChangelogUrl } from '@/lib/site-links';
+import { docsChangelogUrl } from '@midnite/shared';
 import { featuresToNav } from '@/lib/nav-config';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
