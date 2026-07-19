@@ -80,7 +80,9 @@ describe('applyAccent — gradients', () => {
     const g = html.style.getPropertyValue('--accent-gradient');
     expect(g).toContain('linear-gradient');
     // Blue holds to 28% before the transition (extra blue on the purple side).
-    expect(g).toContain(`hsl(${ACCENT_SWATCH_HS.blue.h} ${ACCENT_SWATCH_HS.blue.s}%`);
+    // The brand blue is intentionally deepened + saturated vs. the plain "blue"
+    // swatch (220/90 rather than the swatch's 217/80) for a stronger blue shoulder.
+    expect(g).toContain('hsl(220 90%');
     expect(g).toMatch(/28%/);
     expect(g).toContain(`hsl(${ACCENT_SWATCH_HS.violet.h}`);
     expect(g).toContain(`hsl(${ACCENT_SWATCH_HS.rose.h}`);

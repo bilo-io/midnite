@@ -205,16 +205,17 @@
   /*
    * `--brand-gradient` — a static CSS copy of the signature brand sweep
    * (blue → violet → rose, the `brand` preset in `apply-appearance.ts`:
-   * palette hues 217/80 · 263/70 · 347/75 with the theme-aware lightness
-   * ramp). The auth screen falls back to it when the user's accent is a
+   * hues 220/90 (a deepened, stronger blue) · 263/70 · 347/75 with the
+   * theme-aware lightness ramp). Keep this in lockstep with the brand branch
+   * of `buildAccentCssParts`. The auth screen falls back to it when the user's accent is a
    * *solid* (no `--accent-gradient` set), so the login hero/headings always
    * read as the gradient rather than degrading to a flat primary.
    */
   :root {
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(217 80% 52%) 0%,
-      hsl(217 80% 52%) 28%,
+      hsl(220 90% 47%) 0%,
+      hsl(220 90% 47%) 28%,
       hsl(263 70% 46%) 62%,
       hsl(347 75% 40%) 100%
     );
@@ -222,8 +223,8 @@
   .dark {
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(217 80% 66%) 0%,
-      hsl(217 80% 66%) 28%,
+      hsl(220 88% 59%) 0%,
+      hsl(220 88% 59%) 28%,
       hsl(263 70% 58%) 62%,
       hsl(347 75% 50%) 100%
     );
@@ -240,6 +241,28 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  /*
+   * The update banner's surface: the active primary/accent gradient (falling back
+   * to the brand sweep when no gradient accent is set), gently drifting so the
+   * banner reads as a living brand surface rather than a flat bar. Foreground
+   * content on it is always white (set on the element) — the rule wherever we
+   * paint the primary gradient. Motion is gated for reduced-motion users.
+   */
+  .update-banner-surface {
+    background-image: var(--accent-gradient, var(--brand-gradient));
+    background-size: 220% 100%;
+    background-position: 0% 0;
+    animation: update-banner-flow 9s ease-in-out infinite alternate;
+  }
+  html[data-motion='reduced'] .update-banner-surface {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) .update-banner-surface {
+      animation: none;
+    }
   }
 
   /*
@@ -709,6 +732,16 @@ html[data-no-glass] *::after {
  * across the typed-out title. The title itself types in and the subtitle fades
  * (both driven in JS), so no copy-crossfade keyframe is needed. */
 @keyframes auth-hero-sheen {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+/* The update banner's slow gradient drift (see `.update-banner-surface`). */
+@keyframes update-banner-flow {
   from {
     background-position: 0% 0;
   }

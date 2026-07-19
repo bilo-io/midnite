@@ -74,10 +74,13 @@ export function buildAccentCssParts(
     // holds extra blue before the purple (blue runs to 28% before the transition).
     // Built from the palette hues with a theme-aware lightness ramp; kept
     // self-contained (only `map`/`isDark`/`angleExpr`) for the pre-paint embed.
-    const b = map['blue'] ?? { h: 217, s: 80 };
+    // The brand blue is deepened + saturated relative to the plain "blue" accent
+    // swatch so the signature sweep reads with a stronger, darker blue shoulder
+    // (kept in lockstep with the static `--brand-gradient` in globals.css).
+    const b = { h: 220, s: 90 };
     const v = map['violet'] ?? { h: 263, s: 70 };
     const r = map['rose'] ?? { h: 347, s: 75 };
-    const l0 = isDark ? 66 : 52;
+    const l0 = isDark ? 59 : 47;
     const lm = isDark ? 58 : 46;
     const l1 = isDark ? 50 : 40;
     const g = `linear-gradient(${angleExpr}, hsl(${b.h} ${b.s}% ${l0}%) 0%, hsl(${b.h} ${b.s}% ${l0}%) 28%, hsl(${v.h} ${v.s}% ${lm}%) 62%, hsl(${r.h} ${r.s}% ${l1}%) 100%)`;
