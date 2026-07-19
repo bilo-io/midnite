@@ -1,0 +1,11 @@
+# Next.js build output
+.next/
+out/
+
+# Playwright
+test-results/
+playwright-report/
+.playwright/
+
+# Vitest
+coverage/

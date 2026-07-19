@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat: Phase 73 Theme E — `packages/admin` operator console scaffold (PR #490)
+
+Stand up the standalone **operator console** on the shared `@midnite/shell` frame — a scaffold (frame + nav + login/gate + placeholder pages + minimal settings + tests); page content is Theme F.
+
+- [x] **New `packages/admin`** — client-only Next.js App Router app, **static export** (`output:'export'`, 11 routes prerendered), auto-registered via the `packages/*` glob. Depends only on `@midnite/shell` + `@midnite/ui` + `@midnite/shared`; `src/boundary.test.ts` forbids `@midnite/{web,gateway,cli,desktop,site}` + relative escapes. Minimal fonts (wordmark only).
+- [x] **Shell mount** — `<ShellProviders>` (ThemeProvider + QueryClient) + `<AppFrame>` with a fixed admin nav (Overview / Usage / Users & teams / Projects / Versions / Audit / Links), Next `<Link>`, brand + footer slots, idle `<LockScreen>`; appearance runtime + starfield from shell. Tailwind scans `ui/src` + `shell/src` so the rail classes generate.
+- [x] **Operator gate (thin seam → Theme D)** — `useIsOperator()` probes the operator-gated `GET /admin/overview`: 200 ⇒ operator, 403 ⇒ signed-in non-operator (clean "not an operator" screen + sign-out), else ⇒ loading. Unauthenticated ⇒ themed SSO login on the starfield.
+- [x] **Minimal Settings** (appearance + screen-lock) + a minimal `lib/api.ts` (reads `NEXT_PUBLIC_GATEWAY_URL`; session via `GET /auth/me` cross-origin with `credentials:'include'` — a static export can't ship web's `/api/auth/*` BFF).
+- [x] Gate: `:typecheck` (16 tasks) · `:lint` · `admin:build` · `admin:test` (3) green; Playwright `nav.e2e` (operator navigates rail; non-operator gate) passes. **Follow-up for Theme F:** confirm gateway CORS allows credentialed cross-origin requests from the admin origin. Themes F–G remain.
+
 ## 2026-07-19 — feat(shared,gateway): operator gate + platform admin read APIs — Phase 73 D (PR #489)
 
 Adds a minimal global **operator** identity + the cross-tenant read endpoints the admin console (Theme E/F) needs — no new persisted role model, no new tables — riding the Phase 72 operator-config seam.
