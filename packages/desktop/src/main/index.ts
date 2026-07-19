@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { findFreePort, startGatewayProcess, stopGatewayProcess } from './gateway-process';
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
@@ -55,6 +55,24 @@ async function boot(): Promise<void> {
     },
   });
   win.once('ready-to-show', () => win?.show());
+
+  // Phase 74 Theme D — external links open in the system browser, not a bare
+  // in-app window. The web app only uses `window.open(_blank)` for external
+  // hand-offs (assistant Docs + the new Report-issue link); in-app navigation
+  // goes through the router (a top-frame load, not window.open), so it never
+  // reaches this handler. Guardrail: only http(s) origins are handed to the OS —
+  // a malformed URL or a non-web scheme (file:, custom) is denied and dropped.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const { protocol } = new URL(url);
+      if (protocol === 'http:' || protocol === 'https:') {
+        void shell.openExternal(url);
+      }
+    } catch {
+      // Unparseable URL — never hand it to the OS.
+    }
+    return { action: 'deny' };
+  });
 
   if (!healthy) {
     const html = '<h1>midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>';
