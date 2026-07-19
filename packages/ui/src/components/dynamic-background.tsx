@@ -1,8 +1,31 @@
 'use client';
 
 import { useEffect, useRef, type CSSProperties } from 'react';
-import type { BackgroundPattern } from '@midnite/shared';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/cn';
+
+/**
+ * The decorative backdrop patterns this canvas can draw. `@midnite/ui` is a
+ * strict leaf (see `boundary.test.ts`) and cannot import from another in-repo
+ * package — not even a type — so this union is a local copy of `BackgroundPattern`
+ * from `@midnite/shared`, whose `BackgroundPatternSchema`
+ * (packages/shared/src/preferences.ts) is the source of truth. The two are
+ * structurally identical string unions, so a `shared` value passes straight into
+ * this prop; keep them in sync if the enum changes ("copy, don't cross the
+ * boundary" — the same pattern the site uses for favicons).
+ */
+export type BackgroundPattern =
+  | 'starfield'
+  | 'grid'
+  | 'gradient'
+  | 'dots'
+  | 'diagonal-lines'
+  | 'topographic'
+  | 'aurora'
+  | 'plus-cross'
+  | 'waves'
+  | 'grain'
+  | 'blueprint'
+  | 'mesh-gradient';
 
 /**
  * Dynamic (cursor-reactive) background patterns — Settings → Appearance →

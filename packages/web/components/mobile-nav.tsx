@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Menu, Power, Settings, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Feature } from '@/lib/features';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@midnite/ui';
 import { NotificationCenter } from '@/components/notification-center';
 import { useNotifications } from '@/components/notifications-provider';
 

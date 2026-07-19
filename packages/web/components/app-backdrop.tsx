@@ -1,8 +1,7 @@
 'use client';
 
-import { NeuroCloudBackground } from '@midnite/ui';
+import { DynamicBackground, NeuroCloudBackground } from '@midnite/ui';
 
-import { DynamicBackground } from '@/components/dynamic-background';
 import { cn } from '@/lib/utils';
 import { useBackgroundPattern } from '@/lib/use-background-pattern';
 

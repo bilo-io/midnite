@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, Clock, Laptop, Moon, Sun } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
+import { cn } from '../lib/cn';
+import { Button } from './button';
+import { useTheme, type ThemePreference } from '../theme/theme-context';
 
 const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', Icon: Sun },
