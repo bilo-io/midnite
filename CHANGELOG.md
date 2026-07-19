@@ -14,6 +14,49 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.2.0] - 2026-07-19
+
+A big login + identity release: a fully redesigned, branded sign-in experience
+on a living neuro-cloud backdrop, Google/GitHub SSO end-to-end, and an
+in-app update system.
+
+### Added
+
+- **Redesigned login** — a split-screen, branded sign-in: an animated
+  **neuro-cloud** starfield backdrop (firing "thought paths", a cursor gravity
+  well, and press-to-gather / release-to-scatter interaction), a typed-out hero
+  wordmark + cycling marketing copy with an entry choreography, floating-label
+  inputs, an email-reveal form in a frosted-glass panel, and a remembered
+  "last used" sign-in method.
+- **Google & GitHub SSO** — end-to-end single sign-on: gateway SSO config with a
+  fail-closed boot check, identity persistence, the SSO auth flow
+  (`SsoService`/`SsoController`), and first-class "Continue with Google / GitHub"
+  buttons on the login + register pages.
+- **Neuro-cloud everywhere** — the same starfield is now the backdrop on the
+  **screensaver** and the **landing home**, not just login.
+- **In-app updates** — an update banner with release notes, per-platform update
+  handling, update **channels** + a force-update floor, a CLI out-of-date notice,
+  a `version.json` freshness guard emitted on release, and Electron
+  **auto-update + code-signing** for the desktop app.
+- **Landing & header polish** — landing clock moved to top-centre with top-left
+  weather; a top-right header-actions cluster + always-visible avatar; a
+  restyled brand accent gradient; hover-expand control-bar buttons; search moved
+  into the view control bars; collapsible settings categories; and
+  status-coloured last-run badges.
+
+### Fixed
+
+- SSO callback made static-export compatible (unbreaks the web build).
+- Login-screen polish: SSO buttons always visible, header logo, theme toggle, and
+  an unauthenticated → `/login` redirect.
+- Assistant "Docs" link points at the hosted docs; the Guide button plays rather
+  than browsing away.
+
+### Changed
+
+- Docs site: hash-router link fixes, a theme dropdown, accordion navigation, and
+  richer product prose.
+
 ## [0.1.0] - 2026-06-26
 
 The first tagged release. The curated highlights below cover what has landed since
@@ -59,6 +102,7 @@ the initial scaffold.
   `site`, and `desktop` packages, the proto + moon toolchain, `moon ci`, and the
   one-way package-boundary graph (`shared` is the contract).
 
-[Unreleased]: https://github.com/bilo-io/midnite/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/bilo-io/midnite/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bilo-io/midnite/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bilo-io/midnite/releases/tag/v0.1.0
 [0.0.0]: https://github.com/bilo-io/midnite/releases/tag/v0.0.0
