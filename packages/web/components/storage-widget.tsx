@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Database, RefreshCw } from 'lucide-react';
+import { RadialGauge } from '@midnite/ui';
 import { cn } from '@/lib/utils';
-import { RadialGauge } from './radial-gauge';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 

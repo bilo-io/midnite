@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowUpRight, BotMessageSquare } from 'lucide-react';
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
-import { ContextRing } from '@/components/context-ring';
+import { ContextRing } from '@midnite/ui';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import type { ProjectTagInfo } from '@/components/task-card';
