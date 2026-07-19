@@ -70,6 +70,27 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
   const url = githubIssuesNewUrl({ title, body });
   const overflow = url.length > MAX_ISSUE_URL_LENGTH;
 
+  // The URL actually opened stays within GitHub's budget even when the editable
+  // body doesn't: strip the machine env block first, then hard-truncate the text
+  // (binary search on length) with a marker. The hand-off therefore always works
+  // — the warning + Copy-body carry the full text for the user to paste in.
+  const outboundUrl = React.useMemo(() => {
+    if (!overflow) return url;
+    const fits = (b: string) =>
+      githubIssuesNewUrl({ title, body: b }).length <= MAX_ISSUE_URL_LENGTH;
+    const stripped = stripEnvironment(body);
+    if (fits(stripped)) return githubIssuesNewUrl({ title, body: stripped });
+    const marker = '\n\n_(truncated — use “Copy body” for the full report)_';
+    let lo = 0;
+    let hi = stripped.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (fits(stripped.slice(0, mid) + marker)) lo = mid;
+      else hi = mid - 1;
+    }
+    return githubIssuesNewUrl({ title, body: stripped.slice(0, lo) + marker });
+  }, [overflow, url, title, body]);
+
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const titleRef = React.useRef<HTMLInputElement>(null);
 
@@ -108,7 +129,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   const openOnGitHub = () => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(outboundUrl, '_blank', 'noopener,noreferrer');
     onClose();
   };
 
@@ -183,7 +204,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
             )}
           >
             {overflow
-              ? "This report is too long for a GitHub link — shorten it, or use “Copy body” and paste it into the issue after it opens."
+              ? "This report is too long for a GitHub link — it'll open trimmed. Use “Copy body” to grab the full text and paste it into the issue."
               : 'The captured environment details were trimmed to fit GitHub’s URL limit.'}
           </p>
         )}
@@ -197,7 +218,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={openOnGitHub} disabled={overflow}>
+          <Button type="button" size="sm" onClick={openOnGitHub}>
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
             Open on GitHub
           </Button>

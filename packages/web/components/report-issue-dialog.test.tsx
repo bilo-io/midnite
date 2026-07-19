@@ -53,13 +53,19 @@ describe('ReportIssueDialog', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('warns and blocks the hand-off when the body overflows the URL budget', () => {
+  it('warns on overflow but still opens a within-budget (truncated) URL', () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
     render(<ReportIssueDialog onClose={vi.fn()} />);
     fireEvent.change(screen.getByLabelText('Details'), {
-      target: { value: 'x'.repeat(9000) },
+      target: { value: 'x'.repeat(20000) },
     });
     expect(screen.getByRole('alert')).toHaveTextContent(/too long/i);
-    expect(openGitHub()).toBeDisabled();
+    // Open stays enabled — the Copy-body fallback would be pointless otherwise.
+    expect(openGitHub()).toBeEnabled();
+    fireEvent.click(openGitHub());
+    const opened = open.mock.calls[0]![0] as string;
+    expect(opened.length).toBeLessThanOrEqual(8000);
+    expect(new URL(opened).searchParams.get('body')).toContain('truncated');
   });
 
   it('Escape closes the dialog', () => {
