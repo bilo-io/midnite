@@ -30,7 +30,7 @@
 |-------|--------|------|----------|---|--------|--------|
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 9/43 | `██░░░░░░░░` | 21% | B | C D E F G |
-| [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 15/30 | `█████░░░░░` | 50% | — | E F |
+| [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 15/30 | `█████░░░░░` | 50% | E | F |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
