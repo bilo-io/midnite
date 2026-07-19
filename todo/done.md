@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat(web,desktop): report-issue hand-off to GitHub — Phase 74 A–E (PR #481)
+
+Turn "something's broken" into a prefilled GitHub issue in the public `bilo-io/midnite-app` repo, straight from the Phase 66 assistant menu. Pure client-side compose-and-hand-off — no gateway, no token — with an editable preview so nothing leaves the app unseen (the issue is public). Plus a one-line desktop fix so external links open the system browser (also fixes the existing Docs-in-app quirk).
+
+- [x] **A — URL builder + menu entry**: `githubIssuesNewUrl({title,body,labels,template})` + `REPORT_ISSUE_LABELS` (`bug`,`from-app`) + `REPORT_ISSUE_TEMPLATE` + `MAX_ISSUE_URL_LENGTH` in `site-links.ts` (spaces→`%20`, newlines/`#`/unicode survive); lucide `Bug` entry (last, no pill) in the assistant `ENTRIES` + `activate` branch.
+- [x] **B — Editable preview modal** (`report-issue-dialog.tsx`): mirrors `confirm-dialog` (portal-to-body, focus-trap, Escape), editable title + fully-editable body, `window.open` on confirm; oversize → auto-trim env block + warn + Copy-body fallback, and the hand-off opens a budget-fitted (truncated-with-marker) URL so it never dead-ends. Local open-state in `AssistantFab`.
+- [x] **C — Page-context capture** (`report-context.ts`): pure `buildReportContext()` → `{title, body}` with route/version/web-vs-desktop/browser+OS (hand-rolled UA parse)/viewport/theme/connection as a compact `### Environment` markdown table; editable body = the privacy control.
+- [x] **D — Desktop external-open**: `setWindowOpenHandler` → `shell.openExternal` in desktop main for http(s) only (denies + drops other schemes); routes the Report-issue + existing Docs links to the system browser with no web-side branching.
+- [x] **E — Template + docs**: authored `bug_report.md` for `midnite-app` (same `### Environment` headings) + `docs/REPORT_ISSUE.md` cross-repo note, a docs-site page (`app/report-issue.mdx`), and a README section.
+- [x] Tests: `site-links` URL-builder unit, `report-context` builder unit (UA edge/iOS ordering, table, desktop-vs-web, determinism, strip-env), `ReportIssueDialog` RTL (prefill/edit→URL/cancel/overflow-opens-truncated/Escape). Screenshots (menu + dialog, light + dark) in the PR. No gateway/`shared` changes.
+
 ## 2026-07-19 — feat: Phase 73 Theme A — `@midnite/ui` leaf-visual extraction (PR #479)
 
 The critical-path start of Phase 73 (Admin console): move the leaf-safe app visuals into the design-system package so `web` (and, later, `shell` + `admin`) share **one** source instead of duplicating them. Behaviour-preserving — the components render identically; only their package home changed.

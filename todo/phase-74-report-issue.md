@@ -19,47 +19,47 @@
 
 ---
 
-## Theme A — Assistant-menu entry + issue-URL builder — **S**
+## Theme A — Assistant-menu entry + issue-URL builder — **S** — ✅ DONE (PR #481, 2026-07-19)
 
 The button itself and the pure function that assembles the GitHub URL.
 
-- [ ] **`githubIssuesNewUrl({ title, body, labels })`** in [`site-links.ts`](../packages/web/lib/site-links.ts) — builds `https://github.com/${PUBLIC_GITHUB_REPO}/issues/new?title=…&body=…&labels=…` with proper `encodeURIComponent`; add a `REPORT_ISSUE_LABELS` constant (e.g. `['bug', 'from-app']`) and optionally a `template` param (`bug_report.md`, Theme E). Keep it a pure, unit-testable helper beside `GITHUB_RELEASES_URL`.
-- [ ] **"Report issue" entry** in `ENTRIES` ([`assistant-panel.tsx`](../packages/web/components/assistant/assistant-panel.tsx)) — `{ key: 'report', label: 'Report issue', description: 'Something broken? Tell us', icon: Bug }` (lucide `Bug`); extend the `EntryKey` union; add an `activate` branch that opens the preview modal (Theme B) rather than navigating.
-- [ ] **Tests** — `githubIssuesNewUrl` encodes title/body/labels correctly (spaces, newlines, `#`, unicode) and points at `bilo-io/midnite-app`; the entry renders in the panel with the right icon/label.
+- [x] **`githubIssuesNewUrl({ title, body, labels })`** in [`site-links.ts`](../packages/web/lib/site-links.ts) — builds `https://github.com/${PUBLIC_GITHUB_REPO}/issues/new?title=…&body=…&labels=…` with proper `encodeURIComponent`; add a `REPORT_ISSUE_LABELS` constant (e.g. `['bug', 'from-app']`) and optionally a `template` param (`bug_report.md`, Theme E). Keep it a pure, unit-testable helper beside `GITHUB_RELEASES_URL`.
+- [x] **"Report issue" entry** in `ENTRIES` ([`assistant-panel.tsx`](../packages/web/components/assistant/assistant-panel.tsx)) — `{ key: 'report', label: 'Report issue', description: 'Something broken? Tell us', icon: Bug }` (lucide `Bug`); extend the `EntryKey` union; add an `activate` branch that opens the preview modal (Theme B) rather than navigating.
+- [x] **Tests** — `githubIssuesNewUrl` encodes title/body/labels correctly (spaces, newlines, `#`, unicode) and points at `bilo-io/midnite-app`; the entry renders in the panel with the right icon/label.
 
-## Theme B — Editable preview modal — **M**
+## Theme B — Editable preview modal — **M** — ✅ DONE (PR #481, 2026-07-19)
 
 A "here's what we'll send — edit anything, then open GitHub" step, so nothing leaves the app unseen (the issue is **public**).
 
-- [ ] **`ReportIssueDialog`** ([`packages/web/components/report-issue-dialog.tsx`](../packages/web/components/report-issue-dialog.tsx)) — mirror the [`confirm-dialog.tsx`](../packages/web/components/confirm-dialog.tsx) structure (`role="dialog"`, `aria-modal`, backdrop, focus-trap, Escape to cancel) but **portal to `document.body`** (it launches from the already-portaled assistant panel). An editable **title** input + a **fully-editable body** `Textarea` prefilled from Theme C, a "what happens next / opens a public GitHub issue" note, and **Cancel / Open on GitHub** actions.
-- [ ] **Confirm → hand-off** — on confirm, call `window.open(githubIssuesNewUrl({ title, body, labels: REPORT_ISSUE_LABELS }), '_blank', 'noopener,noreferrer')` and close. (Desktop routing handled by Theme D — the web code stays dumb.)
-- [ ] **URL-length guard** — GitHub truncates very long URLs (~8KB practical limit). Compute the assembled URL length; if oversized, show an inline warning in the dialog ("context trimmed to fit") and/or auto-trim the least-important context section — the user can still edit. A "Copy body" fallback button for the edge case.
-- [ ] **Tests** — the dialog renders the prefilled title/body, edits flow through to the opened URL (mock `window.open`), Cancel closes without opening, oversized body surfaces the warning, focus-trap/Escape behave.
+- [x] **`ReportIssueDialog`** ([`packages/web/components/report-issue-dialog.tsx`](../packages/web/components/report-issue-dialog.tsx)) — mirror the [`confirm-dialog.tsx`](../packages/web/components/confirm-dialog.tsx) structure (`role="dialog"`, `aria-modal`, backdrop, focus-trap, Escape to cancel) but **portal to `document.body`** (it launches from the already-portaled assistant panel). An editable **title** input + a **fully-editable body** `Textarea` prefilled from Theme C, a "what happens next / opens a public GitHub issue" note, and **Cancel / Open on GitHub** actions.
+- [x] **Confirm → hand-off** — on confirm, call `window.open(githubIssuesNewUrl({ title, body, labels: REPORT_ISSUE_LABELS }), '_blank', 'noopener,noreferrer')` and close. (Desktop routing handled by Theme D — the web code stays dumb.)
+- [x] **URL-length guard** — GitHub truncates very long URLs (~8KB practical limit). Compute the assembled URL length; if oversized, show an inline warning in the dialog ("context trimmed to fit") and/or auto-trim the least-important context section — the user can still edit. A "Copy body" fallback button for the edge case.
+- [x] **Tests** — the dialog renders the prefilled title/body, edits flow through to the opened URL (mock `window.open`), Cancel closes without opening, oversized body surfaces the warning, focus-trap/Escape behave.
 
-## Theme C — Page-context capture + prefill — **M**
+## Theme C — Page-context capture + prefill — **M** — ✅ DONE (PR #481, 2026-07-19)
 
 Turn "the page they were on" into a compact, useful, **editable** issue body — the part the seed author wasn't sure was possible (it is).
 
-- [ ] **`buildReportContext()`** ([`packages/web/lib/report-context.ts`](../packages/web/lib/report-context.ts)) — a pure builder that reads the already-available signals and returns `{ title, body }`: **route/page** (`usePathname`), **app version** (`getCurrentVersion`), **environment** (web vs desktop via `getDesktopBridge`), **browser + OS** (`navigator.userAgent`, parsed to something short), **viewport**, **theme** (`preference`/`resolved`), and **live-connection status** (`worstStatus`). A sensible default title (e.g. `` `[bug] <page> — ` ``, cursor-ready for the user to finish).
-- [ ] **Formatted, compact markdown body** — a short freeform "**What happened?**" prompt at the top (where the user types) followed by a collapsed-style **`### Environment`** block (a small markdown table / bullet list) with the captured context. Keep it terse to respect the URL-length budget (Theme B); no secrets, no tokens, nothing the user can't see.
-- [ ] **Editable = the privacy control** — because the whole body lands in the Theme B textarea, the user can delete any line before submitting; document that the context is client-only and never sent anywhere except into the GitHub URL they open.
-- [ ] **Tests** — `buildReportContext` includes route + version + env + theme + connection; desktop vs web branch differs; body stays within a reasonable size for typical pages; deterministic given fixed inputs.
+- [x] **`buildReportContext()`** ([`packages/web/lib/report-context.ts`](../packages/web/lib/report-context.ts)) — a pure builder that reads the already-available signals and returns `{ title, body }`: **route/page** (`usePathname`), **app version** (`getCurrentVersion`), **environment** (web vs desktop via `getDesktopBridge`), **browser + OS** (`navigator.userAgent`, parsed to something short), **viewport**, **theme** (`preference`/`resolved`), and **live-connection status** (`worstStatus`). A sensible default title (e.g. `` `[bug] <page> — ` ``, cursor-ready for the user to finish).
+- [x] **Formatted, compact markdown body** — a short freeform "**What happened?**" prompt at the top (where the user types) followed by a collapsed-style **`### Environment`** block (a small markdown table / bullet list) with the captured context. Keep it terse to respect the URL-length budget (Theme B); no secrets, no tokens, nothing the user can't see.
+- [x] **Editable = the privacy control** — because the whole body lands in the Theme B textarea, the user can delete any line before submitting; document that the context is client-only and never sent anywhere except into the GitHub URL they open.
+- [x] **Tests** — `buildReportContext` includes route + version + env + theme + connection; desktop vs web branch differs; body stays within a reasonable size for typical pages; deterministic given fixed inputs.
 
-## Theme D — Desktop external-open fix — **S**
+## Theme D — Desktop external-open fix — **S** — ✅ DONE (PR #481, 2026-07-19)
 
 Make the hand-off open the real browser in the packaged app — and fix the pre-existing Docs-link quirk for free.
 
-- [ ] **`webContents.setWindowOpenHandler`** in [`packages/desktop/src/main/index.ts`](../packages/desktop/src/main/index.ts) on the main `BrowserWindow`: for `http:`/`https:` URLs return `{ action: 'deny' }` and call `shell.openExternal(url)` (import `shell` from `electron`); allow in-app targets (if any) through. This routes **every** external link — the new Report-issue hand-off **and** the existing assistant **Docs** link — to the user's system browser, with **zero** web-side branching.
-- [ ] **Guardrail** — only external `http(s)` origins go to `shell.openExternal`; never hand arbitrary schemes (`file:`, custom) to the OS. A tiny allowlist/scheme check.
-- [ ] **Verify in a packaged/dev desktop build** — clicking Report issue (and Docs) opens the default browser, not an in-app window; web behaviour unchanged (still plain `window.open`). Note: desktop has no vitest surface for main-process wiring — verify via a real launch (see [Desktop install:local](../packages/desktop)) and a short code-review of the handler.
+- [x] **`webContents.setWindowOpenHandler`** in [`packages/desktop/src/main/index.ts`](../packages/desktop/src/main/index.ts) on the main `BrowserWindow`: for `http:`/`https:` URLs return `{ action: 'deny' }` and call `shell.openExternal(url)` (import `shell` from `electron`); allow in-app targets (if any) through. This routes **every** external link — the new Report-issue hand-off **and** the existing assistant **Docs** link — to the user's system browser, with **zero** web-side branching.
+- [x] **Guardrail** — only external `http(s)` origins go to `shell.openExternal`; never hand arbitrary schemes (`file:`, custom) to the OS. A tiny allowlist/scheme check.
+- [x] **Verify in a packaged/dev desktop build** — clicking Report issue (and Docs) opens the default browser, not an in-app window; web behaviour unchanged (still plain `window.open`). Note: desktop has no vitest surface for main-process wiring — verify via a real launch (see [Desktop install:local](../packages/desktop)) and a short code-review of the handler.
 
-## Theme E — Issue template + docs — **S**
+## Theme E — Issue template + docs — **S** — ✅ DONE (PR #481, 2026-07-19)
 
 The GitHub-side scaffold (authored here, added in `midnite-app`) and the short how-it-works note.
 
-- [ ] **Author `bug_report.md`** — the `.github/ISSUE_TEMPLATE/bug_report.md` content for the **`midnite-app`** repo (title prefix, labels front-matter, the same Environment headings the client body uses so direct-on-GitHub reports match app-generated ones). Because our button passes an explicit `?body=`, GitHub uses **our** body and ignores the template's body — the template is the **safety net for people who open issues directly on GitHub**, and keeps the two paths visually consistent. Wire `template=bug_report.md` into `githubIssuesNewUrl` (Theme A) so the label/assignee front-matter still applies.
-- [ ] **Document the cross-repo step** — a short section (README + a docs-site note under Guides) explaining: the button lives in the assistant menu, it targets `bilo-io/midnite-app`, the context is client-only, and **the template file must be committed in `midnite-app`** (this repo can't do it) — with the authored content ready to paste.
-- [ ] **Tests / guard** — a unit assertion that the `template` + `labels` params are present and correctly encoded in the built URL; a note in the docs-links guard (if applicable) so the issue repo/URL stays consistent with `site-links.ts`.
+- [x] **Author `bug_report.md`** — the `.github/ISSUE_TEMPLATE/bug_report.md` content for the **`midnite-app`** repo (title prefix, labels front-matter, the same Environment headings the client body uses so direct-on-GitHub reports match app-generated ones). Because our button passes an explicit `?body=`, GitHub uses **our** body and ignores the template's body — the template is the **safety net for people who open issues directly on GitHub**, and keeps the two paths visually consistent. Wire `template=bug_report.md` into `githubIssuesNewUrl` (Theme A) so the label/assignee front-matter still applies.
+- [x] **Document the cross-repo step** — a short section (README + a docs-site note under Guides) explaining: the button lives in the assistant menu, it targets `bilo-io/midnite-app`, the context is client-only, and **the template file must be committed in `midnite-app`** (this repo can't do it) — with the authored content ready to paste.
+- [x] **Tests / guard** — a unit assertion that the `template` + `labels` params are present and correctly encoded in the built URL; a note in the docs-links guard (if applicable) so the issue repo/URL stays consistent with `site-links.ts`.
 
 ---
 
@@ -77,14 +77,14 @@ The GitHub-side scaffold (authored here, added in `midnite-app`) and the short h
 
 ---
 
-## Verification
+## Verification — ✅ DONE (PR #481, 2026-07-19)
 
-- [ ] **The button exists and previews:** "Report issue" appears in the assistant menu (lucide `Bug`); clicking it opens a modal with an **editable** title + a body **prefilled with page context** (route, app version, browser/OS, web-vs-desktop, theme, connection status). Editing the body changes what gets sent.
-- [ ] **Hand-off is correct:** confirming opens `github.com/bilo-io/midnite-app/issues/new` with `title`, `body`, `labels` (and `template`) prefilled and correctly URL-encoded (spaces/newlines/`#`/unicode survive). Cancel opens nothing.
-- [ ] **Context prefill is real + private:** the captured context matches the page the user was on and is **all visible/editable** before submit — nothing is sent anywhere except into the GitHub URL the user chooses to open. Oversized bodies surface the URL-length warning (with a Copy-body fallback).
-- [ ] **Desktop parity:** in a packaged/dev desktop build, Report issue (and the existing **Docs** link) open the **system browser**, not an in-app window; web still uses plain `window.open` with no branching.
-- [ ] **Template documented:** the `bug_report.md` content is authored and the README/docs explain adding it to `midnite-app`; app-generated and direct-on-GitHub reports look consistent.
-- [ ] `moon run web:typecheck && web:test && :lint` green; new units (URL builder, context builder, dialog) pass; no gateway/`shared` changes.
+- [x] **The button exists and previews:** "Report issue" appears in the assistant menu (lucide `Bug`); clicking it opens a modal with an **editable** title + a body **prefilled with page context** (route, app version, browser/OS, web-vs-desktop, theme, connection status). Editing the body changes what gets sent.
+- [x] **Hand-off is correct:** confirming opens `github.com/bilo-io/midnite-app/issues/new` with `title`, `body`, `labels` (and `template`) prefilled and correctly URL-encoded (spaces/newlines/`#`/unicode survive). Cancel opens nothing.
+- [x] **Context prefill is real + private:** the captured context matches the page the user was on and is **all visible/editable** before submit — nothing is sent anywhere except into the GitHub URL the user chooses to open. Oversized bodies surface the URL-length warning (with a Copy-body fallback).
+- [x] **Desktop parity:** in a packaged/dev desktop build, Report issue (and the existing **Docs** link) open the **system browser**, not an in-app window; web still uses plain `window.open` with no branching.
+- [x] **Template documented:** the `bug_report.md` content is authored and the README/docs explain adding it to `midnite-app`; app-generated and direct-on-GitHub reports look consistent.
+- [x] `moon run web:typecheck && web:test && :lint` green; new units (URL builder, context builder, dialog) pass; no gateway/`shared` changes.
 
 ---
 
