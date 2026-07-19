@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-20 — feat: Phase 73 Theme F2 — admin console pages A (Overview · Usage · Users & teams · Audit)
+
+Fill four of the admin console's placeholder pages with real content over existing gateway APIs (F stays WIP; F3 = Projects/Versions/Links). Admin-only; no shared/web/gateway files touched.
+
+- [x] **Overview** — `GET /admin/overview` → 6 KPI tiles (users/teams/projects/active sessions/all-time + 30d spend), tasks-by-status `BarList`, recent-activity strip from `GET /audit`.
+- [x] **Usage & cost** — `GET /usage/summary` + `/usage/attribution` (dimension: repo/project/task/session) + `/metrics/ops|cycle-time`, behind time-range (7/30/90d) + dimension filters; spend KPIs, `AreaChart` (from `@midnite/ui`), provider `BarList`, attribution `DataTable`, throughput/cycle tiles. `buildSpendSeries` unit-tested.
+- [x] **Users & teams** — `GET /admin/users` + `/admin/teams`; per-user drawer (identity + `GET /audit?userId=`); **full team CRUD** via `/teams` (create/rename/delete + change role + remove member) with `useMutation` cache invalidation + a confirm modal.
+- [x] **Audit** — `GET /audit` viewer with entity/action/user/date filters + offset pagination.
+- [x] Reusable admin primitives added (`data-table`, `bar-list`, `kpi-tile`, `page-header`, `query-states`, `confirm-dialog`, `lib/format`) for F3. All reads via TanStack Query (skeleton/inline-error/empty states); responses validated against shared zod schemas; `credentials:'include'`. Gate: `admin:typecheck`/`lint`/`build` (static export, 11 routes) + `admin:test` 14 + `admin:e2e` 6/6 green. Themes F3 + G remain.
+
 ## 2026-07-19 — feat: Phase 73 Theme F1 — admin-console foundation (charts→ui, site-links→shared, gateway CORS)
 
 Foundation for the Theme F admin pages (F stays WIP; pages land in F2/F3).
