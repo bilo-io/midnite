@@ -22,7 +22,10 @@ desktop-installers/
 *.sqlite-journal
 
 # Local gateway data dir (SQLite DB, WAL, uploads, ad-hoc backups) — never committed
-.midnite/
+.midnite/*
+# Phase 72: the operator config itself stays private, but its redaction-safe
+# sample is committed so operators have a template.
+!.midnite/operator.example.json
 
 .env
 .env.*

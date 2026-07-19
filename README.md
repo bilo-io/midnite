@@ -288,7 +288,15 @@ loopback by default**:
   the terminal WS. Loopback origins (any port) are always allowed; add others
   here. Non-loopback origins are rejected (CORS + a WS `Origin` check) to block
   drive-by pages from driving a terminal.
-- `gateway.auth` — **optional remote-access auth (off by default)**. midnite is
+- `gateway.auth` — **operator-owned; lives outside `midnite.json`** (Phase 72). The
+  whole auth subtree (bearer token, JWT, SSO client IDs, allowlist) is deploy-time
+  operator policy, so it is **not** kept in the committed, user-facing `midnite.json`.
+  It lives in a private, gitignored **`.midnite/operator.json`** (override the path
+  with `MIDNITE_OPERATOR_CONFIG`), deep-merged into the same config the gateway reads —
+  see [`.midnite/operator.example.json`](.midnite/operator.example.json) for the shape.
+  Putting any `gateway.auth` key back into `midnite.json` **fails the boot** with a
+  remedy. The fields below are documented as they appear in the operator file:
+  - **optional remote-access auth (off by default)**. midnite is
   local-only out of the box; this is for the rare case you bind it off-loopback.
   - `auth.tokenEnv` (default `MIDNITE_AUTH_TOKEN`) names the env var holding a
     bearer token — the secret is never inlined into committed config. When that

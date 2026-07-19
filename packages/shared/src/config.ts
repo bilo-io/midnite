@@ -257,6 +257,27 @@ export const GatewayAuthConfigSchema = z.object({
   allowlist: z.array(z.string().email()).default([]),
 });
 
+// Phase 72 A — operator-owned config source. The operator's auth wiring (client
+// IDs, redirect URIs, JWT, allowlist) is deploy-time secret-adjacent policy that
+// does NOT belong in the committed, user-facing `midnite.json`. It lives in a
+// private, gitignored `.midnite/operator.json` and is deep-merged into the same
+// typed `MidniteConfig` the whole gateway already reads — so nothing about the
+// `MidniteConfig` shape or its ~10 `config.gateway.auth.*` consumers changes; only
+// the *source* of `gateway.auth` moves. Modelled as a GENERAL operator subtree
+// (currently populating only `gateway.auth`) so a later phase can add other
+// operator-owned fields without another split (Phase 72 decision 9). Every field
+// reuses the existing schema — no new shapes.
+export const OperatorConfigSchema = z
+  .object({
+    gateway: z
+      .object({
+        auth: GatewayAuthConfigSchema.default({}),
+      })
+      .default({}),
+  })
+  .default({});
+export type OperatorConfig = z.infer<typeof OperatorConfigSchema>;
+
 export const GatewayConfigSchema = z.object({
   port: z.number().int().positive().default(7777),
   /** Bind address. Loopback by default — the gateway spawns PTYs, so don't expose it to the network unless you mean to. */

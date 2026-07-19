@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat(shared,gateway): operator config split — Phase 72 A+B (PR #483)
+
+Carve the whole `gateway.auth` subtree out of the committed, user-facing `midnite.json` into a private, gitignored operator-owned source, deep-merged into the same typed `MidniteConfig` every consumer already reads — only the *source* of `gateway.auth` moves, the shape is byte-identical and the ~10 `config.gateway.auth.*` consumers are untouched. Makes it impossible to commit operator client IDs / allowlist by accident.
+
+- [x] **A — loader + schema seam**: `OperatorConfigSchema` (a general operator subtree, currently populating only `gateway.auth`) in `config.ts`; `loadOperatorConfig()` resolving `$MIDNITE_OPERATOR_CONFIG` → else `.midnite/operator.json`; a pure `deepMerge`; both `loadConfig`/`loadConfigFromFile` layer the operator auth on top before a single `parseConfig`. Precedence/fail-soft: explicit-missing path throws, default-missing is a no-op (auth stays off), present-but-broken/invalid throws.
+- [x] **B — migrate + fail-closed**: `loadConfig` throws `OperatorAuthInUserConfigError` if `midnite.json` carries any `gateway.auth` key (even `{}`), keyed remedy; stripped `gateway.auth` from the repo `midnite.json`; gateway rethrows (never degrades to defaults) + one-line `operator auth config loaded: providers=[…], jwt=on/off` boot log; committed redaction-safe `.midnite/operator.example.json` (via a `.gitignore` negation) + a local gitignored `.midnite/operator.json` preserving the dev allowlist.
+- [x] Tests: 21 shared `config-loader` specs (deep-merge, env>default precedence, explicit-missing/broken/invalid throw, default-missing no-op, byte-equal to the pre-split inline form, `enabledSsoProviders` over the merge, fail-closed at both entry points, committed-example schema guard). No-regression: gateway 2154 pass / 3 skip unchanged; shared/gateway typecheck + lint green. `midnite.schema.json` doesn't exist in-tree (dangling `$schema` hint), so nothing to strip there. Themes C–F (health-leak redaction, server build target, real OAuth wiring, DX/docs) remain.
+
 ## 2026-07-19 — feat(web,desktop): report-issue hand-off to GitHub — Phase 74 A–E (PR #481)
 
 Turn "something's broken" into a prefilled GitHub issue in the public `bilo-io/midnite-app` repo, straight from the Phase 66 assistant menu. Pure client-side compose-and-hand-off — no gateway, no token — with an editable preview so nothing leaves the app unseen (the issue is public). Plus a one-line desktop fix so external links open the system browser (also fixes the existing Docs-in-app quirk).
