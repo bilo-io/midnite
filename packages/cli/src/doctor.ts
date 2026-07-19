@@ -5,7 +5,9 @@ export interface DoctorRow {
   section: 'preflight' | 'readiness';
   name: string;
   status: PreflightStatus;
-  detail: string;
+  // Optional since Phase 72 C — anonymous /health responses redact it; `doctor`
+  // authenticates so it normally has the detail, but the type must allow absence.
+  detail?: string;
   remedy?: string;
 }
 

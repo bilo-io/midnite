@@ -695,7 +695,7 @@ program
       colWidths: [12, 16, 9, 46],
     });
     for (const r of doctorRows(preflight, readiness)) {
-      table.push([r.section, r.name, paintStatus(r.status), r.detail]);
+      table.push([r.section, r.name, paintStatus(r.status), r.detail ?? '']);
     }
     console.log(table.toString());
 

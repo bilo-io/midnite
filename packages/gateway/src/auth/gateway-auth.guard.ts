@@ -9,13 +9,8 @@ import {
 } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import {
-  isAuthExemptPath,
-  isLoopbackHost,
-  isPublicInboundReceiver,
-  isValidBearer,
-  resolveAuthToken,
-} from './lib/auth-policy';
+import { isAuthExemptPath, isLoopbackHost, isPublicInboundReceiver, resolveAuthToken } from './lib/auth-policy';
+import { authenticateRequest } from './lib/authenticate-request';
 import type { JwtService } from './jwt.service';
 import type { ServiceTokensService } from '../service-tokens/service-tokens.service';
 
@@ -62,40 +57,15 @@ export class GatewayAuthGuard implements CanActivate {
     // The inbound receiver authenticates by provider HMAC, not a session bearer.
     if (isPublicInboundReceiver(req.method, req.url ?? '/')) return true;
 
-    const authHeader = req.headers['authorization'];
-    const bearer = extractBearerToken(authHeader);
-
-    if (bearer && this.jwtSvc?.enabled) {
-      try {
-        const payload = this.jwtSvc.verifyAccessToken(bearer);
-        req.user = { userId: payload.sub, email: payload.email, teamId: payload.teamId ?? null };
-        return true;
-      } catch {
-        // fall through to service-token / static-token check
-      }
-    }
-
-    // Service account tokens: `mnt_<hex>` bearer values issued by /service-tokens.
-    if (bearer && this.serviceTokens) {
-      const st = this.serviceTokens.validate(bearer);
-      if (st) {
-        req.user = {
-          userId: st.createdBy ?? 'service',
-          email: '',
-          teamId: st.teamId ?? null,
-        };
-        return true;
-      }
-    }
-
-    if (this.token && isValidBearer(authHeader, this.token)) return true;
-
-    throw new UnauthorizedException('missing or invalid bearer token');
+    // JWT → service token → static token, via the shared helper the health
+    // controller also uses (Phase 72 C) so the two never disagree on auth.
+    const auth = authenticateRequest(req.headers, {
+      token: this.token,
+      jwtSvc: this.jwtSvc,
+      serviceTokens: this.serviceTokens,
+    });
+    if (!auth) throw new UnauthorizedException('missing or invalid bearer token');
+    if (auth.user) req.user = auth.user;
+    return true;
   }
-}
-
-function extractBearerToken(header: string | string[] | undefined): string | null {
-  const value = Array.isArray(header) ? header[0] : header;
-  if (!value || !value.startsWith('Bearer ')) return null;
-  return value.slice(7).trim() || null;
 }

@@ -39,6 +39,31 @@ tasks:
       - '.next'
       - 'out'
 
+  # Phase 72 D — hosted "server" build: MIDNITE_WEB_TARGET=server drops
+  # output:'export' so the /api/auth/* BFF route handlers build + run. This is the
+  # artifact a hosted deploy consumes (`next start`); the default `build` above
+  # stays static so desktop packaging is byte-for-byte unchanged. Emits only .next
+  # (no out/), since there is no static export in server mode.
+  build-server:
+    command: 'pnpm exec next build'
+    env:
+      MIDNITE_WEB_TARGET: 'server'
+    deps:
+      - 'root:install'
+      - '^:build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'public/**/*'
+      - 'next.config.mjs'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+      - 'tsconfig.json'
+    outputs:
+      - '.next'
+
   start:
     command: 'pnpm exec next start -p 3000'
     preset: 'server'
