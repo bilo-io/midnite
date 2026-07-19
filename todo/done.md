@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat(gateway,cli): SSO DX, readiness & docs (turnkey go-live) — Phase 72 F (PR #487)
+
+Make first-time SSO go-live foolproof, local + hosted, and surface readiness where an operator looks. Closes Phase 72's autonomous scope — only the human OAuth-app registration (Theme E) remains.
+
+- [x] **Per-provider `midnite doctor` SSO readiness** — split `checkSso()` into one preflight check per configured provider (`sso:google` / `sso:github`), each with its own ready/secret-unset/jwt-off status (no-providers stays a single `sso` ok row). `midnite doctor` renders a dedicated **SSO readiness** section via new `isSsoRow`/`ssoReadinessRows`/`nonSsoRows` helpers. Theme C `checkSso` specs updated to the per-provider shape (+ a github independent-row case); doctor helper tests over each state.
+- [x] **Docs runbook** — new `docs/SSO.md`: register Google + GitHub apps (console links), redirect-URI table (local `:7777` + hosted), operator.json-vs-midnite.json, secret export, local run + hosted `MIDNITE_WEB_TARGET=server`/HTTPS/cookie run, troubleshooting table. Surfaced on the docs-site under **Guides** via the repo's `?raw` import-not-duplicate pattern (renders the repo file → zero drift). Linked from the fail-closed boot error (already) + the corrected README auth section (config now `.midnite/operator.json`, per-provider doctor rows, hosted target).
+- [x] **`.env.example`** — new repo-root grouped + commented sample enumerating `MIDNITE_JWT_SECRET`, the two client secrets, `MIDNITE_SECRET_KEY`, `MIDNITE_OPERATOR_CONFIG`, `MIDNITE_WEB_TARGET`, `NEXT_PUBLIC_GATEWAY_URL` (`.gitignore` already carried the `!.env.example` negation).
+- [x] **Tests / gate** — extended the committed `operator.example.json` schema-guard to also pin per-provider `redirectUri` + `jwt` + `allowlist`; doctor SSO-section state tests. `gateway:test` 2171 · `cli:test` 228 · `shared:test` 791 · `docs:test` 36 + `docs:build` (resolves the `?raw` import) · `:typecheck` + `:lint` (0 errors). CI `ci` leg green. **Remaining (human/operator, at go-live):** register the two real OAuth apps + a live sign-in (Theme E tail).
+
 ## 2026-07-19 — test(gateway): pin SSO redirectUri assertions + resolveClient gate reassert — Phase 72 E code-only (PR #486)
 
 The redirect-URI *code* seam already existed (`SsoProviderConfigSchema.redirectUri` + `sso.service.callbackUri()` pinning). This slice delivers Theme E's **codeable half** — proof-tests + inline docs — so the remaining go-live work is config-and-register, not code. The one silent go-live footgun is a redirect-URI mismatch: the authorize step succeeds, then the token exchange 400s; the tests assert the pinned value is the exact string sent in **both** places.

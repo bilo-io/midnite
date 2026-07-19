@@ -220,6 +220,12 @@ describe('operator config (Phase 72)', () => {
       // Sanity: it advertises both providers + an allowlist so operators see the shape.
       expect(parsed.gateway.auth.sso?.google?.clientId).toBeTruthy();
       expect(parsed.gateway.auth.sso?.github?.clientId).toBeTruthy();
+      // Phase 72 E/F — the sample pins per-provider redirect URIs + JWT + allowlist so
+      // an operator sees every field they must fill (and the redirectUri go-live footgun).
+      expect(parsed.gateway.auth.sso?.google?.redirectUri).toContain('/auth/sso/google/callback');
+      expect(parsed.gateway.auth.sso?.github?.redirectUri).toContain('/auth/sso/github/callback');
+      expect(parsed.gateway.auth.jwt.secretEnv).toBe('MIDNITE_JWT_SECRET');
+      expect(parsed.gateway.auth.allowlist.length).toBeGreaterThan(0);
     });
   });
 });

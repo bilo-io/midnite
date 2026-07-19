@@ -105,36 +105,48 @@ describe('HealthService.bootChecks', () => {
     expect(byName(await svc(config()).bootChecks(), 'secret-key').status).toBe('fail');
   });
 
-  describe('sso (Phase 70 E)', () => {
+  describe('sso (Phase 70 E · per-provider Phase 72 F)', () => {
     const GOOGLE = { clientId: 'g', clientSecretEnv: 'SSO_GOOGLE_SECRET' };
+    const GITHUB = { clientId: 'h', clientSecretEnv: 'SSO_GITHUB_SECRET' };
     afterEach(() => {
       delete process.env['SSO_GOOGLE_SECRET'];
+      delete process.env['SSO_GITHUB_SECRET'];
       delete process.env['MIDNITE_JWT_SECRET'];
     });
 
-    it('is ok when no providers are configured', async () => {
+    it('is a single ok `sso` row when no providers are configured', async () => {
       expect(byName(await svc(config()).bootChecks(), 'sso').status).toBe('ok');
     });
 
-    it('fails closed when a configured provider secret env is unset', async () => {
-      const check = byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso');
+    it('fails closed per-provider when a configured provider secret env is unset', async () => {
+      const check = byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso:google');
       expect(check.status).toBe('fail');
       expect(check.detail).toContain('SSO_GOOGLE_SECRET');
     });
 
-    it('warns when secrets are present but JWT is disabled', async () => {
+    it('warns per-provider when secrets are present but JWT is disabled', async () => {
       process.env['SSO_GOOGLE_SECRET'] = 'shh';
-      expect(byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso').status).toBe(
+      expect(byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso:google').status).toBe(
         'warn',
       );
     });
 
-    it('is ok when secrets and JWT are both set', async () => {
+    it('is ok per-provider when secrets and JWT are both set', async () => {
       process.env['SSO_GOOGLE_SECRET'] = 'shh';
       process.env['MIDNITE_JWT_SECRET'] = 'jwt';
-      expect(byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso').status).toBe(
+      expect(byName(await svc(config({ sso: { google: GOOGLE } })).bootChecks(), 'sso:google').status).toBe(
         'ok',
       );
+    });
+
+    it('emits an independent row per provider (github secret unset, google ready)', async () => {
+      process.env['SSO_GOOGLE_SECRET'] = 'shh';
+      process.env['MIDNITE_JWT_SECRET'] = 'jwt';
+      // github deliberately has no secret exported → fail; google ready → ok.
+      const checks = await svc(config({ sso: { google: GOOGLE, github: GITHUB } })).bootChecks();
+      expect(byName(checks, 'sso:google').status).toBe('ok');
+      expect(byName(checks, 'sso:github').status).toBe('fail');
+      expect(byName(checks, 'sso:github').detail).toContain('SSO_GITHUB_SECRET');
     });
   });
 

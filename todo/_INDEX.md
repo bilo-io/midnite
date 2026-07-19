@@ -30,7 +30,7 @@
 |-------|--------|------|----------|---|--------|--------|
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 9/43 | `██░░░░░░░░` | 21% | B | C D E F G |
-| [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 17/30 | `██████░░░░` | 57% | F | — |
+| [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 21/30 | `███████░░░` | 70% | — | — |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [69 · Lifecycle edges: resume & reply](phase-69-lifecycle-resume-reply.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -152,7 +152,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Redact health readiness leak: `/health/preflight` + `/health/ready` status-only for anon (detail/remedy stripped from every check); full detail behind a valid credential via a shared `authenticateRequest()` extracted from the guard (PR #485)
 - ✅ **D** — Web server build target: `MIDNITE_WEB_TARGET=server` drops `output:'export'` so `/api/auth/*` BFF POST handlers run hosted; `resolveWebOutput` in `lib/web-target.mjs` + `web:build-server` moon task; default static keeps desktop parity (PR #485)
 - ◐ **E** — Real provider wiring & explicit redirect URIs: pinned per-env `redirectUri` seam documented + asserted (authorize URL **and** token exchange, local + hosted fixtures) + `resolveClient` gate reassert — **code/docs/tests landed** (PR #486); the two remaining items (register the real OAuth apps, full local Google + GitHub sign-in verified) are **operator/human-gated at go-live**
-- ◻ **F** — DX, readiness & docs: `operator.example.json` + `.env.example`, `midnite doctor` SSO readiness, `docs/SSO.md` register-apps → local + hosted runbook
+- ✅ **F** — DX, readiness & docs: `.env.example` (grouped) + `midnite doctor` **per-provider** SSO readiness section (`checkSso` split into `sso:google`/`sso:github`) + `docs/SSO.md` register-apps → local + hosted runbook (docs-site Guides via `?raw`) + README auth fixes + schema-guard (PR #487)
 
 ### [Phase 71 — App update banner & per-platform update](phase-71-app-update-banner.md)
 *A build-emitted `version.json` published on every tag, a client that polls + folds in the service-worker signal to detect a newer build, and a prominent-but-subtle theme-inverted **top banner** that lets the user take the update when they choose — web force-refreshes, desktop runs a full `electron-updater` download → restart-to-install. Plus release-notes on the version, stable/beta channel, a force-update floor, and a CLI out-of-date notice. Golive-readiness. Never blindly auto-updates.*

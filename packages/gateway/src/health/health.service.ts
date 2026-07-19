@@ -50,7 +50,7 @@ export class HealthService {
       this.checkConfig(),
       this.checkDatabase(),
       this.checkSecretKey(),
-      this.checkSso(),
+      ...this.checkSso(),
       this.checkAgentCli(),
       this.checkGhCli(),
       this.checkSpawner(),
@@ -171,42 +171,44 @@ export class HealthService {
   }
 
   /**
-   * Login SSO preflight (Phase 70 E). Absent `gateway.auth.sso` ⇒ ok (no providers).
-   * A configured provider whose `clientSecretEnv` resolves to nothing is **fail-closed**
-   * (a half-configured OAuth app shouldn't half-boot). When every secret is present but
-   * JWT is disabled we only **warn**: SSO issues our JWTs, so sign-in would 503 without
-   * `jwt.secretEnv` — a coupling hint, not a secret leak.
+   * Login SSO preflight (Phase 70 E) — **one check per configured provider** (Phase 72 F),
+   * named `sso:google` / `sso:github`, so `midnite doctor` shows each provider's readiness
+   * on its own line rather than an aggregate verdict. Absent `gateway.auth.sso` ⇒ a single
+   * `sso` ok row (no providers). Per provider: a `clientSecretEnv` resolving to nothing is
+   * **fail-closed** (a half-configured OAuth app shouldn't half-boot); a present secret with
+   * JWT disabled only **warns** (SSO issues our JWTs, so sign-in would 503 without
+   * `jwt.secretEnv` — a coupling hint, not a secret leak); both present ⇒ ok.
    */
-  private checkSso(): PreflightCheck {
+  private checkSso(): PreflightCheck[] {
     const auth = this.config.gateway.auth;
     const configured: { provider: string; secretEnv: string }[] = [];
     if (auth.sso?.google) configured.push({ provider: 'google', secretEnv: auth.sso.google.clientSecretEnv });
     if (auth.sso?.github) configured.push({ provider: 'github', secretEnv: auth.sso.github.clientSecretEnv });
     if (configured.length === 0) {
-      return { name: 'sso', status: 'ok', detail: 'no SSO login providers configured' };
+      return [{ name: 'sso', status: 'ok', detail: 'no SSO login providers configured' }];
     }
 
-    const missing = configured.filter((c) => !process.env[c.secretEnv]?.trim());
-    if (missing.length > 0) {
-      const names = missing.map((m) => `${m.provider} (${m.secretEnv})`).join(', ');
-      return {
-        name: 'sso',
-        status: 'fail',
-        detail: `SSO provider client secret env unset: ${names}`,
-        remedy: `set ${missing.map((m) => m.secretEnv).join(' and ')} to the OAuth client secret(s)`,
-      };
-    }
-
-    const providers = configured.map((c) => c.provider).join(', ');
-    if (!process.env[auth.jwt.secretEnv]?.trim()) {
-      return {
-        name: 'sso',
-        status: 'warn',
-        detail: `SSO configured (${providers}) but JWT is disabled — SSO issues our JWTs, so sign-in will 503`,
-        remedy: `set ${auth.jwt.secretEnv} to enable JWT auth (SSO requires it)`,
-      };
-    }
-    return { name: 'sso', status: 'ok', detail: `SSO providers ready: ${providers}` };
+    const jwtEnabled = !!process.env[auth.jwt.secretEnv]?.trim();
+    return configured.map(({ provider, secretEnv }): PreflightCheck => {
+      const name = `sso:${provider}`;
+      if (!process.env[secretEnv]?.trim()) {
+        return {
+          name,
+          status: 'fail',
+          detail: `${provider} SSO client secret env unset: ${secretEnv}`,
+          remedy: `set ${secretEnv} to the ${provider} OAuth client secret`,
+        };
+      }
+      if (!jwtEnabled) {
+        return {
+          name,
+          status: 'warn',
+          detail: `${provider} SSO configured but JWT is disabled — SSO issues our JWTs, so sign-in will 503`,
+          remedy: `set ${auth.jwt.secretEnv} to enable JWT auth (SSO requires it)`,
+        };
+      }
+      return { name, status: 'ok', detail: `${provider} SSO ready` };
+    });
   }
 
   private checkAgentCli(): PreflightCheck {

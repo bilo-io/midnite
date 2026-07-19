@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PreflightReport, Readiness } from '@midnite/shared';
-import { doctorExitCode, doctorRows } from './doctor.js';
+import { doctorExitCode, doctorRows, isSsoRow, nonSsoRows, ssoReadinessRows } from './doctor.js';
 
 const okPreflight: PreflightReport = {
   ok: true,
@@ -24,6 +24,49 @@ describe('doctorRows', () => {
     expect(rows.filter((r) => r.section === 'preflight')).toHaveLength(2);
     expect(rows.filter((r) => r.section === 'readiness')).toHaveLength(1);
     expect(rows.find((r) => r.name === 'gh-cli')?.remedy).toBe('install gh');
+  });
+});
+
+describe('SSO readiness section (Phase 72 F)', () => {
+  // A preflight report with the per-provider SSO rows in each go-live state.
+  const ssoPreflight: PreflightReport = {
+    ok: false,
+    worst: 'fail',
+    checks: [
+      { name: 'config', status: 'ok', detail: 'parsed' },
+      { name: 'sso:google', status: 'ok', detail: 'google SSO ready' },
+      { name: 'sso:github', status: 'fail', detail: 'github SSO client secret env unset: MIDNITE_GITHUB_CLIENT_SECRET', remedy: 'set MIDNITE_GITHUB_CLIENT_SECRET to the github OAuth client secret' },
+    ],
+  };
+
+  it('identifies both the aggregate `sso` row and per-provider `sso:<provider>` rows', () => {
+    expect(isSsoRow({ section: 'preflight', name: 'sso', status: 'ok' })).toBe(true);
+    expect(isSsoRow({ section: 'preflight', name: 'sso:google', status: 'ok' })).toBe(true);
+    expect(isSsoRow({ section: 'preflight', name: 'ssoish', status: 'ok' })).toBe(false);
+    expect(isSsoRow({ section: 'preflight', name: 'database', status: 'ok' })).toBe(false);
+  });
+
+  it('splits SSO rows out of the main table into their own section', () => {
+    expect(ssoReadinessRows(ssoPreflight, okReadiness).map((r) => r.name)).toEqual(['sso:google', 'sso:github']);
+    expect(nonSsoRows(ssoPreflight, okReadiness).some((r) => isSsoRow(r))).toBe(false);
+    // Every row is accounted for across the two partitions (no drops, no dups).
+    expect(
+      nonSsoRows(ssoPreflight, okReadiness).length + ssoReadinessRows(ssoPreflight, okReadiness).length,
+    ).toBe(doctorRows(ssoPreflight, okReadiness).length);
+  });
+
+  it('renders each provider readiness state (ready / secret-unset / jwt-off) from a fixture', () => {
+    const jwtOff: PreflightReport = {
+      ok: false,
+      worst: 'warn',
+      checks: [
+        { name: 'sso:google', status: 'warn', detail: 'google SSO configured but JWT is disabled — SSO issues our JWTs, so sign-in will 503', remedy: 'set MIDNITE_JWT_SECRET to enable JWT auth (SSO requires it)' },
+      ],
+    };
+    const rows = ssoReadinessRows(ssoPreflight, okReadiness);
+    expect(rows.find((r) => r.name === 'sso:google')?.status).toBe('ok');
+    expect(rows.find((r) => r.name === 'sso:github')?.status).toBe('fail');
+    expect(ssoReadinessRows(jwtOff, okReadiness)[0]?.status).toBe('warn');
   });
 });
 

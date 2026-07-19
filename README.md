@@ -329,7 +329,11 @@ Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.par
 ### Setting up Google / GitHub SSO
 
 SSO is opt-in. Register an OAuth app with each provider, point it at the gateway's
-callback, then reference the client secrets by **env-var name** in `midnite.json`.
+callback, then reference the client secrets by **env-var name** in the operator config
+(`.midnite/operator.json`, gitignored — **not** `midnite.json`). This is the quick
+reference; the full **register-apps → local → hosted → troubleshooting** runbook lives
+in **[`docs/SSO.md`](docs/SSO.md)**, and a copyable sample is
+[`.midnite/operator.example.json`](.midnite/operator.example.json) (+ [`.env.example`](.env.example)).
 
 **Prerequisites** — SSO issues midnite's own JWTs over an encrypted OAuth state, so both
 must be set:
@@ -353,7 +357,7 @@ must be set:
 3. Copy the **Client ID**, generate a **Client secret**, and export it, e.g.
    `export MIDNITE_SSO_GITHUB_SECRET=…`.
 
-**3 · Configure `midnite.json`** — reference the secrets by env-var name only:
+**3 · Configure `.midnite/operator.json`** (gitignored operator config) — reference the secrets by env-var name only:
 
 ```jsonc
 {
@@ -378,9 +382,12 @@ must be set:
 ```
 
 Only the providers you list appear as sign-in buttons. Omit `google` or `github` to
-offer just one. On boot, `midnite doctor` / the startup preflight reports an `sso`
-check: **fail** if a listed provider's `clientSecretEnv` is unset, **warn** if JWT is
-disabled, **ok** once both are in place.
+offer just one. On boot, `midnite doctor` reports a **per-provider** readiness row —
+`sso:google` / `sso:github` — in its **SSO readiness** section: **fail** if that
+provider's `clientSecretEnv` is unset, **warn** if JWT is disabled, **ok** once both
+are in place. For a **hosted** deployment (so the browser cookie flow runs), build the
+web app with `MIDNITE_WEB_TARGET=server` and set `NEXT_PUBLIC_GATEWAY_URL` — see
+[`docs/SSO.md`](docs/SSO.md).
 
 The optional `workflows` block configures the [workflow builder](todo/phase-6-workflows-mvp.md). It ships **off** (`enabled: false`); set `enabled: true` to start the engine and its cron scheduler. Workflows run manually, on a cron schedule, on a signed webhook, or on a task event. `webhookBaseUrl` is the public URL used to build copyable webhook trigger URLs; `http.request` nodes may call the gateway's own origin (the demo `/playground/*` API) even on loopback. Secrets are referenced by env-var name (e.g. `encryptionKeyEnv`, OAuth `clientSecretEnv`), never inlined.
 
