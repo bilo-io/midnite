@@ -4,7 +4,7 @@
 // companion repo (bilo-io/midnite-app), which hosts the release binaries and the
 // issue tracker. A private repo can't serve anonymous release downloads.
 export const GITHUB_URL = 'https://github.com/bilo-io/midnite-app';
-// Latest desktop release — the page lists the macOS .dmg assets (arm64 + x64).
+// Latest desktop release — the page lists the macOS .dmg asset (Apple Silicon / arm64).
 export const RELEASES_URL = `${GITHUB_URL}/releases/latest`;
 export const APP_URL = 'https://midnite-web-vision-studios-projects.vercel.app';
 export const DOCS_URL = 'https://midnite-docs-vision-studios-projects.vercel.app';
