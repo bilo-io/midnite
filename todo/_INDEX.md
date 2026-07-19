@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | ◻ TODO | 0/43 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
@@ -124,6 +125,16 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 73 — Admin Console & shared app shell](phase-73-admin-console.md)
+*midnite has every operator surface as **data** (Phase 61 usage/cost, Phase 33 users/teams, Phase 55 projects, Phase 71 versions) but no **app** that composes them. Build a standalone **`packages/admin`** console that looks exactly like `web` by first extracting the reusable shell into a **new `@midnite/shell`** package (pure visuals → leaf `@midnite/ui`), refactoring `web` onto it, then standing `admin` up behind a new **operator** gate — with a **lock screen** (idle re-lock + themed login) on the neuro-cloud starfield/dots. Versions is view-only; two new boundary edges (`ui ◀ shell ◀ {web, admin}`).*
+- ◻ **A** — `@midnite/ui` leaf-visual extraction: move NeuroCloudBackground (starfield), RailShell chrome, DynamicBackground into leaf `ui`; inline `BackgroundPattern` so `boundary.test.ts` stays green; web keeps re-export shims
+- ◻ **B** — `@midnite/shell` package: new mid-tier pkg (deps `shared`+`ui`; `next`/`react-query` peers) — configurable `<AppFrame>` (injected nav config), `<LockScreen>` (idle + login on starfield), Phase 39/68 appearance runtime, provider stack; new boundary test + CLAUDE.md graph
+- ◻ **C** — Refactor `web` onto `<AppFrame>`: web mounts the shell frame with its `FEATURES` nav; appearance + idle lock sourced from shell; behaviour-preserving, `web:test` green
+- ◻ **D** — Operator identity & platform read APIs: `operators` allowlist in `.midnite/operator.json` → `isOperator` + `@RequiresOperator`; new operator-gated `GET /admin/users|teams|overview`; existing team-scoped routes untouched
+- ◻ **E** — `packages/admin` scaffold + shell mount: standalone Next app on `<AppFrame>` w/ admin nav, themed SSO login + idle passcode lock on the starfield; web-only deployable (not desktop)
+- ◻ **F** — Admin sections: Overview KPIs, Usage & cost (Phase 61/22), Users & teams (list + team CRUD/roles), Projects (Phase 55), Versions (view-only + changelog + channels/floor read-only), Audit log, Quick links
+- ◻ **G** — Hardening: ui/shell/admin boundary tests, admin unit/story + operator-gate specs, `docs/ADMIN.md` + shell README, CLAUDE.md boundary graph, green gates
 
 ### [Phase 72 — SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md)
 *Phase 70 built the whole Google/GitHub SSO flow but it's never been turned on, and the config that would turn it on (client IDs, redirect URIs, JWT, allowlist) sits in the **committed, user-facing** `midnite.json`. Carve the whole `gateway.auth` subtree into a **gitignored operator-owned source** (fail-closed if it leaks back), add a **server web-build target** so the BFF auth cookie routes actually run hosted (today `output:'export'` drops them), wire the **two real OAuth apps** with pinned redirect URIs, plug the health-preflight config leak, and ship turnkey DX (samples, `midnite doctor`, a go-live runbook). Makes SSO real, local + hosted; no Firebase.*
