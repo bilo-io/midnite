@@ -60,15 +60,15 @@ A minimal global **operator** gate (no new persisted role model) + the handful o
 - [x] **Leave existing team-scoped routes untouched** — do **not** retro-gate `/usage`, `/metrics`, `/audit` (web's Ops page depends on them); admin's platform-wide views use the new `@RequiresOperator` aggregates instead. This is additive, not a tightening that could break `web`.
 - [x] **Contract + client** — add the admin DTOs (`AdminUserSummary`, `AdminTeamSummary`, `PlatformOverview`) and typed client methods to `shared`'s API client; tests for the operator guard (allowlisted ⇒ 200, non-operator ⇒ 403, anon ⇒ 401) and the aggregate shapes.
 
-## Theme E — `packages/admin` app scaffold + shell mount — **M**
+## Theme E — `packages/admin` app scaffold + shell mount — **M** — ✅ DONE (PR #490, 2026-07-19)
 
 Stand up the standalone console on the shared shell, gated to operators, visually identical to web.
 
-- [ ] **Scaffold `packages/admin`** — a Next.js App Router app (`package.json`, `moon.yml` `dependsOn: [shell, ui, shared]`, `tsconfig`, `next.config.mjs`, Tailwind wired to `@midnite/ui/styles` + shell `appearance.css`), fonts + FOUC theme/appearance init scripts mirroring [web's `app/layout.tsx`](../packages/web/app/layout.tsx). A **client-only** app (talks to the gateway over HTTP/WS like `web`), **not** bundled into desktop.
-- [ ] **Mount `<AppFrame>` + `<ShellProviders>`** with an **admin nav config** (Overview / Usage / Users & teams / Projects / Versions / Audit / Links) — the same rail chrome, theme system, and appearance runtime as web, so it looks native from the first render.
-- [ ] **Operator login gate + idle lock** — the app is gated behind the **themed login** (Phase 70 SSO + the operator allowlist check) rendered on the starfield `<LockScreen>`; a non-operator who authenticates sees a clean "not an operator" state, not a broken app. The **idle re-lock** (passcode) reuses the same `<LockScreen>`. Both use the neuro-cloud starfield/dots — the lock experience the seed asked for.
-- [ ] **Gateway client config** — admin reads `NEXT_PUBLIC_GATEWAY_URL` (same pattern as web's server target) for the API/WS origin; a minimal `lib/api.ts` over `shared`'s typed client. **Settings**: admin gets only the appearance + screen-lock settings it needs (reuse shell/appearance; the full settings framework stays web-owned per scope).
-- [ ] **Build + CI** — `admin:build`/`dev`/`test`/`lint`/`typecheck` moon tasks; register in [`.moon/workspace.yml`](../.moon/workspace.yml); confirm the affected-graph builds `ui`→`shell`→`admin` in order.
+- [x] **Scaffold `packages/admin`** — a Next.js App Router app (`package.json`, `moon.yml` `dependsOn: [shell, ui, shared]`, `tsconfig`, `next.config.mjs`, Tailwind wired to `@midnite/ui/styles` + shell `appearance.css`), fonts + FOUC theme/appearance init scripts mirroring [web's `app/layout.tsx`](../packages/web/app/layout.tsx). A **client-only** app (talks to the gateway over HTTP/WS like `web`), **not** bundled into desktop.
+- [x] **Mount `<AppFrame>` + `<ShellProviders>`** with an **admin nav config** (Overview / Usage / Users & teams / Projects / Versions / Audit / Links) — the same rail chrome, theme system, and appearance runtime as web, so it looks native from the first render.
+- [x] **Operator login gate + idle lock** — the app is gated behind the **themed login** (Phase 70 SSO + the operator allowlist check) rendered on the starfield `<LockScreen>`; a non-operator who authenticates sees a clean "not an operator" state, not a broken app. The **idle re-lock** (passcode) reuses the same `<LockScreen>`. Both use the neuro-cloud starfield/dots — the lock experience the seed asked for.
+- [x] **Gateway client config** — admin reads `NEXT_PUBLIC_GATEWAY_URL` (same pattern as web's server target) for the API/WS origin; a minimal `lib/api.ts` over `shared`'s typed client. **Settings**: admin gets only the appearance + screen-lock settings it needs (reuse shell/appearance; the full settings framework stays web-owned per scope).
+- [x] **Build + CI** — `admin:build`/`dev`/`test`/`lint`/`typecheck` moon tasks; register in [`.moon/workspace.yml`](../.moon/workspace.yml); confirm the affected-graph builds `ui`→`shell`→`admin` in order.
 
 ## Theme F — Admin sections (the operator console payload) — **L**
 

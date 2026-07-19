@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 20/43 | `█████░░░░░` | 47% | E | F G |
+| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 25/43 | `██████░░░░` | 58% | — | F G |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 21/30 | `███████░░░` | 70% | — | — |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
@@ -141,7 +141,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — `@midnite/shell` package (PR #482 foundation + #484 tail): mid-tier pkg + Vite lib build + boundary test (`ui ◀ shell ◀ {web,admin}`), `<AppFrame>` (injected nav, `activePath`), `<LockScreen>` (+`useIdleTimer`), the full appearance runtime (**JS + CSS**, `@midnite/shell/appearance.css`) moved in (web re-points + `@import`s), and `<ShellProviders>`
 - ✅ **C** — Refactor `web` onto `<AppFrame>` (PR #488): `<AppFrame>` enriched to full rail parity (navMode/hover/`--nav-offset`/collapsible sections/tooltips + mobile nav); web mounts it via `AppShellClient` + `FEATURES→NavConfig` adapter; idle lock on shell `<LockScreen>`; `nav-bar`/`mobile-nav` deleted; behaviour-preserving (`nav-sections` + new `screen-lock` e2e green)
 - ✅ **D** — Operator identity & platform read APIs (PR #489): `operators` allowlist on `GatewayAuthConfigSchema` (fail-closed) + `isOperatorEmail`; `@RequiresOperator` + global `OperatorGuard` (401 no-user / 403 non-operator); `AdminReadService` → `GET /admin/users|teams|overview` composing existing services; `AdminUserSummary`/`AdminTeamSummary`/`PlatformOverview` DTOs; team-scoped routes untouched. (typed client methods deferred to Theme E, their consumer)
-- ◻ **E** — `packages/admin` scaffold + shell mount: standalone Next app on `<AppFrame>` w/ admin nav, themed SSO login + idle passcode lock on the starfield; web-only deployable (not desktop)
+- ✅ **E** — `packages/admin` scaffold + shell mount (PR #490): standalone static-export Next app on `<AppFrame>` w/ admin nav (7 routes) + `<ShellProviders>`; themed SSO login + idle lock on the starfield; thin operator gate probing `GET /admin/overview` (Theme D); minimal appearance/lock settings; boundary + smoke + nav-e2e green
 - ◻ **F** — Admin sections: Overview KPIs, Usage & cost (Phase 61/22), Users & teams (list + team CRUD/roles), Projects (Phase 55), Versions (view-only + changelog + channels/floor read-only), Audit log, Quick links
 - ◻ **G** — Hardening: ui/shell/admin boundary tests, admin unit/story + operator-gate specs, `docs/ADMIN.md` + shell README, CLAUDE.md boundary graph, green gates
 
