@@ -20,6 +20,9 @@ export {
 export { LockScreen, type LockScreenProps } from './lock/lock-screen';
 export { useIdleTimer } from './lock/use-idle-timer';
 
+// Provider composition — the app-agnostic frame-level provider stack.
+export { ShellProviders, type ShellProvidersProps } from './providers/shell-providers';
+
 // Appearance runtime — the Phase 39/68 appliers + init script (drives the CSS in
 // `@midnite/shell/appearance.css`).
 export {
