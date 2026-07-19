@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 
-import { NeuroCloudBackground } from './neuro-cloud-background';
+import { NeuroCloudBackground } from '@midnite/ui';
 
 // jsdom has no real 2D context; stub getContext → null so the component takes its
 // early-return path (it must degrade gracefully, never block content).

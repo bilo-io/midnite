@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
  * pointer within an influence radius (~32rem):
  *
  * - dots / grid / diagonal: points and lines are *repulsed* away from the cursor
- * - honeycomb: cells swell near the cursor, decaying with distance
  * - plus-cross / blueprint: a tracking-ruler crosshair follows the cursor
  * - waves: amplitude ripples up around the cursor
  * - topographic: contours bend away, like a peak pushing through the map
@@ -232,42 +231,6 @@ function drawGrid(f: Frame): void {
  * wandering epicentre, each bubble breathes on its own beat, and cells swell
  * hard around the cursor with distance decay.
  */
-function drawHoneycomb(f: Frame): void {
-  const cw = 48;
-  const rh = 18;
-  const r0 = 12;
-  const { ctx } = f;
-  const ex = f.w * (0.5 + 0.35 * Math.sin(f.t * 0.09));
-  const ey = f.h * (0.5 + 0.35 * Math.cos(f.t * 0.07));
-  const path = new Path2D();
-  for (let row = -1; row * rh <= f.h + rh; row++) {
-    const xoff = row % 2 ? cw / 2 : 0;
-    for (let col = -1; col * cw + xoff <= f.w + cw; col++) {
-      const x = col * cw + xoff;
-      const y = row * rh;
-      const hsh = hash2(col, row);
-      const d = Math.hypot(x - f.mx, y - f.my);
-      const pulse = 0.12 * Math.sin(f.t * 1.1 - Math.hypot(x - ex, y - ey) / 90);
-      const scale =
-        1 + 1.15 * fall(d, f.R) * f.s + 0.07 * Math.sin(f.t * 0.8 + hsh * TAU) + pulse;
-      const r = r0 * scale;
-      path.moveTo(x + r, y);
-      path.arc(x, y, r, 0, TAU);
-    }
-  }
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = `hsl(${f.tk.fg} / 0.15)`;
-  ctx.stroke(path);
-  if (f.s > 0.01) {
-    // Bubbles relight around the cursor, plus a faint interior glow so the
-    // swollen cells read as lit from within.
-    ctx.strokeStyle = cursorGradient(f, f.tk.fg, 0.6);
-    ctx.stroke(path);
-    ctx.fillStyle = cursorGradient(f, f.tk.fg, 0.07, 0.7);
-    ctx.fill(path);
-  }
-}
-
 /** Diagonal lines (12px, 45°): lines scroll slowly and bow around the cursor. */
 function drawDiagonal(f: Frame): void {
   const sp = 12;
@@ -720,10 +683,11 @@ function drawMeshGradient(f: Frame, st: EngineState): void {
   );
 }
 
-const RENDERERS: Record<BackgroundPattern, (f: Frame, st: EngineState) => void> = {
+// `starfield` has no canvas renderer here — it's drawn by `NeuroCloudBackground`
+// (the AppBackdrop routes it there), so it's absent from this map by design.
+const RENDERERS: Partial<Record<BackgroundPattern, (f: Frame, st: EngineState) => void>> = {
   dots: drawDots,
   grid: drawGrid,
-  honeycomb: drawHoneycomb,
   'diagonal-lines': drawDiagonal,
   'plus-cross': drawPlusCross,
   blueprint: drawBlueprint,
@@ -807,6 +771,8 @@ export function DynamicBackground({
     let s = 0;
     const t0 = performance.now();
     const state: EngineState = {};
+    // No canvas twin for this pattern (e.g. `starfield`, drawn by
+    // NeuroCloudBackground) — `render?.()` below then just clears each frame.
     const render = RENDERERS[pattern];
 
     let raf = 0;
@@ -824,7 +790,7 @@ export function DynamicBackground({
       s += ((present ? 1 : 0) - s) * 0.06;
       const t = (performance.now() - t0) / 1000;
       ctx.clearRect(0, 0, w, h);
-      render({ ctx, w, h, t, mx, my, s, R, tk }, state);
+      render?.({ ctx, w, h, t, mx, my, s, R, tk }, state);
     };
     raf = requestAnimationFrame(loop);
 

@@ -22,10 +22,8 @@ import {
   UserRound,
   Workflow,
 } from 'lucide-react';
-import { DynamicBackground } from '@/components/dynamic-background';
 import { cn } from '@/lib/utils';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
-import { useBackgroundPattern } from '@/lib/use-background-pattern';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
 
@@ -82,7 +80,6 @@ type PageHeaderProps = {
   /** Icon name — resolved client-side so it can be passed from a Server Component. */
   icon?: PageHeaderIcon;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
-  showGrid?: boolean; // dashboard's decorative bg-grid
   actions?: ReactNode; // right-aligned controls (e.g. a search bar)
 };
 
@@ -92,11 +89,9 @@ export function PageHeader({
   description,
   icon,
   size = 'default',
-  showGrid = false,
   actions,
 }: PageHeaderProps) {
   const scrolled = useScrolled();
-  const { pattern, className: patternClass, dynamic } = useBackgroundPattern();
   const Icon = icon ? ICONS[icon] : null;
 
   // Type the title and subtitle out together. Both run over the same duration so
@@ -126,22 +121,9 @@ export function PageHeader({
           scrolled ? 'py-3' : 'py-6',
         )}
       >
-        {showGrid && (
-          <div
-            aria-hidden
-            // The dynamic canvas replaces the static pattern — keep the wrapper
-            // (positioning + scroll fade) but drop the class and data-bg-target
-            // so the pre-paint CSS doesn't paint underneath the canvas.
-            data-bg-target={dynamic ? undefined : ''}
-            className={cn(
-              !dynamic && patternClass,
-              'pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 transition-opacity duration-300 motion-reduce:transition-none',
-              scrolled ? 'opacity-0' : 'opacity-50',
-            )}
-          >
-            {dynamic && <DynamicBackground pattern={pattern} />}
-          </div>
-        )}
+        {/* The decorative backdrop is now app-wide (`<AppBackdrop/>`), showing
+            the starfield (or the chosen pattern) through this transparent header
+            — no per-header pattern strip needed. */}
 
         {/* Wrap (not overflow) on a phone: if the title + actions can't share a
             row, the actions drop to the next line rather than pushing past the

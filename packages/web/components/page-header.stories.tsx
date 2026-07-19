@@ -33,13 +33,13 @@ export const Default: Story = {
   },
 };
 
-/** The dashboard variant: large title and the decorative background grid. */
+/** The dashboard variant: large title. The decorative backdrop is now app-wide
+ *  (`<AppBackdrop/>`), so the header itself carries no pattern. */
 export const Large: Story = {
   args: {
     title: 'midnite',
     description: 'A multitask orchestrator for Claude Code.',
     size: 'lg',
-    showGrid: true,
   },
 };
 

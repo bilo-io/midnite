@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AccentValueSchema,
+  BACKGROUND_PATTERN_DEFAULT,
   BRAND_ACCENT,
   DEFAULT_USER_PREFERENCES,
   PreferencesResponseSchema,
   SECONDARY_ACCENT_OFF,
   UserPreferencesSchema,
+  coerceBackgroundPattern,
 } from './preferences.js';
 
 describe('UserPreferencesSchema', () => {
@@ -18,7 +20,7 @@ describe('UserPreferencesSchema', () => {
     expect(DEFAULT_USER_PREFERENCES).toEqual({
       theme: 'system',
       navMode: 'auto',
-      backgroundPattern: 'dots',
+      backgroundPattern: 'starfield',
       bgIntensity: 'balanced',
       bgDynamic: true,
       accent: BRAND_ACCENT,
@@ -132,6 +134,30 @@ describe('UserPreferencesSchema', () => {
   it('keeps an arbitrary feature map (loose contract)', () => {
     const prefs = UserPreferencesSchema.parse({ features: { anyKey: true, another: false } });
     expect(prefs.features).toEqual({ anyKey: true, another: false });
+  });
+
+  it('coerces a legacy/unknown backgroundPattern back to the default on parse', () => {
+    // `honeycomb` was removed in the starfield revamp; a stored value must not
+    // reject the whole object or land on an unpaintable pattern.
+    const prefs = UserPreferencesSchema.parse({ backgroundPattern: 'honeycomb' });
+    expect(prefs.backgroundPattern).toBe(BACKGROUND_PATTERN_DEFAULT);
+  });
+});
+
+describe('coerceBackgroundPattern', () => {
+  it('keeps a known pattern', () => {
+    expect(coerceBackgroundPattern('starfield')).toBe('starfield');
+    expect(coerceBackgroundPattern('dots')).toBe('dots');
+  });
+
+  it('falls back to the default for legacy/unknown values', () => {
+    expect(coerceBackgroundPattern('honeycomb')).toBe(BACKGROUND_PATTERN_DEFAULT);
+    expect(coerceBackgroundPattern(undefined)).toBe(BACKGROUND_PATTERN_DEFAULT);
+    expect(coerceBackgroundPattern(42)).toBe(BACKGROUND_PATTERN_DEFAULT);
+  });
+
+  it('defaults to the starfield', () => {
+    expect(BACKGROUND_PATTERN_DEFAULT).toBe('starfield');
   });
 });
 

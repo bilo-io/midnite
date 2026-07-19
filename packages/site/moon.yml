@@ -1,17 +1,25 @@
 $schema: 'https://moonrepo.dev/schemas/project.json'
 language: 'typescript'
 
+# The marketing site consumes @midnite/ui for the shared neuro-cloud starfield
+# backdrop — the `ui ◀── site` edge (alongside web + docs). Vite/Next resolve
+# @midnite/ui to its built dist/, so build it before serving/building/checking.
+dependsOn:
+  - 'ui'
+
 tasks:
   dev:
     command: 'pnpm exec next dev -p 3001'
     preset: 'server'
     deps:
       - 'root:install'
+      - 'ui:build'
 
   build:
     command: 'pnpm exec next build'
     deps:
       - 'root:install'
+      - '^:build'
     inputs:
       - 'app/**/*'
       - 'components/**/*'
@@ -29,6 +37,9 @@ tasks:
 
   typecheck:
     command: 'pnpm exec tsc --noEmit'
+    # tsc resolves @midnite/ui via its dist .d.ts, so build it first.
+    deps:
+      - '^:build'
     inputs:
       - 'app/**/*'
       - 'components/**/*'
@@ -37,6 +48,9 @@ tasks:
 
   test:
     command: 'pnpm exec vitest run'
+    # RTL tests import the built @midnite/ui (dist), so build upstream deps first.
+    deps:
+      - '^:build'
     inputs:
       - 'app/**/*'
       - 'components/**/*'

@@ -10,6 +10,7 @@
  */
 
 import {
+  BACKGROUND_PATTERN_DEFAULT as SHARED_BACKGROUND_PATTERN_DEFAULT,
   BRAND_ACCENT,
   DEFAULT_USER_PREFERENCES,
   SECONDARY_ACCENT_OFF,
@@ -123,15 +124,19 @@ export const NAV_W_COLLAPSED = '3.5rem';
 export const NAV_W_EXPANDED = '16rem';
 
 /**
- * The decorative backdrop drawn behind the home screen, screensaver and the
- * dashboard header. Each maps to a self-contained utility class in globals.css.
+ * The decorative backdrop drawn app-wide (every page), on the dashboard header,
+ * and on the landing/login/screensaver. `starfield` renders the neuro-cloud
+ * canvas (`NeuroCloudBackground`); every other pattern maps to a self-contained
+ * utility class in globals.css. Default lives in `@midnite/shared`.
  */
-export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'dots';
+export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = SHARED_BACKGROUND_PATTERN_DEFAULT;
 
-/** Pattern → CSS utility class drawn at each background site. */
+/** Pattern → CSS utility class drawn at each background site. `starfield` has a
+ *  lightweight CSS twin (for the settings swatch + the pre-hydration frame); the
+ *  live surface swaps in the `NeuroCloudBackground` canvas. */
 export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
+  starfield: 'bg-starfield',
   grid: 'bg-grid',
-  honeycomb: 'bg-honeycomb',
   gradient: 'bg-animated-gradient',
   dots: 'bg-dots',
   'diagonal-lines': 'bg-diagonal-lines',
@@ -145,8 +150,8 @@ export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
 };
 
 export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: string }[] = [
+  { value: 'starfield', label: 'Starfield' },
   { value: 'grid', label: 'Grid' },
-  { value: 'honeycomb', label: 'Honeycomb' },
   { value: 'dots', label: 'Dots' },
   { value: 'diagonal-lines', label: 'Diagonal' },
   { value: 'plus-cross', label: 'Plus' },

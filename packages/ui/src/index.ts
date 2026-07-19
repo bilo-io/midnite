@@ -21,6 +21,7 @@ export {
   type GradientGlowTrigger,
 } from './components/gradient-glow';
 export { Input, type InputProps } from './components/input';
+export { NeuroCloudBackground } from './components/neuro-cloud-background';
 export { Select, type SelectOption } from './components/select';
 export { StyledSelect, ModelComboSelect } from './components/styled-select';
 export { Switch } from './components/switch';

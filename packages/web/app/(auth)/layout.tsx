@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Moon, Sun } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { AuthHero } from '@/components/auth/auth-hero';
-import { NeuroCloudBackground } from '@/components/neuro-cloud-background';
+import { NeuroCloudBackground } from '@midnite/ui';
 import { introAtLeast, useAuthIntro } from '@/components/auth/use-auth-intro';
 import { Wordmark } from '@/components/wordmark';
 import { Button } from '@/components/ui/button';

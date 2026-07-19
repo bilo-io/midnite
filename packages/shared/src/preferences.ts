@@ -28,10 +28,16 @@ export type Theme = z.infer<typeof ThemeSchema>;
 export const NavModeSchema = z.enum(['auto', 'expanded', 'collapsed']);
 export type NavMode = z.infer<typeof NavModeSchema>;
 
-/** Decorative backdrop pattern (home screen, screensaver, dashboard header). */
+/**
+ * Decorative backdrop pattern, drawn app-wide (every page), on the dashboard
+ * header, the landing/login/screensaver, and the marketing + docs sites.
+ * `starfield` (the neuro-cloud galaxy) is the signature default and leads the
+ * list. Legacy values no longer in this enum (e.g. the removed `honeycomb`) are
+ * coerced back to the default on read — see `coerceBackgroundPattern`.
+ */
 export const BackgroundPatternSchema = z.enum([
+  'starfield',
   'grid',
-  'honeycomb',
   'gradient',
   'dots',
   'diagonal-lines',
@@ -44,6 +50,19 @@ export const BackgroundPatternSchema = z.enum([
   'mesh-gradient',
 ]);
 export type BackgroundPattern = z.infer<typeof BackgroundPatternSchema>;
+
+/** The signature default backdrop for fresh installs (single source of truth). */
+export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'starfield';
+
+/**
+ * Coerce a stored/legacy background-pattern value to a known one. A value that
+ * dropped out of the enum (e.g. `honeycomb`, removed in the starfield revamp)
+ * would otherwise hydrate as an unpaintable `data-bg`; fall back to the default.
+ */
+export function coerceBackgroundPattern(value: unknown): BackgroundPattern {
+  const parsed = BackgroundPatternSchema.safeParse(value);
+  return parsed.success ? parsed.data : BACKGROUND_PATTERN_DEFAULT;
+}
 
 /** Visibility level of the animated-gradient backdrop. */
 export const BgIntensitySchema = z.enum(['subtle', 'balanced', 'bold']);
@@ -153,15 +172,15 @@ export type ShimmerDirection = z.infer<typeof ShimmerDirectionSchema>;
 export const UserPreferencesSchema = z.object({
   theme: ThemeSchema.default('system'),
   navMode: NavModeSchema.default('auto'),
-  /** The nebula dots are the signature backdrop — the default for fresh installs. */
-  backgroundPattern: BackgroundPatternSchema.default('dots'),
+  /** The neuro-cloud starfield is the signature backdrop — the default for fresh installs. */
+  backgroundPattern: BackgroundPatternSchema.catch(BACKGROUND_PATTERN_DEFAULT).default(BACKGROUND_PATTERN_DEFAULT),
   bgIntensity: BgIntensitySchema.default('balanced'),
   /**
    * Dynamic motion for the background pattern: when on, the backdrop is drawn on
-   * a canvas with a subtle idle animation and reacts to the cursor (repulsed
-   * dots, swelling honeycomb cells, tracking rulers, drifting gradient clouds).
-   * On by default (the dots nebula is the flagship look); always falls back to
-   * the static pattern under reduced motion.
+   * a canvas with a subtle idle animation and reacts to the cursor (the starfield
+   * fires thought-paths and swirls around the pointer, dots scatter, rulers track,
+   * gradients drift). On by default (the starfield is the flagship look); always
+   * falls back to the static pattern under reduced motion.
    */
   bgDynamic: z.boolean().default(true),
   /**

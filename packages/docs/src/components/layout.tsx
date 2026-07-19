@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Download, GitBranch } from 'lucide-react';
+import { NeuroCloudBackground } from '@midnite/ui';
 
 import type { NavGroup } from '../content/nav';
 import logoUrl from '../assets/logo.png';
@@ -27,8 +28,23 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
     setNavOpen(false);
   }, [pathname]);
 
+  // The neuro-cloud starfield backdrop (shared with the app + marketing site).
+  // Animate unless the visitor prefers reduced motion — the canvas owns no motion
+  // gating of its own. It reads the docs' theme tokens, so it re-tints light↔dark.
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setAnimate(!mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    // `relative isolate` + the opaque `bg-background` base lets the fixed starfield
+    // pin at `-z-10` behind the whole shell while the header/sidebar/prose float over it.
+    <div className="relative isolate min-h-screen bg-background text-foreground">
+      <NeuroCloudBackground animate={animate} className="fixed inset-0 -z-10" />
       <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <button

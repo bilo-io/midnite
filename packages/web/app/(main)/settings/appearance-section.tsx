@@ -237,7 +237,8 @@ export function AppearanceSection() {
       >
         <div className="space-y-4 p-5">
           <p className="text-xs text-muted-foreground">
-            The decorative pattern behind the home screen, screensaver, and dashboard header.
+            The decorative backdrop drawn behind every page — plus the dashboard header, the
+            landing screen, and the screensaver. The starfield adapts to your theme and accent.
           </p>
           <div
             role="radiogroup"
@@ -286,8 +287,8 @@ export function AppearanceSection() {
               <span className="space-y-0.5">
                 <span className="block text-sm font-medium">Dynamic motion</span>
                 <span className="block text-xs text-muted-foreground">
-                  Subtly animate the pattern and let it react to your cursor — dots scatter,
-                  honeycomb cells swell, rulers track, gradients drift like clouds.
+                  Subtly animate the pattern and let it react to your cursor — the starfield
+                  swirls and fires, dots scatter, rulers track, gradients drift like clouds.
                 </span>
               </span>
               <Switch
