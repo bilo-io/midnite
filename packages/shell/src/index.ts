@@ -5,7 +5,7 @@
 // `@midnite/ui`; the data-coupled, wired frame lives here. Consumers also import
 // the appearance CSS layer via the `@midnite/shell/appearance.css` subpath.
 
-// App frame — the injected-nav shell chrome.
+// App frame — the injected-nav shell chrome (fixed rail + mobile nav + padded main).
 export {
   AppFrame,
   isActivePath,
@@ -14,7 +14,12 @@ export {
   type NavItem,
   type NavSection,
   type NavLinkComponent,
+  type RailSlot,
+  type RailSlotContext,
 } from './app-frame';
+
+// Mobile bottom-tab nav — rendered internally by `AppFrame`, exported for typing.
+export { AppMobileNav, type AppMobileNavProps } from './nav/mobile-nav';
 
 // Lock screen — the reusable idle/login lock on the neuro-cloud starfield.
 export { LockScreen, type LockScreenProps } from './lock/lock-screen';
