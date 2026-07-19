@@ -11,7 +11,9 @@ import { LastUsedTag, SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
 import { ssoErrorMessage } from '@/lib/api';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
+import { docsChangelogUrl } from '@/lib/site-links';
 import { cn } from '@/lib/utils';
+import { getCurrentVersion } from '@/lib/version';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -58,9 +60,18 @@ export default function LoginPage() {
 
   return (
     <div className="w-full">
-      <h1 className="mb-6 inline-block text-2xl font-semibold tracking-tight text-accent-gradient">
-        Sign in
-      </h1>
+      <div className="mb-6 flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-accent-gradient">Sign in</h1>
+        <a
+          href={docsChangelogUrl(getCurrentVersion())}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View changelog"
+          className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+        >
+          v{getCurrentVersion()}
+        </a>
+      </div>
       {ssoError && (
         <p
           role="alert"
