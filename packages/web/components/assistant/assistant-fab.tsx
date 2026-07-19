@@ -11,6 +11,8 @@ import { useIsMobile } from '@/hooks/use-media-query';
 import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
 
+import { ReportIssueDialog } from '@/components/report-issue-dialog';
+
 import { AssistantPanel, type AssistantView } from './assistant-panel';
 
 const FOCUSABLE =
@@ -27,6 +29,7 @@ const FOCUSABLE =
 export function AssistantFab() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [view, setView] = useState<AssistantView>('menu');
   const chat = useChatCommand();
   const isMobile = useIsMobile();
@@ -48,6 +51,13 @@ export function AssistantFab() {
     setView('menu');
     chat.reset();
   }, [chat]);
+
+  // Report issue (Phase 74): close the panel, then open the preview dialog. The
+  // dialog owns its own portal + focus-trap; the FAB just holds the open flag.
+  const openReport = useCallback(() => {
+    close();
+    setReportOpen(true);
+  }, [close]);
 
   // Re-point the legacy chat-to-board event at the FAB (Phase 66 Theme D): with
   // chat relocated here, `midnite:open-chat` now opens the panel straight into
@@ -151,7 +161,15 @@ export function AssistantFab() {
             chat={chat}
             isMobile={isMobile}
             headingId={headingId}
+            onReport={openReport}
           />,
+          document.body,
+        )}
+
+      {mounted &&
+        reportOpen &&
+        createPortal(
+          <ReportIssueDialog onClose={() => setReportOpen(false)} />,
           document.body,
         )}
     </>

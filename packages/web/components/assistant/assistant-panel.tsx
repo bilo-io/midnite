@@ -2,7 +2,7 @@
 
 import { forwardRef, type ComponentType } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, ChevronRight, Compass, MessageSquare, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, Bug, ChevronRight, Compass, MessageSquare, Sparkles, X } from 'lucide-react';
 
 import { GradientGlow } from '@midnite/ui';
 
@@ -17,7 +17,7 @@ import { AssistantChat } from './assistant-chat';
 
 export type AssistantView = 'menu' | 'chat' | 'guides';
 
-type EntryKey = 'docs' | 'guide' | 'chat' | 'agent';
+type EntryKey = 'docs' | 'guide' | 'chat' | 'agent' | 'report';
 
 type Entry = {
   key: EntryKey;
@@ -35,6 +35,7 @@ const ENTRIES: readonly Entry[] = [
   { key: 'guide', label: 'Guide', description: 'Play this page — or browse all', icon: Compass },
   { key: 'chat', label: 'Chat', description: 'Change the board in words', icon: MessageSquare, beta: true },
   { key: 'agent', label: 'Agent', description: 'Ask about your fleet', icon: Sparkles, soon: true },
+  { key: 'report', label: 'Report issue', description: 'Something broken? Tell us', icon: Bug },
 ];
 
 type Props = {
@@ -45,6 +46,8 @@ type Props = {
   chat: ChatCommandState;
   isMobile: boolean;
   headingId: string;
+  /** Open the "Report issue" preview dialog (Phase 74); owned by the FAB host. */
+  onReport: () => void;
 };
 
 /**
@@ -56,7 +59,7 @@ type Props = {
  * Escape / outside-click, and focus.
  */
 export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function AssistantPanel(
-  { view, onView, onClose, onKeyDownCapture, chat, isMobile, headingId },
+  { view, onView, onClose, onKeyDownCapture, chat, isMobile, headingId, onReport },
   ref,
 ) {
   const pathname = usePathname();
@@ -70,6 +73,8 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
       onClose();
     } else if (entry.key === 'chat') {
       onView('chat');
+    } else if (entry.key === 'report') {
+      onReport();
     }
     // 'guide' is a split control (see the menu render) — its main area plays the
     // current page's guide and its arrow opens the index; it never routes here.

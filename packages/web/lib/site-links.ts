@@ -59,3 +59,55 @@ export function docsChangelogUrl(version?: string | null): string {
   const base = `${DOCS_URL}/#/changelog`;
   return version ? `${base}?v=${encodeURIComponent(version)}` : base;
 }
+
+// --- Report issue (Phase 74) -----------------------------------------------
+//
+// The assistant menu's "Report issue" entry hands off to a *prefilled* GitHub
+// issue in the PUBLIC companion repo — pure client-side compose, no gateway, no
+// token. The label + template files live in `midnite-app` (see docs/Guides);
+// GitHub silently ignores labels/templates that don't exist yet, so the link is
+// safe to ship before they're committed there.
+
+/** Labels stamped on app-generated reports. `from-app` distinguishes them from
+ * issues opened directly on GitHub (a useful triage signal). */
+export const REPORT_ISSUE_LABELS = ['bug', 'from-app'] as const;
+
+/** The issue-form template the hand-off requests (authored for `midnite-app`,
+ * Phase 74 Theme E). Our explicit `?body=` wins over the template body, but its
+ * front-matter (labels/assignees) still applies. */
+export const REPORT_ISSUE_TEMPLATE = 'bug_report.md';
+
+/**
+ * GitHub truncates very long `issues/new` URLs (~8KB in practice). The dialog
+ * (Phase 74 Theme B) warns + auto-trims the context block when the assembled URL
+ * exceeds this budget, and offers a Copy-body fallback for the freeform tail.
+ */
+export const MAX_ISSUE_URL_LENGTH = 8000;
+
+/**
+ * Build a prefilled `github.com/<repo>/issues/new` URL for the PUBLIC companion
+ * repo. Pure + unit-testable: every field is `encodeURIComponent`-escaped so
+ * spaces, newlines, `#`, and unicode survive the hand-off. `labels`/`template`
+ * default to the report constants; pass `template: null` to omit it.
+ */
+export function githubIssuesNewUrl({
+  title,
+  body,
+  labels = REPORT_ISSUE_LABELS,
+  template = REPORT_ISSUE_TEMPLATE,
+}: {
+  title: string;
+  body: string;
+  labels?: readonly string[];
+  template?: string | null;
+}): string {
+  const params = new URLSearchParams();
+  if (title) params.set('title', title);
+  if (body) params.set('body', body);
+  if (labels.length > 0) params.set('labels', labels.join(','));
+  if (template) params.set('template', template);
+  // URLSearchParams encodes spaces as `+`; GitHub accepts both, but `%20` is the
+  // safer, more universally-understood form for an issue body — normalise it.
+  const query = params.toString().replace(/\+/g, '%20');
+  return `https://github.com/${PUBLIC_GITHUB_REPO}/issues/new?${query}`;
+}
