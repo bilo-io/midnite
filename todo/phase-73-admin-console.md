@@ -70,17 +70,17 @@ Stand up the standalone console on the shared shell, gated to operators, visuall
 - [x] **Gateway client config** — admin reads `NEXT_PUBLIC_GATEWAY_URL` (same pattern as web's server target) for the API/WS origin; a minimal `lib/api.ts` over `shared`'s typed client. **Settings**: admin gets only the appearance + screen-lock settings it needs (reuse shell/appearance; the full settings framework stays web-owned per scope).
 - [x] **Build + CI** — `admin:build`/`dev`/`test`/`lint`/`typecheck` moon tasks; register in [`.moon/workspace.yml`](../.moon/workspace.yml); confirm the affected-graph builds `ui`→`shell`→`admin` in order.
 
-## Theme F — Admin sections (the operator console payload) — **L**
+## Theme F — Admin sections (the operator console payload) — **L** — ✅ DONE (PR #491 foundation, #492 pages A, #493 pages B; 2026-07-20)
 
 The pages themselves — mostly a **read-layer** over existing + Theme D endpoints, composed in shell chrome.
 
-- [ ] **Overview** — a platform dashboard: KPI tiles (users, teams, projects, tasks by status, active sessions) + headline **usage/cost** (Phase 61) + recent activity, from `GET /admin/overview`. The operator's landing page.
-- [ ] **Usage & cost** — compose Phase 61 `GET /usage/summary` + `GET /usage/attribution` (by user/team/project/session) + Phase 22 `GET /metrics/ops|cycle-time` into a drill-downable usage view; reuse `web`'s chart components where they've moved to `ui`, else lightweight equivalents. Time-range + dimension filters.
-- [ ] **Users & teams** — list **all** users (`GET /admin/users`) and **all** teams (`GET /admin/teams`) with membership/roles; **team CRUD + role management** via the existing Phase 33/35 `/teams…` endpoints (create/rename/delete team, change member role, remove member). Per-user drill-down (identity, teams, last activity).
-- [ ] **Projects** — list + inspect projects via Phase 55 `GET /projects…` (progress, task counts, linked repos); read-focused (management stays in web's project cockpit unless trivial).
-- [ ] **Versions & releases (view-only)** — current running version + released versions from the Phase 71 `version.json`/`version.beta.json` manifests, the rendered **CHANGELOG**, and **channels + force-update floor read-only**. **No** write API (that's out of scope) — reads the existing static manifest + [`CHANGELOG.md`](../CHANGELOG.md).
-- [ ] **Audit log** — the Phase 33/35 `GET /audit` viewer (filters: entity/user/action/date, paginated) surfaced for operators.
-- [ ] **Quick links** — a links panel out to the **website**, **web app**, and **docs** (reuse/extend [`lib/site-links.ts`](../packages/web/lib/site-links.ts), moved to `shared` or shell if shared across apps), plus in-app deep links (Ops, board). The small, high-value seed ask.
+- [x] **Overview** — a platform dashboard: KPI tiles (users, teams, projects, tasks by status, active sessions) + headline **usage/cost** (Phase 61) + recent activity, from `GET /admin/overview`. The operator's landing page.
+- [x] **Usage & cost** — compose Phase 61 `GET /usage/summary` + `GET /usage/attribution` (by user/team/project/session) + Phase 22 `GET /metrics/ops|cycle-time` into a drill-downable usage view; reuse `web`'s chart components where they've moved to `ui`, else lightweight equivalents. Time-range + dimension filters.
+- [x] **Users & teams** — list **all** users (`GET /admin/users`) and **all** teams (`GET /admin/teams`) with membership/roles; **team CRUD + role management** via the existing Phase 33/35 `/teams…` endpoints (create/rename/delete team, change member role, remove member). Per-user drill-down (identity, teams, last activity).
+- [x] **Projects** — list + inspect projects via Phase 55 `GET /projects…` (progress, task counts, linked repos); read-focused (management stays in web's project cockpit unless trivial).
+- [x] **Versions & releases (view-only)** — current running version + released versions from the Phase 71 `version.json`/`version.beta.json` manifests, the rendered **CHANGELOG**, and **channels + force-update floor read-only**. **No** write API (that's out of scope) — reads the existing static manifest + [`CHANGELOG.md`](../CHANGELOG.md).
+- [x] **Audit log** — the Phase 33/35 `GET /audit` viewer (filters: entity/user/action/date, paginated) surfaced for operators.
+- [x] **Quick links** — a links panel out to the **website**, **web app**, and **docs** (reuse/extend [`lib/site-links.ts`](../packages/web/lib/site-links.ts), moved to `shared` or shell if shared across apps), plus in-app deep links (Ops, board). The small, high-value seed ask.
 
 ## Theme G — Hardening: tests, docs & boundary enforcement — **M**
 

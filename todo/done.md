@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-20 — feat: Phase 73 Theme F3 — admin console pages B (Projects · Versions · Quick Links) — **completes Theme F 🎉**
+
+The final three admin pages; Theme F (all 7 sections) is done. Admin-only.
+
+- [x] **Projects** — `GET /projects` (`ProjectsPageSchema`) `DataTable` + `GET /projects/:id` (`ProjectSchema`) portal drawer (per-status counts, workDir, `phaseDocSyncRepoId`); completion via shared `projectCompletion`. (`ProjectSchema` has no linked-repos array — surfaced workDir + phaseDocSyncRepoId.)
+- [x] **Versions & releases (view-only)** — running build from `NEXT_PUBLIC_APP_VERSION`; stable/beta channels + force-update floor fetched at runtime from the public GitHub mirror (`PUBLIC_GITHUB_REPO` + `versionManifestFile()`, `VersionManifestSchema`, beta 404 fails soft), below-floor/update badges via shared `isBelowFloor`/`isUpdateAvailable`; **CHANGELOG bundled at build** via an RSC `fs.readFileSync` of repo-root `CHANGELOG.md` (Next static-export safe — verified in `out/`) + a dependency-free markdown parser (`lib/markdown.ts`, unit-tested).
+- [x] **Quick Links** — card grid to Docs/Changelog/GitHub/Releases/Report-issue (from `@midnite/shared` site-links) + in-app deep links; external `target=_blank rel=noopener`.
+- [x] Gate: `admin:typecheck`/`lint`/`build` (static export, 11 routes; changelog bundled) · `admin:test` 22 (8 markdown-parser) · `admin:e2e` 9/9 green. **Follow-up:** promote `site`'s `APP_URL` into `@midnite/shared` site-links so admin can add a "web app" link card. Theme G (hardening) remains.
+
 ## 2026-07-20 — feat: Phase 73 Theme F2 — admin console pages A (Overview · Usage · Users & teams · Audit)
 
 Fill four of the admin console's placeholder pages with real content over existing gateway APIs (F stays WIP; F3 = Projects/Versions/Links). Admin-only; no shared/web/gateway files touched.
