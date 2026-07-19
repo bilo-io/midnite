@@ -19,6 +19,7 @@ midnite is a multitask orchestrator for Claude Code. A long-running **gateway** 
 - `packages/cli/` — commander client; `midnite serve` boots the gateway
 - `packages/web/` — Next.js App Router kanban frontend
 - `packages/ui/` — `@midnite/ui`: reusable component library + design system (generic primitives + design tokens), built with **Vite library mode**. A leaf — depends on nothing else in the repo.
+- `packages/shell/` — `@midnite/shell`: the wired **app shell** both `web` and `admin` mount (Phase 73) — `<AppFrame>` (injected nav config), `<LockScreen>` (idle + login on the starfield), the Phase 39/68 appearance runtime, and shared providers. A **mid-tier** package built with **Vite library mode**: it may depend on `@midnite/shared` + `@midnite/ui` only (`react`/`react-dom`/`next`/`@tanstack/react-query` are peers), never on an app or the gateway.
 - `packages/docs/` — `@midnite/docs`: the static **Vite + React** documentation site (design-system docs + developer docs), authored in **MDX** with live `@midnite/ui` examples. A pure consumer of `@midnite/ui` (Phase 26); never talks to the gateway.
 - `midnite.json` — per-project user config (validated by `shared`)
 - `todo/` — phase checklists + `done.md` log; update as work lands
@@ -33,6 +34,8 @@ shared ◀── cli      (cli also imports from shared, never gateway internals
 shared ◀── web      (web also imports from shared, never gateway internals)
 ui     ◀── web      (ui is a leaf: depends on nothing in-repo)
 ui     ◀── docs     (docs is a pure consumer of ui; later: site may join)
+ui, shared ◀── shell        (shell is mid-tier: depends on ui + shared only)
+shell  ◀── web, admin       (web + admin mount the shell's <AppFrame>)
 ```
 
 - `shared` depends on nothing else in the repo
@@ -40,6 +43,7 @@ ui     ◀── docs     (docs is a pure consumer of ui; later: site may join)
 - `gateway` never imports from `cli` or `web`
 - `ui` (`@midnite/ui`) is a **leaf design-system package** — generic primitives + design tokens. It depends on **nothing** else in the repo (not even `shared`); React is a peer dependency. `web` and `docs` consume it. The library's primitives + tokens migrated in across Phase 25; a boundary test in the package enforces the leaf rule in CI.
 - `docs` (`@midnite/docs`) is a **pure consumer of `@midnite/ui`** (Phase 26) — the static documentation site. It imports only `@midnite/ui` (no `shared`/`gateway`/`web`), never talks to the gateway, and its own boundary test enforces the `ui ◀── docs` leaf edge in CI.
+- `shell` (`@midnite/shell`) is a **mid-tier package** (Phase 73 Theme B) — the wired app frame (`<AppFrame>`, `<LockScreen>`, the Phase 39/68 appearance runtime, shared providers) that `web` and `admin` mount. It may depend on **`@midnite/shared` + `@midnite/ui` only** (`react`/`react-dom`/`next`/`@tanstack/react-query` are peers) — **never** on `web`/`admin`/`gateway`/`cli`/`desktop`/`site`. Its `src/boundary.test.ts` enforces the `ui ◀ shell ◀ {web, admin}` edge in CI.
 - Cross-package types live in `shared`; never duplicate them
 - moon enforces this via `dependsOn` in each `moon.yml`
 

@@ -1,0 +1,54 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+language: 'typescript'
+
+# @midnite/shell is a MID-TIER package (Phase 73 Theme B): the wired app frame
+# both `web` and `admin` mount. It may depend on `@midnite/shared` + `@midnite/ui`
+# ONLY (with react/react-dom/next/react-query as peers) — never on
+# web/admin/gateway/cli/desktop/site. The boundary test in src/boundary.test.ts
+# enforces that edge in CI.
+#
+# Built with Vite library mode (like @midnite/ui) rather than `tsc -b`: it bundles
+# JSX/CSS that tsc won't emit. Typechecking still runs via `tsc --noEmit`.
+dependsOn:
+  - 'ui'
+  - 'shared'
+
+tasks:
+  build:
+    command: 'pnpm exec vite build'
+    deps:
+      - 'root:install'
+      - '^:build'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
+    outputs:
+      - 'dist'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    deps:
+      - '^:build'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
+
+  test:
+    command: 'pnpm exec vitest run'
+    # Tests import the built @midnite/shared + @midnite/ui (dist), so build deps first.
+    deps:
+      - '^:build'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'vitest.setup.ts'
+
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - '/eslint.config.mjs'

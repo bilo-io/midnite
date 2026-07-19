@@ -26,7 +26,7 @@ import {
   applyShimmerDirection,
   applyUiFont,
   coerceAccentValue,
-} from '@/lib/apply-appearance';
+} from '@midnite/shell';
 
 /**
  * Applies global appearance preferences to <html> from persisted settings and keeps

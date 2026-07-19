@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "composite": false,
+    // Declarations come from vite-plugin-dts (the build), not this tsc (which is
+    // `--noEmit` typecheck only). Turning declaration emit off avoids TS2742 on
+    // portably-unnameable dep realpaths under pnpm — same fix web/ui use.
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
+    // Drop the base's `@midnite/shared` → src path mapping so shell resolves its
+    // workspace deps via their built dist `.d.ts` (moon builds them first), the
+    // same way `web` does — keeps their source out of shell's program.
+    "paths": {}
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "../shared" }]
+}

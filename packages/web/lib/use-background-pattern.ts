@@ -10,7 +10,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
-import { applyBackground } from '@/lib/apply-appearance';
+import { applyBackground } from '@midnite/shell';
 import { useDynamicBackground } from '@/lib/use-dynamic-background';
 
 /**

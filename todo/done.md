@@ -15,6 +15,16 @@ Turn "something's broken" into a prefilled GitHub issue in the public `bilo-io/m
 - [x] **E — Template + docs**: authored `bug_report.md` for `midnite-app` (same `### Environment` headings) + `docs/REPORT_ISSUE.md` cross-repo note, a docs-site page (`app/report-issue.mdx`), and a README section.
 - [x] Tests: `site-links` URL-builder unit, `report-context` builder unit (UA edge/iOS ordering, table, desktop-vs-web, determinism, strip-env), `ReportIssueDialog` RTL (prefill/edit→URL/cancel/overflow-opens-truncated/Escape). Screenshots (menu + dialog, light + dark) in the PR. No gateway/`shared` changes.
 
+## 2026-07-19 — feat: Phase 73 Theme B foundation — `@midnite/shell` + appearance runtime (PR #482)
+
+Stands up the mid-tier `@midnite/shell` package (the wired app frame `web` + `admin` will share) and moves the appearance JS runtime into it. Foundation slice — the appearance **CSS** relocation, `<ShellProviders>`, and web mounting `<AppFrame>` (Theme C) follow next. Behaviour-preserving: web keeps its `globals.css`; the appliers (now from shell) still drive it.
+
+- [x] **`@midnite/shell` scaffold** — Vite library build mirroring `@midnite/ui`; deps `@midnite/shared` + `@midnite/ui` only (`react`/`react-dom`/`next`/`@tanstack/react-query` peers); `boundary.test.ts` enforces `ui ◀ shell ◀ {web, admin}`.
+- [x] **`<AppFrame>`** — injected nav config (`{ sections, brand, footer }`) + header/banner slots; router-agnostic (`activePath` prop + injectable `linkComponent`).
+- [x] **`<LockScreen>`** — neuro-cloud starfield + `PasscodeUnlockDialog` + a `useIdleTimer` hook; session/telemetry data injected via slots (gateway-agnostic).
+- [x] **Appearance JS runtime** → shell (`apply-appearance.ts` appliers + init script + constants `ACCENT_OPTIONS`/`ACCENT_SWATCH_HS`/`UI_FONT_STACK`/…); web imports the appliers + re-exports the constants from `app-settings` (one source of truth). *(CSS layer relocation deferred to the next slice.)*
+- [x] Unit tests: AppFrame nav→render + active state, the idle timer, the full appearance-applier suite (ported from web); `CLAUDE.md` boundary graph updated (`ui ◀ shell ◀ {web, admin}`).
+
 ## 2026-07-19 — feat: Phase 73 Theme A — `@midnite/ui` leaf-visual extraction (PR #479)
 
 The critical-path start of Phase 73 (Admin console): move the leaf-safe app visuals into the design-system package so `web` (and, later, `shell` + `admin`) share **one** source instead of duplicating them. Behaviour-preserving — the components render identically; only their package home changed.
