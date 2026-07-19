@@ -63,23 +63,48 @@ jobs:
       - name: Stage gateway prod deps (deploy + electron-rebuild for this arch)
         run: pnpm --filter @midnite/desktop run stage
 
+      # Signing env-gate (Phase 71 Theme E). CRITICAL: electron-builder treats an
+      # EMPTY-string CSC_LINK as "a certificate to import", resolves the empty path
+      # to the cwd (a directory) and dies with "packages/desktop not a file" — BEFORE
+      # CSC_IDENTITY_AUTO_DISCOVERY is ever consulted. GitHub expands an unset secret
+      # to an empty string, so passing `CSC_LINK: ${{ secrets.CSC_LINK }}` directly
+      # poisons every unsigned build (this is what silently blocked v0.2.0's macOS
+      # leg). So export the signing vars into $GITHUB_ENV ONLY when a cert is really
+      # configured; otherwise leave CSC_LINK unset and electron-builder produces a
+      # clean unsigned build. Populate the CSC_*/APPLE_* secrets to ship signed +
+      # notarized builds; see packages/desktop/README.md.
+      - name: Configure macOS code-signing
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          if [ -n "$CSC_LINK" ]; then
+            {
+              echo "CSC_LINK<<__MIDNITE_EOF__"
+              echo "$CSC_LINK"
+              echo "__MIDNITE_EOF__"
+              echo "CSC_KEY_PASSWORD=$CSC_KEY_PASSWORD"
+              echo "CSC_IDENTITY_AUTO_DISCOVERY=true"
+            } >> "$GITHUB_ENV"
+            echo "macOS code-signing: certificate present → signed build."
+          else
+            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+            echo "macOS code-signing: no certificate → clean unsigned build."
+          fi
+
       # `--publish never`: electron-builder still generates the electron-updater
       # feed files (latest*.yml + *.blockmap) from the `publish:` block, but does
       # NOT auto-upload them — the `release` job below publishes everything to the
       # PUBLIC downloads repo via a cross-repo PAT (the default GITHUB_TOKEN can't).
-      # Signing is env-gated (Phase 71 Theme E): when CSC_LINK is set electron-builder
-      # signs (+ notarizes via the afterSign hook when APPLE_* are set); when it's
-      # empty, CSC_IDENTITY_AUTO_DISCOVERY=false makes the macOS build cleanly
-      # unsigned instead of failing. Populate these repo secrets to ship signed
-      # builds that can actually auto-update; see packages/desktop/README.md.
+      # CSC_* are inherited from the signing step above (unset when no cert). APPLE_*
+      # drive the afterSign notarize hook when all three are set; empty is fail-soft
+      # (the hook no-ops), and electron-builder's own notarizer is off (notarize:false).
       - name: Package desktop app
         env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' && 'true' || 'false' }}
         run: pnpm --filter @midnite/desktop exec electron-builder ${{ matrix.eb }} --config electron-builder.yml --publish never
 
       # Upload the installers AND the electron-updater feed metadata — the running
