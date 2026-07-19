@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat(gateway,web): health readiness redaction + web server build target — Phase 72 C+D (PR #485)
+
+Two independent SSO-go-live hardening slices. **C**: the auth-exempt `/health/preflight` + `/health/ready` probes were echoing provider names + secret env-var names to anonymous callers — now they return only the status roll-up, with the granular detail behind a valid credential. **D**: `next.config` built `output:'export'` unconditionally, silently dropping the `/api/auth/*` BFF routes the SSO cookie flow needs — a hosted build target now opts out of the export.
+
+- [x] **C — redaction**: new shared `authenticateRequest()` (`auth/lib/authenticate-request.ts`) — JWT → service token → static bearer — extracted from `GatewayAuthGuard` (which now calls it, so the two never drift). `HealthController` redacts every check to `{name, status}` for anonymous callers on both `preflight` + `ready`; full `detail`/`remedy` only for an authenticated request. `PreflightCheck.detail` is now optional; `doctorRows` guards it. Roll-up (`ok`/`ready`/`worst`) + 503 semantics + probes unchanged.
+- [x] **D — server build target**: `resolveWebOutput(env)` in plain-JS `lib/web-target.mjs` (+ `.d.mts`) that `next.config.mjs` imports — default/`static` → `'export'` (desktop + Pages, byte-for-byte unchanged), `MIDNITE_WEB_TARGET=server` → `undefined` (Next server mode, BFF routes build/run). New `web:build-server` moon task sets the flag + emits only `.next`.
+- [x] Tests: `authenticate-request` (6), `health.controller` redaction (8 — anon strips + leaks nothing, authed keeps detail, 503 intact), `web-target` (6). No-regression: gateway 2162 pass (guard specs unchanged), cli 225, shared green; shared/gateway/web/cli typecheck + lint green. Decision: anonymous is always redacted even in local auth-off mode (verified-operator-only detail). Themes E (real OAuth apps) + F (DX/docs) remain.
+
 ## 2026-07-19 — feat(shared,gateway): operator config split — Phase 72 A+B (PR #483)
 
 Carve the whole `gateway.auth` subtree out of the committed, user-facing `midnite.json` into a private, gitignored operator-owned source, deep-merged into the same typed `MidniteConfig` every consumer already reads — only the *source* of `gateway.auth` moves, the shape is byte-identical and the ~10 `config.gateway.auth.*` consumers are untouched. Makes it impossible to commit operator client IDs / allowlist by accident.
