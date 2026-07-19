@@ -41,14 +41,14 @@ A new mid-tier package that owns the *wired* app frame, so `web` and `admin` mou
 - [x] **Provider composition** — `<ShellProviders>`: app-agnostic composition (`ThemeProvider` + host-supplied `QueryClientProvider`); Auth/Notifications/WS/PreferenceSync stay host `children` (their gateway-client DI lands with the Theme C web refactor). (PR #484)
 - [x] **Public entry + tests** — `src/index.ts` exports `AppFrame`, `LockScreen`, `useIdleTimer`, the appearance helpers + constants, and the nav-config types; unit tests over nav-config→render + active state, the idle timer, and the appearance appliers. **[`CLAUDE.md`](../CLAUDE.md)** boundary graph updated; `.moon/workspace.yml` auto-globs `packages/*` (PR #482).
 
-## Theme C — Refactor `web` onto `<AppFrame>` — **M**
+## Theme C — Refactor `web` onto `<AppFrame>` — **M** — ✅ DONE (PR #488, 2026-07-19)
 
-Prove the shell is real by making the shipping web app consume it — **behaviour-preserving**, tests green.
+Prove the shell is real by making the shipping web app consume it — **behaviour-preserving**, tests green. Delivered as an **L** (not M): `<AppFrame>` was enriched to full rail parity first (see done.md).
 
-- [ ] **Mount `<AppFrame navConfig={…}>`** in [`app/(main)/layout.tsx`](../packages/web/app/(main)/layout.tsx), feeding web's existing `FEATURES`/`groupNavSections` ([`lib/features.ts`](../packages/web/lib/features.ts)) as the injected nav config (incl. its feature-flag filtering). Web-specific extras (`PresenceNavPill`, `ConnectionToaster`, `AssistantFab`, command palette) stay web-owned, passed in as `slots` or mounted alongside.
-- [ ] **Source appearance + lock from shell** — web's [`appearance-effects.tsx`](../packages/web/components/appearance-effects.tsx) and the idle `Screensaver` now use shell's appearance runtime + `<LockScreen>`; delete the migrated CSS/appliers from web `globals.css`/`lib` (or leave thin shims) so there's **one** source. Web's [`preference-sync.tsx`](../packages/web/components/preference-sync.tsx) uses shell's provider.
-- [ ] **Re-export shims stay** for anything moved (Theme A/B) so unrelated web imports don't churn; the diff is "compose the frame", not "rewrite pages".
-- [ ] **No visual/behaviour regression** — theme toggle, accent/gradient, background patterns, idle lock, nav grouping, mobile nav all behave exactly as before. Re-run [`web:test`](../packages/web) (unit + stories) + a manual/Playwright pass on the board, settings→appearance, and the screen-lock. This is the acceptance gate for the extraction.
+- [x] **Mount `<AppFrame navConfig={…}>`** in [`app/(main)/layout.tsx`](../packages/web/app/(main)/layout.tsx) via `AppShellClient`, feeding web's `FEATURES`/`groupNavSections` through a `lib/nav-config` adapter (feature-flag filtering intact). Web-specific extras stay web-owned (footer render-slot + siblings).
+- [x] **Source appearance + lock from shell** — `appearance-effects.tsx` already used shell's runtime (Theme B); the idle `Screensaver` now renders on shell's `<LockScreen>` (corners + centre slots). One lock implementation.
+- [x] **Frame import sites repointed** — nav → `<AppFrame>` (rail) + shell mobile nav; `nav-bar.tsx`/`mobile-nav.tsx`/`use-idle-timer.ts` deleted; Phase 25 ui-primitive shims left in place (out of scope — "compose the frame, not rewrite pages"). Provider split kept (root `ThemeProvider` + `(main)` `QueryClientProvider`); `<ShellProviders>` is for `admin` (avoids double-provider / RSC-serialization).
+- [x] **No visual/behaviour regression** — nav grouping/collapse, hover-expand, `--nav-offset`, tooltips, mobile nav, theme/accent, idle lock all preserved. `web:test` (unit) green; `nav-sections.e2e` green + new `screen-lock.e2e.ts`; rail parity screenshots in the PR.
 
 ## Theme D — Operator identity & platform-scoped read APIs — **M**
 

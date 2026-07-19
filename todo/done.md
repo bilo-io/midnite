@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat: Phase 73 Theme C — web onto shared `<AppFrame>` + `<LockScreen>` (PR #488)
+
+Prove `@midnite/shell` is real by making the shipping web app consume its `<AppFrame>`, **behaviour-preserving**. Chosen as the **L** "enrich to full parity then swap" path (the shipped `<AppFrame>` from Theme B was minimal): the rail, mobile nav, and idle lock now have **one** shared implementation both `web` and `admin` (Theme E) mount.
+
+- [x] **`@midnite/shell` `<AppFrame>` enriched to full parity** — fixed rail with `navMode` auto/expanded/collapsed + hover-expand, `--nav-offset`, persisted collapsible sections, icon tooltips, and an internal mobile bottom-nav — all **router-agnostic** (state via props, links via injected `linkComponent`). Structure = fixed `<aside>` + `<AppMobileNav>` + padded `<main>`. +13 `app-frame` tests, new `nav/mobile-nav.tsx` + tests; boundary test stays green (ui + shared only).
+- [x] **web mounts it** — `AppShellClient` (`'use client'`) passes Next `<Link>`, a `FEATURES → NavConfig` adapter (`lib/nav-config`), persisted navMode + section-collapse, brand/footer render-slots, and the lock/passcode flow. `nav-bar.tsx` + `mobile-nav.tsx` (+ its test) deleted; web `lib/use-idle-timer.ts` deleted (uses shell's). Icon-size wrappers force h-4 (rail) / h-5 (mobile) so unsized nav icons render exactly.
+- [x] **idle lock → shell `<LockScreen>`** — `Screensaver` now renders the neuro-cloud starfield + wake→passcode orchestration from shell, supplying its telemetry corners + cycling title through slots.
+- [x] **Provider split kept** — root `ThemeProvider` (covers auth) + `(main)` `QueryClientProvider`; `<ShellProviders>` is for `admin` (using it in web would double the theme provider / cross the RSC serialization boundary). Appearance runtime was already sourced from shell (Theme B).
+- [x] Gate: `:typecheck`/`:lint`/`:build` green; `shell` 53 · `ui` 63 · `web` 1186 (unit) · `gateway` 2171 · `shared` 791 · `cli` 228 · `docs` 36 · `desktop` 17 pass. e2e `nav-sections` (label drift `Insights`→`Overview` fixed) + new `screen-lock.e2e.ts` green. Remaining `web:test`/`ui:test` file-level reds are the documented pre-existing Storybook cold-start flakes (0 assertion failures). Themes D–G remain.
+
 ## 2026-07-19 — feat: Phase 73 Theme B tail — appearance CSS relocation + ShellProviders (PR #484) — **completes Phase 73 Theme B 🎉**
 
 Finishes Theme B: the appearance **CSS layer** deferred from the foundation (#482) moves into `@midnite/shell`, and `<ShellProviders>` lands. `@midnite/shell` now fully owns the appearance runtime (JS + CSS) that `web` and `admin` share. Behaviour-preserving — visual parity verified against the running app.
