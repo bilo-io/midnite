@@ -9,6 +9,10 @@ const config: Config = {
     './stories/**/*.{ts,tsx}',
     './.storybook/**/*.{ts,tsx}',
     '../../packages/ui/src/**/*.{ts,tsx}',
+    // `@midnite/shell` (the AppFrame rail + mobile nav, Phase 73 C) ships utility
+    // classes web renders through — scan its source so Tailwind generates any that
+    // web's own files don't already use (e.g. the icon-size + banner-offset rules).
+    '../../packages/shell/src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {
