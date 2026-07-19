@@ -1,0 +1,105 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+language: 'typescript'
+
+dependsOn:
+  - 'shared'
+  - 'shell'
+  - 'ui'
+
+tasks:
+  dev:
+    command: 'pnpm exec next dev -p 3100'
+    preset: 'server'
+    # Next resolves @midnite/shared, @midnite/ui and @midnite/shell to their built
+    # dist/, so a stale (or missing) build fails to resolve the package entirely
+    # (Can't resolve '@midnite/shell'). (Re)build all three before dev.
+    deps:
+      - 'root:install'
+      - 'shared:build'
+      - 'ui:build'
+      - 'shell:build'
+
+  build:
+    command: 'pnpm exec next build'
+    # next build resolves the workspace packages to their built dist/, so the
+    # explicit shell/ui/shared builds guarantee they exist before bundling.
+    deps:
+      - 'root:install'
+      - 'shared:build'
+      - 'ui:build'
+      - 'shell:build'
+      - '^:build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'contexts/**/*'
+      - 'lib/**/*'
+      - 'public/**/*'
+      - 'next.config.mjs'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+      - 'tsconfig.json'
+    # output: 'export' writes the static site to out/.
+    outputs:
+      - '.next'
+      - 'out'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    # tsc --noEmit resolves shared via project references but doesn't build it.
+    deps:
+      - '^:build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'contexts/**/*'
+      - 'lib/**/*'
+      # tsconfig's `**/*.ts` glob also typechecks these, so changes must bust the cache.
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
+      - 'tsconfig.json'
+
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'contexts/**/*'
+      - 'lib/**/*'
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
+      - '/eslint.config.mjs'
+
+  test:
+    command: 'pnpm exec vitest run'
+    # Tests import the built @midnite/shared (dist), so build upstream deps first.
+    deps:
+      - '^:build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'contexts/**/*'
+      - 'lib/**/*'
+      - 'src/**/*'
+      - 'vitest.config.ts'
+      - 'vitest.setup.ts'
+
+  e2e:
+    command: 'pnpm exec playwright test --project=chromium'
+    deps:
+      - '^:build'
+    options:
+      runInCI: false
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'contexts/**/*'
+      - 'lib/**/*'
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
+
+  clean:
+    command: 'rm -rf .next out'
+    options:
+      cache: false
+      runInCI: false

@@ -1,0 +1,38 @@
+/* Design tokens (HSL custom properties + the .dark block) live in @midnite/ui
+   (Phase 25 Theme B) — the design-system source of truth. */
+@import '@midnite/ui/styles';
+/* Shared highlight.js token palette for code blocks (parity with web). */
+@import '@midnite/ui/code-highlight.css';
+/* Accent/gradient/background/motion/density/effect/shimmer CSS layer, owned by
+   @midnite/shell. @import'ed (not a JS import) so PostCSS inlines it in-context,
+   where the @tailwind directives below satisfy its @layer base/utilities blocks. */
+@import '@midnite/shell/appearance.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* App-specific layout var; the design tokens (colors, radius, .dark overrides)
+       come from @midnite/ui/styles, imported above. */
+    --nav-offset: 3.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground;
+  }
+  body {
+    /* `--font-ui` is set by the Appearance "Interface font" setting (Phase 39 C);
+       when unset it falls through to the platform default sans stack. */
+    font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+    background-image:
+      radial-gradient(circle at top, hsl(var(--foreground) / 0.04), transparent 60%),
+      radial-gradient(circle at 20% 110%, hsl(var(--foreground) / 0.03), transparent 50%);
+    background-attachment: fixed;
+  }
+}
