@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { SCREENSHOTS_DIR } from './config';
 
 /**
- * Sidebar section grouping — the App / Agents / Insights collapsible categories
+ * Sidebar section grouping — the App / Agents / Overview collapsible categories
  * plus the settings feature chooser that mirrors them. Asserts the collapse
  * behaviour (headers toggle their children; state via `aria-expanded`) and
  * captures preview PNGs for the PR. No gateway seed needed — the nav + settings
@@ -30,7 +30,7 @@ async function setup(page: Page, navMode: 'expanded' | 'auto'): Promise<void> {
   }, navMode);
 }
 
-const SECTIONS = ['App', 'Agents', 'Insights'] as const;
+const SECTIONS = ['App', 'Agents', 'Overview'] as const;
 
 test('expanded rail groups features into collapsible sections', async ({ page }) => {
   await setup(page, 'expanded');

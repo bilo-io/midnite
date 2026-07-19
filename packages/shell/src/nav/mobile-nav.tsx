@@ -211,7 +211,7 @@ function TabLink({
       className={cn(tabClass, active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')}
     >
       {active ? <ActiveIndicator /> : null}
-      {item.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center">{item.icon}</span> : null}
+      {item.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5">{item.icon}</span> : null}
       <span className="max-w-full truncate">{item.label}</span>
     </Link>
   );
@@ -238,7 +238,7 @@ function DrawerTile({
           : 'border-border/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground',
       )}
     >
-      {item.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center">{item.icon}</span> : null}
+      {item.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5">{item.icon}</span> : null}
       <span className="max-w-full truncate">{item.label}</span>
     </Link>
   );

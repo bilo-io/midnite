@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { NavBar } from '@/components/nav-bar';
+import { AppShellClient } from '@/components/app-shell-client';
 import { AppBackdrop } from '@/components/app-backdrop';
 import { AuthGuard } from '@/components/auth-guard';
 import { FeatureGate } from '@/components/feature-gate';
@@ -41,13 +41,15 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         <PreferenceSync />
         <CommandPalette />
         <GlobalKeymap />
-        <NavBar />
         <PullToRefresh />
-        <main className="transition-[padding] duration-200 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 md:[padding-left:var(--nav-offset)]">
+        {/* The shared app frame (Phase 73 Theme C): sidenav rail + mobile nav +
+            the padded content region. Its `<main>` reserves the rail width via
+            `--nav-offset`; everything else here floats as a sibling. */}
+        <AppShellClient>
           <Suspense fallback={null}>
             <PageReveal>{children}</PageReveal>
           </Suspense>
-        </main>
+        </AppShellClient>
         <Suspense fallback={null}>
           <FeatureGate />
           <SetupNudge onOpenWizard={openWizard} />

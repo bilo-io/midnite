@@ -199,7 +199,7 @@ export function AppFrame({
             : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
         )}
       >
-        {item.icon ? <span className="flex h-4 w-4 shrink-0 items-center justify-center">{item.icon}</span> : null}
+        {item.icon ? <span className="flex h-4 w-4 shrink-0 items-center justify-center [&>svg]:h-4 [&>svg]:w-4">{item.icon}</span> : null}
         {expandedView ? (
           <>
             <span className="truncate text-sm">{item.label}</span>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { SessionStatus } from '@midnite/shared';
+import { LockScreen } from '@midnite/shell';
 import { getSessions } from '@/lib/api';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useDynamicBackground } from '@/lib/use-dynamic-background';
@@ -14,7 +15,6 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
-import { NeuroCloudBackground, PasscodeUnlockDialog } from '@midnite/ui';
 import { Spinner } from '@/components/spinner';
 import { AreaChart, LegendDot } from '@/components/system-chart';
 import { useSystemTelemetry } from '@/lib/use-system-telemetry';
@@ -338,6 +338,14 @@ function pad(n: number): string {
   return n.toString().padStart(2, '0');
 }
 
+/**
+ * The idle/lock screensaver. Phase 73 Theme C: the reusable lock chrome (neuro-cloud
+ * starfield backdrop + wake→passcode unlock orchestration) now lives in
+ * `@midnite/shell`'s `<LockScreen>`; this component supplies the web-specific,
+ * gateway-bound content — the live session counts, host telemetry rings, and the
+ * cycling status title — through the frame's `corners`/`children` slots. One lock
+ * implementation, shared with `admin`.
+ */
 export function Screensaver({
   onClose,
   locked = false,
@@ -361,18 +369,15 @@ export function Screensaver({
   const dynamicBg = useDynamicBackground();
 
   // A passcode applies only once one is actually set; "only when locked" exempts
-  // the idle screensaver. Until storage has hydrated we keep the lock closed so
-  // an early keypress can't slip past a passcode that's about to load.
+  // the idle screensaver. Until storage has hydrated we keep the lock closed
+  // (treat it as code-required so an early keypress can't slip past a passcode
+  // that's about to load) — `<LockScreen>` then owns the wake/unlock keyboard.
   const passcodeApplies =
     settings.requirePasscode &&
     !!passcode &&
     (settings.passcodeOnlyWhenLocked ? locked : true);
   const hydrated = settingsHydrated && passcodeHydrated;
-  const requireCode = hydrated && passcodeApplies;
-  const dismissible = hydrated && !passcodeApplies;
-  // The unlock prompt is hidden until the user makes a wake gesture, so a locked
-  // screensaver stays clean rather than nagging with an always-visible pad.
-  const [unlocking, setUnlocking] = useState(false);
+  const requireCode = hydrated ? passcodeApplies : true;
 
   // Corner widgets: live clock plus real host telemetry (gateway /system/stats).
   const { cpu, ram, cpuNow, ramNow, available: telemetryAvailable } = useSystemTelemetry();
@@ -445,22 +450,6 @@ export function Screensaver({
     };
   }, []);
 
-  // A keypress is the wake gesture: when there's no passcode it dismisses; when
-  // there is, the first key reveals the unlock prompt (which then owns the
-  // keyboard — so we stand down once it's open).
-  useEffect(() => {
-    if (dismissible) {
-      const onKey = () => onClose();
-      window.addEventListener('keydown', onKey);
-      return () => window.removeEventListener('keydown', onKey);
-    }
-    if (requireCode && !unlocking) {
-      const onKey = () => setUnlocking(true);
-      window.addEventListener('keydown', onKey);
-      return () => window.removeEventListener('keydown', onKey);
-    }
-  }, [dismissible, requireCode, unlocking, onClose]);
-
   const active = counts ? counts.actioning + counts.awaiting : 0;
   const poolSize = settings.agentPoolSize;
   const agentsPct = poolSize > 0 ? clamp((active / poolSize) * 100, 0, 100) : 0;
@@ -468,146 +457,128 @@ export function Screensaver({
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
   return (
-    <div
-      role="dialog"
-      aria-label={requireCode ? 'Locked screensaver' : 'Screensaver'}
-      onClick={
-        dismissible ? onClose : requireCode && !unlocking ? () => setUnlocking(true) : undefined
-      }
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px] ${
-        dismissible || (requireCode && !unlocking) ? 'cursor-pointer' : ''
-      }`}
-    >
-      {/* Neuro-cloud backdrop, painting on top of the opaque blurred surface.
-          `animate={dynamicBg}` → a static frame under reduced motion. */}
-      <NeuroCloudBackground animate={dynamicBg} />
-
-
-      {/* ── Top-left: date ── */}
-      <div className="absolute left-8 top-8 z-10 text-left">
-        <div className="text-2xl font-semibold tracking-tight text-foreground">
-          {DAYS[now.getDay()]}
-        </div>
-        <div className="mt-0.5 text-sm text-muted-foreground tabular-nums">
-          {now.getDate()} {MONTHS[now.getMonth()]} {now.getFullYear()}
-        </div>
-      </div>
-
-      {/* ── Top-right: time ── */}
-      <div className="absolute right-8 top-8 z-10 text-right">
-        <div className="font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
-          {time}
-        </div>
-        <div className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          local time
-        </div>
-      </div>
-
-      {/* ── Bottom-left: CPU & RAM (only when the gateway reports host metrics) ── */}
-      {telemetryAvailable && (
-        <div className="absolute bottom-8 left-8 z-10 text-left">
-          <div className="mb-2 flex items-center gap-4 text-xs">
-            <LegendDot hueVar="--status-wip" label="CPU" value={cpuNow} />
-            <LegendDot hueVar="--status-todo" label="RAM" value={ramNow} />
+    <LockScreen
+      requireCode={requireCode}
+      passcode={passcode ?? ''}
+      onUnlock={onClose}
+      onDismiss={onClose}
+      animateBackground={dynamicBg}
+      label={requireCode ? 'Locked screensaver' : 'Screensaver'}
+      corners={
+        <>
+          {/* ── Top-left: date ── */}
+          <div className="absolute left-8 top-8 z-10 text-left">
+            <div className="text-2xl font-semibold tracking-tight text-foreground">
+              {DAYS[now.getDay()]}
+            </div>
+            <div className="mt-0.5 text-sm text-muted-foreground tabular-nums">
+              {now.getDate()} {MONTHS[now.getMonth()]} {now.getFullYear()}
+            </div>
           </div>
-          <AreaChart cpu={cpu} ram={ram} />
-        </div>
-      )}
 
-      {/* ── Bottom-right: usage quotas + host disk ── */}
-      <div className="absolute bottom-8 right-8 z-10 flex items-end gap-6">
-        <Ring value={agentsPct} hueVar="--status-waiting" label="Agents" display={`${active}/${poolSize}`} />
-        <Ring value={quota} hueVar="--status-done" label="Quota" display={`${Math.round(quota)}%`} />
-        {disk ? (
-          // Arc = used fraction; centre = free space, caption = total (Phase 71).
-          <Ring
-            value={disk.usagePct}
-            hueVar="--status-todo"
-            label={`free of ${formatBytes(disk.totalBytes)}`}
-            display={formatBytes(disk.freeBytes)}
-          />
-        ) : null}
-      </div>
+          {/* ── Top-right: time ── */}
+          <div className="absolute right-8 top-8 z-10 text-right">
+            <div className="font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+              {time}
+            </div>
+            <div className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              local time
+            </div>
+          </div>
 
+          {/* ── Bottom-left: CPU & RAM (only when the gateway reports host metrics) ── */}
+          {telemetryAvailable && (
+            <div className="absolute bottom-8 left-8 z-10 text-left">
+              <div className="mb-2 flex items-center gap-4 text-xs">
+                <LegendDot hueVar="--status-wip" label="CPU" value={cpuNow} />
+                <LegendDot hueVar="--status-todo" label="RAM" value={ramNow} />
+              </div>
+              <AreaChart cpu={cpu} ram={ram} />
+            </div>
+          )}
+
+          {/* ── Bottom-right: usage quotas + host disk ── */}
+          <div className="absolute bottom-8 right-8 z-10 flex items-end gap-6">
+            <Ring value={agentsPct} hueVar="--status-waiting" label="Agents" display={`${active}/${poolSize}`} />
+            <Ring value={quota} hueVar="--status-done" label="Quota" display={`${Math.round(quota)}%`} />
+            {disk ? (
+              // Arc = used fraction; centre = free space, caption = total (Phase 71).
+              <Ring
+                value={disk.usagePct}
+                hueVar="--status-todo"
+                label={`free of ${formatBytes(disk.totalBytes)}`}
+                display={formatBytes(disk.freeBytes)}
+              />
+            ) : null}
+          </div>
+        </>
+      }
+    >
       {/* ── Center: spinner, cycling word, status pills ── */}
-      <div className="relative z-10 flex flex-col items-center">
-        {/* The spinner inherits the mode tint for its glow and switches its
-            phase pool with the state: spinning poses while agents work, calm
-            ellipsis/breathing poses while waiting or idle. */}
-        <div className="mb-10" style={{ '--sv-tint': MODE_TINT[mode] } as CSSProperties}>
-          <Spinner mode={mode} />
-        </div>
-
-        <h1
-          className="screensaver-title flex items-baseline pb-3 text-4xl font-semibold leading-[1.15] tracking-tight sm:text-6xl"
-          style={{ '--sv-tint': MODE_TINT[mode] } as CSSProperties}
-        >
-          {typed}
-          <span
-            aria-hidden
-            className="ml-0.5 inline-block w-[0.06em] self-stretch bg-foreground text-transparent animate-[blink_1s_step-end_infinite]"
-          >
-            |
-          </span>
-        </h1>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          {mode === 'active'
-            ? `${counts?.actioning ?? 0} agent${counts?.actioning === 1 ? '' : 's'} hard at work`
-            : mode === 'waiting'
-              ? `${counts?.awaiting ?? 0} session${counts?.awaiting === 1 ? '' : 's'} awaiting your input`
-              : 'all caught up — ready for more'}
-        </p>
-
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
-          {PILLS.map(({ key, status, label }, i) => {
-            const n = counts ? counts[key] : 0;
-            const triple = SESSION_STATUS_HUE[status];
-            const hue = `hsl(${triple})`;
-            return (
-              <span
-                key={key}
-                className="relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur"
-              >
-                {/* Same shimmer as the landing-page StatusPills: every pill
-                    shimmers, cascade direction driven by the settings. */}
-                <span
-                  aria-hidden
-                  className="pill-shimmer pointer-events-none absolute inset-0"
-                  // `--pill-i` drives the cascade stagger + direction in
-                  // globals.css (see `.pill-shimmer` / `[data-shimmer-dir]`).
-                  style={
-                    {
-                      background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
-                      '--pill-i': i,
-                    } as CSSProperties
-                  }
-                />
-                <span
-                  aria-hidden
-                  className="relative h-2 w-2 rounded-full"
-                  style={{ background: hue, boxShadow: `0 0 8px ${hue}` }}
-                />
-                <span className="relative tabular-nums text-foreground">{counts ? n : '–'}</span>
-                <span className="relative">{label}</span>
-              </span>
-            );
-          })}
-        </div>
+      {/* The spinner inherits the mode tint for its glow and switches its
+          phase pool with the state: spinning poses while agents work, calm
+          ellipsis/breathing poses while waiting or idle. */}
+      <div className="mb-10" style={{ '--sv-tint': MODE_TINT[mode] } as CSSProperties}>
+        <Spinner mode={mode} />
       </div>
 
-      <p className="absolute bottom-2 z-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        {requireCode ? 'press any key to unlock' : 'press any key to wake'}
+      <h1
+        className="screensaver-title flex items-baseline pb-3 text-4xl font-semibold leading-[1.15] tracking-tight sm:text-6xl"
+        style={{ '--sv-tint': MODE_TINT[mode] } as CSSProperties}
+      >
+        {typed}
+        <span
+          aria-hidden
+          className="ml-0.5 inline-block w-[0.06em] self-stretch bg-foreground text-transparent animate-[blink_1s_step-end_infinite]"
+        >
+          |
+        </span>
+      </h1>
+
+      <p className="mt-2 text-sm text-muted-foreground">
+        {mode === 'active'
+          ? `${counts?.actioning ?? 0} agent${counts?.actioning === 1 ? '' : 's'} hard at work`
+          : mode === 'waiting'
+            ? `${counts?.awaiting ?? 0} session${counts?.awaiting === 1 ? '' : 's'} awaiting your input`
+            : 'all caught up — ready for more'}
       </p>
 
-      {requireCode && unlocking ? (
-        <PasscodeUnlockDialog
-          expected={passcode ?? ''}
-          onUnlock={onClose}
-          onCancel={() => setUnlocking(false)}
-        />
-      ) : null}
-    </div>
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+        {PILLS.map(({ key, status, label }, i) => {
+          const n = counts ? counts[key] : 0;
+          const triple = SESSION_STATUS_HUE[status];
+          const hue = `hsl(${triple})`;
+          return (
+            <span
+              key={key}
+              className="relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur"
+            >
+              {/* Same shimmer as the landing-page StatusPills: every pill
+                  shimmers, cascade direction driven by the settings. */}
+              <span
+                aria-hidden
+                className="pill-shimmer pointer-events-none absolute inset-0"
+                // `--pill-i` drives the cascade stagger + direction in
+                // globals.css (see `.pill-shimmer` / `[data-shimmer-dir]`).
+                style={
+                  {
+                    background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
+                    '--pill-i': i,
+                  } as CSSProperties
+                }
+              />
+              <span
+                aria-hidden
+                className="relative h-2 w-2 rounded-full"
+                style={{ background: hue, boxShadow: `0 0 8px ${hue}` }}
+              />
+              <span className="relative tabular-nums text-foreground">{counts ? n : '–'}</span>
+              <span className="relative">{label}</span>
+            </span>
+          );
+        })}
+      </div>
+    </LockScreen>
   );
 }
 
