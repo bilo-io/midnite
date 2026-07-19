@@ -10,13 +10,15 @@ tasks:
   dev:
     command: 'pnpm exec next dev -p 3000'
     preset: 'server'
-    # Next resolves @midnite/shared and @midnite/ui to their built dist/, so a
-    # stale (or missing) build serves the app undefined exports — or fails to
-    # resolve @midnite/ui/styles. (Re)build both before starting the dev server.
+    # Next resolves @midnite/shared, @midnite/ui and @midnite/shell to their built
+    # dist/, so a stale (or missing) build serves the app undefined exports — or
+    # fails to resolve the package entirely (Can't resolve '@midnite/shell').
+    # (Re)build all three before starting the dev server.
     deps:
       - 'root:install'
       - 'shared:build'
       - 'ui:build'
+      - 'shell:build'
 
   build:
     command: 'pnpm exec next build'
