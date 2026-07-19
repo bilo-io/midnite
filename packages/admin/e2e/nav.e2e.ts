@@ -171,6 +171,46 @@ const FAKE_TEAMS = [
   { id: 'team_0000000000000001', slug: 'core', name: 'Core', createdAt: '2026-01-01T00:00:00.000Z', memberCount: 1 },
 ];
 
+const FAKE_PROJECTS = {
+  items: [
+    {
+      id: 'prj_0000000000000001',
+      name: 'Aurora',
+      tag: 'aurora',
+      color: '#7c3aed',
+      description: 'The flagship initiative.',
+      workDir: '~/dev/aurora',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-07-01T00:00:00.000Z',
+      taskStatusCounts: { todo: 2, wip: 1, done: 7 },
+    },
+    {
+      id: 'prj_0000000000000002',
+      name: 'Borealis',
+      tag: 'borealis',
+      color: '#0ea5e9',
+      workDir: '~/dev/borealis',
+      createdAt: '2026-02-01T00:00:00.000Z',
+      updatedAt: '2026-07-10T00:00:00.000Z',
+      taskStatusCounts: { todo: 4 },
+    },
+  ],
+  total: 2,
+};
+
+const FAKE_PROJECT_DETAIL = {
+  ...FAKE_PROJECTS.items[0],
+  phaseDocSyncRepoId: 'repo_0000000000000001',
+};
+
+const STABLE_MANIFEST = {
+  version: '0.3.0',
+  channel: 'stable',
+  minSupported: '0.1.0',
+  releasedAt: '2026-07-15T00:00:00.000Z',
+  notesUrl: 'https://github.com/bilo-io/midnite-app/releases/tag/v0.3.0',
+};
+
 const FAKE_AUDIT = {
   entries: [
     {
@@ -210,6 +250,17 @@ async function stubGateway(page: Page): Promise<void> {
   await page.route(`${GATEWAY_ORIGIN}/metrics/ops**`, (route) => route.fulfill(json(FAKE_OPS)));
   await page.route(`${GATEWAY_ORIGIN}/metrics/cycle-time**`, (route) => route.fulfill(json(FAKE_CYCLE)));
   await page.route(`${GATEWAY_ORIGIN}/audit**`, (route) => route.fulfill(json(FAKE_AUDIT)));
+  // Detail (`/projects/:id`) registered before the list so its glob wins for ids.
+  await page.route(`${GATEWAY_ORIGIN}/projects/*`, (route) => route.fulfill(json(FAKE_PROJECT_DETAIL)));
+  await page.route(`${GATEWAY_ORIGIN}/projects`, (route) => route.fulfill(json(FAKE_PROJECTS)));
+  // Version manifests live on the PUBLIC GitHub mirror (cross-origin), not the
+  // gateway — beta returns 404 (not yet published) to exercise the fail-soft path.
+  await page.route('https://raw.githubusercontent.com/**/version.beta.json**', (route) =>
+    route.fulfill({ status: 404, contentType: 'text/plain', body: 'Not Found' }),
+  );
+  await page.route('https://raw.githubusercontent.com/**/version.json**', (route) =>
+    route.fulfill(json(STABLE_MANIFEST)),
+  );
 }
 
 test('Overview renders KPIs from the stubbed reads', async ({ page }) => {
@@ -272,4 +323,54 @@ test('Audit renders stubbed rows and applies a filter', async ({ page }) => {
   // The entity filter is present and selectable (drives a re-query via the key).
   await expect(page.getByLabel('Filter by entity')).toBeVisible();
   await expect(page.getByText('1–2 of 2')).toBeVisible();
+});
+
+test('Projects lists stubbed projects and drills into one', async ({ page }) => {
+  await stubGateway(page);
+  await page.goto('/projects');
+
+  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: /Aurora/ })).toBeVisible();
+  await expect(page.getByRole('cell', { name: /Borealis/ })).toBeVisible();
+
+  // Click the row → the drill-in drawer opens with detail from /projects/:id.
+  await page.getByRole('cell', { name: /Aurora/ }).click();
+  const drawer = page.getByRole('dialog', { name: /Details for Aurora/ });
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByText('Tasks by status')).toBeVisible();
+  // The phaseDocSyncRepoId only present on the detail response confirms the drill-in fetch.
+  await expect(drawer.getByText('repo_0000000000000001')).toBeVisible();
+});
+
+test('Versions renders the running build, channels, and changelog', async ({ page }) => {
+  await stubGateway(page);
+  await page.goto('/versions');
+
+  await expect(page.getByRole('heading', { name: 'Versions' })).toBeVisible();
+  await expect(page.getByText('Running build', { exact: true })).toBeVisible();
+  // Stable channel from the mirrored manifest.
+  await expect(page.getByText('Stable channel')).toBeVisible();
+  await expect(page.getByText('0.3.0').first()).toBeVisible();
+  await expect(page.getByText('Force-update floor').first()).toBeVisible();
+  // Beta 404s → the fail-soft message, not a crash.
+  await expect(page.getByText('No beta manifest published.')).toBeVisible();
+  // The bundled CHANGELOG.md is rendered as Markdown (section heading + parsed
+  // content incl. an inline link the parser extracted).
+  await expect(page.getByRole('heading', { name: 'Changelog' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Keep a Changelog' })).toBeVisible();
+});
+
+test('Links renders the outbound + in-app cards', async ({ page }) => {
+  await stubGateway(page);
+  await page.goto('/links');
+
+  await expect(page.getByRole('heading', { name: 'Links' })).toBeVisible();
+  // External cards open in a new tab.
+  const docs = page.getByRole('link', { name: /Documentation/ });
+  await expect(docs).toBeVisible();
+  await expect(docs).toHaveAttribute('target', '_blank');
+  await expect(docs).toHaveAttribute('rel', /noopener/);
+  await expect(page.getByRole('link', { name: /^GitHub/ })).toBeVisible();
+  // In-app deep links point at operator surfaces.
+  await expect(page.getByRole('link', { name: /^Usage/ }).first()).toBeVisible();
 });
