@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat: Phase 73 Theme A — `@midnite/ui` leaf-visual extraction (PR #479)
+
+The critical-path start of Phase 73 (Admin console): move the leaf-safe app visuals into the design-system package so `web` (and, later, `shell` + `admin`) share **one** source instead of duplicating them. Behaviour-preserving — the components render identically; only their package home changed.
+
+- [x] **`DynamicBackground`** → `@midnite/ui`; its `BackgroundPattern` union is **inlined** with a sync comment (the leaf can't import `@midnite/shared`, even type-only) — structurally identical to `shared`'s, so values pass straight into the prop.
+- [x] **`RailShell`** (+ `RailFloatingToggle`/`RailHeaderToggle`) → `ui`; the 5 web call sites (memory/projects/sessions/councils/media detail views) import from `@midnite/ui`.
+- [x] **`ThemeToggle`** → `ui`, re-pointed at `ui`'s `useTheme` + `Button`.
+- [x] **`PasscodePad`** (+ `Passcode{Setup,Unlock}Dialog`) → `ui`, which now **owns `PASSCODE_LENGTH`**; web `app-settings` re-exports it (one source of truth).
+- [x] Web copies deleted (no shims — matching the `NeuroCloudBackground` precedent); all call sites re-pointed. `boundary.test.ts` stays green.
+- [x] Stories: `RailShell` + `ThemeToggle` moved into `ui`; `DynamicBackground` smoke story added — all run as `ui:test` browser tests (18/18 files, 63 tests). Typecheck + lint green.
+
 ## 2026-07-18 — feat(web): landing hero — clock to top-centre + top-left weather (PR #466)
 
 Direct UX request: the landing hero's clock/date sat in the top-right, which is now the home of the header-actions cluster (status · approvals · notifications · avatar), so the two overlapped. Moved the clock to the top-centre and put the empty top-left to work with a weather readout.
