@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, GitBranch } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { GithubIcon } from '@midnite/ui';
 
 import { Button } from '@/components/ui/button';
 import { InlinePanel } from '@/components/panel/inline-panel';
@@ -73,7 +74,7 @@ export function Hero() {
           </a>
           <a href={GITHUB_URL} target="_blank" rel="noreferrer">
             <Button size="lg" variant="outline" className="w-full backdrop-blur sm:w-auto">
-              <GitBranch className="h-4 w-4" />
+              <GithubIcon className="h-4 w-4" />
               View on GitHub
             </Button>
           </a>

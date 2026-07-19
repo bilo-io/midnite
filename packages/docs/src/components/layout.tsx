@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Download, GitBranch } from 'lucide-react';
-import { NeuroCloudBackground } from '@midnite/ui';
+import { Download } from 'lucide-react';
+import { GithubIcon, NeuroCloudBackground } from '@midnite/ui';
 
 import type { NavGroup } from '../content/nav';
 import logoUrl from '../assets/logo.png';
@@ -81,7 +81,7 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
               rel="noreferrer noopener"
               className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:inline-flex"
             >
-              <GitBranch className="h-4 w-4" />
+              <GithubIcon className="h-4 w-4" />
               GitHub
             </a>
             <ThemeToggle />

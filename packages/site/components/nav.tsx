@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { GitBranch } from 'lucide-react';
+import { GithubIcon } from '@midnite/ui';
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { DOCS_URL, GITHUB_URL } from '@/lib/site';
@@ -62,7 +62,7 @@ export function Nav() {
             aria-label="GitHub"
             className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
-            <GitBranch className="h-4 w-4" />
+            <GithubIcon className="h-4 w-4" />
           </a>
         </div>
       </nav>

@@ -15,6 +15,7 @@ export { Accordion } from './components/accordion';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Card, CardHeader, CardTitle, CardContent } from './components/card';
 export { Collapse } from './components/collapse';
+export { GithubIcon } from './components/github-icon';
 export {
   GradientGlow,
   type GradientGlowProps,
