@@ -5,8 +5,8 @@ import { expect, userEvent, within } from 'storybook/test';
 import { UpdateBannerView } from './update-banner-view';
 
 /**
- * The banner reads as an *inverted* surface (dark chrome in light mode, light in
- * dark) for contrast, sits at the top of the app, and animates its height in/out.
+ * The banner reads as the animated primary/brand gradient with white foreground
+ * for contrast, sits at the top of the app, and animates its height in/out.
  * Stories drive the presentational view directly (the container wires context).
  */
 const meta = {

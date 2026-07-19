@@ -28,8 +28,9 @@ export type UpdateBannerViewProps = {
 };
 
 /**
- * Presentational "App update available" banner (Phase 71 Theme C + E). Theme-*inverted*
- * surface (`bg-foreground`/`text-background`) for contrast, animates in/out with an
+ * Presentational "App update available" banner (Phase 71 Theme C + E). The surface is
+ * the animated primary/brand gradient (`.update-banner-surface`) with white foreground
+ * for contrast, animates in/out with an
  * ease-in-out height transition (grid-rows 0fr↔1fr, reduced-motion aware), and
  * publishes its measured height as `--update-banner-h` so the fixed nav can offset
  * its `top` and nothing is occluded. Stateless — the container wires it to context
@@ -111,7 +112,7 @@ export function UpdateBannerView({
           ref={innerRef}
           role="status"
           aria-live="polite"
-          className="bg-foreground text-background shadow-sm"
+          className="update-banner-surface text-white shadow-sm"
         >
           <div className="flex items-center gap-3 px-4 py-2.5">
             <ArrowUpCircle aria-hidden className="hidden h-5 w-5 shrink-0 opacity-90 sm:block" />
@@ -137,9 +138,9 @@ export function UpdateBannerView({
               onClick={onUpdate}
               disabled={actionDisabled}
               className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-background px-3 py-1.5',
-                'text-xs font-semibold text-foreground transition-opacity hover:opacity-90',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70',
+                'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-3 py-1.5',
+                'text-xs font-semibold text-slate-900 transition-colors hover:bg-white/90',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
                 'disabled:cursor-default disabled:opacity-60',
               )}
             >
@@ -154,8 +155,8 @@ export function UpdateBannerView({
                 aria-label="Dismiss update notice"
                 className={cn(
                   'inline-flex shrink-0 items-center justify-center rounded-md p-1',
-                  'text-background/70 transition-colors hover:text-background',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70',
+                  'text-white/70 transition-colors hover:text-white',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
                 )}
               >
                 <X aria-hidden className="h-4 w-4" />
@@ -163,10 +164,10 @@ export function UpdateBannerView({
             )}
           </div>
 
-          {/* Desktop download progress — a thin inverted-surface bar under the row. */}
+          {/* Desktop download progress — a thin translucent-white bar under the row. */}
           {showProgress && (
             <div
-              className="h-1 w-full bg-background/20"
+              className="h-1 w-full bg-white/25"
               role="progressbar"
               aria-label="Downloading update"
               aria-valuenow={downloadPercent ?? 0}
@@ -174,7 +175,7 @@ export function UpdateBannerView({
               aria-valuemax={100}
             >
               <div
-                className="h-full bg-background transition-[width] duration-200 ease-out motion-reduce:transition-none"
+                className="h-full bg-white transition-[width] duration-200 ease-out motion-reduce:transition-none"
                 style={{ width: `${downloadPercent ?? 0}%` }}
               />
             </div>
