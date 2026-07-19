@@ -66,7 +66,7 @@ import {
   type NodeLabel,
 } from './workflow.js';
 import { parseCredFlag, templateListRows } from './template.js';
-import { doctorExitCode, doctorRows } from './doctor.js';
+import { doctorExitCode, doctorRows, nonSsoRows, ssoReadinessRows } from './doctor.js';
 import { USAGE_TABLE_HEAD, usageAttributionRows, usageWindowLine } from './usage.js';
 import { retroLines } from './retro.js';
 import { DIGEST_TABLE_HEAD, digestLines, digestListRows, digestWindow } from './digest.js';
@@ -694,10 +694,20 @@ program
       wordWrap: true,
       colWidths: [12, 16, 9, 46],
     });
-    for (const r of doctorRows(preflight, readiness)) {
+    for (const r of nonSsoRows(preflight, readiness)) {
       table.push([r.section, r.name, paintStatus(r.status), r.detail ?? '']);
     }
     console.log(table.toString());
+
+    // Dedicated SSO readiness section (Phase 72 F) — one line per configured provider.
+    const ssoRows = ssoReadinessRows(preflight, readiness);
+    if (ssoRows.length > 0) {
+      console.log(`\n${heading('SSO readiness')}`);
+      for (const r of ssoRows) {
+        const provider = r.name.startsWith('sso:') ? r.name.slice(4) : r.name;
+        console.log(`  ${paintStatus(r.status)}  ${provider}${r.detail ? `  ${dim(`— ${r.detail}`)}` : ''}`);
+      }
+    }
 
     const issues = doctorRows(preflight, readiness).filter((r) => r.status !== 'ok' && r.remedy);
     if (issues.length > 0) {
