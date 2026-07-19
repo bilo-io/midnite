@@ -1,7 +1,31 @@
-import type { MidniteConfig } from '@midnite/shared';
-import { findConfigPath, loadConfigFromFile, loadConfig } from '@midnite/shared/config-loader';
+import { dirname } from 'node:path';
+import { enabledSsoProviders, type MidniteConfig } from '@midnite/shared';
+import {
+  findConfigPath,
+  loadConfigFromFile,
+  loadConfig,
+  operatorConfigInfo,
+  OperatorAuthInUserConfigError,
+} from '@midnite/shared/config-loader';
 
 export { findConfigPath };
+
+/**
+ * One-line info log when the operator auth config (Phase 72) is present, so an
+ * operator can confirm at boot that their `.midnite/operator.json` was picked up
+ * — providers + whether JWT resolved. No secrets are logged (only provider names
+ * and the on/off state).
+ */
+function logOperatorConfig(config: MidniteConfig, baseDir: string): void {
+  const { path, present } = operatorConfigInfo(baseDir);
+  if (!present) return;
+  const providers = enabledSsoProviders(config);
+  const jwtOn = Boolean(process.env[config.gateway.auth.jwt.secretEnv]);
+  // eslint-disable-next-line no-console
+  console.log(
+    `[midnite gateway] operator auth config loaded from ${path}: providers=[${providers.join(', ')}], jwt=${jwtOn ? 'on' : 'off'}`,
+  );
+}
 
 /**
  * Apply environment-variable overrides on top of a parsed config. Lets the
@@ -39,8 +63,13 @@ export function loadConfigFromDisk(): MidniteConfig {
       const config = loadConfigFromFile(explicit);
       // eslint-disable-next-line no-console
       console.log(`[midnite gateway] loaded config from ${explicit} (MIDNITE_CONFIG_PATH)`);
+      logOperatorConfig(config, dirname(explicit));
       return applyEnvOverrides(config);
     } catch (err) {
+      // A committed gateway.auth (Phase 72 B) is a fail-closed error, never a
+      // "parse failed, use defaults" — rethrow so the operator sees the remedy
+      // rather than the gateway silently booting auth-off.
+      if (err instanceof OperatorAuthInUserConfigError) throw err;
       // eslint-disable-next-line no-console
       console.error(`[midnite gateway] failed to parse ${explicit} — using defaults`, err);
       return applyEnvOverrides(loadConfig());
@@ -57,5 +86,7 @@ export function loadConfigFromDisk(): MidniteConfig {
   }
   // eslint-disable-next-line no-console
   console.log(`[midnite gateway] loaded config from ${configPath}`);
-  return applyEnvOverrides(loadConfig(configPath));
+  const config = loadConfig(configPath);
+  logOperatorConfig(config, dirname(configPath));
+  return applyEnvOverrides(config);
 }

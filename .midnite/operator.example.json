@@ -1,0 +1,26 @@
+{
+  "_comment": "Phase 72 — operator-owned auth config. Copy to .midnite/operator.json (gitignored) or point $MIDNITE_OPERATOR_CONFIG at it, then fill in the REPLACE_ME client IDs and export the named secret env vars. NEVER put a raw secret here — only env-var NAMES. See docs/SSO.md.",
+  "gateway": {
+    "auth": {
+      "jwt": {
+        "secretEnv": "MIDNITE_JWT_SECRET"
+      },
+      "sso": {
+        "google": {
+          "clientId": "REPLACE_ME.apps.googleusercontent.com",
+          "clientSecretEnv": "MIDNITE_GOOGLE_CLIENT_SECRET",
+          "scopes": ["openid", "email", "profile"],
+          "redirectUri": "http://localhost:7777/auth/sso/google/callback"
+        },
+        "github": {
+          "clientId": "REPLACE_ME",
+          "clientSecretEnv": "MIDNITE_GITHUB_CLIENT_SECRET",
+          "scopes": ["read:user", "user:email"],
+          "redirectUri": "http://localhost:7777/auth/sso/github/callback"
+        },
+        "webBaseUrl": "http://localhost:3000"
+      },
+      "allowlist": ["you@example.com"]
+    }
+  }
+}
