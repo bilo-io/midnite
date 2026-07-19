@@ -19,9 +19,12 @@ import { cn } from '@/lib/utils';
  * to ~40 nodes), and some fork partway — the pulse splits into two diverging
  * chains. On top of the steady baseline, extra thoughts fire spontaneously
  * (~3–4 every 10s), and ambient mini-vortexes occasionally gather nearby
- * neurons, drift a little, and release a small shockwave — a weaker, tighter
- * version of the pointer's hold-and-release. A sparse subset of neurons also
- * glints now and then (a brief flare over the base twinkle).
+ * neurons, drift a little, and release a small shockwave plus a little
+ * constellation burst from their centre — a weaker, tighter version of the
+ * pointer's hold-and-release. Constellation bursts also fire on their own now
+ * and then, at uniformly random points across the whole galaxy. A sparse
+ * subset of neurons also glints now and then (a brief flare over the base
+ * twinkle).
  * Edge/node colours reuse the `--node-trigger` /
  * `--node-action` / `--node-logic` / `--node-data` tokens (the same four the
  * app's canvas backgrounds read), so it literally renders midnite's node palette
@@ -549,6 +552,52 @@ export function NeuroCloudBackground({
     // small shockwave (a miniature of the pointer's hold-and-release).
     let vortexes: Vortex[] = [];
     let nextVortexAt = 4 + Math.random() * 6;
+    // Spontaneous constellations: the release burst, unprompted, anywhere in the galaxy.
+    let nextConstellationAt = 6 + Math.random() * 6;
+
+    /**
+     * Spark a constellation: `n` thought paths radiating outward from a point,
+     * each seeded from a nearby neuron (or from `seeds` when a gathered swarm
+     * provides them). The burst a pointer release fires — reused by ambient
+     * vortex releases and the spontaneous galaxy-wide firings.
+     */
+    const sparkConstellation = (cx: number, cy: number, t: number, n: number, seeds?: number[]) => {
+      const starts =
+        seeds && seeds.length > 0
+          ? seeds
+          : stars
+              .map((_, i) => i)
+              .sort((a, b) => {
+                const da = (px[a]! - cx) ** 2 + (py[a]! - cy) ** 2;
+                const db = (px[b]! - cx) ** 2 + (py[b]! - cy) ** 2;
+                return da - db;
+              })
+              .slice(0, n * 3);
+      for (let k = 0; k < n; k++) {
+        const start = starts[Math.floor((k / n) * starts.length)]!;
+        let ox = px[start]! - cx;
+        let oy = py[start]! - cy;
+        const d = Math.hypot(ox, oy);
+        if (d < 1) {
+          const ang = (k / n) * TAU;
+          ox = Math.cos(ang);
+          oy = Math.sin(ang);
+        } else {
+          ox /= d;
+          oy /= d;
+        }
+        const p: Pathway = {
+          nodes: buildChain(start, ox, oy, 6 + Math.floor(Math.random() * 4), Math.random),
+          colorIdx: (nextColor++ % 4) as 0 | 1 | 2 | 3,
+          born: t,
+          life: 5.5 + Math.random() * 2,
+          speed: 4.5,
+          click: true,
+        };
+        pathways.push(p, ...maybeBranch(p, Math.random));
+      }
+      if (pathways.length > MAX_PATHWAYS) pathways = pathways.slice(-MAX_PATHWAYS);
+    };
 
     // Cursor gravity well + press-to-gather. The canvas stays
     // pointer-events-none, so listeners live on window and map into canvas space.
@@ -594,44 +643,10 @@ export function NeuroCloudBackground({
         vx[i] = vx[i]! + (ox / d) * kick;
         vy[i] = vy[i]! + (oy / d) * kick;
       }
-      // Path count scales with the catch (a bare click still sparks a couple).
+      // Path count scales with the catch (a bare click still sparks a couple);
+      // seed from the captured swarm when there is one, else the nearest stars.
       const nPaths = Math.min(10, Math.max(2, Math.round(seeds.length / 12)));
-      // Seed from the captured swarm when there is one, else the nearest stars.
-      const starts =
-        seeds.length > 0
-          ? seeds
-          : stars
-              .map((_, i) => i)
-              .sort((a, b) => {
-                const da = (px[a]! - at.x) ** 2 + (py[a]! - at.y) ** 2;
-                const db = (px[b]! - at.x) ** 2 + (py[b]! - at.y) ** 2;
-                return da - db;
-              })
-              .slice(0, nPaths * 3);
-      for (let k = 0; k < nPaths; k++) {
-        const start = starts[Math.floor((k / nPaths) * starts.length)]!;
-        let ox = px[start]! - at.x;
-        let oy = py[start]! - at.y;
-        const d = Math.hypot(ox, oy);
-        if (d < 1) {
-          const ang = (k / nPaths) * TAU;
-          ox = Math.cos(ang);
-          oy = Math.sin(ang);
-        } else {
-          ox /= d;
-          oy /= d;
-        }
-        const p: Pathway = {
-          nodes: buildChain(start, ox, oy, 6 + Math.floor(Math.random() * 4), Math.random),
-          colorIdx: (nextColor++ % 4) as 0 | 1 | 2 | 3,
-          born: t,
-          life: 5.5 + Math.random() * 2,
-          speed: 4.5,
-          click: true,
-        };
-        pathways.push(p, ...maybeBranch(p, Math.random));
-      }
-      if (pathways.length > MAX_PATHWAYS) pathways = pathways.slice(-MAX_PATHWAYS);
+      sparkConstellation(at.x, at.y, t, nPaths, seeds.length > 0 ? seeds : undefined);
     };
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerdown', onDown, { passive: true });
@@ -761,6 +776,10 @@ export function NeuroCloudBackground({
             speed: VORTEX_SW_SPEED,
             decay: VORTEX_SW_DECAY,
           });
+          // The release also sparks a small constellation from the vortex
+          // centre — the pointer-release effect at ambient scale (2–3 paths
+          // vs up to 10).
+          sparkConstellation(v.x, v.y, t, 2 + Math.floor(Math.random() * 2));
         }
       }
       vortexes = vortexes.filter((v) => t - v.born < v.hold);
@@ -796,6 +815,13 @@ export function NeuroCloudBackground({
         pathways.push(p, ...maybeBranch(p, Math.random));
         nextSpontaneousAt = t + 2.2 + Math.random() * 1.4;
         if (pathways.length > MAX_PATHWAYS) pathways = pathways.slice(-MAX_PATHWAYS);
+      }
+      // …and, every so often, a whole constellation bursts at a uniformly
+      // random point — anywhere in the galaxy, not biased toward the dense
+      // core the way star-seeded spawns are.
+      if (t >= nextConstellationAt) {
+        sparkConstellation(Math.random() * w, Math.random() * h, t, 2 + Math.floor(Math.random() * 3));
+        nextConstellationAt = t + 7 + Math.random() * 7;
       }
     };
     raf = requestAnimationFrame(loop);
