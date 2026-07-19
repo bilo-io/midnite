@@ -12,6 +12,7 @@ import type { ResolvedRoute } from './registry';
 // the repo root.
 import changelog from '../../../../CHANGELOG.md?raw';
 import memoryWorkspace from '../../../../docs/MEMORY_WORKSPACE.md?raw';
+import ssoGoLive from '../../../../docs/SSO.md?raw';
 
 /** The changelog is deep-linked from the app's update banner, so it gets a scroll-to-version page. */
 const CHANGELOG_PATH = '/changelog';
@@ -30,7 +31,8 @@ export type ProductDoc = {
 // index (content/search-index.ts) reads the same raw source.
 export const productDocs: ProductDoc[] = [
   { path: '/guides/memory-workspace', title: 'Memory workspace', section: 'Guides', order: 0, source: memoryWorkspace },
-  { path: CHANGELOG_PATH, title: 'Changelog', section: 'Guides', order: 1, source: changelog },
+  { path: '/guides/sso-go-live', title: 'SSO go-live', section: 'Guides', order: 1, source: ssoGoLive },
+  { path: CHANGELOG_PATH, title: 'Changelog', section: 'Guides', order: 2, source: changelog },
 ];
 
 // The changelog needs a scroll-to-version page (it's deep-linked per release from
