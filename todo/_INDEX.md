@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [73 · Admin Console & shared app shell](phase-73-admin-console.md) | ◻ TODO | 0/43 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
@@ -125,6 +126,14 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 74 — Report issue (assistant-menu → GitHub)](phase-74-report-issue.md)
+*Add a **"Report issue"** entry to the Phase 66 assistant menu that opens an **editable preview** with the page context auto-filled (route, app version, browser/OS, web-vs-desktop, theme, connection status), then hands off to a **prefilled GitHub issue** in the public `bilo-io/midnite-app` repo. Pure client-side prefill — no gateway, no token — plus a one-line desktop fix so the hand-off (and the existing Docs link) opens the system browser. Light context v1; single bug report; template authored for the midnite-app repo.*
+- ◻ **A** — Menu entry + URL builder: lucide `Bug` entry in `ENTRIES` + `activate` branch; `githubIssuesNewUrl({title,body,labels})` + `REPORT_ISSUE_LABELS` beside `PUBLIC_GITHUB_REPO` in `site-links.ts`
+- ◻ **B** — Editable preview modal: `ReportIssueDialog` mirroring `confirm-dialog.tsx` (portal-to-body, focus-trap), editable title + fully-editable body, `window.open` on confirm, URL-length guard + Copy-body fallback
+- ◻ **C** — Page-context capture: `buildReportContext()` composing route/version/env/browser/theme/connection into a compact, editable markdown body; editable = the privacy control
+- ◻ **D** — Desktop external-open fix: `setWindowOpenHandler` → `shell.openExternal` in desktop main so http(s) links open the system browser; fixes the existing Docs-opens-in-app bug too
+- ◻ **E** — Template + docs: author `bug_report.md` for the `midnite-app` repo (added there, not here) + wire `template=`/labels; README + docs note on the cross-repo step
 
 ### [Phase 73 — Admin Console & shared app shell](phase-73-admin-console.md)
 *midnite has every operator surface as **data** (Phase 61 usage/cost, Phase 33 users/teams, Phase 55 projects, Phase 71 versions) but no **app** that composes them. Build a standalone **`packages/admin`** console that looks exactly like `web` by first extracting the reusable shell into a **new `@midnite/shell`** package (pure visuals → leaf `@midnite/ui`), refactoring `web` onto it, then standing `admin` up behind a new **operator** gate — with a **lock screen** (idle re-lock + themed login) on the neuro-cloud starfield/dots. Versions is view-only; two new boundary edges (`ui ◀ shell ◀ {web, admin}`).*
