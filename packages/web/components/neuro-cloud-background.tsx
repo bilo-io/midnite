@@ -15,7 +15,14 @@ import { cn } from '@/lib/utils';
  * Firing: every so often an anchor neuron sparks a branching thought path — a
  * chain of nearby neurons lit segment by segment as a bright pulse travels the
  * edges, each neuron flaring (a pulsating glow) as the signal arrives, then the
- * whole path slowly fades. Edge/node colours reuse the `--node-trigger` /
+ * whole path slowly fades. Most thoughts stay short; some run long (rarely up
+ * to ~40 nodes), and some fork partway — the pulse splits into two diverging
+ * chains. On top of the steady baseline, extra thoughts fire spontaneously
+ * (~3–4 every 10s), and ambient mini-vortexes occasionally gather nearby
+ * neurons, drift a little, and release a small shockwave — a weaker, tighter
+ * version of the pointer's hold-and-release. A sparse subset of neurons also
+ * glints now and then (a brief flare over the base twinkle).
+ * Edge/node colours reuse the `--node-trigger` /
  * `--node-action` / `--node-logic` / `--node-data` tokens (the same four the
  * app's canvas backgrounds read), so it literally renders midnite's node palette
  * and re-tints on theme/accent switch.
@@ -61,6 +68,8 @@ type Star = {
   tw: number;
   ph: number;
   bright: boolean;
+  /** Sparse subset that occasionally glints — a brief flare over the base twinkle. */
+  sparkle: boolean;
 };
 
 /** A firing thought path: a chain of neuron indices lit by a travelling pulse. */
@@ -75,7 +84,11 @@ type Pathway = {
   click: boolean;
 };
 
-type Shockwave = { x: number; y: number; born: number };
+/** Per-wave strength/reach so pointer releases and ambient vortexes differ. */
+type Shockwave = { x: number; y: number; born: number; kick: number; speed: number; decay: number };
+
+/** An ambient vortex: gathers nearby neurons while drifting, then releases. */
+type Vortex = { x: number; y: number; dx: number; dy: number; born: number; hold: number };
 
 // ── Tuning ────────────────────────────────────────────────────────────────────
 const WELL_RADIUS = 280; // px — reach of the cursor gravity well
@@ -92,7 +105,18 @@ const MAX_SPEED = 340; // px/s
 const SW_SPEED = 430; // shockwave front speed (px/s)
 const SW_LIFE = 1.5; // seconds
 const SW_KICK = 1200; // shockwave impulse strength (invisible — pure physics)
-const MAX_PATHWAYS = 24;
+const SW_DECAY = 0.7; // s — how fast the wave's push fades (sets the blast radius)
+const MAX_PATHWAYS = 32;
+// Ambient vortexes — smaller, weaker cousins of the pointer gather/release:
+// tighter reach, gentler pull, and a softer shockwave that dies out closer in.
+const VORTEX_RADIUS = 130; // px — reach of an ambient vortex (vs 280 pointer well)
+const VORTEX_PULL = 900;
+const VORTEX_SWIRL = 700;
+const VORTEX_CORE = 26; // px — same event-horizon trick as the pointer well
+const VORTEX_SW_KICK = 500; // vs 1200 for a pointer release
+const VORTEX_SW_SPEED = 300; // px/s — vs 430
+const VORTEX_SW_DECAY = 0.4; // the small blast fades out much sooner
+const MAX_VORTEXES = 2;
 
 /** Deterministic PRNG (mulberry32) so the seeded star field is stable across frames/resizes. */
 function mulberry32(seed: number): () => number {
@@ -159,6 +183,7 @@ function seedStars(count: number): Star[] {
       tw: 0.5 + rnd() * 1.6,
       ph: rnd() * TAU,
       bright,
+      sparkle: rnd() < 0.15,
     });
   }
   return stars;
@@ -212,8 +237,8 @@ export function NeuroCloudBackground({
     let repaint: (() => void) | null = null;
 
     const reseed = () => {
-      // ~5× the old galaxy density — a proper cloud, capped for perf.
-      const count = Math.min(1150, Math.max(400, Math.round((w * h) / 1050)));
+      // ~6× the old galaxy density (a 25% bump over the last one), capped for perf.
+      const count = Math.min(1440, Math.max(500, Math.round((w * h) / 840)));
       stars = seedStars(count);
       hx = stars.map((s) => s.fx * w);
       hy = stars.map((s) => s.fy * h);
@@ -262,9 +287,11 @@ export function NeuroCloudBackground({
       dirY: number,
       len: number,
       rnd: () => number,
+      avoid?: ReadonlySet<number>,
     ): number[] => {
       const chain = [start];
-      const used = new Set<number>([start]);
+      const used = new Set<number>(avoid);
+      used.add(start);
       let cx = px[start]!;
       let cy = py[start]!;
       let dx = dirX;
@@ -306,27 +333,92 @@ export function NeuroCloudBackground({
       return chain;
     };
 
+    /**
+     * Thought length: most chains stay short (5–9), a fair share stretch
+     * longer, and a rare few run epic — up to 40 nodes.
+     */
+    const thoughtLength = (rnd: () => number): number => {
+      const roll = rnd();
+      if (roll < 0.75) return 5 + Math.floor(rnd() * 5); // 5–9
+      if (roll < 0.93) return 10 + Math.floor(rnd() * 12); // 10–21
+      return 22 + Math.floor(rnd() * 19); // 22–40
+    };
+
     const spawnAmbient = (born: number, colorIdx: 0 | 1 | 2 | 3, rnd: () => number): Pathway => {
       const start = Math.floor(rnd() * stars.length);
       const ang = rnd() * TAU;
+      const chain = buildChain(start, Math.cos(ang), Math.sin(ang), thoughtLength(rnd), rnd);
+      // Long thoughts pulse a touch faster, and live long enough for the pulse
+      // to reach the end and fade rather than dying mid-chain.
+      const speed = 2.6 + rnd() * 1.6 + chain.length * 0.05;
       return {
-        nodes: buildChain(start, Math.cos(ang), Math.sin(ang), 5 + Math.floor(rnd() * 4), rnd),
+        nodes: chain,
         colorIdx,
         born,
-        life: 3 + rnd() * 1.6,
-        speed: 2.6 + rnd() * 1.6,
+        life: Math.max(3 + rnd() * 1.6, (chain.length - 1) / speed + 2),
+        speed,
         click: false,
       };
+    };
+
+    /**
+     * Occasionally fork a thought: from a node 25–75% along the parent, grow a
+     * second chain veering off the parent's heading. The fork's pulse starts
+     * when the parent's pulse reaches the branch node, so it reads as one
+     * signal splitting in two.
+     */
+    const maybeBranch = (parent: Pathway, rnd: () => number): Pathway[] => {
+      if (parent.nodes.length < 8 || rnd() > 0.3) return [];
+      const k = Math.max(1, Math.floor(parent.nodes.length * (0.25 + rnd() * 0.5)));
+      const at = parent.nodes[k]!;
+      const prev = parent.nodes[k - 1]!;
+      let dirX = px[at]! - px[prev]!;
+      let dirY = py[at]! - py[prev]!;
+      const hd = Math.hypot(dirX, dirY) || 1;
+      dirX /= hd;
+      dirY /= hd;
+      // Veer ~30–70° off the parent's heading, either side.
+      const rot = (0.55 + rnd() * 0.65) * (rnd() < 0.5 ? -1 : 1);
+      const cos = Math.cos(rot);
+      const sin = Math.sin(rot);
+      const len = Math.max(4, Math.round((parent.nodes.length - k) * (0.6 + rnd() * 0.6)));
+      const chain = buildChain(
+        at,
+        dirX * cos - dirY * sin,
+        dirX * sin + dirY * cos,
+        len,
+        rnd,
+        new Set(parent.nodes),
+      );
+      if (chain.length < 3) return [];
+      const speed = parent.speed * (0.85 + rnd() * 0.3);
+      return [
+        {
+          nodes: chain,
+          colorIdx: parent.colorIdx,
+          born: parent.born + k / parent.speed,
+          life: Math.max(2.5, (chain.length - 1) / speed + 2),
+          speed,
+          click: parent.click,
+        },
+      ];
     };
 
     const drawStars = (t: number) => {
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i]!;
         const twinkle = animate ? 0.6 + 0.4 * Math.sin(t * s.tw + s.ph) : 1;
+        // Sparse glints: a sine raised to a high power sits near zero for most
+        // of its (slow) period, then briefly spikes — an occasional subtle flare.
+        const glint =
+          animate && s.sparkle
+            ? Math.pow(0.5 + 0.5 * Math.sin(t * s.tw * 0.35 + s.ph * 4.7), 8)
+            : 0;
         // Gathered neurons burn brighter while the cursor holds them.
         const gathered = held && capturedSet.has(i);
-        const a = Math.min(1, s.a * twinkle * (gathered ? 1.8 : 1));
-        const r = s.r * (s.bright ? 0.9 + 0.2 * twinkle : 1) * (gathered ? 1.25 : 1);
+        const a = Math.min(1, (s.a * twinkle + 0.35 * glint) * (gathered ? 1.8 : 1));
+        const r =
+          s.r * (s.bright ? 0.9 + 0.2 * twinkle : 1) * (gathered ? 1.25 : 1) * (1 + glint * 0.5);
         // Gentle idle drift layered over the physics so the cloud never sits still.
         const dxi = animate ? Math.sin(t * 0.31 + s.ph * 2.1) * 1.6 : 0;
         const dyi = animate ? Math.cos(t * 0.24 + s.ph * 1.7) * 1.6 : 0;
@@ -449,7 +541,14 @@ export function NeuroCloudBackground({
     );
     let nextColor = 3;
     let nextAmbientAt = 0;
+    // Extra spontaneous firings on top of the ambient baseline (~3–4 per 10s).
+    let nextSpontaneousAt = 1.5 + Math.random() * 2;
     let shockwaves: Shockwave[] = [];
+    // Ambient vortexes: spontaneous little gather/release cycles, independent
+    // of the pointer — each drifts slightly while it gathers, then detonates a
+    // small shockwave (a miniature of the pointer's hold-and-release).
+    let vortexes: Vortex[] = [];
+    let nextVortexAt = 4 + Math.random() * 6;
 
     // Cursor gravity well + press-to-gather. The canvas stays
     // pointer-events-none, so listeners live on window and map into canvas space.
@@ -486,7 +585,7 @@ export function NeuroCloudBackground({
       capturedSet.clear();
       if (!at) return;
       const t = now();
-      shockwaves.push({ x: at.x, y: at.y, born: t });
+      shockwaves.push({ x: at.x, y: at.y, born: t, kick: SW_KICK, speed: SW_SPEED, decay: SW_DECAY });
       for (const i of seeds) {
         const ox = px[i]! - at.x;
         const oy = py[i]! - at.y;
@@ -522,14 +621,15 @@ export function NeuroCloudBackground({
           ox /= d;
           oy /= d;
         }
-        pathways.push({
+        const p: Pathway = {
           nodes: buildChain(start, ox, oy, 6 + Math.floor(Math.random() * 4), Math.random),
           colorIdx: (nextColor++ % 4) as 0 | 1 | 2 | 3,
           born: t,
           life: 5.5 + Math.random() * 2,
           speed: 4.5,
           click: true,
-        });
+        };
+        pathways.push(p, ...maybeBranch(p, Math.random));
       }
       if (pathways.length > MAX_PATHWAYS) pathways = pathways.slice(-MAX_PATHWAYS);
     };
@@ -586,17 +686,39 @@ export function NeuroCloudBackground({
           }
         }
 
+        // Ambient vortexes: a small, gentle version of the pointer well.
+        for (const v of vortexes) {
+          const mx = v.x - px[i]!;
+          const my = v.y - py[i]!;
+          const d = Math.hypot(mx, my);
+          if (d < VORTEX_RADIUS && d > 0.5) {
+            // Ease the well in so a fresh vortex doesn't jerk the field.
+            const f = (1 - d / VORTEX_RADIUS) ** 2 * Math.min(1, (t - v.born) / 0.5);
+            const ux = mx / d;
+            const uy = my / d;
+            ax += ux * VORTEX_PULL * f;
+            ay += uy * VORTEX_PULL * f;
+            ax += -uy * VORTEX_SWIRL * f;
+            ay += ux * VORTEX_SWIRL * f;
+            if (d < VORTEX_CORE) {
+              const push = CORE_PUSH * (1 - d / VORTEX_CORE);
+              ax -= ux * push;
+              ay -= uy * push;
+            }
+          }
+        }
+
         for (const sw of shockwaves) {
           const oxx = px[i]! - sw.x;
           const oyy = py[i]! - sw.y;
           const d = Math.hypot(oxx, oyy) || 1;
-          const front = (t - sw.born) * SW_SPEED;
+          const front = (t - sw.born) * sw.speed;
           const band = d - front;
           // Kick outward as the ring front sweeps past, fading with age.
           const k =
-            SW_KICK *
+            sw.kick *
             Math.exp(-(band * band) / (2 * 42 * 42)) *
-            Math.exp(-(t - sw.born) / 0.7);
+            Math.exp(-(t - sw.born) / sw.decay);
           ax += (oxx / d) * k;
           ay += (oyy / d) * k;
         }
@@ -626,17 +748,54 @@ export function NeuroCloudBackground({
       const dt = Math.min(0.05, (performance.now() - last) / 1000);
       last = performance.now();
 
+      // Ambient vortexes: drift while gathering, release a small shockwave, respawn.
+      for (const v of vortexes) {
+        v.x += v.dx * dt;
+        v.y += v.dy * dt;
+        if (t - v.born >= v.hold) {
+          shockwaves.push({
+            x: v.x,
+            y: v.y,
+            born: t,
+            kick: VORTEX_SW_KICK,
+            speed: VORTEX_SW_SPEED,
+            decay: VORTEX_SW_DECAY,
+          });
+        }
+      }
+      vortexes = vortexes.filter((v) => t - v.born < v.hold);
+      if (vortexes.length < MAX_VORTEXES && t >= nextVortexAt) {
+        const ang = Math.random() * TAU;
+        vortexes.push({
+          x: w * (0.12 + Math.random() * 0.76),
+          y: h * (0.12 + Math.random() * 0.76),
+          dx: Math.cos(ang) * (8 + Math.random() * 14),
+          dy: Math.sin(ang) * (8 + Math.random() * 14),
+          born: t,
+          hold: 1.8 + Math.random() * 1.2,
+        });
+        nextVortexAt = t + 5 + Math.random() * 8;
+      }
+
       step(t, dt);
       // The wave itself is invisible — only its push on the neurons shows.
       shockwaves = shockwaves.filter((sw) => t - sw.born < SW_LIFE);
       ctx.clearRect(0, 0, w, h);
       drawStars(t);
       pathways = pathways.filter((p) => drawPathway(p, t));
-      // Keep a few ambient firings alive on a gentle stagger.
+      // Keep a few ambient firings alive on a gentle stagger…
       const ambient = pathways.reduce((n, p) => n + (p.click ? 0 : 1), 0);
       if (ambient < 3 && t >= nextAmbientAt) {
-        pathways.push(spawnAmbient(t, (nextColor++ % 4) as 0 | 1 | 2 | 3, Math.random));
+        const p = spawnAmbient(t, (nextColor++ % 4) as 0 | 1 | 2 | 3, Math.random);
+        pathways.push(p, ...maybeBranch(p, Math.random));
         nextAmbientAt = t + 0.5 + Math.random() * 1.2;
+      }
+      // …plus extra spontaneous firings on top of the baseline (~3–4 per 10s).
+      if (t >= nextSpontaneousAt) {
+        const p = spawnAmbient(t, (nextColor++ % 4) as 0 | 1 | 2 | 3, Math.random);
+        pathways.push(p, ...maybeBranch(p, Math.random));
+        nextSpontaneousAt = t + 2.2 + Math.random() * 1.4;
+        if (pathways.length > MAX_PATHWAYS) pathways = pathways.slice(-MAX_PATHWAYS);
       }
     };
     raf = requestAnimationFrame(loop);
