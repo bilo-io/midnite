@@ -7,8 +7,6 @@ import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useDynamicBackground } from '@/lib/use-dynamic-background';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
-  BACKGROUND_PATTERN_CLASS,
-  BACKGROUND_PATTERN_DEFAULT,
   CYCLE_MAX_S,
   CYCLE_MIN_S,
   DEFAULT_SETTINGS,
@@ -16,7 +14,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
-import { DynamicBackground } from '@/components/dynamic-background';
+import { NeuroCloudBackground } from '@/components/neuro-cloud-background';
 import { PasscodeUnlockDialog } from '@/components/passcode-pad';
 import { Spinner } from '@/components/spinner';
 import { AreaChart, LegendDot } from '@/components/system-chart';
@@ -358,7 +356,9 @@ export function Screensaver({
     DEFAULT_SETTINGS,
   );
   const [passcode, , passcodeHydrated] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
-  const patternClass = BACKGROUND_PATTERN_CLASS[settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT];
+  // The screensaver wears the neuro-cloud brand backdrop (like the login shell),
+  // not the user's pattern pick — `dynamicBg` gates its motion (the "Dynamic
+  // motion" toggle + motion prefs), so reduced-motion paints a static frame.
   const dynamicBg = useDynamicBackground();
 
   // A passcode applies only once one is actually set; "only when locked" exempts
@@ -479,13 +479,10 @@ export function Screensaver({
         dismissible || (requireCode && !unlocking) ? 'cursor-pointer' : ''
       }`}
     >
-      {/* Decorative backdrop on its own masked layer so its edge fade doesn't
-          punch holes in the opaque, blurred backdrop above. */}
-      {dynamicBg ? (
-        <DynamicBackground pattern={settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT} />
-      ) : (
-        <div aria-hidden className={`${patternClass} pointer-events-none absolute inset-0`} />
-      )}
+      {/* Neuro-cloud backdrop, painting on top of the opaque blurred surface.
+          `animate={dynamicBg}` → a static frame under reduced motion. */}
+      <NeuroCloudBackground animate={dynamicBg} />
+
 
       {/* ── Top-left: date ── */}
       <div className="absolute left-8 top-8 z-10 text-left">
