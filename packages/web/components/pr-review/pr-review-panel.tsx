@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import type { PrDiff } from '@midnite/shared';
+import { GithubIcon } from '@midnite/ui';
 import { getPrDiff } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { Button } from '@/components/ui/button';
@@ -74,7 +75,7 @@ export function PrReviewPanel({ taskId, prUrl }: Props) {
             rel="noreferrer"
             className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
           >
-            Open on GitHub <ExternalLink className="h-3 w-3" />
+            Open on GitHub <GithubIcon className="h-3 w-3" />
           </a>
         </div>
       </div>

@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ExternalLink, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { GithubIcon } from '@midnite/ui';
 import { Button } from '@/components/ui/button';
 import { PrReviewPanel } from './pr-review-panel';
 
@@ -45,7 +46,7 @@ export function PrDiffModal({ taskId, prUrl, onClose }: Props) {
               rel="noreferrer"
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              Open PR <ExternalLink className="h-3 w-3" />
+              Open PR <GithubIcon className="h-3 w-3" />
             </a>
             <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
               <X className="h-4 w-4" />
