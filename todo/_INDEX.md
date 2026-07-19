@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | 🔄 WIP | 0/23 | `░░░░░░░░░░` | 0% | A B C D E | — |
-| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | ◻ TODO | 0/43 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
+| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 0/43 | `░░░░░░░░░░` | 0% | A | B C D E F G |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
