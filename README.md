@@ -512,6 +512,17 @@ docker run --rm --ipc=host --platform linux/amd64 \
 
 Commit the updated PNGs in the same PR as the UI change. Run `moon run web:screenshots` locally to verify against the committed baselines.
 
+## Report a bug
+
+Hit a problem? Open the **assistant menu** (the logo button, bottom-right) and pick
+**Report issue** — it opens an editable preview prefilled with the page context
+(route, version, browser/OS, web-vs-desktop, theme, connection) and hands off to a
+prefilled issue in the public [`bilo-io/midnite-app`](https://github.com/bilo-io/midnite-app)
+tracker. It's pure client-side prefill (no account, no token); everything is
+editable before you open the issue. See [`docs/REPORT_ISSUE.md`](docs/REPORT_ISSUE.md)
+for how it works and the **cross-repo template** step (the `bug_report.md` scaffold
+must be committed in `midnite-app`).
+
 ## Where to go next
 
 - **Designing a change?** Read [`docs/INITIAL_PLAN.md`](docs/INITIAL_PLAN.md) first.
