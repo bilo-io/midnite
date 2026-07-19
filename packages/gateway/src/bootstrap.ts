@@ -121,10 +121,15 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   );
 
   // The gateway can spawn PTYs, so don't reflect arbitrary origins — only
-  // loopback (the dev web app) plus any explicitly-configured origins.
+  // loopback (the dev web app) plus any explicitly-configured origins (including
+  // MIDNITE_ADMIN_ORIGIN, folded into allowedOrigins in load-config). The origin
+  // callback reflects the *specific* request origin when allowed (never `*`), so
+  // `credentials: true` is safe — the admin console (Phase 73 E) reads the API
+  // cross-origin with `credentials: 'include'` for its SSO cookie.
   const { allowedOrigins } = config.gateway;
   app.enableCors({
     origin: (origin, cb) => cb(null, isAllowedOrigin(origin, allowedOrigins)),
+    credentials: true,
   });
   // Live terminal WS rides the same Fastify HTTP server, routed by gateway path.
   app.useWebSocketAdapter(new WsAdapter(app));
