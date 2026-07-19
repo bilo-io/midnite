@@ -64,7 +64,7 @@ describe('SsoButtons', () => {
 
     const github = await screen.findByTestId('sso-github');
     expect(github.closest('.gradient-border')).toHaveClass('gradient-border--always');
-    expect(screen.getByText('Last used')).toBeInTheDocument();
+    expect(screen.getByText('last')).toBeInTheDocument();
     // Only the last-used button is lit.
     const google = screen.getByTestId('sso-google');
     expect(google.closest('.gradient-border')).not.toHaveClass('gradient-border--always');

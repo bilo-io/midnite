@@ -81,7 +81,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="relative z-10 flex w-full flex-col items-center justify-center px-4 py-10 lg:w-1/3">
         <div
           className={cn(
-            'w-full max-w-sm',
+            'w-full max-w-md',
             // Frosted-glass panel over the starfield (desktop): ~50% transparent
             // with a fair blur radius, a hairline border and soft shadow. Mobile
             // has no starfield, so it stays a plain (transparent) block.

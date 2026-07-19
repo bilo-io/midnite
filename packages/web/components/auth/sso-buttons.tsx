@@ -96,11 +96,12 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
   );
 }
 
-/** Small right-aligned "Last used" tag inside a highlighted login button. */
+/** Tiny right-aligned "last" tag inside a highlighted login button. Absolutely
+ *  positioned so it never shifts the button's centred label + logo. */
 export function LastUsedTag() {
   return (
-    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-      Last used
+    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-medium uppercase tracking-wider text-muted-foreground">
+      last
     </span>
   );
 }
