@@ -9,6 +9,11 @@ import {
   OpsSummarySchema,
   CycleTimeResponseSchema,
   AuditListResponseSchema,
+  ProjectSchema,
+  ProjectsPageSchema,
+  VersionManifestSchema,
+  versionManifestFile,
+  PUBLIC_GITHUB_REPO,
   TeamSchema,
   TeamWithMembersSchema,
   type AdminUserSummary,
@@ -25,6 +30,10 @@ import {
   type AuditListResponse,
   type AuditEntityType,
   type AuditAction,
+  type Project,
+  type ProjectsPage,
+  type VersionManifest,
+  type UpdateChannel,
   type Team,
   type TeamWithMembers,
   type TeamRole,
@@ -305,4 +314,47 @@ export async function removeMember(teamId: string, userId: string): Promise<void
     `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`,
     { method: 'DELETE' },
   );
+}
+
+// ── Projects (`GET /projects`, `GET /projects/:id`, Phase 55/57) ──────────────
+// Read-only for the operator console: the registry list + a per-project drill-in.
+
+/** A page of projects (`GET /projects` → `{ items, total }`). */
+export async function getProjects(signal?: AbortSignal): Promise<ProjectsPage> {
+  return fetchJson('/projects', { signal }, ProjectsPageSchema);
+}
+
+/** A single project's full detail (`GET /projects/:id` → the bare `Project`). */
+export async function getProjectDetail(id: string, signal?: AbortSignal): Promise<Project> {
+  return fetchJson(`/projects/${encodeURIComponent(id)}`, { signal }, ProjectSchema);
+}
+
+// ── Version manifests (public GitHub-raw, cross-origin) ────────────────────────
+// The release flow publishes `version.json` / `version.beta.json` to the web origin
+// AND mirrors them into the PUBLIC companion repo (`sync-public-assets.yml`). Admin
+// is a static app on its own origin, so it can't reach web's same-origin manifest —
+// it reads the mirrored copies over `raw.githubusercontent.com`, which serves them
+// anonymously with an open CORS header (same trick the CHANGELOG fetch uses). No
+// gateway, no credentials — a plain cross-origin fetch.
+
+/** The public GitHub-raw URL for a channel's mirrored version manifest. */
+export function versionManifestUrl(channel: UpdateChannel): string {
+  return `https://raw.githubusercontent.com/${PUBLIC_GITHUB_REPO}/main/packages/web/public/${versionManifestFile(channel)}`;
+}
+
+/**
+ * Fetch + validate a channel's published version manifest from the public mirror.
+ * Cache-busted so a CDN can't pin a stale "latest". Throws on a network error, a
+ * 404 (e.g. `beta` not yet published), or a malformed manifest — callers fail soft.
+ */
+export async function fetchVersionManifest(
+  channel: UpdateChannel,
+  signal?: AbortSignal,
+): Promise<VersionManifest> {
+  const bust = `_=${encodeURIComponent(String(Date.now()))}`;
+  const res = await fetch(`${versionManifestUrl(channel)}?${bust}`, { cache: 'no-store', signal });
+  if (!res.ok) {
+    throw new ApiError(`version manifest (${channel}) fetch failed`, res.status);
+  }
+  return VersionManifestSchema.parse(await res.json());
 }

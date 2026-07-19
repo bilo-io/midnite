@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 25/43 | `██████░░░░` | 58% | F | G |
+| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 32/43 | `███████░░░` | 74% | — | G |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 21/30 | `███████░░░` | 70% | — | — |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
@@ -142,7 +142,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Refactor `web` onto `<AppFrame>` (PR #488): `<AppFrame>` enriched to full rail parity (navMode/hover/`--nav-offset`/collapsible sections/tooltips + mobile nav); web mounts it via `AppShellClient` + `FEATURES→NavConfig` adapter; idle lock on shell `<LockScreen>`; `nav-bar`/`mobile-nav` deleted; behaviour-preserving (`nav-sections` + new `screen-lock` e2e green)
 - ✅ **D** — Operator identity & platform read APIs (PR #489): `operators` allowlist on `GatewayAuthConfigSchema` (fail-closed) + `isOperatorEmail`; `@RequiresOperator` + global `OperatorGuard` (401 no-user / 403 non-operator); `AdminReadService` → `GET /admin/users|teams|overview` composing existing services; `AdminUserSummary`/`AdminTeamSummary`/`PlatformOverview` DTOs; team-scoped routes untouched. (typed client methods deferred to Theme E, their consumer)
 - ✅ **E** — `packages/admin` scaffold + shell mount (PR #490): standalone static-export Next app on `<AppFrame>` w/ admin nav (7 routes) + `<ShellProviders>`; themed SSO login + idle lock on the starfield; thin operator gate probing `GET /admin/overview` (Theme D); minimal appearance/lock settings; boundary + smoke + nav-e2e green
-- ◻ **F** — Admin sections: Overview KPIs, Usage & cost (Phase 61/22), Users & teams (list + team CRUD/roles), Projects (Phase 55), Versions (view-only + changelog + channels/floor read-only), Audit log, Quick links
+- ✅ **F** — Admin sections (PR #491 foundation + #492 pages A + #493 pages B): Overview KPIs, Usage & cost (Phase 61/22, filters + charts), Users & teams (list + full team CRUD/roles + user drawer), Projects (Phase 55, drill-in), Versions (running build + live channels/floor read-only + bundled CHANGELOG), Audit log (filters + pagination), Quick links; charts promoted to `@midnite/ui`, site-links to `@midnite/shared`, gateway credentialed CORS (`MIDNITE_ADMIN_ORIGIN`)
 - ◻ **G** — Hardening: ui/shell/admin boundary tests, admin unit/story + operator-gate specs, `docs/ADMIN.md` + shell README, CLAUDE.md boundary graph, green gates
 
 ### [Phase 72 — SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md)
