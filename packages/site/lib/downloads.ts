@@ -8,7 +8,7 @@ export type DownloadTarget = {
   platform: Platform;
   /** Present for platforms shipping per-architecture builds (macOS). */
   arch?: 'arm64' | 'x64';
-  /** Short label shown on the button, e.g. "Apple Silicon" / "Intel" / "Windows". */
+  /** Short label shown on the button, e.g. "Apple Silicon" / "Windows". */
   label: string;
   /** File extension, shown in the button text. */
   ext: string;
@@ -41,14 +41,6 @@ export const DOWNLOAD_TARGETS: DownloadTarget[] = [
     ext: '.dmg',
     available: true,
     assetName: `midnite-${DESKTOP_VERSION}-arm64.dmg`,
-  },
-  {
-    platform: 'mac',
-    arch: 'x64',
-    label: 'Intel',
-    ext: '.dmg',
-    available: true,
-    assetName: `midnite-${DESKTOP_VERSION}-x64.dmg`,
   },
   {
     platform: 'windows',

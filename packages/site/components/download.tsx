@@ -7,9 +7,8 @@ import { Download as DownloadIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RELEASES_URL } from '@/lib/site';
 
-// Apple Silicon vs Intel can't be told apart reliably from the browser (both
-// report "MacIntel"), so we offer both builds and only detect the OS to nudge
-// non-Mac visitors.
+// The macOS build is Apple Silicon only, so there's a single Mac download; we
+// detect the OS only to nudge non-Mac visitors.
 export function Download() {
   const [isMac, setIsMac] = useState(true);
   useEffect(() => {
@@ -32,12 +31,6 @@ export function Download() {
             <Button size="lg">
               <DownloadIcon className="mr-2 h-4 w-4" />
               Apple Silicon (.dmg)
-            </Button>
-          </a>
-          <a href={RELEASES_URL} target="_blank" rel="noreferrer">
-            <Button size="lg" variant="outline">
-              <DownloadIcon className="mr-2 h-4 w-4" />
-              Intel (.dmg)
             </Button>
           </a>
         </div>
