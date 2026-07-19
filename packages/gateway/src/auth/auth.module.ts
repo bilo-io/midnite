@@ -6,6 +6,7 @@ import { TeamsModule } from '../teams/teams.module';
 import { AuthController } from './auth.controller';
 import { GatewayAuthGuard } from './gateway-auth.guard';
 import { JwtService } from './jwt.service';
+import { OperatorGuard } from './operator.guard';
 import { OwnershipService } from './ownership.service';
 import { RateLimitGuard } from './rate-limit.guard';
 import { RefreshTokensRepository } from './refresh-tokens.repository';
@@ -34,13 +35,17 @@ import { SsoStateRepository } from './sso-state.repository';
     SsoService,
     SsoStateRepository,
     RoleGuard,
+    OperatorGuard,
     OwnershipService,
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: GatewayAuthGuard },
     // Global singleton: RoleGuard is a no-op on routes without @RequiresRole, so
     // registering it globally is safe and avoids per-module TeamsService resolution.
     { provide: APP_GUARD, useClass: RoleGuard },
+    // Operator gate (Phase 73 D) — runs after GatewayAuthGuard (so req.user is set);
+    // no-op on routes without @RequiresOperator.
+    { provide: APP_GUARD, useClass: OperatorGuard },
   ],
-  exports: [JwtService, RoleGuard, OwnershipService],
+  exports: [JwtService, RoleGuard, OperatorGuard, OwnershipService],
 })
 export class AuthModule {}

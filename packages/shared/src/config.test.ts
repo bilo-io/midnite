@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enabledSsoProviders, parseConfig } from './config.js';
+import { enabledSsoProviders, isOperatorEmail, parseConfig } from './config.js';
 
 describe('retro config (Phase 62)', () => {
   it('defaults auto-skeleton ON with a 700-token narrative cap', () => {
@@ -316,5 +316,29 @@ describe('login SSO config (Phase 70 E)', () => {
     });
     // github-only configured → github alone; google omitted.
     expect(enabledSsoProviders(config)).toEqual(['github']);
+  });
+});
+
+describe('isOperatorEmail (Phase 73 D)', () => {
+  const withOperators = (operators: string[]) =>
+    parseConfig({ agent: {}, terminal: {}, gateway: { auth: { operators } } });
+
+  it('is fail-closed: empty operators list ⇒ nobody is an operator', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(config.gateway.auth.operators).toEqual([]);
+    expect(isOperatorEmail(config, 'anyone@example.com')).toBe(false);
+  });
+
+  it('matches an allowlisted email case-insensitively', () => {
+    const config = withOperators(['Ops@Example.COM']);
+    expect(isOperatorEmail(config, 'ops@example.com')).toBe(true);
+    expect(isOperatorEmail(config, 'OPS@EXAMPLE.COM')).toBe(true);
+  });
+
+  it('rejects a non-listed email, and a null/empty email', () => {
+    const config = withOperators(['ops@example.com']);
+    expect(isOperatorEmail(config, 'intruder@example.com')).toBe(false);
+    expect(isOperatorEmail(config, null)).toBe(false);
+    expect(isOperatorEmail(config, '')).toBe(false);
   });
 });

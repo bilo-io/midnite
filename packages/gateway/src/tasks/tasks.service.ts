@@ -215,6 +215,11 @@ export class TasksService implements OnModuleDestroy {
     };
   }
 
+  /** Raw per-status task counts (Phase 73 D — the operator console's platform overview). */
+  statusCounts(): Record<Status, number> {
+    return this.repo.countsByStatus();
+  }
+
   listTasks(status?: Status, projectId?: string, scope?: TeamScope): Task[] {
     return this.repo.hydrateMany(this.repo.listTasks(status, projectId, scope)).map((t) => this.withHeld(t));
   }

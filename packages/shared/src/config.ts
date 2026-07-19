@@ -261,6 +261,13 @@ export const GatewayAuthConfigSchema = z.object({
   // unaffected. Compared case-insensitively. Only meaningful when JWT auth is on
   // (a JWT-disabled local gateway has no login to gate).
   allowlist: z.array(z.string().email()).default([]),
+  // Platform **operators** (Phase 73 D) — the emails allowed to reach the operator
+  // console's cross-tenant admin routes (`GET /admin/users|teams|overview`). Like
+  // `allowlist`, this is operator policy and lives in the gitignored
+  // `.midnite/operator.json`. **Empty (the default) ⇒ NO operators** (fail-closed to
+  // "no admin access", never "everyone"): a single-user / static-token install is not
+  // an operator unless explicitly listed here. Compared case-insensitively.
+  operators: z.array(z.string().email()).default([]),
 });
 
 // Phase 72 A — operator-owned config source. The operator's auth wiring (client
@@ -660,6 +667,19 @@ export function enabledSsoProviders(config: MidniteConfig): LoginProvider[] {
   if (sso.google?.clientId) providers.push('google');
   if (sso.github?.clientId) providers.push('github');
   return providers;
+}
+
+/**
+ * Whether `email` is a platform operator (Phase 73 D) — a case-insensitive match
+ * against `gateway.auth.operators`. **Fail-closed:** an empty operators list (the
+ * default) means NOBODY is an operator, and a null/undefined email is never one.
+ * Drives the `@RequiresOperator` gate on the cross-tenant `/admin/*` read routes.
+ */
+export function isOperatorEmail(config: MidniteConfig, email: string | null | undefined): boolean {
+  if (!email) return false;
+  const needle = email.trim().toLowerCase();
+  if (!needle) return false;
+  return config.gateway.auth.operators.some((op) => op.trim().toLowerCase() === needle);
 }
 
 // The runtime loader (reads midnite.json from disk) lives in the node-only

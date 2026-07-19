@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import type { User } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { users, type UserInsert, type UserRow } from '../db/schema';
@@ -10,6 +10,16 @@ export class UsersRepository {
 
   insert(row: UserInsert): UserRow {
     return this.db.insert(users).values(row).returning().get();
+  }
+
+  /** All users, oldest first (Phase 73 D — the operator console's cross-tenant list). */
+  listAll(): UserRow[] {
+    return this.db.select().from(users).orderBy(asc(users.createdAt)).all();
+  }
+
+  /** Total user count (Phase 73 D — platform overview KPI). */
+  count(): number {
+    return this.db.select({ n: sql<number>`COUNT(*)` }).from(users).get()?.n ?? 0;
   }
 
   findById(id: string): UserRow | undefined {
