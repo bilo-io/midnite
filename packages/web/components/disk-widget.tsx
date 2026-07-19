@@ -1,8 +1,8 @@
 'use client';
 
 import { HardDrive } from 'lucide-react';
+import { RadialGauge } from '@midnite/ui';
 import { useSystemStats } from '@/lib/use-system-stats';
-import { RadialGauge } from './radial-gauge';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 

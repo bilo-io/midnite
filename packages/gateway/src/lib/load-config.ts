@@ -7,6 +7,7 @@ import {
   operatorConfigInfo,
   OperatorAuthInUserConfigError,
 } from '@midnite/shared/config-loader';
+import { mergeAllowedOrigins, parseAdminOrigins } from './admin-origin';
 
 export { findConfigPath };
 
@@ -45,6 +46,18 @@ function applyEnvOverrides(config: MidniteConfig): MidniteConfig {
   if (dbPath) config.gateway.dbPath = dbPath;
   if (uploadsDir) config.gateway.uploadsDir = uploadsDir;
   if (webDir) config.gateway.webDir = webDir;
+  // The admin console (Phase 73 E) is a static export on its own origin that
+  // calls the gateway cross-origin with `credentials: 'include'`. Fold any
+  // MIDNITE_ADMIN_ORIGIN entries into the CORS/WS allow-list (deduped, additive)
+  // so a credentialed request from that origin is honoured (CORS with
+  // credentials can't reflect `*`, so the origin must be explicit).
+  const adminOrigins = parseAdminOrigins(process.env['MIDNITE_ADMIN_ORIGIN']);
+  if (adminOrigins.length > 0) {
+    config.gateway.allowedOrigins = mergeAllowedOrigins(
+      config.gateway.allowedOrigins,
+      adminOrigins,
+    );
+  }
   return config;
 }
 

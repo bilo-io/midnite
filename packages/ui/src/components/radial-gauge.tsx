@@ -1,5 +1,3 @@
-import { formatBytes } from '@/lib/utils';
-
 // Radial gauge geometry. `SIZE` is the SVG viewport; the ring is inset by half
 // the stroke so the round caps never clip.
 const SIZE = 128;
@@ -7,6 +5,15 @@ const STROKE = 12;
 const RADIUS = (SIZE - STROKE) / 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+/** Human-readable byte size: 1-decimal below 100, whole numbers above (e.g. "42 GB", "1.4 TB"). */
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** i;
+  return `${i === 0 || value >= 100 ? Math.round(value) : value.toFixed(1)} ${units[i]}`;
+}
 
 /**
  * A used/total byte gauge: a radial ring filled to the used fraction (accent

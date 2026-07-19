@@ -14,7 +14,7 @@ import {
   stripEnvironment,
   type ReportContextInput,
 } from '@/lib/report-context';
-import { MAX_ISSUE_URL_LENGTH, githubIssuesNewUrl } from '@/lib/site-links';
+import { MAX_ISSUE_URL_LENGTH, githubIssuesNewUrl } from '@midnite/shared';
 import { getCurrentVersion } from '@/lib/version';
 import { cn } from '@/lib/utils';
 

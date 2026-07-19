@@ -15,6 +15,7 @@ export { Accordion } from './components/accordion';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Card, CardHeader, CardTitle, CardContent } from './components/card';
 export { Collapse } from './components/collapse';
+export { ContextRing } from './components/context-ring';
 export { DynamicBackground, type BackgroundPattern } from './components/dynamic-background';
 export { GithubIcon } from './components/github-icon';
 export {
@@ -30,6 +31,8 @@ export {
   PasscodeUnlockDialog,
   PASSCODE_LENGTH,
 } from './components/passcode-pad';
+export { RadialGauge } from './components/radial-gauge';
+export { AreaChart, LegendDot, CHART_W, CHART_H } from './components/system-chart';
 export {
   RailShell,
   RailFloatingToggle,

@@ -1,8 +1,8 @@
 'use client';
 
 import { Cpu } from 'lucide-react';
+import { AreaChart, LegendDot } from '@midnite/ui';
 import { useSystemTelemetry } from '@/lib/use-system-telemetry';
-import { AreaChart, LegendDot } from './system-chart';
 import { WidgetCard } from './widget-card';
 
 /**

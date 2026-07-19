@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/cn';
 
 // Shared CPU/RAM area chart used by both the screensaver corner readout and the
 // System monitor dashboard widget, so the two stay visually identical. Pure SVG:

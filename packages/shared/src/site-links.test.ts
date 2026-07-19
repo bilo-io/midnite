@@ -5,7 +5,7 @@ import {
   REPORT_ISSUE_LABELS,
   REPORT_ISSUE_TEMPLATE,
   githubIssuesNewUrl,
-} from './site-links';
+} from './site-links.js';
 
 describe('githubIssuesNewUrl', () => {
   it('targets the public companion repo, not the private source', () => {

@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { SessionStatus } from '@midnite/shared';
 import { LockScreen } from '@midnite/shell';
+import { AreaChart, LegendDot } from '@midnite/ui';
 import { getSessions } from '@/lib/api';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useDynamicBackground } from '@/lib/use-dynamic-background';
@@ -16,7 +17,6 @@ import {
   type AppSettings,
 } from '@/lib/app-settings';
 import { Spinner } from '@/components/spinner';
-import { AreaChart, LegendDot } from '@/components/system-chart';
 import { useSystemTelemetry } from '@/lib/use-system-telemetry';
 import { useSystemStats } from '@/lib/use-system-stats';
 import { clamp, formatBytes } from '@/lib/utils';
