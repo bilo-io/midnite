@@ -38,6 +38,7 @@ const meta = {
     chat: chatStub,
     isMobile: false,
     headingId: 'assistant-heading',
+    onReport: () => {},
   },
 } satisfies Meta<typeof AssistantPanel>;
 
