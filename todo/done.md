@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — test(gateway): pin SSO redirectUri assertions + resolveClient gate reassert — Phase 72 E code-only (PR #486)
+
+The redirect-URI *code* seam already existed (`SsoProviderConfigSchema.redirectUri` + `sso.service.callbackUri()` pinning). This slice delivers Theme E's **codeable half** — proof-tests + inline docs — so the remaining go-live work is config-and-register, not code. The one silent go-live footgun is a redirect-URI mismatch: the authorize step succeeds, then the token exchange 400s; the tests assert the pinned value is the exact string sent in **both** places.
+
+- [x] **redirectUri documented** — expanded the `SsoProviderConfigSchema.redirectUri` doc-comment with the canonical local (`http://localhost:7777/auth/sso/<provider>/callback`) + hosted (`https://<gateway-host>/…`) patterns, the GitHub one-callback/two-app note, and a pointer to the Theme F `docs/SSO.md` runbook. (Left `docs/SSO.md` itself for Theme F.)
+- [x] **Tests** — new `sso.service.test.ts` blocks: a config-pinned `redirectUri` flows into the Google authorize URL (local fixture) + GitHub authorize URL (hosted fixture), and into the Google **and** GitHub token-exchange `redirect_uri` (mocked-fetch body capture); plus a derive-from-origin case when unset. Explicit `resolveClient` gate: config+secret ⇒ enabled; config present + secret env unset ⇒ dropped; no config block (even with a matching secret env) ⇒ dropped. Allowlist-governs-first-login cited from `users.service.test.ts` (not duplicated). `makeHarness` parameterised over the sso block.
+- [x] Gate: `gateway:test` 2170 pass (8 new), `:typecheck` + `:lint` (0 errors) + `shared:test` green. CI `ci` leg green. **Remaining Theme E (human/operator, at go-live):** register the two real OAuth apps + drive a live Google + GitHub sign-in end-to-end — plus all of Theme F (DX/docs).
+
 ## 2026-07-19 — feat(gateway,web): health readiness redaction + web server build target — Phase 72 C+D (PR #485)
 
 Two independent SSO-go-live hardening slices. **C**: the auth-exempt `/health/preflight` + `/health/ready` probes were echoing provider names + secret env-var names to anonymous callers — now they return only the status roll-up, with the granular detail behind a valid credential. **D**: `next.config` built `output:'export'` unconditionally, silently dropping the `/api/auth/*` BFF routes the SSO cookie flow needs — a hosted build target now opts out of the export.
