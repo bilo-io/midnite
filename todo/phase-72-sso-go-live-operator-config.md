@@ -38,22 +38,22 @@ Move the whole auth subtree to the operator source and make it **impossible** to
 - [x] **Migration ergonomics** — a one-line boot log (info) when an operator config is loaded ("operator auth config loaded: providers=[…], jwt=on/off"), and the fail-closed error names the exact offending key path so an operator can move it in seconds.
 - [x] **Tests** — `gateway.auth` in `midnite.json` → throws with the keyed message; trimmed `midnite.json` + absent operator file → auth-off baseline; trimmed + present operator file → providers/allowlist resolve identically to the pre-split fixture.
 
-## Theme C — Redact the health readiness leak — **S**
+## Theme C — Redact the health readiness leak — **S** — ✅ DONE (PR #485, 2026-07-19)
 
 Stop the auth-exempt probes from disclosing provider presence + secret env-var names to anonymous callers.
 
-- [ ] **Status-only for unauthenticated probes**: [`health.controller.ts`](../packages/gateway/src/health/health.controller.ts) `GET /health/preflight` + `/health/ready` return the **status roll-up** (`ok`/`warn`/`fail` + a generic label) to anonymous callers; the granular `detail`/`remedy` strings (provider names, env-var names) are included **only** for an authenticated (operator/admin) request. Probes keep working (uptime checks read status); config specifics stop leaking.
-- [ ] Keep `checkSso()`'s logic intact — this is a **presentation/authorization** change at the controller boundary, not a rule change. The full detail remains available to `midnite doctor` / the operator surface (Theme F), which are authenticated.
-- [ ] **Tests** — anonymous preflight omits provider + env-var names (status only); authenticated preflight includes them; `/health/ready` liveness contract for probes unchanged.
+- [x] **Status-only for unauthenticated probes**: [`health.controller.ts`](../packages/gateway/src/health/health.controller.ts) `GET /health/preflight` + `/health/ready` return the **status roll-up** (`ok`/`warn`/`fail` + a generic label) to anonymous callers; the granular `detail`/`remedy` strings (provider names, env-var names) are included **only** for an authenticated (operator/admin) request. Probes keep working (uptime checks read status); config specifics stop leaking.
+- [x] Keep `checkSso()`'s logic intact — this is a **presentation/authorization** change at the controller boundary, not a rule change. The full detail remains available to `midnite doctor` / the operator surface (Theme F), which are authenticated.
+- [x] **Tests** — anonymous preflight omits provider + env-var names (status only); authenticated preflight includes them; `/health/ready` liveness contract for probes unchanged.
 
-## Theme D — Web server build target (hosted auth-on mode) — **M**
+## Theme D — Web server build target (hosted auth-on mode) — **M** — ✅ DONE (PR #485, 2026-07-19)
 
 Give the hosted deployment a build where the `/api/auth/*` BFF cookie routes actually run, without disturbing the desktop static export.
 
-- [ ] **Build-time toggle** in [`next.config.mjs`](../packages/web/next.config.mjs): `output: 'export'` becomes conditional on a flag (e.g. `MIDNITE_WEB_TARGET` — `static` **default** vs `server`); `server` drops the export so the POST route handlers under [`app/api/auth/`](../packages/web/app/api/auth/) (login/refresh/logout + `sso/callback`) are built and served. Desktop/GitHub-Pages builds keep the default and are unchanged.
-- [ ] **moon wiring** — a `web:build` (static, default, desktop path) + a `web:build:server` task/variant in [`packages/web/moon.yml`](../packages/web/moon.yml) that sets the flag; document which artifact the hosted deploy consumes. Confirm the static path still emits the same `out/` (no BFF routes) so desktop packaging is untouched.
-- [ ] **Runtime sanity** — in `server` mode the app reads `NEXT_PUBLIC_GATEWAY_URL` for the gateway origin and completes the one-time-code exchange → `__midnite_rt` cookie set by [`api/auth/sso/callback/route.ts`](../packages/web/app/api/auth/sso/callback/route.ts); in `static` mode the auth-on paths are simply absent (unchanged today's behaviour). A short note on cookie `secure`/HTTPS + same-site expectations for the hosted origin.
-- [ ] **Tests** — a config-level assertion that the flag flips `output` (unit over a small extracted helper, since `next.config.mjs` itself isn't imported by vitest), plus an e2e/integration note that the server build exposes `POST /api/auth/sso/callback` while the static build 404s it.
+- [x] **Build-time toggle** in [`next.config.mjs`](../packages/web/next.config.mjs): `output: 'export'` becomes conditional on a flag (e.g. `MIDNITE_WEB_TARGET` — `static` **default** vs `server`); `server` drops the export so the POST route handlers under [`app/api/auth/`](../packages/web/app/api/auth/) (login/refresh/logout + `sso/callback`) are built and served. Desktop/GitHub-Pages builds keep the default and are unchanged.
+- [x] **moon wiring** — a `web:build` (static, default, desktop path) + a `web:build:server` task/variant in [`packages/web/moon.yml`](../packages/web/moon.yml) that sets the flag; document which artifact the hosted deploy consumes. Confirm the static path still emits the same `out/` (no BFF routes) so desktop packaging is untouched.
+- [x] **Runtime sanity** — in `server` mode the app reads `NEXT_PUBLIC_GATEWAY_URL` for the gateway origin and completes the one-time-code exchange → `__midnite_rt` cookie set by [`api/auth/sso/callback/route.ts`](../packages/web/app/api/auth/sso/callback/route.ts); in `static` mode the auth-on paths are simply absent (unchanged today's behaviour). A short note on cookie `secure`/HTTPS + same-site expectations for the hosted origin.
+- [x] **Tests** — a config-level assertion that the flag flips `output` (unit over a small extracted helper, since `next.config.mjs` itself isn't imported by vitest), plus an e2e/integration note that the server build exposes `POST /api/auth/sso/callback` while the static build 404s it.
 
 ## Theme E — Real provider wiring & explicit redirect URIs — **M**
 

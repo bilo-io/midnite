@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { PoolModule } from '../pool/pool.module';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
@@ -12,7 +13,9 @@ import { PreflightService } from './preflight.service';
  * exported so the Phase 54 C watchdog can reuse the same checks.
  */
 @Module({
-  imports: [forwardRef(() => PoolModule)],
+  // AuthModule provides JwtService so the controller can detect an authenticated
+  // caller (Phase 72 C) and include the granular detail only for them.
+  imports: [forwardRef(() => PoolModule), AuthModule],
   controllers: [HealthController],
   providers: [HealthService, PreflightService],
   exports: [HealthService, PreflightService],

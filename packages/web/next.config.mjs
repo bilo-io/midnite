@@ -3,10 +3,17 @@ import { fileURLToPath } from 'node:url';
 
 import BundleAnalyzer from '@next/bundle-analyzer';
 
+import { resolveWebOutput } from './lib/web-target.mjs';
+
 const withBundleAnalyzer = BundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
   openAnalyzer: false,
 });
+
+// Phase 72 D — 'export' by default (desktop/Pages static bundle); a hosted build
+// sets MIDNITE_WEB_TARGET=server to drop the export so the /api/auth/* BFF routes
+// run. `undefined` = Next's default server mode.
+const output = resolveWebOutput(process.env);
 
 // Bake this build's version in so the update banner (Phase 71) can compare the
 // running build against the published `/version.json`. Inlined as a literal at
@@ -17,9 +24,9 @@ const pkg = JSON.parse(
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static export so the desktop app can serve the UI as files (only the gateway
-  // runs as a process). All data is fetched client-side from the gateway.
-  output: 'export',
+  // Static export (default) so the desktop app can serve the UI as files (only the
+  // gateway runs as a process); `server` mode omits it for the hosted auth build.
+  output,
   // No Next image-optimization server in an export.
   images: { unoptimized: true },
   // Emit dir/index.html so paths resolve when served as static files.

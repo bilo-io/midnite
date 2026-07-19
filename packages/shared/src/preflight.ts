@@ -16,9 +16,15 @@ export const PreflightCheckSchema = z.object({
   /** Stable identifier for the check, e.g. `database`, `agent-cli`. */
   name: z.string(),
   status: PreflightStatusSchema,
-  /** Human-readable detail of what was found. */
-  detail: z.string(),
-  /** Actionable remediation when not `ok`. */
+  /**
+   * Human-readable detail of what was found. Optional because the auth-exempt
+   * `/health/preflight` + `/health/ready` probes **redact** `detail` + `remedy`
+   * for unauthenticated callers (Phase 72 C) — they'd otherwise disclose provider
+   * names + secret env-var names to anyone. Producers (boot preflight, readiness)
+   * always set it; only the anonymous HTTP response omits it.
+   */
+  detail: z.string().optional(),
+  /** Actionable remediation when not `ok`. Redacted for anonymous probes (see `detail`). */
   remedy: z.string().optional(),
 });
 export type PreflightCheck = z.infer<typeof PreflightCheckSchema>;
