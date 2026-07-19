@@ -98,6 +98,21 @@ export class TeamsService {
     return this.repo.listByUser(userId).map((r) => this.repo.hydrateTeam(r));
   }
 
+  /** All teams, oldest first (Phase 73 D — the operator console's cross-tenant list). */
+  listAllTeams(): Team[] {
+    return this.repo.listAll().map((r) => this.repo.hydrateTeam(r));
+  }
+
+  /** Total team count (Phase 73 D — platform overview KPI). */
+  countTeams(): number {
+    return this.repo.count();
+  }
+
+  /** Member count for a team (Phase 73 D — the admin team summary). */
+  memberCount(teamId: string): number {
+    return this.repo.countMembers(teamId);
+  }
+
   updateTeam(id: string, req: UpdateTeamRequest, callerId: string): TeamWithMembers {
     this.assertRole(id, callerId, 'admin');
     const row = this.repo.update(id, { name: req.name });

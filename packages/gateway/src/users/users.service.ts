@@ -293,6 +293,16 @@ export class UsersService {
     return this.repo.hydrate(row);
   }
 
+  /** All users, oldest first (Phase 73 D — the operator console's cross-tenant list). */
+  listAllUsers(): User[] {
+    return this.repo.listAll().map((row) => this.repo.hydrate(row));
+  }
+
+  /** Total user count (Phase 73 D — platform overview KPI). */
+  countUsers(): number {
+    return this.repo.count();
+  }
+
   async updateProfile(id: string, name?: string): Promise<User> {
     const row = this.repo.updateProfile(id, { name, updatedAt: new Date().toISOString() });
     if (!row) throw new UserDoesNotExistError(id);

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Team, TeamInvite, TeamMember, TeamRole, TeamWithMembers } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module.js';
 import {
@@ -28,6 +28,27 @@ export class TeamsRepository {
 
   findBySlug(slug: string): TeamRow | undefined {
     return this.db.select().from(teams).where(eq(teams.slug, slug)).get();
+  }
+
+  /** All teams, oldest first (Phase 73 D — the operator console's cross-tenant list). */
+  listAll(): TeamRow[] {
+    return this.db.select().from(teams).orderBy(asc(teams.createdAt)).all();
+  }
+
+  /** Total team count (Phase 73 D — platform overview KPI). */
+  count(): number {
+    return this.db.select({ n: sql<number>`COUNT(*)` }).from(teams).get()?.n ?? 0;
+  }
+
+  /** Member count for a team (Phase 73 D — the admin team summary). */
+  countMembers(teamId: string): number {
+    return (
+      this.db
+        .select({ n: sql<number>`COUNT(*)` })
+        .from(teamMemberships)
+        .where(eq(teamMemberships.teamId, teamId))
+        .get()?.n ?? 0
+    );
   }
 
   listByUser(userId: string): TeamRow[] {
