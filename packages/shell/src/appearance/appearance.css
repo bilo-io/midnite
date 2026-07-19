@@ -1,0 +1,489 @@
+/*
+ * @midnite/shell appearance CSS layer (Phase 73 Theme B).
+ *
+ * The accent / gradient / background-pattern / density / motion / effect /
+ * shimmer rules the appearance runtime (`apply-appearance.ts`) drives via
+ * `data-*` attributes + custom properties on <html>. Moved VERBATIM out of
+ * packages/web/app/globals.css so `web` and `admin` share one source; consumers
+ * `@import` it (via their globals.css) alongside `@midnite/ui/styles`.
+ *
+ * Authored as plain (unlayered) CSS on purpose: this file is processed
+ * standalone by the host's PostCSS, so it can't carry Tailwind `@layer`
+ * directives (they need `@tailwind` in-file). Every selector here is either a
+ * high-specificity `html[data-*]` rule, an `!important` reset, a custom-property
+ * setter, or a custom class name that doesn't collide with a generated Tailwind
+ * utility — so unlayered cascade reproduces the original behaviour.
+ */
+
+  /* Density: compact shrinks the root font-size (rem utilities scale). */
+  html[data-density='compact'] {
+    font-size: 14px;
+  }
+
+  html[data-accent] {
+    --primary: var(--accent-h) calc(var(--accent-s) * 1%) 42%;
+    --primary-foreground: 0 0% 100%;
+    --ring: var(--accent-h) calc(var(--accent-s) * 1%) 42%;
+    --accent: var(--accent-h) calc(var(--accent-s) * 1%) 92%;
+    --accent-foreground: var(--accent-h) calc(var(--accent-s) * 1%) 25%;
+  }
+  /* Dark theme primary is the lighter surface (dark text on top), so accents sit
+     brighter with a dark foreground — mirroring the default token inversion. */
+  html.dark[data-accent] {
+    --primary: var(--accent-h) calc(var(--accent-s) * 1%) 62%;
+    --primary-foreground: 240 12% 8%;
+    --ring: var(--accent-h) calc(var(--accent-s) * 1%) 62%;
+    --accent: var(--accent-h) calc(var(--accent-s) * 1%) 22%;
+    --accent-foreground: var(--accent-h) calc(var(--accent-s) * 1%) 88%;
+  }
+
+  /*
+   * Phase 68 — accent gradients + secondary channel. For a gradient primary accent,
+   * `applyAccent()` sets `--accent-gradient` (a full linear/conic value, theme-aware
+   * — brand uses the `--node-*` tokens) + `data-accent-gradient`, while still
+   * retinting the solid tokens above from the gradient's *primary stop*, so text,
+   * icons, and focus rings always have a contrast-safe solid fallback (they never
+   * sit on a raw gradient). `applyAccentSecondary()` sets `--accent-2-h`/`-s` (+ an
+   * optional `--accent-2-gradient`); the theme-aware lightness for the secondary
+   * *solid* token is supplied here, mirroring the primary. Actual gradient surface
+   * repainting (buttons, FAB, rings, progress) lands in Theme C — this establishes
+   * the tokens + a gradient utility the live preview uses.
+   */
+  html[data-accent-2] {
+    --accent-2: var(--accent-2-h) calc(var(--accent-2-s) * 1%) 42%;
+    --accent-2-foreground: 0 0% 100%;
+  }
+  html.dark[data-accent-2] {
+    --accent-2: var(--accent-2-h) calc(var(--accent-2-s) * 1%) 62%;
+    --accent-2-foreground: 240 12% 8%;
+  }
+
+  /*
+   * Paint the active gradient accent, falling back to the solid primary token when
+   * no gradient is set. Foreground content placed on this surface must use a solid
+   * token (e.g. `text-primary-foreground`) — never rely on contrast against the
+   * gradient itself. Used by the Appearance live preview (Theme D); real surfaces
+   * adopt it in Theme C.
+   */
+  .accent-gradient-surface {
+    background-color: hsl(var(--primary));
+    background-image: var(--accent-gradient, none);
+  }
+
+  /*
+   * Phase 68 C — paint the active gradient accent on real accent surfaces. Almost
+   * every accent surface uses the `bg-primary` utility (primary buttons/CTAs,
+   * active nav, chips, selected states), so one rule paints them all — the gradient
+   * layers over the solid `background-color` so `hover:bg-primary/90` and the like
+   * still work, and foreground text stays on the solid `--primary-foreground`
+   * (never on the raw gradient). Focus rings deliberately keep the SOLID `--ring`
+   * (the gradient's primary stop) for visibility — see the retint rules above.
+   */
+  html[data-accent-gradient] .bg-primary {
+    background-image: var(--accent-gradient);
+  }
+  html[data-accent-gradient] a.bg-primary:hover,
+  html[data-accent-gradient] button.bg-primary:hover {
+    filter: brightness(1.06);
+  }
+  /* Progress fills + any surface that opts in explicitly. */
+  html[data-accent-gradient] [data-accent-surface] {
+    background-image: var(--accent-gradient);
+  }
+
+  /* Secondary accent (Phase 68 C) — token utilities for genuinely-secondary
+     surfaces (secondary badges, chart series #2, secondary button accents). Fall
+     back to the primary token when the secondary channel is off. */
+  .bg-accent-2 {
+    background-color: hsl(var(--accent-2, var(--primary)));
+  }
+  .text-accent-2 {
+    color: hsl(var(--accent-2, var(--primary)));
+  }
+  .border-accent-2 {
+    border-color: hsl(var(--accent-2, var(--primary)));
+  }
+
+  /*
+   * `--brand-gradient` — a static CSS copy of the signature brand sweep
+   * (blue → violet → rose, the `brand` preset in `apply-appearance.ts`:
+   * hues 220/90 (a deepened, stronger blue) · 263/70 · 347/75 with the
+   * theme-aware lightness ramp). Keep this in lockstep with the brand branch
+   * of `buildAccentCssParts`. The auth screen falls back to it when the user's accent is a
+   * *solid* (no `--accent-gradient` set), so the login hero/headings always
+   * read as the gradient rather than degrading to a flat primary.
+   */
+  :root {
+    --brand-gradient: linear-gradient(
+      135deg,
+      hsl(220 90% 47%) 0%,
+      hsl(220 90% 47%) 28%,
+      hsl(263 70% 46%) 62%,
+      hsl(347 75% 40%) 100%
+    );
+  }
+  .dark {
+    --brand-gradient: linear-gradient(
+      135deg,
+      hsl(220 88% 59%) 0%,
+      hsl(220 88% 59%) 28%,
+      hsl(263 70% 58%) 62%,
+      hsl(347 75% 50%) 100%
+    );
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.6) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Starfield — the lightweight CSS twin of the neuro-cloud canvas: a scattered
+     two-layer dot field on the neutral foreground, so the settings swatch and the
+     pre-hydration frame read as a galaxy before `NeuroCloudBackground` mounts. */
+  .bg-starfield {
+    background-image:
+      radial-gradient(circle, hsl(var(--foreground) / 0.35) 0.6px, transparent 1.2px),
+      radial-gradient(circle, hsl(var(--foreground) / 0.18) 0.6px, transparent 1.2px);
+    background-size: 34px 34px, 19px 21px;
+    background-position: 0 0, 11px 13px;
+    mask-image: radial-gradient(ellipse at center, black 45%, transparent 90%);
+  }
+
+  /* Fine dot grid — radial dots on a transparent field. */
+  .bg-dots {
+    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.25) 1px, transparent 1px);
+    background-size: 20px 20px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* 45° repeating diagonal stripes. */
+  .bg-diagonal-lines {
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--border) / 0.7) 0,
+      hsl(var(--border) / 0.7) 1px,
+      transparent 0,
+      transparent 12px
+    );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Contour-map concentric rings at two focal points. */
+  .bg-topographic {
+    background-image:
+      radial-gradient(ellipse 100% 50% at 30% 40%, transparent 58px, hsl(var(--border) / 0.5) 59px, transparent 60px),
+      radial-gradient(ellipse 80% 40% at 30% 40%, transparent 38px, hsl(var(--border) / 0.4) 39px, transparent 40px),
+      radial-gradient(ellipse 60% 30% at 30% 40%, transparent 18px, hsl(var(--border) / 0.3) 19px, transparent 20px),
+      radial-gradient(ellipse 120% 60% at 70% 65%, transparent 78px, hsl(var(--border) / 0.5) 79px, transparent 80px),
+      radial-gradient(ellipse 90% 45% at 70% 65%, transparent 52px, hsl(var(--border) / 0.4) 53px, transparent 54px),
+      radial-gradient(ellipse 60% 30% at 70% 65%, transparent 26px, hsl(var(--border) / 0.3) 27px, transparent 28px);
+    background-attachment: fixed;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Soft multi-color radial blobs — static aurora wash. */
+  .bg-aurora {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 20% 30%, hsl(var(--node-trigger) / 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 35% at 80% 70%, hsl(var(--node-action) / 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 30% at 55% 55%, hsl(var(--node-data) / 0.10) 0%, transparent 60%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Plus-sign lattice: two short perpendicular stripes centred per tile. */
+  .bg-plus-cross {
+    background-image:
+      linear-gradient(to right, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px),
+      linear-gradient(to bottom, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Repeating wave arcs using overlapping circle outlines. */
+  .bg-waves {
+    background-image:
+      radial-gradient(ellipse 60% 80% at 0% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%),
+      radial-gradient(ellipse 60% 80% at 100% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%);
+    background-size: 64px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Fine crosshatch that reads as subtle grain. */
+  .bg-grain {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        hsl(var(--foreground) / 0.04) 3px,
+        hsl(var(--foreground) / 0.04) 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 4px,
+        hsl(var(--foreground) / 0.04) 4px,
+        hsl(var(--foreground) / 0.04) 5px
+      );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Blueprint-style dual-scale grid in blue tones. */
+  .bg-blueprint {
+    background-image:
+      linear-gradient(hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(hsl(217 91% 60% / 0.10) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.10) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Mesh gradient — overlapping colour blobs at six anchor points. */
+  .bg-mesh-gradient {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--node-trigger) / 0.18) 0px, transparent 55%),
+      radial-gradient(at 80% 10%, hsl(var(--node-action) / 0.15) 0px, transparent 55%),
+      radial-gradient(at 5% 55%, hsl(var(--node-logic) / 0.12) 0px, transparent 55%),
+      radial-gradient(at 85% 55%, hsl(var(--node-trigger) / 0.10) 0px, transparent 55%),
+      radial-gradient(at 20% 90%, hsl(var(--node-data) / 0.14) 0px, transparent 55%),
+      radial-gradient(at 80% 85%, hsl(var(--node-action) / 0.12) 0px, transparent 55%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Slowly drifting multi-colour conic gradient. The angle is animated via the
+     @property below; --bg-intensity controls the opacity of each colour stop so
+     the Intensity control in Appearance can scale it from subtle → bold.
+     Reduced-motion freezes it to its final state. */
+  .bg-animated-gradient {
+    background-image: conic-gradient(
+      from var(--gradient-angle) at 50% 50%,
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-action) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-logic) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-data) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2))
+    );
+    animation: gradient-border-spin 20s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) .bg-animated-gradient {
+      animation: none;
+    }
+  }
+
+  /* data-bg-intensity on <html> maps to the --bg-intensity custom property
+     consumed by .bg-animated-gradient. Only shown in Appearance when gradient
+     is the active pattern. */
+  html[data-bg-intensity='subtle']   { --bg-intensity: 0.10; }
+  html[data-bg-intensity='balanced'] { --bg-intensity: 0.20; }
+  html[data-bg-intensity='bold']     { --bg-intensity: 0.40; }
+
+  /* Pre-paint background: the appearanceInitScript sets data-bg on <html> before
+     first paint; any element with data-bg-target picks up the pattern here without
+     waiting for React hydration. After hydration the .bg-* class on the same element
+     is equivalent; both rules apply harmlessly. */
+  html[data-bg='grid'] [data-bg-target] {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.6) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='starfield'] [data-bg-target] {
+    background-image:
+      radial-gradient(circle, hsl(var(--foreground) / 0.35) 0.6px, transparent 1.2px),
+      radial-gradient(circle, hsl(var(--foreground) / 0.18) 0.6px, transparent 1.2px);
+    background-size: 34px 34px, 19px 21px;
+    background-position: 0 0, 11px 13px;
+    mask-image: radial-gradient(ellipse at center, black 45%, transparent 90%);
+  }
+
+  html[data-bg='dots'] [data-bg-target] {
+    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.25) 1px, transparent 1px);
+    background-size: 20px 20px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='diagonal-lines'] [data-bg-target] {
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--border) / 0.7) 0,
+      hsl(var(--border) / 0.7) 1px,
+      transparent 0,
+      transparent 12px
+    );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='topographic'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 100% 50% at 30% 40%, transparent 58px, hsl(var(--border) / 0.5) 59px, transparent 60px),
+      radial-gradient(ellipse 80% 40% at 30% 40%, transparent 38px, hsl(var(--border) / 0.4) 39px, transparent 40px),
+      radial-gradient(ellipse 60% 30% at 30% 40%, transparent 18px, hsl(var(--border) / 0.3) 19px, transparent 20px),
+      radial-gradient(ellipse 120% 60% at 70% 65%, transparent 78px, hsl(var(--border) / 0.5) 79px, transparent 80px),
+      radial-gradient(ellipse 90% 45% at 70% 65%, transparent 52px, hsl(var(--border) / 0.4) 53px, transparent 54px),
+      radial-gradient(ellipse 60% 30% at 70% 65%, transparent 26px, hsl(var(--border) / 0.3) 27px, transparent 28px);
+    background-attachment: fixed;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='aurora'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 20% 30%, hsl(var(--node-trigger) / 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 35% at 80% 70%, hsl(var(--node-action) / 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 30% at 55% 55%, hsl(var(--node-data) / 0.10) 0%, transparent 60%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  html[data-bg='plus-cross'] [data-bg-target] {
+    background-image:
+      linear-gradient(to right, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px),
+      linear-gradient(to bottom, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='waves'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 60% 80% at 0% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%),
+      radial-gradient(ellipse 60% 80% at 100% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%);
+    background-size: 64px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='grain'] [data-bg-target] {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        hsl(var(--foreground) / 0.04) 3px,
+        hsl(var(--foreground) / 0.04) 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 4px,
+        hsl(var(--foreground) / 0.04) 4px,
+        hsl(var(--foreground) / 0.04) 5px
+      );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='blueprint'] [data-bg-target] {
+    background-image:
+      linear-gradient(hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(hsl(217 91% 60% / 0.10) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.10) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='mesh-gradient'] [data-bg-target] {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--node-trigger) / 0.18) 0px, transparent 55%),
+      radial-gradient(at 80% 10%, hsl(var(--node-action) / 0.15) 0px, transparent 55%),
+      radial-gradient(at 5% 55%, hsl(var(--node-logic) / 0.12) 0px, transparent 55%),
+      radial-gradient(at 85% 55%, hsl(var(--node-trigger) / 0.10) 0px, transparent 55%),
+      radial-gradient(at 20% 90%, hsl(var(--node-data) / 0.14) 0px, transparent 55%),
+      radial-gradient(at 80% 85%, hsl(var(--node-action) / 0.12) 0px, transparent 55%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  html[data-bg='gradient'] [data-bg-target] {
+    background-image: conic-gradient(
+      from var(--gradient-angle) at 50% 50%,
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-action) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-logic) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-data) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2))
+    );
+    animation: gradient-border-spin 20s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) [data-bg='gradient'] [data-bg-target] {
+      animation: none;
+    }
+  }
+
+/*
+ * Phase 68 E — opt-in animated gradient accent. When a gradient's `animate` flag
+ * is set, the applier builds it with `var(--accent-angle)` and sets
+ * `data-accent-animate`; this spins the angle. Registered `@property` makes the
+ * custom-property animation smooth, and (inherits: true) propagates the value to
+ * every element painting `var(--accent-gradient)`. Gated exactly like
+ * `.bg-animated-gradient`: off under `data-motion='reduced'`, and off under the OS
+ * `prefers-reduced-motion` unless the user opted into `full`.
+ */
+@property --accent-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: true;
+}
+@keyframes accent-angle-spin {
+  to {
+    --accent-angle: 360deg;
+  }
+}
+html[data-accent-animate] {
+  animation: accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate][data-motion='reduced'] {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-accent-animate]:not([data-motion='full']) {
+    animation: none;
+  }
+}
+
+/* Explicit `reduced` (any OS) — a universal reset forcing animation/transition off
+   (animation-fill-mode: forwards holds each end frame so opacity:0→1 entrances still
+   settle visible). The per-effect @media(reduce) blocks handle the `system` path,
+   gated :not([data-motion='full']) so `full` can override an OS reduce preference. */
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  animation-fill-mode: forwards !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * Phase 39 D — per-effect toggles. `applyEffects()` sets a `data-no-*` attribute
+ * on <html> when an effect is disabled; each is independent of the motion knob.
+ * (The typewriter is JS-driven — gated in page-header via the effects setting,
+ * not here.)
+ */
+html[data-no-page-reveal] .page-reveal header ~ *,
+html[data-no-page-reveal] .page-reveal .reveal-staged {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+html[data-no-glass] *,
+html[data-no-glass] *::before,
+html[data-no-glass] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Status-pill shimmer cascade direction (Phase 39). */
+html[data-shimmer-dir='rtl'] .pill-shimmer {
+  animation-delay: calc(var(--pill-i, 0) * -0.4s);
+}

@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat: Phase 73 Theme B tail — appearance CSS relocation + ShellProviders (PR #484) — **completes Phase 73 Theme B 🎉**
+
+Finishes Theme B: the appearance **CSS layer** deferred from the foundation (#482) moves into `@midnite/shell`, and `<ShellProviders>` lands. `@midnite/shell` now fully owns the appearance runtime (JS + CSS) that `web` and `admin` share. Behaviour-preserving — visual parity verified against the running app.
+
+- [x] **Appearance CSS → `@midnite/shell/appearance.css`** — accent/gradient/background-pattern/density/motion/effect/shimmer rules moved **verbatim** out of web `globals.css` (~490 lines); web `@import`s it alongside `@midnite/ui/styles`. Authored **unlayered** (processed standalone → no Tailwind `@layer`); safe because every selector is a high-specificity `html[data-*]` rule, an `!important` reset, a custom-property setter, or a non-colliding custom class.
+- [x] **`<ShellProviders>`** — app-agnostic composition (`ThemeProvider` from ui + host-supplied `QueryClientProvider`); Auth/WS/Notifications/PreferenceSync stay host `children` (gateway-client DI defers to the Theme C web refactor). Context unit test + jsdom `matchMedia` stub.
+- [x] Verified: `web:build` green (57 pages), both CSS files pass cssnano, `:typecheck`/`:lint` green, `shell:test` 45 tests; Playwright screenshot confirms the brand gradient + neuro-cloud starfield render from the relocated stylesheet.
+
 ## 2026-07-19 — feat(gateway,cli): SSO DX, readiness & docs (turnkey go-live) — Phase 72 F (PR #487)
 
 Make first-time SSO go-live foolproof, local + hosted, and surface readiness where an operator looks. Closes Phase 72's autonomous scope — only the human OAuth-app registration (Theme E) remains.

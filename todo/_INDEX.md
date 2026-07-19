@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 9/43 | `██░░░░░░░░` | 21% | B | C D E F G |
+| [73 · Admin Console & shared app shell](phase-73-admin-console.md) | 🔄 WIP | 11/43 | `███░░░░░░░` | 26% | — | C D E F G |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 21/30 | `███████░░░` | 70% | — | — |
 | [71 · App update banner](phase-71-app-update-banner.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [70 · Google & GitHub SSO](phase-70-google-github-sso.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
@@ -138,7 +138,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 73 — Admin Console & shared app shell](phase-73-admin-console.md)
 *midnite has every operator surface as **data** (Phase 61 usage/cost, Phase 33 users/teams, Phase 55 projects, Phase 71 versions) but no **app** that composes them. Build a standalone **`packages/admin`** console that looks exactly like `web` by first extracting the reusable shell into a **new `@midnite/shell`** package (pure visuals → leaf `@midnite/ui`), refactoring `web` onto it, then standing `admin` up behind a new **operator** gate — with a **lock screen** (idle re-lock + themed login) on the neuro-cloud starfield/dots. Versions is view-only; two new boundary edges (`ui ◀ shell ◀ {web, admin}`).*
 - ✅ **A** — `@midnite/ui` leaf-visual extraction: moved DynamicBackground (inlined `BackgroundPattern`), RailShell, ThemeToggle, PasscodePad (owns `PASSCODE_LENGTH`) into leaf `ui`; web imports them directly (NeuroCloud was already in `ui`); `boundary.test.ts` green (PR #479)
-- ◐ **B** — `@midnite/shell` package: **foundation landed** (PR #482) — mid-tier pkg + Vite lib build + boundary test (`ui ◀ shell ◀ {web,admin}`), `<AppFrame>` (injected nav, `activePath`), `<LockScreen>` (+`useIdleTimer`), appearance **JS runtime** moved in (web re-points). **Remaining:** appearance **CSS** relocation + `<ShellProviders>` (next slice)
+- ✅ **B** — `@midnite/shell` package (PR #482 foundation + #484 tail): mid-tier pkg + Vite lib build + boundary test (`ui ◀ shell ◀ {web,admin}`), `<AppFrame>` (injected nav, `activePath`), `<LockScreen>` (+`useIdleTimer`), the full appearance runtime (**JS + CSS**, `@midnite/shell/appearance.css`) moved in (web re-points + `@import`s), and `<ShellProviders>`
 - ◻ **C** — Refactor `web` onto `<AppFrame>`: web mounts the shell frame with its `FEATURES` nav; appearance + idle lock sourced from shell; behaviour-preserving, `web:test` green
 - ◻ **D** — Operator identity & platform read APIs: `operators` allowlist in `.midnite/operator.json` → `isOperator` + `@RequiresOperator`; new operator-gated `GET /admin/users|teams|overview`; existing team-scoped routes untouched
 - ◻ **E** — `packages/admin` scaffold + shell mount: standalone Next app on `<AppFrame>` w/ admin nav, themed SSO login + idle passcode lock on the starfield; web-only deployable (not desktop)

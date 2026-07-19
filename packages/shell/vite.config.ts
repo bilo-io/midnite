@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
@@ -44,6 +44,19 @@ function preserveUseClient() {
   };
 }
 
+// The appearance CSS layer is plain CSS — ship it verbatim at dist/appearance.css
+// (exposed as `@midnite/shell/appearance.css`), the way @midnite/ui ships its token
+// stylesheet. Vite's lib build only emits the JS entry; this copies the stylesheet.
+function copyStylesheets() {
+  return {
+    name: 'midnite-shell-copy-styles',
+    closeBundle() {
+      mkdirSync(r('dist'), { recursive: true });
+      copyFileSync(r('src/appearance/appearance.css'), r('dist/appearance.css'));
+    },
+  };
+}
+
 // @midnite/shell is built with Vite library mode (like @midnite/ui): it bundles
 // JSX that tsc wouldn't emit. Typechecking still runs via `tsc --noEmit`; the
 // `.d.ts` files come from vite-plugin-dts. shared/ui/react/next/react-query stay
@@ -60,6 +73,7 @@ export default defineConfig({
         'src/**/*.spec.tsx',
       ],
     }),
+    copyStylesheets(),
     preserveUseClient(),
   ],
   build: {
