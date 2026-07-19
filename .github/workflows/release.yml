@@ -101,12 +101,34 @@ jobs:
   release:
     name: Publish release
     needs: build
+    # Publish even when a single platform leg fails. The matrix is fail-fast:false,
+    # so surviving OS builds still upload their installers; without this `if:` a
+    # dependent job is skipped the moment any `needs` job fails, which is exactly
+    # how a flaky macOS DMG build once blocked an *entire* release (win + linux were
+    # green) from ever reaching the public downloads repo. `!cancelled()` still lets
+    # an explicit cancel abort, and the guard step below fails loudly if truly
+    # nothing built. A later re-run of the fixed leg re-runs this job and adds the
+    # missing installers to the same release.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Download all installers
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      # A partial matrix (e.g. macOS flaked) still publishes, but an empty artifact
+      # set must NOT create an assetless release — fail the job so the problem is
+      # visible instead of silently shipping nothing.
+      - name: Ensure at least one installer was produced
+        shell: bash
+        run: |
+          count=$(find artifacts -type f 2>/dev/null | wc -l | tr -d ' ')
+          echo "Downloaded $count artifact file(s) across all platform legs."
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No installers were built on any platform — refusing to publish an empty release."
+            exit 1
+          fi
 
       # Publish to the PUBLIC downloads repo so the site's download links resolve
       # for anonymous visitors. The default GITHUB_TOKEN is scoped to THIS (private)
