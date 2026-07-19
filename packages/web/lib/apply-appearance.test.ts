@@ -196,8 +196,8 @@ describe('applyUiFont', () => {
 
 describe('applyBackground', () => {
   it('sets data-bg to the pattern name', () => {
-    applyBackground('honeycomb', 'balanced');
-    expect(document.documentElement.getAttribute('data-bg')).toBe('honeycomb');
+    applyBackground('starfield', 'balanced');
+    expect(document.documentElement.getAttribute('data-bg')).toBe('starfield');
     expect(document.documentElement.hasAttribute('data-bg-intensity')).toBe(false);
   });
 
@@ -283,9 +283,9 @@ describe('appearanceInitScript', () => {
     expect(html.getAttribute('data-accent-preset')).toBe('brand');
     expect(html.hasAttribute('data-accent-gradient')).toBe(true);
     expect(html.style.getPropertyValue('--accent-gradient')).toContain('linear-gradient');
-    // Motion defaults to system; bg defaults to the nebula dots; no uiFont override.
+    // Motion defaults to system; bg defaults to the neuro-cloud starfield; no uiFont override.
     expect(html.getAttribute('data-motion')).toBe('system');
-    expect(html.getAttribute('data-bg')).toBe('dots');
+    expect(html.getAttribute('data-bg')).toBe('starfield');
     expect(html.hasAttribute('data-ui-font')).toBe(false);
   });
 

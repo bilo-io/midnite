@@ -3,6 +3,7 @@
 import { useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { NavBar } from '@/components/nav-bar';
+import { AppBackdrop } from '@/components/app-backdrop';
 import { AuthGuard } from '@/components/auth-guard';
 import { FeatureGate } from '@/components/feature-gate';
 import { LiveData } from '@/components/live-data';
@@ -30,7 +31,11 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
     <NotificationsProvider>
     <PaletteCommandsProvider>
-      <div className="min-h-screen">
+      {/* `relative isolate` + an opaque `bg-background` base so the app-wide
+          backdrop (starfield by default) can pin at `-z-10` behind every page
+          while content floats above it. */}
+      <div className="relative isolate min-h-screen bg-background">
+        <AppBackdrop />
         <AuthGuard />
         <LiveData />
         <PreferenceSync />

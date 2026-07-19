@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { BackgroundPattern } from '@midnite/shared';
+import { coerceBackgroundPattern, type BackgroundPattern } from '@midnite/shared';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   BACKGROUND_PATTERN_CLASS,
-  BACKGROUND_PATTERN_DEFAULT,
   BG_INTENSITY_DEFAULT,
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
@@ -35,7 +34,9 @@ export function useBackgroundPattern(): {
   dynamic: boolean;
 } {
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
-  const pattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
+  // Coerce legacy/unknown stored values (e.g. the removed `honeycomb`) to the
+  // default so `data-bg` never lands on an unpaintable pattern.
+  const pattern = coerceBackgroundPattern(settings.backgroundPattern);
   const intensity = settings.bgIntensity ?? BG_INTENSITY_DEFAULT;
   const dynamic = useDynamicBackground();
 

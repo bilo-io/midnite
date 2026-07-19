@@ -356,16 +356,16 @@ html[data-accent-animate][data-motion='reduced'] {
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 
-  /* Hexagonal "honeycomb" lattice: two offset columns of hex cells drawn with
-     repeating radial gradients, faded out at the edges like .bg-grid. */
-  .bg-honeycomb {
-    --hex: hsl(var(--border) / 0.6);
+  /* Starfield — the lightweight CSS twin of the neuro-cloud canvas: a scattered
+     two-layer dot field on the neutral foreground, so the settings swatch and the
+     pre-hydration frame read as a galaxy before `NeuroCloudBackground` mounts. */
+  .bg-starfield {
     background-image:
-      radial-gradient(circle at 50% 0, transparent 11px, var(--hex) 12px, transparent 13px),
-      radial-gradient(circle at 0 18px, transparent 11px, var(--hex) 12px, transparent 13px),
-      radial-gradient(circle at 100% 18px, transparent 11px, var(--hex) 12px, transparent 13px);
-    background-size: 48px 36px;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      radial-gradient(circle, hsl(var(--foreground) / 0.35) 0.6px, transparent 1.2px),
+      radial-gradient(circle, hsl(var(--foreground) / 0.18) 0.6px, transparent 1.2px);
+    background-size: 34px 34px, 19px 21px;
+    background-position: 0 0, 11px 13px;
+    mask-image: radial-gradient(ellipse at center, black 45%, transparent 90%);
   }
 
   /* Fine dot grid — radial dots on a transparent field. */
@@ -512,14 +512,13 @@ html[data-accent-animate][data-motion='reduced'] {
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 
-  html[data-bg='honeycomb'] [data-bg-target] {
-    --hex: hsl(var(--border) / 0.6);
+  html[data-bg='starfield'] [data-bg-target] {
     background-image:
-      radial-gradient(circle at 50% 0, transparent 11px, var(--hex) 12px, transparent 13px),
-      radial-gradient(circle at 0 18px, transparent 11px, var(--hex) 12px, transparent 13px),
-      radial-gradient(circle at 100% 18px, transparent 11px, var(--hex) 12px, transparent 13px);
-    background-size: 48px 36px;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      radial-gradient(circle, hsl(var(--foreground) / 0.35) 0.6px, transparent 1.2px),
+      radial-gradient(circle, hsl(var(--foreground) / 0.18) 0.6px, transparent 1.2px);
+    background-size: 34px 34px, 19px 21px;
+    background-position: 0 0, 11px 13px;
+    mask-image: radial-gradient(ellipse at center, black 45%, transparent 90%);
   }
 
   html[data-bg='dots'] [data-bg-target] {

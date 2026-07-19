@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type CSSProperties } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/cn';
 
 /**
  * The neuro-cloud backdrop — a dense, galaxy-like field of "neurons" that

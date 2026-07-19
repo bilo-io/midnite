@@ -1,6 +1,7 @@
 import {
   ACCENT_SWATCH_HS,
   BACKGROUND_PATTERN_DEFAULT,
+  BACKGROUND_PATTERN_OPTIONS,
   BG_INTENSITY_DEFAULT,
   BRAND_ACCENT,
   DEFAULT_EFFECTS,
@@ -274,4 +275,6 @@ function primary(val){var p=build(val,isDark,MAP,SHIFT);if(p.solidH==null){h.rem
 function secondary(val){var p=build(val,isDark,MAP,SHIFT);if(p.solidH==null&&!p.gradient)return;if(p.solidH!=null){h.style.setProperty('--accent-2-h',String(p.solidH));h.style.setProperty('--accent-2-s',String(p.solidS));}h.setAttribute('data-accent-2','');if(p.gradient)h.style.setProperty('--accent-2-gradient',p.gradient);}
 primary(coerce(s.accent===undefined?BRAND:s.accent,BRAND));if(s.accentSecondary!==undefined)secondary(coerce(s.accentSecondary,BRAND));h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var F=${JSON.stringify(
   UI_FONT_STACK,
-)};var f=F[s.uiFont];if(f){h.style.setProperty('--font-ui',f);h.setAttribute('data-ui-font',s.uiFont);}var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');if(s.shimmerDirection==='rtl')h.setAttribute('data-shimmer-dir','rtl');}catch(e){}})();`;
+)};var f=F[s.uiFont];if(f){h.style.setProperty('--font-ui',f);h.setAttribute('data-ui-font',s.uiFont);}var BGK=${JSON.stringify(
+  BACKGROUND_PATTERN_OPTIONS.map((o) => o.value),
+)};var bg=s.backgroundPattern;if(BGK.indexOf(bg)<0)bg='${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');if(s.shimmerDirection==='rtl')h.setAttribute('data-shimmer-dir','rtl');}catch(e){}})();`;

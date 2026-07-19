@@ -14,7 +14,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
-import { NeuroCloudBackground } from '@/components/neuro-cloud-background';
+import { NeuroCloudBackground } from '@midnite/ui';
 import { PasscodeUnlockDialog } from '@/components/passcode-pad';
 import { Spinner } from '@/components/spinner';
 import { AreaChart, LegendDot } from '@/components/system-chart';

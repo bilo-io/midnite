@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { NeuroCloudBackground } from '@/components/neuro-cloud-background';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
 import { LandingClock } from '@/components/landing-clock';
 import { LandingWeather } from '@/components/landing-weather';
-import { useDynamicBackground } from '@/lib/use-dynamic-background';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   CYCLE_MAX_S,
@@ -203,19 +201,13 @@ export default function HomePage() {
     if (subDone) setPillsRevealed(true);
   }, [subDone]);
 
-  // The landing home wears the neuro-cloud brand backdrop (like the login shell),
-  // not the user's pattern pick. `animate` follows the "Dynamic motion" toggle +
-  // motion prefs, so reduced motion paints a static frame.
-  const animate = useDynamicBackground();
-
   return (
     <div
-      // `bg-background` is an opaque base (so the global `data-bg` pattern on the
-      // body doesn't bleed between stars); `isolate` makes this a stacking
-      // context so the canvas's -z-10 stays above that base but below content.
-      className="relative isolate flex min-h-[100dvh] flex-col items-center justify-center bg-background px-6 text-center"
+      // Transparent: the app-wide <AppBackdrop/> (starfield by default) shows
+      // through from the layout, so the landing shares the one backdrop rather
+      // than mounting its own canvas.
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center"
     >
-      <NeuroCloudBackground animate={animate} className="-z-10" />
       <LandingWeather />
       <LandingClock now={now} />
 

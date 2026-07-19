@@ -12,7 +12,8 @@ vi.mock('@/components/auth/auth-hero', () => ({
 }));
 // The full-viewport starfield mounts at the layout level now — stub it so these
 // DOM-level tests don't touch a jsdom canvas.
-vi.mock('@/components/neuro-cloud-background', () => ({
+vi.mock('@midnite/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@midnite/ui')>()),
   NeuroCloudBackground: () => <div data-testid="starfield" />,
 }));
 // The layout's theme toggle reads the theme context; stub it (no provider here).

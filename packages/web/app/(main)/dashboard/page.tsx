@@ -40,7 +40,6 @@ export default function DashboardPage() {
         title="Dashboard"
         icon="LayoutDashboard"
         size="lg"
-        showGrid
         description="An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."
       />
 

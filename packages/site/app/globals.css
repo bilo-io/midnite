@@ -27,6 +27,12 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+    /* Node palette — the four hues the shared starfield backdrop tints its
+       thought-paths with (mirrors @midnite/ui tokens); stars follow --foreground. */
+    --node-trigger: 217 91% 60%;
+    --node-action: 262 83% 58%;
+    --node-logic: 38 92% 50%;
+    --node-data: 173 80% 40%;
   }
 
   .dark {
@@ -49,6 +55,11 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+    /* Brighter node hues for the dark theme (mirrors @midnite/ui dark tokens). */
+    --node-trigger: 217 91% 68%;
+    --node-action: 262 83% 68%;
+    --node-logic: 38 92% 60%;
+    --node-data: 173 70% 50%;
   }
 }
 

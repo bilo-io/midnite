@@ -1,15 +1,29 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { NeuroCloudBackground } from '@midnite/ui';
+
 /**
- * Static, CSS-only ambient backdrop. Replaces the (removed) WebGL particle field
- * with a calm set of soft, brand-tinted blurs so the page keeps some depth without
- * any 3D/canvas. Fixed and pointer-events-none; sits behind page content (z-0,
- * content is relative z-10). Low opacity reads intentionally in both themes.
+ * The site's ambient backdrop: the shared neuro-cloud starfield — the same canvas
+ * the app and docs render — so every midnite surface wears one signature
+ * background. Fixed + `pointer-events-none`, behind page content (content is
+ * `relative z-10`). It reads the site's `--foreground` / `--node-*` tokens, so it
+ * re-tints with the active theme; a bottom fade keeps text legible. Animates
+ * unless the visitor prefers reduced motion (the canvas owns no motion gating).
  */
 export function AmbientBackdrop() {
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setAnimate(!mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-      <div className="absolute -left-[15%] top-[-10%] h-[55vh] w-[55vw] rounded-full bg-[#8b5cf6]/10 blur-[120px]" />
-      <div className="absolute right-[-15%] top-[25%] h-[50vh] w-[50vw] rounded-full bg-[#3b82f6]/10 blur-[130px]" />
-      <div className="absolute bottom-[-15%] left-[20%] h-[50vh] w-[55vw] rounded-full bg-[#10b981]/[0.08] blur-[130px]" />
+      <NeuroCloudBackground animate={animate} />
       {/* Fade into the page background at the bottom for legibility. */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
     </div>
