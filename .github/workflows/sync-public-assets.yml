@@ -1,0 +1,70 @@
+name: Sync public assets
+
+# Mirror the handful of public-facing files that clients fetch over GitHub-raw into
+# the PUBLIC companion repo (bilo-io/midnite-app), so those anonymous fetches keep
+# resolving once THIS repo goes private. The clients read these from the public repo:
+#
+#   - CHANGELOG.md ............... release-notes popover (packages/web/lib/site-links.ts)
+#   - packages/web/public/version.json ... CLI update check + desktop force-update floor
+#   - packages/web/public/version.beta.json (when present) ... desktop beta channel floor
+#
+# Paths are mirrored 1:1 (same layout in the public repo) so the raw URLs differ only
+# by the repo slug. Runs on every `main` push that touches these files; `workflow_dispatch`
+# seeds the initial backfill / re-syncs on demand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'CHANGELOG.md'
+      - 'packages/web/public/version.json'
+      - 'packages/web/public/version.beta.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Mirror to public repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source (this) repo
+        uses: actions/checkout@v4
+
+      # The default GITHUB_TOKEN is scoped to THIS (private) repo only; writing into
+      # midnite-app needs the same fine-grained PAT (Contents:write on midnite-app)
+      # that release.yml uses — the RELEASES_REPO_TOKEN secret.
+      - name: Checkout public mirror repo
+        uses: actions/checkout@v4
+        with:
+          repository: bilo-io/midnite-app
+          token: ${{ secrets.RELEASES_REPO_TOKEN }}
+          path: public-repo
+
+      - name: Copy public-facing assets (path-preserving)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp CHANGELOG.md public-repo/CHANGELOG.md
+          mkdir -p public-repo/packages/web/public
+          for f in version.json version.beta.json; do
+            src="packages/web/public/$f"
+            if [ -f "$src" ]; then
+              cp "$src" "public-repo/packages/web/public/$f"
+            fi
+          done
+
+      - name: Commit + push if anything changed
+        shell: bash
+        working-directory: public-repo
+        run: |
+          set -euo pipefail
+          git config user.name "midnite-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Public assets already up to date — nothing to sync."
+            exit 0
+          fi
+          git add CHANGELOG.md packages/web/public
+          git commit -m "chore: sync public assets from midnite@${GITHUB_SHA::7}"
+          git push

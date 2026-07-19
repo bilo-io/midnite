@@ -17,7 +17,7 @@ const FETCH_TIMEOUT_MS = 5000;
 const GH_TIMEOUT_MS = 5000;
 const MAX_FETCH_BYTES = 512 * 1024;
 const USER_AGENT =
-  'Mozilla/5.0 (compatible; midnite-context/1.0; +https://github.com/bilo-io/midnite)';
+  'Mozilla/5.0 (compatible; midnite-context/1.0; +https://github.com/bilo-io/midnite-app)';
 
 /** The fields we lift from a GitHub issue/PR (the REST issues endpoint serves both). */
 type GithubIssue = { title: string; body: string | null; state: string };

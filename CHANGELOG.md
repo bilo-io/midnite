@@ -102,7 +102,7 @@ the initial scaffold.
   `site`, and `desktop` packages, the proto + moon toolchain, `moon ci`, and the
   one-way package-boundary graph (`shared` is the contract).
 
-[Unreleased]: https://github.com/bilo-io/midnite/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/bilo-io/midnite/releases/tag/v0.2.0
-[0.1.0]: https://github.com/bilo-io/midnite/releases/tag/v0.1.0
-[0.0.0]: https://github.com/bilo-io/midnite/releases/tag/v0.0.0
+[Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.2.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.2.0
+[0.1.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.1.0
+[0.0.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.0.0

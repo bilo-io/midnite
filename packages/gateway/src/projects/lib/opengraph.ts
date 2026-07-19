@@ -12,7 +12,7 @@ export interface SourceMetadata {
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_BYTES = 512 * 1024;
 const USER_AGENT =
-  'Mozilla/5.0 (compatible; midnite-link-preview/1.0; +https://github.com/bilo-io/midnite)';
+  'Mozilla/5.0 (compatible; midnite-link-preview/1.0; +https://github.com/bilo-io/midnite-app)';
 
 /**
  * Reject non-http(s) URLs and obvious internal/private hosts. This is a

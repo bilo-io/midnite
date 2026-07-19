@@ -7,7 +7,7 @@ const execFileAsync = promisify(execFile);
 const GH_TIMEOUT_MS = 10_000;
 const GH_MAX_BUFFER = 20 * 1024 * 1024; // 20 MiB — plenty for a raw PR diff
 const USER_AGENT =
-  'Mozilla/5.0 (compatible; midnite-pr-diff/1.0; +https://github.com/bilo-io/midnite)';
+  'Mozilla/5.0 (compatible; midnite-pr-diff/1.0; +https://github.com/bilo-io/midnite-app)';
 
 /** Default byte budget for the included files of a structured diff (Decision §6). */
 export const DEFAULT_MAX_DIFF_BYTES = 1_000_000;

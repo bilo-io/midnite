@@ -21,7 +21,7 @@ const execFileAsync = promisify(execFile);
 const GH_TIMEOUT_MS = 8000;
 const MAX_FETCH_BYTES = 256 * 1024;
 const USER_AGENT =
-  'Mozilla/5.0 (compatible; midnite-pr-status/1.0; +https://github.com/bilo-io/midnite)';
+  'Mozilla/5.0 (compatible; midnite-pr-status/1.0; +https://github.com/bilo-io/midnite-app)';
 
 /**
  * Phase 22 Theme C — resolve a task's GitHub PR (from its `prUrl`) to a live

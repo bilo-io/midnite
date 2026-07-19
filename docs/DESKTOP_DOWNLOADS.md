@@ -101,6 +101,28 @@ OS and every button resolves to a real installer.
 
 ---
 
+## Public raw-asset mirror
+
+A few files are fetched anonymously over **GitHub-raw** by shipped clients, so they must
+stay reachable even after this repo goes private:
+
+| File | Fetched by |
+| --- | --- |
+| `CHANGELOG.md` | web release-notes popover |
+| `packages/web/public/version.json` | CLI update check · desktop force-update floor |
+| `packages/web/public/version.beta.json` (when present) | desktop beta-channel floor |
+
+[`sync-public-assets.yml`](../.github/workflows/sync-public-assets.yml) mirrors these into
+**`bilo-io/midnite-app`** (path-preserving) on every `main` push that touches them — so the
+raw URLs differ from the source only by the repo slug and keep resolving anonymously. It
+reuses the same **`RELEASES_REPO_TOKEN`** PAT as `release.yml` (no new secret). Run it once
+via **Actions → Sync public assets → Run workflow** to seed the initial backfill; thereafter
+it's automatic. The client fetch URLs already point at the public mirror
+([`site-links.ts`](../packages/web/lib/site-links.ts), [`version-check.ts`](../packages/cli/src/lib/version-check.ts),
+[`floor.ts`](../packages/desktop/src/updates/floor.ts)).
+
+---
+
 ## Notes & follow-ups
 
 - **Builds are unsigned.** macOS shows a Gatekeeper warning on first open; the site

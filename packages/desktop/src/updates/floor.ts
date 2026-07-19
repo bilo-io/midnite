@@ -16,12 +16,15 @@ export function manifestFileForChannel(channel: UpdateChannel): string {
 
 /**
  * Where the committed manifest lives for GitHub-raw fetching (the same source the
- * CLI uses). Theme G commits `version.json` under `packages/web/public/`. Overridable
- * via `MIDNITE_VERSION_URL_BASE` for testing / self-hosting.
+ * CLI uses). Theme G commits `version.json` under `packages/web/public/`. Fetched
+ * from the PUBLIC mirror repo (not the private source) so it keeps resolving
+ * anonymously once the source repo is private — the `sync-public-assets` workflow
+ * mirrors it there on every `main` push. Overridable via `MIDNITE_VERSION_URL_BASE`
+ * for testing / self-hosting.
  */
 export const MANIFEST_RAW_BASE =
   process.env.MIDNITE_VERSION_URL_BASE ??
-  'https://raw.githubusercontent.com/bilo-io/midnite/main/packages/web/public';
+  'https://raw.githubusercontent.com/bilo-io/midnite-app/main/packages/web/public';
 
 export function manifestUrlForChannel(channel: UpdateChannel): string {
   return `${MANIFEST_RAW_BASE}/${manifestFileForChannel(channel)}`;

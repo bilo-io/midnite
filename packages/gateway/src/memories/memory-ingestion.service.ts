@@ -12,7 +12,7 @@ import { capUtf8, extractUpload, htmlToPlainText } from './lib/ingest';
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_FETCH_BYTES = 2 * 1024 * 1024; // cap the raw download before extraction
 const USER_AGENT =
-  'Mozilla/5.0 (compatible; midnite-source-ingest/1.0; +https://github.com/bilo-io/midnite)';
+  'Mozilla/5.0 (compatible; midnite-source-ingest/1.0; +https://github.com/bilo-io/midnite-app)';
 
 /** Where uploaded source files live under the (reused) media uploads store. */
 const UPLOAD_SUBDIR = 'memory-sources';

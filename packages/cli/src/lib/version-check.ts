@@ -12,11 +12,14 @@ import { error as paintError, warn } from './palette.js';
 // cached so it never slows a command or breaks offline use, and suppressible.
 // The CLI has no web origin, so it reads the published manifest straight from
 // GitHub-raw (the same file Theme G commits under packages/web/public) — no
-// gateway round-trip.
+// gateway round-trip. Fetched from the PUBLIC mirror repo (not the private source)
+// so it keeps resolving anonymously once the source repo is private: the
+// `sync-public-assets` workflow mirrors `packages/web/public/version.json` there on
+// every `main` push.
 
-/** Where the published `version.json` lives (GitHub-raw). Overridable for tests / self-hosting. */
+/** Where the published `version.json` lives (GitHub-raw, public mirror). Overridable for tests / self-hosting. */
 export const DEFAULT_VERSION_URL =
-  'https://raw.githubusercontent.com/bilo-io/midnite/main/packages/web/public/version.json';
+  'https://raw.githubusercontent.com/bilo-io/midnite-app/main/packages/web/public/version.json';
 
 /** Cache the manifest here so at most one fetch happens per {@link CACHE_TTL_MS}. */
 export const CACHE_FILE = path.join(os.tmpdir(), 'midnite-version-check.json');
