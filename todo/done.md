@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-19 — feat: Phase 73 Theme F1 — admin-console foundation (charts→ui, site-links→shared, gateway CORS)
+
+Foundation for the Theme F admin pages (F stays WIP; pages land in F2/F3).
+
+- [x] **Chart primitives → `@midnite/ui`** — `AreaChart`/`LegendDot` (`system-chart`), `RadialGauge`, `ContextRing` moved into the leaf design-system (leaf-safe: `cn` repointed, `formatBytes` inlined); web consumers repointed, web copies deleted; ui boundary test green.
+- [x] **`site-links` → `@midnite/shared`** — cross-app links/helpers (`docsChangelogUrl`, `githubIssuesNewUrl`, `GITHUB_*`, `REPORT_ISSUE_*`, …) moved to shared; web import sites repointed; web copy + test moved.
+- [x] **Gateway credentialed CORS for the admin origin** — `MIDNITE_ADMIN_ORIGIN` (comma-separated) folds into `gateway.allowedOrigins`; `enableCors` reflects the specific allowed origin (never `*`) with `credentials: true`, so admin's cross-origin `/auth/me` + `/admin/*` (and WS upgrades) work. `lib/admin-origin.ts` + tests; `.env.example` documented.
+- [x] Gate: `ui` 67 · `shared` 800 · `gateway` 2187/3-skip · web typecheck+lint+build (57 pages) all green; `:typecheck`/`:lint` graph-wide green.
+
 ## 2026-07-19 — feat: Phase 73 Theme E — `packages/admin` operator console scaffold (PR #490)
 
 Stand up the standalone **operator console** on the shared `@midnite/shell` frame — a scaffold (frame + nav + login/gate + placeholder pages + minimal settings + tests); page content is Theme F.
