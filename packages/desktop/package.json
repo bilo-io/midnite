@@ -11,6 +11,7 @@
     "stage": "tsc -b && node scripts/stage-gateway.mjs",
     "test": "vitest run",
     "dist": "pnpm stage && electron-builder --mac --config electron-builder.yml",
+    "install:local": "node scripts/install-local.mjs",
     "package": "electron-builder --mac --config electron-builder.yml",
     "package:win": "electron-builder --win --config electron-builder.yml",
     "package:linux": "electron-builder --linux --config electron-builder.yml"
@@ -23,6 +24,7 @@
     "@electron/rebuild": "^3.7.0",
     "@midnite/gateway": "workspace:*",
     "@midnite/shared": "workspace:*",
+    "@midnite/web": "workspace:*",
     "@types/node": "^22.10.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",

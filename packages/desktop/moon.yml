@@ -5,7 +5,14 @@ language: 'typescript'
 dependsOn:
   - 'gateway'
   - 'shared'
-  - 'web'
+  # `development` scope so moon's package.json sync writes @midnite/web to
+  # devDependencies, not dependencies. The web UI ships as a prebuilt static
+  # export via electron-builder's extraResources (build-staging/web) — desktop
+  # never imports it as a module — so it must NOT be a production dependency, or
+  # electron-builder walks the workspace symlink into packages/web + its
+  # @midnite/* deps and dies on sibling paths (packages/shared/dist/.tsbuildinfo).
+  - id: 'web'
+    scope: 'development'
 
 tasks:
   build:

@@ -95,6 +95,63 @@ moon run desktop:package        # → packages/desktop/build/midnite-*-{arm64,x6
 (`pnpm --filter @midnite/desktop run dist` chains `stage` + `electron-builder` in
 one step once the builds in step 1 exist.)
 
+## Build & replace the local install (one command)
+
+For the local iterate-on-desktop loop, `install:local` does the whole
+build→package→install in one shot — the fast way to see a change running in the
+actual installed app rather than the dev shell:
+
+```bash
+pnpm --filter @midnite/desktop run install:local
+# then:
+open /Applications/midnite.app
+```
+
+macOS + Apple Silicon only (matches the release matrix). Your data is safe across
+reinstalls: the DB, uploads, and knowledge live in
+`~/Library/Application Support/midnite/` (outside the bundle), so replacing the
+`.app` never touches your tasks/projects.
+
+### What it does
+
+The script is [`scripts/install-local.mjs`](scripts/install-local.mjs). It runs
+the same pipeline as the manual "Packaging" steps above, then installs:
+
+1. **Build** — gateway `dist` + Electron main/preload (moon), then the web static
+   export (`web/out`).
+2. **Stage** — `pnpm run stage`: a flat, symlink-free gateway prod `node_modules`
+   (`pnpm deploy` + `electron-rebuild` of the native deps for this arch) plus the
+   web export, into `build-staging/`.
+3. **Package** — electron-builder emits `build/mac-arm64/midnite.app` (and the
+   dmg/zip).
+4. **Install** — quit any running instance, replace `/Applications/midnite.app`
+   with the fresh build, and strip the quarantine bit so the unsigned build
+   launches.
+
+### Notes / gotchas it handles
+
+These are non-obvious and each one is a silent failure if you script it by hand —
+the reasons are commented at the relevant lines in the script:
+
+- **The `.app` is copied with `ditto`, never `cp -R`.** The bundle embeds signed
+  frameworks that use `Versions/Current` symlinks; a plain recursive copy breaks
+  the code seal, and macOS then **SIGKILLs the app on launch with no output or
+  logs**. If a locally-installed build won't open, check
+  `codesign -vv /Applications/midnite.app` — "unsealed contents … embedded
+  framework" is this bug.
+- **`@midnite/web` must stay a _dev_ dependency of this package** (see
+  [`moon.yml`](moon.yml): the `web` edge is scoped `development`). The web UI ships
+  as the prebuilt static export via `extraResources` — it's never imported as a
+  module — so if it lands in prod `dependencies`, electron-builder walks the
+  workspace symlink into `packages/web` + its `@midnite/*` deps and dies on a
+  sibling path (`packages/shared/dist/.tsbuildinfo`).
+- **The web build tolerates a moon flake.** On a cache miss, `web:build` can error
+  with `task_runner::missing_outputs` on Next's `output: export` `out/` even
+  though the export was written correctly; the script continues as long as
+  `web/out/index.html` exists (a real `next build` failure never produces it). It
+  also packages by calling electron-builder directly rather than
+  `moon run desktop:package`, which would re-trigger that same flaky web build.
+
 Build the arm64 dmg on Apple Silicon and the x64 dmg on (or cross from) Intel —
 native modules are arch-specific; a universal binary is fragile for these and is
 intentionally avoided.
