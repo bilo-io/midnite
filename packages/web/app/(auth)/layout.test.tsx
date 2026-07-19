@@ -12,8 +12,8 @@ vi.mock('@/components/auth/auth-hero', () => ({
 }));
 // The full-viewport starfield mounts at the layout level now — stub it so these
 // DOM-level tests don't touch a jsdom canvas.
-vi.mock('@/components/auth/constellation-background', () => ({
-  ConstellationBackground: () => <div data-testid="starfield" />,
+vi.mock('@/components/neuro-cloud-background', () => ({
+  NeuroCloudBackground: () => <div data-testid="starfield" />,
 }));
 // The layout's theme toggle reads the theme context; stub it (no provider here).
 vi.mock('@/app/theme/theme-context', () => ({

@@ -4,11 +4,13 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Login-hero backdrop: a neuro-cloud — a dense, galaxy-like field of "neurons"
- * that periodically fire, sending pulses down winding multi-hop "thought paths"
- * (a visual echo of what midnite is: a live graph of tasks/agents/repos).
- * Neurons scatter with a radial density falloff around one off-centre core,
- * twinkle on their own phase, and a few read as brighter anchors.
+ * The neuro-cloud backdrop — a dense, galaxy-like field of "neurons" that
+ * periodically fire, sending pulses down winding multi-hop "thought paths" (a
+ * visual echo of what midnite is: a live graph of tasks/agents/repos). Shared
+ * across the app's showcase surfaces: the auth/login shell, the landing home
+ * screen, and the screensaver. Neurons scatter with a radial density falloff
+ * around one off-centre core, twinkle on their own phase, and a few read as
+ * brighter anchors.
  *
  * Firing: every so often an anchor neuron sparks a branching thought path — a
  * chain of nearby neurons lit segment by segment as a bright pulse travels the
@@ -32,11 +34,12 @@ import { cn } from '@/lib/utils';
  *     paths radiating from the release point — the more neurons captured, the
  *     more thoughts fire. They decay slowly.
  *
- * Motion gating lives with the caller (see `useAnimationPrefs`): pass
- * `animate={false}` for the reduced-motion path and the canvas paints **once** —
- * a static field plus a few pre-lit thought paths, no twinkle, no physics, no
- * RAF, no listeners. Purely decorative (`aria-hidden`, `pointer-events-none`);
- * it never blocks the form and is safe to mount after the page is interactive.
+ * Motion gating lives with the caller (`useAnimationPrefs` / `useDynamicBackground`):
+ * pass `animate={false}` for the reduced-motion path and the canvas paints
+ * **once** — a static field plus a few pre-lit thought paths, no twinkle, no
+ * physics, no RAF, no listeners. Purely decorative (`aria-hidden`,
+ * `pointer-events-none`); it never blocks content and is safe to mount after the
+ * page is interactive.
  */
 
 const TAU = Math.PI * 2;
@@ -170,7 +173,7 @@ function envelope(age: number, life: number): number {
   return e * e * (3 - 2 * e);
 }
 
-export function ConstellationBackground({
+export function NeuroCloudBackground({
   animate,
   className,
   style,

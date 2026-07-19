@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Moon, Sun } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { AuthHero } from '@/components/auth/auth-hero';
-import { ConstellationBackground } from '@/components/auth/constellation-background';
+import { NeuroCloudBackground } from '@/components/neuro-cloud-background';
 import { introAtLeast, useAuthIntro } from '@/components/auth/use-auth-intro';
 import { Wordmark } from '@/components/wordmark';
 import { Button } from '@/components/ui/button';
@@ -63,7 +63,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                 'radial-gradient(ellipse 110% 90% at 64% 40%, hsl(var(--muted)) 0%, hsl(var(--background)) 60%, hsl(var(--background)) 100%)',
             }}
           />
-          <ConstellationBackground
+          <NeuroCloudBackground
             animate={animate}
             className={cn(
               'z-0 transition-opacity duration-1000',

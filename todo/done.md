@@ -4281,3 +4281,11 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] **Frosted-glass form panel** (lg+): the form's `max-w-sm` container gained `bg-background/50` + `backdrop-blur-2xl` + hairline border + shadow, floating over the starfield. Mobile keeps the plain block (no starfield to blur). Content lifted to `z-10` above the `z-0` canvas.
 - [x] **Vertical alignment**: the glass panel's padding rebalanced the column so the hero subtitle now bottom-aligns with the "Continue with email" button (measured delta ~3px at 1440/1920) — no nudge needed.
 - [x] Layout test asserts the full-viewport starfield mounts on desktop / never below `lg`; hero test drops the now-unused canvas stub. Gates green.
+
+## 2026-07-19 — Neuro-cloud as the screensaver + landing backdrop (feature/neuro-bg)
+
+- [x] **Promoted the neuro-cloud out of `auth/`**: `components/auth/constellation-background.tsx` → `components/neuro-cloud-background.tsx`, export renamed `ConstellationBackground` → `NeuroCloudBackground` (it's now a shared brand backdrop, not an auth-only component). Auth layout + its test updated; the component's own test moved + renamed.
+- [x] **Screensaver** (`components/screensaver.tsx`): renders the neuro-cloud brand backdrop instead of the user's pattern pick, painting on the blurred surface; `animate={useDynamicBackground()}` so the "Dynamic motion" toggle + motion prefs still gate it (reduced motion → static frame). Dropped the now-unused pattern-class / DynamicBackground path.
+- [x] **Landing home** (`app/(main)/page.tsx`): same — neuro-cloud backdrop over an opaque `bg-background` base inside an `isolate` context (canvas at `-z-10`, content above), replacing the pattern-class / DynamicBackground path.
+- [x] Scope: only the two showcase surfaces (mirroring the login shell). The dashboard-header pattern picker (`page-header.tsx`) + Settings → Appearance are untouched — the neuro-cloud's full-screen pointer gestures don't belong in a header strip, and `backgroundPattern` defaults to `'dots'` so it can't cleanly express a per-surface default.
+- [x] Verified via Playwright (landing dark+light, screensaver): neuro-cloud renders with correct z-layering behind all widgets. Gates: web typecheck + lint green; web unit 1147 pass (lone command-palette failure pre-existing on main).
