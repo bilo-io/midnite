@@ -4,11 +4,30 @@ import {
   PlatformOverviewSchema,
   LoginProviderSchema,
   UserSchema,
+  UsageSummaryResponseSchema,
+  UsageAttributionResponseSchema,
+  OpsSummarySchema,
+  CycleTimeResponseSchema,
+  AuditListResponseSchema,
+  TeamSchema,
+  TeamWithMembersSchema,
   type AdminUserSummary,
   type AdminTeamSummary,
   type PlatformOverview,
   type LoginProvider,
   type User,
+  type UsageSummaryResponse,
+  type UsageAttributionResponse,
+  type UsageGroupBy,
+  type UsageAttributionGroupBy,
+  type OpsSummary,
+  type CycleTimeResponse,
+  type AuditListResponse,
+  type AuditEntityType,
+  type AuditAction,
+  type Team,
+  type TeamWithMembers,
+  type TeamRole,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -76,6 +95,8 @@ async function fetchJson<T>(
     const text = await res.text().catch(() => '');
     throw new ApiError(errorMessage(res, text), res.status);
   }
+  // 204 No Content (e.g. team/member DELETE) carries no body — never call json().
+  if (res.status === 204) return undefined as T;
   const body = (await res.json()) as unknown;
   return schema ? schema.parse(body) : (body as T);
 }
@@ -173,4 +194,115 @@ export async function getAdminUsers(signal?: AbortSignal): Promise<AdminUserSumm
 /** Every team on the platform (`GET /admin/teams`). Operator-only, cross-tenant. */
 export async function getAdminTeams(signal?: AbortSignal): Promise<AdminTeamSummary[]> {
   return fetchJson('/admin/teams', { signal }, z.array(AdminTeamSummarySchema));
+}
+
+// ── Usage & cost (`GET /usage/*`, Phase 61) ───────────────────────────────────
+
+/** Build a query string, dropping undefined values. */
+function qs(params: Record<string, string | number | undefined>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') sp.set(k, String(v));
+  }
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
+/** LLM-call usage summary over a window, grouped by day/provider/feature. */
+export async function getUsageSummary(
+  params: { from?: string; to?: string; groupBy?: UsageGroupBy },
+  signal?: AbortSignal,
+): Promise<UsageSummaryResponse> {
+  return fetchJson(`/usage/summary${qs(params)}`, { signal }, UsageSummaryResponseSchema);
+}
+
+/** Agent-session cost attribution, grouped by task/repo/project/session. */
+export async function getUsageAttribution(
+  params: { from?: string; to?: string; groupBy?: UsageAttributionGroupBy },
+  signal?: AbortSignal,
+): Promise<UsageAttributionResponse> {
+  return fetchJson(`/usage/attribution${qs(params)}`, { signal }, UsageAttributionResponseSchema);
+}
+
+// ── Ops metrics (`GET /metrics/*`, Phase 22/61) ───────────────────────────────
+
+/** Ops summary: live gauges + throughput/duration/outcome aggregates. */
+export async function getOpsSummary(
+  params: { from?: string; to?: string },
+  signal?: AbortSignal,
+): Promise<OpsSummary> {
+  return fetchJson(`/metrics/ops${qs(params)}`, { signal }, OpsSummarySchema);
+}
+
+/** Cycle-time percentiles (wait/work/end-to-end) over a trailing window. */
+export async function getCycleTime(
+  params: { windowDays?: number; groupBy?: string },
+  signal?: AbortSignal,
+): Promise<CycleTimeResponse> {
+  return fetchJson(`/metrics/cycle-time${qs(params)}`, { signal }, CycleTimeResponseSchema);
+}
+
+// ── Audit log (`GET /audit`) ──────────────────────────────────────────────────
+
+export type AuditFilters = {
+  entityType?: AuditEntityType;
+  userId?: string;
+  action?: AuditAction;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+/** Paginated, filterable audit log. */
+export async function getAudit(filters: AuditFilters, signal?: AbortSignal): Promise<AuditListResponse> {
+  return fetchJson(`/audit${qs(filters)}`, { signal }, AuditListResponseSchema);
+}
+
+// ── Teams CRUD (`/teams…`, Phase 33/35) ───────────────────────────────────────
+// The operator console reuses the standard team endpoints for writes; membership
+// reads use `GET /teams/:id` (full members), which `/admin/teams` (summary) omits.
+
+/** Full team detail incl. members + roles (`GET /teams/:id`). */
+export async function getTeamDetail(id: string, signal?: AbortSignal): Promise<TeamWithMembers> {
+  return fetchJson(`/teams/${encodeURIComponent(id)}`, { signal }, TeamWithMembersSchema);
+}
+
+/** Create a team (`POST /teams`). */
+export async function createTeam(body: { name: string; slug: string }): Promise<Team> {
+  return fetchJson(
+    '/teams',
+    { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } },
+    TeamSchema,
+  );
+}
+
+/** Rename a team (`PATCH /teams/:id`). */
+export async function updateTeam(id: string, body: { name: string }): Promise<Team> {
+  return fetchJson(
+    `/teams/${encodeURIComponent(id)}`,
+    { method: 'PATCH', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } },
+    TeamSchema,
+  );
+}
+
+/** Delete a team (`DELETE /teams/:id`, 204). */
+export async function deleteTeam(id: string): Promise<void> {
+  await fetchJson(`/teams/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Change a member's role (`PATCH /teams/:id/members/:userId/role`). */
+export async function setMemberRole(teamId: string, userId: string, role: TeamRole): Promise<void> {
+  await fetchJson(
+    `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}/role`,
+    { method: 'PATCH', body: JSON.stringify({ role }), headers: { 'content-type': 'application/json' } },
+  );
+}
+
+/** Remove a member from a team (`DELETE /teams/:id/members/:userId`, 204). */
+export async function removeMember(teamId: string, userId: string): Promise<void> {
+  await fetchJson(
+    `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`,
+    { method: 'DELETE' },
+  );
 }
