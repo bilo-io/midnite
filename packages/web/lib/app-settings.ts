@@ -28,6 +28,16 @@ import {
   type UserPreferences,
   type VisualEffects,
 } from '@midnite/shared';
+import {
+  ACCENT_OPTIONS,
+  ACCENT_SWATCH_HS,
+  BACKGROUND_PATTERN_OPTIONS,
+  BG_INTENSITY_DEFAULT,
+  DEFAULT_EFFECTS,
+  MONO_HUE_SHIFT,
+  SETTINGS_STORAGE_KEY,
+  UI_FONT_STACK,
+} from '@midnite/shell';
 
 import { DEFAULT_FEATURE_FLAGS, type FeatureKey } from './features';
 
@@ -49,6 +59,20 @@ export type {
 };
 
 export { BRAND_ACCENT, SECONDARY_ACCENT_OFF };
+
+// Appearance constants now live in @midnite/shell (Phase 73 Theme B) — the shared
+// appearance runtime both `web` and `admin` use. Re-exported here so existing
+// `@/lib/app-settings` import sites are unchanged (one source of truth).
+export {
+  ACCENT_OPTIONS,
+  ACCENT_SWATCH_HS,
+  BACKGROUND_PATTERN_OPTIONS,
+  BG_INTENSITY_DEFAULT,
+  DEFAULT_EFFECTS,
+  MONO_HUE_SHIFT,
+  SETTINGS_STORAGE_KEY,
+  UI_FONT_STACK,
+};
 
 export const AGENT_POOL_MIN = 1;
 export const AGENT_POOL_DEFAULT = 4;
@@ -149,44 +173,6 @@ export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
   'mesh-gradient': 'bg-mesh-gradient',
 };
 
-export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: string }[] = [
-  { value: 'starfield', label: 'Starfield' },
-  { value: 'grid', label: 'Grid' },
-  { value: 'dots', label: 'Dots' },
-  { value: 'diagonal-lines', label: 'Diagonal' },
-  { value: 'plus-cross', label: 'Plus' },
-  { value: 'topographic', label: 'Topographic' },
-  { value: 'waves', label: 'Waves' },
-  { value: 'blueprint', label: 'Blueprint' },
-  { value: 'grain', label: 'Grain' },
-  { value: 'aurora', label: 'Aurora' },
-  { value: 'mesh-gradient', label: 'Mesh' },
-  { value: 'gradient', label: 'Gradient' },
-];
-
-/**
- * The accent palette swatches. Each is a hue + saturation only — the lightness
- * comes from the active light/dark theme (via the `html[data-accent]` rules in
- * globals.css), so text-on-accent contrast holds in both themes. `default` applies
- * no override, reproducing today's near-monochrome primary. These swatches are the
- * source for both solid accents and gradient stops (Phase 68).
- */
-export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number }[] = [
-  { id: 'default', label: 'Default', h: 240, s: 6 },
-  { id: 'blue', label: 'Blue', h: 217, s: 80 },
-  { id: 'violet', label: 'Violet', h: 263, s: 70 },
-  { id: 'emerald', label: 'Emerald', h: 152, s: 58 },
-  { id: 'amber', label: 'Amber', h: 38, s: 85 },
-  { id: 'rose', label: 'Rose', h: 347, s: 75 },
-  { id: 'cyan', label: 'Cyan', h: 190, s: 72 },
-  { id: 'orange', label: 'Orange', h: 24, s: 85 },
-];
-
-/** Hue+saturation for a swatch id (single source of truth for appliers/presets). */
-export const ACCENT_SWATCH_HS: Record<AccentId, { h: number; s: number }> = Object.fromEntries(
-  ACCENT_OPTIONS.map((o) => [o.id, { h: o.h, s: o.s }]),
-) as Record<AccentId, { h: number; s: number }>;
-
 /**
  * The default primary accent (Phase 68): the brand gradient. Re-exported
  * from the shared contract so web and the wire agree. Existing users keep their
@@ -261,13 +247,6 @@ export const GRADIENT_TYPE_OPTIONS: { value: GradientType; label: string }[] = [
   { value: 'conic', label: 'Conic' },
 ];
 
-/**
- * Hue offset (degrees) applied either side of a swatch's base hue to render a
- * mono-shade gradient — a subtle "same-family" shift rather than a flat tonal
- * ramp (Phase 68, hue-adjacent decision).
- */
-export const MONO_HUE_SHIFT = 14;
-
 /** True when an accent value renders as a gradient. */
 export function isGradientAccent(a: AccentValue): a is Extract<AccentValue, { kind: 'gradient' }> {
   return a.kind === 'gradient';
@@ -286,16 +265,6 @@ export const MOTION_OPTIONS: { value: Motion; label: string; hint: string }[] = 
   { value: 'reduced', label: 'Reduced', hint: 'Minimise animation everywhere' },
   { value: 'full', label: 'Full', hint: 'Always animate, even if the OS says reduce' },
 ];
-
-/**
- * Individual visual-effect toggles, each gated via a `data-no-*` attribute on
- * <html> (independent of the motion setting). All on by default.
- */
-export const DEFAULT_EFFECTS: VisualEffects = {
-  pageReveal: true,
-  typewriter: true,
-  glass: true,
-};
 
 export const EFFECT_OPTIONS: { key: keyof VisualEffects; label: string; hint: string }[] = [
   { key: 'pageReveal', label: 'Page reveal', hint: 'Staggered fade-in of page content' },
@@ -337,18 +306,6 @@ export const DENSITY_OPTIONS: { value: Density; label: string; hint: string }[] 
  */
 export const UI_FONT_DEFAULT: UiFont = 'system';
 
-/**
- * Font-family stacks for the non-`system` UI fonts. System fonts only — each
- * family is broadly available on at least one major platform and degrades
- * gracefully to the generic family. `system` is absent here: it clears the var.
- */
-export const UI_FONT_STACK: Record<Exclude<UiFont, 'system'>, string> = {
-  grotesk: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  humanist: "Optima, Candara, 'Segoe UI', 'Trebuchet MS', sans-serif",
-  serif: "Georgia, Cambria, 'Times New Roman', Times, serif",
-  mono: "ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace",
-};
-
 export const UI_FONT_OPTIONS: { value: UiFont; label: string; hint: string }[] = [
   { value: 'system', label: 'System', hint: 'Your platform default sans-serif' },
   { value: 'grotesk', label: 'Grotesk', hint: 'Clean neo-grotesque sans' },
@@ -356,9 +313,6 @@ export const UI_FONT_OPTIONS: { value: UiFont; label: string; hint: string }[] =
   { value: 'serif', label: 'Serif', hint: 'Classic serif' },
   { value: 'mono', label: 'Mono', hint: 'Monospaced' },
 ];
-
-/** Opacity of the animated gradient at each intensity level. */
-export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
 
 export const BG_INTENSITY_OPTIONS: { value: BgIntensity; label: string }[] = [
   { value: 'subtle', label: 'Subtle' },
@@ -413,8 +367,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notifyTaskUpdates: false,
   editorAutosaveSeconds: 30,
 };
-
-export const SETTINGS_STORAGE_KEY = 'midnite.settings';
 
 /** Selectable autosave intervals (seconds) for the editor settings. `0` = off. */
 export const EDITOR_AUTOSAVE_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [

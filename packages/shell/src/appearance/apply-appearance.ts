@@ -1,4 +1,15 @@
 import {
+  type AccentValue,
+  type BackgroundPattern,
+  type BgIntensity,
+  type Density,
+  type Motion,
+  type ShimmerDirection,
+  type UiFont,
+  type VisualEffects,
+} from '@midnite/shared';
+
+import {
   ACCENT_SWATCH_HS,
   BACKGROUND_PATTERN_DEFAULT,
   BACKGROUND_PATTERN_OPTIONS,
@@ -8,15 +19,7 @@ import {
   MONO_HUE_SHIFT,
   SETTINGS_STORAGE_KEY,
   UI_FONT_STACK,
-  type AccentValue,
-  type BackgroundPattern,
-  type BgIntensity,
-  type Density,
-  type Motion,
-  type ShimmerDirection,
-  type UiFont,
-  type VisualEffects,
-} from './app-settings';
+} from './constants';
 
 /**
  * The CSS pieces an accent value maps to. `gradient` is the full `--accent-gradient`

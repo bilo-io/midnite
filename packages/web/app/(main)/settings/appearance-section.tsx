@@ -65,7 +65,7 @@ import {
   applyShimmerDirection,
   applyUiFont,
   coerceAccentValue,
-} from '@/lib/apply-appearance';
+} from '@midnite/shell';
 import { cn } from '@/lib/utils';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [

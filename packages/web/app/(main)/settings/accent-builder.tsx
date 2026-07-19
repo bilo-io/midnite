@@ -13,7 +13,7 @@ import {
   type AccentValue,
   type GradientType,
 } from '@/lib/app-settings';
-import { accentGradientCss } from '@/lib/apply-appearance';
+import { accentGradientCss } from '@midnite/shell';
 import { cn } from '@/lib/utils';
 
 /** Deep-equality for accent values (both are constructed with stable key order). */

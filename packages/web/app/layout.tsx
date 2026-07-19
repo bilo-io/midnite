@@ -10,7 +10,7 @@ import { UpdateBanner } from '@/components/update/update-banner';
 import { ThemeProvider } from './theme/theme-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { themeInitScript } from './theme/theme-script';
-import { appearanceInitScript } from '@/lib/apply-appearance';
+import { appearanceInitScript } from '@midnite/shell';
 import { AppearanceEffects } from '@/components/appearance-effects';
 
 // Display fonts trialled for the "midnite" wordmark. Each is exposed as its own

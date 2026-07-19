@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ACCENT_OPTIONS, ACCENT_SWATCH_HS, BRAND_ACCENT, MONO_HUE_SHIFT, UI_FONT_STACK, type AccentValue } from './app-settings';
+import type { AccentValue } from '@midnite/shared';
+import { ACCENT_OPTIONS, ACCENT_SWATCH_HS, BRAND_ACCENT, MONO_HUE_SHIFT, UI_FONT_STACK } from './constants';
 import {
   accentGradientCss,
   appearanceInitScript,

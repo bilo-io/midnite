@@ -3,6 +3,7 @@ language: 'typescript'
 
 dependsOn:
   - 'shared'
+  - 'shell'
   - 'ui'
 
 tasks:
