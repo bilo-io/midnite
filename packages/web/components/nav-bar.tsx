@@ -4,15 +4,10 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  ChevronDown,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Power,
-  Settings,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronDown, ChevronLeft, Power, Settings, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCurrentVersion } from '@/lib/version';
+import { docsChangelogUrl } from '@/lib/site-links';
 import { FEATURES, groupNavSections, isFeatureEnabled, type NavCategory } from '@/lib/features';
 import { Collapse } from '@/components/ui/collapse';
 import { useIdleTimer } from '@/lib/use-idle-timer';
@@ -188,24 +183,33 @@ export function NavBar() {
             {expandedView ? <Wordmark /> : <Tooltip>midnite</Tooltip>}
           </Link>
           {expandedView ? (
-            <button
-              type="button"
-              onClick={() =>
-                setSettings((prev) => ({
-                  ...prev,
-                  navMode: navMode === 'expanded' ? 'auto' : 'expanded',
-                }))
-              }
-              aria-label={navMode === 'expanded' ? 'Unlock navigation' : 'Keep navigation expanded'}
-              aria-pressed={navMode === 'expanded'}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-            >
-              {navMode === 'expanded' ? (
-                <PanelLeftClose className="h-4 w-4" />
-              ) : (
-                <PanelLeftOpen className="h-4 w-4" />
-              )}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <a
+                href={docsChangelogUrl(getCurrentVersion())}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="View changelog"
+                className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+              >
+                v{getCurrentVersion()}
+              </a>
+              <button
+                type="button"
+                onClick={() =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    navMode: navMode === 'expanded' ? 'auto' : 'expanded',
+                  }))
+                }
+                aria-label={navMode === 'expanded' ? 'Unlock navigation' : 'Keep navigation expanded'}
+                aria-pressed={navMode === 'expanded'}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+              >
+                <ChevronLeft
+                  className={cn('h-4 w-4 transition-transform', navMode !== 'expanded' && 'rotate-180')}
+                />
+              </button>
+            </div>
           ) : null}
         </div>
 
