@@ -30,6 +30,13 @@ tasks:
       - 'tailwind.config.ts'
       - 'postcss.config.mjs'
       - 'tsconfig.json'
+      # The Changelog page bundles the repo-root CHANGELOG via `?raw`
+      # (src/content/product-docs.tsx). It lives OUTSIDE this project, so without
+      # declaring it moon treats a changelog-only edit as a cache hit and deploys a
+      # stale bundle — which is exactly how the old private-repo release links kept
+      # surviving on GitHub Pages after CHANGELOG.md was fixed to point at the
+      # public mirror. Workspace-relative (leading `/`) so it busts the cache.
+      - '/CHANGELOG.md'
     outputs:
       - 'dist'
 
