@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { Memory, Project, TaskSummary } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { ConnectionStatus } from '@/components/connection-status';
-import { Tabs, type TabOption } from '@midnite/ui';
+import { RailShell, RailHeaderToggle, Tabs, type TabOption } from '@midnite/ui';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
@@ -16,7 +16,6 @@ import { ProjectRoadmapPanel } from '@/components/projects/panels/project-roadma
 import { ProjectStatsPanel } from '@/components/projects/project-stats-panel';
 import { ProjectInfoPanel } from '@/components/projects/project-info-panel';
 import { ResourceNotFound } from '@/components/resource-not-found';
-import { RailShell, RailHeaderToggle } from '@/components/rail-shell';
 import { getMemories, getProject, getTasks } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { taskPageHref } from '@/lib/task-route';

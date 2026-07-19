@@ -424,8 +424,12 @@ export const EDITOR_AUTOSAVE_OPTIONS: ReadonlyArray<{ value: number; label: stri
   { value: 60, label: 'Every 60s' },
 ];
 
-/** Length of the screensaver passcode, in digits. */
-export const PASSCODE_LENGTH = 4;
+/**
+ * Length of the screensaver passcode, in digits. Owned by `@midnite/ui`
+ * (alongside the `PasscodePad` keypad) and re-exported here so existing web
+ * import sites (`@/lib/app-settings`) stay unchanged — one source of truth.
+ */
+export { PASSCODE_LENGTH } from '@midnite/ui';
 
 /**
  * Where the screensaver passcode is kept. Stored in plain localStorage so a

@@ -19,7 +19,7 @@ import { useIsMobile } from '@/hooks/use-media-query';
 import { MEDIA_PROVIDER_CATALOG, useMediaModels } from '@/lib/use-media-models';
 import { ProviderSelect } from '@/components/provider-select';
 import { PageHeader } from '@/components/page-header';
-import { RailFloatingToggle, RailHeaderToggle } from '@/components/rail-shell';
+import { RailFloatingToggle, RailHeaderToggle } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';

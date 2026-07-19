@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Lock, X } from 'lucide-react';
-import { PASSCODE_LENGTH } from '@/lib/app-settings';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/cn';
+import { Button } from './button';
+
+/** Length of the screensaver/lock passcode, in digits. Owned here (the keypad
+ * is a UI concern); web re-exports it from `@midnite/ui` so there's one source. */
+export const PASSCODE_LENGTH = 4;
 
 /**
  * A row of single-character inputs for one passcode. Typing a digit advances to

@@ -11,7 +11,7 @@ import { MemoryChatComposer } from '@/components/memory/memory-chat-composer';
 import { MemoryMetadataModal } from '@/components/memory/memory-metadata-modal';
 import { MemoryScopeChip } from '@/components/memory/memory-scope';
 import { MemoryStudioRail } from '@/components/memory/memory-studio-rail';
-import { RailShell, RailHeaderToggle } from '@/components/rail-shell';
+import { RailShell, RailHeaderToggle } from '@midnite/ui';
 import { getMemory, getProjects, updateMemory } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useApiData } from '@/lib/use-api-data';

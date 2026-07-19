@@ -5,7 +5,7 @@ import { Clock, Lock } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { PasscodeSetupDialog } from '@/components/passcode-pad';
+import { PasscodeSetupDialog } from '@midnite/ui';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   CYCLE_DEFAULT_S,

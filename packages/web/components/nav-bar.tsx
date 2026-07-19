@@ -22,10 +22,9 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { PasscodeSetupDialog, ThemeToggle } from '@midnite/ui';
 import { PresenceNavPill } from '@/components/office/presence-nav-pill';
 import { Screensaver } from '@/components/screensaver';
-import { PasscodeSetupDialog } from '@/components/passcode-pad';
 import { Wordmark } from '@/components/wordmark';
 import { ConnectionToaster } from '@/components/connection-status';
 import { HeaderActions } from '@/components/header/header-actions';

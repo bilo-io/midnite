@@ -20,15 +20,15 @@
 
 ---
 
-## Theme A — `@midnite/ui` leaf-visual extraction — **M**
+## Theme A — `@midnite/ui` leaf-visual extraction — **M** — ✅ DONE (PR #479, 2026-07-19)
 
 Move the genuinely pure visuals into the design-system leaf, so both apps share one starfield/chrome without breaking the leaf rule.
 
-- [ ] **Move `NeuroCloudBackground`** (the starfield / neuro-cloud gather-release canvas) into `@midnite/ui` (e.g. `packages/ui/src/backgrounds/neuro-cloud-background.tsx`) and export it from [`src/index.ts`](../packages/ui/src/index.ts). It already depends on nothing but `react` + `cn` (which `ui` provides). Web keeps a **re-export shim** at [`components/neuro-cloud-background.tsx`](../packages/web/components/neuro-cloud-background.tsx) so existing imports (incl. `screensaver.tsx`) are untouched.
-- [ ] **Move `DynamicBackground`** into `ui`, **inlining the `BackgroundPattern` union** (or a local structural equal) so it stops importing `@midnite/shared` even type-only — the leaf rule forbids it. Keep the shared `BackgroundPattern` as the contract; `ui`'s copy is a small duplicated string-union with a comment pointing at the source of truth (the same "copy, don't cross the boundary" pattern the site uses for favicons).
-- [ ] **Move `RailShell`** (the presentational nav-rail chrome, `react` + `lucide-react` + `cn`) into `ui` as the reusable rail primitive the shell's `<AppFrame>` (Theme B) composes.
-- [ ] **Optionally move `ThemeToggle` + `PasscodePad`** into `ui` if they stay leaf-safe (ThemeToggle already consumes `ui`'s `useTheme` + Button; `PasscodePad` is a self-contained keypad). If either needs shared/data, leave it for the shell (Theme B) instead — don't force it into the leaf.
-- [ ] **Keep `boundary.test.ts` green** — re-run [`ui:test`](../packages/ui/src/boundary.test.ts) after each move; the grep must still find **zero** in-repo imports in shipped `ui` source. Add the moved components to `ui`'s Storybook/exports as appropriate.
+- [x] **Move `NeuroCloudBackground`** into `@midnite/ui` — already landed ahead of this slice; exported from [`src/index.ts`](../packages/ui/src/index.ts). Web imports it **directly** from `@midnite/ui` (no re-export shim — the pattern this slice follows for the rest).
+- [x] **Move `DynamicBackground`** into `ui`, **inlining the `BackgroundPattern` union** with a sync comment pointing at `@midnite/shared` as the source of truth — the leaf can't import `@midnite/shared` even type-only. The two unions are structurally identical, so a `shared` value passes straight into the prop.
+- [x] **Move `RailShell`** (+ `RailFloatingToggle`/`RailHeaderToggle`) into `ui` as the reusable rail primitive `<AppFrame>` (Theme B) composes.
+- [x] **Moved `ThemeToggle` + `PasscodePad`** into `ui` (both stay leaf-safe): `ThemeToggle` now sources `useTheme` + `Button` from `ui`; `PasscodePad` **owns `PASSCODE_LENGTH`** (web `app-settings` re-exports it). Both `Passcode{Setup,Unlock}Dialog` exported too.
+- [x] **`boundary.test.ts` green** — `ui:test` passes 18/18 files; the leaf grep still finds **zero** in-repo imports. `RailShell` + `ThemeToggle` stories moved into `ui`; a `DynamicBackground` smoke story added.
 
 ## Theme B — `@midnite/shell` package (`<AppFrame>` + lock + appearance + providers) — **L**
 

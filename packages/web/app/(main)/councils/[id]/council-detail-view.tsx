@@ -10,7 +10,7 @@ import { CouncilRunThread } from '@/components/council-run-thread';
 import { CouncilComposer } from '@/components/council-topic-composer';
 import { CouncilCustomFormatModal } from '@/components/council-custom-format-modal';
 import { PageHeader } from '@/components/page-header';
-import { RailFloatingToggle, RailHeaderToggle } from '@/components/rail-shell';
+import { RailFloatingToggle, RailHeaderToggle } from '@midnite/ui';
 import {
   listCouncilRuns,
   retryCouncilRunMember,

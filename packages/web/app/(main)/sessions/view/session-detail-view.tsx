@@ -10,7 +10,7 @@ import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
 import { ResourceNotFound } from '@/components/resource-not-found';
-import { RailShell, RailHeaderToggle } from '@/components/rail-shell';
+import { RailShell, RailHeaderToggle } from '@midnite/ui';
 import { getProject, getSession, getTask } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
