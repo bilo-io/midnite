@@ -88,4 +88,56 @@ describe('registerWebStatic', () => {
 
     await app.close();
   });
+
+  it('serves the page for a browser navigation that collides with an API route', async () => {
+    // The API has no path prefix, so `/projects` is BOTH a page and a controller.
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>midnite</title>');
+    mkdirSync(join(dir, 'projects'));
+    writeFileSync(join(dir, 'projects', 'index.html'), '<!doctype html><title>projects-page</title>');
+
+    const app = Fastify();
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
+    app.get('/projects', async () => ({ items: [] }));
+    await app.ready();
+
+    // Browser top-level navigation → the page wins over the colliding API route,
+    // with or without the trailingSlash the export emits.
+    for (const url of ['/projects', '/projects/']) {
+      const nav = await app.inject({ method: 'GET', url, headers: { accept: 'text/html,application/xhtml+xml' } });
+      expect(nav.statusCode).toBe(200);
+      expect(nav.body).toContain('projects-page');
+    }
+
+    // A client `fetch` (Accept: */*) still reaches the API and gets JSON.
+    const data = await app.inject({ method: 'GET', url: '/projects', headers: { accept: '*/*' } });
+    expect(data.statusCode).toBe(200);
+    expect(data.json()).toEqual({ items: [] });
+
+    // A JSON-typed request also reaches the API.
+    const json = await app.inject({ method: 'GET', url: '/projects', headers: { accept: 'application/json' } });
+    expect(json.json()).toEqual({ items: [] });
+
+    await app.close();
+  });
+
+  it('lets a redirect endpoint with no page file through to the API on a browser navigation', async () => {
+    // SSO start/callback are browser navigations (Accept: text/html) but have no
+    // page file in the export, so they must reach the controller (302), not 404.
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>midnite</title>');
+
+    const app = Fastify();
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
+    app.get('/auth/sso/:provider/start', async (_req, reply) => reply.redirect('https://provider.example/oauth', 302));
+    await app.ready();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/auth/sso/github/start',
+      headers: { accept: 'text/html' },
+    });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('https://provider.example/oauth');
+
+    await app.close();
+  });
 });
