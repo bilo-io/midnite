@@ -29,6 +29,16 @@ export default defineConfig({
         // The addon auto-applies the .storybook/preview decorators/globals to
         // every story (Storybook ≥10.3), so no extra setup file is needed.
         plugins: [storybookTest({ configDir: join(rootDir, '.storybook') })],
+        // Eagerly pre-bundle the heavy third-party deps the stories pull in
+        // (Phase 73 G). On a COLD run (no `node_modules/.vite` cache) the browser
+        // optimizer discovers deps lazily as the story files load in parallel; a
+        // late discovery triggers a full-page reload that tears down the running
+        // suite ("Vitest failed to find the current suite"). Forcing one up-front
+        // optimize makes the first run green like the (warm-cache) re-run. (ui is a
+        // leaf, so there are no `@midnite/*` deps to include here.)
+        optimizeDeps: {
+          include: ['react', 'react-dom', 'react/jsx-dev-runtime', 'lucide-react', 'react-select'],
+        },
         test: {
           name: 'storybook',
           browser: {
