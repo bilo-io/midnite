@@ -89,6 +89,11 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
   // skipped intros must not play the centre→rest glide.
   const playedRef = useRef(false);
   if (intro === 'logo' || intro === 'cursor' || intro === 'wordmark') playedRef.current = true;
+  // The title's gradient cursor must not appear until the logo + wordmark have
+  // *finished* gliding to their resting spot — flipped on the brand block's own
+  // `transform` transitionend. A skipped / reduced-motion intro has no glide, so
+  // 'done' satisfies it as a fallback (see `brandLanded` below).
+  const [brandSettled, setBrandSettled] = useState(false);
 
   useLayoutEffect(() => {
     const hero = heroRef.current;
@@ -111,10 +116,12 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
   );
 
   // Type the title out; the subtitle waits for `titleDone` before fading in.
-  // The text stays empty until the intro's 'copy' beat so typing starts exactly
-  // as the brand block lands. Under reduced motion the hook returns the full
-  // string immediately (done=true).
-  const showCopy = introAtLeast(intro, 'copy');
+  // The gradient caret + typing stay hidden until the brand block has *fully*
+  // landed — its glide transitionend (or 'done' when the intro was skipped) —
+  // so the cursor only shows once the logo + wordmark reach their resting spot.
+  // Under reduced motion the hook returns the full string immediately (done=true).
+  const brandLanded = brandSettled || introAtLeast(intro, 'done');
+  const showCopy = brandLanded;
   // Drop the trailing full stop — the hero title reads as a headline, not a
   // sentence (the copy set keeps the periods so it stays grammatical as data).
   const titleText = copy.title.replace(/\.$/, '');
@@ -171,6 +178,13 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
               playedRef.current && introAtLeast(intro, 'move')
                 ? 'transform 900ms cubic-bezier(0.22, 0.9, 0.3, 1)'
                 : undefined,
+          }}
+          onTransitionEnd={(e) => {
+            // Only the brand block's own transform glide counts — not its opacity
+            // fade, and not any child transition bubbling up.
+            if (e.target === e.currentTarget && e.propertyName === 'transform') {
+              setBrandSettled(true);
+            }
           }}
         >
           {/* Round pulsating gradient bloom sits behind the logo icon (::after on

@@ -187,33 +187,44 @@
     border-radius: 1px;
   }
 
-  /* Pulsating glow behind the auth-hero brand: a round bloom under the logo icon
-   * and a text-glow around the wordmark, both breathing on the same slow cadence. */
+  /* Pulsating glow behind the auth-hero brand: a bloom under the logo icon and a
+   * bloom behind the wordmark, both painted in the active brand/accent gradient
+   * (falling back to the static brand gradient under a solid accent) and breathing
+   * on the same slow cadence. A radial mask fades each bloom to nothing at its
+   * edges, so the multi-hue gradient reads as a soft glow, not a hard shape. */
   .auth-hero-logo-glow::after {
     content: '';
     position: absolute;
     inset: -22%;
     z-index: -1;
     border-radius: 9999px;
-    background: radial-gradient(
-      circle,
-      hsl(var(--primary) / 0.5) 0%,
-      hsl(var(--primary) / 0.18) 45%,
-      transparent 70%
-    );
+    background: var(--accent-gradient, var(--brand-gradient));
+    -webkit-mask: radial-gradient(circle, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 70%);
+    mask: radial-gradient(circle, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 70%);
     filter: blur(6px);
     animation: auth-hero-glow-pulse 4s ease-in-out infinite;
   }
   .auth-hero-wordmark-glow {
-    animation: auth-hero-wordmark-pulse 4s ease-in-out infinite;
+    position: relative;
+  }
+  .auth-hero-wordmark-glow::before {
+    content: '';
+    position: absolute;
+    inset: -55% -14%;
+    z-index: -1;
+    background: var(--accent-gradient, var(--brand-gradient));
+    -webkit-mask: radial-gradient(65% 120% at 50% 50%, #000 0%, rgb(0 0 0 / 0.3) 55%, transparent 80%);
+    mask: radial-gradient(65% 120% at 50% 50%, #000 0%, rgb(0 0 0 / 0.3) 55%, transparent 80%);
+    filter: blur(12px);
+    animation: auth-hero-glow-pulse 4s ease-in-out infinite;
   }
   html[data-motion='reduced'] .auth-hero-logo-glow::after,
-  html[data-motion='reduced'] .auth-hero-wordmark-glow {
+  html[data-motion='reduced'] .auth-hero-wordmark-glow::before {
     animation: none;
   }
   @media (prefers-reduced-motion: reduce) {
     html:not([data-motion='full']) .auth-hero-logo-glow::after,
-    html:not([data-motion='full']) .auth-hero-wordmark-glow {
+    html:not([data-motion='full']) .auth-hero-wordmark-glow::before {
       animation: none;
     }
   }
@@ -272,7 +283,7 @@
   }
 }
 
-/* Slow "breathing" glow shared by the auth-hero logo bloom and wordmark text-glow. */
+/* Slow "breathing" glow shared by the auth-hero logo + wordmark brand blooms. */
 @keyframes auth-hero-glow-pulse {
   0%,
   100% {
@@ -282,19 +293,6 @@
   50% {
     opacity: 1;
     transform: scale(1.06);
-  }
-}
-@keyframes auth-hero-wordmark-pulse {
-  0%,
-  100% {
-    text-shadow:
-      0 0 10px hsl(var(--primary) / 0.35),
-      0 0 26px hsl(var(--primary) / 0.15);
-  }
-  50% {
-    text-shadow:
-      0 0 16px hsl(var(--primary) / 0.55),
-      0 0 40px hsl(var(--primary) / 0.3);
   }
 }
 
