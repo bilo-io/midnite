@@ -19,6 +19,22 @@ const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 /**
+ * Mirror the CSS reduced-motion guard for `.animate-panel-*`: animations are off
+ * only when the OS prefers reduced motion and the app hasn't forced them on
+ * (`data-motion='full'`). When off, the panel must unmount immediately on close
+ * rather than waiting for an exit animation that never plays.
+ */
+function panelAnimationsDisabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (document.documentElement.getAttribute('data-motion') === 'full') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Exit animation duration (`.animate-panel-out` is 0.12s) plus a small buffer, so
+// the shrink-out fully plays before the panel unmounts.
+const EXIT_MS = 140;
+
+/**
  * The persistent assistant surface (Phase 66 Theme A): a logo-anchored floating
  * action button, fixed bottom-right, mounted on app routes only (rendered from
  * the `(main)` shell). Rest state is a quiet logo; hovering lights the gradient
@@ -28,7 +44,10 @@ const FOCUSABLE =
  */
 export function AssistantFab() {
   const [mounted, setMounted] = useState(false);
+  // `open` is the visual intent (drives enter vs. exit); `render` keeps the panel
+  // in the DOM through the exit animation so it can shrink back into the FAB.
   const [open, setOpen] = useState(false);
+  const [render, setRender] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [view, setView] = useState<AssistantView>('menu');
   const chat = useChatCommand();
@@ -36,6 +55,7 @@ export function AssistantFab() {
   const { hasAnyUnseen } = useSeenGuides();
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const headingId = useId();
 
   // Subtle nudge: at least one product guide is unseen at its current version
@@ -46,11 +66,42 @@ export function AssistantFab() {
 
   useEffect(() => setMounted(true), []);
 
-  const close = useCallback(() => {
-    setOpen(false);
+  const openPanel = useCallback(() => {
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
+    setRender(true);
+    setOpen(true);
+  }, []);
+
+  // Unmount the panel and reset it to the default view for next time.
+  const finalizeClose = useCallback(() => {
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
+    setRender(false);
     setView('menu');
     chat.reset();
   }, [chat]);
+
+  // Begin closing: flip to the exit animation, then unmount once it has played.
+  // With animations off there's nothing to wait for, so unmount immediately.
+  const close = useCallback(() => {
+    setOpen(false);
+    if (panelAnimationsDisabled()) {
+      finalizeClose();
+      return;
+    }
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+    exitTimer.current = setTimeout(finalizeClose, EXIT_MS);
+  }, [finalizeClose]);
+
+  // Clear any pending exit timer on unmount.
+  useEffect(() => () => {
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+  }, []);
 
   // Report issue (Phase 74): close the panel, then open the preview dialog. The
   // dialog owns its own portal + focus-trap; the FAB just holds the open flag.
@@ -65,11 +116,11 @@ export function AssistantFab() {
   useEffect(() => {
     const onChat = () => {
       setView('chat');
-      setOpen(true);
+      openPanel();
     };
     window.addEventListener('midnite:open-chat', onChat);
     return () => window.removeEventListener('midnite:open-chat', onChat);
-  }, []);
+  }, [openPanel]);
 
   // Escape + outside-click close (mirrors the web portaled-menu convention).
   useEffect(() => {
@@ -127,7 +178,7 @@ export function AssistantFab() {
           ref={fabRef}
           type="button"
           data-tour="assistant"
-          onClick={() => (open ? close() : setOpen(true))}
+          onClick={() => (open ? close() : openPanel())}
           aria-label="Open assistant"
           aria-haspopup="dialog"
           aria-expanded={open}
@@ -150,7 +201,7 @@ export function AssistantFab() {
       </GradientGlow>
 
       {mounted &&
-        open &&
+        render &&
         createPortal(
           <AssistantPanel
             ref={panelRef}
@@ -162,6 +213,7 @@ export function AssistantFab() {
             isMobile={isMobile}
             headingId={headingId}
             onReport={openReport}
+            exiting={!open}
           />,
           document.body,
         )}

@@ -848,10 +848,29 @@ html[data-motion='reduced'] .screensaver-title {
   animation: panel-grow-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* The reverse of panel-grow-in: shrink + fade back into the trigger corner. Used
+   for surfaces that keep the exit mounted long enough to play it out (e.g. the
+   assistant panel). `forwards` holds the shrunk/hidden end state until unmount. */
+@keyframes panel-shrink-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+.animate-panel-out {
+  animation: panel-shrink-out 0.12s ease-in forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html:not([data-motion='full']) .animate-dialog-in,
   html:not([data-motion='full']) .animate-toast-in,
-  html:not([data-motion='full']) .animate-panel-in {
+  html:not([data-motion='full']) .animate-panel-in,
+  html:not([data-motion='full']) .animate-panel-out {
     animation: none;
   }
 }

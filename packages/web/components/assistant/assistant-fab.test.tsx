@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const routerPush = vi.fn();
@@ -146,11 +146,27 @@ describe('AssistantFab', () => {
     expect(screen.getByTestId('chat-bar')).toBeInTheDocument();
   });
 
-  it('closes on Escape', () => {
+  it('grows in from the FAB corner when opened (reveal transition)', () => {
     render(<AssistantFab />);
     fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // The animation lives on the panel wrapper (the dialog's parent), springing
+    // from the bottom-right corner nearest the FAB on desktop.
+    const wrapper = screen.getByRole('dialog').parentElement as HTMLElement;
+    expect(wrapper).toHaveClass('animate-panel-in');
+    expect(wrapper).toHaveClass('origin-bottom-right');
+  });
+
+  it('closes on Escape (kept mounted through the shrink-out, then unmounts)', async () => {
+    render(<AssistantFab />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // The panel stays mounted while its exit animation plays — the wrapper (the
+    // dialog's parent) carries the shrink-out class — then unmounts once the
+    // exit window elapses.
+    expect(dialog.parentElement).toHaveClass('animate-panel-out');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

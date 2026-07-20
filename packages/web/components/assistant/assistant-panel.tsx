@@ -48,6 +48,8 @@ type Props = {
   headingId: string;
   /** Open the "Report issue" preview dialog (Phase 74); owned by the FAB host. */
   onReport: () => void;
+  /** True while the panel is animating out (kept mounted by the host until then). */
+  exiting?: boolean;
 };
 
 /**
@@ -59,7 +61,7 @@ type Props = {
  * Escape / outside-click, and focus.
  */
 export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function AssistantPanel(
-  { view, onView, onClose, onKeyDownCapture, chat, isMobile, headingId, onReport },
+  { view, onView, onClose, onKeyDownCapture, chat, isMobile, headingId, onReport, exiting },
   ref,
 ) {
   const pathname = usePathname();
@@ -120,8 +122,13 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
   return (
     <GradientGlow
       trigger="always"
+      // Grow out of / shrink back into the FAB corner (bottom-right on desktop,
+      // bottom-centre on the full-width mobile sheet). The host keeps the panel
+      // mounted while `exiting` so the shrink-out can play, then unmounts it.
       className={cn(
         'fixed z-50 shadow-2xl',
+        isMobile ? 'origin-bottom' : 'origin-bottom-right',
+        exiting ? 'pointer-events-none animate-panel-out' : 'animate-panel-in',
         isMobile
           ? 'inset-x-2 bottom-2 rounded-2xl'
           : 'right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] w-[min(21rem,calc(100vw-2rem))] rounded-2xl md:bottom-20',
