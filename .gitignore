@@ -23,6 +23,9 @@ desktop-installers/
 
 # Local gateway data dir (SQLite DB, WAL, uploads, ad-hoc backups) — never committed
 .midnite/*
+# Same dir when the gateway runs from its own package (nested runtime data:
+# its SQLite DB + timestamped backups + uploads/approvals) — never committed.
+packages/gateway/.midnite/
 # Phase 72: the operator config itself stays private, but its redaction-safe
 # sample is committed so operators have a template.
 !.midnite/operator.example.json
