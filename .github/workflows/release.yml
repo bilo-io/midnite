@@ -57,8 +57,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build gateway + web (static export)
-        run: moon run gateway:build web:build
+      # `cli:build` is required before staging: Phase 77 bundles the `midnite`
+      # CLI into the app, and stage-gateway.mjs errors if packages/cli/dist is
+      # missing (install-local.mjs builds it too). Without it the stage step dies
+      # with "CLI build not found at packages/cli/dist/index.js".
+      - name: Build gateway + web (static export) + CLI
+        run: moon run gateway:build web:build cli:build
 
       - name: Stage gateway prod deps (deploy + electron-rebuild for this arch)
         run: pnpm --filter @midnite/desktop run stage
