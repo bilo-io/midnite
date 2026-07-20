@@ -8,19 +8,64 @@ Next.js web UI against it. No servers to run by hand.
 
 ```
 Electron main (dist/main/index.js)
-  ├─ resolvePaths()         → db/uploads/knowledge under ~/Library/Application Support/midnite
+  ├─ resolvePaths()         → shared home ~/.midnite: db/uploads + config/operator/.env
+  │                           discovery (migrates a legacy app-private db once)
   ├─ findFreePort()         → dynamic loopback port (avoids 7777 clashes)
-  ├─ startGatewayProcess()  → spawn gateway via Electron's node (ELECTRON_RUN_AS_NODE),
-  │                           paths + port passed as MIDNITE_* env
+  ├─ startGatewayProcess()  → spawn gateway via Electron's node (ELECTRON_RUN_AS_NODE);
+  │                           MIDNITE_* paths + config/operator paths + ~/.midnite/.env
+  │                           secrets + MIDNITE_WEB_DIR (gateway serves the web itself)
   ├─ waitForHealth()        → poll GET /health before showing the window
+  ├─ writeGatewayEndpoint() → advertise the URL in ~/.midnite/gateway.json for the CLI
   ├─ BrowserWindow          → preload injects window.__NEXT_PUBLIC_GATEWAY_URL
   └─ renderer URL:
         dev  → http://localhost:3000 (next dev) or $MIDNITE_WEB_URL
         prod → serveStatic(web/) over a second loopback port  (NOT file://)
 ```
 
-The gateway honours `MIDNITE_GATEWAY_PORT / _DB_PATH / _UPLOADS_DIR`,
-`MIDNITE_KNOWLEDGE_DIR`, `MIDNITE_CONFIG_PATH` (added in `gateway/src/lib/load-config.ts`).
+### Shared `~/.midnite` home (one midnite per machine)
+
+A downloaded app must behave like the user's own gateway — same config, same SSO, same
+board data — so the embedded gateway reads a **shared machine-wide home** (`~/.midnite`),
+not an app-private sandbox:
+
+| File | Effect |
+|------|--------|
+| `~/.midnite/midnite.json`  | user config → `MIDNITE_CONFIG_PATH` |
+| `~/.midnite/operator.json` | SSO/JWT (operator) config → `MIDNITE_OPERATOR_CONFIG` |
+| `~/.midnite/.env`          | secrets (JWT signing secret, SSO client secrets) merged into the gateway child env |
+| `~/.midnite/midnite.db`, `uploads/` | shared data (a legacy app-private db is migrated in once) |
+| `~/.midnite/gateway.json`  | written on boot so the bundled CLI finds the running gateway |
+
+A fresh machine with no `~/.midnite/*` boots on schema defaults (auth off, local mode).
+Drop a `midnite.json` / `operator.json` / `.env` there and SSO + settings light up on
+the next launch — exactly as `gateway:dev` behaves.
+
+### Auth / SSO in the desktop app
+
+The web is a **static export** (no Next server), so the `/api/auth/*` BFF route handlers
+don't exist here. Auth talks to the embedded gateway's `/auth/*` endpoints **directly**
+(`lib/auth-transport.ts`), keeping the refresh token in `localStorage` (acceptable on a
+single-user loopback machine). Because the gateway serves the web itself (single origin),
+the SSO OAuth round-trip — `/auth/sso/:provider/start` → provider → gateway callback →
+`/auth/sso/callback` page → `/auth/sso/exchange` — all resolves on one origin, exactly
+like `midnite serve`. SSO requires the provider's redirect URI to allow the gateway's
+loopback origin (loopback redirect URIs are permitted for native apps per RFC 8252).
+
+### Bundled CLI
+
+The app ships the `midnite` CLI (`Contents/Resources/cli/dist/index.mjs`) as an
+**esbuild single-file bundle** (~3MB — vs. ~220MB if `pnpm deploy` dragged the whole
+gateway closure in twice), run via the `bin/midnite` shim under the app's own
+Electron-as-Node (no system Node, ABI matches). It discovers the running gateway from
+`~/.midnite/gateway.json`, so `midnite list` works against the desktop app with no flags.
+`install:local` symlinks it to `/usr/local/bin`; end users can
+`ln -s "/Applications/midnite.app/Contents/Resources/bin/midnite" /usr/local/bin/midnite`.
+(`midnite serve` is intentionally unavailable from the bundled copy — its
+`import('@midnite/gateway/bootstrap')` is kept external; the app IS the gateway.)
+
+The gateway honours `MIDNITE_GATEWAY_PORT / _DB_PATH / _UPLOADS_DIR`, `MIDNITE_KNOWLEDGE_DIR`,
+`MIDNITE_CONFIG_PATH`, `MIDNITE_OPERATOR_CONFIG`, and `MIDNITE_WEB_DIR`
+(see `gateway/src/lib/load-config.ts` + `bootstrap.ts`).
 
 ## Native notifications (Phase 21 Theme D)
 

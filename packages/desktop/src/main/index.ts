@@ -2,7 +2,13 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { app, BrowserWindow, shell } from 'electron';
-import { findFreePort, startGatewayProcess, stopGatewayProcess } from './gateway-process';
+import {
+  clearGatewayEndpoint,
+  findFreePort,
+  startGatewayProcess,
+  stopGatewayProcess,
+  writeGatewayEndpoint,
+} from './gateway-process';
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
@@ -11,6 +17,8 @@ import { registerUpdater, startUpdateCheck } from './updater';
 
 let gateway: ChildProcess | null = null;
 let win: BrowserWindow | null = null;
+/** The shared home dir (`~/.midnite`) — kept so shutdown can clear the endpoint file. */
+let midniteHome: string | null = null;
 
 // One instance only — two launches would fight over the SQLite DB and ports.
 if (!app.requestSingleInstanceLock()) {
@@ -35,6 +43,7 @@ function webRoot(): string | null {
 
 async function boot(): Promise<void> {
   const paths = resolvePaths();
+  midniteHome = paths.home;
   const gatewayPort = await findFreePort();
   gateway = startGatewayProcess(paths, gatewayPort);
   gateway.stdout?.on('data', (d: Buffer) => process.stdout.write(`[gateway] ${d}`));
@@ -42,6 +51,8 @@ async function boot(): Promise<void> {
 
   const healthy = await waitForHealth(gatewayPort);
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
+  // Advertise the endpoint so the bundled CLI finds this gateway on its dynamic port.
+  writeGatewayEndpoint(paths.home, gatewayUrl);
 
   win = new BrowserWindow({
     width: 1400,
@@ -112,6 +123,7 @@ app.on('window-all-closed', () => app.quit());
 function shutdown(): void {
   stopGatewayProcess(gateway);
   gateway = null;
+  if (midniteHome) clearGatewayEndpoint(midniteHome);
 }
 app.on('before-quit', shutdown);
 process.on('exit', shutdown);

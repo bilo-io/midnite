@@ -3,6 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Team, User } from '@midnite/shared';
 import { listTeams, setAccessToken } from '@/lib/api';
+import {
+  loginSession,
+  logoutSession,
+  refreshSession,
+  registerAccount,
+} from '@/lib/auth-transport';
 
 export interface AuthContextValue {
   user: User | null;
@@ -58,21 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Restore session from the httpOnly cookie on mount.
+  // Restore the session on mount. In the hosted web this refreshes from the httpOnly
+  // cookie via the BFF; in the desktop app it refreshes directly against the embedded
+  // gateway using the stored token (see lib/auth-transport.ts).
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch('/api/auth/refresh', { method: 'POST' });
-        if (res.ok) {
-          const data = (await res.json()) as { accessToken: string; user: User };
-          applyTokens(data.accessToken, data.user);
+        const { status, session } = await refreshSession();
+        if (status === 200 && session) {
+          applyTokens(session.accessToken, session.user);
           setJwtEnabled(true);
           await loadTeams();
-        } else if (res.status === 401) {
-          // Cookie expired / no cookie — JWT is enabled, just not logged in.
+        } else if (status === 401) {
+          // Session expired / not logged in — JWT is enabled, just no live session.
           setJwtEnabled(true);
         }
-        // 503 (gateway unavailable / JWT disabled) → jwtEnabled stays false.
+        // 503 (gateway unavailable) / 400 (JWT disabled) → jwtEnabled stays false.
       } catch {
         // Network error — treat as JWT disabled to avoid locking users out.
       } finally {
@@ -87,44 +94,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<void> => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      throw new Error(data.message ?? 'Login failed');
-    }
-    const data = (await res.json()) as { accessToken: string; user: User };
-    applyTokens(data.accessToken, data.user);
+    const session = await loginSession(email, password);
+    applyTokens(session.accessToken, session.user);
     setJwtEnabled(true);
     await loadTeams();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
-    }).catch(() => undefined);
+    await logoutSession(accessToken);
     clearTokens();
   }, [accessToken]);
 
   const register = useCallback(
-    async (email: string, name: string, password: string): Promise<User> => {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, name, password }),
-      });
-      if (!res.ok) {
-        const data = (await res.json()) as { message?: string };
-        throw new Error(data.message ?? 'Registration failed');
-      }
-      const data = (await res.json()) as { user: User };
-      return data.user;
-    },
+    async (email: string, name: string, password: string): Promise<User> =>
+      registerAccount(email, name, password),
     [],
   );
 

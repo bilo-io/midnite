@@ -1,0 +1,19 @@
+#!/bin/sh
+# Bundled `midnite` CLI launcher (Phase 77). Runs the staged CLI under the app's own
+# Electron binary in Node mode — no system Node required, and the ABI matches the app.
+# Ships inside the app at Contents/Resources/bin/midnite; symlink it onto PATH
+# (install-local does this for dev; end users can `ln -s` it — see the README).
+#
+# Paths are resolved relative to this script so it works wherever the .app lives.
+# Resolve symlinks to find the real script location (readlink -f isn't on stock macOS).
+SELF="$0"
+while [ -h "$SELF" ]; do
+  LINK="$(readlink "$SELF")"
+  case "$LINK" in
+    /*) SELF="$LINK" ;;
+    *) SELF="$(dirname "$SELF")/$LINK" ;;
+  esac
+done
+DIR="$(cd "$(dirname "$SELF")" && pwd)"
+# DIR = …/Contents/Resources/bin → Electron is ../../MacOS/midnite, CLI is ../cli/dist.
+exec env ELECTRON_RUN_AS_NODE=1 "$DIR/../../MacOS/midnite" "$DIR/../cli/dist/index.mjs" "$@"

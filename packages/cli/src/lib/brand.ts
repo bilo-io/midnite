@@ -83,8 +83,18 @@ export function logoLines(rows = 8): string[] {
   return out;
 }
 
-/** The CLI version, read from package.json (falls back to a placeholder, never throws). */
+// Injected at bundle time by the desktop's esbuild step (Phase 77): a single-file
+// bundle can't read `../../package.json` relative to this module, so the version is
+// baked in via `define`. Guarded with `typeof` so the normal (unbundled) build — where
+// this identifier is never declared — falls through to the package.json read below.
+declare const __MIDNITE_CLI_VERSION__: string | undefined;
+
+/** The CLI version. Prefers a bundle-time injected constant (the desktop's esbuild
+ *  bundle), else reads package.json. Falls back to a placeholder, never throws. */
 export function getVersion(): string {
+  if (typeof __MIDNITE_CLI_VERSION__ !== 'undefined' && __MIDNITE_CLI_VERSION__) {
+    return __MIDNITE_CLI_VERSION__;
+  }
   try {
     const pkgPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json');
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version?: string };

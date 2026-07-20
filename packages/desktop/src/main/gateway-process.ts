@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 import type { DesktopPaths } from './paths';
@@ -43,23 +43,99 @@ function gatewayRuntime(): { exec: string; entry: string; electronAsNode: boolea
 }
 
 /**
+ * Parse a `.env` file into key→value pairs. Deliberately minimal (no dep): `KEY=VALUE`
+ * per line, `#` comments and blanks skipped, surrounding single/double quotes stripped.
+ * The desktop gateway needs the same secrets the dev gateway loads via moon's `envFile`
+ * (JWT signing secret, SSO client secrets) for auth to resolve as "on".
+ */
+export function parseEnvFile(contents: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const rawLine of contents.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq <= 0) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
  * Spawn the gateway as a child process. Writable paths + the chosen port are
- * passed via env (honoured by the gateway's config loader). `detached` puts it
- * in its own process group so we can reap the whole PTY tree on quit.
+ * passed via env (honoured by the gateway's config loader). Config/operator paths
+ * and the `.env` secrets from the shared `~/.midnite` home are folded in so the
+ * embedded gateway runs against the user's real config + SSO wiring, not schema
+ * defaults. `detached` puts it in its own process group so we can reap the whole
+ * PTY tree on quit.
  */
 export function startGatewayProcess(paths: DesktopPaths, port: number): ChildProcess {
   const { exec, entry, electronAsNode } = gatewayRuntime();
+
+  // Secrets from ~/.midnite/.env are the base layer; the process env wins over them
+  // (an explicitly-set var at launch time should never be silently overridden).
+  const dotenv = paths.envPath
+    ? (() => {
+        try {
+          return parseEnvFile(readFileSync(paths.envPath, 'utf-8'));
+        } catch {
+          return {};
+        }
+      })()
+    : {};
+
   return spawn(exec, [entry], {
     env: {
+      ...dotenv,
       ...process.env,
       ...(electronAsNode ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
       MIDNITE_GATEWAY_PORT: String(port),
       MIDNITE_GATEWAY_DB_PATH: paths.dbPath,
       MIDNITE_GATEWAY_UPLOADS_DIR: paths.uploadsDir,
+      // Load the shared user config + operator (SSO/JWT) config when present. Both are
+      // fail-closed if set-but-missing, so only set them when the file actually exists
+      // (resolvePaths already null-guards absence) — a fresh machine boots on defaults.
+      ...(paths.configPath ? { MIDNITE_CONFIG_PATH: paths.configPath } : {}),
+      ...(paths.operatorPath ? { MIDNITE_OPERATOR_CONFIG: paths.operatorPath } : {}),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true,
   });
+}
+
+/** The shared endpoint file the bundled CLI reads to find the running gateway. */
+function endpointFile(home: string): string {
+  return join(home, 'gateway.json');
+}
+
+/**
+ * Advertise the running gateway's URL in `~/.midnite/gateway.json` so the bundled CLI
+ * (and any other midnite process) can reach the desktop app's gateway on its dynamic
+ * loopback port without a flag. Best-effort — a write failure just means the CLI falls
+ * back to its default endpoint.
+ */
+export function writeGatewayEndpoint(home: string, url: string): void {
+  try {
+    writeFileSync(endpointFile(home), JSON.stringify({ url, pid: process.pid }, null, 2));
+  } catch {
+    // Non-fatal — the CLI still works with an explicit --gateway/$MIDNITE_GATEWAY_URL.
+  }
+}
+
+/** Remove the endpoint file on shutdown so a stale URL doesn't point at a dead port. */
+export function clearGatewayEndpoint(home: string): void {
+  try {
+    rmSync(endpointFile(home), { force: true });
+  } catch {
+    // Non-fatal.
+  }
 }
 
 /** Terminate the gateway and its process group (SIGTERM, then the OS reaps PTYs). */

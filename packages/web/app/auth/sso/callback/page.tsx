@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SsoRedirectPathSchema } from '@midnite/shared';
+import { exchangeSsoCode } from '@/lib/auth-transport';
 
 // Browser landing for the SSO callback (client half — see the BFF route at
 // app/api/auth/sso/callback/route.ts). The gateway 302s here with a one-time
@@ -40,23 +41,13 @@ function SsoCallbackInner() {
     }
 
     void (async () => {
-      let res: Response;
-      try {
-        res = await fetch('/api/auth/sso/callback', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ code }),
-        });
-      } catch {
-        router.replace('/login?sso_error=gateway_unavailable');
+      // BFF mode sets the httpOnly cookie; desktop stores the refresh token locally.
+      // Either way the subsequent full navigation lets AuthProvider restore the session.
+      const result = await exchangeSsoCode(code);
+      if (!result.ok) {
+        router.replace(`/login?sso_error=${result.message ?? 'exchange_failed'}`);
         return;
       }
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { message?: string } | null;
-        router.replace(`/login?sso_error=${data?.message ?? 'exchange_failed'}`);
-        return;
-      }
-      // Cookie set — full navigation so AuthProvider remounts and restores it.
       window.location.replace(redirect);
     })();
   }, [params, router]);
