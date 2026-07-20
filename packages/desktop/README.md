@@ -10,16 +10,19 @@ Next.js web UI against it. No servers to run by hand.
 Electron main (dist/main/index.js)
   ├─ resolvePaths()         → shared home ~/.midnite: db/uploads + config/operator/.env
   │                           discovery (migrates a legacy app-private db once)
-  ├─ findFreePort()         → dynamic loopback port (avoids 7777 clashes)
+  ├─ resolveGatewayPort()   → stable 7777 (so the OAuth redirect_uri is constant), else a
+  │                           random free port if 7777 is taken
   ├─ startGatewayProcess()  → spawn gateway via Electron's node (ELECTRON_RUN_AS_NODE);
   │                           MIDNITE_* paths + config/operator paths + ~/.midnite/.env
-  │                           secrets + MIDNITE_WEB_DIR (gateway serves the web itself)
+  │                           secrets + MIDNITE_WEB_DIR (gateway serves the web) +
+  │                           MIDNITE_SSO_WEB_BASE_URL (SSO callback → this origin)
   ├─ waitForHealth()        → poll GET /health before showing the window
   ├─ writeGatewayEndpoint() → advertise the URL in ~/.midnite/gateway.json for the CLI
   ├─ BrowserWindow          → preload injects window.__NEXT_PUBLIC_GATEWAY_URL
   └─ renderer URL:
         dev  → http://localhost:3000 (next dev) or $MIDNITE_WEB_URL
-        prod → serveStatic(web/) over a second loopback port  (NOT file://)
+        prod → the gateway itself: http://localhost:<port>/  — SINGLE ORIGIN (API + UI +
+               SSO callback all on one origin), NOT file://
 ```
 
 ### Shared `~/.midnite` home (one midnite per machine)
@@ -45,11 +48,17 @@ the next launch — exactly as `gateway:dev` behaves.
 The web is a **static export** (no Next server), so the `/api/auth/*` BFF route handlers
 don't exist here. Auth talks to the embedded gateway's `/auth/*` endpoints **directly**
 (`lib/auth-transport.ts`), keeping the refresh token in `localStorage` (acceptable on a
-single-user loopback machine). Because the gateway serves the web itself (single origin),
-the SSO OAuth round-trip — `/auth/sso/:provider/start` → provider → gateway callback →
-`/auth/sso/callback` page → `/auth/sso/exchange` — all resolves on one origin, exactly
-like `midnite serve`. SSO requires the provider's redirect URI to allow the gateway's
-loopback origin (loopback redirect URIs are permitted for native apps per RFC 8252).
+single-user loopback machine). Because the gateway serves the web itself (single origin)
+on the **stable port 7777**, the SSO round-trip — `/auth/sso/:provider/start` → provider →
+gateway callback → `/auth/sso/callback` page → `/auth/sso/exchange` — all resolves on
+`http://localhost:7777`, so an existing OAuth app registered against
+`http://localhost:7777/auth/sso/<provider>/callback` (i.e. the dev gateway's) works
+unchanged — no separate desktop OAuth app. `MIDNITE_SSO_WEB_BASE_URL` (set to the gateway
+origin) keeps the post-callback redirect in the app instead of the config's `webBaseUrl`
+(the dev web on :3000). If 7777 is taken at launch (a dev gateway is running), the app
+falls back to a random port and SSO won't complete that session — don't run both at once.
+GitHub OAuth Apps allow this in-window flow; Google (which blocks embedded webviews) would
+need the system-browser path (Phase 75).
 
 ### Bundled CLI
 

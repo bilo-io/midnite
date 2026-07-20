@@ -10,11 +10,15 @@
 > (3) there was **no bundled CLI**. This phase makes the app a complete, self-contained
 > midnite: one gateway, one CLI, one shared config/data home per machine.
 
-> **Boundary with [Phase 75](phase-75-desktop-oauth.md).** Phase 75 owns the desktop
-> **OAuth start** (fixed loopback port, system-browser flow, WS code handback — providers
-> block embedded webviews). This phase is additive and composes with it: it does **not**
-> touch the OAuth start/callback bridging. The direct-to-gateway `POST /auth/sso/exchange`
-> here is exactly the final step Phase 75 expects the callback page to call.
+> **Relationship to [Phase 75](phase-75-desktop-oauth.md).** Phase 75 designs desktop
+> OAuth around the *system browser* (fixed loopback port + WS code handback), needed for
+> providers (Google) that block embedded webviews. This phase instead takes the simpler
+> **single-origin, in-window** route the user asked for: pin the gateway to the stable
+> port (7777) and have it serve the web itself, so the whole OAuth round-trip runs on one
+> origin and an **existing** OAuth app (registered against `localhost:7777`) works
+> unchanged — no new registration, no system-browser bridge. GitHub OAuth Apps allow the
+> in-window flow; if Google (embedded-webview-blocked) is needed later, Phase 75's
+> system-browser path is the follow-up.
 
 ---
 
@@ -26,6 +30,22 @@
 - Gateway config: `MIDNITE_CONFIG_PATH` (user config) + `MIDNITE_OPERATOR_CONFIG` (SSO/JWT,
   fail-closed) + env-var secrets; the web's `/api/auth/*` BFF only runs in the hosted
   `server` target (`web/lib/web-target.mjs`).
+
+## Theme D — Stable port + single-origin so SSO completes in-app — **M** ✅
+
+- [x] **Pin the gateway to a stable port** (`resolveGatewayPort`: `$MIDNITE_GATEWAY_PORT`
+      → 7777 if free → random fallback), so the OAuth `redirect_uri` is constant across
+      launches and an existing OAuth app keeps working. Random fallback (when 7777 is
+      taken, e.g. a dev gateway is up) keeps the board usable but SSO won't complete that
+      session (logged).
+- [x] **Single origin:** the gateway serves the web export itself (`MIDNITE_WEB_DIR`), and
+      the window loads the gateway URL (`http://localhost:<port>/`) — so the API, UI, and
+      the SSO callback page share one origin. Consistent `localhost` matches the OAuth
+      app's registered `redirectUri`.
+- [x] **Post-callback redirect stays in-app:** `MIDNITE_SSO_WEB_BASE_URL` (new gateway env
+      override, `load-config.ts`) points the SSO callback back at the gateway's own origin
+      instead of the operator config's `webBaseUrl` (which targets the dev web on :3000).
+- [x] Tests: `resolveGatewayPort`/`isPortFree`; the `MIDNITE_SSO_WEB_BASE_URL` override.
 
 ## Theme A — Shared `~/.midnite` home (config + data + secrets) — **M** ✅
 

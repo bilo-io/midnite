@@ -4,7 +4,7 @@ import type { ChildProcess } from 'node:child_process';
 import { app, BrowserWindow, shell } from 'electron';
 import {
   clearGatewayEndpoint,
-  findFreePort,
+  resolveGatewayPort,
   startGatewayProcess,
   stopGatewayProcess,
   writeGatewayEndpoint,
@@ -12,7 +12,6 @@ import {
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
-import { serveStatic } from './static-server';
 import { registerUpdater, startUpdateCheck } from './updater';
 
 let gateway: ChildProcess | null = null;
@@ -44,14 +43,22 @@ function webRoot(): string | null {
 async function boot(): Promise<void> {
   const paths = resolvePaths();
   midniteHome = paths.home;
-  const gatewayPort = await findFreePort();
-  gateway = startGatewayProcess(paths, gatewayPort);
+  // Prefer the stable port (7777) so the SSO callback URL is constant across launches
+  // and an existing OAuth app keeps working; fall back to a free port if it's taken.
+  const gatewayPort = await resolveGatewayPort();
+  // Use `localhost` (not 127.0.0.1) so it matches the SSO redirectUri OAuth apps
+  // register (`http://localhost:7777/...`) and stays one consistent origin.
+  const gatewayUrl = `http://localhost:${gatewayPort}`;
+  // Packaged: the gateway serves the web export itself (single origin) so the SSO
+  // callback lands back in the app. Null in dev → the Next dev server + no web serving.
+  const root = webRoot();
+  const serveWeb = app.isPackaged && root ? root : undefined;
+  gateway = startGatewayProcess(paths, gatewayPort, serveWeb, serveWeb ? gatewayUrl : undefined);
   gateway.stdout?.on('data', (d: Buffer) => process.stdout.write(`[gateway] ${d}`));
   gateway.stderr?.on('data', (d: Buffer) => process.stderr.write(`[gateway] ${d}`));
 
   const healthy = await waitForHealth(gatewayPort);
-  const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
-  // Advertise the endpoint so the bundled CLI finds this gateway on its dynamic port.
+  // Advertise the endpoint so the bundled CLI finds this gateway (its port) with no flags.
   writeGatewayEndpoint(paths.home, gatewayUrl);
 
   win = new BrowserWindow({
@@ -91,14 +98,12 @@ async function boot(): Promise<void> {
     return;
   }
 
-  // Renderer: dev → the Next dev server; prod → the static export over loopback http.
-  const root = webRoot();
-  if (!app.isPackaged || !root) {
+  // Renderer: dev → the Next dev server; prod → the gateway itself, which serves the
+  // web export at `/` (single origin with the API + the SSO callback page).
+  if (!serveWeb) {
     await win.loadURL(process.env['MIDNITE_WEB_URL'] ?? 'http://localhost:3000');
   } else {
-    const webPort = await findFreePort();
-    await serveStatic(root, webPort);
-    await win.loadURL(`http://127.0.0.1:${webPort}/`);
+    await win.loadURL(`${gatewayUrl}/`);
   }
 
   // First update check once the window is up (no auto-download; user-timed).

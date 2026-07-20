@@ -19,6 +19,42 @@ export function findFreePort(): Promise<number> {
 }
 
 /**
+ * The gateway's own default port (mirrors `gateway.port`'s schema default). Preferred
+ * for the desktop so the OAuth callback URL is stable across launches (Phase 77): SSO
+ * providers require a **fixed, pre-registered** `redirect_uri`, so a random port each
+ * launch would break login. Reusing 7777 lets an existing OAuth app (registered against
+ * the dev gateway's `localhost:7777/auth/sso/<provider>/callback`) work unchanged.
+ */
+export const PREFERRED_GATEWAY_PORT = 7777;
+
+/** Whether `port` can be bound on loopback right now (i.e. it's free). */
+export function isPortFree(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const srv = createServer();
+    srv.unref();
+    srv.once('error', () => resolve(false));
+    srv.listen(port, '127.0.0.1', () => srv.close(() => resolve(true)));
+  });
+}
+
+/**
+ * Resolve the gateway's listen port. `$MIDNITE_GATEWAY_PORT` wins (explicit override),
+ * else the stable {@link PREFERRED_GATEWAY_PORT} when it's free, else a random free port.
+ * The stable port is what keeps SSO working launch-to-launch; the random fallback keeps
+ * the app usable (board/local mode) when 7777 is taken — e.g. a dev gateway is running —
+ * at the cost of OAuth for that session (the redirect would target 7777, not us).
+ */
+export async function resolveGatewayPort(): Promise<number> {
+  const envPort = process.env['MIDNITE_GATEWAY_PORT'];
+  if (envPort) {
+    const parsed = Number.parseInt(envPort, 10);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+  if (await isPortFree(PREFERRED_GATEWAY_PORT)) return PREFERRED_GATEWAY_PORT;
+  return findFreePort();
+}
+
+/**
  * Locate the gateway entry, and pick the runtime it must run under.
  *
  * - **Packaged**: entry ships in extraResources; run it under Electron's own
@@ -75,8 +111,20 @@ export function parseEnvFile(contents: string): Record<string, string> {
  * embedded gateway runs against the user's real config + SSO wiring, not schema
  * defaults. `detached` puts it in its own process group so we can reap the whole
  * PTY tree on quit.
+ *
+ * When `webDir` is set (packaged app) the gateway also serves the web export itself
+ * (`MIDNITE_WEB_DIR`), so the UI, API, and the SSO callback page share ONE origin —
+ * the gateway's. That single origin is what makes the SSO round-trip land back in the
+ * app: the callback redirects to `MIDNITE_SSO_WEB_BASE_URL` (the gateway's own origin),
+ * served here, rather than the config's `webBaseUrl` (which points at the dev web on
+ * :3000). `originUrl` is that origin (e.g. `http://localhost:7777`).
  */
-export function startGatewayProcess(paths: DesktopPaths, port: number): ChildProcess {
+export function startGatewayProcess(
+  paths: DesktopPaths,
+  port: number,
+  webDir?: string,
+  originUrl?: string,
+): ChildProcess {
   const { exec, entry, electronAsNode } = gatewayRuntime();
 
   // Secrets from ~/.midnite/.env are the base layer; the process env wins over them
@@ -104,6 +152,11 @@ export function startGatewayProcess(paths: DesktopPaths, port: number): ChildPro
       // (resolvePaths already null-guards absence) — a fresh machine boots on defaults.
       ...(paths.configPath ? { MIDNITE_CONFIG_PATH: paths.configPath } : {}),
       ...(paths.operatorPath ? { MIDNITE_OPERATOR_CONFIG: paths.operatorPath } : {}),
+      // Single origin: the gateway serves the web export, and the SSO callback redirects
+      // back to that same origin (not the config's dev webBaseUrl) — so login completes
+      // in the desktop app.
+      ...(webDir ? { MIDNITE_WEB_DIR: webDir } : {}),
+      ...(originUrl ? { MIDNITE_SSO_WEB_BASE_URL: originUrl } : {}),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true,
