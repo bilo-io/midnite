@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-20 — test/docs: Phase 73 Theme G — hardening (tests · docs · boundary) — **completes Phase 73 🎉 43/43**
+
+Final Phase 73 slice: durability across the newly-expanded graph (`admin`, `shell`, promoted `ui` charts). No product-surface change; PR #494.
+
+- [x] **Boundary tests all green** — `ui` leaf, new `shell` (imports only `shared`+`ui`), `admin` (no gateway internals); CLAUDE.md documents `ui ◀ shell ◀ {web, admin}` + `{shared, ui} ◀ admin` and the three `boundary.test.ts` guards.
+- [x] **Admin app tests (RTL)** — operator-gate 3 outcomes (unauth→login / non-operator probe-403→blocked+sign-out / operator probe-200→app), nav-config→rail (7 ids/order/hrefs), happy-path render for all 7 sections against mocked `@/lib/api`; ui Storybook stories for `RadialGauge` + `AreaChart`/`LegendDot`.
+- [x] **Operator-gate tests (gateway)** — `/auth/refresh` JWT-off ⇒ 400 regression (guard already in code, was untested) + operator-route 200/403/401 coverage + an assertion that `/usage`/`/metrics`/`/audit`/`/teams` were **not** retro-gated (team-scoped specs unedited).
+- [x] **Docs** — `docs/ADMIN.md` (console, operator allowlist in `.midnite/operator.json`, run local + hosted, versions view-only), `@midnite/shell` README (`<AppFrame>` consumption), docs-site `/guides/operator-console` (via `?raw`), README link.
+- [x] **`APP_URL` → `@midnite/shared`** + admin "Web app" quick-link card.
+- [x] **Green gates** — `:typecheck`/`:lint` ✅ · `shared/gateway/admin/shell/ui:test` ✅ · `ui/shell/admin/web/docs:build` ✅ · `admin:e2e` 9/9 ✅. **Bonus: fixed the storybook cold-start flake** — root-caused a cold-cache Vite dep-optimizer race (worsened by `@midnite/shared` CJS); eager `optimizeDeps.include` runs the optimizer once up front (`ui:test` fully green cold; web storybook 52→3 failing files, the 3 remaining are pre-existing stale `play` assertions, documented in `docs/TESTING.md`).
+
 ## 2026-07-20 — feat: Phase 73 Theme F3 — admin console pages B (Projects · Versions · Quick Links) — **completes Theme F 🎉**
 
 The final three admin pages; Theme F (all 7 sections) is done. Admin-only.

@@ -82,7 +82,7 @@ The pages themselves — mostly a **read-layer** over existing + Theme D endpoin
 - [x] **Audit log** — the Phase 33/35 `GET /audit` viewer (filters: entity/user/action/date, paginated) surfaced for operators.
 - [x] **Quick links** — a links panel out to the **website**, **web app**, and **docs** (reuse/extend [`lib/site-links.ts`](../packages/web/lib/site-links.ts), moved to `shared` or shell if shared across apps), plus in-app deep links (Ops, board). The small, high-value seed ask.
 
-## Theme G — Hardening: tests, docs & boundary enforcement — **M**
+## Theme G — Hardening: tests, docs & boundary enforcement — **M** — ✅ DONE (PR #494, 2026-07-20)
 
 - [x] **Boundary tests all green** — `ui` leaf test (Theme A), the **new `shell` boundary test** (Theme B: shell imports only `shared`+`ui`), and `admin`'s "never imports gateway internals" check; confirm CI runs all three. Update the enforcement note in [`CLAUDE.md`](../CLAUDE.md) to document the `ui ◀ shell ◀ {web, admin}` and `shared/ui ◀ admin` edges.
 - [x] **App tests** — `admin` unit/RTL tests for the nav config → rail render, the operator-gate redirect (operator ⇒ app, non-operator ⇒ blocked), and each section's happy-path render against mocked endpoints; Storybook stories for the new `shell`/`ui` components run as browser tests.
