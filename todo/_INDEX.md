@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [75 · Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A B C D E F G | — |
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [73 · Admin Console & shared app shell](phase-73-admin-console.md) | ✅ DONE | 43/43 | `██████████` | 100% | — | — |
 | [72 · SSO go-live & operator config split](phase-72-sso-go-live-operator-config.md) | 🔄 WIP | 21/30 | `███████░░░` | 70% | — | — |
@@ -126,6 +127,17 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 75 — Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md)
+*Desktop (Electron) users can't complete GitHub/Google OAuth. Add the native-app flow — **Pattern A: loopback into the desktop's own local gateway**, the one-time code handed back to the renderer over its existing WebSocket; no hosted gateway needed. **Implementation in flight in a parallel session.***
+- 🔄 **A** — Fixed, registrable loopback redirect (pin desktop gateway port + pinned `redirectUri`)
+- 🔄 **B** — System-browser start (`shell.openExternal` + preload bridge; never an embedded webview)
+- 🔄 **C** — Callback → renderer handback over WS (`sso.complete` event → `/exchange` → in-memory session)
+- 🔄 **D** — Desktop callback-page fix (drop the POST to the missing static-export BFF route; resolves the current 500)
+- 🔄 **E** — Config, secret & DX (operator.json sample, loud secret-unset error, `midnite doctor` check)
+- 🔄 **F** — Docs (`docs/SSO.md` desktop section: loopback redirect URIs + secret tradeoff)
+- 🔄 **G** — Tests (gateway callback/exchange, desktop port + openExternal, handback smoke)
+- ◻ **H (alt/future)** — Pattern B hosted exchange broker on Vercel serverless (keeps the OAuth secret off the client)
 
 ### [Phase 74 — Report issue (assistant-menu → GitHub)](phase-74-report-issue.md)
 *Add a **"Report issue"** entry to the Phase 66 assistant menu that opens an **editable preview** with the page context auto-filled (route, app version, browser/OS, web-vs-desktop, theme, connection status), then hands off to a **prefilled GitHub issue** in the public `bilo-io/midnite-app` repo. Pure client-side prefill — no gateway, no token — plus a one-line desktop fix so the hand-off (and the existing Docs link) opens the system browser. Light context v1; single bug report; template authored for the midnite-app repo.*
