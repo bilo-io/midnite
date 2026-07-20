@@ -1,8 +1,6 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import type { AgentCli, Council, CouncilFormat, CouncilMember, CouncilRun } from '@midnite/shared';
 import { CouncilMembersPanel } from '@/components/council-participants-panel';
 import { CouncilRunTabs } from '@/components/council-run-tabs';
@@ -145,22 +143,14 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       <PageHeader
         title={initial.name}
         description={initial.description}
+        back={{ href: '/councils', label: 'All councils' }}
         actions={
-          <div className="flex items-center gap-2">
-            {isMobile ? (
-              <>
-                <RailHeaderToggle side="left" open={threadOpen} onClick={() => setThreadOpen(!threadOpen)} />
-                <RailHeaderToggle side="right" open={panelOpen} onClick={() => setPanelOpen(!panelOpen)} />
-              </>
-            ) : null}
-            <Link
-              href="/councils"
-              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              All councils
-            </Link>
-          </div>
+          isMobile ? (
+            <div className="flex items-center gap-2">
+              <RailHeaderToggle side="left" open={threadOpen} onClick={() => setThreadOpen(!threadOpen)} />
+              <RailHeaderToggle side="right" open={panelOpen} onClick={() => setPanelOpen(!panelOpen)} />
+            </div>
+          ) : undefined
         }
       />
       <div className="container space-y-5 pb-48 pt-2">

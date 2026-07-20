@@ -2,10 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
   ImageIcon,
   type LucideIcon,
   Music2,
@@ -132,22 +130,14 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
       <PageHeader
         title={title || (mode === 'create' ? `New ${mediaType}` : 'Media')}
         icon="Images"
+        back={{ href: '/media', label: 'All media' }}
         actions={
-          <div className="flex items-center gap-2">
-            {isMobile ? (
-              <>
-                <RailHeaderToggle side="left" open={propertiesOpen} onClick={() => setPropertiesOpen(!propertiesOpen)} />
-                <RailHeaderToggle side="right" open={promptOpen} onClick={() => setPromptOpen(!promptOpen)} />
-              </>
-            ) : null}
-            <Link
-              href="/media"
-              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              All media
-            </Link>
-          </div>
+          isMobile ? (
+            <div className="flex items-center gap-2">
+              <RailHeaderToggle side="left" open={propertiesOpen} onClick={() => setPropertiesOpen(!propertiesOpen)} />
+              <RailHeaderToggle side="right" open={promptOpen} onClick={() => setPromptOpen(!promptOpen)} />
+            </div>
+          ) : undefined
         }
       />
 

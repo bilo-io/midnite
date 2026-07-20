@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { NeuroCloudBackground, PasscodeUnlockDialog, cn } from '@midnite/ui';
 
 /**
@@ -50,6 +51,14 @@ export function LockScreen({
   const [unlocking, setUnlocking] = useState(false);
   const dismissible = !requireCode;
 
+  // Portal the overlay to <body> so it escapes the app layout's `isolate`
+  // stacking context. Inside that context its z-index can never beat elements
+  // that portal *themselves* to <body> (e.g. the memory chat composer at z-30),
+  // which would otherwise bleed through the screensaver. As a direct body child
+  // at z-[200] it sits above every app surface and every body-level portal.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (dismissible) {
       const onKey = () => onDismiss?.();
@@ -63,13 +72,15 @@ export function LockScreen({
     }
   }, [dismissible, unlocking, onDismiss]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       role="dialog"
       aria-label={label ?? (requireCode ? 'Locked screen' : 'Screensaver')}
       onClick={dismissible ? onDismiss : !unlocking ? () => setUnlocking(true) : undefined}
       className={cn(
-        'fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px]',
+        'fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px]',
         dismissible || !unlocking ? 'cursor-pointer' : '',
       )}
     >
@@ -91,6 +102,7 @@ export function LockScreen({
           onCancel={() => setUnlocking(false)}
         />
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
