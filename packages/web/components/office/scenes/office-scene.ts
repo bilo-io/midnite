@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import { useOfficeStore } from '@/lib/office-store';
 import { STATUS_LABEL, STATUS_TINT, type OfficeAgent, type OfficeStatus } from '@/lib/office/agents';
 import { dayNightTint } from '@/lib/office/daynight';

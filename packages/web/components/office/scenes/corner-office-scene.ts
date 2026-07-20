@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import { useOfficeStore } from '@/lib/office-store';
 import { OFFICE_TILE } from '@/lib/office/dimensions';
 import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';

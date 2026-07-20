@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import type { PresenceScene } from '@midnite/shared';
 import { interpStep } from '@/lib/presence-interp';
 import { presencePeerList, usePresenceStore } from '@/lib/presence-store';
