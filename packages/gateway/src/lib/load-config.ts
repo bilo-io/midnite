@@ -39,6 +39,7 @@ function applyEnvOverrides(config: MidniteConfig): MidniteConfig {
   const dbPath = process.env['MIDNITE_GATEWAY_DB_PATH'];
   const uploadsDir = process.env['MIDNITE_GATEWAY_UPLOADS_DIR'];
   const webDir = process.env['MIDNITE_WEB_DIR'];
+  const ssoWebBaseUrl = process.env['MIDNITE_SSO_WEB_BASE_URL'];
   if (port) {
     const parsed = Number.parseInt(port, 10);
     if (Number.isInteger(parsed) && parsed > 0) config.gateway.port = parsed;
@@ -46,6 +47,13 @@ function applyEnvOverrides(config: MidniteConfig): MidniteConfig {
   if (dbPath) config.gateway.dbPath = dbPath;
   if (uploadsDir) config.gateway.uploadsDir = uploadsDir;
   if (webDir) config.gateway.webDir = webDir;
+  // The desktop app serves the web from the gateway (single origin) and sets this to the
+  // gateway's own URL, so the SSO callback redirects back to the app instead of the
+  // config's `webBaseUrl` (which points at the hosted/dev web). Only meaningful when SSO
+  // is configured; harmless otherwise.
+  if (ssoWebBaseUrl && config.gateway.auth.sso) {
+    config.gateway.auth.sso.webBaseUrl = ssoWebBaseUrl;
+  }
   // The admin console (Phase 73 E) is a static export on its own origin that
   // calls the gateway cross-origin with `credentials: 'include'`. Fold any
   // MIDNITE_ADMIN_ORIGIN entries into the CORS/WS allow-list (deduped, additive)
