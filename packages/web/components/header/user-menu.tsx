@@ -46,7 +46,7 @@ export function UserMenu() {
           <div
             role="menu"
             aria-label="Account"
-            className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-2xl"
+            className="absolute right-0 top-full z-50 mt-2 w-56 origin-top-right animate-panel-in overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-2xl"
           >
             <div className="px-3 py-2.5">
               <p className="text-sm font-medium text-foreground">Not signed in</p>
@@ -110,7 +110,7 @@ export function UserMenu() {
         <div
           role="menu"
           aria-label="Account"
-          className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-2xl"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right animate-panel-in overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-2xl"
         >
           <div className="flex items-center gap-2.5 px-3 py-2.5">
             <Avatar

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, Power, Settings } from 'lucide-react';
 import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
-import { PasscodeSetupDialog, ThemeToggle } from '@midnite/ui';
+import { PasscodeSetupDialog } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
 import { docsChangelogUrl } from '@midnite/shared';
@@ -140,9 +140,9 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   const footer = ({ expanded }: { expanded: boolean }) => (
     <>
       {/* "Chat to board" moved into the assistant FAB (Phase 66 D); Approvals +
-          Notifications live in the top-right header-actions cluster (Phase 71). */}
+          Notifications + Theme live in the top-right header-actions cluster
+          (Phase 71 / Phase 77). */}
       <PresenceNavPill expanded={expanded} />
-      <ThemeToggle expanded={expanded} />
       <Link
         href="/settings"
         aria-label="Settings"

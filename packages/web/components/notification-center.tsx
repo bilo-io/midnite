@@ -126,21 +126,47 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
 }
 
 /**
- * The notification dropdown body — the "Mark all read"/"Clear" header plus the
- * live feed (newest first), each row deep-linking to its source entity. Shared by
- * the sidebar bell ({@link NotificationCenter}, opening upward) and the
- * header-actions bell (opening downward); the caller supplies positioning/width
- * via `className` and an `onClose` to dismiss the containing dropdown.
+ * The notification-feed header actions — "Mark all read" + "Clear". Split out so
+ * both the standalone {@link NotificationFeedPanel} (sidebar bell) and the
+ * header's tabbed panel can render them on the notifications tab only.
  */
-export function NotificationFeedPanel({
-  onClose,
-  className,
-}: {
-  onClose: () => void;
-  className?: string;
-}) {
+export function NotificationFeedActions() {
+  const { feed, unread, markAllRead, clear } = useNotifications();
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={markAllRead}
+        disabled={unread === 0}
+        aria-label="Mark all read"
+        className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+      >
+        <CheckCheck className="h-3.5 w-3.5" />
+        Mark all read
+      </button>
+      <button
+        type="button"
+        onClick={clear}
+        disabled={feed.length === 0}
+        aria-label="Clear notifications"
+        className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+        Clear
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The live notification list body (loading / empty / newest-first rows), each row
+ * deep-linking to its source entity and marking itself read on click. Split from
+ * {@link NotificationFeedPanel} so the header's tabbed panel can drop it under its
+ * own tab header. `onClose` dismisses the containing dropdown after navigating.
+ */
+export function NotificationFeedList({ onClose }: { onClose: () => void }) {
   const router = useRouter();
-  const { feed, unread, loading, markRead, markAllRead, clear, dismiss } = useNotifications();
+  const { feed, loading, markRead, dismiss } = useNotifications();
 
   const openEntry = (n: Notification) => {
     markRead([n.id]);
@@ -149,42 +175,8 @@ export function NotificationFeedPanel({
   };
 
   return (
-    <div
-      role="menu"
-      aria-label="Notifications"
-      className={cn(
-        'overflow-hidden rounded-xl border border-border bg-popover shadow-2xl',
-        className,
-      )}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border/60 px-3 py-2">
-        <p className="text-sm font-semibold">Notifications</p>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={markAllRead}
-            disabled={unread === 0}
-            aria-label="Mark all read"
-            className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            Mark all read
-          </button>
-          <button
-            type="button"
-            onClick={clear}
-            disabled={feed.length === 0}
-            aria-label="Clear notifications"
-            className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Clear
-          </button>
-        </div>
-      </div>
-
-      <div className="max-h-[60vh] overflow-auto">
-        {loading ? (
+    <div className="max-h-[60vh] overflow-auto">
+      {loading ? (
           <div className="flex items-center justify-center gap-2 px-3 py-8 text-sm text-muted-foreground">
             <LoaderCircle className="h-4 w-4 animate-spin" aria-label="Loading" />
             Loading…
@@ -252,7 +244,38 @@ export function NotificationFeedPanel({
             })}
           </ul>
         )}
+    </div>
+  );
+}
+
+/**
+ * The standalone notification dropdown — the "Mark all read"/"Clear" header plus
+ * the live feed. Used by the sidebar bell ({@link NotificationCenter}, opening
+ * upward) and the mobile sheet; the header's bell opens the tabbed
+ * `NotificationsPanel` instead. The caller supplies positioning/width via
+ * `className` and an `onClose` to dismiss the containing dropdown.
+ */
+export function NotificationFeedPanel({
+  onClose,
+  className,
+}: {
+  onClose: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      role="menu"
+      aria-label="Notifications"
+      className={cn(
+        'overflow-hidden rounded-xl border border-border bg-popover shadow-2xl',
+        className,
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border/60 px-3 py-2">
+        <p className="text-sm font-semibold">Notifications</p>
+        <NotificationFeedActions />
       </div>
+      <NotificationFeedList onClose={onClose} />
     </div>
   );
 }
