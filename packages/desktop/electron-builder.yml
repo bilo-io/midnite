@@ -55,6 +55,16 @@ extraResources:
   # The Next.js static export (output: 'export'), staged from packages/web/out.
   - from: build-staging/web
     to: web
+  # The bundled midnite CLI (Phase 77) — an esbuild single-file bundle (~3MB) staged as
+  # dist/index.mjs + package.json (see stage-gateway.mjs). `midnite serve` is stripped
+  # (redundant — the app IS the gateway). Runs under Electron-as-Node via bin/midnite.
+  - from: build-staging/cli
+    to: cli
+  # The `midnite` launcher shim. extraResources `from:` is relative to the app dir
+  # (packages/desktop), so point at resources/bin/midnite. Symlink it onto PATH to use
+  # the CLI (install-local does this for dev; end users `ln -s` — see the README).
+  - from: resources/bin/midnite
+    to: bin/midnite
 
 # The app asar carries no native modules of its own — the gateway's native deps
 # (better-sqlite3, node-pty) are electron-rebuilt in `pnpm run stage` and ride

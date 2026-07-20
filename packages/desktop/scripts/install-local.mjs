@@ -44,8 +44,9 @@ function tryRun(cmd, args) {
   }
 }
 
-// 1. Build gateway dist and the Electron main/preload.
-run('moon', ['run', 'gateway:build', 'desktop:build']);
+// 1. Build gateway dist, the Electron main/preload, and the CLI dist (esbuild-bundled
+//    into the staged app by `pnpm run stage` — Phase 77).
+run('moon', ['run', 'gateway:build', 'desktop:build', 'cli:build']);
 
 // The web static export. On a CACHE MISS, moon's post-run output check flakes on
 // Next's `output: export` `out/` glob and errors with `task_runner::missing_outputs`
@@ -97,4 +98,21 @@ run('ditto', [built, installed]);
 // Unsigned local build → strip the quarantine bit so Gatekeeper lets it launch.
 tryRun('xattr', ['-dr', 'com.apple.quarantine', installed]);
 
+// Symlink the bundled `midnite` CLI onto PATH so it's usable from the terminal.
+// Best-effort: /usr/local/bin may need elevated perms — fall back to instructions.
+const shim = join(installed, 'Contents', 'Resources', 'bin', 'midnite');
+const linkTarget = '/usr/local/bin/midnite';
+let linked = false;
+try {
+  execFileSync('ln', ['-sf', shim, linkTarget], { stdio: 'ignore' });
+  linked = true;
+} catch {
+  /* not writable — print the manual command below */
+}
+
 console.log(`\n✓ installed ${installed} — open it from /Applications (or \`open ${installed}\`).`);
+console.log(
+  linked
+    ? `✓ linked the midnite CLI → ${linkTarget} (run \`midnite --help\`).`
+    : `• to use the CLI, symlink it onto PATH:\n    sudo ln -sf "${shim}" ${linkTarget}`,
+);

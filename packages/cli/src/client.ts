@@ -1,5 +1,6 @@
-import { openAsBlob } from 'node:fs';
-import { basename } from 'node:path';
+import { openAsBlob, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { basename, join } from 'node:path';
 
 import {
   ApprovalLogResponseSchema,
@@ -90,9 +91,34 @@ export interface TaskDefaults {
   dependsOn?: string[];
 }
 
-/** Resolve the gateway base URL: explicit flag → env → loopback default. */
+/**
+ * The endpoint file the desktop app (and `midnite serve`) writes on boot so other
+ * midnite processes on the machine can find a running gateway on its dynamic port.
+ * Lives in the shared `~/.midnite` home (Phase 77 — one midnite per machine).
+ */
+function sharedGatewayUrl(): string | null {
+  try {
+    const file = join(homedir(), '.midnite', 'gateway.json');
+    const raw = JSON.parse(readFileSync(file, 'utf-8')) as { url?: unknown };
+    return typeof raw.url === 'string' && raw.url.length > 0 ? raw.url : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the gateway base URL: explicit flag → `$MIDNITE_GATEWAY_URL` → the running
+ * gateway advertised in `~/.midnite/gateway.json` (e.g. the desktop app on its dynamic
+ * port) → the loopback default. So a bundled CLI reaches the desktop's embedded
+ * gateway with no flags, while an explicit flag/env always wins.
+ */
 export function resolveBaseUrl(flag?: string): string {
-  return (flag || process.env['MIDNITE_GATEWAY_URL'] || 'http://localhost:7777').replace(/\/$/, '');
+  return (
+    flag ||
+    process.env['MIDNITE_GATEWAY_URL'] ||
+    sharedGatewayUrl() ||
+    'http://localhost:7777'
+  ).replace(/\/$/, '');
 }
 
 export interface GatewayClient {

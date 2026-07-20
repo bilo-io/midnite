@@ -1,9 +1,25 @@
-import { rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClient, parseStatus, resolveBaseUrl } from './client.js';
+
+// resolveBaseUrl reads ~/.midnite/gateway.json as a fallback; point homedir at a
+// controlled temp dir so the test never sees a real desktop-written endpoint file.
+const fakeHome = mkdtempSync(join(tmpdir(), 'midnite-home-'));
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:os')>();
+  return { ...actual, homedir: () => fakeHome };
+});
+
+function writeSharedEndpoint(url: string | null): void {
+  const dir = join(fakeHome, '.midnite');
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, 'gateway.json');
+  if (url === null) rmSync(file, { force: true });
+  else writeFileSync(file, JSON.stringify({ url }));
+}
 
 const TASK = {
   id: 't1',
@@ -22,12 +38,25 @@ function stubFetch(impl: (url: string, init?: RequestInit) => Response | Promise
 }
 
 describe('resolveBaseUrl', () => {
-  it('prefers the flag, then env, then the loopback default', () => {
+  beforeEach(() => writeSharedEndpoint(null));
+  afterEach(() => writeSharedEndpoint(null));
+
+  it('prefers the flag, then env, then the shared endpoint, then the loopback default', () => {
     expect(resolveBaseUrl('http://host:1/')).toBe('http://host:1');
     process.env['MIDNITE_GATEWAY_URL'] = 'http://env:2';
     expect(resolveBaseUrl()).toBe('http://env:2');
     delete process.env['MIDNITE_GATEWAY_URL'];
     expect(resolveBaseUrl()).toBe('http://localhost:7777');
+  });
+
+  it('falls back to a running gateway advertised in ~/.midnite/gateway.json', () => {
+    writeSharedEndpoint('http://127.0.0.1:54999');
+    expect(resolveBaseUrl()).toBe('http://127.0.0.1:54999');
+    // …but an explicit flag / env still wins over the shared endpoint.
+    expect(resolveBaseUrl('http://flag:1')).toBe('http://flag:1');
+    process.env['MIDNITE_GATEWAY_URL'] = 'http://env:2';
+    expect(resolveBaseUrl()).toBe('http://env:2');
+    delete process.env['MIDNITE_GATEWAY_URL'];
   });
 });
 
