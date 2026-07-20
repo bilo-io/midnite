@@ -204,27 +204,28 @@
     filter: blur(6px);
     animation: auth-hero-glow-pulse 4s ease-in-out infinite;
   }
+  /* The wordmark glow is a second copy of the glyphs (same typed string, stacked
+     behind the crisp text in the markup): filled with the brand/accent gradient,
+     clipped to the letterforms and blurred — so the glow hugs the actual strokes
+     rather than sitting as a rectangle behind the block. Scaled about its centre
+     as it breathes. */
   .auth-hero-wordmark-glow {
-    position: relative;
-  }
-  .auth-hero-wordmark-glow::before {
-    content: '';
-    position: absolute;
-    inset: -55% -14%;
-    z-index: -1;
-    background: var(--accent-gradient, var(--brand-gradient));
-    -webkit-mask: radial-gradient(65% 120% at 50% 50%, #000 0%, rgb(0 0 0 / 0.3) 55%, transparent 80%);
-    mask: radial-gradient(65% 120% at 50% 50%, #000 0%, rgb(0 0 0 / 0.3) 55%, transparent 80%);
-    filter: blur(12px);
+    background-image: var(--accent-gradient, var(--brand-gradient));
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: blur(5px);
+    transform-origin: center;
     animation: auth-hero-glow-pulse 4s ease-in-out infinite;
   }
   html[data-motion='reduced'] .auth-hero-logo-glow::after,
-  html[data-motion='reduced'] .auth-hero-wordmark-glow::before {
+  html[data-motion='reduced'] .auth-hero-wordmark-glow {
     animation: none;
   }
   @media (prefers-reduced-motion: reduce) {
     html:not([data-motion='full']) .auth-hero-logo-glow::after,
-    html:not([data-motion='full']) .auth-hero-wordmark-glow::before {
+    html:not([data-motion='full']) .auth-hero-wordmark-glow {
       animation: none;
     }
   }

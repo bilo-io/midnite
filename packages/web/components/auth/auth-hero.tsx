@@ -204,10 +204,16 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
           <span className="relative inline-block">
             <Wordmark className="invisible text-4xl" />
             <span className="absolute inset-y-0 left-0 flex items-center">
-              <Wordmark
-                text={typedWordmark}
-                className="auth-hero-wordmark-glow text-4xl text-foreground"
-              />
+              {/* The glyphs render twice, stacked: a blurred brand-gradient copy
+                  behind (the glow, hugging the letter strokes) and the crisp
+                  foreground text on top. Both take the same typed string so the
+                  glow tracks the glyphs as they land. */}
+              <span className="relative inline-block">
+                <span aria-hidden className="pointer-events-none absolute left-0 top-0">
+                  <Wordmark text={typedWordmark} className="auth-hero-wordmark-glow text-4xl" />
+                </span>
+                <Wordmark text={typedWordmark} className="relative text-4xl text-foreground" />
+              </span>
               {showCaret && (
                 <span
                   aria-hidden
