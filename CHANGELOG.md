@@ -14,6 +14,38 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.4.0] - 2026-07-20
+
+A desktop-first release: midnite now installs as a **standalone desktop app**
+with SSO that completes inside the window, plus assistant/notification polish
+across the web UI.
+
+### Added
+
+- **Standalone desktop app (Phase 77)** — installs against a shared `~/.midnite`,
+  authenticates direct-to-gateway, and bundles the `midnite` CLI onto your PATH.
+  It runs **single-origin on a stable port** so the UI, API, and the GitHub SSO
+  callback all share one origin and sign-in completes inside the app.
+- **Assistant panel reveal transition** — the assistant panel grows in / shrinks
+  out instead of snapping.
+- **Notifications & approvals consolidation** — approvals now live in the bell
+  panel, the theme toggle moved to the header, and popovers animate open/closed.
+- **Login landing polish** — a brand-gradient glow and a title cursor gated on
+  the brand landing.
+
+### Fixed
+
+- **Desktop pages rendered as raw JSON** — in single-origin mode the gateway now
+  serves the web page for browser navigations to routes that collide with the
+  unprefixed API (`/projects`, `/tasks`, `/sessions`, …), while client `fetch`
+  calls still receive JSON and the SSO redirect flow is preserved.
+- **Packaged desktop preload** — the preload script is now bundled so it loads in
+  the sandboxed (packaged) app.
+- **Static export build** — Phaser is namespace-imported so the Next `output:
+  export` build no longer fails.
+- **Login wordmark glow** — hugs the glyph strokes rather than the surrounding
+  block.
+
 ## [0.3.0] - 2026-07-20
 
 A platform release: a standalone **operator console**, a shared **app-shell**
@@ -174,6 +206,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.4.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.0
 [0.3.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.1.0
