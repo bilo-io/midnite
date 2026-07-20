@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | ◻ TODO | 0/13 | `░░░░░░░░░░` | 0% | — | A B C |
 | [75 · Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A B C D E F G | — |
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [73 · Admin Console & shared app shell](phase-73-admin-console.md) | ✅ DONE | 43/43 | `██████████` | 100% | — | — |
@@ -127,6 +128,12 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 76 — Gateway DI metadata: kill the silent-`undefined` injection class](phase-76-gateway-di-metadata.md)
+*esbuild (tsx) elides constructor-param-only imports → Nest silently injects `undefined` (dev-only, invisible to build/CI; broke the whole SSO path in v0.3.0). Fix the root cause + a behavioural backstop.*
+- ◻ **A** — SWC dev runner (`@swc-node` + `node --watch`, `.swcrc` emits `decoratorMetadata`; keep a `dev:tsx` escape hatch)
+- ◻ **B** — DI boot smoke test (boot `AppModule` on `:memory:`, assert no `undefined` injected deps)
+- ◻ **C** — Convention & docs (`@Inject` now optional; retire the workaround; document the runner)
 
 ### [Phase 75 — Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md)
 *Desktop (Electron) users can't complete GitHub/Google OAuth. Add the native-app flow — **Pattern A: loopback into the desktop's own local gateway**, the one-time code handed back to the renderer over its existing WebSocket; no hosted gateway needed. **Implementation in flight in a parallel session.***
