@@ -86,6 +86,29 @@ The `web:test` task runs two Vitest projects:
 
 > **Gotcha:** web tests cannot run from inside a `.git/worktrees/<n>` directory (Vite denies `.git/**`). Worktrees now live in the repo-root `.worktrees/` dir (outside `.git/`), so `web:test` runs fine inside them; the primary checkout works too.
 
+> **Cold-start optimizer race (Phase 73 G — mitigated).** On a *cold* run (no
+> `node_modules/.vite` cache) the storybook **browser** project used to fail a large
+> batch of story files with `SyntaxError: … does not provide an export named 'X'`
+> (from the CJS `@midnite/shared`) and/or `Vitest failed to find the current suite`.
+> Root cause: the browser dep-optimizer discovered deps lazily as ~60 story files
+> loaded in parallel; a late discovery forced a full-page reload that tore down the
+> running suite and served a stale/partial pre-bundle. Fix: each storybook project's
+> vitest config now lists the workspace/heavy deps in `optimizeDeps.include`
+> (`packages/{web,ui}/vitest.config.ts`), so the optimizer runs once up front. This
+> cut web's cold storybook failures from ~52 files to a handful and made `ui:test`
+> fully green cold. Because `optimizeDeps` is not a moon `test` input, cold-verify a
+> change with `rm -rf packages/{web,ui}/node_modules/.vite && moon run <pkg>:test --force`.
+>
+> **Remaining web storybook failures are unrelated & pre-existing.** A few `web`
+> stories (`components/auth/auth-hero`, `components/auth/sso-buttons`,
+> `components/guardrails-control`) fail their `play` assertions deterministically —
+> stale assertions that drifted from shipped behaviour (e.g. sso-buttons expects the
+> non-configured provider hidden, contradicting the "SSO buttons always visible"
+> decision). These were masked by the collection flake above and are **not** a flake;
+> they are tracked separately. The required gate stands on
+> **typecheck + lint + unit tests + build** (+ the story render smoke coverage that
+> passes); the web storybook `play` suite is not yet fully green.
+
 **Accessibility:** `@storybook/addon-a11y` runs axe-core against every story. Currently set to `parameters.a11y.test: 'todo'` (warnings only). Violations are tracked in [phase-10-test-suite-hardening.md](../todo/phase-10-test-suite-hardening.md) Theme C3.
 
 **Adding a story:**
