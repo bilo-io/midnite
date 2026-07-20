@@ -38,6 +38,16 @@
       + SSO wiring (fresh machine → schema defaults, auth off, local mode).
 - [x] `parseEnvFile` unit-tested.
 
+## Theme A2 — Preload load failure (the real "no data" root cause) — **S** ✅
+
+- [x] The compiled preload did `require("../updates/update-state")`, which the packaged
+      app's **sandboxed** preload loader (`preloadRequire`) can't resolve → the preload
+      threw "module not found" at load and never ran, so `window.__NEXT_PUBLIC_GATEWAY_URL`
+      was never injected and the web fell back to `localhost:7777` (this — not config — is
+      why it "only worked with localhost running"). Fixed by esbuild-bundling the preload
+      in place (`stage-gateway.mjs`) into a self-contained CJS file whose only require is
+      `electron`, keeping the renderer sandbox on.
+
 ## Theme B — Direct-to-gateway auth transport (static export has no BFF) — **M** ✅
 
 - [x] `web/lib/auth-transport.ts`: one interface, two modes. Hosted → the `/api/auth/*`

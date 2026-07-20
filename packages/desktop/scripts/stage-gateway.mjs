@@ -58,6 +58,31 @@ for (const mod of ['better-sqlite3', 'node-pty']) {
   );
 }
 
+// 2a. Bundle the Electron preload into a self-contained file (Phase 77). The preload
+//     runs in a *sandboxed* renderer context whose loader (`preloadRequire`) can't
+//     resolve relative sibling modules — so `tsc`'s `require("../updates/update-state")`
+//     throws "module not found" at load, the preload never runs, and
+//     `window.__NEXT_PUBLIC_GATEWAY_URL` is never injected → the web silently falls back
+//     to localhost:7777 (the real cause of "connects only to localhost"). esbuild-bundle
+//     it in place so the only remaining require is `electron` (which the sandbox allows),
+//     keeping the sandbox on. `dist/preload/index.js` is packaged into the asar as-is, so
+//     overwriting it here (after `tsc`, before packaging) is enough.
+const preloadEntry = join(desktopDir, 'dist', 'preload', 'index.js');
+if (!existsSync(preloadEntry)) {
+  throw new Error(`preload build not found at ${preloadEntry}. Run \`moon run desktop:build\` first.`);
+}
+await esbuild.build({
+  entryPoints: [preloadEntry],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  target: 'node20',
+  outfile: preloadEntry,
+  allowOverwrite: true,
+  external: ['electron'],
+  logLevel: 'error',
+});
+
 // 2b. Stage the bundled midnite CLI (Phase 77). The desktop ships `midnite` so a
 //     downloaded app is a complete install — one binary that IS the gateway and
 //     carries the CLI. Rather than `pnpm deploy` (which drags the whole @midnite/gateway
