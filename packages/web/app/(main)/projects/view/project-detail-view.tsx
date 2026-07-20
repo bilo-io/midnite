@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import type { Memory, Project, TaskSummary } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { BackLink } from '@/components/back-link';
 import { ConnectionStatus } from '@/components/connection-status';
 import { RailShell, RailHeaderToggle, Tabs, type TabOption } from '@midnite/ui';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
@@ -55,15 +54,7 @@ export function ProjectDetailContainer() {
     };
   }, [data?.project]);
 
-  const back = (
-    <Link
-      href="/projects"
-      className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      All projects
-    </Link>
-  );
+  const back = <BackLink href="/projects" label="All projects" className="mb-4" />;
 
   if (!id || error || (!loading && !data)) {
     return (
@@ -131,6 +122,7 @@ export function ProjectDetailView({
         title={project.name}
         icon="Folder"
         description={project.tag ? `#${project.tag}` : undefined}
+        back={{ href: '/projects', label: 'All projects' }}
         actions={
           <div className="flex items-center gap-2">
             <ConnectionStatus variant="compact" />
@@ -140,13 +132,6 @@ export function ProjectDetailView({
                 <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
               </>
             ) : null}
-            <Link
-              href="/projects"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Projects
-            </Link>
           </div>
         }
       />

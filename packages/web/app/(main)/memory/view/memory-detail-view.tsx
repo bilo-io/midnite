@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Brain, MoreHorizontal } from 'lucide-react';
+import { Brain, MoreHorizontal } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { BackLink } from '@/components/back-link';
 import { MemorySourcesPanel } from '@/components/memory/memory-sources-panel';
 import { MemoryChatComposer } from '@/components/memory/memory-chat-composer';
 import { MemoryMetadataModal } from '@/components/memory/memory-metadata-modal';
@@ -31,15 +31,7 @@ export function MemoryDetailContainer() {
     return { memory, projects };
   }, [id]);
 
-  const back = (
-    <Link
-      href="/memory"
-      className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      All memories
-    </Link>
-  );
+  const back = <BackLink href="/memory" label="All memories" className="mb-4" />;
 
   if (!id || error || (!loading && !data)) {
     return (
@@ -135,20 +127,8 @@ export function MemoryDetailView({
       <PageHeader
         title={memory.title}
         icon="BrainCircuit"
-        titleNode={
-          <span className="flex min-w-0 items-center gap-1.5">
-            <Link
-              href="/memory"
-              className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Memories
-            </Link>
-            <span aria-hidden className="shrink-0 text-muted-foreground/50">
-              /
-            </span>
-            <InlineMemoryTitle title={memory.title} onCommit={saveTitle} />
-          </span>
-        }
+        back={{ href: '/memory', label: 'All memories' }}
+        titleNode={<InlineMemoryTitle title={memory.title} onCommit={saveTitle} />}
         description={<MemoryScopeChip project={project} />}
         actions={
           <div className="flex items-center gap-2">

@@ -257,7 +257,11 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   return (
     <WorkflowStoreContext.Provider value={store}>
       <ReactFlowProvider>
-        <div className="flex h-screen w-full flex-col overflow-hidden">
+        {/* Reserve top space for the app's fixed header-actions cluster (z-50,
+            top-right) so the toolbar's own Run/Enabled/Save controls sit *below*
+            it rather than under it. Offset = banner height + the cluster's
+            footprint (0.75rem inset + h-9). box-border keeps the column at 100vh. */}
+        <div className="flex h-screen w-full flex-col overflow-hidden pt-[calc(var(--update-banner-h,0px)+3.25rem)]">
           <WorkflowToolbar
             onRun={() => void run()}
             onSave={() => void save()}

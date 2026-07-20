@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { TaskDetail, type TaskDetailTab } from '@/components/task-detail';
+import { BackLink } from '@/components/back-link';
 import { ResourceNotFound } from '@/components/resource-not-found';
 import { getProjects, getTask, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
@@ -54,16 +54,7 @@ export function TaskDetailView() {
     };
   }, [task]);
 
-  const back = (
-    <button
-      type="button"
-      onClick={() => router.push('/tasks')}
-      className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      All tasks
-    </button>
-  );
+  const back = <BackLink href="/tasks" label="All tasks" className="mb-4" />;
 
   if (!id || error || (!loading && !task)) {
     return (

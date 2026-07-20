@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { BackLink } from '@/components/back-link';
 import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
@@ -41,15 +40,7 @@ export function SessionDetailContainer() {
     };
   }, [data?.session]);
 
-  const back = (
-    <Link
-      href="/sessions"
-      className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      All sessions
-    </Link>
-  );
+  const back = <BackLink href="/sessions" label="All sessions" className="mb-4" />;
 
   if (!id || error || (!loading && !data)) {
     return (
@@ -105,6 +96,7 @@ export function SessionDetailView({
         title={session.title}
         icon="BotMessageSquare"
         description={session.subtitle || undefined}
+        back={{ href: '/sessions', label: 'All sessions' }}
         actions={
           <div className="flex items-center gap-2">
             <ConnectionStatus variant="compact" />
@@ -124,13 +116,6 @@ export function SessionDetailView({
                 <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
               </>
             ) : null}
-            <Link
-              href="/sessions"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Sessions
-            </Link>
           </div>
         }
       />

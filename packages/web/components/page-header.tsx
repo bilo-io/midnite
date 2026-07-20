@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
+import { BackLink } from '@/components/back-link';
 
 // Icon names that can be passed as a plain string across the server→client
 // boundary. Adding an icon here: import it above and add an entry below.
@@ -81,6 +82,13 @@ type PageHeaderProps = {
   icon?: PageHeaderIcon;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
   actions?: ReactNode; // right-aligned controls (e.g. a search bar)
+  /**
+   * Optional top-left back affordance (e.g. `{ href: '/councils', label: 'All
+   * councils' }`). Rendered above the title via the shared `BackLink`, kept clear
+   * of the fixed top-right `HeaderActions` cluster — the one consistent back
+   * pattern across every detail view.
+   */
+  back?: { href: string; label: string };
 };
 
 export function PageHeader({
@@ -90,6 +98,7 @@ export function PageHeader({
   icon,
   size = 'default',
   actions,
+  back,
 }: PageHeaderProps) {
   const scrolled = useScrolled();
   const Icon = icon ? ICONS[icon] : null;
@@ -124,6 +133,8 @@ export function PageHeader({
         {/* The decorative backdrop is now app-wide (`<AppBackdrop/>`), showing
             the starfield (or the chosen pattern) through this transparent header
             — no per-header pattern strip needed. */}
+
+        {back ? <BackLink href={back.href} label={back.label} className="mb-2" /> : null}
 
         {/* Wrap (not overflow) on a phone: if the title + actions can't share a
             row, the actions drop to the next line rather than pushing past the
