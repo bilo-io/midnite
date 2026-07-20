@@ -14,6 +14,77 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.3.0] - 2026-07-20
+
+A platform release: a standalone **operator console**, a shared **app-shell**
+package that both apps mount, SSO **go-live** (private operator config + local
+sign-in fully wired end-to-end), and the neuro-cloud starfield everywhere.
+
+### Added
+
+- **Operator console (`@midnite/admin`)** — a standalone Next.js console for
+  operators: platform **Overview** (KPIs + usage/cost), **Usage & cost**,
+  **Users & teams** (list all tenants + team CRUD / role management),
+  **Projects**, view-only **Versions & releases** (changelog + channels/floor),
+  **Audit log**, and **Quick links**. Gated behind an operator allowlist and the
+  themed SSO login / idle lock, on the same rail chrome + appearance system as
+  the main app.
+- **Shared app shell (`@midnite/shell`)** — the wired frame both `web` and
+  `admin` mount: `<AppFrame>` (injected nav config), `<LockScreen>` (idle
+  re-lock + themed login on the starfield), the appearance/accent runtime, and
+  shared providers. `web` was refactored onto it so there's one source of truth.
+- **Operator config split** — all auth wiring (SSO client IDs, JWT, allowlist,
+  operators) now lives in a private, gitignored `.midnite/operator.json`,
+  deep-merged into the gateway config and **fail-closed** (a leaked
+  `gateway.auth` in the public config fails boot with a keyed remedy).
+- **Operator gate + platform admin APIs** — an `isOperator` claim +
+  `@RequiresOperator` guard and operator-only `GET /admin/users|teams|overview`
+  aggregates, without a new persisted global-role model.
+- **SSO go-live DX** — a `midnite doctor` SSO-readiness section, health-endpoint
+  redaction, a hosted **server** web build target for the cookie-backed auth
+  routes, and the [`docs/SSO.md`](docs/SSO.md) go-live runbook.
+- **Starfield everywhere** — the neuro-cloud starfield now backs `web`, `docs`,
+  and `site` (honeycomb dropped), with constellation bursts on vortex release
+  and spontaneous galaxy-wide firings.
+- **Report an issue** — a report-issue hand-off to GitHub from both `web` and
+  the desktop app.
+- **Version chips** — a version pill on the login form and a nav-header chip,
+  both linking to the changelog.
+- **GitHub branding** — a shared GitHub logo on every GitHub button and the
+  PR-review "Open on GitHub" / "Open PR" links.
+- **Desktop one-command local build+install** (`install:local`), and public raw
+  assets served from the midnite-app mirror.
+
+### Fixed
+
+- **Local SSO sign-in fully wired** — the auth/SSO dependency graph
+  (`SsoController`, `SsoService`, `UsersService`, `TeamsService`, and
+  `JwtService`'s refresh-token repository) now resolves under the dev runner, so
+  GitHub/Google sign-in completes end-to-end instead of failing at the callback
+  and one-time-code exchange. `gateway:dev` now auto-loads `.env`.
+- **Desktop native-ABI fix** — `electron-rebuild` is scoped to the staged
+  gateway tree so it no longer recompiles the workspace's shared `better-sqlite3`
+  binary for Electron's ABI (which broke the gateway and node-based tests); the
+  dev gateway now runs under plain Node.
+- Web: banner no longer overlaps the header actions; corrected command-palette
+  surface count; `@midnite/shell` build ordering + Tailwind content scan;
+  auth-hero title unclipped + gradient-caret polish.
+- Site: dropped the Intel macOS download (Apple Silicon only).
+- CI: an empty `CSC_LINK` no longer breaks unsigned macOS builds; a release now
+  publishes even if a single platform build flakes.
+
+### Changed
+
+- **`@midnite/ui`** absorbed the shared visuals (neuro-cloud background, rail
+  chrome, theme toggle, passcode pad) as a strict leaf, so `web`, `docs`, and
+  `admin` share one source of truth.
+- The **gateway is no longer deployed on Vercel** — it's stateful and belongs on
+  a persistent host, not a serverless build.
+
+### Removed
+
+- The honeycomb backdrop, superseded by the neuro-cloud starfield.
+
 ## [0.2.0] - 2026-07-19
 
 A big login + identity release: a fully redesigned, branded sign-in experience
@@ -103,6 +174,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.3.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.1.0
 [0.0.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.0.0
