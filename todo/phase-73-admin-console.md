@@ -84,11 +84,11 @@ The pages themselves — mostly a **read-layer** over existing + Theme D endpoin
 
 ## Theme G — Hardening: tests, docs & boundary enforcement — **M**
 
-- [ ] **Boundary tests all green** — `ui` leaf test (Theme A), the **new `shell` boundary test** (Theme B: shell imports only `shared`+`ui`), and `admin`'s "never imports gateway internals" check; confirm CI runs all three. Update the enforcement note in [`CLAUDE.md`](../CLAUDE.md) to document the `ui ◀ shell ◀ {web, admin}` and `shared/ui ◀ admin` edges.
-- [ ] **App tests** — `admin` unit/RTL tests for the nav config → rail render, the operator-gate redirect (operator ⇒ app, non-operator ⇒ blocked), and each section's happy-path render against mocked endpoints; Storybook stories for the new `shell`/`ui` components run as browser tests.
-- [ ] **Operator-gate tests (gateway)** — allowlist resolution + `@RequiresOperator` (200/403/401), plus the aggregate endpoint shapes; the existing team-scoped routes' specs stay **unedited** (proof they weren't tightened).
-- [ ] **Docs** — a `docs/ADMIN.md` (what the console is, the operator allowlist in `.midnite/operator.json`, how to run `admin` locally + hosted) and a short `@midnite/shell` package README (what's in the shell, how a third app would consume `<AppFrame>`); note the versions surface is view-only. Link from the README.
-- [ ] **Green gates** — `moon run :typecheck && :lint && :test` across the expanded graph; `ui`/`shell`/`admin`/`web` all build; web behaviour unchanged (Theme C acceptance holds).
+- [x] **Boundary tests all green** — `ui` leaf test (Theme A), the **new `shell` boundary test** (Theme B: shell imports only `shared`+`ui`), and `admin`'s "never imports gateway internals" check; confirm CI runs all three. Update the enforcement note in [`CLAUDE.md`](../CLAUDE.md) to document the `ui ◀ shell ◀ {web, admin}` and `shared/ui ◀ admin` edges.
+- [x] **App tests** — `admin` unit/RTL tests for the nav config → rail render, the operator-gate redirect (operator ⇒ app, non-operator ⇒ blocked), and each section's happy-path render against mocked endpoints; Storybook stories for the new `shell`/`ui` components run as browser tests.
+- [x] **Operator-gate tests (gateway)** — allowlist resolution + `@RequiresOperator` (200/403/401), plus the aggregate endpoint shapes; the existing team-scoped routes' specs stay **unedited** (proof they weren't tightened).
+- [x] **Docs** — a `docs/ADMIN.md` (what the console is, the operator allowlist in `.midnite/operator.json`, how to run `admin` locally + hosted) and a short `@midnite/shell` package README (what's in the shell, how a third app would consume `<AppFrame>`); note the versions surface is view-only. Link from the README.
+- [x] **Green gates** — `moon run :typecheck && :lint && :test` across the expanded graph; `ui`/`shell`/`admin`/`web` all build; web behaviour unchanged (Theme C acceptance holds).
 
 ---
 
@@ -108,12 +108,12 @@ The pages themselves — mostly a **read-layer** over existing + Theme D endpoin
 
 ## Verification
 
-- [ ] **The shell is real and web is unbroken:** `web` mounts `<AppFrame>` from `@midnite/shell`; theme toggle, accent/gradient, background patterns, idle lock, nav grouping, and mobile nav all behave **exactly as before** (manual/Playwright pass on board + settings→appearance + screen-lock); `moon run web:test` green with no behavioural edits to page specs.
-- [ ] **Leaf + boundary rules hold:** `moon run ui:test` (leaf) green — `ui` still imports nothing in-repo (the `BackgroundPattern` union is inlined); the **new** `shell` boundary test passes (imports only `shared`+`ui`); `admin` imports no gateway internals. `CLAUDE.md`'s graph documents `ui ◀ shell ◀ {web, admin}`.
-- [ ] **`admin` boots on the shared shell:** `moon run admin:dev` renders the console with the **same** sidenav/theme/appearance as web; the neuro-cloud **starfield/dots** back both the **login gate** and the **idle re-lock**; a themed passcode/SSO lock works.
-- [ ] **Operator gate works:** an allowlisted operator (`operators` in `.midnite/operator.json`) reaches the console; a non-operator who authenticates is cleanly blocked; anonymous is redirected to login. `GET /admin/users|teams|overview` return **403** for non-operators, **401** for anon, data for operators. Existing `/usage`/`/metrics`/`/audit` specs pass **unedited** (not retro-gated).
-- [ ] **The sections show real data:** Overview KPIs + usage/cost render from live gateway data; Users & teams list **all** tenants with working team CRUD/role management; Projects list from Phase 55; **Versions is view-only** (released versions + rendered CHANGELOG + channels/floor read-only, no write API); Audit log filters; Quick links open website/webapp/docs.
-- [ ] `moon run :typecheck && :lint && :test` green across the expanded graph; `ui`/`shell`/`admin`/`web` all build.
+- [x] **The shell is real and web is unbroken:** `web` mounts `<AppFrame>` from `@midnite/shell`; theme toggle, accent/gradient, background patterns, idle lock, nav grouping, and mobile nav all behave **exactly as before** (manual/Playwright pass on board + settings→appearance + screen-lock); `moon run web:test` green with no behavioural edits to page specs.
+- [x] **Leaf + boundary rules hold:** `moon run ui:test` (leaf) green — `ui` still imports nothing in-repo (the `BackgroundPattern` union is inlined); the **new** `shell` boundary test passes (imports only `shared`+`ui`); `admin` imports no gateway internals. `CLAUDE.md`'s graph documents `ui ◀ shell ◀ {web, admin}`.
+- [x] **`admin` boots on the shared shell:** `moon run admin:dev` renders the console with the **same** sidenav/theme/appearance as web; the neuro-cloud **starfield/dots** back both the **login gate** and the **idle re-lock**; a themed passcode/SSO lock works.
+- [x] **Operator gate works:** an allowlisted operator (`operators` in `.midnite/operator.json`) reaches the console; a non-operator who authenticates is cleanly blocked; anonymous is redirected to login. `GET /admin/users|teams|overview` return **403** for non-operators, **401** for anon, data for operators. Existing `/usage`/`/metrics`/`/audit` specs pass **unedited** (not retro-gated).
+- [x] **The sections show real data:** Overview KPIs + usage/cost render from live gateway data; Users & teams list **all** tenants with working team CRUD/role management; Projects list from Phase 55; **Versions is view-only** (released versions + rendered CHANGELOG + channels/floor read-only, no write API); Audit log filters; Quick links open website/webapp/docs.
+- [x] `moon run :typecheck && :lint && :test` green across the expanded graph; `ui`/`shell`/`admin`/`web` all build.
 
 ---
 
