@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type {
   CreateInviteRequest,
   CreateTeamRequest,
@@ -68,8 +68,8 @@ function hasRole(actual: TeamRole, required: TeamRole): boolean {
 @Injectable()
 export class TeamsService {
   constructor(
-    private readonly repo: TeamsRepository,
-    @Optional() private readonly audit?: AuditService,
+    @Inject(TeamsRepository) private readonly repo: TeamsRepository,
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
   createTeam(req: CreateTeamRequest, createdBy: string): TeamWithMembers {

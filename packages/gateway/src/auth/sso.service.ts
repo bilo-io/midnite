@@ -72,10 +72,10 @@ export class SsoService {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(CryptoService) private readonly crypto: CryptoService,
-    private readonly stateRepo: SsoStateRepository,
-    private readonly users: UsersService,
-    private readonly jwtSvc: JwtService,
-    private readonly teams: TeamsService,
+    @Inject(SsoStateRepository) private readonly stateRepo: SsoStateRepository,
+    @Inject(UsersService) private readonly users: UsersService,
+    @Inject(JwtService) private readonly jwtSvc: JwtService,
+    @Inject(TeamsService) private readonly teams: TeamsService,
     // Google id_token key source. Unset in production ⇒ the real remote JWKS is
     // built lazily; tests inject a local JWKS so verification is deterministic + offline.
     @Optional() @Inject(GOOGLE_JWKS_RESOLVER) private readonly googleJwksOverride?: JWTVerifyGetKey,

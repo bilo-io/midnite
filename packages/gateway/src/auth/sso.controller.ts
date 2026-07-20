@@ -43,8 +43,8 @@ import {
 export class SsoController {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
-    private readonly service: SsoService,
-    private readonly jwtSvc: JwtService,
+    @Inject(SsoService) private readonly service: SsoService,
+    @Inject(JwtService) private readonly jwtSvc: JwtService,
   ) {}
 
   /** Which providers the gateway is configured for — the web renders only usable buttons. */

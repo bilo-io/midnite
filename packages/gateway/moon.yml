@@ -25,6 +25,12 @@ tasks:
     preset: 'server'
     deps:
       - 'root:install'
+    options:
+      # Auto-load the gitignored repo-root .env (SSO/JWT secrets etc.) so
+      # `moon run :dev` / `gateway:dev` boot with auth configured without needing
+      # to `source .env` in the shell first. Dev-only — CI never runs `dev`, and
+      # in prod you export env vars (or use `start`), so a missing .env is harmless.
+      envFile: '/.env'
 
   start:
     command: 'node dist/main.js'

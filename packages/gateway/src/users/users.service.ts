@@ -112,14 +112,14 @@ export class UsersService {
   private readonly allowlist: ReadonlySet<string>;
 
   constructor(
-    private readonly repo: UsersRepository,
+    @Inject(UsersRepository) private readonly repo: UsersRepository,
     // Optional: absent in unit tests that don't wire the full module graph.
-    @Optional() private readonly teams?: TeamsService,
-    @Optional() private readonly audit?: AuditService,
+    @Optional() @Inject(TeamsService) private readonly teams?: TeamsService,
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
     // Phase 70 B — required in the real module (UsersModule registers it); optional
     // so pre-SSO unit tests that `new UsersService(repo)` still construct. The SSO
     // methods guard on its presence.
-    @Optional() private readonly identities?: UserIdentitiesRepository,
+    @Optional() @Inject(UserIdentitiesRepository) private readonly identities?: UserIdentitiesRepository,
     // Phase 71 — access allowlist source. Optional so unit tests that construct
     // the service by hand (no config) impose no restriction.
     @Optional() @Inject(MIDNITE_CONFIG) config?: MidniteConfig,

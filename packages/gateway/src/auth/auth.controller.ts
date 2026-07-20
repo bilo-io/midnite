@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, ForbiddenException, Get, Optional, Post, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Inject, Optional, Post, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponseSchema,
   CreateUserRequestSchema,
@@ -23,10 +23,10 @@ type AuthenticatedUser = { userId: string; email: string; teamId: string | null 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly users: UsersService,
-    private readonly jwtSvc: JwtService,
-    private readonly teams: TeamsService,
-    @Optional() private readonly audit?: AuditService,
+    @Inject(UsersService) private readonly users: UsersService,
+    @Inject(JwtService) private readonly jwtSvc: JwtService,
+    @Inject(TeamsService) private readonly teams: TeamsService,
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
   private primaryTeamId(userId: string): string | null {
