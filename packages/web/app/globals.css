@@ -201,7 +201,7 @@
     background: var(--accent-gradient, var(--brand-gradient));
     -webkit-mask: radial-gradient(circle, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 70%);
     mask: radial-gradient(circle, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 70%);
-    filter: blur(6px);
+    filter: blur(6px) brightness(1.2);
     animation: auth-hero-glow-pulse 4s ease-in-out infinite;
   }
   /* The wordmark glow is a second copy of the glyphs (same typed string, stacked
@@ -215,7 +215,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    filter: blur(5px);
+    filter: blur(5px) brightness(1.5);
     transform-origin: center;
     animation: auth-hero-glow-pulse 4s ease-in-out infinite;
   }
