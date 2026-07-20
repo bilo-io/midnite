@@ -32,7 +32,7 @@ export class JwtService {
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
-    private readonly refreshRepo: RefreshTokensRepository,
+    @Inject(RefreshTokensRepository) private readonly refreshRepo: RefreshTokensRepository,
   ) {
     const raw = process.env[config.gateway.auth.jwt.secretEnv];
     this.secret = raw?.trim() || null;
