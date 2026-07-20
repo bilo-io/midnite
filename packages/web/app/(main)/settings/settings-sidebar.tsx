@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import {
   Bot,
   ChevronDown,
-  CircleUser,
   Database,
   FileEdit,
   FolderGit2,
@@ -16,8 +15,6 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Ticket,
-  Users,
-  UserRound,
   Webhook,
   type LucideIcon,
 } from 'lucide-react';
@@ -41,19 +38,11 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Workspace',
     items: [
       { href: '/settings/agents', label: 'Agents', Icon: Bot },
+      { href: '/settings/api-tokens', label: 'API Tokens', Icon: Ticket },
       { href: '/settings/data', label: 'Data', Icon: Database },
       { href: '/settings/editor', label: 'Editor', Icon: FileEdit },
-      { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
       { href: '/settings/integrations', label: 'Integrations', Icon: Webhook },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [
-      { href: '/settings/api-tokens', label: 'API Tokens', Icon: Ticket },
-      { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
-      { href: '/settings/team', label: 'Team', Icon: Users },
-      { href: '/settings/user', label: 'User', Icon: UserRound },
+      { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
     ],
   },
   {

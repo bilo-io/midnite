@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { SsoIdentity } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { updateMyProfile, updateMyPassword } from '@/lib/api';
+import { getCurrentUser, updateMyProfile, updateMyPassword } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
 function errMsg(e: unknown): string {
@@ -24,6 +25,15 @@ export function AccountView() {
   const [pwSaving, setPwSaving] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSaved, setPwSaved] = useState(false);
+
+  // Linked SSO identities (Phase 70 D). `null` = unknown/not applicable (JWT off or
+  // the /auth/me read failed) → the section is hidden. `[]` = enabled but none linked.
+  const [identities, setIdentities] = useState<SsoIdentity[] | null>(null);
+  useEffect(() => {
+    getCurrentUser()
+      .then((u) => setIdentities(u.identities ?? []))
+      .catch(() => setIdentities(null));
+  }, []);
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,6 +165,40 @@ export function AccountView() {
           </div>
         </form>
       </section>
+
+      {identities !== null ? (
+        <>
+          <div className="border-t border-border" />
+
+          {/* Linked accounts */}
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-sm font-medium">Linked accounts</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Third-party providers you can sign in with. Linked automatically the first time you
+                use &ldquo;Continue with Google / GitHub&rdquo;.
+              </p>
+            </div>
+            {identities.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No linked accounts yet.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {identities.map((id) => (
+                  <li
+                    key={`${id.provider}-${id.email}`}
+                    className="flex items-center gap-2 text-sm text-foreground"
+                  >
+                    <span className="w-16 shrink-0 font-medium capitalize">{id.provider}</span>
+                    <span className="truncate text-muted-foreground" title={id.email}>
+                      {id.email}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -15,9 +15,9 @@ import {
   Newspaper,
   Search,
   Settings,
+  SlidersHorizontal,
   StickyNote,
   Terminal,
-  UserRound,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -76,7 +76,7 @@ type NavCommand = { href: string; label: string; hint?: string; Icon: LucideIcon
 
 const ALWAYS_ON: NavCommand[] = [
   { href: '/settings/agents', label: 'Agents', Icon: Bot },
-  { href: '/settings/user', label: 'Profile', Icon: UserRound },
+  { href: '/settings/personalization', label: 'Personalization', Icon: SlidersHorizontal },
   { href: '/settings', label: 'Settings', Icon: Settings },
 ];
 
