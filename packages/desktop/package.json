@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -b",
     "start": "electron .",
-    "rebuild": "electron-rebuild",
+    "rebuild": "electron-rebuild -m build-staging/gateway -f -w better-sqlite3 -w node-pty",
     "stage": "tsc -b && node scripts/stage-gateway.mjs",
     "test": "vitest run",
     "dist": "pnpm stage && electron-builder --mac --config electron-builder.yml",

@@ -18,27 +18,41 @@ export function findFreePort(): Promise<number> {
   });
 }
 
-/** Locate the gateway entry: packaged extraResources first, else the workspace. */
-function gatewayEntry(): string {
+/**
+ * Locate the gateway entry, and pick the runtime it must run under.
+ *
+ * - **Packaged**: entry ships in extraResources; run it under Electron's own
+ *   binary (`process.execPath` + ELECTRON_RUN_AS_NODE) — there's no system Node
+ *   in a shipped app, and the staged native deps are electron-rebuilt to match
+ *   Electron's ABI (130). See scripts/stage-gateway.mjs.
+ * - **Dev**: entry resolves from the workspace `@midnite/gateway`, which loads
+ *   the *shared hoisted* better-sqlite3. Run it under plain Node so it uses the
+ *   Node ABI (127) that copy is built for — the same ABI `gateway:dev` and the
+ *   test suite use. Running it under Electron-as-node here would demand ABI 130
+ *   and force a toggle of the shared binary that breaks `gateway:dev`.
+ */
+function gatewayRuntime(): { exec: string; entry: string; electronAsNode: boolean } {
   const packaged = join(process.resourcesPath, 'gateway', 'dist', 'main.js');
-  if (existsSync(packaged)) return packaged;
-  // Dev: resolved from @midnite/gateway's package main.
-   
-  return require.resolve('@midnite/gateway');
+  if (existsSync(packaged)) {
+    return { exec: process.execPath, entry: packaged, electronAsNode: true };
+  }
+  // Dev: prefer the Node that launched us (proto/pnpm shim), else PATH `node`.
+  const nodeExec = process.env.npm_node_execpath ?? process.env.NODE ?? 'node';
+
+  return { exec: nodeExec, entry: require.resolve('@midnite/gateway'), electronAsNode: false };
 }
 
 /**
- * Spawn the gateway as a child Node process using Electron's own binary
- * (ELECTRON_RUN_AS_NODE), so its native modules share the rebuilt ABI. Writable
- * paths + the chosen port are passed via env (honoured by the gateway's config
- * loader). `detached` puts it in its own process group so we can reap the whole
- * PTY tree on quit.
+ * Spawn the gateway as a child process. Writable paths + the chosen port are
+ * passed via env (honoured by the gateway's config loader). `detached` puts it
+ * in its own process group so we can reap the whole PTY tree on quit.
  */
 export function startGatewayProcess(paths: DesktopPaths, port: number): ChildProcess {
-  return spawn(process.execPath, [gatewayEntry()], {
+  const { exec, entry, electronAsNode } = gatewayRuntime();
+  return spawn(exec, [entry], {
     env: {
       ...process.env,
-      ELECTRON_RUN_AS_NODE: '1',
+      ...(electronAsNode ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
       MIDNITE_GATEWAY_PORT: String(port),
       MIDNITE_GATEWAY_DB_PATH: paths.dbPath,
       MIDNITE_GATEWAY_UPLOADS_DIR: paths.uploadsDir,

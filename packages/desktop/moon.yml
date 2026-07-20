@@ -53,13 +53,14 @@ tasks:
       - 'src/**/*'
       - 'vitest.config.ts'
 
-  # Rebuild native deps (better-sqlite3, node-pty) against Electron's ABI.
-  # Run on the target machine before `start`/`package`.
+  # Rebuild native deps (better-sqlite3, node-pty) against Electron's ABI —
+  # SCOPED to the staged prod tree (`-m build-staging/gateway`) so it can only
+  # ever touch that isolated `pnpm deploy` copy, never the workspace's shared
+  # hoisted binaries (rebuilding those for Electron's ABI 130 breaks the gateway
+  # + node-based tests that load the same NODE_MODULE_VERSION-127 binaries).
+  # Run `desktop:stage` first so build-staging/gateway/node_modules exists.
   rebuild:
-    command: 'pnpm exec electron-rebuild'
-    # Mutates the workspace's shared native binaries (better-sqlite3, node-pty)
-    # to Electron's ABI, which breaks node-based tests that load the same
-    # binaries — so never in `moon ci`. Runs locally / in the release workflow.
+    command: 'pnpm exec electron-rebuild -m build-staging/gateway -f -w better-sqlite3 -w node-pty'
     options:
       runInCI: false
 

@@ -56,8 +56,15 @@ built/downloaded in the restricted sandbox. On a Mac:
 pnpm install                       # downloads the Electron binary
 moon run gateway:build             # gateway/dist (+ copies hook .cjs)
 moon run desktop:build             # desktop/dist (main + preload)
-moon run desktop:rebuild           # electron-rebuild better-sqlite3 + node-pty for Electron's ABI
 ```
+
+Dev needs **no** `electron-rebuild`: `desktop:start` spawns the gateway child under
+plain **Node** (see `src/main/gateway-process.ts`), so it uses the workspace's shared
+`better-sqlite3`/`node-pty` at their Node ABI (127) — the same copy `gateway:dev` and
+the tests use. `moon run desktop:rebuild` is a **packaging-only** step: it is scoped to
+the staged prod tree (`build-staging/gateway`, produced by `desktop:stage`) and
+electron-rebuilds *that* isolated copy for Electron's ABI — it never touches the shared
+hoisted binaries.
 
 ## Dev run (against the Next dev server)
 
