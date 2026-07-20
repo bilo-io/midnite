@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '@midnite/ui/theme';
 import type {
   AdminTeamSummary,
@@ -20,7 +20,7 @@ import { VersionsView } from '@/components/versions-view';
 import OverviewPage from './page';
 import UsagePage from './usage/page';
 import UsersPage from './users/page';
-import ProjectsPage from './projects/page';
+import ProjectsSection from './projects/page';
 import AuditPage from './audit/page';
 import LinksPage from './links/page';
 
@@ -249,7 +249,7 @@ describe('Projects section', () => {
   it('lists projects from the mocked read', async () => {
     vi.spyOn(api, 'getProjects').mockResolvedValue(PROJECTS);
 
-    renderPage(<ProjectsPage />);
+    renderPage(<ProjectsSection />);
 
     expect(await screen.findByRole('heading', { name: 'Projects' })).toBeInTheDocument();
     expect(await screen.findByRole('cell', { name: /Aurora/ })).toBeInTheDocument();
