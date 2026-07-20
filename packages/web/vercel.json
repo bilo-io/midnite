@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm --filter @midnite/shared run build && pnpm --filter @midnite/ui run build && pnpm --filter @midnite/shell run build && cd packages/web && pnpm run build",
   "git": {
     "deploymentEnabled": {
       "gh-pages": false
