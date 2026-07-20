@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
+  AppWindow,
   BarChart3,
   BookOpen,
   Bug,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Card, GithubIcon } from '@midnite/ui';
 import {
+  APP_URL,
   DOCS_URL,
   GITHUB_RELEASES_URL,
   PUBLIC_GITHUB_REPO,
@@ -40,6 +42,12 @@ type ExternalLink = {
 };
 
 const EXTERNAL_LINKS: readonly ExternalLink[] = [
+  {
+    label: 'Web app',
+    description: 'The task board — open the main midnite web app.',
+    href: APP_URL,
+    icon: <AppWindow aria-hidden />,
+  },
   {
     label: 'Documentation',
     description: 'Guides, the design system, and developer docs.',

@@ -543,3 +543,4 @@ must be committed in `midnite-app`).
 - **Designing a change?** Read [`docs/INITIAL_PLAN.md`](docs/INITIAL_PLAN.md) first.
 - **Picking up work?** Open the relevant `todo/phase-N-*.md` and grab an unchecked box. When you finish, move it into [`todo/done.md`](todo/done.md) (most-recent first).
 - **Coding conventions?** [`CLAUDE.md`](CLAUDE.md) is the agent brief — it also documents the layering rules, package boundaries, and the golden rule (`shared` is the contract).
+- **Running the operator console?** The cross-tenant admin app (`packages/admin`) — the operator allowlist, running it locally, and hosting — is documented in [`docs/ADMIN.md`](docs/ADMIN.md).

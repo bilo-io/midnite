@@ -33,6 +33,16 @@ export const DOCS_URL =
     : (process.env.NEXT_PUBLIC_DOCS_URL ?? DOCS_PAGES_URL);
 
 /**
+ * The deployed web-app URL. Promoted here (Phase 73 Theme G) from
+ * `packages/site/lib/site.ts` so every package agrees on one canonical value —
+ * the marketing site's "Open the app" CTA and the operator console's "Web app"
+ * quick link both resolve here. Overridable per environment via
+ * `NEXT_PUBLIC_APP_URL`; falls back to the hosted deployment.
+ */
+export const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ?? 'https://midnite-web-vision-studios-projects.vercel.app';
+
+/**
  * Raw CHANGELOG, fetched from the PUBLIC mirror repo's default branch. `main`'s
  * changelog already contains every released version's section, so one fetch covers
  * any version the banner shows — no per-tag fetch needed. We read from the public

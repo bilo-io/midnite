@@ -36,7 +36,16 @@ ui     ◀── web      (ui is a leaf: depends on nothing in-repo)
 ui     ◀── docs     (docs is a pure consumer of ui; later: site may join)
 ui, shared ◀── shell        (shell is mid-tier: depends on ui + shared only)
 shell  ◀── web, admin       (web + admin mount the shell's <AppFrame>)
+shared, ui, shell ◀── admin (admin is an app leaf: never imported by anything)
 ```
+
+**Enforced boundary tests (CI).** Three packages carry a `src/boundary.test.ts`
+that fails the build if the source imports outside its allowed set — they pin the
+mid-tier edges: **`ui ◀ shell ◀ {web, admin}`** and **`{shared, ui} ◀ admin`**.
+`packages/ui/src/boundary.test.ts` keeps `ui` a leaf (no in-repo imports);
+`packages/shell/src/boundary.test.ts` keeps `shell` on `{shared, ui}` only (never
+an app / gateway / cli / desktop / site); `packages/admin/src/boundary.test.ts`
+keeps `admin` a pure client of `{shared, ui, shell}` (never gateway internals).
 
 - `shared` depends on nothing else in the repo
 - `cli` and `web` are pure clients of `gateway` over HTTP/WS — they never import gateway internals

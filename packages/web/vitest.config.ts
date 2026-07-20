@@ -46,6 +46,17 @@ export default defineConfig({
         // The addon auto-applies the .storybook/preview decorators/globals to
         // every story (Storybook ≥10.3), so no extra setup file is needed.
         plugins: [storybookTest({ configDir: join(rootDir, '.storybook') })],
+        // Eagerly pre-bundle the workspace deps the stories import (Phase 73 G).
+        // On a COLD run there is no `node_modules/.vite` cache, so the browser
+        // optimizer discovers deps lazily as ~60 story files load in parallel; a
+        // late discovery triggers a full-page reload that both tears down the
+        // running suite ("Vitest failed to find the current suite") and serves a
+        // stale/partial bundle of the CJS `@midnite/shared` ("does not provide an
+        // export named 'X'"). Listing the deps here forces one up-front optimize,
+        // so the first run is green like the (warm-cache) re-run.
+        optimizeDeps: {
+          include: ['@midnite/shared', '@midnite/ui', '@midnite/shell'],
+        },
         test: {
           name: 'storybook',
           browser: {
