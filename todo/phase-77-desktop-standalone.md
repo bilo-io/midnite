@@ -111,5 +111,7 @@
    data shared with the CLI, not an app-private sandbox.
 2. **Auth = full SSO, direct to gateway** (user choice) — the static export can't run the
    BFF; the transport calls the gateway's `/auth/*` directly.
-3. **No single-origin rewrite** — leave the two-loopback-server model + injected URL as
-   Phase 75's baseline; don't fork the desktop SSO architecture mid-flight.
+3. **Single-origin + stable port (Theme D)** — the gateway serves the web on a stable
+   port (7777) so the SSO round-trip completes in-app against an existing OAuth app. This
+   supersedes the earlier two-loopback-server model. Google (embedded-webview-blocked)
+   would still need Phase 75's system-browser path.
