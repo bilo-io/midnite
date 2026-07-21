@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — fix: Phase 78 Theme E — CI-hygiene follow-ups — **completes Phase 78 🎉 17/17**
+
+PR #503. Cleared two pre-existing CI reds that predated Phase 78 but sit in its "clean CI" goal.
+
+- [x] **Coverage-v8 ↔ vitest alignment** — `gateway` + `web` pinned `@vitest/coverage-v8@^4` against `vitest@3.2.4`; the v4 provider imported `BaseCoverageProvider` from `vitest/node` (v4-only) and crashed, so the E2E `coverage` job was red every commit. Pinned to `3.2.4` → `gateway:test-coverage` (2203 tests, 78%) + `web:test-coverage` (1146) green.
+- [x] **`session-detail-view.test.tsx` repair** — #499 gave the view `useToast`/`useConfirm`, breaking `web:test`/`moon ci`. Wrapped renders in `Toast`+`Confirm` providers (the `slides-view` pattern) and dropped stale `running`/`ended` assertions — the status chip moved to `SessionInfoPanel` (stubbed here; covered by its own spec, no coverage lost).
+- [ ] ⏳ **Gateway Vercel deploy failure** — deferred; needs a Vercel dashboard `rootDirectory` change (outside repo reach).
+
 ## 2026-07-21 — feat: Phase 78 CI/CD cost-cut (Themes A–D) — **completes Phase 78 🎉 15/15**
 
 Affected-only deploys & checks: run/deploy only the app whose dep subtree changed, kill all feature-branch previews. PR #498. moon's affected graph is the oracle for Actions; a git-diff Node script gates Vercel. Skipped work reports green via a `ci-gate`. CI surfaced 5 Vercel projects (not 3) — extended to `admin`+`site` and made `gateway` never-deploy.
