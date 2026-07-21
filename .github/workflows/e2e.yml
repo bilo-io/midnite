@@ -86,14 +86,19 @@ jobs:
       - name: Install Playwright chromium (needed for Storybook browser tests)
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Build upstream packages
-        run: moon run shared:build ui:build
+      - name: Build upstream packages (coverage runs vitest directly — build web's deps too)
+        run: moon run shared:build ui:build shell:build
 
+      # The `test-coverage` moon tasks are `runInCI: false` (kept out of the fast
+      # `moon ci` gate), which also makes moon refuse to run them via `moon run` in
+      # a CI environment ("No tasks found"). This dedicated job runs vitest directly
+      # to sidestep that filter while keeping coverage off the critical path. The
+      # commands mirror the `test-coverage` tasks in each package's moon.yml.
       - name: Gateway coverage
-        run: moon run gateway:test-coverage --force
+        run: pnpm --filter @midnite/gateway exec vitest run --coverage
 
       - name: Web coverage
-        run: moon run web:test-coverage --force
+        run: pnpm --filter @midnite/web exec vitest run --coverage --project=unit
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

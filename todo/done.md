@@ -4,6 +4,10 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — fix: coverage job runs in CI (Phase 78 E follow-up) 🟢
+
+The `e2e.yml` `coverage` job invoked `moon run {gateway,web}:test-coverage`, but those tasks are `runInCI: false` (kept out of the fast `moon ci` gate) — which also makes moon refuse to run them via `moon run` in CI ("No tasks found"), so the job was red every run. Now runs vitest **directly** (mirrors the moon task commands), sidestepping the CI filter while keeping coverage off the `moon ci` critical path; builds `shell` too since direct vitest skips moon's dep resolution. Verified green with `CI=true`: gateway 2203 tests, web 1146, coverage reports emitted → the `coverage` job (informational, non-required) is finally green. Completes the Phase 78 Theme E "turn the E2E coverage job green" item in CI (it previously held only locally).
+
 ## 2026-07-21 — fix: web:build-storybook CJS-barrel resolution (Phase 78 E follow-up) 🟢 ci green
 
 Cleared the last pre-existing `moon ci` red that failed every web PR: rollup's commonjs pass couldn't resolve named imports (e.g. `AgentPingResponseSchema`) through `@midnite/shared`'s CJS `__exportStar` barrel. Aliased `@midnite/shared` to its TS source in the storybook Vite build (`.storybook/main.ts` `viteFinal`) → compiles as ESM with static named exports. Storybook-scoped; Next build + vitest browser tests verified unaffected. `moon ci` (`:typecheck`/`:lint`/`:test`/`web:build*`) now fully green for web PRs — unblocks the `ci-gate` branch-protection repoint.
