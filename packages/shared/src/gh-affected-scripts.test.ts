@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 // Test-only import of the GitHub Actions affected-detection script's pure
 // helpers (Phase 78 Theme B). Not a runtime dep of `shared`; imported here to
-// pin the affected-id → job-gate mapping (esp. fail-open + the web-visual /
-// docs-deploy groups). `main()` is guarded behind an "invoked directly" check.
+// pin the affected-id → job-gate mapping (esp. fail-open + the web-visual
+// group). `main()` is guarded behind an "invoked directly" check.
 import { computeAffected, PACKAGES, queryAffected } from '../../../scripts/gh-affected.mjs';
 
 describe('gh-affected · computeAffected', () => {
@@ -28,18 +28,11 @@ describe('gh-affected · computeAffected', () => {
     expect(computeAffected({ affectedIds: ['docs'], failOpen: false }).webVisual).toBe('false');
   });
 
-  it('docsDeploy is true for docs or ui', () => {
-    expect(computeAffected({ affectedIds: ['docs'], failOpen: false }).docsDeploy).toBe('true');
-    expect(computeAffected({ affectedIds: ['ui'], failOpen: false }).docsDeploy).toBe('true');
-    expect(computeAffected({ affectedIds: ['web'], failOpen: false }).docsDeploy).toBe('false');
-  });
-
   it('fail-open forces every output true', () => {
     const out = computeAffected({ affectedIds: [], failOpen: true });
     for (const p of PACKAGES) expect(out[p]).toBe('true');
     expect(out.code).toBe('true');
     expect(out.webVisual).toBe('true');
-    expect(out.docsDeploy).toBe('true');
     expect(out.failOpen).toBe('true');
   });
 

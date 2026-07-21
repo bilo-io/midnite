@@ -20,17 +20,16 @@ export const PUBLIC_GITHUB_REPO = 'bilo-io/midnite-app';
 // In dev the docs SPA runs on its fixed, strict port — see docs/vite.config.ts
 // (`server.port: 5173`, `strictPort: true`) and docs/moon.yml — so we point
 // straight at it. In a deployed build the URL comes from `NEXT_PUBLIC_DOCS_URL`
-// when set, else the GitHub Pages deploy the docs CI publishes (preview.yml →
-// `destination_dir: docs` on `<owner>.github.io/<repo>`). Falling back to the
-// real hosted URL — not '#' — keeps the assistant's Docs link off the webapp
-// origin (a bare '#' resolves to the current page, i.e. the app itself).
-const [GITHUB_OWNER, GITHUB_REPO_NAME] = GITHUB_REPO.split('/');
-export const DOCS_PAGES_URL = `https://${GITHUB_OWNER}.github.io/${GITHUB_REPO_NAME}/docs`;
+// when set, else the hosted Vercel deploy (its own Vercel project — see
+// docs/CICD.md). Falling back to the real hosted URL — not '#' — keeps the
+// assistant's Docs link off the webapp origin (a bare '#' resolves to the
+// current page, i.e. the app itself).
+export const DOCS_HOSTED_URL = 'https://midnite-docs-vision-studios-projects.vercel.app';
 
 export const DOCS_URL =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:5173'
-    : (process.env.NEXT_PUBLIC_DOCS_URL ?? DOCS_PAGES_URL);
+    : (process.env.NEXT_PUBLIC_DOCS_URL ?? DOCS_HOSTED_URL);
 
 /**
  * The deployed web-app URL. Promoted here (Phase 73 Theme G) from

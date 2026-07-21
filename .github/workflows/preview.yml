@@ -2,9 +2,11 @@ name: Preview
 
 # Phase 10 Theme E3 — screenshot gallery + Storybook preview per PR.
 # Phase 78 Theme B — gated on affected packages: the gallery + Storybook jobs
-# only run when the web app or its upstream (ui/shared/shell) changed, and the
-# docs deploy only when the docs subtree (docs/ui) changed. The PR-close cleanup
-# always runs so gh-pages never accumulates stale previews.
+# only run when the web app or its upstream (ui/shared/shell) changed. The
+# PR-close cleanup always runs so gh-pages never accumulates stale previews.
+#
+# The docs site is NOT published here — it deploys to its own hosted Vercel
+# project (see docs/CICD.md); nothing about the documentation touches gh-pages.
 #
 # Two jobs run on every PR push and every merge to main (when affected):
 #
@@ -161,35 +163,6 @@ jobs:
                 body,
               });
             }
-
-  # ── docs site ──────────────────────────────────────────────────────────────
-  docs:
-    name: Docs site (GH Pages)
-    needs: changes
-    runs-on: ubuntu-latest
-    # Only deploy when landing on main AND the docs subtree (docs/ui) changed.
-    if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main'
-      && needs.changes.outputs.docsDeploy == 'true'
-    # Never block a merge on a docs-deploy failure.
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup
-
-      - name: Build docs (moon resolves ui:build dep automatically)
-        run: moon run docs:build
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: packages/docs/dist
-          destination_dir: docs
-          keep_files: true
-          commit_message: "chore(docs): deploy docs site [${{ github.sha }}]"
 
   # ── cleanup ────────────────────────────────────────────────────────────────
   cleanup:

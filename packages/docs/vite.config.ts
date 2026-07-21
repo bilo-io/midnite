@@ -16,9 +16,9 @@ import { defineConfig } from 'vite';
 // with the design-system tokens. `remark-mdx-frontmatter` turns each page's YAML
 // frontmatter into an `export const frontmatter` the route registry reads.
 export default defineConfig({
-  // Relative base so assets resolve correctly under any deployment subpath
-  // (e.g. GitHub Pages at /midnite/docs/). Hash router handles all navigation;
-  // only the asset URLs need to be subpath-aware.
+  // Relative base so assets resolve correctly under any deployment subpath.
+  // Hash router handles all navigation; only the asset URLs need to be
+  // subpath-aware.
   base: './',
   // Deterministic dev/preview ports. `strictPort` makes Vite fail loudly if the
   // port is taken rather than silently drifting to 5174+ — so cross-links from

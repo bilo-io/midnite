@@ -36,8 +36,6 @@ export function computeAffected({ affectedIds, failOpen }) {
   out.code = failOpen || PACKAGES.some((p) => affected.has(p)) ? 'true' : 'false';
   // `webVisual` gates e2e / screenshots / Storybook preview.
   out.webVisual = failOpen || WEB_VISUAL.some((p) => affected.has(p)) ? 'true' : 'false';
-  // `docsDeploy` gates the docs GH-Pages deploy (docs + its only dep, ui).
-  out.docsDeploy = failOpen || affected.has('docs') || affected.has('ui') ? 'true' : 'false';
   out.failOpen = failOpen ? 'true' : 'false';
   return out;
 }

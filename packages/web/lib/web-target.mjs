@@ -3,7 +3,7 @@
 // web-target.d.mts types it for the vitest unit + tsc. See docs/SSO.md (hosted).
 //
 //  - default (unset, or MIDNITE_WEB_TARGET=static) → 'export': the static bundle
-//    the desktop app + GitHub Pages consume (out/), byte-for-byte unchanged.
+//    the desktop app + a static host consume (out/), byte-for-byte unchanged.
 //  - MIDNITE_WEB_TARGET=server → undefined: drops the export so the /api/auth/*
 //    BFF route handlers (login/refresh/logout + sso/callback) build and run in a
 //    hosted Next server, which the SSO cookie flow needs.
