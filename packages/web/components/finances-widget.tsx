@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { List, Settings2, Sigma, Trash2, Wallet, X } from 'lucide-react';
 import type { FinanceConfig, FinanceEntry } from '@/lib/dashboard-widgets';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
 
@@ -11,13 +12,15 @@ type FinancesWidgetProps = {
   onConfigChange: (config: FinanceConfig) => void;
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+/** Format an amount for the active locale (Phase 79 F) — `1,234.56` vs `1.234,56`. */
+type Fmt = (n: number) => string;
 
 const sum = (entries: FinanceEntry[]) => entries.reduce((t, e) => t + e.amount, 0);
 
 export function FinancesWidget({ config, onConfigChange }: FinancesWidgetProps) {
   const [editing, setEditing] = useState(false);
+  const { number } = useLocaleFormat();
+  const fmt: Fmt = (n) => number(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const { title, income, expenses, showDetail } = config;
 
   const incomeTotal = sum(income);
@@ -60,23 +63,23 @@ export function FinancesWidget({ config, onConfigChange }: FinancesWidgetProps) 
         <div className="flex flex-col gap-3">
           {showDetail ? (
             <>
-              <EntryGroup label="Income" entries={income} total={incomeTotal} />
-              <EntryGroup label="Expenses" entries={expenses} total={expenseTotal} />
+              <EntryGroup label="Income" entries={income} total={incomeTotal} fmt={fmt} />
+              <EntryGroup label="Expenses" entries={expenses} total={expenseTotal} fmt={fmt} />
             </>
           ) : (
             <div className="space-y-1.5 text-sm">
-              <TotalRow label="Income" value={incomeTotal} />
-              <TotalRow label="Expenses" value={expenseTotal} />
+              <TotalRow label="Income" value={incomeTotal} fmt={fmt} />
+              <TotalRow label="Expenses" value={expenseTotal} fmt={fmt} />
             </div>
           )}
-          <LeftoverRow value={leftover} />
+          <LeftoverRow value={leftover} fmt={fmt} />
         </div>
       )}
     </WidgetCard>
   );
 }
 
-function TotalRow({ label, value }: { label: string; value: number }) {
+function TotalRow({ label, value, fmt }: { label: string; value: number; fmt: Fmt }) {
   return (
     <div className="flex items-baseline justify-between">
       <span className="text-muted-foreground">{label}</span>
@@ -85,7 +88,7 @@ function TotalRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function LeftoverRow({ value }: { value: number }) {
+function LeftoverRow({ value, fmt }: { value: number; fmt: Fmt }) {
   return (
     <div className="flex items-baseline justify-between border-t border-border/40 pt-2">
       <span className="text-sm font-semibold">Leftover</span>
@@ -101,7 +104,17 @@ function LeftoverRow({ value }: { value: number }) {
   );
 }
 
-function EntryGroup({ label, entries, total }: { label: string; entries: FinanceEntry[]; total: number }) {
+function EntryGroup({
+  label,
+  entries,
+  total,
+  fmt,
+}: {
+  label: string;
+  entries: FinanceEntry[];
+  total: number;
+  fmt: Fmt;
+}) {
   return (
     <div className="space-y-1">
       <div className="flex items-baseline justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">

@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — feat: Phase 79 Theme F — locale-aware formatting 🟢
+
+PR #510. Formatting now follows the active shell locale (Phase 79 A/B) instead of a pinned one.
+
+- [x] New `useLocaleFormat()` seam (`web/lib/use-locale-format.ts`) over next-intl's `useFormatter`/`useLocale`, bound to the `LocaleProvider` locale — `number`, `money` (explicit ISO currency, dynamic locale), `dateTime` (defaults to the viewer's local tz → no next-intl `ENVIRONMENT_FALLBACK` warning). One seam Theme D reuses.
+- [x] `finances-widget`: dropped `Intl.NumberFormat('en-GB')`; formats at the parent + threads `fmt` to the total/leftover/entry rows.
+- [x] Converted the `clock`/`date`/`calendar`/`digest` dashboard widgets from `toLocale*(undefined, …)` to the seam's `dateTime`.
+- [x] RTL tests: number/currency/date differ across en-GB/de-DE/fr-FR; finances renders `1,234.50` vs `1.234,50`; `digest-widget` test wrapped in `LocaleProvider`.
+- [x] Gate: web typecheck + lint (0 err) + unit **1152/1152** + static-export build all green.
+- Follow-up: `market-asset-widget`'s USD pin left as-is (conventionally USD; `fmtPrice` used in a recharts callback); Theme-D surfaces adopt the seam as they're translated.
+
+---
+
 ## 2026-07-21 — feat: Phase 79 Themes A+B — i18n contract + next-intl runtime 🟢
 
 PR #509. The greenfield i18n foundation for `web` — contract + runtime only (no switcher/translation yet; those are Themes C/D). Key call from the brainstorm: **preference-based client i18n, not middleware/URL routing** — `web` defaults to Next static export (no server, no `middleware.ts`), so the locale comes from the Phase 43 synced pref and applies via `NextIntlClientProvider`.

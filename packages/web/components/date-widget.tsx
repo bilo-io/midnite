@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar } from 'lucide-react';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { WidgetCard } from './widget-card';
 
 /** Today's date. Re-renders once at the next local midnight. */
@@ -15,8 +16,9 @@ export function DateWidget() {
     return () => clearTimeout(id);
   }, [now]);
 
-  const weekday = now.toLocaleDateString(undefined, { weekday: 'long' });
-  const month = now.toLocaleDateString(undefined, { month: 'long' });
+  const { dateTime } = useLocaleFormat();
+  const weekday = dateTime(now, { weekday: 'long' });
+  const month = dateTime(now, { month: 'long' });
   const day = now.getDate();
   const year = now.getFullYear();
 

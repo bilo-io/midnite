@@ -71,13 +71,13 @@ Make all four locales real, keep them in parity in CI, and stop new hardcoded st
 - [ ] **ESLint gate** — a `no-literal-jsx-text`-style rule (with a small allowlist for non-copy: icons, class strings, code samples) that **fails on new hardcoded user-facing strings** in `packages/web`, so the untouched long tail converts incrementally without regressions. Scope the rule so it doesn't retroactively fail the ~500 un-migrated files (e.g. warn on legacy, error on touched/new — or an allowlist file).
 - [ ] **Tests / CI** — a deliberately drifted catalog fails `i18n:validate`; the ESLint rule flags a planted hardcoded string and passes a `t()` call.
 
-## Theme F — Locale-aware formatting — **S**
+## Theme F — Locale-aware formatting — **S** — ✅ DONE (PR #510, 2026-07-21)
 
 Dates, numbers, and currency follow the active locale on the priority surfaces.
 
-- [ ] **next-intl formatters** — use `useFormatter()` for dates/relative-times/numbers on the converted Theme D surfaces (board timestamps, settings, common) instead of ad-hoc `toLocaleString` calls.
-- [ ] **Fix hardcoded currency** — [`finances-widget.tsx`](../packages/web/components/finances-widget.tsx): replace `Intl.NumberFormat('en-GB', …)` with the active locale (keep the currency code explicit; only the locale becomes dynamic).
-- [ ] **Tests** — a date/number formats differently under de-DE vs en-GB via the formatter; the finances widget's formatting follows the active locale (not pinned to en-GB).
+- [x] **next-intl formatters** — new `useLocaleFormat()` seam ([`lib/use-locale-format.ts`](../packages/web/lib/use-locale-format.ts)) over `useFormatter`/`useLocale`, bound to the active `LocaleProvider` locale (`number`/`money`/`dateTime`; `dateTime` defaults to the viewer's local tz → no next-intl `ENVIRONMENT_FALLBACK` warning). Applied to the dashboard date/number widgets (clock/date/calendar/digest), replacing ad-hoc `toLocaleString`. The Theme-D surfaces (board/settings/common) adopt the same seam as they're translated.
+- [x] **Fix hardcoded currency** — [`finances-widget.tsx`](../packages/web/components/finances-widget.tsx): dropped `Intl.NumberFormat('en-GB', …)`; formats at the parent via the seam and threads `fmt` to the rows (currency code stays explicit; only the locale is dynamic). `market-asset-widget`'s USD pin left as-is (conventionally USD; `fmtPrice` also runs in a recharts callback) — logged as follow-up.
+- [x] **Tests** — number/currency/date format differently under en-GB vs de-DE vs fr-FR via the seam; the finances widget renders `1,234.50` (en-GB) vs `1.234,50` (de-DE).
 
 ---
 

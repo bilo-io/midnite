@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
 
@@ -12,6 +13,7 @@ function sameDay(a: Date, b: Date): boolean {
 }
 
 export function CalendarWidget() {
+  const { dateTime } = useLocaleFormat();
   const [today, setToday] = useState(() => new Date());
   // Months offset from the current month (0 = this month).
   const [offset, setOffset] = useState(0);
@@ -37,7 +39,7 @@ export function CalendarWidget() {
     return out;
   }, [view]);
 
-  const monthLabel = view.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const monthLabel = dateTime(view, { month: 'long', year: 'numeric' });
 
   return (
     <WidgetCard

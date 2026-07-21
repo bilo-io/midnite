@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
-| [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 10/34 | `███░░░░░░░` | 29% | F | C D E |
+| [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 13/34 | `████░░░░░░` | 38% | — | C D E |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
 | [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | ◻ TODO | 0/13 | `░░░░░░░░░░` | 0% | — | A B C |
@@ -148,7 +148,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Language switcher (sidenav footer **above Settings** like the old theme switcher + Settings → Appearance picker; one write path via `prefs.locale`)
 - ◻ **D** — Priority-surface translation (nav/chrome, Settings, board, auth/login, common toasts/dialogs; en-GB fallback)
 - ◻ **E** — MT-seed + tooling (MT-seed de/fr/es `needs-review`, `web:i18n:validate` key-parity CI task, ESLint no-hardcoded-string gate for the long tail)
-- ◻ **F** — Locale-aware formatting (next-intl formatters for dates/numbers; fix the hardcoded `Intl.NumberFormat('en-GB')` in `finances-widget`)
+- ✅ **F** — Locale-aware formatting: `useLocaleFormat()` seam over next-intl bound to the active locale; fixed the hardcoded `Intl.NumberFormat('en-GB')` in `finances-widget` + converted the clock/date/calendar/digest dashboard widgets (PR #510)
 
 ### [Phase 78 — CI/CD cost-cut: affected-only deploys & checks](phase-78-cicd-cost-cut.md)
 *Every push/PR runs the full Actions matrix + Vercel deploys previews for every branch, regardless of what changed. Deploy/run only the app whose dep subtree changed; skipped work reports green.*
