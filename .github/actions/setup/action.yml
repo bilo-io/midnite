@@ -1,0 +1,37 @@
+name: Setup toolchain
+description: >-
+  Install proto + the pinned node/pnpm/moon toolchain, and (optionally) the
+  workspace dependencies. Shared by every CI job so the install boilerplate
+  lives in one place (Phase 78 Theme B).
+
+inputs:
+  install-deps:
+    description: >-
+      Whether to run `pnpm install --frozen-lockfile`. The lightweight `changes`
+      detection job only needs moon + git (no node_modules), so it passes 'false'
+      to stay fast.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Install proto
+      shell: bash
+      run: |
+        curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+        echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+        echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+    - name: Install pinned toolchain (node, pnpm, moon)
+      shell: bash
+      run: proto install
+
+    - name: Install dependencies
+      if: inputs.install-deps == 'true'
+      shell: bash
+      # Skip the Electron binary download — CI runs typecheck/test/build, not a
+      # desktop package, and the binary is large + macOS-specific.
+      env:
+        ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      run: pnpm install --frozen-lockfile

@@ -1,0 +1,99 @@
+name: Affected
+
+# Phase 78 Theme B — the single affected-detection oracle, called by ci / e2e /
+# preview as their leading `changes` job. moon's affected graph decides which
+# packages a push/PR touches; downstream jobs gate on these outputs so a runner
+# only boots for work that a change actually needs. Fails open (everything true)
+# when the diff base can't be resolved.
+
+on:
+  workflow_call:
+    outputs:
+      code:
+        description: Any package affected → run the blocking moon ci job.
+        value: ${{ jobs.detect.outputs.code }}
+      webVisual:
+        description: web/ui/shared/shell affected → run e2e / screenshots / Storybook.
+        value: ${{ jobs.detect.outputs.webVisual }}
+      docsDeploy:
+        description: docs/ui affected → deploy the docs site.
+        value: ${{ jobs.detect.outputs.docsDeploy }}
+      failOpen:
+        description: Detection couldn't be trusted; everything ran.
+        value: ${{ jobs.detect.outputs.failOpen }}
+      # Per-package outputs (future-proof — currently unused by the gates above
+      # but available for finer per-package jobs later).
+      web:
+        value: ${{ jobs.detect.outputs.web }}
+      docs:
+        value: ${{ jobs.detect.outputs.docs }}
+      gateway:
+        value: ${{ jobs.detect.outputs.gateway }}
+      cli:
+        value: ${{ jobs.detect.outputs.cli }}
+      shared:
+        value: ${{ jobs.detect.outputs.shared }}
+      ui:
+        value: ${{ jobs.detect.outputs.ui }}
+      shell:
+        value: ${{ jobs.detect.outputs.shell }}
+      admin:
+        value: ${{ jobs.detect.outputs.admin }}
+      site:
+        value: ${{ jobs.detect.outputs.site }}
+      desktop:
+        value: ${{ jobs.detect.outputs.desktop }}
+
+jobs:
+  detect:
+    name: Detect affected packages
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.affected.outputs.code }}
+      webVisual: ${{ steps.affected.outputs.webVisual }}
+      docsDeploy: ${{ steps.affected.outputs.docsDeploy }}
+      failOpen: ${{ steps.affected.outputs.failOpen }}
+      web: ${{ steps.affected.outputs.web }}
+      docs: ${{ steps.affected.outputs.docs }}
+      gateway: ${{ steps.affected.outputs.gateway }}
+      cli: ${{ steps.affected.outputs.cli }}
+      shared: ${{ steps.affected.outputs.shared }}
+      ui: ${{ steps.affected.outputs.ui }}
+      shell: ${{ steps.affected.outputs.shell }}
+      admin: ${{ steps.affected.outputs.admin }}
+      site: ${{ steps.affected.outputs.site }}
+      desktop: ${{ steps.affected.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # moon needs history to diff the PR base / previous push commit.
+          fetch-depth: 0
+
+      # Lightweight: proto + moon only, no pnpm install — moon query reads the
+      # project graph + git, it doesn't need node_modules.
+      - uses: ./.github/actions/setup
+        with:
+          install-deps: 'false'
+
+      - name: Resolve diff base
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "MOON_BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
+            echo "MOON_HEAD=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_ENV"
+          else
+            BEFORE="${{ github.event.before }}"
+            # First push / force-push / missing base commit → fail open.
+            if [ -z "$BEFORE" ] \
+               || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+               || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              echo "AFFECTED_FAIL_OPEN=1" >> "$GITHUB_ENV"
+            else
+              echo "MOON_BASE=${BEFORE}" >> "$GITHUB_ENV"
+              echo "MOON_HEAD=${{ github.sha }}" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Detect affected packages
+        id: affected
+        run: node scripts/gh-affected.mjs

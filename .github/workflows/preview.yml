@@ -1,8 +1,12 @@
 name: Preview
 
 # Phase 10 Theme E3 — screenshot gallery + Storybook preview per PR.
+# Phase 78 Theme B — gated on affected packages: the gallery + Storybook jobs
+# only run when the web app or its upstream (ui/shared/shell) changed, and the
+# docs deploy only when the docs subtree (docs/ui) changed. The PR-close cleanup
+# always runs so gh-pages never accumulates stale previews.
 #
-# Two jobs run on every PR push and every merge to main:
+# Two jobs run on every PR push and every merge to main (when affected):
 #
 #   gallery  — captures the key app pages + all Storybook stories, generates a
 #              browsable gallery.html + SCREENSHOTS.md, and uploads the whole
@@ -31,31 +35,27 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Phase 78 Theme B — decide what changed. Runs even on PR-close (cheap; the
+  # cleanup job below ignores its output).
+  changes:
+    uses: ./.github/workflows/affected.yml
+
   # ── gallery ────────────────────────────────────────────────────────────────
   gallery:
     name: Screenshots & gallery
+    needs: changes
     runs-on: ubuntu-latest
-    # Skip on PR-close events — no new screenshots to capture.
-    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    # Skip on PR-close events, and only when web/ui/shared/shell changed.
+    if: >-
+      (github.event_name != 'pull_request' || github.event.action != 'closed')
+      && needs.changes.outputs.webVisual == 'true'
     # Never block a merge on a screenshot failure.
     continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install proto
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
-
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -93,27 +93,18 @@ jobs:
   # ── storybook preview ──────────────────────────────────────────────────────
   storybook:
     name: Storybook preview (GH Pages)
+    needs: changes
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    if: >-
+      (github.event_name != 'pull_request' || github.event.action != 'closed')
+      && needs.changes.outputs.webVisual == 'true'
     # A Pages deploy should never block a merge.
     continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install proto
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
-
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Build Storybook
         run: moon run web:build-storybook
@@ -174,28 +165,19 @@ jobs:
   # ── docs site ──────────────────────────────────────────────────────────────
   docs:
     name: Docs site (GH Pages)
+    needs: changes
     runs-on: ubuntu-latest
-    # Only deploy when landing on main — docs don't need a preview per PR.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Only deploy when landing on main AND the docs subtree (docs/ui) changed.
+    if: >-
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.changes.outputs.docsDeploy == 'true'
     # Never block a merge on a docs-deploy failure.
     continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install proto
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
-
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Build docs (moon resolves ui:build dep automatically)
         run: moon run docs:build
@@ -213,6 +195,8 @@ jobs:
   cleanup:
     name: Remove PR preview on close
     runs-on: ubuntu-latest
+    # Unconditional on PR-close (independent of affected detection) so gh-pages
+    # always gets tidied.
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     continue-on-error: true
 

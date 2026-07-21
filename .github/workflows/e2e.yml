@@ -6,30 +6,26 @@ on:
   pull_request:
 
 jobs:
+  # Phase 78 Theme B — gate these (fat) runners on what changed.
+  changes:
+    uses: ./.github/workflows/affected.yml
+
   e2e:
+    needs: changes
+    # Playwright flows + visual regression only matter when the web app or its
+    # upstream (ui/shared/shell) changed.
+    if: needs.changes.outputs.webVisual == 'true'
     runs-on: ubuntu-latest
     # Keep e2e out of the critical path: a failing visual snapshot never blocks
-    # a merge — the `ci` job owns that gate. This job surfaces regressions and
-    # uploads artifacts for review; treat failures as "needs attention", not "blocked".
+    # a merge — the `ci-gate` job owns that gate. This job surfaces regressions
+    # and uploads artifacts for review; treat failures as "needs attention".
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install proto
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
-
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -76,25 +72,16 @@ jobs:
           retention-days: 7
 
   coverage:
+    needs: changes
+    # Coverage targets gateway + web; run when either (or their deps) changed.
+    if: needs.changes.outputs.webVisual == 'true' || needs.changes.outputs.gateway == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install proto
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
-
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Install Playwright chromium (needed for Storybook browser tests)
         run: pnpm exec playwright install --with-deps chromium
