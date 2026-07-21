@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 10/34 | `███░░░░░░░` | 29% | F | C D E |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
@@ -131,6 +132,14 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 80 — Shared reading face & complete legal set](phase-80-shared-reading-face-legal.md)
+*Extract the reading face (column shell + prose + scroll-spy TOC) into `@midnite/ui` as a framework-agnostic leaf, migrate **both** docs and site legal onto it, and complete the legal set (Terms + Cookies) with real, counsel-review-flagged prose.*
+- ◻ **A** — Shared reading primitives in `@midnite/ui` (`ReadingLayout` + `Prose` self-slugifying headings + `TableOfContents` scroll-spy + `ReadingLayoutProvider` injected Link; leaf rule intact)
+- ◻ **B** — Migrate docs onto the primitive (thin MDX adapter; visual-parity guardrail on the polished docs face)
+- ◻ **C** — Rebuild site legal on the primitive (gains the right-rail TOC + heading deep-links it never had)
+- ◻ **D** — Complete legal set + real prose (Terms of Use + Cookies added to `LEGAL_DOCS`; effective dates; footer surfaces all four)
+- ◻ **E** — Stories, tests & verification (Storybook browser tests for the three primitives; `ui`/`docs`/`site` boundaries green)
 
 ### [Phase 79 — Translations & Internationalization (i18n)](phase-79-translations-i18n.md)
 *Greenfield i18n for `web` via next-intl in **preference-based client mode** (locale from the Phase 43 synced pref, not middleware/URL routing — web defaults to static export with no server). en-GB canonical + de-DE/fr-FR/es-ES; `Locale` type in `shared`, catalogs in `web/messages/`; foundation + priority surfaces + lint gate (not all ~560 files).*
