@@ -27,13 +27,14 @@ export const BothProviders: Story = {
   },
 };
 
-/** Only GitHub configured — renders a single button. */
+/** Only GitHub configured — both buttons still show (SSO stays fully visible by
+ *  design; an unconfigured click gets a friendly error rather than a hidden button). */
 export const SingleProvider: Story = {
   beforeEach: () => installMockFetch([{ match: '/auth/sso/providers', json: { providers: ['github'] } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Continue with GitHub')).toBeInTheDocument();
-    await expect(canvas.queryByText('Continue with Google')).toBeNull();
+    await expect(canvas.getByText('Continue with Google')).toBeInTheDocument();
   },
 };
 

@@ -32,9 +32,9 @@ export const Filters: Story = {
     // The search input is a combobox (Phase 60 I), not a plain textbox.
     const input = within(dialog).getByRole('combobox', { name: 'Search commands and content' });
 
-    await userEvent.type(input, 'profile');
-    await expect(within(dialog).getByText('Profile')).toBeInTheDocument();
-    await expect(within(dialog).queryByText('Settings')).not.toBeInTheDocument();
+    await userEvent.type(input, 'personal');
+    await expect(within(dialog).getByText('Personalization')).toBeInTheDocument();
+    await expect(within(dialog).queryByText('Agents')).not.toBeInTheDocument();
 
     await userEvent.clear(input);
     await userEvent.type(input, 'zzzzz');
