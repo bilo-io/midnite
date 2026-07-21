@@ -1,6 +1,7 @@
 'use client';
 
 import { useFormatter, useLocale } from 'next-intl';
+import type { DateTimeFormatOptions, NumberFormatOptions } from 'next-intl';
 import type { Locale } from '@midnite/shared';
 
 /**
@@ -22,11 +23,11 @@ export type LocaleFormat = {
   /** The active locale (e.g. for passing to a library that wants a locale string). */
   locale: Locale;
   /** A plain number — e.g. `1,234.56` (en-GB) vs `1.234,56` (de-DE). */
-  number: (value: number, options?: Intl.NumberFormatOptions) => string;
+  number: (value: number, options?: NumberFormatOptions) => string;
   /** A currency amount. Pass the ISO 4217 code explicitly; only the locale is dynamic. */
-  money: (value: number, currency: string, options?: Intl.NumberFormatOptions) => string;
+  money: (value: number, currency: string, options?: NumberFormatOptions) => string;
   /** A date/time — e.g. weekday/month names + date-part order follow the locale. */
-  dateTime: (value: Date | number, options?: Intl.DateTimeFormatOptions) => string;
+  dateTime: (value: Date | number, options?: DateTimeFormatOptions) => string;
 };
 
 export function useLocaleFormat(): LocaleFormat {

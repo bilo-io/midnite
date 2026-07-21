@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { LocaleProvider } from '@midnite/shell';
 import type { DigestListItem } from '@midnite/shared';
 import { withQueryClient } from '@/lib/test-query-wrapper';
 
@@ -12,6 +13,17 @@ vi.mock('next/link', () => ({
 }));
 
 import { DigestWidget } from './digest-widget';
+
+// DigestWidget formats the digest date via the locale-aware seam (Phase 79 F), which
+// needs next-intl's provider — mounted globally in the app, so supply it in tests too.
+const renderWidget = () =>
+  render(
+    withQueryClient(
+      <LocaleProvider catalogs={{}} initialLocale="en-GB">
+        <DigestWidget />
+      </LocaleProvider>,
+    ),
+  );
 
 const item: DigestListItem = {
   id: 'd1',
@@ -27,7 +39,7 @@ describe('DigestWidget', () => {
 
   it('shows the latest digest headline + counts, linking to the feed', async () => {
     getDigests.mockResolvedValue([item]);
-    render(withQueryClient(<DigestWidget />));
+    renderWidget();
     await waitFor(() => expect(screen.getByText('A productive day')).toBeInTheDocument());
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByRole('link')).toHaveAttribute('href', '/ops?tab=digest&id=d1');
@@ -35,7 +47,7 @@ describe('DigestWidget', () => {
 
   it('shows an honest empty state when no digests exist', async () => {
     getDigests.mockResolvedValue([]);
-    render(withQueryClient(<DigestWidget />));
+    renderWidget();
     await waitFor(() => expect(screen.getByText(/No digests yet/)).toBeInTheDocument());
   });
 });
