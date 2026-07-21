@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | ◻ TODO | 0/34 | `░░░░░░░░░░` | 0% | — | A B C D E F |
-| [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | 🔄 WIP | 0/13 | `░░░░░░░░░░` | 0% | A B C D | — |
+| [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
 | [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | ◻ TODO | 0/13 | `░░░░░░░░░░` | 0% | — | A B C |
 | [75 · Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A B C D E F G | — |
@@ -143,10 +143,10 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 78 — CI/CD cost-cut: affected-only deploys & checks](phase-78-cicd-cost-cut.md)
 *Every push/PR runs the full Actions matrix + Vercel deploys previews for every branch, regardless of what changed. Deploy/run only the app whose dep subtree changed; skipped work reports green.*
-- ◻ **A** — Vercel deploy governance (previews off for web+docs; per-app git-diff subtree ignore-build-step; gateway stays off)
-- ◻ **B** — Actions affected-gating (moon `--affected` `changes` job gates ci/e2e/preview so a docs typo boots no runner)
-- ◻ **C** — Skip-is-pass contract (always-run `ci-gate` aggregation job = sole required check; repoint branch protection)
-- ◻ **D** — Runbook & drift guards (`docs/CICD.md`; keep Vercel subtree lists honest vs `moon.yml` dependsOn)
+- ✅ **A** — Vercel deploy governance (previews off for web+docs+admin+site; per-app git-diff subtree ignore-build-step; gateway never deploys) — PR #498
+- ✅ **B** — Actions affected-gating (moon `--affected` `changes` job gates ci/e2e/preview so a docs typo boots no runner) — PR #498
+- ✅ **C** — Skip-is-pass contract (always-run `ci-gate` aggregation job = sole required check; repoint branch protection) — PR #498
+- ✅ **D** — Runbook & drift guards (`docs/CICD.md`; keep Vercel subtree lists honest vs `moon.yml` dependsOn) — PR #498
 
 ### [Phase 76 — Gateway DI metadata: kill the silent-`undefined` injection class](phase-76-gateway-di-metadata.md)
 *esbuild (tsx) elides constructor-param-only imports → Nest silently injects `undefined` (dev-only, invisible to build/CI; broke the whole SSO path in v0.3.0). Fix the root cause + a behavioural backstop.*

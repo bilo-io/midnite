@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — feat: Phase 78 CI/CD cost-cut (Themes A–D) — **completes Phase 78 🎉 15/15**
+
+Affected-only deploys & checks: run/deploy only the app whose dep subtree changed, kill all feature-branch previews. PR #498. moon's affected graph is the oracle for Actions; a git-diff Node script gates Vercel. Skipped work reports green via a `ci-gate`. CI surfaced 5 Vercel projects (not 3) — extended to `admin`+`site` and made `gateway` never-deploy.
+
+- [x] **A · Vercel governance** — [`scripts/vercel-ignore.mjs`](../scripts/vercel-ignore.mjs) `ignoreCommand` on web/docs/admin/site: production-branch-only (no previews) + `git diff HEAD^ HEAD` over each app's dep subtree; `gateway` always-skips (`NEVER_DEPLOY`). 17 unit tests + drift guard.
+- [x] **B · Actions affected-gating** — reusable [`affected.yml`](../.github/workflows/affected.yml) runs `moon query projects --affected` via [`scripts/gh-affected.mjs`](../scripts/gh-affected.mjs) (per-package matrix + `code`/`webVisual`/`docsDeploy` groups, fail-open); `ci`/`e2e`/`coverage`/`gallery`/`storybook`/`docs` gate on it. Install boilerplate → `.github/actions/setup` composite. 8 unit tests.
+- [x] **C · Skip-is-pass** — always-run `ci-gate` aggregation job in `ci.yml` (success||skipped = pass; fails on real failure/cancel or broken detection) = the single required check. Repoint documented.
+- [x] **D · Runbook & drift guards** — [`docs/CICD.md`](../docs/CICD.md) (economy table, oracle split, fail-open, `ci-gate` contract, branch-protection repoint, add-an-app) + `CLAUDE.md` note; `SUBTREES` drift-guard test vs transitive `moon.yml dependsOn`.
+- [ ] **Post-merge (human):** repoint branch protection to require `ci-gate`; confirm real-Vercel subtree behaviour after first `main` deploy.
+
 ## 2026-07-20 — test/docs: Phase 73 Theme G — hardening (tests · docs · boundary) — **completes Phase 73 🎉 43/43**
 
 Final Phase 73 slice: durability across the newly-expanded graph (`admin`, `shell`, promoted `ui` charts). No product-surface change; PR #494.
