@@ -72,7 +72,7 @@ export default function LoginPage() {
           title={tNav('footer.changelog')}
           className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
         >
-          v{getCurrentVersion()}
+          {`v${getCurrentVersion()}`}
         </a>
       </div>
       {ssoError && (

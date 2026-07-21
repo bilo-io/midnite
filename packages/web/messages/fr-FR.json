@@ -52,7 +52,8 @@
     "forgotPassword": "Mot de passe oublié ?",
     "createAccount": "Créer un compte",
     "lastUsed": "Dernière utilisation",
-    "or": "ou"
+    "or": "ou",
+    "lastUsedShort": "récent"
   },
   "board": {
     "title": "Tableau des tâches",

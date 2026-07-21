@@ -102,9 +102,10 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
 /** Tiny right-aligned "last" tag inside a highlighted login button. Absolutely
  *  positioned so it never shifts the button's centred label + logo. */
 export function LastUsedTag() {
+  const t = useTranslations('auth');
   return (
     <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-medium uppercase tracking-wider text-muted-foreground">
-      last
+      {t('lastUsedShort')}
     </span>
   );
 }
