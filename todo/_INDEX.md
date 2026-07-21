@@ -31,7 +31,7 @@
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | ◻ TODO | 0/34 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
-| [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | ◻ TODO | 0/13 | `░░░░░░░░░░` | 0% | — | A B C |
+| [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | 🔄 WIP | 0/13 | `░░░░░░░░░░` | 0% | A | B C |
 | [75 · Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A B C D E F G | — |
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [73 · Admin Console & shared app shell](phase-73-admin-console.md) | ✅ DONE | 43/43 | `██████████` | 100% | — | — |
