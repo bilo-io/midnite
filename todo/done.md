@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — feat: Phase 79 Theme D — priority-surface translation 🟢
+
+PR #512. Switching language now visibly changes the app copy across the high-traffic surfaces.
+
+- [x] Externalized the primary copy of all five surfaces into nested next-intl namespaces: **nav** (feature + category labels via an optional `featuresToNav` label mapper + footer chrome), **settings** (sidebar groups/items keyed by stable id + appearance section headers + language row + reset/sync), **board** (column headers + "Nothing here" + aria-label), **auth** (login page + SSO buttons with an ICU `{provider}` arg + "or"), **common** (confirm-dialog Cancel/Delete).
+- [x] Catalogs: en-GB canonical + **full hand fr-FR** (key parity enforced by test); de-DE/es-ES fall back to en-GB via the provider until Theme E's MT-seed.
+- [x] Tests: per-namespace fr-FR render + ICU interpolation + en-GB fallback (de-DE) + fr/en parity. Added a shared `withLocale` test wrapper + a Storybook `LocaleProvider` decorator; fixed 9 pre-existing tests that render now-i18n'd components (all SSO-button specs + confirm-dialog-driven ones). Also fixed a stale `next.theme` assertion in the Theme C locale-preference test (AppSettings omits `theme`).
+- [x] Gate: web typecheck + lint (0 err) + unit **1163/1163** + static-export build all green.
+- Scope: primary/visible copy of each surface (the doc's per-surface bullets); deep leaf strings (settings subpages, board card/dialog internals, register/forgot/invite) stay English and convert behind Theme E's lint gate — the phase's stated model.
+
+---
+
 ## 2026-07-21 — feat: Phase 79 Theme C — language switcher 🟢
 
 PR #511. Users can now change UI language from two places; the whole app re-renders on switch.
