@@ -41,14 +41,14 @@ Stand up next-intl in client/provider mode and mount it once for both apps — n
 - [x] **Static-export sanity** — confirm `MIDNITE_WEB_TARGET` unset (`output: 'export'`) still builds and runs with the provider (no server-only next-intl APIs; catalogs statically imported). This is the risky bit — verify explicitly ([`web-static-export-not-in-ci-can-break-main`](web-static-export-not-in-ci-can-break-main.md)).
 - [x] **Tests** — locale resolver picks pref, else nearest browser locale, else `en-GB`; `NextIntlClientProvider` renders a `t()` string per locale; unknown/missing key falls back to en-GB (not a crash).
 
-## Theme C — Language switcher: sidenav footer + Settings — **S**
+## Theme C — Language switcher: sidenav footer + Settings — **S** — ✅ DONE (PR #511, 2026-07-21)
 
 Two entry points, one behaviour — set the pref, everything re-renders.
 
-- [ ] **Sidenav footer switcher** — a compact language control in the `<AppFrame>` **footer cluster just above Settings**, built in [`app-shell-client.tsx`](../packages/web/components/app-shell-client.tsx) / [`lib/nav-config.tsx`](../packages/web/lib/nav-config.tsx), **mirroring how the theme switcher used to sit in the rail** (user request): collapsed = a globe/flag icon button opening a small popover (portal to body, per [repo convention](web-overflow-menus-use-portal.md)); expanded = the current language label. Respects the collapsed/expanded rail state.
-- [ ] **Settings → Appearance picker** — a "Language" row in [`appearance-section.tsx`](../packages/web/app/(main)/settings/appearance-section.tsx) alongside theme/accent, listing `SUPPORTED_LOCALES` with native labels.
-- [ ] **Selection = one write path** — both surfaces set `prefs.locale` (Theme A), which persists locally + syncs to the gateway (Phase 43) and re-renders the provider; no separate locale state.
-- [ ] **Tests** — selecting a language in the sidenav popover and in Settings both update the active locale and persist; the footer control sits above Settings and works in collapsed + expanded rail; a11y (role/label on the popover trigger).
+- [x] **Sidenav footer switcher** — `LanguageSwitcher` ([`language-switcher.tsx`](../packages/web/components/language-switcher.tsx)) wired into the `<AppFrame>` footer cluster **just above Settings** via [`app-shell-client.tsx`](../packages/web/components/app-shell-client.tsx), mirroring the old theme-switcher spot: collapsed = a **round colour flag** icon (`LocaleFlag`, inline circular SVGs) with a RailTooltip; expanded = native label + code (**"Deutsch (de-DE)"**); opens a portalled popover (per [repo convention](web-overflow-menus-use-portal.md)) listing `SUPPORTED_LOCALES`. Respects collapsed/expanded rail state.
+- [x] **Settings → Appearance picker** — a "Language" accordion in [`appearance-section.tsx`](../packages/web/app/(main)/settings/appearance-section.tsx) with a `StyledSelect` of the four locales (flag + native label + code).
+- [x] **Selection = one write path** — `setLocalePreference(setSettings, locale)` ([`lib/locale-preference.ts`](../packages/web/lib/locale-preference.ts)): both surfaces call it with their **own** `setSettings` (avoids a dual-`useLocalStorage` clobber), persisting `prefs.locale` (Theme A / Phase 43 sync) + firing `LOCALE_CHANGE_EVENT` so the provider re-resolves same-tab. Active/selected reads next-intl `useLocale()`.
+- [x] **Tests** — switcher collapsed(tooltip)/expanded(label), popover lists all 4 with the active `aria-selected`, select fires `onSelect(code)` + closes, Escape closes, a11y roles; the write path merges `locale` + fires the event. (Live screenshots blocked by the dev `/login` gate — covered by RTL instead.)
 
 ## Theme D — Priority-surface translation — **L**
 

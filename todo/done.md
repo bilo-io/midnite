@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — feat: Phase 79 Theme C — language switcher 🟢
+
+PR #511. Users can now change UI language from two places; the whole app re-renders on switch.
+
+- [x] `LanguageSwitcher` in the sidenav footer just above Settings (mirrors the old theme-switcher spot): collapsed = a round colour flag (`LocaleFlag`, inline circular SVGs — cross-platform, unlike emoji flags); expanded = native label + code ("Deutsch (de-DE)"); portalled popover lists `SUPPORTED_LOCALES`.
+- [x] Settings → Appearance "Language" accordion with a `StyledSelect` (flag + native label + code).
+- [x] One write path `setLocalePreference(setSettings, locale)` — both surfaces call it with their own `setSettings` (avoids a dual-`useLocalStorage` clobber); persists `prefs.locale` (Theme A / Phase 43 sync) + fires `LOCALE_CHANGE_EVENT` so the shell provider re-resolves same-tab. Active/selected reads next-intl `useLocale()`.
+- [x] Tests: switcher collapsed/expanded/popover/select/Escape + a11y roles; write path merges locale + fires event.
+- [x] Gate: web typecheck + lint (0 err) + unit **1159/1159** + static-export build all green.
+- Note: live screenshots blocked by the dev `/login` gate (JWT on locally) — covered by RTL rather than fabricated shots.
+
+---
+
 ## 2026-07-21 — feat: Phase 79 Theme F — locale-aware formatting 🟢
 
 PR #510. Formatting now follows the active shell locale (Phase 79 A/B) instead of a pinned one.
