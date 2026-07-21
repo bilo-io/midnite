@@ -47,6 +47,28 @@
 
 ## Theme A — SWC dev runner (metadata that actually emits) — **M**
 
+> **⛔ Attempted 2026-07-21 — SWC blocked; recommend `ts-node` instead.** A spike
+> (`@swc-node/register` + `.swcrc` with `decoratorMetadata`, and the `nest start -b swc`
+> fallback) got the runner wired but **cannot boot the gateway**. SWC's
+> `emitDecoratorMetadata` emits a **live-binding class reference** in `design:paramtypes`;
+> across the gateway's **~24 `forwardRef` circular-DI pairs** (terminal↔approval, pool,
+> approvals, health) that reference is accessed mid-cycle at module-eval and throws
+> `ReferenceError: Cannot access 'X' before initialization` (TDZ). `tsc`/esbuild avoid this
+> by emitting a *lazy property access* that yields `undefined` instead of throwing. This is
+> **SWC codegen, not runner-specific** — it fails under both `@swc-node/register` and
+> `nest start -b swc`. Making SWC work would require **breaking those circular deps**
+> (token-based injection across PTY/approval/scheduler DI) — well beyond "swap the
+> transpiler," and risky. Two lesser issues also surfaced and are cheaply fixable: swc-node
+> mis-resolves the base tsconfig `paths` (point it at a paths-less tsconfig) and doesn't
+> remap 11 relative `.js` import specifiers to `.ts` (normalise them).
+>
+> **Recommended pivot: `ts-node` (transpile-only)** — `node --watch -r
+> ts-node/register/transpile-only src/main.ts`. It uses the real TS compiler, so it (a)
+> **doesn't elide** constructor-param imports (fixes the exact bug — the reason prod/`tsc`
+> never saw it) and (b) emits tsc-style lazy metadata → **no circular-dep TDZ**, with zero
+> source refactor. Trade-off: slower per-file transpile than SWC (fine for a dev watcher).
+> If revisited, retarget this theme's `.swcrc`→a ts-node config and re-verify the parity set.
+
 Swap the gateway dev transpiler for one that honours `emitDecoratorMetadata`, so a constructor-param-only import is never elided and Nest always sees real `design:paramtypes`.
 
 - [ ] **Add `@swc-node/register` + `@swc/core`** as gateway **devDependencies** and a `.swcrc` with `jsc.parser.decorators: true`, `jsc.transform.legacyDecorator: true`, **`jsc.transform.decoratorMetadata: true`**, `jsc.keepClassNames: true`, and a `target`/`module` matching the `tsc -b` output so runtime behaviour is unchanged.
