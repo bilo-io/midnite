@@ -68,7 +68,7 @@ export function RuntimeHealthPanel() {
   const spawner = readiness?.checks.find((c) => c.name === 'spawner');
 
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="rounded-xl border surface-glass p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-foreground">Runtime health</h2>
         {readiness ? (

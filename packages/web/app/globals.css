@@ -1099,24 +1099,34 @@ html[data-motion='reduced'] .screensaver-title {
 /* ── Frosted-glass surfaces (Phase 74) ───────────────────────────────────────
    List / grid / table / detail panels used to sit on a fully-transparent or
    thin `bg-card/40` fill, so the app backdrop (starfield) read straight through
-   them. `.surface-glass` gives every panel a consistent frosted look: a faint
-   (~20%) card tint over a small backdrop blur, so the backdrop is felt but not
-   distracting. The `-interactive` variant adds a subtle theme-aware hover
-   gradient built from `--accent` (which flips between a light tint in light mode
-   and a dark tint in dark mode), matching the existing `hover:bg-accent` idiom.
-   Defined in `@layer components` so per-element Tailwind utilities (e.g. a
-   selected row's `bg-accent/30`) still override the base fill. */
+   them. `.surface-glass` gives every panel the same frosted look as the sticky
+   page header: a mostly-opaque card fill over a backdrop blur, so the backdrop is
+   felt at the edges but never bleeds into the content. The `-interactive` variant
+   adds a subtle theme-aware hover gradient built from `--accent` (which flips
+   between a light tint in light mode and a dark tint in dark mode), matching the
+   existing `hover:bg-accent` idiom. Defined in `@layer components` so per-element
+   Tailwind utilities (e.g. a selected row's `bg-accent/30`) still override the
+   base fill. */
 @layer components {
-  .surface-glass {
-    background-color: hsl(var(--card) / 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  /* Fallback (no backdrop-filter support): a near-opaque fill so the starfield
+     can't bleed through even without the blur. */
+  .surface-glass,
+  .surface-glass-interactive {
+    background-color: hsl(var(--card) / 0.92);
   }
   .surface-glass-interactive {
-    background-color: hsl(var(--card) / 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     transition: background-color 150ms ease;
+  }
+  /* With backdrop-filter (the common case) the frost carries the readability, so
+     the fill can relax to ~70% and let a hint of the backdrop through — the same
+     treatment as the header's `supports-[backdrop-filter]:bg-background/60`. */
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .surface-glass,
+    .surface-glass-interactive {
+      background-color: hsl(var(--card) / 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
   }
   .surface-glass-interactive:hover {
     background-image: linear-gradient(180deg, hsl(var(--accent) / 0.6), hsl(var(--accent) / 0.25));

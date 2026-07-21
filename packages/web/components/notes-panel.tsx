@@ -66,7 +66,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
 
   return (
     <section
-      className="cascade-item flex h-full flex-col rounded-xl border bg-card shadow-sm"
+      className="cascade-item flex h-full flex-col rounded-xl border surface-glass shadow-sm"
       style={{ animationDelay: `${SETTLE_MS + 6 * 70}ms` }}
     >
       {/* Header */}
