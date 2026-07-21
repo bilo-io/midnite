@@ -23,15 +23,25 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  // Take over as soon as installed so updates apply on the next load, not after
-  // every tab closes.
-  self.skipWaiting();
+  // Do NOT skipWaiting here (Phase 71): a new build installs and then *waits*,
+  // so the app can surface an "update available" banner and let the user choose
+  // when to take it. The takeover happens on the SKIP_WAITING message below,
+  // fired by the banner's "Update" action.
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
       // Best-effort: a single missing asset must not fail the whole install.
       Promise.allSettled(PRECACHE.map((url) => cache.add(url))),
     ),
   );
+});
+
+// The waiting worker activates only when the user clicks "Update" (Phase 71
+// Theme D): the page posts { type: 'SKIP_WAITING' }, we take over, and the page
+// reloads on the resulting `controllerchange`.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
