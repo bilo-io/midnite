@@ -90,13 +90,6 @@ function LinkedTaskActions({ task, onChanged }: { task: Task; onChanged: () => v
 // rails (approvals/context in Theme D, info/stats in Theme E). On mobile the rails
 // become header-toggled drawers and the center goes full-width.
 
-const STATUS_HUE: Record<SessionDetail['status'], string> = {
-  running: '--status-wip',
-  waiting: '--status-waiting',
-  completed: '--status-done',
-  idle: '--status-backlog',
-};
-
 export function SessionDetailView({
   session,
   task,
@@ -112,8 +105,6 @@ export function SessionDetailView({
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.session.rightOpen', true);
   const isMobile = useIsMobile();
 
-  const ended = session.status === 'completed' || Boolean(session.archivedAt);
-
   return (
     <>
       <PageHeader
@@ -127,15 +118,8 @@ export function SessionDetailView({
                 reopen / export / delete, icon-only with a label on hover. */}
             {task ? <LinkedTaskActions task={task} onChanged={() => onTaskChanged?.()} /> : null}
             <ConnectionStatus variant="compact" />
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{
-                backgroundColor: `hsl(var(${STATUS_HUE[session.status]}) / 0.15)`,
-                color: `hsl(var(${STATUS_HUE[session.status]}))`,
-              }}
-            >
-              {ended ? 'ended' : session.status}
-            </span>
+            {/* The session status lives in the Session info panel now (as a pill),
+                so it isn't duplicated up here beside the action buttons. */}
             {/* On mobile the rails are drawers toggled from here. */}
             {isMobile ? (
               <>

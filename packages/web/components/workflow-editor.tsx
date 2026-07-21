@@ -22,7 +22,6 @@ import { NodePalette } from '@/components/node-palette';
 import { RunHistoryPanel } from '@/components/run-history-panel';
 import { RunOutputPanel } from '@/components/run-output-panel';
 import { WorkflowPageHeader } from '@/components/workflow-page-header';
-import { WorkflowToolbar } from '@/components/workflow-toolbar';
 import { createWorkflowTemplateFromWorkflow, updateWorkflow } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useAutosave } from '@/lib/use-autosave';
@@ -264,8 +263,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             (e.g. the dependency graph). Its left-aligned content clears the app's
             fixed top-right header-actions cluster, so no manual offset is needed. */}
         <div className="flex h-[100dvh] w-full flex-col overflow-hidden">
-          <WorkflowPageHeader />
-          <WorkflowToolbar
+          <WorkflowPageHeader
             onRun={() => void run()}
             onSave={() => void save()}
             onEditTrigger={editTrigger}

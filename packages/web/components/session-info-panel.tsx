@@ -4,6 +4,15 @@ import { LLM_PROVIDER_LABEL, type SessionDetail } from '@midnite/shared';
 import { cn, relativeTime } from '@/lib/utils';
 import { SessionCostLine } from './session-cost-line';
 
+// Status → the status-hue CSS var, so the Status pill tints itself the same way
+// the board / task chips do (moved here from the page header — Phase 74).
+const STATUS_HUE: Record<SessionDetail['status'], string> = {
+  running: '--status-wip',
+  waiting: '--status-waiting',
+  completed: '--status-done',
+  idle: '--status-backlog',
+};
+
 /**
  * The session cockpit's right-rail readout (Phase 51 E) — an instrument panel of
  * the fields that genuinely exist on a session, honest about what's real. Rows
@@ -20,7 +29,20 @@ export function SessionInfoPanel({ session }: { session: SessionDetail }) {
 
   return (
     <dl className="space-y-2.5 text-xs">
-      <Row label="Status" value={ended ? 'ended' : session.status} mono />
+      <div className="flex items-baseline justify-between gap-3">
+        <dt className="shrink-0 text-muted-foreground">Status</dt>
+        <dd className="min-w-0">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
+            style={{
+              backgroundColor: `hsl(var(${STATUS_HUE[session.status]}) / 0.15)`,
+              color: `hsl(var(${STATUS_HUE[session.status]}))`,
+            }}
+          >
+            {ended ? 'ended' : session.status}
+          </span>
+        </dd>
+      </div>
       {provider ? <Row label="Provider" value={provider} /> : null}
       {session.agentCli ? <Row label="Agent CLI" value={session.agentCli} mono /> : null}
       {uptime ? (
