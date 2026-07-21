@@ -1,9 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
+
+import { ConfirmProvider } from '@/components/confirm-dialog';
+import { ToastProvider } from '@/components/toast';
 
 afterEach(cleanup);
 beforeEach(() => localStorage.clear());
+
+// The view's session actions use `useToast` + `useConfirm`, which the app provides
+// at the layout root (app/layout.tsx). Mirror that in the harness so the hooks
+// resolve — same nested wrapper the slides-view spec uses.
+const renderView = (ui: ReactElement) =>
+  render(
+    <ToastProvider>
+      <ConfirmProvider>{ui}</ConfirmProvider>
+    </ToastProvider>,
+  );
 
 // The view is presentational; only the media-query hook needs stubbing so the
 // desktop (rail) path renders deterministically. The terminal region is its own
@@ -48,29 +62,32 @@ const task = { id: 't1', title: 'Fix login flow', projectId: 'p1' } as Task;
 const project = { id: 'p1', name: 'Acme app' } as Project;
 
 describe('SessionDetailView', () => {
-  it('renders the session title, status, the terminal region, and the D/E rail regions', () => {
-    render(<SessionDetailView session={session} task={task} project={project} />);
+  it('renders the session title, the terminal region, and the D/E rail regions', () => {
+    // Status now renders as a pill inside SessionInfoPanel (its own spec) — stubbed
+    // here, so this shell test asserts the title, terminal wiring, and rails only.
+    renderView(<SessionDetailView session={session} task={task} project={project} />);
     expect(screen.getByRole('heading', { name: 'Fix login flow' })).toBeInTheDocument();
-    expect(screen.getByText('running')).toBeInTheDocument();
     expect(screen.getByTestId('terminal-region')).toHaveTextContent('terminal:running');
     expect(screen.getByText('Approvals & context')).toBeInTheDocument();
     expect(screen.getByText('Session info')).toBeInTheDocument();
   });
 
-  it('shows the ended status chip for a completed session', () => {
-    render(<SessionDetailView session={{ ...session, status: 'completed' }} task={null} project={null} />);
-    expect(screen.getByText('ended')).toBeInTheDocument();
+  it('wires a completed session through to the terminal region', () => {
+    // The status chip moved to SessionInfoPanel (covered by its spec); here we just
+    // confirm the shell forwards a completed session's state to the terminal region.
+    renderView(<SessionDetailView session={{ ...session, status: 'completed' }} task={null} project={null} />);
+    expect(screen.getByTestId('terminal-region')).toHaveTextContent('terminal:completed');
   });
 
   it('mounts the left panel with the task (approvals + context live there)', () => {
-    render(<SessionDetailView session={session} task={task} project={project} />);
+    renderView(<SessionDetailView session={session} task={task} project={project} />);
     // Task/project links now render inside SessionLeftPanel (its own spec); the
     // shell just wires the task through to it.
     expect(screen.getByRole('link', { name: 'Fix login flow' })).toHaveAttribute('href', '/tasks/view?id=t1');
   });
 
   it('collapses and re-expands a rail via the content-layer toggle (persisted state)', () => {
-    render(<SessionDetailView session={session} task={task} project={project} />);
+    renderView(<SessionDetailView session={session} task={task} project={project} />);
     // The toggle is a content-layer control (not inside the rail); collapsing
     // flips its label and persists, while the rail animates its width to 0.
     fireEvent.click(screen.getByRole('button', { name: 'Collapse Approvals & context' }));
