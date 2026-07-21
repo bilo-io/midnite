@@ -78,8 +78,25 @@ describe('vercel-ignore · decideVercelBuild', () => {
     expect(r.reason).toMatch(/fail-open/);
   });
 
-  it('fails open for an unknown app', () => {
-    expect(decideVercelBuild({ app: 'gateway', env: 'production', changedFiles: [] }).build).toBe(true);
+  it('builds admin when its upstream (shared/shell/ui) changed', () => {
+    for (const f of ['packages/admin/x.ts', 'packages/shared/s.ts', 'packages/shell/z.ts', 'packages/ui/u.ts']) {
+      expect(decideVercelBuild({ app: 'admin', env: 'production', changedFiles: [f] }).build).toBe(true);
+    }
+  });
+
+  it('builds site only for site/ui changes', () => {
+    expect(decideVercelBuild({ app: 'site', env: 'production', changedFiles: ['packages/ui/u.ts'] }).build).toBe(true);
+    expect(decideVercelBuild({ app: 'site', env: 'production', changedFiles: ['packages/web/w.ts'] }).build).toBe(false);
+  });
+
+  it('never deploys the gateway, even on production with its own change', () => {
+    const r = decideVercelBuild({ app: 'gateway', env: 'production', changedFiles: ['packages/gateway/src/main.ts'] });
+    expect(r.build).toBe(false);
+    expect(r.reason).toMatch(/never deploys/);
+  });
+
+  it('fails open for a genuinely unknown app', () => {
+    expect(decideVercelBuild({ app: 'mystery', env: 'production', changedFiles: [] }).build).toBe(true);
   });
 });
 

@@ -15,8 +15,10 @@
 | **GitHub Actions — `gallery` + Storybook preview** | PR + `main` | `webVisual` affected |
 | **GitHub Actions — docs GH-Pages deploy** | push to `main` | `docsDeploy` (docs/ui) affected |
 | **Vercel — `web`** | production branch (`main`) only | web subtree (`web`+`shared`+`ui`+`shell`) changed |
+| **Vercel — `admin`** | production branch (`main`) only | admin subtree (`admin`+`shared`+`ui`+`shell`) changed |
 | **Vercel — `docs`** | production branch (`main`) only | docs subtree (`docs`+`ui`) changed |
-| **Vercel — `gateway`** | never (stateful server) | — deployment disabled outright |
+| **Vercel — `site`** | production branch (`main`) only | site subtree (`site`+`ui`) changed |
+| **Vercel — `gateway`** | never (stateful server) | `ignoreCommand` always skips + `deploymentEnabled:false` |
 
 No feature-branch **previews** deploy — production only. There is **no numeric
 daily-deploy cap**; the savings come from not deploying/running unaffected work.

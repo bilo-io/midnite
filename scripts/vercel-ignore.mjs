@@ -27,7 +27,16 @@ import { execFileSync } from 'node:child_process';
 export const SUBTREES = {
   web: ['packages/web/', 'packages/shared/', 'packages/ui/', 'packages/shell/'],
   docs: ['packages/docs/', 'packages/ui/'],
+  admin: ['packages/admin/', 'packages/shared/', 'packages/ui/', 'packages/shell/'],
+  site: ['packages/site/', 'packages/ui/'],
 };
+
+/**
+ * Apps that must NEVER deploy on Vercel (a stateful server can't run on Vercel's
+ * ephemeral platform). Kept separate from SUBTREES so the drift guard doesn't
+ * expect a subtree for them.
+ */
+export const NEVER_DEPLOY = ['gateway'];
 
 /**
  * Root files whose change can invalidate any app build (a dependency bump or a
@@ -56,6 +65,10 @@ export function decideVercelBuild({
   changedFiles,
   productionBranch = PRODUCTION_BRANCH,
 }) {
+  if (NEVER_DEPLOY.includes(app)) {
+    return { build: false, reason: `${app} never deploys on Vercel (stateful server)` };
+  }
+
   const subtree = SUBTREES[app];
   if (!subtree) {
     // Unknown app → fail-open (build) rather than silently never deploy.

@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "//": "The gateway is a stateful long-running server (SQLite on disk, in-memory agent pool, WebSocket server, a scheduler tick loop, and node-pty/tmux child processes running Claude Code sessions). None of that can run on Vercel's stateless/ephemeral serverless platform, so this project must NOT deploy here. Deploy the gateway on a persistent host (Railway / Fly.io / Render / a VPS) instead. deploymentEnabled:false stops Vercel creating deployments for these branches. For a complete kill, also disconnect the Git repo or delete the project in the Vercel dashboard.",
+  "//": "The gateway is a stateful long-running server (SQLite on disk, in-memory agent pool, WebSocket server, a scheduler tick loop, and node-pty/tmux child processes running Claude Code sessions). None of that can run on Vercel's stateless/ephemeral serverless platform, so this project must NOT deploy here. Deploy the gateway on a persistent host (Railway / Fly.io / Render / a VPS) instead. deploymentEnabled:false stops Vercel deploying main/gh-pages; the ignoreCommand additionally skips ALL preview branches (which deploymentEnabled can't enumerate) so no branch ever attempts a failing gateway build. For a complete kill, also disconnect the Git repo or delete the project in the Vercel dashboard.",
+  "ignoreCommand": "node ../../scripts/vercel-ignore.mjs gateway",
   "git": {
     "deploymentEnabled": {
       "main": false,

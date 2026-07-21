@@ -2,8 +2,9 @@
 // it runs dependency-free on Vercel's Node image). Lets the shared drift-guard
 // test import the pure helpers with types instead of tripping noImplicitAny.
 
-export const SUBTREES: Record<'web' | 'docs', string[]>;
+export const SUBTREES: Record<string, string[]>;
 export const ALWAYS_BUILD: string[];
+export const NEVER_DEPLOY: string[];
 export const PRODUCTION_BRANCH: string;
 
 export function decideVercelBuild(o: {
