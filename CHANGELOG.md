@@ -14,6 +14,36 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.4.1] - 2026-07-21
+
+A UI-consistency patch: a unified frosted-glass surface for every panel, and
+detail headers (sessions + workflows) brought onto the same shared pattern.
+
+### Changed
+
+- **Frosted-glass panels everywhere** — dashboard widgets, list / grid / table
+  views, cards, and detail panels now share one semi-opaque, blurred surface
+  (matching the page header), so the background no longer bleeds through and card
+  content is easier to read.
+- **Task actions are icon buttons that reveal their label on hover** — the
+  task/session modal's controls moved onto the tab row beside "Open page", and the
+  same actions are now available near the top of the session page.
+- **Workflow editor header now matches the other detail pages** — the shared page
+  header carries an editable title + description, its Run / Save / History /
+  template / Enabled controls sit on the right as hover-expand icon buttons, and
+  the trigger is a chip on that row.
+- **Session status moved into the Session info panel** as a tinted pill, instead
+  of being duplicated beside the header's action buttons.
+- **Workflows list** — the Templates entry is now a hover-expand button beside the
+  search bar.
+- **Ops → Digest** — the digest list is aligned with the tabs, and its export
+  control is a download icon.
+- **Settings** — the Account section was folded into Workspace and the user menu.
+
+### Fixed
+
+- Full-screen top-right controls no longer overlap the floating page header.
+
 ## [0.4.0] - 2026-07-20
 
 A desktop-first release: midnite now installs as a **standalone desktop app**
@@ -206,6 +236,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.4.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.1
 [0.4.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.0
 [0.3.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.2.0
