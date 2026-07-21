@@ -10,6 +10,7 @@
 
 # Build outputs (never commit; regenerate with `moon run web:build`)
 .next/
+.next-server/
 out/
 *.tsbuildinfo
 .turbo/

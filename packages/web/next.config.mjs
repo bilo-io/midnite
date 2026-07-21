@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import BundleAnalyzer from '@next/bundle-analyzer';
 
-import { resolveWebOutput } from './lib/web-target.mjs';
+import { resolveWebOutput, resolveWebTarget } from './lib/web-target.mjs';
 
 const withBundleAnalyzer = BundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -14,6 +14,14 @@ const withBundleAnalyzer = BundleAnalyzer({
 // sets MIDNITE_WEB_TARGET=server to drop the export so the /api/auth/* BFF routes
 // run. `undefined` = Next's default server mode.
 const output = resolveWebOutput(process.env);
+
+// The static (`build`) and hosted (`build-server`) targets both run `next build`
+// in this directory; moon may run them concurrently (both are affected by any web
+// change), and two `next build`s sharing the default `.next` dir corrupt each
+// other (a racing wipe of `.next/types` surfaces as an ENOENT build error). Give
+// the server target its own distDir so the two never collide; the static build
+// keeps `.next` so the desktop/Pages path is byte-for-byte unchanged.
+const distDir = resolveWebTarget(process.env) === 'server' ? '.next-server' : '.next';
 
 // Bake this build's version in so the update banner (Phase 71) can compare the
 // running build against the published `/version.json`. Inlined as a literal at
@@ -27,6 +35,7 @@ const nextConfig = {
   // Static export (default) so the desktop app can serve the UI as files (only the
   // gateway runs as a process); `server` mode omits it for the hosted auth build.
   output,
+  distDir,
   // No Next image-optimization server in an export.
   images: { unoptimized: true },
   // Emit dir/index.html so paths resolve when served as static files.
