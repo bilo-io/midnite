@@ -24,7 +24,7 @@ export function SectionCard({
   empty?: boolean;
 }) {
   return (
-    <div className="flex h-full flex-col rounded-xl border bg-card p-5 shadow-sm">
+    <div className="flex h-full flex-col rounded-xl border surface-glass p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {action}

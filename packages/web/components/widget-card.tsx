@@ -24,7 +24,7 @@ export function WidgetCard({
   bodyClassName?: string;
 }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border surface-glass shadow-sm">
       <div className="flex items-center justify-between border-b border-border/40 px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />

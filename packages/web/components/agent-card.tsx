@@ -70,7 +70,7 @@ export function AgentCard({
   ];
 
   return (
-    <section className="overflow-hidden rounded-lg border border-border/60 bg-card">
+    <section className="overflow-hidden rounded-lg border border-border/60 surface-glass">
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <button
           type="button"

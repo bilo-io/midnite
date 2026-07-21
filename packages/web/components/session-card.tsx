@@ -135,7 +135,7 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
     return (
       <div
         className={cn(
-          'group flex w-full items-center gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:bg-accent/40 hover:border-foreground/20',
+          'group flex w-full items-center gap-3 rounded-lg border border-border/60 surface-glass-interactive p-3 transition-colors hover:border-foreground/20',
           selected && 'border-primary/50 bg-accent/30',
         )}
       >
@@ -164,7 +164,7 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
   return (
     <div
       className={cn(
-        'group flex flex-col gap-2 rounded-xl border border-border/60 bg-card/40 p-4 transition-colors hover:bg-accent/40 hover:border-foreground/20',
+        'group flex flex-col gap-2 rounded-xl border border-border/60 surface-glass-interactive p-4 transition-colors hover:border-foreground/20',
         selected && 'border-primary/50 bg-accent/30',
       )}
     >

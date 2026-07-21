@@ -26,7 +26,7 @@ export function DashboardTile({ tile, value, total }: DashboardTileProps) {
   return (
     <Link
       href={href}
-      className="group relative flex h-full flex-col overflow-hidden rounded-xl border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group relative flex h-full flex-col overflow-hidden rounded-xl border surface-glass-interactive p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       style={{ ['--tile-hue' as string]: `var(${hueVar})` }}
     >
       <span

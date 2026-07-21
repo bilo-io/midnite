@@ -99,7 +99,7 @@ export function RunHistoryPanel({
   };
 
   return (
-    <div className="flex h-full w-80 shrink-0 flex-col overflow-hidden border-l border-border/60 bg-card/40">
+    <div className="flex h-full w-80 shrink-0 flex-col overflow-hidden border-l border-border/60 surface-glass">
       <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2">
         <span className="text-xs font-semibold text-foreground">Run history</span>
         <button
@@ -209,7 +209,7 @@ function ReplayPlayer({
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
       {/* Run summary */}
-      <div className="rounded-md border border-border/50 bg-card/50 px-3 py-2">
+      <div className="rounded-md border border-border/50 surface-glass px-3 py-2">
         <div className="flex items-center gap-2">
           <span
             className="h-2 w-2 shrink-0 rounded-full"

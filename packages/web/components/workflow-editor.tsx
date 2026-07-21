@@ -21,6 +21,7 @@ import { NodeConfigPanel } from '@/components/node-config-panel';
 import { NodePalette } from '@/components/node-palette';
 import { RunHistoryPanel } from '@/components/run-history-panel';
 import { RunOutputPanel } from '@/components/run-output-panel';
+import { WorkflowPageHeader } from '@/components/workflow-page-header';
 import { WorkflowToolbar } from '@/components/workflow-toolbar';
 import { createWorkflowTemplateFromWorkflow, updateWorkflow } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
@@ -258,11 +259,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   return (
     <WorkflowStoreContext.Provider value={store}>
       <ReactFlowProvider>
-        {/* Reserve top space for the app's fixed header-actions cluster (z-50,
-            top-right) so the toolbar's own Run/Enabled/Save controls sit *below*
-            it rather than under it. Offset = banner height + the cluster's
-            footprint (0.75rem inset + h-9). box-border keeps the column at 100vh. */}
-        <div className="flex h-screen w-full flex-col overflow-hidden pt-[calc(var(--update-banner-h,0px)+3.25rem)]">
+        {/* Full-screen editor column — the shared `PageHeader` (back + editable
+            title/subtitle) sits at the top, mirroring the other detail cockpits
+            (e.g. the dependency graph). Its left-aligned content clears the app's
+            fixed top-right header-actions cluster, so no manual offset is needed. */}
+        <div className="flex h-[100dvh] w-full flex-col overflow-hidden">
+          <WorkflowPageHeader />
           <WorkflowToolbar
             onRun={() => void run()}
             onSave={() => void save()}

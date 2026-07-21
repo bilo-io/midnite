@@ -39,7 +39,7 @@ export function WorkflowCard({
     return (
       <div
         className={cn(
-          'group flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:border-foreground/20 hover:bg-accent/40',
+          'group flex items-center gap-3 rounded-lg border border-border/60 surface-glass-interactive p-3 transition-colors hover:border-foreground/20',
           selected && 'border-primary/50 bg-accent/30',
           workflow.archived && 'opacity-60',
         )}
@@ -77,7 +77,7 @@ export function WorkflowCard({
   return (
     <div
       className={cn(
-        'group relative flex flex-col gap-3 rounded-lg border bg-card/60 p-4 backdrop-blur-sm transition-colors hover:border-foreground/20',
+        'group relative flex flex-col gap-3 rounded-lg border surface-glass-interactive p-4 transition-colors hover:border-foreground/20',
         selected && 'border-primary/50 bg-accent/30',
         workflow.archived && 'opacity-60',
       )}
