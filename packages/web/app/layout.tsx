@@ -10,8 +10,9 @@ import { UpdateBanner } from '@/components/update/update-banner';
 import { ThemeProvider } from './theme/theme-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { themeInitScript } from './theme/theme-script';
-import { appearanceInitScript } from '@midnite/shell';
+import { appearanceInitScript, localeInitScript, LocaleProvider } from '@midnite/shell';
 import { AppearanceEffects } from '@/components/appearance-effects';
+import { CATALOGS } from '@/i18n/messages';
 
 // Display fonts trialled for the "midnite" wordmark. Each is exposed as its own
 // CSS var; the active one is chosen in Settings → Appearance → Logo and applied
@@ -128,28 +129,31 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: appearanceInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
       </head>
       {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla's
           cz-shortcut-listen) inject attributes on <body> before React hydrates */}
       <body className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <PwaRegister />
         <AppearanceEffects />
-        <ThemeProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <ConfirmProvider>
-                <UpdateProvider>
-                  {/* Flex column so the update banner pushes the whole app down
-                      rather than overlaying it (Phase 71). */}
-                  <div className="flex min-h-screen flex-col">
-                    <UpdateBanner />
-                    <div className="flex-1">{children}</div>
-                  </div>
-                </UpdateProvider>
-              </ConfirmProvider>
-            </ToastProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <LocaleProvider catalogs={CATALOGS}>
+          <ThemeProvider>
+            <AuthProvider>
+              <ToastProvider>
+                <ConfirmProvider>
+                  <UpdateProvider>
+                    {/* Flex column so the update banner pushes the whole app down
+                        rather than overlaying it (Phase 71). */}
+                    <div className="flex min-h-screen flex-col">
+                      <UpdateBanner />
+                      <div className="flex-1">{children}</div>
+                    </div>
+                  </UpdateProvider>
+                </ConfirmProvider>
+              </ToastProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

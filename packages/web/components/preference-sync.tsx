@@ -26,6 +26,7 @@ const WRITE_DEBOUNCE_MS = 800;
 function prefsKey(p: UserPreferences): string {
   return JSON.stringify({
     theme: p.theme,
+    locale: p.locale,
     navMode: p.navMode,
     backgroundPattern: p.backgroundPattern,
     bgIntensity: p.bgIntensity,
