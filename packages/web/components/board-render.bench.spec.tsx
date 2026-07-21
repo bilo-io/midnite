@@ -4,6 +4,7 @@ import type { Status, Task } from '@midnite/shared';
 import { BoardView } from './board-view';
 import { COLUMNS } from './task-columns';
 import { ConfirmProvider } from './confirm-dialog';
+import { withLocale } from '@/lib/test-locale-wrapper';
 
 /**
  * Phase 57 A — web render benchmark (evidence backbone). Renders the board with a
@@ -39,19 +40,21 @@ describe(`Phase 57 A — web board render benchmark (n=${SIZE})`, () => {
   it('bounds mounted cards below the dataset size (windowed board)', () => {
     const tasks = Array.from({ length: SIZE }, (_, i) => task(i, 'todo'));
     render(
-      <ConfirmProvider>
-        <BoardView
-          tasks={tasks}
-          columns={COLUMNS}
-          projectsById={new Map()}
-          onSelect={vi.fn()}
-          showAbandoned={false}
-          onMove={vi.fn()}
-          isSelected={() => false}
-          onToggleSelect={vi.fn()}
-          blockedCounts={new Map()}
-        />
-      </ConfirmProvider>,
+      withLocale(
+        <ConfirmProvider>
+          <BoardView
+            tasks={tasks}
+            columns={COLUMNS}
+            projectsById={new Map()}
+            onSelect={vi.fn()}
+            showAbandoned={false}
+            onMove={vi.fn()}
+            isSelected={() => false}
+            onToggleSelect={vi.fn()}
+            blockedCounts={new Map()}
+          />
+        </ConfirmProvider>,
+      ),
     );
 
     // Each card renders a button whose accessible name carries its title.

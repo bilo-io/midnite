@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -65,6 +66,7 @@ function ConfirmDialog({
   const confirmRef = React.useRef<HTMLButtonElement>(null);
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const destructive = state.destructive ?? true;
+  const tc = useTranslations('common');
 
   React.useEffect(() => {
     // Remember what had focus so we can restore it when the dialog closes
@@ -137,7 +139,7 @@ function ConfirmDialog({
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={() => onClose(false)}>
-            {state.cancelLabel ?? 'Cancel'}
+            {state.cancelLabel ?? tc('cancel')}
           </Button>
           <Button
             ref={confirmRef}
@@ -146,7 +148,7 @@ function ConfirmDialog({
             size="sm"
             onClick={() => onClose(true)}
           >
-            {state.confirmLabel ?? 'Delete'}
+            {state.confirmLabel ?? tc('delete')}
           </Button>
         </div>
       </div>

@@ -19,7 +19,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { SUPPORTED_LOCALES, type Locale } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { PwaInstall } from '@/components/pwa-install';
@@ -106,6 +106,7 @@ export function AppearanceSection() {
 
   // Active locale (resolved by the shell provider); one write path via setSettings.
   const locale = useLocale() as Locale;
+  const t = useTranslations('settings');
 
   const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
   const setBackgroundPattern = (pattern: BackgroundPattern) =>
@@ -167,12 +168,12 @@ export function AppearanceSection() {
           user ? (
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Cloud className="h-3 w-3" />
-              Synced to your account
+              {t('syncedToAccount')}
             </span>
           ) : (
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CloudOff className="h-3 w-3" />
-              Sign in to sync across devices
+              {t('signInToSync')}
             </span>
           )
         ) : (
@@ -184,15 +185,15 @@ export function AppearanceSection() {
           className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <RotateCcw className="h-3 w-3" />
-          Reset to defaults
+          {t('reset')}
         </button>
       </div>
 
-      <Accordion title="Language" icon={<Globe className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('appearance.language')} icon={<Globe className="h-3.5 w-3.5" />} defaultOpen>
         <div className="p-5">
           <SettingRow
-            title="Language"
-            description="The language used across the app. Syncs to your account when you're signed in."
+            title={t('appearance.language')}
+            description={t('appearance.languageDescription')}
           >
             <StyledSelect<Locale>
               options={LOCALE_OPTIONS}
@@ -205,7 +206,7 @@ export function AppearanceSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Theme" icon={<Palette className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('appearance.theme')} icon={<Palette className="h-3.5 w-3.5" />} defaultOpen>
         <div className="p-5">
           <SettingRow
             title="Colour theme"
@@ -242,7 +243,7 @@ export function AppearanceSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Navigation" icon={<PanelLeft className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('appearance.navigation')} icon={<PanelLeft className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <SettingRow
             title="Side navigation"
@@ -355,7 +356,7 @@ export function AppearanceSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Accent" icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('appearance.accent')} icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <p className="text-xs text-muted-foreground">
             Retints buttons, links, and focus rings across the app. Pick the brand gradient, a
@@ -371,7 +372,7 @@ export function AppearanceSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Motion & effects" icon={<Zap className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('appearance.motionEffects')} icon={<Zap className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <SettingRow
             title="Density"

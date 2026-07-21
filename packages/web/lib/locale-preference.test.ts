@@ -14,7 +14,7 @@ describe('setLocalePreference (Phase 79 C — one write path)', () => {
     const next = updater(DEFAULT_SETTINGS);
     expect(next.locale).toBe('de-DE');
     // Untouched fields survive (it merges, not replaces).
-    expect(next.theme).toBe(DEFAULT_SETTINGS.theme);
+    expect(next.navMode).toBe(DEFAULT_SETTINGS.navMode);
   });
 
   it('fires LOCALE_CHANGE_EVENT so the provider re-resolves in the same tab', () => {

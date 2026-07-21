@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
@@ -18,6 +19,8 @@ import { getCurrentVersion } from '@/lib/version';
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
+  const t = useTranslations('auth');
+  const tNav = useTranslations('nav');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,12 +64,12 @@ export default function LoginPage() {
   return (
     <div className="w-full">
       <div className="mb-6 flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-accent-gradient">Sign in</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-accent-gradient">{t('signIn')}</h1>
         <a
           href={docsChangelogUrl(getCurrentVersion())}
           target="_blank"
           rel="noopener noreferrer"
-          title="View changelog"
+          title={tNav('footer.changelog')}
           className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
         >
           v{getCurrentVersion()}
@@ -103,7 +106,7 @@ export default function LoginPage() {
             aria-controls="email-login-form"
           >
             <Mail className="mr-2 h-4 w-4" />
-            Continue with email
+            {t('continueWithEmail')}
             {emailLastUsed && <LastUsedTag />}
           </Button>
         </div>
@@ -116,7 +119,7 @@ export default function LoginPage() {
           <FloatingLabelInput
             ref={emailRef}
             id="email"
-            label="Email"
+            label={t('email')}
             type="email"
             autoComplete="email"
             required
@@ -125,7 +128,7 @@ export default function LoginPage() {
           />
           <FloatingLabelInput
             id="password"
-            label="Password"
+            label={t('password')}
             type="password"
             autoComplete="current-password"
             required
@@ -134,7 +137,7 @@ export default function LoginPage() {
           />
           {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" disabled={pending} className="w-full">
-            {pending ? 'Signing in…' : 'Sign in'}
+            {pending ? t('signingIn') : t('signIn')}
           </Button>
           {/* Signup + forgot-password on either side, below the form. */}
           <div className="flex items-center justify-between pt-0.5 text-sm">
@@ -142,13 +145,13 @@ export default function LoginPage() {
               href="/register"
               className="text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
             >
-              Sign up
+              {t('signUp')}
             </Link>
             <Link
               href="/forgot-password"
               className="text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
             >
-              Forgot password?
+              {t('forgotPassword')}
             </Link>
           </div>
         </form>
