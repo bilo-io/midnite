@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import type { GuardrailSettings } from '@midnite/shared';
 import { GuardrailsBanner, GuardrailsControl } from './guardrails-control';
 import { ConfirmProvider } from './confirm-dialog';
+import { withLocale } from '@/lib/test-locale-wrapper';
 import { ToastProvider } from './toast';
 
 vi.mock('@/lib/api', () => ({
@@ -22,9 +23,11 @@ const paused: GuardrailSettings = { ...running, pausedGlobal: true, pausedBy: 'a
 
 function wrap(ui: React.ReactNode) {
   return render(
-    <ToastProvider>
-      <ConfirmProvider>{ui}</ConfirmProvider>
-    </ToastProvider>,
+    withLocale(
+      <ToastProvider>
+        <ConfirmProvider>{ui}</ConfirmProvider>
+      </ToastProvider>,
+    ),
   );
 }
 

@@ -12,9 +12,20 @@ import { FEATURES, groupNavSections, isFeatureEnabled, type Feature, type Featur
  * Icons are pre-rendered `ReactNode`s (the shell renders them verbatim, sizing the
  * rail to `h-4` and the mobile bar to `h-5` via the frame's icon wrappers).
  */
-function toItem(f: Feature): NavItem {
+/**
+ * Optional label translators (Phase 79 D). When supplied, feature + category
+ * labels come from the `nav` message catalog keyed by the stable feature/category
+ * key; when omitted, the English labels baked into `FEATURES` are used (so the pure
+ * unit tests and any non-i18n caller keep working unchanged).
+ */
+export type NavLabels = {
+  feature: (key: FeatureKey) => string;
+  category: (key: string) => string;
+};
+
+function toItem(f: Feature, labels?: NavLabels): NavItem {
   const Icon = f.Icon;
-  return { href: f.href, label: f.label, icon: <Icon aria-hidden /> };
+  return { href: f.href, label: labels ? labels.feature(f.key) : f.label, icon: <Icon aria-hidden /> };
 }
 
 /**
@@ -22,18 +33,21 @@ function toItem(f: Feature): NavItem {
  * collapsible category sections. Input flags gate which features appear; a category
  * whose features are all disabled simply doesn't render (via `groupNavSections`).
  */
-export function featuresToNav(flags: Partial<Record<FeatureKey, boolean>> | undefined): {
+export function featuresToNav(
+  flags: Partial<Record<FeatureKey, boolean>> | undefined,
+  labels?: NavLabels,
+): {
   pinned: NavItem[];
   sections: NavSection[];
 } {
   const features = FEATURES.filter((f) => isFeatureEnabled(flags, f.key));
   const { pinned, sections } = groupNavSections(features);
   return {
-    pinned: pinned.map(toItem),
+    pinned: pinned.map((f) => toItem(f, labels)),
     sections: sections.map((s) => ({
       key: s.key,
-      title: s.label,
-      items: s.features.map(toItem),
+      title: labels ? labels.category(s.key) : s.label,
+      items: s.features.map((f) => toItem(f, labels)),
       collapsible: true,
     })),
   };

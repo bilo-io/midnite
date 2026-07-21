@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, Power, Settings } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
 import { PasscodeSetupDialog } from '@midnite/ui';
 import { cn } from '@/lib/utils';
@@ -60,9 +60,14 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
   // The active locale (pref → browser → default, resolved by the shell provider).
   const locale = useLocale() as Locale;
+  const tNav = useTranslations('nav');
 
-  // FEATURES → the shell's injected nav config (pinned home + collapsible sections).
-  const { pinned, sections } = featuresToNav(settings.features);
+  // FEATURES → the shell's injected nav config (pinned home + collapsible sections),
+  // with feature/category labels translated from the `nav` catalog (Phase 79 D).
+  const { pinned, sections } = featuresToNav(settings.features, {
+    feature: (key) => tNav(`features.${key}`),
+    category: (key) => tNav(`categories.${key}`),
+  });
 
   // Section collapse is persisted in AppSettings; the shell drives it via props.
   const collapsedSections = settings.collapsedNavSections ?? [];
@@ -121,7 +126,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
             href={docsChangelogUrl(getCurrentVersion())}
             target="_blank"
             rel="noopener noreferrer"
-            title="View changelog"
+            title={tNav('footer.changelog')}
             className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
           >
             v{getCurrentVersion()}
@@ -156,7 +161,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
       />
       <Link
         href="/settings"
-        aria-label="Settings"
+        aria-label={tNav('footer.settings')}
         aria-current={pathname === '/settings' || pathname.startsWith('/settings/') ? 'page' : undefined}
         className={cn(
           'group relative flex h-9 items-center rounded-md transition-colors',
@@ -167,20 +172,28 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         )}
       >
         <Settings className="h-4 w-4 shrink-0" />
-        {expanded ? <span className="truncate text-sm">Settings</span> : <RailTooltip>Settings</RailTooltip>}
+        {expanded ? (
+          <span className="truncate text-sm">{tNav('footer.settings')}</span>
+        ) : (
+          <RailTooltip>{tNav('footer.settings')}</RailTooltip>
+        )}
       </Link>
       <div className={cn('my-1 h-px bg-border/60', expanded ? 'w-full' : 'w-6')} />
       <button
         type="button"
         onClick={lock}
-        aria-label="Lock screen"
+        aria-label={tNav('footer.lock')}
         className={cn(
           'group relative flex h-9 items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
           expanded ? 'w-full gap-3 px-2.5' : 'w-9 justify-center',
         )}
       >
         <Power className="h-4 w-4 shrink-0" />
-        {expanded ? <span className="truncate text-sm">Lock</span> : <RailTooltip>Lock</RailTooltip>}
+        {expanded ? (
+          <span className="truncate text-sm">{tNav('footer.lock')}</span>
+        ) : (
+          <RailTooltip>{tNav('footer.lock')}</RailTooltip>
+        )}
       </button>
       {/* Phase 56 E — the single recovery-toast owner. */}
       <ConnectionToaster />
@@ -197,7 +210,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         collapsedSections={collapsedSections}
         onToggleSection={toggleSection}
         onLock={lock}
-        settings={{ href: '/settings', label: 'Settings', icon: <Settings aria-hidden /> }}
+        settings={{ href: '/settings', label: tNav('footer.settings'), icon: <Settings aria-hidden /> }}
         mobileSheet={<NotificationCenter expanded />}
         mobileUnread={unread}
       >

@@ -12,16 +12,19 @@ vi.mock('@/lib/api', () => ({
 import { PrReviewActions } from './pr-review-actions';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { ToastProvider } from '@/components/toast';
+import { withLocale } from '@/lib/test-locale-wrapper';
 
 const task = { id: 't1', status: 'done' } as unknown as Task;
 
 function wrap(comments: PrReviewComment[] = [], onDone = vi.fn(), onClear = vi.fn()) {
   render(
-    <ToastProvider>
-      <ConfirmProvider>
-        <PrReviewActions taskId="t1" comments={comments} onClearComments={onClear} onDone={onDone} />
-      </ConfirmProvider>
-    </ToastProvider>,
+    withLocale(
+      <ToastProvider>
+        <ConfirmProvider>
+          <PrReviewActions taskId="t1" comments={comments} onClearComments={onClear} onDone={onDone} />
+        </ConfirmProvider>
+      </ToastProvider>,
+    ),
   );
   return { onDone, onClear };
 }

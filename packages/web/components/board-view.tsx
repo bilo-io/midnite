@@ -12,6 +12,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import { useTranslations } from 'next-intl';
 import { Play, RotateCcw, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -83,6 +84,7 @@ export function BoardView({
   useEffect(() => setMounted(true), []);
 
   const isMobile = useIsMobile();
+  const t = useTranslations('board');
 
   // Split mouse vs. touch so each gets the right activation (Phase 24 Theme B):
   // - Mouse: a 6px distance — a plain click still reaches the card button (open
@@ -278,7 +280,7 @@ export function BoardView({
           // no focusable cards (axe `scrollable-region-focusable`).
           tabIndex={0}
           role="group"
-          aria-label="Task board"
+          aria-label={t('title')}
           data-tour="board"
           className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1 max-md:snap-x max-md:snap-mandatory max-md:scroll-smooth max-md:gap-0"
         >
@@ -286,7 +288,7 @@ export function BoardView({
             <Column
               key={col.status}
               status={col.status}
-              label={col.label}
+              label={t(`columns.${col.status}`)}
               hueVar={col.hueVar}
               count={(grouped.get(col.status) ?? []).length}
             >
@@ -365,6 +367,7 @@ function Column({
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
+  const t = useTranslations('board');
   return (
     <section
       ref={setNodeRef}
@@ -405,7 +408,7 @@ function Column({
       </div>
       {count === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground">
-          Nothing here
+          {t('nothingHere')}
         </div>
       ) : (
         // The card list (VirtualList) brings its own scroll container so it can be

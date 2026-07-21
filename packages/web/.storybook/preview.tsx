@@ -3,9 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import type { Decorator, Preview } from '@storybook/nextjs-vite';
 
+import { LocaleProvider } from '@midnite/shell';
+
 import { ThemeProvider } from '../app/theme/theme-context';
 import { THEME_STORAGE_KEY } from '../app/theme/theme-script';
 import { ToastProvider } from '../components/toast';
+import { CATALOGS } from '../i18n/messages';
 import '../app/globals.css';
 
 // Each story gets a fresh QueryClient so state never leaks between tests.
@@ -35,8 +38,16 @@ const withTheme: Decorator = (Story, { globals }) => {
   );
 };
 
+// Every story mounts under the i18n provider (Phase 79 D) — many components now
+// call `useTranslations`/`useLocale`, which require it. en-GB (canonical copy).
+const withLocale: Decorator = (Story) => (
+  <LocaleProvider catalogs={CATALOGS} initialLocale="en-GB">
+    <Story />
+  </LocaleProvider>
+);
+
 const preview: Preview = {
-  decorators: [withQueryClient, withTheme],
+  decorators: [withQueryClient, withLocale, withTheme],
   globalTypes: {
     theme: {
       description: 'Color theme',

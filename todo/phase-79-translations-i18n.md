@@ -50,16 +50,16 @@ Two entry points, one behaviour — set the pref, everything re-renders.
 - [x] **Selection = one write path** — `setLocalePreference(setSettings, locale)` ([`lib/locale-preference.ts`](../packages/web/lib/locale-preference.ts)): both surfaces call it with their **own** `setSettings` (avoids a dual-`useLocalStorage` clobber), persisting `prefs.locale` (Theme A / Phase 43 sync) + firing `LOCALE_CHANGE_EVENT` so the provider re-resolves same-tab. Active/selected reads next-intl `useLocale()`.
 - [x] **Tests** — switcher collapsed(tooltip)/expanded(label), popover lists all 4 with the active `aria-selected`, select fires `onSelect(code)` + closes, Escape closes, a11y roles; the write path merges `locale` + fires the event. (Live screenshots blocked by the dev `/login` gate — covered by RTL instead.)
 
-## Theme D — Priority-surface translation — **L**
+## Theme D — Priority-surface translation — **L** — ✅ DONE (PR #512, 2026-07-21)
 
-Fully externalize the high-traffic surfaces so switching language visibly changes the app. Everything else stays English and converts later behind the Theme E gate.
+Fully externalize the high-traffic surfaces so switching language visibly changes the app. Everything else stays English and converts later behind the Theme E gate. **Scope delivered: each surface's primary/visible copy** (the bullets below); deeper leaf strings (individual settings subpages, board card/dialog internals, register/forgot/invite) stay English and convert incrementally behind Theme E's lint gate — the phase's stated model.
 
-- [ ] **Shell nav + `<AppFrame>` chrome** — nav section labels, the footer cluster tooltips (theme/settings/lock/connection), mobile-nav tiles → `nav`/`common` namespaces.
-- [ ] **Settings (all sections)** — [`settings/`](../packages/web/app/(main)/settings) labels, descriptions, and the sidebar → `settings` namespace (the switcher itself lands here, so it's a natural first full surface).
-- [ ] **Board** — column headers, empty states, and card affordances on the main kanban → `board` namespace.
-- [ ] **Auth / login** — the login/lock screens (incl. [`components/auth/`](../packages/web/components/auth) and the [`(auth)`](../packages/web/app/(auth)) tree) → `auth` namespace; keep SSO button copy localized ([`sso-buttons-visible-by-default`](sso-buttons-visible-by-default.md)).
-- [ ] **Common cross-cutting copy** — [`confirm-dialog.tsx`](../packages/web/components/confirm-dialog.tsx) default labels, toasts, and shared empty/error states → `common` namespace (highest reuse, converts many call-sites cheaply).
-- [ ] **Tests** — RTL renders a translated key from each namespace under a non-en locale (de-DE sample) and the en-GB fallback for an untranslated key; no hardcoded literal remains in the converted files (the Theme E lint rule enforces this on the touched set).
+- [x] **Shell nav + `<AppFrame>` chrome** — feature + category labels (threaded through `featuresToNav` via an optional label mapper so the pure unit test keeps its English path) + footer chrome (Settings/Lock/changelog) → `nav` namespace.
+- [x] **Settings** — the sidebar groups + items (keyed by stable id, translated at render) + Appearance section titles + the language row + reset/sync labels → `settings` namespace. (Deep per-subpage field copy → Theme E tail.)
+- [x] **Board** — column headers, the "Nothing here" empty state, and the board `aria-label` → `board` namespace. (Card menu internals → tail.)
+- [x] **Auth / login** — the login page + `<SsoButtons>` (`continueWith` uses an ICU `{provider}` arg; vendor names untranslated) + the "or" divider → `auth` namespace. (register/forgot/invite → tail.)
+- [x] **Common cross-cutting copy** — [`confirm-dialog.tsx`](../packages/web/components/confirm-dialog.tsx) default Cancel/Delete labels → `common` namespace.
+- [x] **Tests** — per-namespace fr-FR render + ICU interpolation + en-GB fallback (de-DE) + fr/en key parity; a shared `withLocale` wrapper + a Storybook `LocaleProvider` decorator mount the provider converted components now require.
 
 ## Theme E — MT-seed, catalog tooling & lint gate — **M**
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { type LoginProvider, LOGIN_PROVIDERS } from '@midnite/shared';
 import { GradientGlow } from '@midnite/ui';
 import { buttonVariants } from '@/components/ui/button';
@@ -8,9 +9,10 @@ import { cn } from '@/lib/utils';
 import { fetchSsoProviders, ssoStartUrl } from '@/lib/api';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
 
-const PROVIDER_LABEL: Record<LoginProvider, string> = {
-  google: 'Continue with Google',
-  github: 'Continue with GitHub',
+/** Vendor names are proper nouns — not translated; only the surrounding copy is. */
+const PROVIDER_NAME: Record<LoginProvider, string> = {
+  google: 'Google',
+  github: 'GitHub',
 };
 
 /** Per-provider glow palette: Google wears the full rainbow (the default
@@ -37,6 +39,7 @@ const PROVIDER_GLOW: Record<LoginProvider, string | undefined> = {
  * glow lit on arrival with a small "Last used" tag.
  */
 export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
+  const t = useTranslations('auth');
   const [providers, setProviders] = useState<LoginProvider[] | null>(null);
   // Read after mount — localStorage is unavailable during the static prerender.
   const [lastUsed, setLastUsed] = useState<string | null>(null);
@@ -81,7 +84,7 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
               data-testid={`sso-${provider}`}
             >
               <ProviderIcon provider={provider} />
-              {PROVIDER_LABEL[provider]}
+              {t('continueWith', { provider: PROVIDER_NAME[provider] })}
               {lastUsed === provider && <LastUsedTag />}
             </a>
           </GradientGlow>
@@ -89,7 +92,7 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-border" />
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">or</span>
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('or')}</span>
         <span className="h-px flex-1 bg-border" />
       </div>
     </div>

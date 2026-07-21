@@ -5,8 +5,97 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "close": "Fermer",
+    "confirm": "Confirmer",
     "retry": "Réessayer",
     "search": "Rechercher",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "remove": "Retirer",
+    "back": "Retour",
+    "none": "Aucun"
+  },
+  "nav": {
+    "categories": {
+      "app": "Application",
+      "agents": "Agents",
+      "overview": "Vue d’ensemble"
+    },
+    "features": {
+      "dashboard": "Tableau de bord",
+      "projects": "Projets",
+      "tasks": "Tâches",
+      "slides": "Diapositives",
+      "workflows": "Flux de travail",
+      "memory": "Mémoire",
+      "sessions": "Sessions",
+      "councils": "Conseils",
+      "media": "Médias",
+      "ops": "Opérations"
+    },
+    "footer": {
+      "settings": "Paramètres",
+      "lock": "Verrouiller",
+      "language": "Langue",
+      "changelog": "Voir le journal des modifications"
+    }
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signingIn": "Connexion…",
+    "continueWithEmail": "Continuer avec l’e-mail",
+    "continueWith": "Continuer avec {provider}",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "signUp": "S’inscrire",
+    "forgotPassword": "Mot de passe oublié ?",
+    "createAccount": "Créer un compte",
+    "lastUsed": "Dernière utilisation",
+    "or": "ou"
+  },
+  "board": {
+    "title": "Tableau des tâches",
+    "nothingHere": "Rien ici",
+    "columns": {
+      "backlog": "En attente",
+      "todo": "À faire",
+      "wip": "En cours",
+      "waiting": "En pause",
+      "done": "Terminé",
+      "abandoned": "Abandonné"
+    }
+  },
+  "settings": {
+    "reset": "Réinitialiser les valeurs par défaut",
+    "syncedToAccount": "Synchronisé avec votre compte",
+    "signInToSync": "Connectez-vous pour synchroniser entre appareils",
+    "groups": {
+      "general": "Général",
+      "workspace": "Espace de travail",
+      "security": "Sécurité"
+    },
+    "items": {
+      "appearance": "Apparence",
+      "system": "Système",
+      "agents": "Agents",
+      "apiTokens": "Jetons d’API",
+      "data": "Données",
+      "editor": "Éditeur",
+      "integrations": "Intégrations",
+      "repos": "Dépôts",
+      "safety": "Sûreté",
+      "credentials": "Identifiants",
+      "screenLock": "Verrouillage d’écran",
+      "security": "Sécurité"
+    },
+    "appearance": {
+      "language": "Langue",
+      "languageDescription": "La langue utilisée dans toute l’application. Synchronisée avec votre compte lorsque vous êtes connecté.",
+      "theme": "Thème",
+      "navigation": "Navigation",
+      "accent": "Accentuation",
+      "motionEffects": "Mouvement et effets"
+    }
   }
 }
