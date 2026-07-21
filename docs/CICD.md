@@ -65,16 +65,59 @@ So a docs-only PR skips `moon ci`, `ci-gate` goes green, and the PR is mergeable
 
 ### Repoint branch protection (one-time)
 
-Make `ci-gate` the required check instead of `ci` / `moon ci`:
+Make `ci-gate` the **only** required status check. The non-blocking jobs (`e2e`,
+`coverage`, `gallery`, `storybook`, `docs`) must **not** be required — they're
+`continue-on-error` and gated, so requiring one would let a skip wedge a merge.
+
+> First check what's there: `gh api repos/{owner}/{repo}/branches/main/protection/required_status_checks`.
+> If it returns **`Branch not protected` (404)**, there's no protection yet — you're
+> *creating* it (use the `PUT` below or the UI), not patching an existing rule.
+
+**Option A — GitHub UI (simplest for a one-time setup).**
+
+1. Open **Settings → Branches** (`https://github.com/{owner}/{repo}/settings/branches`).
+2. **Add classic branch protection rule** (or a ruleset).
+3. **Branch name pattern:** `main`.
+4. Tick **Require status checks to pass before merging**.
+5. Search for **`ci-gate`** and select it. *(Only checks that have run before appear —
+   `ci-gate` shows up once CI has run at least once on a PR.)*
+6. **Leave "Require branches to be up to date before merging" UNticked** — ticking it
+   forces a rebase on every PR before merge, which fights the parallel-loop workflow.
+7. Add **only** `ci-gate`. Save.
+
+**Option B — `gh` CLI.** When no protection exists yet this is a full `PUT`
+(not a `PATCH`):
 
 ```bash
-gh api -X PATCH repos/{owner}/{repo}/branches/main/protection/required_status_checks \
-  -f 'checks[][context]=ci-gate'
+gh api -X PUT repos/{owner}/{repo}/branches/main/protection --input - <<'JSON'
+{
+  "required_status_checks": { "strict": false, "checks": [{ "context": "ci-gate" }] },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
 ```
 
-The non-blocking jobs (`e2e`, `coverage`, `gallery`, `storybook`, `docs`) must
-**not** be required checks — they're `continue-on-error` and gated, so requiring
-one would let a skip wedge a merge.
+- `"strict": false` — don't force branch-up-to-date (same reason as UI step 6).
+- `"enforce_admins": false` — admins can still override in a genuine emergency.
+- `required_pull_request_reviews` / `restrictions` `null` — no reviewer requirement,
+  so self-merge still works.
+
+**Verify (either option):**
+
+```bash
+gh api repos/{owner}/{repo}/branches/main/protection/required_status_checks \
+  --jq '.checks[].context'   # → ci-gate
+```
+
+**Two things to know once it's on:**
+
+- A **skipped `ci` now reads green through `ci-gate`** — a docs-only PR won't hang.
+  That's the whole point of requiring `ci-gate` rather than `ci`.
+- **CI must actually run** for `ci-gate` to report, so if GitHub Actions is ever
+  billing-blocked, PRs won't be mergeable until it's restored (previously, with no
+  required check, you could merge on local-green).
 
 ## Adding a new app
 
