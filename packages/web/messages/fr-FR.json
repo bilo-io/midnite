@@ -1,0 +1,12 @@
+{
+  "common": {
+    "appName": "midnite",
+    "loading": "Chargement…",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "retry": "Réessayer",
+    "search": "Rechercher",
+    "settings": "Paramètres"
+  }
+}

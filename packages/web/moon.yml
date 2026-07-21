@@ -63,12 +63,16 @@ tasks:
       - 'tailwind.config.ts'
       - 'postcss.config.mjs'
       - 'tsconfig.json'
+    # Own distDir (next.config.mjs) so this never races the static `build`'s .next.
     outputs:
-      - '.next'
+      - '.next-server'
 
   start:
     command: 'pnpm exec next start -p 3000'
     preset: 'server'
+    # `next start` must read the same distDir the server build wrote (.next-server).
+    env:
+      MIDNITE_WEB_TARGET: 'server'
     deps:
       - 'shared:build'
 

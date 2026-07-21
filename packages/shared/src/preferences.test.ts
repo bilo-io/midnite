@@ -19,6 +19,7 @@ describe('UserPreferencesSchema', () => {
   it('exposes sensible defaults', () => {
     expect(DEFAULT_USER_PREFERENCES).toEqual({
       theme: 'system',
+      locale: 'en-GB',
       navMode: 'auto',
       backgroundPattern: 'starfield',
       bgIntensity: 'balanced',
@@ -104,6 +105,7 @@ describe('UserPreferencesSchema', () => {
   it('round-trips a full preferences object', () => {
     const full = {
       theme: 'time' as const,
+      locale: 'fr-FR' as const,
       navMode: 'expanded' as const,
       backgroundPattern: 'aurora' as const,
       bgIntensity: 'bold' as const,

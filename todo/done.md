@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — feat: Phase 79 Themes A+B — i18n contract + next-intl runtime 🟢
+
+PR #509. The greenfield i18n foundation for `web` — contract + runtime only (no switcher/translation yet; those are Themes C/D). Key call from the brainstorm: **preference-based client i18n, not middleware/URL routing** — `web` defaults to Next static export (no server, no `middleware.ts`), so the locale comes from the Phase 43 synced pref and applies via `NextIntlClientProvider`.
+
+- [x] **A · Locale contract in `shared`** — new [`i18n.ts`](../packages/shared/src/i18n.ts): `LocaleSchema`/`Locale`/`SUPPORTED_LOCALES`/`DEFAULT_LOCALE` + a self-contained `resolveLocale` (pref → nearest browser → default). Added a defaulted, `.catch`'d `locale` field to `UserPreferencesSchema` (legacy/unknown blobs hydrate to `en-GB`); wired through the web sync path (`app-settings` mapping + `prefsKey`). Shared schema/resolver units incl. legacy-blob coercion.
+- [x] **B · next-intl runtime + shell provider** — `shell` owns `LocaleProvider` (resolves + reacts via `storage`/`LOCALE_CHANGE_EVENT`; merges the active locale over `en-GB` so missing keys fall back to source strings) + a pre-paint `localeInitScript` stamping `<html lang>`; `next-intl` added as a `shell` peer. `web` threads them into its own layout with a static catalog import map ([`web/i18n/messages.ts`](../packages/web/i18n/messages.ts)); catalogs under `web/messages/` (en-GB + fr-FR populated, de-DE/es-ES stubbed → Theme E seeds). Static-export build verified. `LocaleProvider` RTL tests (en-GB source, fr-FR active, de-DE fallback).
+- [x] **CI fix (incidental)** — [`web:build`](../packages/web/next.config.mjs) (static export) and `web:build-server` both ran `next build` against the default `.next` and moon runs them concurrently → a racing `.next/types` wipe (`ENOENT routes.d.ts`) failed CI. Server target now uses distDir `.next-server` (static path byte-for-byte unchanged). Latent since Phase 72 D; this PR's broad web touch invalidated both caches at once and exposed it.
+
+---
+
 ## 2026-07-21 — fix: coverage job runs in CI (Phase 78 E follow-up) 🟢
 
 The `e2e.yml` `coverage` job invoked `moon run {gateway,web}:test-coverage`, but those tasks are `runInCI: false` (kept out of the fast `moon ci` gate) — which also makes moon refuse to run them via `moon run` in CI ("No tasks found"), so the job was red every run. Now runs vitest **directly** (mirrors the moon task commands), sidestepping the CI filter while keeping coverage off the `moon ci` critical path; builds `shell` too since direct vitest skips moon's dep resolution. Verified green with `CI=true`: gateway 2203 tests, web 1146, coverage reports emitted → the `coverage` job (informational, non-required) is finally green. Completes the Phase 78 Theme E "turn the E2E coverage job green" item in CI (it previously held only locally).

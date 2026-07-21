@@ -416,6 +416,7 @@ export function appSettingsToPreferences(
 ): UserPreferences {
   return {
     theme,
+    locale: settings.locale,
     navMode: settings.navMode,
     backgroundPattern: settings.backgroundPattern,
     bgIntensity: settings.bgIntensity,
@@ -446,6 +447,7 @@ export function applyPreferences(
 ): void {
   setSettings((prev) => ({
     ...prev,
+    locale: prefs.locale,
     navMode: prefs.navMode,
     backgroundPattern: prefs.backgroundPattern,
     bgIntensity: prefs.bgIntensity,

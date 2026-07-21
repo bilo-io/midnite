@@ -28,6 +28,17 @@ export { useIdleTimer } from './lock/use-idle-timer';
 // Provider composition — the app-agnostic frame-level provider stack.
 export { ShellProviders, type ShellProvidersProps } from './providers/shell-providers';
 
+// i18n runtime (Phase 79 Theme B) — the locale provider + pre-paint init script
+// both `web` and `admin` mount. Catalogs are supplied by the host (they live in
+// the app, not shell); this owns locale resolution + reactivity.
+export {
+  LocaleProvider,
+  LOCALE_CHANGE_EVENT,
+  type LocaleProviderProps,
+  type LocaleMessages,
+} from './i18n/locale-provider';
+export { localeInitScript } from './i18n/locale-init-script';
+
 // Appearance runtime — the Phase 39/68 appliers + init script (drives the CSS in
 // `@midnite/shell/appearance.css`).
 export {
