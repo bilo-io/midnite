@@ -177,7 +177,7 @@ function Section({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'relative overflow-hidden rounded-lg border bg-card/60 backdrop-blur-sm',
+        'relative overflow-hidden rounded-lg border surface-glass',
         isDragging && 'z-10 shadow-lg',
       )}
     >

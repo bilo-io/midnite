@@ -118,7 +118,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
   // was deleted): a compact "pick a project" prompt.
   if (!project) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card/40 p-4 text-center">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed surface-glass p-4 text-center">
         <FolderKanban className="h-5 w-5 text-muted-foreground" />
         <p className="text-xs text-muted-foreground">No project selected</p>
         {picker}
@@ -132,7 +132,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex h-full w-full flex-col gap-3 overflow-hidden rounded-xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group flex h-full w-full flex-col gap-3 overflow-hidden rounded-xl border surface-glass-interactive p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span
           aria-hidden
@@ -232,7 +232,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
               key={project.id}
               type="button"
               onClick={() => setEditProject(project)}
-              className="group relative flex w-full flex-col gap-4 overflow-hidden rounded-xl border bg-card p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="group relative flex w-full flex-col gap-4 overflow-hidden rounded-xl border surface-glass-interactive p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               style={{ ['--proj-color' as string]: project.color }}
             >
               <span aria-hidden className="absolute inset-x-0 top-0 h-px" style={{ backgroundImage: 'linear-gradient(to right, transparent, var(--proj-color), transparent)' }} />

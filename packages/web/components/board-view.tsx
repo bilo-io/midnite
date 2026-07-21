@@ -371,7 +371,7 @@ function Column({
       data-tour={`board-column-${status}`}
       className={cn(
         // Desktop: flexible columns that grow to fill available space.
-        'relative flex h-full min-w-[240px] flex-1 flex-col overflow-hidden rounded-lg border bg-card/60 p-3 backdrop-blur-sm transition-colors',
+        'relative flex h-full min-w-[240px] flex-1 flex-col overflow-hidden rounded-lg border surface-glass p-3 transition-colors',
         // Mobile: each column is exactly the viewport width (fills the snap container).
         // No side borders on mobile — the tab bar above provides the column affordance.
         'max-md:w-full max-md:min-w-0 max-md:shrink-0 max-md:snap-start max-md:rounded-none max-md:border-x-0',

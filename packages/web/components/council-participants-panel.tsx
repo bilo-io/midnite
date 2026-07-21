@@ -218,7 +218,7 @@ export function CouncilMembersPanel({
       {/* Fixed-width content so it doesn't reflow while the wrapper width animates. */}
       <div
         className={cn(
-          'flex w-full flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-opacity duration-200 lg:max-h-[calc(100dvh-4.5rem)] lg:w-[320px] lg:overflow-y-auto',
+          'flex w-full flex-col gap-3 rounded-xl border border-border/60 surface-glass p-4 transition-opacity duration-200 lg:max-h-[calc(100dvh-4.5rem)] lg:w-[320px] lg:overflow-y-auto',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >

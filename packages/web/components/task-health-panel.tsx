@@ -21,7 +21,7 @@ export function TaskHealthPanel({ report }: { report: TasksDoctorReport | null |
     report.recentFailures.length === 0;
 
   return (
-    <section aria-labelledby="task-health-heading" className="rounded-lg border bg-card p-4">
+    <section aria-labelledby="task-health-heading" className="rounded-lg border surface-glass p-4">
       <h2 id="task-health-heading" className="mb-3 text-sm font-semibold">
         Task health
       </h2>
