@@ -21,25 +21,25 @@
 
 ---
 
-## Theme A — Locale contract in `shared` — **S**
+## Theme A — Locale contract in `shared` — **S** — ✅ DONE (PR #509, 2026-07-21)
 
 The single source of truth for "which languages exist" + the synced preference field.
 
-- [ ] **`LocaleSchema` + `Locale` type** in a new [`packages/shared/src/i18n.ts`](../packages/shared/src/i18n.ts) (exported from the package index): `z.enum(['en-GB', 'de-DE', 'fr-FR', 'es-ES'])`, a `DEFAULT_LOCALE = 'en-GB'`, and a `SUPPORTED_LOCALES` list with display metadata (`{ code, label, nativeLabel }`) the switcher renders.
-- [ ] **`locale` field on `UserPreferencesSchema`** ([`preferences.ts`](../packages/shared/src/preferences.ts)) — `locale: LocaleSchema.default(DEFAULT_LOCALE)`; add to `DEFAULT_USER_PREFERENCES`. Ensure legacy rows (no `locale`) hydrate to the default (the schema `.default()` covers this — mirror the [read-coercion pattern](removing-persisted-union-member-needs-read-coercion.md) so an old stored prefs blob parses).
-- [ ] **Wire `locale` through the web sync path** — add it to the `prefsKey()` serializer in [`preference-sync.tsx`](../packages/web/components/preference-sync.tsx) and the `AppSettings`↔prefs mapping in [`lib/app-settings.ts`](../packages/web/lib/app-settings.ts) so a change round-trips to the gateway like `theme`/`accent` do.
-- [ ] **Tests** ([`shared:test`](../packages/shared)) — `LocaleSchema` accepts the four codes + rejects others; `UserPreferencesSchema` defaults `locale` to `en-GB`; a legacy prefs object with no `locale` parses to the default (regression against dropping the field).
+- [x] **`LocaleSchema` + `Locale` type** in a new [`packages/shared/src/i18n.ts`](../packages/shared/src/i18n.ts) (exported from the package index): `z.enum(['en-GB', 'de-DE', 'fr-FR', 'es-ES'])`, a `DEFAULT_LOCALE = 'en-GB'`, and a `SUPPORTED_LOCALES` list with display metadata (`{ code, label, nativeLabel }`) the switcher renders.
+- [x] **`locale` field on `UserPreferencesSchema`** ([`preferences.ts`](../packages/shared/src/preferences.ts)) — `locale: LocaleSchema.default(DEFAULT_LOCALE)`; add to `DEFAULT_USER_PREFERENCES`. Ensure legacy rows (no `locale`) hydrate to the default (the schema `.default()` covers this — mirror the [read-coercion pattern](removing-persisted-union-member-needs-read-coercion.md) so an old stored prefs blob parses).
+- [x] **Wire `locale` through the web sync path** — add it to the `prefsKey()` serializer in [`preference-sync.tsx`](../packages/web/components/preference-sync.tsx) and the `AppSettings`↔prefs mapping in [`lib/app-settings.ts`](../packages/web/lib/app-settings.ts) so a change round-trips to the gateway like `theme`/`accent` do.
+- [x] **Tests** ([`shared:test`](../packages/shared)) — `LocaleSchema` accepts the four codes + rejects others; `UserPreferencesSchema` defaults `locale` to `en-GB`; a legacy prefs object with no `locale` parses to the default (regression against dropping the field).
 
-## Theme B — next-intl runtime + shell provider — **M**
+## Theme B — next-intl runtime + shell provider — **M** — ✅ DONE (PR #509, 2026-07-21)
 
 Stand up next-intl in client/provider mode and mount it once for both apps — no middleware, no route segments.
 
-- [ ] **Add `next-intl`** to `packages/web` (and as a **peer** where `shell` references its provider types); create [`packages/web/i18n/`](../packages/web/i18n) config that loads the message catalog for a given `Locale` (static `import` map over `web/messages/*.json`, so it bundles cleanly under static export — no request-time `getRequestConfig`).
-- [ ] **Message catalogs** — [`packages/web/messages/en-GB.json`](../packages/web/messages) (canonical) + `de-DE.json` / `fr-FR.json` / `es-ES.json`, namespaced by surface (`nav`, `settings`, `board`, `auth`, `common`). en-GB authored by hand; the other three seeded in Theme E.
-- [ ] **`LocaleProvider` + `NextIntlClientProvider`** added to [`shell-providers.tsx`](../packages/shell/src/providers/shell-providers.tsx) (messages + resolved locale injected by the host so `shell` imports no catalog and stays on `{shared, ui}` — boundary test unaffected).
-- [ ] **Pre-paint locale init (no flash)** — a small head script mirroring `appearanceInitScript` that resolves the initial locale **pref → `navigator.language` mapped to nearest supported → `en-GB`**, sets `<html lang>` and a data attribute the provider reads on mount; used in both [`web/app/layout.tsx`](../packages/web/app/layout.tsx) and [`admin/app/layout.tsx`](../packages/admin/app/layout.tsx).
-- [ ] **Static-export sanity** — confirm `MIDNITE_WEB_TARGET` unset (`output: 'export'`) still builds and runs with the provider (no server-only next-intl APIs; catalogs statically imported). This is the risky bit — verify explicitly ([`web-static-export-not-in-ci-can-break-main`](web-static-export-not-in-ci-can-break-main.md)).
-- [ ] **Tests** — locale resolver picks pref, else nearest browser locale, else `en-GB`; `NextIntlClientProvider` renders a `t()` string per locale; unknown/missing key falls back to en-GB (not a crash).
+- [x] **Add `next-intl`** to `packages/web` (and as a **peer** where `shell` references its provider types); create [`packages/web/i18n/`](../packages/web/i18n) config that loads the message catalog for a given `Locale` (static `import` map over `web/messages/*.json`, so it bundles cleanly under static export — no request-time `getRequestConfig`).
+- [x] **Message catalogs** — [`packages/web/messages/en-GB.json`](../packages/web/messages) (canonical) + `de-DE.json` / `fr-FR.json` / `es-ES.json`, namespaced by surface (`nav`, `settings`, `board`, `auth`, `common`). en-GB authored by hand; the other three seeded in Theme E.
+- [x] **`LocaleProvider` + `NextIntlClientProvider`** added to [`shell-providers.tsx`](../packages/shell/src/providers/shell-providers.tsx) (messages + resolved locale injected by the host so `shell` imports no catalog and stays on `{shared, ui}` — boundary test unaffected).
+- [x] **Pre-paint locale init (no flash)** — a small head script mirroring `appearanceInitScript` that resolves the initial locale **pref → `navigator.language` mapped to nearest supported → `en-GB`**, sets `<html lang>` and a data attribute the provider reads on mount; used in both [`web/app/layout.tsx`](../packages/web/app/layout.tsx) and [`admin/app/layout.tsx`](../packages/admin/app/layout.tsx).
+- [x] **Static-export sanity** — confirm `MIDNITE_WEB_TARGET` unset (`output: 'export'`) still builds and runs with the provider (no server-only next-intl APIs; catalogs statically imported). This is the risky bit — verify explicitly ([`web-static-export-not-in-ci-can-break-main`](web-static-export-not-in-ci-can-break-main.md)).
+- [x] **Tests** — locale resolver picks pref, else nearest browser locale, else `en-GB`; `NextIntlClientProvider` renders a `t()` string per locale; unknown/missing key falls back to en-GB (not a crash).
 
 ## Theme C — Language switcher: sidenav footer + Settings — **S**
 

@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 0/34 | `░░░░░░░░░░` | 0% | A B | C D E F |
+| [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 10/34 | `███░░░░░░░` | 29% | — | C D E F |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
 | [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | ◻ TODO | 0/13 | `░░░░░░░░░░` | 0% | — | A B C |
@@ -134,8 +134,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 79 — Translations & Internationalization (i18n)](phase-79-translations-i18n.md)
 *Greenfield i18n for `web` via next-intl in **preference-based client mode** (locale from the Phase 43 synced pref, not middleware/URL routing — web defaults to static export with no server). en-GB canonical + de-DE/fr-FR/es-ES; `Locale` type in `shared`, catalogs in `web/messages/`; foundation + priority surfaces + lint gate (not all ~560 files).*
-- ◻ **A** — Locale contract in `shared` (`LocaleSchema`/`Locale`/`SUPPORTED_LOCALES` + `locale` field on `UserPreferencesSchema`, wired through the web sync path)
-- ◻ **B** — next-intl runtime + shell provider (static catalog map, `NextIntlClientProvider` in `shell-providers`, pre-paint locale init, static-export sanity)
+- ✅ **A** — Locale contract in `shared` (`LocaleSchema`/`Locale`/`SUPPORTED_LOCALES` + `locale` field on `UserPreferencesSchema`, wired through the web sync path) (PR #509)
+- ✅ **B** — next-intl runtime + shell provider (static catalog map, `LocaleProvider` in `@midnite/shell`, pre-paint locale init, static-export sanity) (PR #509)
 - ◻ **C** — Language switcher (sidenav footer **above Settings** like the old theme switcher + Settings → Appearance picker; one write path via `prefs.locale`)
 - ◻ **D** — Priority-surface translation (nav/chrome, Settings, board, auth/login, common toasts/dialogs; en-GB fallback)
 - ◻ **E** — MT-seed + tooling (MT-seed de/fr/es `needs-review`, `web:i18n:validate` key-parity CI task, ESLint no-hardcoded-string gate for the long tail)
