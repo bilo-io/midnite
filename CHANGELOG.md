@@ -14,6 +14,18 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.4.2] - 2026-07-21
+
+A documentation-hosting patch: the docs site now serves exclusively from its
+hosted deployment, and every in-app documentation link points there.
+
+### Changed
+
+- **Documentation moved fully onto the hosted docs site** — the version tag, the
+  release-notes "Full changelog" link, and the assistant's **Docs** deep-link now
+  resolve to the hosted documentation rather than the retired GitHub Pages build.
+  GitHub Pages is no longer part of the docs pipeline.
+
 ## [0.4.1] - 2026-07-21
 
 A UI-consistency patch: a unified frosted-glass surface for every panel, and
@@ -236,6 +248,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.4.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.2
 [0.4.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.1
 [0.4.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.0
 [0.3.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.3.0

@@ -1,6 +1,6 @@
 {
   "name": "midnite",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "Multitask Claude Code — task orchestrator wrapped around a pool of Claude Code agents",
   "packageManager": "pnpm@9.15.0",
