@@ -147,6 +147,8 @@ moon run :test
 
 CI runs `moon ci`. Lint violations fail the build — fix locally rather than after CI flags them.
 
+**CI/CD is affected-gated** (Phase 78, see [`docs/CICD.md`](docs/CICD.md)). GitHub Actions jobs and Vercel deploys only run for the packages a change actually touches (moon's affected graph is the oracle; Vercel uses a git-diff subtree script), so expect **skipped-but-green** checks on PRs that don't touch a given app. The single required status check is **`ci-gate`** (an always-run aggregation job), not `ci` — a skipped `moon ci` still reports green through it. No feature-branch Vercel previews deploy; only `main` does.
+
 ### Pull Requests
 
 - Create PRs as drafts until ready for review
