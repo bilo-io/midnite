@@ -4,6 +4,10 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-21 — fix: web:build-storybook CJS-barrel resolution (Phase 78 E follow-up) 🟢 ci green
+
+Cleared the last pre-existing `moon ci` red that failed every web PR: rollup's commonjs pass couldn't resolve named imports (e.g. `AgentPingResponseSchema`) through `@midnite/shared`'s CJS `__exportStar` barrel. Aliased `@midnite/shared` to its TS source in the storybook Vite build (`.storybook/main.ts` `viteFinal`) → compiles as ESM with static named exports. Storybook-scoped; Next build + vitest browser tests verified unaffected. `moon ci` (`:typecheck`/`:lint`/`:test`/`web:build*`) now fully green for web PRs — unblocks the `ci-gate` branch-protection repoint.
+
 ## 2026-07-21 — fix: Phase 78 Theme E — CI-hygiene follow-ups — **completes Phase 78 🎉 17/17**
 
 PR #503. Cleared two pre-existing CI reds that predated Phase 78 but sit in its "clean CI" goal.

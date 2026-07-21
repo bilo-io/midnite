@@ -108,12 +108,13 @@ lives squarely in its "clean, non-wasteful CI" goal.
         `auth-hero` (title full-stop / typed wordmark → logo alt; SplitScreen reduced-motion),
         `sso-buttons` (both buttons always show, #454), `guardrails-control` (inline hover
         buttons, no menu), `command-palette` (`Profile`→`Personalization`). Full `:test` now green.
-- [ ] ⏳ **`web:build-storybook` CJS-barrel resolution** — rollup (storybook's Vite) can't
-      statically resolve a named import (`AgentPingResponseSchema`) through `@midnite/shared`'s
-      **CommonJS `export *` barrel**, so `web:build-storybook` (part of `moon ci`) fails on every
-      web-touching PR — pre-existing, independent of this phase. Fix needs a shared build/export
-      change (e.g. ESM output, or not compiling `*.test.ts` into `dist`) or storybook Vite
-      commonjs handling; wide blast radius — **deferred** to its own slice.
+- [x] ✅ **`web:build-storybook` CJS-barrel resolution** (fixed 2026-07-21) — rollup (storybook's
+      Vite) couldn't statically resolve a named import (`AgentPingResponseSchema`) through
+      `@midnite/shared`'s CommonJS `__exportStar` barrel, so `web:build-storybook` (part of
+      `moon ci`) failed on every web PR. Fixed **storybook-scoped**: alias `@midnite/shared` to
+      its TS source in the storybook Vite build (`.storybook/main.ts` `viteFinal`) so it compiles
+      as ESM with statically-analyzable named exports. Next build + vitest browser tests unaffected
+      (verified). This clears the last blocker to a green `ci` job for web PRs.
 - [ ] ⏳ **Gateway Vercel deploy failure** — the `midnite-gateway` project shows
       "Deployment failed" on PRs (rootDirectory likely not set to `packages/gateway`, so its
       `vercel.json` ignoreCommand isn't read). Needs a Vercel *dashboard* change, not just
