@@ -1,0 +1,1 @@
+import{Q as t}from"./iframe-mYbb-MFG.js";const n=new t({defaultOptions:{queries:{staleTime:5e3,retry:!1,refetchOnWindowFocus:!0}}}),o=300;let e,i=!1;function s(){e===void 0?(n.invalidateQueries(),e=setTimeout(a,o)):i=!0}function a(){e=void 0,i&&(i=!1,s())}export{s as i};
