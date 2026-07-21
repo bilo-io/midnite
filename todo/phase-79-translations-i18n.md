@@ -61,15 +61,15 @@ Fully externalize the high-traffic surfaces so switching language visibly change
 - [x] **Common cross-cutting copy** — [`confirm-dialog.tsx`](../packages/web/components/confirm-dialog.tsx) default Cancel/Delete labels → `common` namespace.
 - [x] **Tests** — per-namespace fr-FR render + ICU interpolation + en-GB fallback (de-DE) + fr/en key parity; a shared `withLocale` wrapper + a Storybook `LocaleProvider` decorator mount the provider converted components now require.
 
-## Theme E — MT-seed, catalog tooling & lint gate — **M**
+## Theme E — MT-seed, catalog tooling & lint gate — **M** — ✅ DONE (PR #513, 2026-07-22)
 
-Make all four locales real, keep them in parity in CI, and stop new hardcoded strings from creeping in.
+Make the locales enforceable, keep them in parity in CI, and stop new hardcoded strings from creeping in.
 
-- [ ] **Extraction helper** — `scripts/i18n-extract.mjs` that scans the web tree for `t('ns.key')` usages and reports keys missing from the canonical catalog (drives authoring; ships a sibling `.d.mts` if imported by any TS test, per [importing-untyped-mjs](importing-untyped-mjs-into-ts-breaks-typecheck.md)).
-- [ ] **MT-seed de/fr/es** from the en-GB canonical, each entry tagged `needs-review` in a parallel metadata map (or a `_meta` block) so a later human-review pass can find unreviewed strings; en-GB is authoritative.
-- [ ] **`moon run web:i18n:validate` task** — fails CI on **key drift**: every non-canonical catalog must have exactly the canonical key set (no missing, no extra). Wired into the web project's tasks so `moon ci` runs it.
-- [ ] **ESLint gate** — a `no-literal-jsx-text`-style rule (with a small allowlist for non-copy: icons, class strings, code samples) that **fails on new hardcoded user-facing strings** in `packages/web`, so the untouched long tail converts incrementally without regressions. Scope the rule so it doesn't retroactively fail the ~500 un-migrated files (e.g. warn on legacy, error on touched/new — or an allowlist file).
-- [ ] **Tests / CI** — a deliberately drifted catalog fails `i18n:validate`; the ESLint rule flags a planted hardcoded string and passes a `t()` call.
+- [x] **Extraction helper** — [`scripts/i18n-extract.mjs`](../scripts/i18n-extract.mjs) reports the canonical (en-GB) keys still missing per locale — the authoring worklist; reuses the validator's pure helpers so the key set has one definition. (Read-only; not imported by a TS test, so no `.d.mts` needed — the validator's `.d.mts` covers the shared test.)
+- [⏳] **MT-seed de/fr/es** — **deferred (user decision):** fr-FR is fully hand-translated (Theme D); de-DE/es-ES are left **empty** and fall back to en-GB via the provider (no offline MT available). The `meta/<locale>.json` sidecars carry `complete`/`needsReview`, so a later real-translation pass can seed de/es + flag review without touching the gate. Tracked as a follow-up.
+- [x] **`moon run web:i18n-validate` task** ([`scripts/i18n-validate.mjs`](../scripts/i18n-validate.mjs)) — fails on **orphan/drift keys** (a locale key not in en-GB) and on **missing keys in a `complete` locale** (fr-FR); intentionally-empty de/es reported for coverage only. Wired in `packages/web/moon.yml` so `moon ci` runs it. (Task named `i18n-validate` — moon task names can't contain `:`.)
+- [x] **ESLint gate** — `eslint-plugin-i18next` `no-literal-string` (`jsx-text-only`) erroring **only** on the migrated files (`I18N_ENFORCED` in [`eslint.config.mjs`](../eslint.config.mjs)); the ~500-file tail is untouched until a file joins the list. Caught + fixed two residual literals (login version chip → template expr; SSO "last" tag → `auth.lastUsedShort`).
+- [x] **Tests / CI** — `validateCatalogs` parity/orphan/missing/needs-review units (shared); a config guard pinning the lint gate stays enabled + bounded (web). The rule's live behaviour is exercised by the real `web:lint` over the enforced files. + `messages/README.md`.
 
 ## Theme F — Locale-aware formatting — **S** — ✅ DONE (PR #510, 2026-07-21)
 

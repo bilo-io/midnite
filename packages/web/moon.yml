@@ -104,6 +104,16 @@ tasks:
       - 'playwright.config.ts'
       - '/eslint.config.mjs'
 
+  # i18n catalog key-parity gate (Phase 79 E). Fails on orphan/drift keys in any
+  # locale and on missing keys in a locale declared `complete` (fr-FR); de-DE/es-ES
+  # are intentionally-incomplete fallbacks and only reported for coverage. Runs in
+  # `moon ci` (runInCI default) so a drifted catalog can't merge.
+  i18n-validate:
+    command: 'node ../../scripts/i18n-validate.mjs'
+    inputs:
+      - 'messages/**/*.json'
+      - '/scripts/i18n-validate.mjs'
+
   test:
     command: 'pnpm exec vitest run'
     # Tests import the built @midnite/shared (dist), so build upstream deps first.

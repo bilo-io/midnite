@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-22 — feat: Phase 79 Theme E — i18n catalog gate + tooling + lint 🟢
+
+PR #513. The four locales are now enforceable and new hardcoded copy is blocked on migrated surfaces.
+
+- [x] `scripts/i18n-validate.mjs` (+`.d.mts`) → `moon run web:i18n-validate` (runs in moon ci): fails on orphan/drift keys (a locale key not in en-GB) + missing keys in a `complete` locale (fr-FR); de-DE/es-ES empty → coverage-only, never fail.
+- [x] `scripts/i18n-extract.mjs` — prints canonical keys missing per locale (translation worklist).
+- [x] `messages/meta/<locale>.json` sidecars (`complete`/`needsReview`) — kept out of the catalogs so next-intl never sees them.
+- [x] `eslint-plugin-i18next` no-literal-string (jsx-text-only) erroring only on migrated files (`I18N_ENFORCED`); caught + fixed 2 residual literals (login version chip → template expr; SSO "last" → `auth.lastUsedShort`).
+- [x] Tests: `validateCatalogs` parity/orphan/missing/needs-review (shared, 6) + a config guard pinning the lint gate enabled + bounded (web); + `messages/README.md`.
+- [x] Gate: web typecheck + shared typecheck + lint (0 err) + unit **1165/1165** + shared **842** + static-export build all green.
+- ⏳ Follow-up: real de-DE/es-ES translations (no offline MT; they fall back to en-GB meanwhile). All six themes A–F have now landed; the phase-wide Verification checklist + de/es seed remain.
+
+---
+
 ## 2026-07-21 — feat: Phase 79 Theme D — priority-surface translation 🟢
 
 PR #512. Switching language now visibly changes the app copy across the high-traffic surfaces.
