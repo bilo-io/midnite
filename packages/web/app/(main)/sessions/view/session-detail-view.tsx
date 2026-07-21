@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { BackLink } from '@/components/back-link';
+import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
+import { useToast } from '@/components/toast';
 import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
@@ -23,7 +25,7 @@ import { SessionLeftPanel } from './session-left-panel';
  */
 export function SessionDetailContainer() {
   const id = useSearchParams().get('id') ?? '';
-  const { data, loading, error } = useApiData(async () => {
+  const { data, loading, error, refresh } = useApiData(async () => {
     if (!id) return null;
     const session = await getSession(id);
     const task = session.linkedTaskId ? await getTask(session.linkedTaskId).catch(() => null) : null;
@@ -60,7 +62,27 @@ export function SessionDetailContainer() {
     );
   }
 
-  return <SessionDetailView session={data.session} task={data.task} project={data.project} />;
+  return (
+    <SessionDetailView session={data.session} task={data.task} project={data.project} onTaskChanged={refresh} />
+  );
+}
+
+/**
+ * The linked task's lifecycle actions, surfaced in the session header (Phase 74)
+ * so start / abandon / reopen / export / delete are reachable without hopping to
+ * the board. Mutations refresh the cockpit; failures surface as a toast (there's
+ * no inline error banner in the header the way the modal body has one).
+ */
+function LinkedTaskActions({ task, onChanged }: { task: Task; onChanged: () => void }) {
+  const actions = useTaskActions({ task, onActionComplete: onChanged });
+  const toast = useToast();
+  const { statusError, setStatusError } = actions;
+  useEffect(() => {
+    if (!statusError) return;
+    toast.error(statusError);
+    setStatusError(null);
+  }, [statusError, setStatusError, toast]);
+  return <TaskActionButtons task={task} actions={actions} />;
 }
 
 // Phase 51 B — the session cockpit shell: a large center region (the terminal
@@ -79,10 +101,12 @@ export function SessionDetailView({
   session,
   task,
   project,
+  onTaskChanged,
 }: {
   session: SessionDetail;
   task: Task | null;
   project: Project | null;
+  onTaskChanged?: () => void;
 }) {
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.session.leftOpen', true);
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.session.rightOpen', true);
@@ -99,6 +123,9 @@ export function SessionDetailView({
         back={{ href: '/sessions', label: 'All sessions' }}
         actions={
           <div className="flex items-center gap-2">
+            {/* The linked task's lifecycle actions (Phase 74) — start / abandon /
+                reopen / export / delete, icon-only with a label on hover. */}
+            {task ? <LinkedTaskActions task={task} onChanged={() => onTaskChanged?.()} /> : null}
             <ConnectionStatus variant="compact" />
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"

@@ -219,6 +219,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     try {
       await updateWorkflow(workflow.id, {
         name: state.name,
+        description: state.description,
         enabled: state.enabled,
         trigger: state.trigger,
         nodes: graph.nodes,

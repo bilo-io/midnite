@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowUpRight, Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, RotateCcw, SquareTerminal, X } from 'lucide-react';
+import { ArrowUpRight, Check, ExternalLink, GitCompare, Plus, RefreshCw, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
@@ -26,31 +26,25 @@ import {
   type TaskLink,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
-import { ExportMenu } from '@/components/export-menu';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { PrStatusChip } from '@/components/pr-status-chip';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
 import { TaskPicker } from '@/components/task-picker';
-import { DeleteConfirmButton } from '@/components/delete-confirm-button';
+import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
 import { useConfirm } from '@/components/confirm-dialog';
 import {
   addTaskDependency,
   addTaskLink,
-  deleteTask,
-  exportTask,
   gatewayUrl,
   refreshPrStatus,
   removeTaskDependency,
   removeTaskLink,
-  reopenTask,
   setTaskTags,
-  startTask,
   updateTaskProject,
-  updateTaskStatus,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
-import { dependentsOf, unmetBlockerCount } from '@/lib/task-dependencies';
+import { dependentsOf } from '@/lib/task-dependencies';
 import { useTaskPaletteCommands } from '@/hooks/use-task-palette-commands';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
@@ -194,14 +188,6 @@ export function TaskDetail({
   const kind = task.kind ?? 'unknown';
   const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
-  // Slugged base name for the export download / print title (the gateway also
-  // sends its own Content-Disposition; this is the client-side download name).
-  const exportFilename =
-    (task.title.trim() || 'task')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 60) || 'task';
 
   // Contextual ⌘K "Move to…" commands, live only while this detail surface is
   // mounted (modal or full page) — Phase 42 C.
@@ -213,8 +199,6 @@ export function TaskDetail({
   const [linkUrl, setLinkUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [statusBusy, setStatusBusy] = useState(false);
-  const [statusError, setStatusError] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(task.projectId ?? null);
   const [projectBusy, setProjectBusy] = useState(false);
   const [tags, setTags] = useState<string[]>(task.tags);
@@ -240,6 +224,13 @@ export function TaskDetail({
   const [depBusy, setDepBusy] = useState(false);
 
   const tasksById = new Map(tasks.map((t) => [t.id, t] as const));
+
+  // Lifecycle mutations (start / abandon / reopen / delete) + their shared busy /
+  // error state, shared with the session cockpit. Completing any of them leaves
+  // this surface (the modal closes; the full page routes back to /tasks).
+  const actions = useTaskActions({ task, tasksById, onActionComplete: onClose });
+  const { statusError, setStatusError } = actions;
+
   // Open tasks that aren't this task and aren't already a blocker — candidates to add.
   const blockerCandidates = tasks.filter(
     (t) => t.id !== task.id && !dependsOn.includes(t.id) && t.status !== 'done' && t.status !== 'abandoned',
@@ -334,88 +325,6 @@ export function TaskDetail({
     router.push(`/tasks/view?id=${encodeURIComponent(task.id)}${suffix}`);
   };
 
-  // Manual kickoff: spawn an agent session now (todo/backlog → wip). The gateway
-  // 409s when no slot is free; surface that as a non-fatal message. Starting a
-  // blocked task is a human override (Phase 27) — warn + confirm first.
-  const start = async () => {
-    const unmet = unmetBlockerCount(task, tasksById);
-    if (unmet > 0) {
-      const ok = await confirm({
-        title: 'Start a blocked task?',
-        description: `${unmet} blocker${unmet === 1 ? " isn't" : "s aren't"} done yet. The scheduler skips blocked tasks; starting it manually runs it anyway.`,
-        confirmLabel: 'Start anyway',
-      });
-      if (!ok) return;
-    }
-    setStatusBusy(true);
-    setStatusError(null);
-    try {
-      await startTask(task.id);
-      invalidateData();
-      onClose();
-    } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to start task');
-    } finally {
-      setStatusBusy(false);
-    }
-  };
-
-  const abandon = async () => {
-    const ok = await confirm({
-      title: 'Abandon this task?',
-      description: 'It will be archived and its session stopped. You can permanently delete it afterwards.',
-      confirmLabel: 'Abandon',
-    });
-    if (!ok) return;
-    setStatusBusy(true);
-    setStatusError(null);
-    try {
-      await updateTaskStatus(task.id, 'abandoned'); // gateway auto-archives the session
-      invalidateData();
-      onClose();
-    } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to abandon task');
-    } finally {
-      setStatusBusy(false);
-    }
-  };
-
-  // Reopen a terminal task (Phase 69 E): done/abandoned → todo. Clears the
-  // session binding + retry state and re-blocks dependents; PR history is kept.
-  const reopen = async () => {
-    const ok = await confirm({
-      title: 'Reopen this task?',
-      description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
-      confirmLabel: 'Reopen',
-    });
-    if (!ok) return;
-    setStatusBusy(true);
-    setStatusError(null);
-    try {
-      await reopenTask(task.id);
-      invalidateData();
-      onClose();
-    } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to reopen task');
-    } finally {
-      setStatusBusy(false);
-    }
-  };
-
-  // Permanent delete — only offered once the task is archived (e.g. abandoned).
-  const remove = async () => {
-    setStatusBusy(true);
-    setStatusError(null);
-    try {
-      await deleteTask(task.id);
-      invalidateData();
-      onClose();
-    } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to delete task');
-      setStatusBusy(false);
-    }
-  };
-
   const addLink = async () => {
     const url = linkUrl.trim();
     if (!url) return;
@@ -498,65 +407,27 @@ export function TaskDetail({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {projects.length > 0 ? (
-            <ProjectSelect
-              projects={projects}
-              value={projectId}
-              onChange={(next) => void reassign(next)}
-              disabled={projectBusy}
-              align="right"
-            />
-          ) : null}
-          {task.status === 'todo' || task.status === 'backlog' ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => void start()}
-              disabled={statusBusy}
-            >
-              <Play className="h-3.5 w-3.5" />
-              Start
-            </Button>
-          ) : null}
-          {task.status === 'done' || task.status === 'abandoned' ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => void reopen()}
-              disabled={statusBusy}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Reopen
-            </Button>
-          ) : null}
-          <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} iconOnly={inModal} />
-          {/* On the full page the session lives at its own route, so a nav button
-              is useful; in the unified modal the Session tab makes it redundant
-              (Phase 70), so it's dropped there. */}
-          {showSessionTab ? null : (
-            <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
-              <SquareTerminal className="h-3.5 w-3.5" />
-              Session
-            </Button>
-          )}
-          {task.status !== 'abandoned' ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => void abandon()}
-              disabled={statusBusy}
-              aria-label="Abandon task"
-              title="Abandon"
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <Ban className="h-4 w-4" />
-            </Button>
-          ) : null}
-          {task.archivedAt ? (
-            <DeleteConfirmButton noun="task" onConfirm={() => void remove()} />
+          {/* Full page: the task's controls live in the header cluster. In the
+              unified modal they move down to the tab strip so they share the row
+              with "Open page" (Phase 74); only the Close button stays up here. */}
+          {!inModal ? (
+            <>
+              {projects.length > 0 ? (
+                <ProjectSelect
+                  projects={projects}
+                  value={projectId}
+                  onChange={(next) => void reassign(next)}
+                  disabled={projectBusy}
+                  align="right"
+                />
+              ) : null}
+              <TaskActionButtons
+                task={task}
+                actions={actions}
+                showSession={!showSessionTab}
+                onOpenSession={goToSession}
+              />
+            </>
           ) : null}
           {variant === 'modal' ? (
             <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
@@ -586,18 +457,28 @@ export function TaskDetail({
               Retro
             </TabButton>
           )}
-          {inModal && !disableNavigation ? (
-            // Far-right on the tab row — expands the active tab into its full page.
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={openPage}
-              className="ml-auto"
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              Open page
-            </Button>
+          {inModal ? (
+            // The modal's task controls share this row with "Open page" (Phase 74):
+            // the project picker, the lifecycle actions (icon-only, label on hover),
+            // then the far-right expand-to-page affordance.
+            <div className="ml-auto flex items-center gap-1.5 py-1.5">
+              {projects.length > 0 ? (
+                <ProjectSelect
+                  projects={projects}
+                  value={projectId}
+                  onChange={(next) => void reassign(next)}
+                  disabled={projectBusy}
+                  align="right"
+                />
+              ) : null}
+              <TaskActionButtons task={task} actions={actions} />
+              {!disableNavigation ? (
+                <Button type="button" variant="secondary" size="sm" onClick={openPage}>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                  Open page
+                </Button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
