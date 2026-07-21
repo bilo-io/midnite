@@ -5,12 +5,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, Power, Settings } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
 import { PasscodeSetupDialog } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
-import { docsChangelogUrl } from '@midnite/shared';
+import { docsChangelogUrl, type Locale } from '@midnite/shared';
 import { featuresToNav } from '@/lib/nav-config';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { setLocalePreference } from '@/lib/locale-preference';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   DEFAULT_SETTINGS,
@@ -55,6 +58,8 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   const { unread } = useNotifications();
 
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
+  // The active locale (pref → browser → default, resolved by the shell provider).
+  const locale = useLocale() as Locale;
 
   // FEATURES → the shell's injected nav config (pinned home + collapsible sections).
   const { pinned, sections } = featuresToNav(settings.features);
@@ -143,6 +148,12 @@ export function AppShellClient({ children }: { children: ReactNode }) {
           Notifications + Theme live in the top-right header-actions cluster
           (Phase 71 / Phase 77). */}
       <PresenceNavPill expanded={expanded} />
+      {/* Language switcher (Phase 79 C) — mirrors where the theme switcher sat. */}
+      <LanguageSwitcher
+        expanded={expanded}
+        locale={locale}
+        onSelect={(next) => setLocalePreference(setSettings, next)}
+      />
       <Link
         href="/settings"
         aria-label="Settings"

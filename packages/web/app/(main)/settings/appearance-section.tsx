@@ -7,6 +7,7 @@ import {
   CloudOff,
   Compass,
   Download,
+  Globe,
   Laptop,
   LayoutGrid,
   Moon,
@@ -18,9 +19,14 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { SUPPORTED_LOCALES, type Locale } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { PwaInstall } from '@/components/pwa-install';
+import { StyledSelect } from '@/components/ui/styled-select';
 import { Switch } from '@/components/ui/switch';
+import { LocaleFlag } from '@/components/locale-flag';
+import { setLocalePreference } from '@/lib/locale-preference';
 import { AccentBuilder } from './accent-builder';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
 import { useAuth } from '@/contexts/auth-context';
@@ -75,6 +81,12 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }
   { value: 'time', label: 'Time', Icon: Clock },
 ];
 
+const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((l) => ({
+  value: l.code,
+  label: `${l.nativeLabel} (${l.code})`,
+  icon: <LocaleFlag locale={l.code} className="h-4 w-4" />,
+}));
+
 const NAV_MODE_OPTIONS: { value: NavMode; label: string; hint: string }[] = [
   { value: 'auto', label: 'Auto', hint: 'Collapsed; expands on hover' },
   { value: 'expanded', label: 'Locked open', hint: 'Always expanded' },
@@ -91,6 +103,9 @@ export function AppearanceSection() {
 
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
   const setNavMode = (mode: NavMode) => setSettings((prev) => ({ ...prev, navMode: mode }));
+
+  // Active locale (resolved by the shell provider); one write path via setSettings.
+  const locale = useLocale() as Locale;
 
   const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
   const setBackgroundPattern = (pattern: BackgroundPattern) =>
@@ -172,6 +187,23 @@ export function AppearanceSection() {
           Reset to defaults
         </button>
       </div>
+
+      <Accordion title="Language" icon={<Globe className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="p-5">
+          <SettingRow
+            title="Language"
+            description="The language used across the app. Syncs to your account when you're signed in."
+          >
+            <StyledSelect<Locale>
+              options={LOCALE_OPTIONS}
+              value={locale}
+              onChange={(next) => setLocalePreference(setSettings, next)}
+              aria-label="Language"
+              className="w-56"
+            />
+          </SettingRow>
+        </div>
+      </Accordion>
 
       <Accordion title="Theme" icon={<Palette className="h-3.5 w-3.5" />} defaultOpen>
         <div className="p-5">
