@@ -40,5 +40,6 @@ src/
   lib/                # token-specimens (live foundations rendering)
 ```
 
-> Hosting (GitHub Pages / a static host) is a deferred follow-on — this package ships
-> a buildable app, not a deploy pipeline.
+> Hosted on its own **Vercel** project (production `main` only, gated on the docs
+> subtree — see [`docs/CICD.md`](../../docs/CICD.md)). The web app cross-links here
+> via `NEXT_PUBLIC_DOCS_URL` (see `packages/shared/src/site-links.ts`).

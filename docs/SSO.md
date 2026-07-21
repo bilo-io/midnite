@@ -32,7 +32,7 @@ Export these before booting the gateway (or put them in `.env`):
 | `MIDNITE_GOOGLE_CLIENT_SECRET` | Google OAuth client secret (name is referenced by `clientSecretEnv`) | If Google enabled |
 | `MIDNITE_GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | If GitHub enabled |
 | `MIDNITE_OPERATOR_CONFIG` | Override the operator-config path (default `.midnite/operator.json`) | Optional |
-| `MIDNITE_WEB_TARGET` | `static` (default, desktop/Pages) or `server` (hosted, runs the BFF auth routes) | Hosted only |
+| `MIDNITE_WEB_TARGET` | `static` (default, desktop / static host) or `server` (hosted, runs the BFF auth routes) | Hosted only |
 | `NEXT_PUBLIC_GATEWAY_URL` | Gateway origin the web app calls for the code exchange | Hosted only |
 
 ## Redirect URIs — the exact strings to register
@@ -123,7 +123,7 @@ Verify:
 
 ## 5 · Run it hosted
 
-The web app defaults to a **static export** (for desktop + GitHub Pages), which **drops** the
+The web app defaults to a **static export** (for desktop + a static host), which **drops** the
 `/api/auth/*` BFF cookie routes. For a hosted sign-in, build the **server** target:
 
 ```bash

@@ -53,11 +53,13 @@ describe('docs-links', () => {
       expect(docsUrlForPathname('/memory/view')).toBe('http://localhost:5173/#/agents/memory');
     });
 
-    it('falls back to the hosted GitHub Pages docs when no env override is set', () => {
+    it('falls back to the hosted Vercel docs when no env override is set', () => {
       vi.stubEnv('NODE_ENV', 'production');
       vi.stubEnv('NEXT_PUBLIC_DOCS_URL', undefined);
       // Never the app's own origin (a bare '#') — the real docs deploy.
-      expect(docsUrlForPathname('/tasks')).toBe('https://bilo-io.github.io/midnite/docs/#/app/tasks');
+      expect(docsUrlForPathname('/tasks')).toBe(
+        'https://midnite-docs-vision-studios-projects.vercel.app/#/app/tasks',
+      );
     });
 
     it("degrades to '#' only when explicitly configured with an empty URL", () => {

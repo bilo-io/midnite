@@ -15,9 +15,6 @@ on:
       webVisual:
         description: web/ui/shared/shell affected → run e2e / screenshots / Storybook.
         value: ${{ jobs.detect.outputs.webVisual }}
-      docsDeploy:
-        description: docs/ui affected → deploy the docs site.
-        value: ${{ jobs.detect.outputs.docsDeploy }}
       failOpen:
         description: Detection couldn't be trusted; everything ran.
         value: ${{ jobs.detect.outputs.failOpen }}
@@ -51,7 +48,6 @@ jobs:
     outputs:
       code: ${{ steps.affected.outputs.code }}
       webVisual: ${{ steps.affected.outputs.webVisual }}
-      docsDeploy: ${{ steps.affected.outputs.docsDeploy }}
       failOpen: ${{ steps.affected.outputs.failOpen }}
       web: ${{ steps.affected.outputs.web }}
       docs: ${{ steps.affected.outputs.docs }}

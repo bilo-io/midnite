@@ -13,7 +13,6 @@
 | **GitHub Actions — `e2e` + visual** | push to `main`, every PR | runs only when `web`/`ui`/`shared`/`shell` affected (`webVisual`) |
 | **GitHub Actions — `coverage`** | push to `main`, every PR | `webVisual` or `gateway` affected |
 | **GitHub Actions — `gallery` + Storybook preview** | PR + `main` | `webVisual` affected |
-| **GitHub Actions — docs GH-Pages deploy** | push to `main` | `docsDeploy` (docs/ui) affected |
 | **Vercel — `web`** | production branch (`main`) only | web subtree (`web`+`shared`+`ui`+`shell`) changed |
 | **Vercel — `admin`** | production branch (`main`) only | admin subtree (`admin`+`shared`+`ui`+`shell`) changed |
 | **Vercel — `docs`** | production branch (`main`) only | docs subtree (`docs`+`ui`) changed |
@@ -29,11 +28,14 @@ daily-deploy cap**; the savings come from not deploying/running unaffected work.
 [`affected.yml`](../.github/workflows/affected.yml) workflow runs
 `moon query projects --affected` (via [`scripts/gh-affected.mjs`](../scripts/gh-affected.mjs))
 against the PR base / previous push commit and emits a boolean per package plus
-three convenience groups the jobs gate on:
+two convenience groups the jobs gate on:
 
 - `code` — any package affected → run the blocking `moon ci`.
 - `webVisual` — `web`/`ui`/`shared`/`shell` → run e2e / visual / Storybook.
-- `docsDeploy` — `docs`/`ui` → deploy the docs site.
+
+The docs site deploys to its own hosted **Vercel** project (see the table above);
+its `vercel.json` `ignoreCommand` gates on the docs subtree (`docs`+`ui`) — the
+same git-diff mechanism every other app uses, not a GitHub Actions job.
 
 Because moon knows the dep graph (`shared → web`, `ui → shell → web`), a change
 to `shared` correctly marks `web` affected — no hand-maintained globs to drift.
@@ -66,7 +68,7 @@ So a docs-only PR skips `moon ci`, `ci-gate` goes green, and the PR is mergeable
 ### Repoint branch protection (one-time)
 
 Make `ci-gate` the **only** required status check. The non-blocking jobs (`e2e`,
-`coverage`, `gallery`, `storybook`, `docs`) must **not** be required — they're
+`coverage`, `gallery`, `storybook`) must **not** be required — they're
 `continue-on-error` and gated, so requiring one would let a skip wedge a merge.
 
 > First check what's there: `gh api repos/{owner}/{repo}/branches/main/protection/required_status_checks`.

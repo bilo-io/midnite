@@ -6,8 +6,8 @@
  * Two facts about the docs site shape the URLs here:
  * - It's a **hash-routed** static SPA (packages/docs README), so a deep link is
  *   `${base}/#${slug}`, not `${base}${slug}`.
- * - Hosting is a deferred follow-on, so the base URL is deploy-configured via
- *   `NEXT_PUBLIC_DOCS_URL` with a sensible fallback.
+ * - The docs site is hosted on Vercel, so the base URL is deploy-configured via
+ *   `NEXT_PUBLIC_DOCS_URL` with the hosted URL as a sensible fallback.
  *
  * Boundary note: `web` must not import `@midnite/docs` (a separate leaf consumer
  * of `@midnite/ui`; there is no web→docs edge). So the valid docs slugs are
@@ -17,13 +17,13 @@
  * sync when pages are added/renamed under packages/docs/src/content/.
  */
 
-import { DOCS_PAGES_URL } from '@midnite/shared';
+import { DOCS_HOSTED_URL } from '@midnite/shared';
 
 /**
  * The docs site's base URL (trailing slash trimmed), resolved per environment.
  * In dev the docs SPA runs on its fixed strict port (docs/vite.config.ts →
  * `server.port: 5173`); a deployed build reads `NEXT_PUBLIC_DOCS_URL`, else falls
- * back to the GitHub Pages deploy the docs CI publishes ({@link DOCS_PAGES_URL}).
+ * back to the hosted Vercel docs deploy ({@link DOCS_HOSTED_URL}).
  * The fallback is the real hosted URL — never '' — so the Docs link can't degrade
  * to '#' and reopen the app's own origin instead of the docs site.
  * Read at call time (not a module-load constant) so it stays correct + testable.
@@ -32,7 +32,7 @@ export function docsBaseUrl(): string {
   const origin =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:5173'
-      : (process.env['NEXT_PUBLIC_DOCS_URL'] ?? DOCS_PAGES_URL);
+      : (process.env['NEXT_PUBLIC_DOCS_URL'] ?? DOCS_HOSTED_URL);
   return origin.replace(/\/+$/, '');
 }
 
