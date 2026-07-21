@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { DEFAULT_LOCALE, LocaleSchema } from './i18n.js';
 import { UpdateChannelSchema } from './update.js';
 
 /**
@@ -171,6 +172,13 @@ export type ShimmerDirection = z.infer<typeof ShimmerDirectionSchema>;
 
 export const UserPreferencesSchema = z.object({
   theme: ThemeSchema.default('system'),
+  /**
+   * UI language (Phase 79). One of the supported locales; `en-GB` is the
+   * canonical source locale and the default. Additive — a pre-Phase-79 blob with
+   * no `locale` hydrates to the default, and an unknown/removed value is coerced
+   * back to it (`.catch`) so an old or hand-edited row never fails to parse.
+   */
+  locale: LocaleSchema.catch(DEFAULT_LOCALE).default(DEFAULT_LOCALE),
   navMode: NavModeSchema.default('auto'),
   /** The neuro-cloud starfield is the signature backdrop — the default for fresh installs. */
   backgroundPattern: BackgroundPatternSchema.catch(BACKGROUND_PATTERN_DEFAULT).default(BACKGROUND_PATTERN_DEFAULT),
