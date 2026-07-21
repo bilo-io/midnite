@@ -89,6 +89,22 @@
 - [x] Noted in [`CLAUDE.md`](../CLAUDE.md) (CI section) that CI/CD is affected-gated and to
       expect skipped-but-green checks + the `ci-gate` required check.
 
+## Theme E — CI-hygiene follow-ups (post-launch) — **S**
+
+Small fixes surfaced while landing A–D — pre-existing CI red that predates this phase but
+lives squarely in its "clean, non-wasteful CI" goal.
+
+- [ ] **Align `@vitest/coverage-v8` with `vitest`** — both `gateway` + `web` pin
+      `@vitest/coverage-v8@^4` against `vitest@^3.2.4`, so the coverage provider imports
+      `BaseCoverageProvider` from `vitest/node` (a v4 export) and crashes → the E2E `coverage`
+      job has been red on every commit. Downgrade to `^3.2.4` (match vitest 3) in both packages.
+- [ ] **Turn the E2E `coverage` job green** — confirm `gateway:test-coverage` +
+      `web:test-coverage` run and the `E2E & Visual` workflow no longer fails on coverage.
+- [ ] ⏳ **Gateway Vercel deploy failure** — the `midnite-gateway` project shows
+      "Deployment failed" on PRs (rootDirectory likely not set to `packages/gateway`, so its
+      `vercel.json` ignoreCommand isn't read). Needs a Vercel *dashboard* change, not just
+      repo — **deferred** (outside repo reach; track separately).
+
 ## Post-merge actions (human, one-time)
 
 - **Repoint branch protection** to require `ci-gate` instead of `ci`/`moon ci` — the `gh api`
