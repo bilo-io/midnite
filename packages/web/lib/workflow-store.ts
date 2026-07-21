@@ -41,6 +41,7 @@ export interface WorkflowGraphPayload {
 
 export interface WorkflowState {
   name: string;
+  description: string;
   enabled: boolean;
   trigger: Trigger;
   nodes: AppNode[];
@@ -52,6 +53,7 @@ export interface WorkflowState {
    *  (see `markSaved`), so an edit mid-save isn't silently marked saved. */
   revision: number;
   setName(name: string): void;
+  setDescription(description: string): void;
   setEnabled(enabled: boolean): void;
   setTrigger(trigger: Trigger): void;
   onNodesChange(changes: NodeChange<AppNode>[]): void;
@@ -113,6 +115,7 @@ function toAppEdges(workflow: Workflow): Edge[] {
 export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState> {
   return createStore<WorkflowState>((set, get) => ({
     name: workflow.name,
+    description: workflow.description ?? '',
     enabled: workflow.enabled,
     trigger: workflow.trigger,
     nodes: toAppNodes(workflow),
@@ -122,6 +125,7 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
     revision: 0,
 
     setName: (name) => set((s) => ({ name, dirty: true, revision: s.revision + 1 })),
+    setDescription: (description) => set((s) => ({ description, dirty: true, revision: s.revision + 1 })),
     setEnabled: (enabled) => set((s) => ({ enabled, dirty: true, revision: s.revision + 1 })),
 
     // workflow.trigger is canonical — keep the single trigger node's kind in lockstep.
