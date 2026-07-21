@@ -35,67 +35,66 @@
   branch; **feature-branch previews are on** and there's **no ignore-build-step**. The
   gateway's `vercel.json` disables `main` + `gh-pages` (stateful server — stays off).
 
-## Theme A — Vercel deploy governance (previews off + subtree ignore) — **M**
+> **Scope note (discovered during build).** CI revealed **5** Vercel projects, not the 3 the
+> doc assumed: `web`, `docs`, **`admin`**, **`site`**, and `gateway`. `admin`/`site` were
+> deploying ungated previews and `gateway` previews failed on every PR — all five are now
+> covered (user confirmed "all my Vercel apps").
 
-- [ ] **Kill all previews for `web` + `docs`** — only the production branch (`main`) deploys.
-      Set `git.deploymentEnabled` so non-production branches don't deploy, and/or a
-      production-only `ignoreCommand` that exits 0 (skip) on any non-production ref. No
-      feature-branch previews at all.
-- [ ] **Per-app `vercel-ignore` script** (the "Ignored Build Step" / `ignoreCommand`): a thin
-      `git diff` over the app's **dependency subtree** — `web` = `packages/web` + `shared` +
-      `ui` + `shell` (mirrors its `buildCommand` chain); `docs` = `packages/docs` + `ui`. Exit
-      0 = skip deploy, exit 1 = build. So a `docs`-only change never rebuilds `web`, and
-      vice-versa. Live as a script under each package (`packages/<app>/scripts/vercel-ignore.sh`)
-      referenced from `vercel.json`.
-- [ ] **Gateway stays off** — leave [`gateway/vercel.json`](../packages/gateway/vercel.json)
-      untouched; add a one-line note that it's intentionally excluded from the subtree scheme.
-- [ ] Verify against real Vercel: a docs-only PR merge deploys **docs only**; a `shared` change
-      deploys **web** (proves the subtree edge is honoured, not just the leaf dir).
+## Theme A — Vercel deploy governance (previews off + subtree ignore) — **M** ✅ DONE (PR #498, 2026-07-21)
 
-## Theme B — Actions affected-gating (moon oracle) — **L**
+- [x] **Kill all previews for every app** — only the production branch (`main`) deploys;
+      the `ignoreCommand` in [`scripts/vercel-ignore.mjs`](../scripts/vercel-ignore.mjs) skips
+      any non-production `VERCEL_ENV`/ref. No feature-branch previews at all.
+- [x] **Per-app `vercel-ignore.mjs` script** (Node, not bash — unit-testable): a thin
+      `git diff HEAD^ HEAD` over the app's **dependency subtree** — `web`/`admin` =
+      pkg+`shared`+`ui`+`shell`; `docs`/`site` = pkg+`ui`. Exit 0 = skip, exit 1 = build. So a
+      `docs`-only change never rebuilds `web`. Referenced from each `vercel.json`.
+- [x] **Gateway never deploys** — its `vercel.json` gets an always-skip `ignoreCommand`
+      (`NEVER_DEPLOY`) on top of `deploymentEnabled:false`, so preview branches stop attempting
+      (and failing) a stateful-server build.
+- [x] Verified via CI: `changes` detection ran green; docs-only vs `shared` subtree behaviour
+      is pinned by the drift-guard + unit tests (real-Vercel confirmation lands post-merge on `main`).
 
-- [ ] **`changes` detection job** — a fast leading job (checkout `fetch-depth: 0`, install
-      toolchain, `moon query projects --affected --json` against the PR base / push range) that
-      emits per-app boolean outputs (`web`, `docs`, `gateway`, `cli`, `shared`, `ui`, `shell`,
-      `desktop`) consumed by downstream jobs.
-- [ ] **Gate `ci.yml`** — the `moon ci` job runs only when *anything* code-relevant is
-      affected; a pure-docs/markdown change skips the runner entirely (no boot, no install, no
-      Playwright download).
-- [ ] **Gate `e2e.yml`** — run the `e2e` + `coverage` jobs only when `web`/`ui`/`shared`/`shell`
-      is affected (they're the fattest runners; biggest single saving even though e2e is
-      already non-blocking).
-- [ ] **Gate `preview.yml`** — run the screenshot `gallery` + Storybook deploy only when
-      `web`/`ui`/`shared`/`shell` changed; run the main-only `docs` deploy only when the docs
-      subtree changed. Keep the PR-close `cleanup` unconditional (it must always tidy
-      `gh-pages`).
-- [ ] Factor the shared install boilerplate (proto → `proto install` → `pnpm install
-      --frozen-lockfile`) so the `changes` job and the gated jobs don't duplicate five steps
-      each — a small composite action or reused step block.
+## Theme B — Actions affected-gating (moon oracle) — **L** ✅ DONE (PR #498, 2026-07-21)
 
-## Theme C — Skip-is-pass contract (`ci-gate` + branch protection) — **M**
+- [x] **`changes` detection job** — reusable [`affected.yml`](../.github/workflows/affected.yml)
+      (checkout `fetch-depth: 0`, moon-only setup) runs `moon query projects --affected` via
+      [`scripts/gh-affected.mjs`](../scripts/gh-affected.mjs), emitting a per-package boolean
+      matrix + `code`/`webVisual`/`docsDeploy` groups.
+- [x] **Gate `ci.yml`** — `moon ci` runs only when `code == 'true'`; a pure docs/markdown
+      change skips the runner entirely.
+- [x] **Gate `e2e.yml`** — `e2e` on `webVisual`; `coverage` on `webVisual || gateway`.
+- [x] **Gate `preview.yml`** — `gallery` + Storybook on `webVisual`; main-only `docs` deploy on
+      `docsDeploy`; PR-close `cleanup` stays unconditional.
+- [x] Factored the proto→pnpm install boilerplate into a `.github/actions/setup` composite
+      action (deps optional, so the lightweight `changes` job skips `pnpm install`).
 
-- [ ] **`ci-gate` aggregation job** in `ci.yml` — always runs (`if: always()`), `needs:` the
-      `changes` + `moon ci` jobs, and passes when the gated job either **succeeded or was
-      skipped** (fails only on a real failure). This is the job GitHub branch protection
-      requires — a skipped `moon ci` reports green through the gate, so a docs-only PR is
-      immediately mergeable instead of stuck "Expected — waiting for status."
-- [ ] **Repoint branch protection** — document (and, where scriptable via `gh api`, apply) that
-      the **required status check becomes `ci-gate`**, not `ci`/`moon ci`. Capture the exact
-      `gh api` call in the runbook so it's reproducible.
-- [ ] Confirm the non-blocking jobs (`e2e`, `coverage`, preview) are **not** required checks, so
-      gating them can never wedge a merge regardless of skip behaviour.
+## Theme C — Skip-is-pass contract (`ci-gate` + branch protection) — **M** ✅ DONE (PR #498, 2026-07-21)
 
-## Theme D — Runbook & drift guards — **S**
+- [x] **`ci-gate` aggregation job** in `ci.yml` — `if: always()`, `needs: [changes, ci]`,
+      passes when `ci` succeeded **or** was skipped (fails on real failure/cancel or a broken
+      `changes`). The single required check, so a docs-only PR is immediately mergeable.
+- [x] **Repoint branch protection** — the exact `gh api` call is captured in the runbook
+      ([`docs/CICD.md`](../docs/CICD.md)); applying it is the one post-merge step (below).
+- [x] Confirmed the non-blocking jobs (`e2e`/`coverage`/`gallery`/`storybook`/`docs`) are
+      `continue-on-error` and must **not** be required checks — documented in the runbook.
 
-- [ ] **`docs/CICD.md`** (or a section in an existing infra doc) — the deploy economy: what
-      triggers a deploy, what triggers each workflow, the `ci-gate` contract, and **how to add a
-      new app** to both the moon-affected outputs and its Vercel subtree list.
-- [ ] **Drift guard for the Vercel subtree lists** — a comment/test that keeps each
-      `vercel-ignore` path list honest against the package's real `moon.yml` `dependsOn` (the
-      one hand-maintained list in the phase; everything else derives from moon), so a future dep
-      edge added to `web` doesn't silently under-deploy.
-- [ ] Note in [`CLAUDE.md`](../CLAUDE.md) (CI section) that Actions job-selection + Vercel
-      deploys are affected-gated, so contributors expect skipped-but-green checks.
+## Theme D — Runbook & drift guards — **S** ✅ DONE (PR #498, 2026-07-21)
+
+- [x] **[`docs/CICD.md`](../docs/CICD.md)** — the deploy economy table, the moon/Vercel oracle
+      split, fail-open policy, the `ci-gate` contract + branch-protection repoint, and how to
+      add a new app.
+- [x] **Drift guard** — `packages/shared/src/vercel-ignore-scripts.test.ts` fails CI if a
+      `SUBTREES` entry drifts from the package's transitive `moon.yml dependsOn`.
+- [x] Noted in [`CLAUDE.md`](../CLAUDE.md) (CI section) that CI/CD is affected-gated and to
+      expect skipped-but-green checks + the `ci-gate` required check.
+
+## Post-merge actions (human, one-time)
+
+- **Repoint branch protection** to require `ci-gate` instead of `ci`/`moon ci` — the `gh api`
+  call is in [`docs/CICD.md`](../docs/CICD.md#repoint-branch-protection-one-time).
+- **Confirm on real Vercel** after the first `main` deploy: a docs-only change deploys docs
+  only; a `shared` change deploys web + admin; no feature-branch previews appear.
 
 ---
 
