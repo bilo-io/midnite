@@ -5,16 +5,12 @@ import { ArrowRight, Newspaper, RefreshCw } from 'lucide-react';
 import type { DigestListItem } from '@midnite/shared';
 
 import { getDigests } from '@/lib/api';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 120_000;
-
-function fmtDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { dateStyle: 'medium' });
-}
 
 function Count({ label, value, tone }: { label: string; value: number; tone: 'good' | 'bad' | 'warn' }) {
   return (
@@ -42,6 +38,11 @@ function Count({ label, value, tone }: { label: string; value: number; tone: 'go
 export function DigestWidget() {
   const { data, error, loading, refresh } = usePolling<DigestListItem[]>(() => getDigests(1), REFRESH_MS);
   const latest = data?.[0] ?? null;
+  const { dateTime } = useLocaleFormat();
+  const fmtDate = (iso: string): string => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : dateTime(d, { dateStyle: 'medium' });
+  };
 
   return (
     <WidgetCard

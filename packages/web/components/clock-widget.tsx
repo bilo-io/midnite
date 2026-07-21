@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import type { ClockMode, WidgetConfig } from '@/lib/dashboard-widgets';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 import { AnalogClockFace } from './analog-clock-face';
 import { WidgetCard } from './widget-card';
@@ -52,8 +53,9 @@ export function ClockWidget({ config, onConfigChange }: ClockWidgetProps) {
 }
 
 function DigitalClock({ date }: { date: Date }) {
-  // 24-hour clock (h23) so there's no AM/PM.
-  const time = date.toLocaleTimeString(undefined, {
+  const { dateTime } = useLocaleFormat();
+  // 24-hour clock (h23) so there's no AM/PM; digit glyphs + separators follow the locale.
+  const time = dateTime(date, {
     hourCycle: 'h23',
     hour: '2-digit',
     minute: '2-digit',
