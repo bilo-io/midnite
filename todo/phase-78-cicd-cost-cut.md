@@ -99,11 +99,15 @@ lives squarely in its "clean, non-wasteful CI" goal.
       `BaseCoverageProvider` from `vitest/node` (a v4 export) and crashed → the E2E `coverage`
       job was red on every commit. Pinned to `3.2.4` (exact match to the locked vitest) in both.
 - [x] **Turn the E2E `coverage` job green** — `gateway:test-coverage` (2203 tests, 78% report)
-      + `web:test-coverage` (1146 tests) now run green. This also required repairing
-      `session-detail-view.test.tsx` (a separate pre-existing red from #499 that broke
-      `web:test`/`moon ci` too): wrap renders in `Toast`+`Confirm` providers (the view gained
-      `useToast`/`useConfirm`) and drop the stale status-text assertions — the status chip
-      moved to `SessionInfoPanel` (stubbed here; covered by its own spec).
+      + `web:test-coverage` (1146 tests) now run green. This also required clearing the
+      pre-existing `web:test`/`moon ci` reds that fail every web PR on `main`:
+      - `session-detail-view.test.tsx` (from #499): wrap renders in `Toast`+`Confirm`
+        providers (the view gained `useToast`/`useConfirm`) and drop the stale status-text
+        assertions — the status chip moved to `SessionInfoPanel` (stubbed here; its own spec covers it).
+      - **6 drifted storybook interaction stories** realigned to their current components:
+        `auth-hero` (title full-stop / typed wordmark → logo alt; SplitScreen reduced-motion),
+        `sso-buttons` (both buttons always show, #454), `guardrails-control` (inline hover
+        buttons, no menu), `command-palette` (`Profile`→`Personalization`). Full `:test` now green.
 - [ ] ⏳ **Gateway Vercel deploy failure** — the `midnite-gateway` project shows
       "Deployment failed" on PRs (rootDirectory likely not set to `packages/gateway`, so its
       `vercel.json` ignoreCommand isn't read). Needs a Vercel *dashboard* change, not just

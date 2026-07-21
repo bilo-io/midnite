@@ -10,6 +10,7 @@ PR #503. Cleared two pre-existing CI reds that predated Phase 78 but sit in its 
 
 - [x] **Coverage-v8 ↔ vitest alignment** — `gateway` + `web` pinned `@vitest/coverage-v8@^4` against `vitest@3.2.4`; the v4 provider imported `BaseCoverageProvider` from `vitest/node` (v4-only) and crashed, so the E2E `coverage` job was red every commit. Pinned to `3.2.4` → `gateway:test-coverage` (2203 tests, 78%) + `web:test-coverage` (1146) green.
 - [x] **`session-detail-view.test.tsx` repair** — #499 gave the view `useToast`/`useConfirm`, breaking `web:test`/`moon ci`. Wrapped renders in `Toast`+`Confirm` providers (the `slides-view` pattern) and dropped stale `running`/`ended` assertions — the status chip moved to `SessionInfoPanel` (stubbed here; covered by its own spec, no coverage lost).
+- [x] **6 drifted storybook interaction stories realigned** (also pre-existing web-PR reds): `auth-hero` (title full-stop, typed-wordmark → logo alt, SplitScreen reduced-motion), `sso-buttons` (both buttons always visible per #454), `guardrails-control` (inline hover controls, no menu), `command-palette` (`Profile`→`Personalization`). Full `moon ci` (`:typecheck`/`:lint`/`:test`) now green.
 - [ ] ⏳ **Gateway Vercel deploy failure** — deferred; needs a Vercel dashboard `rootDirectory` change (outside repo reach).
 
 ## 2026-07-21 — feat: Phase 78 CI/CD cost-cut (Themes A–D) — **completes Phase 78 🎉 15/15**
