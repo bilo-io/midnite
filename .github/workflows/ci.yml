@@ -6,7 +6,16 @@ on:
   pull_request:
 
 jobs:
+  # Phase 78 Theme B — decide which packages this push/PR touches.
+  changes:
+    uses: ./.github/workflows/affected.yml
+
   ci:
+    needs: changes
+    # Skip the whole runner when no package is affected (e.g. a docs/*.md-only
+    # or todo/ change). `ci-gate` below reports green for the skip so the PR
+    # stays mergeable.
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,24 +23,35 @@ jobs:
           # moon needs history to detect affected projects against the base.
           fetch-depth: 0
 
-      - name: Install proto
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
-
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
-
-      - name: Install dependencies
-        # Skip the Electron binary download — CI runs typecheck/test/build, not a
-        # desktop package, and the binary is large + macOS-specific.
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Install Playwright chromium (Storybook stories run as browser tests in web:test)
         run: pnpm exec playwright install --with-deps chromium
 
       - name: moon ci (typecheck + test + build + lint)
         run: moon ci
+
+  # Phase 78 Theme C — the single required status check. Always runs and
+  # aggregates: passes when `ci` succeeded OR was skipped (nothing affected),
+  # fails on a real ci failure/cancel or a broken `changes` detection. Point
+  # branch protection at THIS job, not `ci` (see docs/CICD.md).
+  ci-gate:
+    needs: [changes, ci]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate CI result
+        run: |
+          changes_res="${{ needs.changes.result }}"
+          ci_res="${{ needs.ci.result }}"
+          echo "changes: $changes_res · ci: $ci_res"
+          if [ "$changes_res" != "success" ]; then
+            echo "::error::affected-detection did not succeed ($changes_res)"
+            exit 1
+          fi
+          if [ "$ci_res" = "success" ] || [ "$ci_res" = "skipped" ]; then
+            echo "CI gate passed (ci: $ci_res)."
+            exit 0
+          fi
+          echo "::error::CI gate failed (ci: $ci_res)"
+          exit 1
