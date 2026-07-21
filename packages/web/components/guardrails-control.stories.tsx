@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { userEvent, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import type { GuardrailSettings } from '@midnite/shared';
 
 import { ConfirmProvider } from './confirm-dialog';
@@ -41,7 +41,8 @@ export const BannerScoped: Story = {
   render: () => <GuardrailsBanner guardrails={pausedRepo} onChange={() => {}} />,
 };
 
-/** The compact toolbar control with its safety menu open. */
+/** The compact toolbar control: pause + emergency-stop surfaced directly as
+ *  hover-expand buttons (Phase 50 A — no dropdown menu). */
 export const ControlMenuOpen: Story = {
   render: () => (
     <div className="flex justify-end p-2">
@@ -50,7 +51,10 @@ export const ControlMenuOpen: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: /safety controls/i }));
+    // Both controls are always in the accessible tree (labels are clipped, not
+    // removed); hovering just reveals them visually.
+    await expect(canvas.getByRole('button', { name: /pause scheduling/i })).toBeInTheDocument();
+    await userEvent.hover(canvas.getByRole('button', { name: /emergency stop/i }));
   },
 };
 

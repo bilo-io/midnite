@@ -4,7 +4,10 @@ import { expect, within } from 'storybook/test';
 import { AUTH_HERO_COPY, AuthHero } from './auth-hero';
 import { SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 
-const TITLES = AUTH_HERO_COPY.map((c) => c.title);
+// The hero renders the title as a headline with the trailing full stop dropped
+// (auth-hero.tsx: `copy.title.replace(/\.$/, '')`), so mirror that here to compare
+// against what's actually on screen.
+const TITLES = AUTH_HERO_COPY.map((c) => c.title.replace(/\.$/, ''));
 
 const meta = {
   title: 'Auth/AuthHero',
@@ -27,7 +30,9 @@ async function expectLoginCopy(canvasElement: HTMLElement) {
   const heading = await canvas.findByRole('heading', { level: 2 });
   // The hero renders one of the curated *login* pairs — not dashboard/quote copy.
   await expect(TITLES.some((t) => t.startsWith(heading.textContent ?? ''))).toBe(true);
-  await expect(canvas.getByText('midnite')).toBeInTheDocument();
+  // The wordmark types out (and its intro waits on the layout's starfield, absent
+  // in isolation), so assert the brand via the always-present logo image instead.
+  await expect(canvas.getByAltText('midnite')).toBeInTheDocument();
 }
 
 /** The living knowledge-graph starfield behind the animated login copy. */
@@ -55,6 +60,13 @@ export const ReducedMotion: Story = {
  * tested in `layout.test.tsx`.
  */
 export const SplitScreen: Story = {
+  // Resolve motion so the hero's title/wordmark settle deterministically in
+  // isolation (the motion-on intro waits on the layout starfield, absent here),
+  // avoiding a transient empty-heading during the type-out.
+  beforeEach: () => {
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ motion: 'reduced' }));
+    return () => window.localStorage.removeItem(SETTINGS_STORAGE_KEY);
+  },
   render: () => (
     <div className="flex h-[700px] w-full bg-background">
       <div className="flex w-1/3 flex-col items-center justify-center px-4">
@@ -62,7 +74,11 @@ export const SplitScreen: Story = {
           <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">
             Sign in to midnite
           </h1>
-          <div className="h-40 rounded-md border border-dashed border-border" aria-label="form" />
+          <div
+            role="group"
+            aria-label="form"
+            className="h-40 rounded-md border border-dashed border-border"
+          />
         </div>
       </div>
       <div className="relative w-2/3">

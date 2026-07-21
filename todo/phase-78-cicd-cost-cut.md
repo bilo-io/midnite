@@ -89,17 +89,31 @@
 - [x] Noted in [`CLAUDE.md`](../CLAUDE.md) (CI section) that CI/CD is affected-gated and to
       expect skipped-but-green checks + the `ci-gate` required check.
 
-## Theme E — CI-hygiene follow-ups (post-launch) — **S**
+## Theme E — CI-hygiene follow-ups (post-launch) — **S** ✅ DONE (PR #503, 2026-07-21)
 
 Small fixes surfaced while landing A–D — pre-existing CI red that predates this phase but
 lives squarely in its "clean, non-wasteful CI" goal.
 
-- [ ] **Align `@vitest/coverage-v8` with `vitest`** — both `gateway` + `web` pin
-      `@vitest/coverage-v8@^4` against `vitest@^3.2.4`, so the coverage provider imports
-      `BaseCoverageProvider` from `vitest/node` (a v4 export) and crashes → the E2E `coverage`
-      job has been red on every commit. Downgrade to `^3.2.4` (match vitest 3) in both packages.
-- [ ] **Turn the E2E `coverage` job green** — confirm `gateway:test-coverage` +
-      `web:test-coverage` run and the `E2E & Visual` workflow no longer fails on coverage.
+- [x] **Align `@vitest/coverage-v8` with `vitest`** — both `gateway` + `web` pinned
+      `@vitest/coverage-v8@^4` against `vitest@3.2.4`, so the coverage provider imported
+      `BaseCoverageProvider` from `vitest/node` (a v4 export) and crashed → the E2E `coverage`
+      job was red on every commit. Pinned to `3.2.4` (exact match to the locked vitest) in both.
+- [x] **Turn the E2E `coverage` job green** — `gateway:test-coverage` (2203 tests, 78% report)
+      + `web:test-coverage` (1146 tests) now run green. This also required clearing the
+      pre-existing `web:test`/`moon ci` reds that fail every web PR on `main`:
+      - `session-detail-view.test.tsx` (from #499): wrap renders in `Toast`+`Confirm`
+        providers (the view gained `useToast`/`useConfirm`) and drop the stale status-text
+        assertions — the status chip moved to `SessionInfoPanel` (stubbed here; its own spec covers it).
+      - **6 drifted storybook interaction stories** realigned to their current components:
+        `auth-hero` (title full-stop / typed wordmark → logo alt; SplitScreen reduced-motion),
+        `sso-buttons` (both buttons always show, #454), `guardrails-control` (inline hover
+        buttons, no menu), `command-palette` (`Profile`→`Personalization`). Full `:test` now green.
+- [ ] ⏳ **`web:build-storybook` CJS-barrel resolution** — rollup (storybook's Vite) can't
+      statically resolve a named import (`AgentPingResponseSchema`) through `@midnite/shared`'s
+      **CommonJS `export *` barrel**, so `web:build-storybook` (part of `moon ci`) fails on every
+      web-touching PR — pre-existing, independent of this phase. Fix needs a shared build/export
+      change (e.g. ESM output, or not compiling `*.test.ts` into `dist`) or storybook Vite
+      commonjs handling; wide blast radius — **deferred** to its own slice.
 - [ ] ⏳ **Gateway Vercel deploy failure** — the `midnite-gateway` project shows
       "Deployment failed" on PRs (rootDirectory likely not set to `packages/gateway`, so its
       `vercel.json` ignoreCommand isn't read). Needs a Vercel *dashboard* change, not just
