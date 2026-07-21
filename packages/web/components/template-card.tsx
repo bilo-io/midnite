@@ -16,7 +16,7 @@ export function TemplateCard({ template, layout, onOpen }: Props) {
       <button
         type="button"
         onClick={onOpen}
-        className="group flex w-full items-center gap-3 rounded-lg border border-border/60 bg-card/40 p-3 text-left transition-colors hover:border-foreground/20 hover:bg-accent/40"
+        className="group flex w-full items-center gap-3 rounded-lg border border-border/60 surface-glass-interactive p-3 text-left transition-colors hover:border-foreground/20"
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ export function TemplateCard({ template, layout, onOpen }: Props) {
     <button
       type="button"
       onClick={onOpen}
-      className="group flex flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 text-left transition-colors hover:border-foreground/20 hover:bg-accent/40"
+      className="group flex flex-col gap-3 rounded-xl border border-border/60 surface-glass-interactive p-4 text-left transition-colors hover:border-foreground/20"
     >
       <div className="flex items-center justify-between gap-2">
         <ProjectTag tag={template.tag} color={template.color} />

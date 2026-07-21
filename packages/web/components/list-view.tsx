@@ -33,7 +33,7 @@ export function ListView({
         items.length === 0 ? (
           <p className="px-1 text-xs text-muted-foreground">Nothing here</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border bg-card">
+          <div className="overflow-hidden rounded-lg border surface-glass">
             {items.map((t) => (
               <TaskRow
                 key={t.id}

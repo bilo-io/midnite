@@ -92,7 +92,7 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
               <p className="text-xs text-muted-foreground">No node activity yet.</p>
             ) : (
               run.nodeRuns.map((nr) => (
-                <div key={nr.id} className="overflow-hidden rounded-md border border-border/50 bg-card/50">
+                <div key={nr.id} className="overflow-hidden rounded-md border border-border/50 surface-glass">
                   <button
                     type="button"
                     onClick={() => setExpanded((e) => (e === nr.id ? null : nr.id))}

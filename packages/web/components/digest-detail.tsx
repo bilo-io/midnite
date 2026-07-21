@@ -38,7 +38,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function StatChip({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'bad' | 'warn' }) {
   return (
-    <div className="rounded-lg border bg-card px-3 py-2">
+    <div className="rounded-lg border surface-glass px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div
         className={cn(
@@ -87,7 +87,7 @@ export function DigestDetail({ digest }: { digest: Digest }) {
             {fmtDate(digest.from)} – {fmtDate(digest.to)}
           </p>
         </div>
-        <ExportMenu fetchMarkdown={() => exportDigest(digest.id)} filename={`digest-${digest.id}`} />
+        <ExportMenu fetchMarkdown={() => exportDigest(digest.id)} filename={`digest-${digest.id}`} iconOnly />
       </div>
 
       {/* Outcome tallies */}
@@ -128,7 +128,7 @@ export function DigestDetail({ digest }: { digest: Digest }) {
       {digest.sections.length > 0 && (
         <section>
           <SectionTitle>By repo / project</SectionTitle>
-          <ul className="divide-y rounded-lg border bg-card">
+          <ul className="divide-y rounded-lg border surface-glass">
             {digest.sections.map((s) => (
               <li key={s.name} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <span className="truncate font-medium text-foreground">{s.name}</span>
@@ -152,7 +152,7 @@ export function DigestDetail({ digest }: { digest: Digest }) {
               <li key={h.taskId}>
                 <Link
                   href={`/tasks?task=${encodeURIComponent(h.taskId)}`}
-                  className="group flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm transition-colors hover:border-primary/50 hover:bg-accent"
+                  className="group flex items-center gap-3 rounded-lg border surface-glass-interactive px-3 py-2 text-sm transition-colors hover:border-primary/50"
                 >
                   <OutcomeBadge outcome={h.outcome} />
                   <span className="min-w-0 flex-1">

@@ -50,7 +50,7 @@ export function MemoryCard({
     return (
       <div
         className={cn(
-          'group flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:border-foreground/20 hover:bg-accent/40',
+          'group flex items-center gap-3 rounded-lg border border-border/60 surface-glass-interactive p-3 transition-colors hover:border-foreground/20',
           selected && 'border-primary/50 bg-accent/30',
           memory.archived && 'opacity-80',
         )}
@@ -76,7 +76,7 @@ export function MemoryCard({
   return (
     <div
       className={cn(
-        'group flex flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-colors hover:border-foreground/20 hover:bg-accent/40',
+        'group flex flex-col gap-3 rounded-xl border border-border/60 surface-glass-interactive p-4 transition-colors hover:border-foreground/20',
         selected && 'border-primary/50 bg-accent/30',
         memory.archived && 'opacity-80',
       )}

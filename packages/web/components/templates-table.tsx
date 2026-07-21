@@ -45,7 +45,7 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
         return (
           <section
             key={t.id}
-            className="overflow-hidden rounded-lg border border-border/60 bg-card/60 backdrop-blur-sm"
+            className="overflow-hidden rounded-lg border border-border/60 surface-glass"
           >
             <div className="flex items-center gap-2 px-2 py-2">
               <button

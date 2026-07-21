@@ -31,7 +31,7 @@ export function AbandonedRow({
   if (tasks.length === 0) return null;
   const projectFor = (t: TaskSummary) => (t.projectId ? projectsById?.get(t.projectId) : undefined);
   return (
-    <section className="shrink-0 rounded-lg border bg-card">
+    <section className="shrink-0 rounded-lg border surface-glass">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

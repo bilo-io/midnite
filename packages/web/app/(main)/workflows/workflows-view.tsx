@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { LayoutGrid, List, ListTree, Plus, Workflow } from 'lucide-react';
+import { LayoutDashboard, LayoutGrid, List, ListTree, Plus, Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
+import { HoverExpandButton } from '@/components/hover-expand-button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -172,6 +173,14 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <CountPill count={filtered.length} noun="workflow" />
         <div className="flex items-center gap-2">
+          {/* Templates — icon-only left of search, revealing its label on hover
+              (the shared HoverExpandButton pattern, as on the tasks board). */}
+          <HoverExpandButton
+            href="/workflows/templates"
+            icon={<LayoutDashboard className="h-3.5 w-3.5" />}
+            label="Templates"
+            variant="outline"
+          />
           <SearchBar placeholder="Search workflows" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
