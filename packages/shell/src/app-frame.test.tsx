@@ -42,7 +42,9 @@ describe('AppFrame', () => {
     expect(rail().getByRole('link', { name: /Sessions/ })).toHaveAttribute('href', '/sessions');
     expect(rail().getByRole('link', { name: /Settings/ })).toHaveAttribute('href', '/settings');
     // Brand + footer + the collapsible section header live only in the rail.
-    expect(screen.getByText('Main')).toBeInTheDocument();
+    // At rest (auto mode) the rail is collapsed, so the section title surfaces
+    // as the header button's accessible name (its tooltip only mounts on hover).
+    expect(screen.getByRole('button', { name: 'Main section' })).toBeInTheDocument();
     expect(screen.getByText('midnite')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Account' })).toBeInTheDocument();
     expect(screen.getByText('content')).toBeInTheDocument();
@@ -142,9 +144,16 @@ describe('AppFrame', () => {
         </AppFrame>,
       );
       // Collapsed rail: the header is an icon button with an aria-label, and every
-      // rail control carries a hover tooltip instead of an inline label.
+      // rail control carries a hover tooltip instead of an inline label. Tooltips
+      // portal to <body> (the nav list is a scroll container that would clip
+      // them) and only mount while their control is hovered/focused.
       expect(rail().getByRole('button', { name: 'App section' })).toBeInTheDocument();
-      expect(rail().getAllByRole('tooltip').length).toBeGreaterThan(0);
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+      const link = rail().getByRole('link', { name: 'Board' });
+      fireEvent.mouseEnter(link);
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Board');
+      fireEvent.mouseLeave(link);
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 
     it('renders section headers as text with the title when expanded (navMode)', () => {
@@ -155,7 +164,7 @@ describe('AppFrame', () => {
       );
       const header = screen.getByRole('button', { name: /App/ });
       expect(within(header).getByText('App')).toBeInTheDocument();
-      expect(rail().queryAllByRole('tooltip')).toHaveLength(0);
+      expect(screen.queryAllByRole('tooltip')).toHaveLength(0);
     });
   });
 

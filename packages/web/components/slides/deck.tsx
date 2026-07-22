@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Maximize, X } from 'lucide-react';
+import { Maximize, X } from 'lucide-react';
 import type { Slide } from '@/lib/slides/markdown';
 import { sliceHtml, visibleLen } from '@/lib/slides/html-type';
 import { copyCodeFromButton } from '@/lib/slides/code-blocks';
@@ -310,18 +309,10 @@ export function Deck({ slides }: { slides: Slide[] }) {
     <div className="slides-scope deck">
       <DeckRail slides={slides} index={index} reveal={reveal} jump={jump} />
 
-      <div className="fixed left-[clamp(1.5rem,2.6vw,2.4rem)] top-[clamp(1.2rem,2.4vw,2rem)] z-30">
-        <Link
-          href="/slides"
-          className="deck-control inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label="Back to all decks"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Decks
-        </Link>
-      </div>
-
-      <div className="fixed right-[clamp(1.2rem,2.4vw,2rem)] top-[clamp(1.2rem,2.4vw,2rem)] z-30 flex items-center gap-1.5">
+      {/* No back button — the close (X) control exits to /slides already. The
+          controls offset by --titlebar-h so the desktop title bar (fixed,
+          z-[60]) never occludes them. */}
+      <div className="fixed right-[clamp(1.2rem,2.4vw,2rem)] top-[calc(var(--titlebar-h,0px)_+_clamp(1.2rem,2.4vw,2rem))] z-30 flex items-center gap-1.5">
         <button type="button" onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Fullscreen (F)" className={controlClass}>
           <Maximize className="h-4 w-4" />
         </button>

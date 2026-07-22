@@ -9,7 +9,7 @@ import { SettingsSidebar } from './settings-sidebar';
  */
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] flex-col">
+    <div className="flex min-h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col">
       <PageHeader
         title="Settings"
         icon="Settings"

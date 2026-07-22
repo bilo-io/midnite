@@ -7,11 +7,12 @@ import { LayoutGrid, List, Plus, Presentation, type LucideIcon } from 'lucide-re
 import type { Project } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { StyledSelect } from '@/components/ui/styled-select';
 import { EmptyState } from '@/components/empty-state';
 import type { FilterOption } from '@/components/filter-pills';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { SearchBar } from '@/components/search-bar';
+import { SortSelect } from '@/components/sort-select';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { DeckCard, DeckRow } from '@/components/slides/deck-card';
 import { useDecks } from '@/lib/slides/use-decks';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -125,43 +126,41 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
+      <StickyToolbar>
+        <div className="flex flex-wrap items-center gap-2">
+          {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
+          <SortSelect<Sort>
+            options={SORT_OPTIONS}
+            value={sort}
+            onChange={setSort}
+            aria-label="Sort decks"
+          />
+        </div>
 
-        <StyledSelect<Sort>
-          options={SORT_OPTIONS}
-          value={sort}
-          onChange={setSort}
-          aria-label="Sort decks"
-          className="w-44"
-        />
-
-        <div className="ml-auto">
+        <div className="flex shrink-0 items-center gap-2">
           <SearchBar placeholder="Search decks" />
+          <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
+            {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+              <Button
+                key={value}
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={label}
+                aria-pressed={view === value}
+                onClick={() => setView(value)}
+                className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
+              >
+                <Icon className="h-4 w-4" />
+              </Button>
+            ))}
+          </div>
+          <Link href="/slides/new" className={cn(buttonVariants({ size: 'sm' }))}>
+            <Plus className="h-4 w-4" />
+            New deck
+          </Link>
         </div>
-
-        <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-          {VIEW_OPTIONS.map(({ value, label, Icon }) => (
-            <Button
-              key={value}
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={label}
-              aria-pressed={view === value}
-              onClick={() => setView(value)}
-              className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          ))}
-        </div>
-
-        <Link href="/slides/new" className={cn(buttonVariants({ size: 'sm' }))}>
-          <Plus className="h-4 w-4" />
-          New deck
-        </Link>
-      </div>
+      </StickyToolbar>
 
       <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
         <CountPill count={decks.length} noun="deck" />

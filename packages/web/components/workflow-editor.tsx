@@ -261,8 +261,11 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         {/* Full-screen editor column — the shared `PageHeader` (back + editable
             title/subtitle) sits at the top, mirroring the other detail cockpits
             (e.g. the dependency graph). Its left-aligned content clears the app's
-            fixed top-right header-actions cluster, so no manual offset is needed. */}
-        <div className="flex h-[100dvh] w-full flex-col overflow-hidden">
+            fixed top-right header-actions cluster, so no manual offset is needed.
+            Height subtracts the desktop title bar (the layout pads by
+            --titlebar-h) so the column fits the viewport exactly — otherwise the
+            48px document overflow lets the header/palette scroll behind the bar. */}
+        <div className="flex h-[calc(100dvh_-_var(--titlebar-h,0px))] w-full flex-col overflow-hidden">
           <WorkflowPageHeader
             onRun={() => void run()}
             onSave={() => void save()}

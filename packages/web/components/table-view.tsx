@@ -57,7 +57,9 @@ export function TableView({
   });
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto pb-1">
+    // No inner scroll region — the document is the page's one scroll area, so
+    // the sticky toolbar pins while the accordions scroll under it.
+    <div className="min-h-0 flex-1 pb-1">
       <SortableAccordions sections={sections} storageKey="midnite.tasks.sections" />
       {showAbandoned && (
         <div className="mt-2">

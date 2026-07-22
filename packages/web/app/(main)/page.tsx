@@ -205,8 +205,10 @@ export default function HomePage() {
     <div
       // Transparent: the app-wide <AppBackdrop/> (starfield by default) shows
       // through from the layout, so the landing shares the one backdrop rather
-      // than mounting its own canvas.
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center"
+      // than mounting its own canvas. The viewport height subtracts the desktop
+      // title bar (the layout already pads by --titlebar-h) so the landing never
+      // overflows into a 48px document scroll on desktop.
+      className="relative flex min-h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col items-center justify-center px-6 text-center"
     >
       <LandingWeather />
       <LandingClock now={now} />

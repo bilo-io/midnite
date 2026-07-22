@@ -21,6 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Pin, Plus, X } from 'lucide-react';
 import { MAX_DASHBOARDS, isDefaultTab, useDashboardTabs, type DashboardTab } from '@/lib/dashboard-tabs';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { cn } from '@/lib/utils';
 
 /**
@@ -118,50 +119,55 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
     );
 
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-1.5">
-      {defaultTab &&
-        (editingId === defaultTab.id ? (
-          renameInput(defaultTab)
-        ) : (
-          <div
-            key={defaultTab.id}
-            className={cn(chipClass(defaultTab.id === activeId), 'px-3')}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveId(defaultTab.id)}
-              onDoubleClick={() => startRename(defaultTab.id, defaultTab.name)}
-              className="max-w-[12rem] truncate focus-visible:outline-none"
-              title={`${defaultTab.name} — double-click to rename`}
+    // The standard sticky list-controls row — pins the tab strip (and the
+    // trailing add-widget button) under the collapsed header / desktop title
+    // bar instead of letting it scroll away with the grid.
+    <StickyToolbar className="mb-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {defaultTab &&
+          (editingId === defaultTab.id ? (
+            renameInput(defaultTab)
+          ) : (
+            <div
+              key={defaultTab.id}
+              className={cn(chipClass(defaultTab.id === activeId), 'px-3')}
             >
-              {defaultTab.name}
-            </button>
-          </div>
-        ))}
+              <button
+                type="button"
+                onClick={() => setActiveId(defaultTab.id)}
+                onDoubleClick={() => startRename(defaultTab.id, defaultTab.name)}
+                className="max-w-[12rem] truncate focus-visible:outline-none"
+                title={`${defaultTab.name} — double-click to rename`}
+              >
+                {defaultTab.name}
+              </button>
+            </div>
+          ))}
 
-      <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragEnd={onDragEnd}>
-        <SortableContext items={nonDefault.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
-          {pinned.map(renderSortable)}
-          {pinned.length > 0 && unpinned.length > 0 && (
-            <div aria-hidden className="mx-0.5 h-5 w-px shrink-0 self-center bg-border" />
-          )}
-          {unpinned.map(renderSortable)}
-        </SortableContext>
-      </DndContext>
+        <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragEnd={onDragEnd}>
+          <SortableContext items={nonDefault.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
+            {pinned.map(renderSortable)}
+            {pinned.length > 0 && unpinned.length > 0 && (
+              <div aria-hidden className="mx-0.5 h-5 w-px shrink-0 self-center bg-border" />
+            )}
+            {unpinned.map(renderSortable)}
+          </SortableContext>
+        </DndContext>
 
-      {tabs.length < MAX_DASHBOARDS && (
-        <button
-          type="button"
-          onClick={addTab}
-          aria-label="Add dashboard"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      )}
+        {tabs.length < MAX_DASHBOARDS && (
+          <button
+            type="button"
+            onClick={addTab}
+            aria-label="Add dashboard"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        )}
+      </div>
 
-      {trailing ? <div className="ml-auto">{trailing}</div> : null}
-    </div>
+      {trailing ? <div className="shrink-0">{trailing}</div> : null}
+    </StickyToolbar>
   );
 }
 
