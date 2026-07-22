@@ -38,9 +38,10 @@ export type TitleBarProps = {
 
 /**
  * Bar height (48px) — also published as `--titlebar-h` while mounted. Tall
- * enough that a 36px control's focus ring isn't clipped against the bar edge;
- * the collapsed sticky page header is sized to hide behind it (45px compact
- * form, stuck at -1px), not the other way around.
+ * enough that a 36px control's focus ring isn't clipped against the bar edge.
+ * web's collapsed sticky page header holds the SAME height (48px, stuck at
+ * -1px) so it hides exactly behind the bar and sticky toolbars below it share
+ * one `top-12` offset — keep the two in lockstep.
  */
 export const TITLE_BAR_HEIGHT = '3rem';
 

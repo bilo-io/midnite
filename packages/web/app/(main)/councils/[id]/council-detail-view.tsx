@@ -143,7 +143,6 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       <PageHeader
         title={initial.name}
         description={initial.description}
-        back={{ href: '/councils', label: 'All councils' }}
         actions={
           isMobile ? (
             <div className="flex items-center gap-2">

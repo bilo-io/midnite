@@ -11,6 +11,7 @@ import {
   type TaskSummary,
 } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
@@ -310,7 +311,7 @@ export function SessionsView({
 
   return (
     <div className="space-y-4" data-tour="sessions-list">
-      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
+      <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={sessions.length} noun="session" className="mr-1" />
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
@@ -360,7 +361,7 @@ export function SessionsView({
           </div>
           <NewSessionButton />
         </div>
-      </div>
+      </StickyToolbar>
 
       <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
 

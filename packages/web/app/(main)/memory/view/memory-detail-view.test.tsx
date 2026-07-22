@@ -59,9 +59,9 @@ const memory: Memory = {
 describe('MemoryDetailView — shell', () => {
   it('renders the header, chat composer, and both rails', () => {
     render(<MemoryDetailView memory={memory} projects={[project]} onChanged={vi.fn()} />);
+    // The title is static in the header (renames go through the edit modal).
     expect(screen.getByRole('heading', { name: 'Coding conventions' })).toBeInTheDocument();
-    // The title is editable inline in the header breadcrumb.
-    expect(screen.getByRole('textbox', { name: 'Memory title' })).toHaveValue('Coding conventions');
+    expect(screen.queryByRole('textbox', { name: 'Memory title' })).toBeNull();
     expect(screen.getByTestId('sources-panel')).toBeInTheDocument();
     // Left rail title + right Studio rail.
     expect(screen.getByRole('heading', { name: 'Sources' })).toBeInTheDocument();

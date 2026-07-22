@@ -79,7 +79,6 @@ export function TaskDetailView() {
 
   return (
     <div className={`container py-6 pb-12 ${wide ? 'max-w-5xl' : 'max-w-3xl'}`}>
-      {back}
       <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
         <TaskDetail
           task={task}

@@ -26,7 +26,6 @@ import { cn } from '@/lib/utils';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
-import { BackLink } from '@/components/back-link';
 
 // Icon names that can be passed as a plain string across the server→client
 // boundary. Adding an icon here: import it above and add an entry below.
@@ -82,15 +81,12 @@ type PageHeaderProps = {
   icon?: PageHeaderIcon;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
   actions?: ReactNode; // right-aligned controls (e.g. a search bar)
-  /**
-   * Optional top-left back affordance (e.g. `{ href: '/councils', label: 'All
-   * councils' }`). Rendered above the title via the shared `BackLink`, kept clear
-   * of the fixed top-right `HeaderActions` cluster — the one consistent back
-   * pattern across every detail view.
-   */
-  back?: { href: string; label: string };
 };
 
+// Detail views no longer carry a back affordance in the header (Phase 81
+// follow-up): the desktop title bar owns history nav, and in a browser the
+// browser's own back button covers it. Loading/not-found states keep their
+// standalone `BackLink`s (there is no header on those).
 export function PageHeader({
   title,
   titleNode,
@@ -98,7 +94,6 @@ export function PageHeader({
   icon,
   size = 'default',
   actions,
-  back,
 }: PageHeaderProps) {
   const scrolled = useScrolled();
   const Icon = icon ? ICONS[icon] : null;
@@ -117,11 +112,13 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        // -1px (not 0): in the frameless desktop window the header slides
-        // behind the fixed 48px title bar when scrolled; the compact collapsed
-        // form (45px incl. its bottom border — py-2 + a text-xl line) plus the
-        // 1px tuck keeps even that border from peeking below the bar.
-        // Imperceptible in a browser.
+        // The collapsed form is EXACTLY the title bar's height (48px content;
+        // its border-b rides within the -1px sticky tuck), an invariant two
+        // things depend on: (1) in the frameless desktop window the collapsed
+        // header hides completely behind the fixed 48px title bar; (2) sticky
+        // toolbars below the header use one offset — `top-12` — that lands
+        // flush under the collapsed header in a browser AND under the title
+        // bar on desktop. Change one height and the other must follow.
         'sticky top-[-1px] z-30 border-b transition-colors duration-200 motion-reduce:transition-none',
         scrolled
           ? 'border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60'
@@ -132,19 +129,22 @@ export function PageHeader({
       <div
         className={cn(
           'container relative transition-[padding] duration-200 motion-reduce:transition-none',
-          scrolled ? 'py-2' : 'py-6',
+          scrolled ? 'flex h-12 flex-col justify-center py-0' : 'py-6',
         )}
       >
         {/* The decorative backdrop is now app-wide (`<AppBackdrop/>`), showing
             the starfield (or the chosen pattern) through this transparent header
             — no per-header pattern strip needed. */}
 
-        {back ? <BackLink href={back.href} label={back.label} className="mb-2" /> : null}
-
         {/* Wrap (not overflow) on a phone: if the title + actions can't share a
             row, the actions drop to the next line rather than pushing past the
             viewport. No effect at desktop widths, where they always fit. */}
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div
+          className={cn(
+            'flex justify-between gap-x-4',
+            scrolled ? 'flex-nowrap items-center' : 'flex-wrap items-start gap-y-2',
+          )}
+        >
           <div className="min-w-0 flex-1">
             <h1
               // The title types out character-by-character, so `typedTitle` is empty on
@@ -153,8 +153,7 @@ export function PageHeader({
               aria-label={title}
               className={cn(
                 'flex items-center gap-2.5 font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
-                // Both sizes collapse to text-xl: with py-2 that's a 45px
-                // header (incl. border) — under the 48px desktop title bar.
+                // Both sizes collapse to text-xl inside the fixed 48px form.
                 scrolled ? 'text-xl' : size === 'lg' ? 'text-3xl' : 'text-2xl',
               )}
             >
@@ -188,7 +187,7 @@ export function PageHeader({
               </div>
             )}
           </div>
-          {actions ? <div className="min-w-0 shrink-0 pt-0.5">{actions}</div> : null}
+          {actions ? <div className={cn('min-w-0 shrink-0', !scrolled && 'pt-0.5')}>{actions}</div> : null}
         </div>
       </div>
     </header>

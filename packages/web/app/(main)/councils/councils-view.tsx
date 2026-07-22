@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { CirclePile, LayoutGrid, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -126,7 +127,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="reveal-controls flex items-center justify-between gap-3">
+      <StickyToolbar className="reveal-controls">
         <CountPill count={filtered.length} noun="council" />
         <div className="flex items-center gap-2">
           <SearchBar placeholder="Search councils" />
@@ -151,7 +152,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
             New council
           </Button>
         </div>
-      </div>
+      </StickyToolbar>
 
       <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
 
