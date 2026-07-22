@@ -93,7 +93,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div
         className={cn(
           windowChrome?.frameless
-            ? 'fixed right-3 top-0 z-[80] flex h-14 items-center'
+            ? 'fixed right-3 top-0 z-[80] flex h-12 items-center'
             : 'absolute right-4 top-4 z-20',
         )}
         style={windowChrome?.frameless ? ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties) : undefined}

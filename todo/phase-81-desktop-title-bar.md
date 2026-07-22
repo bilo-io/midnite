@@ -40,7 +40,7 @@
 ## Theme A — Frameless macOS window (main process) — **S** ✅
 
 - [x] `titleBarStyle: 'hidden'` + `trafficLightPosition: { x: 16, y: 18 }` (so the
-      lights sit level with the bar controls in the 56px bar — `hiddenInset` ignores a custom position) + a
+      lights sit level with the bar controls in the 48px bar — `hiddenInset` ignores a custom position) + a
       theme-matching `backgroundColor` on the `BrowserWindow`, gated
       `process.platform === 'darwin'` (non-mac keeps the default frame untouched).
 - [x] Keep `win.setTitle()` / the HTML `<title>` flowing — the window title still matters
@@ -65,7 +65,7 @@
 
 ## Theme C — `TitleBar` in `@midnite/shell` — **M** ✅
 
-- [x] `shell/src/title-bar.tsx`: fixed-height bar (56px token — tall enough to fully mask the collapsed sticky page header), `-webkit-app-region: drag`
+- [x] `shell/src/title-bar.tsx`: fixed-height bar (48px token; the collapsed sticky page header is compacted to 45px so it tucks fully behind the bar), `-webkit-app-region: drag`
       with `no-drag` on every interactive child; renders **only** when a
       `WindowChromeBridge` with `frameless: true` is provided (browser renders nothing).
 - [x] Traffic-light clearance (left padding for the inset ●●●) that **collapses in
