@@ -58,7 +58,16 @@ for (const mod of ['better-sqlite3', 'node-pty']) {
   );
 }
 
-// 2a. Bundle the Electron preload into a self-contained file (Phase 77). The preload
+// 2a. Guard: the Electron rebuild above must only ever touch the staged tree.
+//     Historically its artifacts leaked into the WORKSPACE node_modules through
+//     pnpm's global side-effects cache (hardlinked store files), breaking the
+//     gateway under Node with "ABI 130 vs 127" days later — see
+//     docs/NATIVE-MODULES.md. Verify the workspace copies still load under Node
+//     right here at the source; the script self-heals (targeted pnpm rebuild)
+//     and warns loudly, or fails the stage if it can't.
+run('node', [join(repoRoot, 'packages', 'gateway', 'scripts', 'ensure-native-abi.mjs')], repoRoot);
+
+// 2b. Bundle the Electron preload into a self-contained file (Phase 77). The preload
 //     runs in a *sandboxed* renderer context whose loader (`preloadRequire`) can't
 //     resolve relative sibling modules — so `tsc`'s `require("../updates/update-state")`
 //     throws "module not found" at load, the preload never runs, and
@@ -83,7 +92,7 @@ await esbuild.build({
   logLevel: 'error',
 });
 
-// 2b. Stage the bundled midnite CLI (Phase 77). The desktop ships `midnite` so a
+// 2c. Stage the bundled midnite CLI (Phase 77). The desktop ships `midnite` so a
 //     downloaded app is a complete install — one binary that IS the gateway and
 //     carries the CLI. Rather than `pnpm deploy` (which drags the whole @midnite/gateway
 //     closure — nest/fastify/drizzle — in twice, ~220MB), esbuild-bundle the CLI into a
