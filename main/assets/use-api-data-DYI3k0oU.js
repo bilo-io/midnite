@@ -1,0 +1,1 @@
+import{b5 as c}from"./iframe-2OGF1UZZ.js";import{u as d}from"./useQuery-C-OaMkhB.js";function p(n,s=[]){const t=[c.useId(),...s],{data:e,error:r,isFetching:o,isPending:a,refetch:i}=d({queryKey:t,queryFn:({signal:u})=>n(u)});return{data:e??null,error:r?r instanceof Error?r.message:"request failed":null,loading:a||o,refresh:()=>void i()}}export{p as u};
