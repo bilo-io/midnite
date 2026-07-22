@@ -89,6 +89,42 @@ describe('NewTaskModal — bulk paste', () => {
   });
 });
 
+describe('NewTaskModal — column/project defaults', () => {
+  // The per-project board's column "+" seeds the modal with a status and project.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the modal only reads id/name off a project
+  const PROJECTS = [{ id: 'p1', name: 'Acme' } as any];
+
+  it('pre-selects the project and status passed as defaults', () => {
+    render(
+      <NewTaskModal
+        projects={PROJECTS}
+        repos={[]}
+        defaultStatus="backlog"
+        defaultProjectId="p1"
+        onCreated={vi.fn()}
+        onBulkCreated={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect((screen.getByLabelText('Project') as HTMLSelectElement).value).toBe('p1');
+    expect((screen.getByLabelText('Status') as HTMLSelectElement).value).toBe('backlog');
+  });
+
+  it('defaults to no project and Todo status when no defaults are given', () => {
+    render(
+      <NewTaskModal
+        projects={PROJECTS}
+        repos={[]}
+        onCreated={vi.fn()}
+        onBulkCreated={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect((screen.getByLabelText('Project') as HTMLSelectElement).value).toBe('');
+    expect((screen.getByLabelText('Status') as HTMLSelectElement).value).toBe('todo');
+  });
+});
+
 describe('NewTaskModal — repo picker (Phase 13 B1)', () => {
   it('hides the repo picker when there are no registered repos', () => {
     renderModal({ repos: [] });

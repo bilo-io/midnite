@@ -443,7 +443,7 @@ export function MediaView({ items, projects, error }: Props) {
           inner container and never pin. */}
       <main className="min-w-0 flex-1 p-4 lg:p-6">
         <StickyToolbar className="mb-4">
-          <CountPill count={filtered.length} noun="item" />
+          <CountPill count={filtered.length} />
           <div className="flex shrink-0 items-center gap-2">
             <SearchBar placeholder="Search media" />
             <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">

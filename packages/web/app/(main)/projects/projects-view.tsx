@@ -248,7 +248,7 @@ export function ProjectsView({
     <div className="space-y-4" data-tour="projects">
       <StickyToolbar className="reveal-controls">
         <div className="flex items-center gap-3">
-          <CountPill count={count} noun={tab === 'projects' ? 'project' : 'template'} />
+          <CountPill count={count} />
           <div className="flex items-center gap-1.5">
             {TABS.map((t) => (
               <button

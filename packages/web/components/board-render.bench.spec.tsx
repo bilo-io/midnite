@@ -7,12 +7,11 @@ import { ConfirmProvider } from './confirm-dialog';
 import { withLocale } from '@/lib/test-locale-wrapper';
 
 /**
- * Phase 57 A — web render benchmark (evidence backbone). Renders the board with a
- * seeded task set and counts **mounted card nodes**. Theme F virtualized the
- * board, so the mounted count is now **bounded** (windowed), not 1:1 with the
- * dataset — this asserts that bound. (jsdom has no viewport height, so the exact
- * windowed count isn't meaningful here; the nonzero-but-bounded proof against a
- * real browser lives in `e2e/board-virtualization.e2e.ts`.)
+ * Web render benchmark (evidence backbone). Renders the board with a seeded task
+ * set and counts **mounted card nodes**. Phase 82 un-windowed the board: columns
+ * now grow to their full content height and the whole PAGE scrolls (so a full
+ * board reads as a tall page), which means every card mounts — the count is 1:1
+ * with the dataset. This asserts that, and stands as the render-cost baseline.
  */
 const SIZE = Number(process.env['BENCH_SIZE']) || 200;
 
@@ -36,8 +35,8 @@ function task(i: number, status: Status): Task {
 
 afterEach(cleanup);
 
-describe(`Phase 57 A — web board render benchmark (n=${SIZE})`, () => {
-  it('bounds mounted cards below the dataset size (windowed board)', () => {
+describe(`web board render benchmark (n=${SIZE})`, () => {
+  it('mounts every card so the board grows with the page (un-windowed)', () => {
     const tasks = Array.from({ length: SIZE }, (_, i) => task(i, 'todo'));
     render(
       withLocale(
@@ -62,10 +61,9 @@ describe(`Phase 57 A — web board render benchmark (n=${SIZE})`, () => {
     // eslint-disable-next-line no-console -- benchmark output is the point
     console.log(`[bench] board mounted cards: ${cards.length} of ${SIZE} tasks`);
 
-    // Theme F: the board is windowed — the mounted card count is bounded well
-    // below the dataset size (the whole point). Exact count is layout-dependent
-    // and not meaningful in jsdom; the real-browser proof is the e2e.
-    expect(cards.length).toBeLessThan(SIZE);
+    // Phase 82: the board is no longer windowed — every card mounts so the column
+    // grows to its full height and the page (not the column) scrolls.
+    expect(cards.length).toBe(SIZE);
     // Generous timeout: rendering N cards in jsdom is slow under parallel suite
     // load (well past the 5s default), so budget it explicitly to avoid a flake.
   }, 30_000);

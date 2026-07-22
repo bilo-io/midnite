@@ -59,6 +59,7 @@
   "board": {
     "title": "Tableau des tâches",
     "nothingHere": "Rien ici",
+    "addTask": "Ajouter une tâche à {column}",
     "columns": {
       "backlog": "En attente",
       "todo": "À faire",

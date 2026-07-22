@@ -2,17 +2,24 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, Copy, Download, Link2, Pencil, Trash2 } from 'lucide-react';
+import { Check, Copy, Download, Link2, Pencil, Presentation, Trash2 } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import type { DeckSummary } from '@/lib/slides/store';
 import { getDeckBySlug, deleteDeck, duplicateDeck } from '@/lib/slides/store';
 import { renderStandaloneDeck } from '@/lib/slides/standalone-deck';
 import { useConfirm } from '@/components/confirm-dialog';
 import { ProjectTag } from '@/components/project-tag';
+import { SelectableIcon } from '@/components/selectable-icon';
 import { useToast } from '@/components/toast';
 import { cn, relativeTime } from '@/lib/utils';
 
 type DeckProject = Pick<Project, 'tag' | 'color'>;
+
+/** Selection props shared by the grid card and list row (Phase: bulk actions). */
+type Selectable = {
+  selected?: boolean;
+  onToggleSelect?: (shiftKey: boolean) => void;
+};
 
 const DOT_CAP = 14;
 
@@ -136,17 +143,31 @@ export function DeckCard({
   deck,
   project,
   onChanged,
+  selected = false,
+  onToggleSelect,
 }: {
   deck: DeckSummary;
   project?: DeckProject;
   onChanged: () => void;
-}) {
+} & Selectable) {
   const href = `/slides/present?slug=${encodeURIComponent(deck.slug)}`;
   return (
-    <div className="group relative flex flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-colors hover:border-foreground/20 hover:bg-accent/40">
+    <div
+      className={cn(
+        'group relative flex flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-colors hover:border-foreground/20 hover:bg-accent/40',
+        selected && 'border-primary/50 bg-accent/30',
+      )}
+    >
       <Link href={href} className="absolute inset-0 z-[1] rounded-xl" aria-label={`Present ${deck.title}`} />
       <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-xs font-semibold tracking-wider text-primary">{badge(deck.id)}</span>
+        <span className="flex items-center gap-2">
+          {onToggleSelect ? (
+            <span className="relative z-[2]">
+              <SelectableIcon Icon={Presentation} selected={selected} onToggle={onToggleSelect} />
+            </span>
+          ) : null}
+          <span className="font-mono text-xs font-semibold tracking-wider text-primary">{badge(deck.id)}</span>
+        </span>
         <div className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
           <CardActions deck={deck} onChanged={onChanged} />
         </div>
@@ -167,15 +188,27 @@ export function DeckRow({
   deck,
   project,
   onChanged,
+  selected = false,
+  onToggleSelect,
 }: {
   deck: DeckSummary;
   project?: DeckProject;
   onChanged: () => void;
-}) {
+} & Selectable) {
   const href = `/slides/present?slug=${encodeURIComponent(deck.slug)}`;
   return (
-    <div className="group relative flex items-center gap-4 rounded-lg border border-border/60 bg-card/40 px-4 py-2.5 transition-colors hover:border-foreground/20 hover:bg-accent/40">
+    <div
+      className={cn(
+        'group relative flex items-center gap-4 rounded-lg border border-border/60 bg-card/40 px-4 py-2.5 transition-colors hover:border-foreground/20 hover:bg-accent/40',
+        selected && 'border-primary/50 bg-accent/30',
+      )}
+    >
       <Link href={href} className="absolute inset-0 z-[1] rounded-lg" aria-label={`Present ${deck.title}`} />
+      {onToggleSelect ? (
+        <span className="relative z-[2] shrink-0">
+          <SelectableIcon Icon={Presentation} selected={selected} onToggle={onToggleSelect} />
+        </span>
+      ) : null}
       <span className="w-8 shrink-0 font-mono text-xs font-semibold tracking-wider text-primary">{badge(deck.id)}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{deck.title}</span>
       {project ? (

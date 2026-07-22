@@ -374,12 +374,16 @@ export function CommandPalette() {
         role="presentation"
       >
         <div
-          className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
+          className="w-full max-w-lg rounded-xl accent-gradient-border accent-gradient-border--lit"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
           aria-label="Command palette"
         >
+          {/* Inner surface keeps overflow-hidden so content clips to the rounded
+              corners; the brand-gradient border + soft halo live on the outer
+              wrapper, so the halo isn't clipped (matches the login accent border). */}
+          <div className="overflow-hidden rounded-xl bg-popover shadow-2xl">
           <div className="flex items-center gap-2 border-b border-border/60 px-3">
             {chatMode ? (
               <MessageSquare className="h-4 w-4 shrink-0 text-primary" />
@@ -537,6 +541,7 @@ export function CommandPalette() {
             )}
           </ul>
           )}
+          </div>
         </div>
       </div>
       <KeyboardShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />

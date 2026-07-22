@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { BackLink } from '@/components/back-link';
 import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
 import { useToast } from '@/components/toast';
@@ -111,14 +112,20 @@ export function SessionDetailView({
         title={session.title}
         icon="BotMessageSquare"
         description={session.subtitle || undefined}
-        actions={
+      />
+
+      <div className="reveal-staged container space-y-5 pb-8 pt-2">
+        {/* Actions live in a sticky toolbar (top-12), not the collapsing header —
+            so start / abandon / reopen / export / delete stay reachable once the
+            header tucks behind the desktop title bar, matching the list pages. */}
+        <StickyToolbar className="reveal-controls">
+          <div className="flex items-center gap-2">
+            <ConnectionStatus variant="compact" />
+          </div>
           <div className="flex items-center gap-2">
             {/* The linked task's lifecycle actions (Phase 74) — start / abandon /
                 reopen / export / delete, icon-only with a label on hover. */}
             {task ? <LinkedTaskActions task={task} onChanged={() => onTaskChanged?.()} /> : null}
-            <ConnectionStatus variant="compact" />
-            {/* The session status lives in the Session info panel now (as a pill),
-                so it isn't duplicated up here beside the action buttons. */}
             {/* On mobile the rails are drawers toggled from here. */}
             {isMobile ? (
               <>
@@ -127,10 +134,8 @@ export function SessionDetailView({
               </>
             ) : null}
           </div>
-        }
-      />
+        </StickyToolbar>
 
-      <div className="reveal-staged container space-y-5 pb-8 pt-2">
         <RailShell
           isMobile={isMobile}
           left={{
