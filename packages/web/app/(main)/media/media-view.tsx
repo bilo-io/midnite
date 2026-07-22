@@ -10,6 +10,7 @@ import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { SearchBar } from '@/components/search-bar';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { NewMediaButton } from './new-media-button';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -330,10 +331,11 @@ export function MediaView({ items, projects, error }: Props) {
 
   return (
     <div className="flex min-h-0 gap-0">
-      {/* Secondary sidebar */}
+      {/* Secondary sidebar — pinned at the shared 48px offset (collapsed header
+          in a browser, title bar on desktop), same lockstep as StickyToolbar. */}
       <aside
         className={cn(
-          'sticky top-16 h-[calc(100dvh-4rem)] shrink-0 overflow-y-auto border-r border-border/60 transition-[width] duration-200',
+          'sticky top-12 h-[calc(100dvh_-_3rem)] shrink-0 overflow-y-auto border-r border-border/60 transition-[width] duration-200',
           sidebarOpen ? 'w-[220px]' : 'w-9',
         )}
       >
@@ -436,11 +438,13 @@ export function MediaView({ items, projects, error }: Props) {
         )}
       </aside>
 
-      {/* Gallery */}
-      <main className="min-w-0 flex-1 overflow-y-auto p-4 lg:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      {/* Gallery. No overflow on <main>: the document must stay the one scroll
+          region or the sticky toolbar would compute against a non-scrolling
+          inner container and never pin. */}
+      <main className="min-w-0 flex-1 p-4 lg:p-6">
+        <StickyToolbar className="mb-4">
           <CountPill count={filtered.length} noun="item" />
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <SearchBar placeholder="Search media" />
             <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
               {VIEW_OPTIONS.map(({ value, label, Icon }) => (
@@ -460,7 +464,7 @@ export function MediaView({ items, projects, error }: Props) {
             </div>
             <NewMediaButton />
           </div>
-        </div>
+        </StickyToolbar>
 
         {renderGallery()}
       </main>

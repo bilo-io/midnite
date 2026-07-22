@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import type { NavMode } from '@midnite/shared';
 import { Collapse, cn } from '@midnite/ui';
@@ -130,14 +131,57 @@ function resolveSlot(slot: RailSlot | undefined, expanded: boolean): ReactNode {
   return typeof slot === 'function' ? slot({ expanded }) : slot;
 }
 
-/** Hover-tooltip shown to the right of a rail control when the rail is collapsed. */
+/**
+ * Hover-tooltip shown to the right of a rail control when the rail is collapsed.
+ * Rendered in a body portal with fixed positioning (anchored to the hovered
+ * control's rect) rather than `absolute left-full` — the nav list is a scroll
+ * container (`overflow-y-auto`, so short windows can scroll it), and any
+ * in-flow tooltip would be clipped at its edge.
+ */
 function Tooltip({ children }: { children: ReactNode }) {
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    // The trigger is the rail control the tooltip annotates: the anchor's
+    // closest positioned ancestor (every rail link/button is `group relative`).
+    const trigger = anchorRef.current?.closest<HTMLElement>('.group');
+    if (!trigger) return;
+    const show = () => {
+      const r = trigger.getBoundingClientRect();
+      setPos({ top: r.top + r.height / 2, left: r.right + 8 });
+    };
+    const hide = () => setPos(null);
+    trigger.addEventListener('mouseenter', show);
+    trigger.addEventListener('mouseleave', hide);
+    trigger.addEventListener('focus', show, true);
+    trigger.addEventListener('blur', hide, true);
+    // Scrolling the rail moves the anchor under a stationary pointer — drop the
+    // tooltip rather than letting it float detached from its control.
+    window.addEventListener('scroll', hide, true);
+    return () => {
+      trigger.removeEventListener('mouseenter', show);
+      trigger.removeEventListener('mouseleave', hide);
+      trigger.removeEventListener('focus', show, true);
+      trigger.removeEventListener('blur', hide, true);
+      window.removeEventListener('scroll', hide, true);
+    };
+  }, []);
+
   return (
-    <span
-      role="tooltip"
-      className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100"
-    >
-      {children}
+    <span ref={anchorRef} aria-hidden className="hidden">
+      {pos
+        ? createPortal(
+            <span
+              role="tooltip"
+              style={{ top: pos.top, left: pos.left }}
+              className="pointer-events-none fixed z-[70] -translate-y-1/2 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-xs font-medium text-foreground shadow-md"
+            >
+              {children}
+            </span>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }
@@ -255,7 +299,12 @@ export function AppFrame({
 
         <nav
           aria-label={navLabel}
-          className={cn('flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}
+          // Scrolls on its own when the window is too short for every section
+          // (brand + footer stay pinned); tooltips escape the clip via a portal.
+          className={cn(
+            'flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]',
+            expandedView ? 'items-stretch' : 'items-center',
+          )}
         >
           {(nav.pinned ?? []).map(renderLink)}
           {nav.sections.map((section, si) => {

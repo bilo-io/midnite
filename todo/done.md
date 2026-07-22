@@ -4529,3 +4529,13 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] **Bar contents (web)** (`components/desktop-title-bar.tsx`): history back/forward (Navigation API reachability), active-feature label, centred ⌘K search pill → command palette (`midnite:open-palette`), `HeaderActions` relocated inline (floating copy skipped when frameless); theme→window backing sync via `cssRgbToHex` + a `<html>` attribute observer.
 - [x] **Lock/auth drag coverage**: screensaver lock overlay (z-200 covers the bar) + the auth split-screen mount `TitleBarDragStrip`.
 - [x] Gates: `:typecheck` + `:lint` + full `:test` green (shared 842 · shell 62 · web 1379 · desktop 26 · admin 36). Outstanding: the packaged-app manual pass (drag surfaces, double-click-zoom, fullscreen, theme retint) — Phase 81 E.
+
+## 2026-07-22 — Sticky-bar parity sweep (desktop title-bar occlusion + one-scroll-region fixes)
+
+- [x] **`--titlebar-h` folded into every viewport-height shell**: landing `/` (`min-h` calc — no more 48px desktop scroll), tasks page, task graph, workflow editor (`h-[calc(100dvh_-_var(--titlebar-h,0px))]` — header/palette can no longer scroll behind the bar), settings layout.
+- [x] **StickyToolbar adopted by the stragglers**: dashboard tabs + add-widget (`dashboard-tabs.tsx` root is now the sticky row), slides controls row, media gallery toolbar (media `<main>` dropped its inert `overflow-y-auto` so the document owns scroll; sidebar re-pinned `top-16`→`top-12` lockstep).
+- [x] **Tasks single scroll region**: list/table views dropped their inner `overflow-y-auto`; the page shell is `min-h` (document scroll, toolbar pins) for list/table and stays a bounded `overflow-hidden` column only for the board (columns keep internal scroll) via a new `onViewChange` seam.
+- [x] **`SortSelect`** (`components/sort-select.tsx`): single-select dropdown in the `FilterPills`/`ProjectMultiSelect` trigger+portal style; replaces the mismatched `StyledSelect` on slides.
+- [x] **Deck presentation chrome**: redundant back button removed (X exits to /slides); fullscreen/close controls offset by `--titlebar-h` so the desktop bar can't occlude them.
+- [x] **Scrollable nav rail** (`shell/app-frame.tsx`): the rail's `<nav>` is `flex-1 overflow-y-auto` (brand/footer pinned); rail tooltips now portal to `<body>` with fixed positioning (hover/focus-mounted) so the scroll clip can't cut them off. RTL specs updated.
+- [x] Gates: shell 62 · web 1381, `:typecheck` + `:lint` green.

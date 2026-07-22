@@ -17,7 +17,7 @@ function TaskGraphContainer() {
   const projects = data?.[1] ?? [];
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col overflow-hidden">
       <PageHeader
         title="Dependency graph"
         icon="Workflow"

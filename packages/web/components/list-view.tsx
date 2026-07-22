@@ -51,7 +51,9 @@ export function ListView({
   });
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto pb-1">
+    // No inner scroll region — the document is the page's one scroll area, so
+    // the sticky toolbar pins while the groups scroll under it.
+    <div className="min-h-0 flex-1 pb-1">
       <CollapsibleStatusGroups groups={groups} storageKey="midnite.tasks.listGroups" />
 
       {showAbandoned && (

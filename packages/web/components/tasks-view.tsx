@@ -99,7 +99,7 @@ const UNASSIGNED = 'none';
 
 // View toggle, matching the Projects/Sessions control — list / board / table,
 // persisted to localStorage. "board" is the kanban (where the others have grid).
-type TaskView = 'list' | 'board' | 'table';
+export type TaskView = 'list' | 'board' | 'table';
 const VIEWS: readonly TaskView[] = ['list', 'board', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.tasks.view';
 const VIEW_OPTIONS: Array<{ value: TaskView; label: string; Icon: LucideIcon }> = [
@@ -118,11 +118,15 @@ export function TasksView({
   error,
   projects,
   repos,
+  onViewChange,
 }: {
   tasks: TaskSummary[];
   error: string | null;
   projects: Project[];
   repos: Repo[];
+  /** Fires with the active view so the page shell can adapt (board is a
+   *  bounded viewport-height layout; list/table flow with the document). */
+  onViewChange?: (view: TaskView) => void;
 }) {
   const [localTasks, setLocalTasks] = useState<TaskSummary[]>(tasks);
   // The page fetches tasks client-side, so the first render passes an empty
@@ -220,6 +224,9 @@ export function TasksView({
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
     if (stored && (VIEWS as readonly string[]).includes(stored)) setView(stored as TaskView);
   }, []);
+  useEffect(() => {
+    onViewChange?.(view);
+  }, [view, onViewChange]);
   // Board drag-and-drop / Start / Stop: optimistically restatus, then call the
   // gateway. Dropping into "In progress" from todo/backlog spawns an agent session
   // (start endpoint); dragging a running task (wip/waiting) back to todo/backlog
