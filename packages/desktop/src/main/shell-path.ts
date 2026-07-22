@@ -42,10 +42,13 @@ export function mergePath(current: string | undefined, resolved: string): string
 }
 
 /**
- * PATH as the user's login shell sees it, or null when it can't be resolved
- * (Windows GUI apps already inherit the full user PATH; any shell error/timeout
- * fails soft). `-lc` matches the gateway's `detectCli` probe, so the spawn PATH
- * and the environment checker finally agree.
+ * PATH as the user's shell sees it, or null when it can't be resolved (Windows
+ * GUI apps already inherit the full user PATH; any shell error/timeout fails
+ * soft). The shell runs `-lic` — login AND interactive — because PATH additions
+ * commonly live in interactive-only rc files (`~/.zshrc`: nvm, `~/.local/bin`,
+ * pyenv), which a plain `-lc` login shell never sources; the markers keep
+ * interactive profile noise (banners, prompts) out of the parse, and the
+ * timeout bounds an rc file that hangs.
  */
 export function resolveLoginShellPath(): string | null {
   if (process.platform === 'win32') return null;
@@ -54,7 +57,7 @@ export function resolveLoginShellPath(): string | null {
   // Braces around ${PATH} — a bare $PATH would swallow the end marker as part
   // of the variable name (`$PATH__MIDNITE...` is a valid, unset identifier).
   const probe = `printf '%s' "${MARKER_START}\${PATH}${MARKER_END}"`;
-  const res = spawnSync(shell, ['-lc', probe], {
+  const res = spawnSync(shell, ['-lic', probe], {
     encoding: 'utf-8',
     timeout: RESOLVE_TIMEOUT_MS,
   });
