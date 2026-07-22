@@ -86,8 +86,18 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </>
       )}
 
-      {/* Theme toggle — top-right corner of the whole screen (over everything). */}
-      <div className="absolute right-4 top-4 z-20">
+      {/* Theme toggle — top-right corner of the whole screen (over everything).
+          In the frameless desktop window it moves INTO the title-bar strip:
+          vertically centred in the 56px drag zone, above it (z) and opted out
+          of the drag region so it stays clickable (Phase 81 polish). */}
+      <div
+        className={cn(
+          windowChrome?.frameless
+            ? 'fixed right-3 top-0 z-[80] flex h-14 items-center'
+            : 'absolute right-4 top-4 z-20',
+        )}
+        style={windowChrome?.frameless ? ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties) : undefined}
+      >
         <AuthThemeToggle />
       </div>
 

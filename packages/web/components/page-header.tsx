@@ -117,7 +117,11 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 border-b transition-colors duration-200 motion-reduce:transition-none',
+        // -1px (not 0): in the frameless desktop window the header slides
+        // behind the fixed 56px title bar when scrolled; the collapsed `lg`
+        // header is 57px incl. its bottom border, so the 1px tuck keeps that
+        // border from peeking below the bar. Imperceptible in a browser.
+        'sticky top-[-1px] z-30 border-b transition-colors duration-200 motion-reduce:transition-none',
         scrolled
           ? 'border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60'
           : 'border-transparent bg-transparent',

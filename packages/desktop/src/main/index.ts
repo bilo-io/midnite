@@ -69,8 +69,11 @@ async function boot(): Promise<void> {
 
   // Frameless chrome (Phase 81, macOS-only): drop the native title bar and let
   // the renderer draw its own (`@midnite/shell` <TitleBar>). The traffic lights
-  // stay, inset so the 12px buttons centre in the 48px bar (y = (48-12)/2),
-  // level with the bar's own controls. Non-mac keeps the stock frame.
+  // stay, inset to sit level with the bar's own controls in the 56px bar. The
+  // y is tuned against a real window, not the (barH-12)/2 formula — macOS
+  // renders the light group ~4px lower than its nominal top (verified via
+  // screenshot at 48px/y=18, where the formula sat them visibly low against
+  // the history arrows). Non-mac keeps the stock frame.
   const frameless = windowFrameless();
   win = new BrowserWindow({
     width: 1400,
@@ -117,7 +120,7 @@ async function boot(): Promise<void> {
     // With the native title bar hidden the window is only draggable through an
     // app-drawn drag region, so the failure page carries its own strip.
     const dragStrip = frameless
-      ? '<div style="position:fixed;top:0;left:0;right:0;height:48px;-webkit-app-region:drag"></div>'
+      ? '<div style="position:fixed;top:0;left:0;right:0;height:56px;-webkit-app-region:drag"></div>'
       : '';
     const html = `${dragStrip}<h1>midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>`;
     await win.loadURL(`data:text/html,${encodeURIComponent(html)}`);
