@@ -12,6 +12,7 @@ import {
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
+import { ensureLoginShellPath } from './shell-path';
 import { registerUpdater, startUpdateCheck } from './updater';
 import { attachWindowChrome, registerWindowChrome, windowFrameless } from './window-chrome';
 import { WINDOW_FRAMELESS_ARG } from '../window-chrome/channels';
@@ -47,6 +48,11 @@ function webRoot(): string | null {
 }
 
 async function boot(): Promise<void> {
+  // A Finder/Dock launch inherits launchd's bare PATH (no Homebrew, no
+  // ~/.local/bin), so the gateway couldn't spawn `claude`/`tmux` and every
+  // agent run crash-looped back to todo. Resolve the login-shell PATH into
+  // process.env BEFORE the gateway (which inherits it) is spawned.
+  ensureLoginShellPath();
   const paths = resolvePaths();
   midniteHome = paths.home;
   // Prefer the stable port (7777) so the SSO callback URL is constant across launches
