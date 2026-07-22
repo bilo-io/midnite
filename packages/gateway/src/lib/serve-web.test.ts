@@ -120,6 +120,57 @@ describe('registerWebStatic', () => {
     await app.close();
   });
 
+  it('serves an RSC flight file that collides with a param API route', async () => {
+    // Next's client router fetches `/tasks/index.txt?_rsc=…` on every client-side
+    // navigation. Fastify ranks `GET /tasks/:id` above the static `/*` wildcard,
+    // so without the onRequest intercept the API answers (id = "index.txt"), the
+    // flight fetch fails, and the router falls back to a full document reload.
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>midnite</title>');
+    mkdirSync(join(dir, 'tasks'));
+    writeFileSync(join(dir, 'tasks', 'index.html'), '<!doctype html><title>tasks-page</title>');
+    writeFileSync(join(dir, 'tasks', 'index.txt'), 'flight-payload');
+
+    const app = Fastify();
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
+    app.get('/tasks/:id', async (req) => ({ id: (req.params as { id: string }).id }));
+    await app.ready();
+
+    // The flight fetch (a plain fetch — Accept: */*) gets the file, not the API.
+    const flight = await app.inject({ method: 'GET', url: '/tasks/index.txt?_rsc=abc123' });
+    expect(flight.statusCode).toBe(200);
+    expect(flight.body).toBe('flight-payload');
+
+    // A real API lookup (extensionless) still reaches the controller.
+    const api = await app.inject({ method: 'GET', url: '/tasks/42' });
+    expect(api.statusCode).toBe(200);
+    expect(api.json()).toEqual({ id: '42' });
+
+    // A path that names no export file falls through to the API too.
+    const miss = await app.inject({ method: 'GET', url: '/tasks/report.txt' });
+    expect(miss.statusCode).toBe(200);
+    expect(miss.json()).toEqual({ id: 'report.txt' });
+
+    await app.close();
+  });
+
+  it('never serves a file outside the export root', async () => {
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>midnite</title>');
+    writeFileSync(join(dir, '..', 'outside.txt'), 'secret');
+
+    const app = Fastify();
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
+    await app.ready();
+
+    for (const url of ['/../outside.txt', '/%2e%2e/outside.txt', '/tasks/%2E%2E/../outside.txt']) {
+      const res = await app.inject({ method: 'GET', url });
+      expect(res.statusCode).toBeGreaterThanOrEqual(400);
+      expect(res.body).not.toContain('secret');
+    }
+
+    rmSync(join(dir, '..', 'outside.txt'), { force: true });
+    await app.close();
+  });
+
   it('lets a redirect endpoint with no page file through to the API on a browser navigation', async () => {
     // SSO start/callback are browser navigations (Accept: text/html) but have no
     // page file in the export, so they must reach the controller (302), not 404.

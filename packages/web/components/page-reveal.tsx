@@ -14,8 +14,13 @@ export function PageReveal({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const optOut = pathname === '/dashboard' || /^\/workflows\/.+/.test(pathname);
   if (optOut) return <>{children}</>;
+  // Settings sub-pages share one key: switching categories must keep the hub
+  // shell (header + category list) mounted and only re-reveal the content pane
+  // (see settings/settings-pane.tsx) — a per-pathname key here would remount
+  // and re-animate the whole settings layout on every category click.
+  const key = pathname === '/settings' || pathname.startsWith('/settings/') ? '/settings' : pathname;
   return (
-    <div key={pathname} className="page-reveal">
+    <div key={key} className="page-reveal">
       {children}
     </div>
   );

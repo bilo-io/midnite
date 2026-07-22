@@ -23,6 +23,30 @@ function pageFileFor(root: string, url: string): string | null {
   return existsSync(join(root, rel)) ? rel : null;
 }
 
+/**
+ * Map an extensioned request path to the export file it names, or `null` when
+ * the export doesn't ship one. Extensioned paths normally belong to the static
+ * `/*` wildcard — but Fastify ranks a param API route *above* a wildcard, so a
+ * page's RSC flight file (`/tasks/index.txt?_rsc=…`, fetched by Next's client
+ * router on every navigation) is swallowed by `GET /tasks/:id` (id =
+ * "index.txt"), the router's fetch fails, and Next falls back to a full
+ * document load — the "whole app reloads on some nav items" bug. Serving any
+ * file the export really ships ahead of routing closes that hole.
+ */
+function assetFileFor(root: string, url: string): string | null {
+  const path = (url.split('?')[0] ?? '').split('#')[0] ?? '';
+  if (!/\.[a-zA-Z0-9]+$/.test(path)) return null; // extensionless → page, not asset
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(path);
+  } catch {
+    return null; // malformed escape → not a file we ship
+  }
+  if (decoded.split('/').includes('..')) return null; // never escape the export root
+  const rel = decoded.replace(/^\/+/, '');
+  return existsSync(join(root, rel)) ? rel : null;
+}
+
 /** A top-level browser navigation (GET for HTML) — as opposed to a JSON/`fetch` API call. */
 function isHtmlNavigation(req: FastifyRequest): boolean {
   if (req.method !== 'GET') return false;
@@ -48,7 +72,10 @@ function isHtmlNavigation(req: FastifyRequest): boolean {
  * API. API calls from the client use `fetch` (whose default `Accept` never
  * includes `text/html`), so they fall through to the controllers untouched; so do redirect
  * endpoints with no page file (`/auth/sso/:provider/start`, `…/callback`). Assets
- * (extensioned paths) are left to the `/*` static mount as before.
+ * (extensioned paths) that the export ships are served here too — a param API
+ * route (`GET /tasks/:id`) outranks the `/*` wildcard, so leaving them to the
+ * static mount let the API swallow the pages' RSC flight files and forced full
+ * document reloads on client-side navigation (see `assetFileFor`).
  *
  * Returns the resolved `root` (so the caller can log it without re-resolving) and
  * `served`: `true` when the export was found and mounted, `false` when `webDir`
@@ -72,11 +99,13 @@ export async function registerWebStatic(
     decorateReply: true,
   });
 
-  // Serve page navigations before the API can answer them (see doc comment above).
-  // Sending a reply from `onRequest` short-circuits the matched controller.
+  // Serve page navigations — and any asset the export really ships (RSC flight
+  // `.txt` files above all) — before the API can answer them (see doc comments
+  // above). Sending a reply from `onRequest` short-circuits the matched controller.
   fastify.addHook('onRequest', (req: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void) => {
-    if (!isHtmlNavigation(req)) return done();
-    const rel = pageFileFor(root, req.url);
+    if (req.method !== 'GET') return done();
+    // Disjoint by construction: assets have an extension, pages don't.
+    const rel = assetFileFor(root, req.url) ?? (isHtmlNavigation(req) ? pageFileFor(root, req.url) : null);
     if (!rel) return done();
     // Takes over the response — do not call `done()` afterwards.
     void (reply as FastifyReply & { sendFile: (path: string) => FastifyReply }).sendFile(rel);
