@@ -14,6 +14,43 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.5.0] - 2026-07-22
+
+A localization + desktop-chrome release: midnite now **speaks multiple
+languages** end to end, and the desktop app wears a **custom frameless title
+bar** that the web UI's sticky headers align to.
+
+### Added
+
+- **Internationalization (Phase 79)** — the app is now fully translatable. A
+  next-intl runtime + typed message contract backs a **language switcher** (in
+  the sidenav footer and Settings), **locale-aware formatting** across the
+  finances views and dashboard widgets, and translated priority surfaces
+  (navigation, settings, board, auth, and shared common strings).
+- **Translation-coverage tooling (Phase 82)** — a catalog gate plus a
+  no-hardcoded-string lint rule keep new UI strings translatable, so coverage
+  can't silently regress.
+- **Custom frameless title bar (Phase 81)** — the desktop app draws its own
+  title bar (aligned traffic lights, an in-rail language drop-up, and the auth
+  theme toggle), and the web UI's collapsed page headers, sticky list toolbars,
+  and standardized detail-page headers tuck cleanly beneath it.
+- **Operator login branding** — the operator console's login screen now carries
+  the Cassandra brand font and logo.
+
+### Fixed
+
+- **Sticky-bar parity across shell/desktop/web** — title-bar offsets, single
+  scroll regions, and a scrollable nav rail now line up; the workflow editor's
+  header collapses and tucks like every other page, and the 48px desktop scroll
+  was killed at its root.
+- **Desktop PATH resolution** — the app resolves the login-shell PATH (probing
+  the shell interactively) before spawning the gateway, so rc-file PATH entries
+  are honoured.
+- **Work-item modal** — the action row is unified and defaults to the Session
+  tab when a session is live.
+- **Site download links** point at the correct v0.4.0 release assets.
+- **CI coverage** — the coverage job runs via vitest directly so it works in CI.
+
 ## [0.4.2] - 2026-07-21
 
 A documentation-hosting patch: the docs site now serves exclusively from its
@@ -248,6 +285,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.5.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.5.0
 [0.4.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.2
 [0.4.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.1
 [0.4.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.0
