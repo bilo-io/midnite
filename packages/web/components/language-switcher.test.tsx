@@ -4,11 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { LanguageSwitcher } from './language-switcher';
 
 describe('LanguageSwitcher (Phase 79 C)', () => {
-  it('expanded: shows the current language + locale code, and an accessible trigger', () => {
+  it('expanded: shows the current language with the locale code right-aligned, and an accessible trigger', () => {
     render(<LanguageSwitcher expanded locale="de-DE" onSelect={() => {}} />);
     const trigger = screen.getByRole('button', { name: /Language: German/i });
     expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
-    expect(within(trigger).getByText('Deutsch (de-DE)')).toBeInTheDocument();
+    expect(within(trigger).getByText('Deutsch')).toBeInTheDocument();
+    expect(within(trigger).getByText('de-DE')).toBeInTheDocument();
   });
 
   it('collapsed: shows the label only as a tooltip (icon-only rail)', () => {
@@ -19,7 +20,7 @@ describe('LanguageSwitcher (Phase 79 C)', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('English (UK) (en-GB)');
   });
 
-  it('opens a listbox of all supported locales, marking the active one', () => {
+  it('opens a listbox of all supported locales, marking the active one, codes on every row', () => {
     render(<LanguageSwitcher expanded locale="de-DE" onSelect={() => {}} />);
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -29,6 +30,25 @@ describe('LanguageSwitcher (Phase 79 C)', () => {
     expect(options).toHaveLength(4);
     const active = screen.getByRole('option', { selected: true });
     expect(active).toHaveTextContent('Deutsch');
+    // Every row carries its locale code (rendered far right).
+    for (const option of options) {
+      expect(option).toHaveTextContent(/(en-GB|de-DE|fr-FR|es-ES)$/);
+    }
+  });
+
+  it('expanded: the drop-up renders inside the rail (not portalled to body)', () => {
+    const { container } = render(<LanguageSwitcher expanded locale="en-GB" onSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Language:/i }));
+    // Inside the component subtree → in-rail (the old theme-toggle pattern) …
+    expect(within(container as HTMLElement).getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('collapsed: the flyout portals to the body (rail-overflow convention)', () => {
+    const { container } = render(<LanguageSwitcher expanded={false} locale="en-GB" onSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Language:/i }));
+    // … outside the component subtree → portalled.
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(within(container as HTMLElement).queryByRole('listbox')).not.toBeInTheDocument();
   });
 
   it('selecting a language calls onSelect with the locale code and closes', () => {
