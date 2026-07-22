@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Notification as MidniteNotification } from '@midnite/shared';
+import type { DesktopPlatform, Notification as MidniteNotification } from '@midnite/shared';
 
 import type { UpdateChannel } from '../updates/floor';
 import {
@@ -10,6 +10,12 @@ import {
   UPDATE_STATE_CHANNEL,
   type UpdateState,
 } from '../updates/update-state';
+import {
+  WINDOW_BACKGROUND_CHANNEL,
+  WINDOW_FOCUS_CHANNEL,
+  WINDOW_FRAMELESS_ARG,
+  WINDOW_FULLSCREEN_CHANNEL,
+} from '../window-chrome/channels';
 
 // The static web bundle bakes NEXT_PUBLIC_* at build time, so the gateway URL
 // (a dynamic loopback port) is injected here instead. gatewayUrl()/gatewayWsUrl()
@@ -31,6 +37,21 @@ if (gatewayUrl) {
 const NOTIFY_CHANNEL = 'midnite:notify';
 const NAVIGATE_CHANNEL = 'midnite:navigate';
 
+// Window-chrome bridge (Phase 81): `frameless` is single-sourced from the main
+// process's window options via a CLI switch (like `--gateway-url`), never
+// re-derived here. Shape mirrors `WindowChromeBridge` in `@midnite/shared`.
+const framelessArg = process.argv.find((a) => a.startsWith(WINDOW_FRAMELESS_ARG));
+const frameless = framelessArg?.slice(WINDOW_FRAMELESS_ARG.length) === '1';
+
+/** Subscribe to a boolean main→renderer channel; returns an unsubscribe. */
+function onBooleanChannel(channel: string, handler: (value: boolean) => void): () => void {
+  const listener = (_event: unknown, value: boolean): void => handler(value);
+  ipcRenderer.on(channel, listener);
+  return () => {
+    ipcRenderer.removeListener(channel, listener);
+  };
+}
+
 try {
   contextBridge.exposeInMainWorld('midniteDesktop', {
     notify: (notification: MidniteNotification) => {
@@ -42,6 +63,17 @@ try {
       return () => {
         ipcRenderer.removeListener(NAVIGATE_CHANNEL, listener);
       };
+    },
+    windowChrome: {
+      platform: process.platform as DesktopPlatform,
+      frameless,
+      onFullscreenChange: (handler: (fullscreen: boolean) => void): (() => void) =>
+        onBooleanChannel(WINDOW_FULLSCREEN_CHANNEL, handler),
+      onFocusChange: (handler: (focused: boolean) => void): (() => void) =>
+        onBooleanChannel(WINDOW_FOCUS_CHANNEL, handler),
+      setBackgroundColor: (color: string) => {
+        ipcRenderer.send(WINDOW_BACKGROUND_CHANNEL, color);
+      },
     },
   });
 } catch {

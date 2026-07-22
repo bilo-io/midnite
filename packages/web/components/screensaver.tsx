@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { SessionStatus } from '@midnite/shared';
-import { LockScreen } from '@midnite/shell';
+import { LockScreen, TitleBarDragStrip } from '@midnite/shell';
 import { AreaChart, LegendDot } from '@midnite/ui';
 import { getSessions } from '@/lib/api';
+import { getWindowChromeBridge } from '@/lib/desktop-bridge';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useDynamicBackground } from '@/lib/use-dynamic-background';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -466,6 +467,10 @@ export function Screensaver({
       label={requireCode ? 'Locked screensaver' : 'Screensaver'}
       corners={
         <>
+          {/* Frameless desktop window (Phase 81): the lock overlay covers the
+              title bar, so it carries its own drag strip (nothing in a browser). */}
+          <TitleBarDragStrip windowChrome={getWindowChromeBridge()} />
+
           {/* ── Top-left: date ── */}
           <div className="absolute left-8 top-8 z-10 text-left">
             <div className="text-2xl font-semibold tracking-tight text-foreground">

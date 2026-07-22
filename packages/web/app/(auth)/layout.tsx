@@ -1,10 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { Moon, Sun } from 'lucide-react';
+import type { WindowChromeBridge } from '@midnite/shared';
+import { TitleBarDragStrip } from '@midnite/shell';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { AuthHero } from '@/components/auth/auth-hero';
+import { getWindowChromeBridge } from '@/lib/desktop-bridge';
 import { NeuroCloudBackground } from '@midnite/ui';
 import { introAtLeast, useAuthIntro } from '@/components/auth/use-auth-intro';
 import { Wordmark } from '@/components/wordmark';
@@ -39,12 +42,22 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const isDesktop = useIsDesktop();
   const { animate } = useAnimationPrefs();
   const intro = useAuthIntro(animate);
+  // Window-chrome bridge, read after mount (this layout is SSR'd in the export).
+  const [windowChrome, setWindowChrome] = useState<WindowChromeBridge | null>(null);
+  useEffect(() => {
+    setWindowChrome(getWindowChromeBridge());
+  }, []);
   const formShown = introAtLeast(intro, 'done');
   // The starfield (and its wash) fade in on the intro's first beat.
   const backdropShown = introAtLeast(intro, 'starfield');
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-background">
+      {/* Frameless desktop window (Phase 81): the auth screens render without the
+          app shell (no title bar), so they carry their own top drag strip —
+          renders nothing in a browser. */}
+      <TitleBarDragStrip windowChrome={windowChrome} />
+
       {/* Full-viewport neuro-cloud backdrop (desktop only): a soft radial wash for
           depth, then the starfield canvas over it. Both fade in on the first
           intro beat; the form + hero float above at z-10. */}

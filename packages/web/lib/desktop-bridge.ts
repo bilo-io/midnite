@@ -1,4 +1,4 @@
-import type { Notification, UpdateChannel } from '@midnite/shared';
+import type { Notification, UpdateChannel, WindowChromeBridge } from '@midnite/shared';
 
 /**
  * Bridge the Electron preload exposes on `window.midniteDesktop` when the web app
@@ -19,6 +19,13 @@ export type MidniteDesktopBridge = {
    * receives the notification's `route`; returns an unsubscribe function.
    */
   onNavigate: (handler: (route: string) => void) => () => void;
+  /**
+   * Window-chrome bridge for the frameless title bar (Phase 81). The contract
+   * lives in `@midnite/shared` (`WindowChromeBridge`) because the consumer is
+   * `@midnite/shell`'s <TitleBar>. Optional so an older preload without it
+   * degrades gracefully (the app keeps the browser chrome).
+   */
+  windowChrome?: WindowChromeBridge;
 };
 
 /**
@@ -85,4 +92,10 @@ export function getDesktopBridge(): MidniteDesktopBridge | null {
 export function getUpdatesBridge(): UpdatesBridge | null {
   if (typeof window === 'undefined') return null;
   return window.midnite?.updates ?? null;
+}
+
+/** The window-chrome bridge when running inside the Electron shell, else `null`. */
+export function getWindowChromeBridge(): WindowChromeBridge | null {
+  if (typeof window === 'undefined') return null;
+  return window.midniteDesktop?.windowChrome ?? null;
 }

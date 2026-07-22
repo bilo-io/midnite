@@ -10,7 +10,7 @@ import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
 import { PasscodeSetupDialog } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
-import { docsChangelogUrl, type Locale } from '@midnite/shared';
+import { docsChangelogUrl, type Locale, type WindowChromeBridge } from '@midnite/shared';
 import { featuresToNav } from '@/lib/nav-config';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { setLocalePreference } from '@/lib/locale-preference';
@@ -27,9 +27,11 @@ import { PresenceNavPill } from '@/components/office/presence-nav-pill';
 import { Screensaver } from '@/components/screensaver';
 import { Wordmark } from '@/components/wordmark';
 import { ConnectionToaster } from '@/components/connection-status';
+import { DesktopTitleBar } from '@/components/desktop-title-bar';
 import { HeaderActions } from '@/components/header/header-actions';
 import { NotificationCenter } from '@/components/notification-center';
 import { useNotifications } from '@/components/notifications-provider';
+import { getWindowChromeBridge } from '@/lib/desktop-bridge';
 
 // Route Next's client-side `<Link>` through the shell's injected link seam so the
 // router-agnostic `<AppFrame>` still gets SPA navigation.
@@ -56,6 +58,16 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const [passcode, setPasscode] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
   const { unread } = useNotifications();
+
+  // The Electron window-chrome bridge (Phase 81) — read after mount (the static
+  // export SSRs this component, where `window` is absent). When the window is
+  // frameless the shell mounts the desktop title bar and the header-actions
+  // cluster relocates into it (so the floating copy is skipped below).
+  const [windowChrome, setWindowChrome] = useState<WindowChromeBridge | null>(null);
+  useEffect(() => {
+    setWindowChrome(getWindowChromeBridge());
+  }, []);
+  const frameless = windowChrome?.frameless === true;
 
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
   // The active locale (pref → browser → default, resolved by the shell provider).
@@ -213,13 +225,15 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         settings={{ href: '/settings', label: tNav('footer.settings'), icon: <Settings aria-hidden /> }}
         mobileSheet={<NotificationCenter expanded />}
         mobileUnread={unread}
+        titleBar={frameless ? <DesktopTitleBar windowChrome={windowChrome} /> : undefined}
       >
         {children}
       </AppFrame>
 
       {/* Top-right header-actions cluster (status · approvals · notifications ·
-          avatar), floating across every surface — a sibling of the frame. */}
-      <HeaderActions />
+          avatar), floating across every surface — a sibling of the frame. In the
+          frameless desktop window it lives in the title bar instead (Phase 81). */}
+      {frameless ? null : <HeaderActions />}
 
       {settingUp ? (
         <PasscodeSetupDialog

@@ -155,7 +155,8 @@ export function CommandPalette() {
     return [...pages, ...ALWAYS_ON];
   }, [settings.features]);
 
-  // Open on ⌘K / Ctrl+K; open help on `midnite:open-help` custom event.
+  // Open on ⌘K / Ctrl+K, or on `midnite:open-palette` (the desktop title bar's
+  // search pill, Phase 81); open help on `midnite:open-help`.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -163,14 +164,17 @@ export function CommandPalette() {
         setOpen((o) => !o);
       }
     };
+    const onOpen = () => setOpen(true);
     const onHelp = () => setHelpOpen(true);
     // `midnite:open-chat` now opens the assistant FAB's chat view (Phase 66
     // Theme D) — the palette keeps chat only via its own `>` prefix, typed by
     // keyboard users. So the palette no longer listens for that event.
     window.addEventListener('keydown', onKey);
+    window.addEventListener('midnite:open-palette', onOpen);
     window.addEventListener('midnite:open-help', onHelp);
     return () => {
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('midnite:open-palette', onOpen);
       window.removeEventListener('midnite:open-help', onHelp);
     };
   }, []);

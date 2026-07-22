@@ -19,10 +19,19 @@ import { UserMenu } from './user-menu';
  * the banner grows in (and eases back when it collapses) instead of being
  * occluded by it — matching the nav rail's offset. `items-center` centres the
  * row; each item carries its own dropdown, tooltip, and count badge.
+ *
+ * `inline` (Phase 81) drops the fixed positioning so the same cluster can sit
+ * in the desktop title bar's right slot instead of floating over the page.
  */
-export function HeaderActions() {
+export function HeaderActions({ inline = false }: { inline?: boolean }) {
   return (
-    <div className="fixed right-4 top-[calc(var(--update-banner-h,0px)+0.75rem)] z-50 flex h-9 items-center gap-1.5 transition-[top] duration-300 ease-in-out motion-reduce:transition-none">
+    <div
+      className={
+        inline
+          ? 'flex h-9 items-center gap-1.5'
+          : 'fixed right-4 top-[calc(var(--update-banner-h,0px)+0.75rem)] z-50 flex h-9 items-center gap-1.5 transition-[top] duration-300 ease-in-out motion-reduce:transition-none'
+      }
+    >
       <ConnectionStatusPill />
       <ThemeMenu />
       <NotificationsMenu />

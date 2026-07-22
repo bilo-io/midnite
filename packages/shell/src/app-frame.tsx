@@ -95,6 +95,12 @@ export type AppFrameProps = {
   headerActions?: ReactNode;
   /** Full-width strip above the content (e.g. the update banner) — rendered only when provided. */
   banner?: ReactNode;
+  /**
+   * The desktop title bar (Phase 81) — typically a `<TitleBar>` bound to the
+   * host's window-chrome bridge. Rendered as a frame sibling; the fixed rail
+   * offsets below it via the `--titlebar-h` var the bar publishes.
+   */
+  titleBar?: ReactNode;
   /** Accessible label for the desktop rail landmark (default "Primary"). */
   navLabel?: string;
   className?: string;
@@ -150,6 +156,7 @@ export function AppFrame({
   settings,
   headerActions,
   banner,
+  titleBar,
   navLabel = 'Primary',
   className,
   children,
@@ -219,15 +226,17 @@ export function AppFrame({
 
   return (
     <>
+      {titleBar}
       <aside
         {...autoHandlers}
         aria-label={navLabel}
         className={cn(
           // Hidden on phones (the bottom-tab bar takes over below `md`); the
           // icon-rail/expanded states stay for tablet and desktop. `top` follows
-          // the update banner's height so the fixed rail is pushed down with the
-          // rest of the app; `bottom-0` keeps it anchored.
-          'fixed bottom-0 left-0 top-[var(--update-banner-h,0px)] z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width,top] duration-200 md:flex',
+          // the update banner's height plus the desktop title bar's (both 0px
+          // when absent) so the fixed rail is pushed down with the rest of the
+          // app; `bottom-0` keeps it anchored.
+          'fixed bottom-0 left-0 top-[calc(var(--update-banner-h,0px)_+_var(--titlebar-h,0px))] z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width,top] duration-200 md:flex',
           expandedView
             ? 'w-64 items-stretch bg-background/95 px-2 shadow-xl'
             : 'w-14 items-center bg-background/70 supports-[backdrop-filter]:bg-background/50',
