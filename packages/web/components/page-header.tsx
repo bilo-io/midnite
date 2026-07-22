@@ -118,9 +118,10 @@ export function PageHeader({
     <header
       className={cn(
         // -1px (not 0): in the frameless desktop window the header slides
-        // behind the fixed 56px title bar when scrolled; the collapsed `lg`
-        // header is 57px incl. its bottom border, so the 1px tuck keeps that
-        // border from peeking below the bar. Imperceptible in a browser.
+        // behind the fixed 48px title bar when scrolled; the compact collapsed
+        // form (45px incl. its bottom border — py-2 + a text-xl line) plus the
+        // 1px tuck keeps even that border from peeking below the bar.
+        // Imperceptible in a browser.
         'sticky top-[-1px] z-30 border-b transition-colors duration-200 motion-reduce:transition-none',
         scrolled
           ? 'border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60'
@@ -131,7 +132,7 @@ export function PageHeader({
       <div
         className={cn(
           'container relative transition-[padding] duration-200 motion-reduce:transition-none',
-          scrolled ? 'py-3' : 'py-6',
+          scrolled ? 'py-2' : 'py-6',
         )}
       >
         {/* The decorative backdrop is now app-wide (`<AppBackdrop/>`), showing
@@ -152,7 +153,9 @@ export function PageHeader({
               aria-label={title}
               className={cn(
                 'flex items-center gap-2.5 font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
-                size === 'lg' ? (scrolled ? 'text-2xl' : 'text-3xl') : scrolled ? 'text-xl' : 'text-2xl',
+                // Both sizes collapse to text-xl: with py-2 that's a 45px
+                // header (incl. border) — under the 48px desktop title bar.
+                scrolled ? 'text-xl' : size === 'lg' ? 'text-3xl' : 'text-2xl',
               )}
             >
               {Icon && (
