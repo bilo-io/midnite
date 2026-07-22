@@ -33,8 +33,12 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     <PaletteCommandsProvider>
       {/* `relative isolate` + an opaque `bg-background` base so the app-wide
           backdrop (starfield by default) can pin at `-z-10` behind every page
-          while content floats above it. */}
-      <div className="relative isolate min-h-screen bg-background">
+          while content floats above it. The min-height subtracts the desktop
+          title bar: this wrapper sits INSIDE the root layout's
+          `pt-[--titlebar-h]` column, so a plain 100vh here forces a permanent
+          48px document scroll on desktop that slides every page (and the
+          viewport-fitted shells) behind the fixed bar. */}
+      <div className="relative isolate min-h-[calc(100dvh_-_var(--titlebar-h,0px))] bg-background">
         <AppBackdrop />
         <AuthGuard />
         <LiveData />

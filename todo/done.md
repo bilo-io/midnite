@@ -4539,3 +4539,10 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] **Deck presentation chrome**: redundant back button removed (X exits to /slides); fullscreen/close controls offset by `--titlebar-h` so the desktop bar can't occlude them.
 - [x] **Scrollable nav rail** (`shell/app-frame.tsx`): the rail's `<nav>` is `flex-1 overflow-y-auto` (brand/footer pinned); rail tooltips now portal to `<body>` with fixed positioning (hover/focus-mounted) so the scroll clip can't cut them off. RTL specs updated.
 - [x] Gates: shell 62 · web 1381, `:typecheck` + `:lint` green.
+
+## 2026-07-22 — Sticky-bar parity follow-up (the real 48px scroll + workflow editor toolbar)
+
+- [x] **Root cause of the residual desktop scroll**: `(main)/layout.tsx`'s page wrapper was `min-h-screen` *inside* the root layout's `pt-[--titlebar-h]` column — a permanent 48px document overflow on desktop that slid every page (landing clock, the viewport-fitted editor shells) behind the fixed title bar regardless of the per-page calc fixes. Now `min-h-[calc(100dvh_-_var(--titlebar-h,0px))]`.
+- [x] **Workflow editor actions** moved out of the collapsing `PageHeader` into the standard `StickyToolbar` (`workflow-page-header.tsx`): trigger chip far left, icon controls (edit · history · template · enable · run · save) right via the row's space-between.
+- [x] **StickyToolbar surface**: pure `backdrop-blur` with a transparent background where `backdrop-filter` is supported; the translucent `bg-background/80` remains only as the no-support fallback.
+- [x] Gates: web 1381 · `:typecheck` + `:lint` green.

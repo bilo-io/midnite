@@ -5,6 +5,7 @@ import { BookmarkPlus, History, Loader2, Pencil, Play, Power, Save } from 'lucid
 import { PageHeader } from '@/components/page-header';
 import { EditDetailsModal } from '@/components/edit-details-modal';
 import { HoverExpandButton } from '@/components/hover-expand-button';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { TriggerBadge } from '@/components/trigger-badge';
 import { describeCron } from '@/lib/cron';
 import { useWorkflowStore } from '@/lib/workflow-store';
@@ -14,7 +15,9 @@ import { cn } from '@/lib/utils';
  * The workflow editor's page header (Phase 74; reshaped in the Phase 81
  * follow-up) — the same shared `PageHeader` every resource page uses: STATIC
  * title + description (no back link — the desktop title bar carries history
- * nav), controls top-right. Renaming goes through the pen button's
+ * nav), with the controls in a `StickyToolbar` below it (trigger chip left,
+ * icon controls right) so they never tuck behind the desktop title bar with
+ * the collapsing header. Renaming goes through the pen button's
  * `EditDetailsModal`; edits write to the workflow store, so the ordinary
  * Save/autosave path persists them. The other actions mirror the session
  * cockpit: icon-only controls that reveal their label on hover
@@ -65,19 +68,26 @@ export function WorkflowPageHeader({
         title={name || 'Untitled workflow'}
         icon="Workflow"
         description={description || 'Describe what this workflow does…'}
-        actions={
-          <div className="flex items-center gap-1.5">
-            {/* Trigger — a labelled chip (it names how the workflow fires); click to edit. */}
-            <button
-              type="button"
-              onClick={onEditTrigger}
-              title="Change trigger"
-              aria-label="Change trigger"
-              className="flex h-8 items-center gap-2 rounded-md border border-transparent px-2 transition-colors hover:border-border hover:bg-accent/40"
-            >
-              <TriggerBadge type={trigger.type} />
-              <span className="hidden text-xs text-muted-foreground sm:inline">{triggerLabel}</span>
-            </button>
+      />
+
+      {/* Editor actions live in the standard sticky controls row (not in the
+          header, which tucks behind the desktop title bar when collapsed):
+          trigger chip far left, icon controls right. */}
+      <div className="container">
+        <StickyToolbar>
+          {/* Trigger — a labelled chip (it names how the workflow fires); click to edit. */}
+          <button
+            type="button"
+            onClick={onEditTrigger}
+            title="Change trigger"
+            aria-label="Change trigger"
+            className="flex h-8 items-center gap-2 rounded-md border border-transparent px-2 transition-colors hover:border-border hover:bg-accent/40"
+          >
+            <TriggerBadge type={trigger.type} />
+            <span className="hidden text-xs text-muted-foreground sm:inline">{triggerLabel}</span>
+          </button>
+
+          <div className="flex shrink-0 items-center gap-1.5">
             <HoverExpandButton
               icon={<Pencil className="h-3.5 w-3.5" />}
               label="Edit details"
@@ -124,8 +134,8 @@ export function WorkflowPageHeader({
               disabled={!dirty || saving}
             />
           </div>
-        }
-      />
+        </StickyToolbar>
+      </div>
 
       {editing ? (
         <EditDetailsModal
