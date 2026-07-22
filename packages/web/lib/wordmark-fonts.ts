@@ -86,9 +86,40 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
 export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font';
 export const DEFAULT_WORDMARK_FONT: WordmarkFontKey = 'signpainter';
 
-// The font the "midnite" wordmark logo is hard-coded to app-wide. Cassandra reads
-// best, so it's fixed here rather than user-configurable.
+// The font the "midnite" wordmark logo defaults to app-wide (Cassandra reads
+// best). The Settings → Appearance → Logo picker persists a per-user override
+// under WORDMARK_FONT_STORAGE_KEY; the Wordmark follows it live, falling back to
+// this face until the user picks another.
 export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'cassandra';
+
+// The wordmark's letter-casing is a separate, live-configurable trial dimension
+// (Settings → Appearance → Logo) so the same face can be judged in lower / title
+// / upper case. Only the wordmark string is transformed — nothing else.
+export type WordmarkCase = 'lower' | 'title' | 'upper';
+
+export const WORDMARK_CASE_STORAGE_KEY = 'midnite.wordmark-case';
+export const DEFAULT_WORDMARK_CASE: WordmarkCase = 'lower';
+
+// Ordered for the settings toggle; each label doubles as the live preview of the
+// casing it selects.
+export const WORDMARK_CASE_OPTIONS: readonly { value: WordmarkCase; label: string }[] = [
+  { value: 'lower', label: 'midnite' },
+  { value: 'title', label: 'Midnite' },
+  { value: 'upper', label: 'MIDNITE' },
+];
+
+// Transform a wordmark string to the chosen casing. Always normalises from the
+// raw text so a stale/unknown stored value falls through to lowercase.
+export function applyWordmarkCase(text: string, wordmarkCase: string): string {
+  switch (wordmarkCase) {
+    case 'upper':
+      return text.toUpperCase();
+    case 'title':
+      return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    default:
+      return text.toLowerCase();
+  }
+}
 
 // CSS var for a key, falling back to the default font when an unknown/stale value
 // is read from storage.
