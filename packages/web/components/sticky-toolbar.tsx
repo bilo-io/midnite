@@ -19,9 +19,10 @@ export function StickyToolbar({ className, children }: { className?: string; chi
     <div
       className={cn(
         // -mx/px keep the hit area flush with the container edge while the
-        // translucent surface bleeds slightly past the content for legibility
-        // over cards scrolling beneath.
-        'sticky top-12 z-20 -mx-2 flex flex-wrap items-center justify-between gap-3 gap-y-2 rounded-lg bg-background/80 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+        // blurred surface bleeds slightly past the content for legibility over
+        // cards scrolling beneath. The surface is pure backdrop-blur (no tint);
+        // the translucent bg only kicks in where backdrop-filter is unsupported.
+        'sticky top-12 z-20 -mx-2 flex flex-wrap items-center justify-between gap-3 gap-y-2 rounded-lg bg-background/80 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-transparent',
         className,
       )}
     >
