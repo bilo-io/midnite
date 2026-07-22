@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/page-header';
+import { SettingsPane } from './settings-pane';
 import { SettingsSidebar } from './settings-sidebar';
 
 /**
@@ -17,7 +18,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
       />
       <div className="container flex flex-col gap-8 py-2 md:flex-row md:items-start" data-tour="settings">
         <SettingsSidebar />
-        <div className="min-w-0 flex-1 md:max-w-3xl">{children}</div>
+        <SettingsPane>{children}</SettingsPane>
       </div>
     </div>
   );

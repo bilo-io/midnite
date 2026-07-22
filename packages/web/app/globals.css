@@ -586,6 +586,18 @@ html[data-motion='reduced'] .screensaver-title {
     }
   }
 
+  /* Settings category switch: only the content pane re-reveals (the hub shell —
+     header + category list — persists; see settings-pane.tsx). Quicker than the
+     full page reveal so tabbing through categories feels snappy. */
+  .settings-pane-reveal {
+    animation: card-rise 0.3s ease-out both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) .settings-pane-reveal {
+      animation: none;
+    }
+  }
+
   /* Hide the scrollbar while keeping the element scrollable (used by the
      horizontally-scrolling feature-list-request pills). */
   .no-scrollbar {
