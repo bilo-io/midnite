@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 0/27 | `░░░░░░░░░░` | 0% | A B C D E | — |
+| [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 27/34 | `████████░░` | 79% | — | — |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
@@ -136,11 +136,11 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 81 — Desktop title bar & window chrome](phase-81-desktop-title-bar.md)
 *Frameless macOS window (`hiddenInset`) + a first-class `TitleBar` in `@midnite/shell` — drag region, traffic-light clearance, ⌘K search pill, nav, relocated header cluster — theme-seamless via a `WindowChromeBridge` contract in `shared`. Desktop-only, macOS-only (Windows overlay deferred).*
-- ◻ **A** — Frameless macOS window (main process: `hiddenInset` + traffic lights + `backgroundColor`, darwin-gated; failure-page drag strip)
-- ◻ **B** — Window-controls IPC (`WindowChromeBridge` type in `shared`; preload exposes fullscreen/focus events + `setBackgroundColor`)
-- ◻ **C** — `TitleBar` in `@midnite/shell` (drag region, fullscreen-collapsing clearance, blur dimming, appearance-runtime-synced surface, AppFrame slot)
-- ◻ **D** — Bar contents (⌘K search pill → Phase 41 palette, back/forward, title label, headerActions relocation on desktop)
-- ◻ **E** — Lock screen & auth drag coverage + packaged-app verification pass
+- ✅ **A** — Frameless macOS window (main process: `titleBarStyle: 'hidden'` + inset traffic lights + `backgroundColor`, darwin-gated; failure-page drag strip)
+- ✅ **B** — Window-controls IPC (`WindowChromeBridge` type in `shared`; preload exposes fullscreen/focus events + `setBackgroundColor`)
+- ✅ **C** — `TitleBar` in `@midnite/shell` (drag region, fullscreen-collapsing clearance, blur dimming, appearance-runtime-synced surface, AppFrame slot)
+- ✅ **D** — Bar contents (⌘K search pill → Phase 41 palette, back/forward, title label, headerActions relocation on desktop)
+- ◐ **E** — Lock screen & auth drag coverage ✅ + packaged-app verification pass (outstanding)
 
 ### [Phase 80 — Shared reading face & complete legal set](phase-80-shared-reading-face-legal.md)
 *Extract the reading face (column shell + prose + scroll-spy TOC) into `@midnite/ui` as a framework-agnostic leaf, migrate **both** docs and site legal onto it, and complete the legal set (Terms + Cookies) with real, counsel-review-flagged prose.*
