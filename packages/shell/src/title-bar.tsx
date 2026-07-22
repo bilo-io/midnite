@@ -36,8 +36,11 @@ export type TitleBarProps = {
   className?: string;
 };
 
-/** Bar height (44px) — also published as `--titlebar-h` while mounted. */
-export const TITLE_BAR_HEIGHT = '2.75rem';
+/**
+ * Bar height (48px) — also published as `--titlebar-h` while mounted. Tall
+ * enough that a 36px control's focus ring isn't clipped against the bar edge.
+ */
+export const TITLE_BAR_HEIGHT = '3rem';
 
 // `-webkit-app-region` isn't in React's CSSProperties; the casts keep strict TS.
 const DRAG_STYLE = { WebkitAppRegion: 'drag' } as CSSProperties;
@@ -80,8 +83,8 @@ export function TitleBar({ windowChrome, left, center, right, className }: Title
       data-window-focused={focused ? 'true' : 'false'}
       style={DRAG_STYLE}
       className={cn(
-        'fixed inset-x-0 top-0 z-[60] flex h-11 items-center gap-3 border-b border-border/60 bg-background pr-3 transition-[padding-left,opacity] duration-200',
-        // 5.25rem clears the traffic lights inset at { x: 16, y: 14 }.
+        'fixed inset-x-0 top-0 z-[60] flex h-12 items-center gap-3 border-b border-border/60 bg-background pr-3 transition-[padding-left,opacity] duration-200',
+        // 5.25rem clears the traffic lights inset at { x: 16, y: 18 }.
         clearTrafficLights ? 'pl-[5.25rem]' : 'pl-3',
         !focused && 'opacity-60',
         className,
@@ -122,6 +125,6 @@ export function TitleBarDragStrip({
 }) {
   if (windowChrome?.frameless !== true) return null;
   return (
-    <div aria-hidden style={DRAG_STYLE} className={cn('fixed inset-x-0 top-0 z-[70] h-11', className)} />
+    <div aria-hidden style={DRAG_STYLE} className={cn('fixed inset-x-0 top-0 z-[70] h-12', className)} />
   );
 }
