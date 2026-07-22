@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { ToastProvider } from '@/components/toast';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { createDeck } from '@/lib/slides/store';
@@ -60,6 +60,21 @@ describe('SlidesView', () => {
     expect(screen.getByText('ACME')).toBeInTheDocument();
     // The react-select styled project filter is present.
     expect(screen.getByRole('button', { name: /all projects/i })).toBeInTheDocument();
+  });
+
+  it('selecting a deck reveals the bulk action bar with Duplicate and Delete', async () => {
+    createDeck({ markdown: '# Quarterly review\n\n## Numbers\n\n- up', title: 'Quarterly review' });
+
+    renderView();
+    expect(await screen.findByText('Quarterly review')).toBeInTheDocument();
+
+    // The SelectableIcon exposes a role=checkbox labelled "Select". (The slides
+    // store caches decks in-memory across tests, so pick the first affordance.)
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /select/i })[0]!);
+
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('shows the empty state when there are no decks', async () => {

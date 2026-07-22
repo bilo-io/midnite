@@ -130,7 +130,9 @@ export function TasksView({
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
-  const [showNewTask, setShowNewTask] = useState(false);
+  // The new-task modal, opened either bare (toolbar button / palette command) or
+  // seeded from a column's "+" with a target status (and project, per-project mode).
+  const [newTask, setNewTask] = useState<{ status?: Status; projectId?: string } | null>(null);
   const { guardrails, setLocal: setGuardrails } = useGuardrails();
   const toast = useToast();
   const searchParams = useSearchParams();
@@ -142,7 +144,7 @@ export function TasksView({
 
   // Allow the command palette's "Create task…" command to open the new-task form.
   useEffect(() => {
-    const onNew = () => setShowNewTask(true);
+    const onNew = () => setNewTask({});
     window.addEventListener('midnite:new-task', onNew);
     return () => window.removeEventListener('midnite:new-task', onNew);
   }, []);
@@ -524,7 +526,7 @@ export function TasksView({
           <Button
             type="button"
             size="sm"
-            onClick={() => setShowNewTask(true)}
+            onClick={() => setNewTask({})}
             className="h-8 gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -552,7 +554,12 @@ export function TasksView({
         ) : view === 'list' ? (
           <ListView {...viewProps} />
         ) : (
-          <BoardView {...viewProps} groupByProject={boardStyle === 'project'} projects={projects} />
+          <BoardView
+            {...viewProps}
+            groupByProject={boardStyle === 'project'}
+            projects={projects}
+            onAddTask={(status, projectId) => setNewTask({ status, projectId })}
+          />
         )}
       </div>
 
@@ -565,11 +572,13 @@ export function TasksView({
         />
       ) : null}
 
-      {showNewTask && (
+      {newTask && (
         <NewTaskModal
           projects={projects}
           repos={repos}
           tasks={localTasks}
+          defaultStatus={newTask.status}
+          defaultProjectId={newTask.projectId}
           onCreated={(task) => {
             setLocalTasks((prev) => [task, ...prev]);
             toast.success('Task created');
@@ -582,7 +591,7 @@ export function TasksView({
             // invalidate directly too so it updates without a live socket.
             invalidateData();
           }}
-          onClose={() => setShowNewTask(false)}
+          onClose={() => setNewTask(null)}
         />
       )}
     </div>

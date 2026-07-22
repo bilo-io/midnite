@@ -1,19 +1,24 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, Plus, Presentation, type LucideIcon } from 'lucide-react';
 import type { Project } from '@midnite/shared';
+import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { CountPill } from '@/components/count-pill';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import type { FilterOption } from '@/components/filter-pills';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { SearchBar } from '@/components/search-bar';
 import { SortSelect } from '@/components/sort-select';
 import { StickyToolbar } from '@/components/sticky-toolbar';
+import { useToast } from '@/components/toast';
 import { DeckCard, DeckRow } from '@/components/slides/deck-card';
+import { deleteDeck, duplicateDeck } from '@/lib/slides/store';
+import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useDecks } from '@/lib/slides/use-decks';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { cn } from '@/lib/utils';
@@ -103,6 +108,46 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
     return sorted;
   }, [decks, query, sort, activeProjects, projectsById]);
 
+  // --- Bulk selection (decks are keyed by slug) ---
+  const {
+    selectedIds,
+    count: selectedCount,
+    clear: clearSelection,
+    isSelected,
+    toggle: toggleSelect,
+  } = useBulkSelection();
+  const confirm = useConfirm();
+  const toast = useToast();
+  const orderedSlugs = useMemo(() => filtered.map((d) => d.slug), [filtered]);
+
+  const duplicateSelection = useCallback(() => {
+    if (selectedIds.length === 0) return;
+    selectedIds.forEach((slug) => duplicateDeck(slug));
+    toast.success(`${selectedIds.length} deck${selectedIds.length === 1 ? '' : 's'} duplicated`);
+    clearSelection();
+    refresh();
+  }, [selectedIds, toast, clearSelection, refresh]);
+
+  const deleteSelection = useCallback(async () => {
+    const slugs = [...selectedIds];
+    if (slugs.length === 0) return;
+    const ok = await confirm({
+      title: `Delete ${slugs.length} deck${slugs.length === 1 ? '' : 's'}?`,
+      description: 'This permanently deletes the decks and all their slides. This cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    slugs.forEach((slug) => deleteDeck(slug));
+    toast.success(`${slugs.length} deck${slugs.length === 1 ? '' : 's'} deleted`);
+    clearSelection();
+    refresh();
+  }, [selectedIds, confirm, toast, clearSelection, refresh]);
+
+  const bulkActions: BulkAction[] = [
+    { key: 'duplicate', label: 'Duplicate', color: BULK_COLORS.neutral, onClick: duplicateSelection },
+    { key: 'delete', label: 'Delete', color: BULK_COLORS.delete, onClick: () => void deleteSelection() },
+  ];
+
   // Avoid flashing the empty state before localStorage has been read.
   if (!hydrated) return <div className="h-40" aria-hidden />;
 
@@ -162,6 +207,8 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
         </div>
       </StickyToolbar>
 
+      <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
+
       <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
         <CountPill count={decks.length} />
         {filtering && filtered.length !== decks.length ? (
@@ -181,6 +228,8 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
               deck={deck}
               project={deck.projectId ? projectsById.get(deck.projectId) : undefined}
               onChanged={refresh}
+              selected={isSelected(deck.slug)}
+              onToggleSelect={(sk) => toggleSelect(deck.slug, sk, orderedSlugs)}
             />
           ))}
         </div>
@@ -192,6 +241,8 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
               deck={deck}
               project={deck.projectId ? projectsById.get(deck.projectId) : undefined}
               onChanged={refresh}
+              selected={isSelected(deck.slug)}
+              onToggleSelect={(sk) => toggleSelect(deck.slug, sk, orderedSlugs)}
             />
           ))}
         </div>

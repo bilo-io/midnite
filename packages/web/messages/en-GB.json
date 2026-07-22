@@ -59,6 +59,7 @@
   "board": {
     "title": "Task board",
     "nothingHere": "Nothing here",
+    "addTask": "Add task to {column}",
     "columns": {
       "backlog": "Backlog",
       "todo": "Todo",

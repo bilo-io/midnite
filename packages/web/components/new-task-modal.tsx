@@ -29,6 +29,8 @@ type Props = {
   /** Existing tasks, candidates for the single-mode "Blocked by" picker (Phase 27). */
   tasks?: TaskSummary[];
   defaultStatus?: Status;
+  /** Pre-selects the project — e.g. the per-project board's "+" seeds its column's project. */
+  defaultProjectId?: string;
   onCreated: (task: Task) => void;
   /** Called after a bulk batch lands, so the parent can refresh the board. */
   onBulkCreated?: (response: BulkCreateTaskResponse) => void;
@@ -45,6 +47,7 @@ export function NewTaskModal({
   repos,
   tasks = [],
   defaultStatus = 'todo',
+  defaultProjectId = '',
   onCreated,
   onBulkCreated,
   onClose,
@@ -52,7 +55,7 @@ export function NewTaskModal({
   const [mode, setMode] = useState<Mode>('single');
   const [title, setTitle] = useState('');
   const [bulkText, setBulkText] = useState('');
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] = useState(defaultProjectId);
   const [repo, setRepo] = useState('');
   const [status, setStatus] = useState<Status>(defaultStatus);
   const [priority, setPriority] = useState(1);
