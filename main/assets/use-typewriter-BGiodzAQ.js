@@ -1,0 +1,1 @@
+import{b5 as c}from"./iframe-DYd4tQ-K.js";function i(e,{duration:n=700,enabled:s=!0}={}){const[l,r]=c.useState("");return c.useEffect(()=>{if(!s||e.length===0){r(e);return}r("");let t=0;const o=Math.max(n/e.length,12),a=setInterval(()=>{t+=1,r(e.slice(0,t)),t>=e.length&&clearInterval(a)},o);return()=>clearInterval(a)},[e,n,s]),{typed:l,done:l.length===e.length}}export{i as u};
