@@ -258,14 +258,18 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   return (
     <WorkflowStoreContext.Provider value={store}>
       <ReactFlowProvider>
-        {/* Full-screen editor column — the shared `PageHeader` (back + editable
-            title/subtitle) sits at the top, mirroring the other detail cockpits
-            (e.g. the dependency graph). Its left-aligned content clears the app's
-            fixed top-right header-actions cluster, so no manual offset is needed.
-            Height subtracts the desktop title bar (the layout pads by
-            --titlebar-h) so the column fits the viewport exactly — otherwise the
-            48px document overflow lets the header/palette scroll behind the bar. */}
-        <div className="flex h-[calc(100dvh_-_var(--titlebar-h,0px))] w-full flex-col overflow-hidden">
+        {/* Editor column. NOT a fixed overflow-hidden shell: the shared
+            `PageHeader` collapses on WINDOW scroll (useScrolled), so the page
+            must scroll the document — like every list page — for the header to
+            collapse and tuck behind the desktop title bar. The cockpit region
+            below (canvas + run output) is therefore sized to the TUCKED
+            end-state — 100dvh minus the title bar minus the 48px sticky
+            toolbar — so after the header scrolls away the toolbar pins at
+            top-12 and the cockpit exactly fills the rest, leaving no residual
+            scroll. (Sizing it against the EXPANDED header instead would make
+            the collapse shrink the document and clamp the scroll straight
+            back — a feedback loop.) */}
+        <div className="flex w-full flex-col">
           <WorkflowPageHeader
             onRun={() => void run()}
             onSave={() => void save()}
@@ -286,58 +290,64 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             {banner}
           </div>
 
-          <div className="relative flex min-h-0 flex-1" data-tour="workflow-canvas">
-            <div
-              className={cn(
-                'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
-                paletteOpen ? 'w-52' : 'w-0',
-              )}
-            >
-              <NodePalette />
-            </div>
-
-            <div className="relative min-w-0 flex-1">
-              {/* Fill the flex cell via absolute insets, not height:100% — a
-                  percentage height won't resolve against a flex item whose own
-                  height is auto, which collapses React Flow's interaction pane
-                  (nodes still render, but panning/dragging goes dead). */}
-              <div className="absolute inset-0">
-                <WorkflowCanvas />
-              </div>
-              <PanelToggle
-                side="left"
-                open={paletteOpen}
-                onToggle={() => setPaletteOpen((o) => !o)}
-                label={paletteOpen ? 'Hide node palette' : 'Show node palette'}
-              />
-              {!historyOpen ? (
-                <PanelToggle
-                  side="right"
-                  open={configOpen}
-                  onToggle={() => setConfigOpen((o) => !o)}
-                  label={configOpen ? 'Hide config panel' : 'Show config panel'}
-                />
-              ) : null}
-            </div>
-
-            {historyOpen ? (
-              <RunHistoryPanel
-                workflowId={workflow.id}
-                onClose={() => setHistoryOpen(false)}
-              />
-            ) : (
+          {/* The viewport-fitted cockpit: canvas row + run output. 3rem = the
+              sticky toolbar (py-2 + h-8 controls) — the toolbar and this region
+              together fill the viewport below the title bar once the header has
+              tucked. */}
+          <div className="flex h-[calc(100dvh_-_var(--titlebar-h,0px)_-_3rem)] min-h-0 flex-col">
+            <div className="relative flex min-h-0 flex-1" data-tour="workflow-canvas">
               <div
                 className={cn(
                   'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
-                  configOpen ? 'w-80' : 'w-0',
+                  paletteOpen ? 'w-52' : 'w-0',
                 )}
               >
-                <NodeConfigPanel workflowId={workflow.id} run={runner.run} />
+                <NodePalette />
               </div>
-            )}
-          </div>
 
-          <RunOutputPanel run={runner.run} />
+              <div className="relative min-w-0 flex-1">
+                {/* Fill the flex cell via absolute insets, not height:100% — a
+                    percentage height won't resolve against a flex item whose own
+                    height is auto, which collapses React Flow's interaction pane
+                    (nodes still render, but panning/dragging goes dead). */}
+                <div className="absolute inset-0">
+                  <WorkflowCanvas />
+                </div>
+                <PanelToggle
+                  side="left"
+                  open={paletteOpen}
+                  onToggle={() => setPaletteOpen((o) => !o)}
+                  label={paletteOpen ? 'Hide node palette' : 'Show node palette'}
+                />
+                {!historyOpen ? (
+                  <PanelToggle
+                    side="right"
+                    open={configOpen}
+                    onToggle={() => setConfigOpen((o) => !o)}
+                    label={configOpen ? 'Hide config panel' : 'Show config panel'}
+                  />
+                ) : null}
+              </div>
+
+              {historyOpen ? (
+                <RunHistoryPanel
+                  workflowId={workflow.id}
+                  onClose={() => setHistoryOpen(false)}
+                />
+              ) : (
+                <div
+                  className={cn(
+                    'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
+                    configOpen ? 'w-80' : 'w-0',
+                  )}
+                >
+                  <NodeConfigPanel workflowId={workflow.id} run={runner.run} />
+                </div>
+              )}
+            </div>
+
+            <RunOutputPanel run={runner.run} />
+          </div>
         </div>
       </ReactFlowProvider>
 
