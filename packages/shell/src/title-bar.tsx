@@ -100,7 +100,11 @@ export function TitleBar({ windowChrome, left, center, right, className }: Title
       ) : null}
       <div className="flex min-w-0 flex-1 items-center justify-center">
         {center ? (
-          <div style={NO_DRAG_STYLE} className="flex w-full max-w-xl items-center justify-center">
+          // The no-drag region must hug the visible search box. `w-full max-w-xl`
+          // stretched it ~36rem wide — far past the box — so the empty flanks
+          // became a no-drag dead zone that swallowed window-drag on the bar.
+          // Cap at 20rem so the draggable strip resumes right beside the box.
+          <div style={NO_DRAG_STYLE} className="flex w-full max-w-xs items-center justify-center">
             {center}
           </div>
         ) : null}
