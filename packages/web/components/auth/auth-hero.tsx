@@ -229,15 +229,17 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
             <h2 className="auth-hero-title text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">
               {typedTitle}
             </h2>
-            <span
-              aria-hidden
-              className={cn(
-                'auth-hero-caret ml-1.5 inline-block w-[0.12em] self-stretch text-transparent animate-[blink_1s_step-end_infinite] motion-reduce:animate-none',
-                showCopy ? 'opacity-100' : 'opacity-0',
-              )}
-            >
-              |
-            </span>
+            {/* Rendered (not opacity-toggled) only once the brand has landed:
+                the blink animation drives `opacity`, which would override any
+                opacity class and show the caret from first paint. */}
+            {showCopy && (
+              <span
+                aria-hidden
+                className="auth-hero-caret ml-1.5 inline-block w-[0.12em] self-stretch text-transparent animate-[blink_1s_step-end_infinite] motion-reduce:animate-none"
+              >
+                |
+              </span>
+            )}
           </div>
           <p
             className={cn(
