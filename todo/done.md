@@ -4546,3 +4546,8 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] **Workflow editor actions** moved out of the collapsing `PageHeader` into the standard `StickyToolbar` (`workflow-page-header.tsx`): trigger chip far left, icon controls (edit · history · template · enable · run · save) right via the row's space-between.
 - [x] **StickyToolbar surface**: pure `backdrop-blur` with a transparent background where `backdrop-filter` is supported; the translucent `bg-background/80` remains only as the no-support fallback.
 - [x] Gates: web 1381 · `:typecheck` + `:lint` green.
+
+## 2026-07-22 — Workflow editor header tuck (scroll-driven collapse like every other page)
+
+- [x] **Editor header now collapses/tucks like the list pages**: `PageHeader` collapse is window-scroll-driven (`useScrolled`), and the editor's fixed `overflow-hidden` shell meant the window never scrolled — the header could never tuck behind the desktop title bar. The shell is now a plain document-scroll column; the cockpit (canvas + run output) is sized to the TUCKED end-state (`100dvh − --titlebar-h − 3rem` toolbar) so the page scrolls by exactly the header's collapsible height, then the toolbar pins at `top-12` and the cockpit fills the viewport with no residual scroll. Sizing against the *expanded* header would let the collapse shrink the document and clamp the scroll straight back (feedback loop) — documented inline.
+- [x] Gates: web 1381 · `web:typecheck` + `web:lint` green.
