@@ -13,6 +13,8 @@ import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
 import { registerUpdater, startUpdateCheck } from './updater';
+import { attachWindowChrome, registerWindowChrome, windowFrameless } from './window-chrome';
+import { WINDOW_FRAMELESS_ARG } from '../window-chrome/channels';
 
 let gateway: ChildProcess | null = null;
 let win: BrowserWindow | null = null;
@@ -30,6 +32,10 @@ registerNotificationBridge(() => win);
 // electron-updater bridge: the web UpdateBanner drives check → download → restart
 // over IPC (user-timed; never auto). No-op when unpackaged. Reads `win` lazily.
 registerUpdater(() => win);
+
+// Window-chrome bridge (Phase 81): the renderer retints the native window
+// backing on theme change so the frameless chrome stays seamless. Reads `win` lazily.
+registerWindowChrome(() => win);
 
 /** Locate the web static export: packaged extraResources first, else the dev build. */
 function webRoot(): string | null {
@@ -61,18 +67,32 @@ async function boot(): Promise<void> {
   // Advertise the endpoint so the bundled CLI finds this gateway (its port) with no flags.
   writeGatewayEndpoint(paths.home, gatewayUrl);
 
+  // Frameless chrome (Phase 81, macOS-only): drop the native title bar and let
+  // the renderer draw its own (`@midnite/shell` <TitleBar>). The traffic lights
+  // stay, inset to sit centred in the 44px bar. Non-mac keeps the stock frame.
+  const frameless = windowFrameless();
   win = new BrowserWindow({
     width: 1400,
     height: 900,
     show: false,
+    // Matches the app's dark `--background` (also the PWA themeColor), so the
+    // first paint and resize flashes read as the app, not a white void. The
+    // renderer retints it live when the theme changes (registerWindowChrome).
+    backgroundColor: '#09090b',
+    ...(frameless
+      ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 16, y: 14 } }
+      : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      // Read by the preload, which exposes it as window.__NEXT_PUBLIC_GATEWAY_URL.
-      additionalArguments: [`--gateway-url=${gatewayUrl}`],
+      // Read by the preload: the gateway URL is exposed as
+      // window.__NEXT_PUBLIC_GATEWAY_URL, the frameless flag feeds the
+      // windowChrome bridge (single-sourced from the window options above).
+      additionalArguments: [`--gateway-url=${gatewayUrl}`, `${WINDOW_FRAMELESS_ARG}${frameless ? '1' : '0'}`],
     },
   });
   win.once('ready-to-show', () => win?.show());
+  attachWindowChrome(win);
 
   // Phase 74 Theme D — external links open in the system browser, not a bare
   // in-app window. The web app only uses `window.open(_blank)` for external
@@ -93,7 +113,12 @@ async function boot(): Promise<void> {
   });
 
   if (!healthy) {
-    const html = '<h1>midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>';
+    // With the native title bar hidden the window is only draggable through an
+    // app-drawn drag region, so the failure page carries its own strip.
+    const dragStrip = frameless
+      ? '<div style="position:fixed;top:0;left:0;right:0;height:44px;-webkit-app-region:drag"></div>'
+      : '';
+    const html = `${dragStrip}<h1>midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>`;
     await win.loadURL(`data:text/html,${encodeURIComponent(html)}`);
     return;
   }

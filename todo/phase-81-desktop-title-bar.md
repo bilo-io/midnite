@@ -37,65 +37,67 @@
   `backgroundColor` must follow it so resize flashes and rounded-corner backing match.
 - **Command palette** (Phase 41) is the search surface; the bar only needs its trigger.
 
-## Theme A — Frameless macOS window (main process) — **S**
+## Theme A — Frameless macOS window (main process) — **S** ✅
 
-- [ ] `titleBarStyle: 'hiddenInset'` + `trafficLightPosition` + a theme-matching
-      `backgroundColor` on the `BrowserWindow`, gated `process.platform === 'darwin'`
-      (non-mac keeps the default frame untouched).
-- [ ] Keep `win.setTitle()` / the HTML `<title>` flowing — the window title still matters
+- [x] `titleBarStyle: 'hidden'` + `trafficLightPosition: { x: 16, y: 14 }` (so the
+      lights centre in the 44px bar — `hiddenInset` ignores a custom position) + a
+      theme-matching `backgroundColor` on the `BrowserWindow`, gated
+      `process.platform === 'darwin'` (non-mac keeps the default frame untouched).
+- [x] Keep `win.setTitle()` / the HTML `<title>` flowing — the window title still matters
       for Mission Control, the app switcher, and screen readers even with no visible bar.
-- [ ] The gateway-failure data-URL page gets an inline drag strip
+- [x] The gateway-failure data-URL page gets an inline drag strip
       (`-webkit-app-region: drag`) so the window stays movable when boot fails.
 
-## Theme B — Window-controls IPC (preload bridge) — **M**
+## Theme B — Window-controls IPC (preload bridge) — **M** ✅
 
-- [ ] Bridge contract in `@midnite/shared` (e.g. `shared/src/desktop/window-chrome.ts`):
+- [x] Bridge contract in `@midnite/shared` ([`shared/src/window-chrome.ts`](../packages/shared/src/window-chrome.ts)):
       `WindowChromeBridge` — `platform`, `frameless` flag, `onFullscreenChange(cb)`,
       `onFocusChange(cb)`, `setBackgroundColor(color)` — so `shell` can type against it
       without importing from `web` (boundary-legal: `shared ◀ shell`).
-- [ ] Preload: expose `windowChrome` on the existing `midniteDesktop` object
+- [x] Preload: expose `windowChrome` on the existing `midniteDesktop` object
       (enter/leave-fullscreen + focus/blur subscriptions over `ipcRenderer`, fire-and-forget
       `setBackgroundColor` send).
-- [ ] Main: forward `enter-full-screen` / `leave-full-screen` / `focus` / `blur` window
+- [x] Main: forward `enter-full-screen` / `leave-full-screen` / `focus` / `blur` window
       events to the renderer; handle the `setBackgroundColor` IPC (validate it's a plain
       `#rrggbb` string before calling `win.setBackgroundColor`).
-- [ ] [`web/lib/desktop-bridge.ts`](../packages/web/lib/desktop-bridge.ts) mirrors the
+- [x] [`web/lib/desktop-bridge.ts`](../packages/web/lib/desktop-bridge.ts) mirrors the
       shared type; unit tests for the accessor + color validation.
 
-## Theme C — `TitleBar` in `@midnite/shell` — **M**
+## Theme C — `TitleBar` in `@midnite/shell` — **M** ✅
 
-- [ ] `shell/src/title-bar.tsx`: fixed-height bar (44px token), `-webkit-app-region: drag`
+- [x] `shell/src/title-bar.tsx`: fixed-height bar (44px token), `-webkit-app-region: drag`
       with `no-drag` on every interactive child; renders **only** when a
       `WindowChromeBridge` with `frameless: true` is provided (browser renders nothing).
-- [ ] Traffic-light clearance (left padding for the inset ●●●) that **collapses in
+- [x] Traffic-light clearance (left padding for the inset ●●●) that **collapses in
       fullscreen** via `onFullscreenChange` (macOS hides the lights in fullscreen;
       `env(titlebar-area-*)` is not populated on mac, so the bridge event is the source
       of truth).
-- [ ] Focus/blur dimming: when the window blurs, the bar's text/icons drop to the muted
+- [x] Focus/blur dimming: when the window blurs, the bar's text/icons drop to the muted
       token (the Slack behaviour), driven by `onFocusChange`.
-- [ ] Theme-seamless surface: bar background = the app's own background token; on
+- [x] Theme-seamless surface: bar background = the app's own background token; on
       appearance-runtime theme change, call `setBackgroundColor` so the native window
       backing follows (no flash on resize / rounded corners).
-- [ ] `AppFrame` integration: a `titleBar` slot prop (injected by the host like nav
+- [x] `AppFrame` integration: a `titleBar` slot prop (injected by the host like nav
       config); existing `banner`/`headerActions` behaviour unchanged when absent.
-- [ ] `boundary.test.ts` stays green (imports from `shared` + `ui` only); RTL tests +
-      a Storybook story (framed vs frameless vs fullscreen vs blurred states).
+- [x] `boundary.test.ts` stays green (imports from `shared` + `ui` only); RTL tests
+      pin the framed / frameless / fullscreen / blurred states (a Storybook story is
+      N/A — shell has no Storybook setup; stories live in `web`).
 
-## Theme D — Bar contents (web wires it up) — **M**
+## Theme D — Bar contents (web wires it up) — **M** ✅
 
-- [ ] Search pill, centered Slack-style: displays placeholder + `⌘K` hint, opens the
+- [x] Search pill, centered Slack-style: displays placeholder + `⌘K` hint, opens the
       Phase 41 command palette on click (no new search UI).
-- [ ] History back/forward arrows with real enabled/disabled state (Next router /
+- [x] History back/forward arrows with real enabled/disabled state (Next router /
       `history` API), `no-drag`.
-- [ ] Workspace/page title label in the bar (doubles as the source for `document.title`).
-- [ ] On desktop, the floating `headerActions` cluster (notifications/avatar/status)
+- [x] Workspace/page title label in the bar (doubles as the source for `document.title`).
+- [x] On desktop, the floating `headerActions` cluster (notifications/avatar/status)
       relocates into the bar's right side; browser layout untouched.
-- [ ] `web` mounts the TitleBar via the desktop bridge; component tests for the
+- [x] `web` mounts the TitleBar via the desktop bridge; component tests for the
       pill/nav/relocation gating.
 
-## Theme E — Lock screen & auth coverage — **S**
+## Theme E — Lock screen & auth coverage — **S** ◐ (manual packaged-app pass outstanding)
 
-- [ ] `LockScreen` (shell) and the auth/login pages stay draggable under the hidden
+- [x] `LockScreen` (shell) and the auth/login pages stay draggable under the hidden
       title bar — a top drag strip overlays the starfield without blocking the form.
 - [ ] Manual verification pass in the packaged app: drag from every surface (board,
       task detail, lock screen, login, failure page), double-click-to-zoom, fullscreen
@@ -109,20 +111,22 @@
 |------|-------|
 | Desktop main | [`packages/desktop/src/main/index.ts`](../packages/desktop/src/main/index.ts) (window opts, event forwarding, failure page) |
 | Desktop preload | [`packages/desktop/src/preload/index.ts`](../packages/desktop/src/preload/index.ts) (`windowChrome` bridge) |
-| Shared | `packages/shared/src/desktop/window-chrome.ts` (new — bridge contract) |
-| Shell | `packages/shell/src/title-bar.tsx` (new), [`packages/shell/src/app-frame.tsx`](../packages/shell/src/app-frame.tsx) (slot), [`packages/shell/src/lock-screen.tsx`](../packages/shell/src/lock-screen.tsx) (drag strip) |
+| Shared | [`packages/shared/src/window-chrome.ts`](../packages/shared/src/window-chrome.ts) (new — bridge contract) |
+| Shell | [`packages/shell/src/title-bar.tsx`](../packages/shell/src/title-bar.tsx) (new — `TitleBar` + `TitleBarDragStrip`), [`packages/shell/src/app-frame.tsx`](../packages/shell/src/app-frame.tsx) (slot) |
 | Web | [`packages/web/lib/desktop-bridge.ts`](../packages/web/lib/desktop-bridge.ts) (mirror), shell mount point + palette/nav/headerActions wiring |
 
 ## Verification
 
-- [ ] `moon run :typecheck && moon run :lint && moon run :test` green (incl. all three
+- [x] `moon run :typecheck && moon run :lint && moon run :test` green (incl. all three
       `boundary.test.ts`).
 - [ ] Packaged app (`desktop install:local` flow): frameless window, seamless bar color
       in light + dark + accent themes, traffic lights inset correctly.
 - [ ] Drag works from the bar on every surface; interactive children still clickable.
-- [ ] Fullscreen: clearance collapses on enter, restores on leave.
-- [ ] Blur dims the bar; focus restores it.
-- [ ] Browser web + admin render byte-identical chrome to today (no TitleBar).
+- [ ] Fullscreen: clearance collapses on enter, restores on leave (RTL-pinned;
+      confirm in the packaged app).
+- [ ] Blur dims the bar; focus restores it (RTL-pinned; confirm in the packaged app).
+- [x] Browser web + admin render byte-identical chrome to today (no TitleBar) —
+      both suites pass unchanged; the bar mounts only behind the frameless bridge.
 - [ ] Gateway-failure page is draggable.
 
 ## Decisions / open questions

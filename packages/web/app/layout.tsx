@@ -143,8 +143,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <ConfirmProvider>
                   <UpdateProvider>
                     {/* Flex column so the update banner pushes the whole app down
-                        rather than overlaying it (Phase 71). */}
-                    <div className="flex min-h-screen flex-col">
+                        rather than overlaying it (Phase 71). `--titlebar-h` (0px
+                        outside the frameless desktop window) keeps the in-flow
+                        column below the fixed desktop title bar (Phase 81). */}
+                    <div className="flex min-h-screen flex-col pt-[var(--titlebar-h,0px)]">
                       <UpdateBanner />
                       <div className="flex-1">{children}</div>
                     </div>

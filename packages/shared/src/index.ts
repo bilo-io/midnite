@@ -78,3 +78,4 @@ export * from './preferences.js';
 export * from './webhook.js';
 export * from './inbound.js';
 export * from './site-links.js';
+export * from './window-chrome.js';

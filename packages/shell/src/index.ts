@@ -21,6 +21,10 @@ export {
 // Mobile bottom-tab nav — rendered internally by `AppFrame`, exported for typing.
 export { AppMobileNav, type AppMobileNavProps } from './nav/mobile-nav';
 
+// Desktop title bar (Phase 81) — app-drawn chrome for the frameless Electron
+// window; slots are the host's, behaviours (drag/clearance/dim) live here.
+export { TitleBar, TitleBarDragStrip, TITLE_BAR_HEIGHT, type TitleBarProps } from './title-bar';
+
 // Lock screen — the reusable idle/login lock on the neuro-cloud starfield.
 export { LockScreen, type LockScreenProps } from './lock/lock-screen';
 export { useIdleTimer } from './lock/use-idle-timer';
