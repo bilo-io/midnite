@@ -23,7 +23,7 @@ import { TerminalService } from '../terminal/terminal.service';
 import { RuntimeMetaService } from '../runtime/runtime-meta.service';
 import { AgentPoolScheduler } from './agent-pool-scheduler.service';
 import { AgentPoolService } from './agent-pool.service';
-import { appendRepoConventions } from './lib/build-agent-prompt';
+import { appendDescription, appendRepoConventions } from './lib/build-agent-prompt';
 import { classifyFailure, waitReasonForFailure, type ClassifiedFailure } from './lib/classify-failure';
 import { computeBackoffMs } from './lib/retry-backoff';
 
@@ -217,9 +217,12 @@ export class AgentRunnerService implements OnModuleInit, OnModuleDestroy {
   async start(task: Task): Promise<boolean> {
     if (this.pool.acquire(task.id, task.createdBy ?? undefined) === null) return false;
     try {
+      // The user's seed text (the full prompt, falling back to the short title),
+      // with any free-form description they wrote folded in right after it.
+      const seed = appendDescription(task.prompt?.trim() || task.title, task.description);
       // Fold any linked GitHub issue/PR + URL context into the seed prompt
       // (best-effort, fail-open — never blocks the run). Phase 15 Theme B.
-      const enriched = await this.urlContext.enrich(task.prompt?.trim() || task.title);
+      const enriched = await this.urlContext.enrich(seed);
       // Fold in relevant watched "knowledge files" the plan model picks for this
       // task (best-effort, fail-open). Phase 15 Theme D.
       const withKnowledge = this.knowledge ? await this.knowledge.enrich(enriched, task) : enriched;

@@ -85,6 +85,8 @@ function normalizeTags(tags: string[]): string[] {
 
 export interface CreateTaskInput {
   prompt: string;
+  /** Optional longer detail typed alongside the title; folded into the agent seed prompt. */
+  description?: string;
   repo?: string;
   projectId?: string;
   /** Where the task should land. Defaults to 'todo' (picked up as agents free up). */
@@ -831,6 +833,7 @@ export class TasksService implements OnModuleDestroy {
           status: answer ? 'done' : (input.status ?? (triage.ready ? 'todo' : 'backlog')),
           priority: clampPriority(input.priority),
           prompt: input.prompt,
+          description: input.description ?? null,
           repo,
           projectId: input.projectId ?? null,
           agentId: null,

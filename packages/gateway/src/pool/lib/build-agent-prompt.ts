@@ -4,6 +4,18 @@ import type { Repo } from '@midnite/shared';
 type RepoConventions = Pick<Repo, 'branchPrefix' | 'prTemplate'>;
 
 /**
+ * Fold a task's optional free-form description into its seed prompt, right after
+ * the title/prompt line and before any URL/knowledge/repo context. An empty or
+ * missing description leaves the prompt untouched, so the section only appears
+ * when the user actually wrote one. Pure + unit-tested.
+ */
+export function appendDescription(prompt: string, description: string | undefined | null): string {
+  const detail = description?.trim();
+  if (!detail) return prompt;
+  return `${prompt}\n\n## Description\n\n${detail}`;
+}
+
+/**
  * Append a task's repo conventions — branch-naming prefix and PR-body template —
  * to its agent seed prompt. Pure + unit-tested; the runner calls it after URL
  * context enrichment.

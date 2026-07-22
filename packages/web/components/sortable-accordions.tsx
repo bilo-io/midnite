@@ -38,8 +38,12 @@ export type AccordionSection = {
   prefix?: ReactNode;
   /** Count shown in the pill badge. */
   count: number;
-  /** Extra text shown beside the title only while collapsed (e.g. "3 tasks · 1 project"). */
+  /** Extra text shown beside the title only while collapsed (e.g. "3 tasks · 1 project").
+   *  Pass an empty string to show nothing (e.g. when a `progress` bar replaces it). */
   summary: string;
+  /** When set, a thin primary-gradient progress bar sits next to the count pill,
+   *  filled to `done / total` (e.g. tasks completed). Shown expanded and collapsed. */
+  progress?: { done: number; total: number };
   /** Trailing controls in the header (right-aligned), e.g. an edit button. */
   actions?: ReactNode;
   body: ReactNode;
@@ -56,9 +60,17 @@ export type AccordionSection = {
 export function SortableAccordions({
   sections,
   storageKey,
+  bare = false,
 }: {
   sections: AccordionSection[];
   storageKey: string;
+  /**
+   * Drop the bordered glass-card chrome for a "naked" stack — just the header row
+   * (grip · dot · label · count · actions · chevron) over an animated body, matching
+   * the Sessions list's CollapsibleStatusGroups so the section content floats
+   * freely. Sections still drag-reorder and persist. Defaults to the carded look.
+   */
+  bare?: boolean;
 }) {
   const orderKey = `${storageKey}.order`;
   const collapsedKey = `${storageKey}.collapsed`;
@@ -141,13 +153,14 @@ export function SortableAccordions({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ordered.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col gap-2">
+        <div className={cn('flex flex-col', bare ? 'gap-4' : 'gap-2')}>
           {ordered.map((section) => (
             <Section
               key={section.id}
               section={section}
               collapsed={collapsed.has(section.id)}
               onToggle={() => toggle(section.id)}
+              bare={bare}
             />
           ))}
         </div>
@@ -160,10 +173,12 @@ function Section({
   section,
   collapsed,
   onToggle,
+  bare = false,
 }: {
   section: AccordionSection;
   collapsed: boolean;
   onToggle: () => void;
+  bare?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
@@ -177,11 +192,13 @@ function Section({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'relative overflow-hidden rounded-lg border surface-glass',
-        isDragging && 'z-10 shadow-lg',
+        'relative',
+        bare
+          ? isDragging && 'z-10 opacity-90'
+          : cn('overflow-hidden rounded-lg border surface-glass', isDragging && 'z-10 shadow-lg'),
       )}
     >
-      <div className="flex items-center gap-2 px-2 py-2">
+      <div className={cn('flex items-center gap-2', bare ? 'py-1' : 'px-2 py-2')}>
         <button
           type="button"
           ref={setActivatorNodeRef}
@@ -218,17 +235,43 @@ function Section({
           <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
             {section.count}
           </span>
-          {collapsed && (
+          {section.progress && section.progress.total > 0 ? (
+            <ProgressBar done={section.progress.done} total={section.progress.total} />
+          ) : null}
+          {collapsed && section.summary ? (
             <span className="ml-1 truncate text-[11px] text-muted-foreground">{section.summary}</span>
-          )}
+          ) : null}
         </button>
         {section.actions ? (
           <div className="flex shrink-0 items-center gap-0.5 pr-1">{section.actions}</div>
         ) : null}
       </div>
       <Collapse open={!collapsed}>
-        <div className="border-t border-border/60">{section.body}</div>
+        <div className={cn(!bare && 'border-t border-border/60')}>{section.body}</div>
       </Collapse>
     </section>
+  );
+}
+
+/** A thin completion bar filled in the active primary/accent gradient — `done`
+ *  of `total`. Sits beside the count pill; purely presentational (the header
+ *  button owns the interaction). */
+function ProgressBar({ done, total }: { done: number; total: number }) {
+  const pct = Math.round((Math.min(done, total) / total) * 100);
+  return (
+    <span
+      role="progressbar"
+      aria-valuenow={done}
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-label={`${done} of ${total} done`}
+      title={`${done} of ${total} done`}
+      className="ml-1 h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-muted/50"
+    >
+      <span
+        className="block h-full rounded-full transition-[width] duration-500"
+        style={{ width: `${pct}%`, backgroundImage: 'var(--accent-gradient, var(--brand-gradient))' }}
+      />
+    </span>
   );
 }

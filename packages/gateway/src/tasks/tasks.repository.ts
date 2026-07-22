@@ -852,6 +852,7 @@ export class TasksRepository {
       nextRetryAt: row.nextRetryAt ?? undefined,
       waitReason: (row.waitReason as WaitReason | null) ?? undefined,
       prompt: row.prompt ?? undefined,
+      description: row.description ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,
       sessionId: row.sessionId ?? undefined,

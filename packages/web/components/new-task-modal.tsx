@@ -54,6 +54,7 @@ export function NewTaskModal({
 }: Props) {
   const [mode, setMode] = useState<Mode>('single');
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [bulkText, setBulkText] = useState('');
   const [projectId, setProjectId] = useState(defaultProjectId);
   const [repo, setRepo] = useState('');
@@ -115,6 +116,8 @@ export function NewTaskModal({
     try {
       const form = new FormData();
       form.append('prompt', prompt);
+      const desc = description.trim();
+      if (desc) form.append('description', desc);
       form.append('status', status);
       form.append('priority', String(priority));
       if (projectId) form.append('projectId', projectId);
@@ -163,7 +166,7 @@ export function NewTaskModal({
           role="dialog"
           aria-modal="true"
           aria-label="New task"
-          className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-card shadow-2xl"
+          className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-card shadow-2xl sm:max-w-lg"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
@@ -194,20 +197,37 @@ export function NewTaskModal({
             </div>
 
             {mode === 'single' ? (
-              <div>
-                <label htmlFor="new-task-title" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Title
-                </label>
-                <input
-                  id="new-task-title"
-                  ref={inputRef}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void submit(); }}
-                  placeholder="What needs doing?"
-                  className={INPUT_CLASS}
-                  disabled={busy}
-                />
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="new-task-title" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Title
+                  </label>
+                  <input
+                    id="new-task-title"
+                    ref={inputRef}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void submit(); }}
+                    placeholder="What needs doing?"
+                    className={INPUT_CLASS}
+                    disabled={busy}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="new-task-description" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Description
+                    <span className="ml-1.5 font-normal text-muted-foreground/70">(optional)</span>
+                  </label>
+                  <textarea
+                    id="new-task-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Add detail, context, or acceptance criteria — included in the agent's prompt."
+                    rows={3}
+                    className={cn(INPUT_CLASS, 'h-auto resize-y leading-relaxed')}
+                    disabled={busy}
+                  />
+                </div>
               </div>
             ) : (
               <div>
@@ -242,56 +262,53 @@ export function NewTaskModal({
               </div>
             )}
 
-            {/* Scope: where the task lives. Project and repo are orthogonal axes
-                (Phase 13); each picker only shows when there's something to pick. */}
-            {(projects.length > 0 || repos.length > 0) && (
-              <div className="flex gap-2">
-                {projects.length > 0 && (
-                  <div className="flex-1">
-                    <label htmlFor="new-task-project" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                      Project
-                    </label>
-                    <select
-                      id="new-task-project"
-                      value={projectId}
-                      onChange={(e) => setProjectId(e.target.value)}
-                      disabled={busy}
-                      className={SELECT_CLASS}
-                    >
-                      <option value="">No project</option>
-                      {projects.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {repos.length > 0 && (
-                  <div className="flex-1">
-                    <label htmlFor="new-task-repo" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                      Repo
-                    </label>
-                    <select
-                      id="new-task-repo"
-                      value={repo}
-                      onChange={(e) => setRepo(e.target.value)}
-                      disabled={busy}
-                      className={SELECT_CLASS}
-                    >
-                      <option value="">Unassigned</option>
-                      {repos.map((r) => (
-                        <option key={r.id} value={r.name}>{r.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2">
+            {/* Scope + meta selects. Project and repo are orthogonal axes (Phase 13);
+                each picker only shows when there's something to pick. All the
+                dropdowns share one row on desktop (wrapping to two-up on narrow
+                widths); status is single-create only (bulk triage decides it). */}
+            <div className="flex flex-wrap gap-2">
+              {projects.length > 0 && (
+                <div className="min-w-[8.5rem] flex-1">
+                  <label htmlFor="new-task-project" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Project
+                  </label>
+                  <select
+                    id="new-task-project"
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    disabled={busy}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">No project</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {repos.length > 0 && (
+                <div className="min-w-[8.5rem] flex-1">
+                  <label htmlFor="new-task-repo" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Repo
+                  </label>
+                  <select
+                    id="new-task-repo"
+                    value={repo}
+                    onChange={(e) => setRepo(e.target.value)}
+                    disabled={busy}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">Unassigned</option>
+                    {repos.map((r) => (
+                      <option key={r.id} value={r.name}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {/* Bulk status is decided per task by triage (ready → todo, else backlog),
                   so the status selector only applies to a single create. */}
               {mode === 'single' && (
-                <div className="flex-1">
+                <div className="min-w-[8.5rem] flex-1">
                   <label htmlFor="new-task-status" className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Status
                   </label>
@@ -307,7 +324,7 @@ export function NewTaskModal({
                   </select>
                 </div>
               )}
-              <div className="flex-1">
+              <div className="min-w-[8.5rem] flex-1">
                 <label htmlFor="new-task-priority" className="mb-1.5 block text-xs font-medium text-muted-foreground">
                   Priority
                 </label>

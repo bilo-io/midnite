@@ -122,6 +122,12 @@ export const TaskSchema = z.object({
   kind: TaskKindSchema.optional(),
   repo: z.string().optional(),
   prompt: z.string().optional(),
+  /**
+   * Optional longer free-form detail the user wrote alongside the title. It's woven
+   * into the seed prompt handed to the agent session (after the title/prompt line),
+   * so the agent gets the extra context. Absent when the task was created without one.
+   */
+  description: z.string().optional(),
   status: StatusSchema,
   /** Scheduling priority: 0 Low · 1 Normal · 2 High · 3 Urgent. Higher runs first. */
   priority: z.number().int().min(0).max(3).default(1),
@@ -336,6 +342,8 @@ export const MAX_TASK_DEPENDENCIES = 50;
 
 export const CreateTaskRequestSchema = z.object({
   prompt: z.string().min(1).max(8000),
+  /** Optional longer detail folded into the agent's seed prompt at spawn. */
+  description: z.string().max(8000).optional(),
   repo: z.string().optional(),
   projectId: z.string().optional(),
   priority: z.number().int().min(0).max(3).optional(),

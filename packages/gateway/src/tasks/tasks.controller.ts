@@ -478,6 +478,7 @@ export class TasksController {
     mkdirSync(stagingDir, { recursive: true });
 
     let prompt = '';
+    let description: string | undefined;
     let repo: string | undefined;
     let projectId: string | undefined;
     let status: Status | undefined;
@@ -514,6 +515,7 @@ export class TasksController {
           });
         } else {
           if (part.fieldname === 'prompt') prompt = String(part.value ?? '');
+          if (part.fieldname === 'description') description = String(part.value ?? '');
           if (part.fieldname === 'repo') repo = String(part.value ?? '');
           if (part.fieldname === 'projectId') projectId = String(part.value ?? '');
           if (part.fieldname === 'dependsOn') {
@@ -543,6 +545,7 @@ export class TasksController {
 
       const task = await this.service.createFromPrompt({
         prompt: prompt.trim(),
+        description: description?.trim() || undefined,
         repo: repo?.trim() || undefined,
         projectId: projectId?.trim() || undefined,
         status,

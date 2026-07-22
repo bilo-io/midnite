@@ -476,7 +476,10 @@ function ProjectBoardsView({
     label: g.name,
     color: g.color,
     count: g.tasks.length,
-    summary: `${g.tasks.length} task${g.tasks.length === 1 ? '' : 's'}`,
+    // The count pill carries the total; a gradient progress bar beside it tracks
+    // completion (done tasks / total), so no duplicate "N tasks" summary text.
+    summary: '',
+    progress: { done: g.tasks.filter((x) => x.status === 'done').length, total: g.tasks.length },
     // Requirement: the project tag chip lives at the far right of the header.
     actions: g.tag ? <ProjectTag tag={g.tag} color={g.color ?? '#94a3b8'} /> : undefined,
     body: (
@@ -502,7 +505,7 @@ function ProjectBoardsView({
       {groups.length === 0 ? (
         <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('nothingHere')}</p>
       ) : (
-        <SortableAccordions sections={sections} storageKey="midnite.tasks.projectBoards" />
+        <SortableAccordions sections={sections} storageKey="midnite.tasks.projectBoards" bare />
       )}
       {showAbandoned ? (
         <AbandonedRow
@@ -574,8 +577,9 @@ function ProjectBoardBody({
       onDragCancel={() => setActiveId(null)}
     >
       {/* Columns grow to content; the row scrolls horizontally only if the
-          columns overflow (vertical growth flows to the page). */}
-      <div className="flex flex-col gap-3 overflow-x-auto p-3 md:flex-row md:items-start">
+          columns overflow (vertical growth flows to the page). The section chrome
+          is now "bare" (no card), so the columns sit flush under the header. */}
+      <div className="flex flex-col gap-3 overflow-x-auto pt-1 md:flex-row md:items-start">
         {columns.map((col) => {
           const colTasks = grouped.get(col.status) ?? [];
           return (

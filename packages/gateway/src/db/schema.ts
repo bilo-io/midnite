@@ -32,6 +32,9 @@ export const tasks = sqliteTable(
     // but `needs-input`) marks it needs-attention; null when not waiting.
     waitReason: text('wait_reason'),
     prompt: text('prompt'),
+    // Optional longer free-form detail typed alongside the title; folded into the
+    // agent's seed prompt at spawn. Null/absent = none.
+    description: text('description'),
     repo: text('repo'),
     agentId: text('agent_id'),
     sessionId: text('session_id'),
