@@ -20,11 +20,23 @@ tasks:
     outputs:
       - 'dist'
 
+  # Preflight for anything that loads better-sqlite3/node-pty: verify they match
+  # the current Node ABI and self-heal with a targeted rebuild if the desktop's
+  # Electron build ever contaminated them (see docs/NATIVE-MODULES.md). Never
+  # cached — the check IS the point, and it costs ~200ms when healthy.
+  ensure-native:
+    command: 'node scripts/ensure-native-abi.mjs'
+    deps:
+      - 'root:install'
+    options:
+      cache: false
+
   dev:
     command: 'pnpm exec tsx watch src/main.ts'
     preset: 'server'
     deps:
       - 'root:install'
+      - '~:ensure-native'
     options:
       # Auto-load the gitignored repo-root .env (SSO/JWT secrets etc.) so
       # `moon run :dev` / `gateway:dev` boot with auth configured without needing
@@ -41,6 +53,7 @@ tasks:
     # Imports the built @midnite/shared (dist), so build upstream deps first.
     deps:
       - '^:build'
+      - '~:ensure-native'
     inputs:
       - 'src/**/*'
 

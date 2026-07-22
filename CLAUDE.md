@@ -73,6 +73,7 @@ keeps `admin` a pure client of `{shared, ui, shell}` (never gateway internals).
 ## Toolchain
 
 - **proto** manages binary versions (node, pnpm). Run `proto install` after cloning to materialise versions from `.prototools`.
+- **Native modules are dual-ABI** — better-sqlite3/node-pty are built for Node 22 (ABI 127) in the workspace and Electron 33 (ABI 130) only in the desktop's staged tree. A gateway crash naming "ABI 130 vs 127" is Electron contamination, **not** a wrong Node version — see [`docs/NATIVE-MODULES.md`](docs/NATIVE-MODULES.md) before touching `.npmrc`, electron-rebuild, or pnpm install behaviour. The root `.npmrc` and the `gateway:ensure-native` preflight are the defences; keep both.
 - **moon** runs tasks across packages with caching. Always invoke tasks via `moon run` so the dependency graph and cache apply.
 - **pnpm** is the package manager. Use workspace protocol (`workspace:*`) for cross-package deps.
 
