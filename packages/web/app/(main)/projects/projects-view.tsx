@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Task, TaskSummary } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -245,7 +246,7 @@ export function ProjectsView({
 
   return (
     <div className="space-y-4" data-tour="projects">
-      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
+      <StickyToolbar className="reveal-controls">
         <div className="flex items-center gap-3">
           <CountPill count={count} noun={tab === 'projects' ? 'project' : 'template'} />
           <div className="flex items-center gap-1.5">
@@ -316,7 +317,7 @@ export function ProjectsView({
             </Button>
           )}
         </div>
-      </div>
+      </StickyToolbar>
 
       {tab === 'projects' ? (
         <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />

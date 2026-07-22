@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { LayoutDashboard, LayoutGrid, List, ListTree, Plus, Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
@@ -170,7 +171,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
+      <StickyToolbar className="reveal-controls">
         <CountPill count={filtered.length} noun="workflow" />
         <div className="flex items-center gap-2">
           {/* Templates — icon-only left of search, revealing its label on hover
@@ -222,7 +223,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
             New workflow
           </Button>
         </div>
-      </div>
+      </StickyToolbar>
 
       <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
 

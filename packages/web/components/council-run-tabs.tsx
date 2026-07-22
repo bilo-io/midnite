@@ -186,7 +186,7 @@ export function CouncilRunTabs({
           beneath them. Same border as the sticky page header, but near-opaque
           (vs PageHeader's frosted 60–80%) — prose scrolls directly beneath
           this strip and must not stay readable through it. */}
-      <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/95 px-1 pb-2 pt-3 backdrop-blur">
+      <div className="sticky top-12 z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/95 px-1 pb-2 pt-3 backdrop-blur">
         <p className="text-xs text-muted-foreground">
           Prompt: <span className="text-foreground">{run.prompt}</span>
         </p>

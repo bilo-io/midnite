@@ -122,7 +122,6 @@ export function ProjectDetailView({
         title={project.name}
         icon="Folder"
         description={project.tag ? `#${project.tag}` : undefined}
-        back={{ href: '/projects', label: 'All projects' }}
         actions={
           <div className="flex items-center gap-2">
             <ConnectionStatus variant="compact" />

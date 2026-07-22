@@ -15,6 +15,7 @@ import {
 import { DELIVERY_STATES, matchesDelivery } from '@/lib/pr-delivery';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
@@ -457,7 +458,7 @@ export function TasksView({
 
   return (
     <div className="reveal-staged container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
-      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
+      <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={STATUS_FILTERS} paramKey="status" allLabel="All statuses" />
@@ -504,7 +505,7 @@ export function TasksView({
             New task
           </Button>
         </div>
-      </div>
+      </StickyToolbar>
 
       <GuardrailsBanner guardrails={guardrails} onChange={setGuardrails} />
 

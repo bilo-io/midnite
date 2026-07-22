@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Brain, MoreHorizontal } from 'lucide-react';
+import { Brain, Pencil } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { BackLink } from '@/components/back-link';
@@ -12,7 +12,7 @@ import { MemoryMetadataModal } from '@/components/memory/memory-metadata-modal';
 import { MemoryScopeChip } from '@/components/memory/memory-scope';
 import { MemoryStudioRail } from '@/components/memory/memory-studio-rail';
 import { RailShell, RailHeaderToggle } from '@midnite/ui';
-import { getMemory, getProjects, updateMemory } from '@/lib/api';
+import { getMemory, getProjects } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -98,18 +98,9 @@ export function MemoryDetailView({
     invalidateData();
   };
 
-  // Inline title rename from the header breadcrumb — optimistic via applyUpdate.
-  const saveTitle = (next: string) => {
-    if (next === memory.title) return;
-    updateMemory(memory.id, { title: next })
-      .then(applyUpdate)
-      .catch(() => {
-        // Best-effort; the field re-seeds from the unchanged title on the next render.
-      });
-  };
-
-  // The metadata button — floated by the center's top-right on desktop (next to
-  // the Studio toggle) and surfaced in the header on mobile.
+  // The edit button (title/scope/content via the metadata modal — the header
+  // title is static, per the resource-page pattern) — floated by the center's
+  // top-right on desktop (next to the Studio toggle) and in the header on mobile.
   const metadataButton = (
     <button
       type="button"
@@ -118,7 +109,7 @@ export function MemoryDetailView({
       title="Edit memory"
       className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-foreground"
     >
-      <MoreHorizontal className="h-4 w-4" />
+      <Pencil className="h-4 w-4" />
     </button>
   );
 
@@ -127,8 +118,6 @@ export function MemoryDetailView({
       <PageHeader
         title={memory.title}
         icon="BrainCircuit"
-        back={{ href: '/memory', label: 'All memories' }}
-        titleNode={<InlineMemoryTitle title={memory.title} onCommit={saveTitle} />}
         description={<MemoryScopeChip project={project} />}
         actions={
           <div className="flex items-center gap-2">
@@ -178,52 +167,6 @@ export function MemoryDetailView({
         />
       ) : null}
     </>
-  );
-}
-
-/**
- * The memory title, editable in place from the header breadcrumb. Commits on
- * Enter or blur; Escape reverts. The field auto-sizes to its content so it reads
- * as heading text, not a boxed input.
- */
-function InlineMemoryTitle({
-  title,
-  onCommit,
-}: {
-  title: string;
-  onCommit: (next: string) => void;
-}) {
-  const [draft, setDraft] = useState(title);
-  useEffect(() => setDraft(title), [title]);
-
-  const commit = () => {
-    const next = draft.trim();
-    if (!next || next === title) {
-      setDraft(title); // revert empty / no-op edits
-      return;
-    }
-    onCommit(next);
-  };
-
-  return (
-    <input
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          e.currentTarget.blur();
-        } else if (e.key === 'Escape') {
-          setDraft(title);
-          e.currentTarget.blur();
-        }
-      }}
-      aria-label="Memory title"
-      placeholder="Untitled memory"
-      size={Math.max(draft.length, 1)}
-      className="-mx-1 min-w-0 max-w-full rounded px-1 font-semibold text-foreground outline-none transition-colors hover:bg-accent/40 focus:bg-accent/40 focus:ring-1 focus:ring-ring"
-    />
   );
 }
 

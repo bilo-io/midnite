@@ -130,7 +130,6 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
       <PageHeader
         title={title || (mode === 'create' ? `New ${mediaType}` : 'Media')}
         icon="Images"
-        back={{ href: '/media', label: 'All media' }}
         actions={
           isMobile ? (
             <div className="flex items-center gap-2">

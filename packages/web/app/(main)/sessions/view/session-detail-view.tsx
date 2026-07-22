@@ -111,7 +111,6 @@ export function SessionDetailView({
         title={session.title}
         icon="BotMessageSquare"
         description={session.subtitle || undefined}
-        back={{ href: '/sessions', label: 'All sessions' }}
         actions={
           <div className="flex items-center gap-2">
             {/* The linked task's lifecycle actions (Phase 74) — start / abandon /

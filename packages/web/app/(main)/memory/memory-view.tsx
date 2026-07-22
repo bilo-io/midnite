@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { BrainCircuit, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
+import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -175,7 +176,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
 
   return (
     <div className="space-y-4" data-tour="memory-workspace">
-      <div className="reveal-controls flex items-center justify-between gap-3">
+      <StickyToolbar className="reveal-controls">
         <div className="flex min-w-0 items-center gap-3">
           <CountPill count={filtered.length} noun="memory" />
           <FilterPills options={scopeOptions} paramKey="scope" allLabel="All scopes" />
@@ -222,7 +223,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
             New memory
           </Button>
         </div>
-      </div>
+      </StickyToolbar>
 
       <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
 
