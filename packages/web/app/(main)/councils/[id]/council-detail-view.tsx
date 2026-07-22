@@ -231,7 +231,9 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
           bar mirrors the content row's nav-rail offset (pl-14), container, and
           thread/panel spacers so the composer lines up exactly with the run
           output column above it — in every collapsed/expanded combination. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 pl-14">
+      {/* Track the rail's live width (--nav-offset) like the dashboard composer —
+          a hardcoded pl-14 slid under the rail whenever it was locked expanded. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 transition-[padding] duration-200 md:[padding-left:var(--nav-offset)]">
         {/* Tall theme fade so long output washes out behind the composer
             instead of reading through it. */}
         <div className="bg-gradient-to-t from-background from-45% via-background/85 to-transparent pb-6 pt-20">
