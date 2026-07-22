@@ -19,7 +19,7 @@ export type DownloadTarget = {
 };
 
 /** Desktop version; keep in step with the published GitHub release tag. */
-export const DESKTOP_VERSION = '0.1.0';
+export const DESKTOP_VERSION = '0.4.0';
 
 export const PLATFORM_LABELS: Record<Platform, string> = {
   mac: 'macOS',
@@ -56,7 +56,7 @@ export const DOWNLOAD_TARGETS: DownloadTarget[] = [
     label: 'Linux',
     ext: '.AppImage',
     available: true,
-    assetName: `midnite-${DESKTOP_VERSION}-x64.AppImage`,
+    assetName: `midnite-${DESKTOP_VERSION}-x86_64.AppImage`,
   },
 ];
 
