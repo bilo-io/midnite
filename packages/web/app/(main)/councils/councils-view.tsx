@@ -128,7 +128,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
   return (
     <div className="space-y-4">
       <StickyToolbar className="reveal-controls">
-        <CountPill count={filtered.length} noun="council" />
+        <CountPill count={filtered.length} />
         <div className="flex items-center gap-2">
           <SearchBar placeholder="Search councils" />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">

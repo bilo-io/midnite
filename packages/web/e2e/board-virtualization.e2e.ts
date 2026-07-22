@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test';
 
 import { seedTask } from './helpers/gateway';
 
-// Phase 57 F — the board columns are windowed (@tanstack/react-virtual): only the
-// visible cards (+ overscan) mount, so the DOM stays bounded no matter the count.
-// jsdom can't prove this (no layout/scroll), so we assert it against a real browser:
-// seed many tasks into one column and confirm the mounted card count is far below
-// the total. Each windowed row carries a `data-index`, so counting those = mounted rows.
-const SEEDED = 60; // > the VirtualList threshold (50), so the column windows
+// Phase 82 — the board is no longer windowed: columns grow to their full content
+// height and the whole PAGE scrolls, so a full board reads as a tall page. This
+// asserts that against a real browser — seed many tasks into one column and
+// confirm every card mounts (windowing would have dropped the off-screen ones)
+// and the document itself grows taller than the viewport.
+const SEEDED = 60;
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -20,18 +20,22 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('board columns keep the DOM bounded as the card count grows', async ({ page }) => {
+test('board grows with its content and scrolls the page (un-windowed)', async ({ page }) => {
   // Seed in parallel — all land in the same (todo) column.
   await Promise.all(
-    Array.from({ length: SEEDED }, (_, i) => seedTask(`Virtualized board task ${i}`, 'todo')),
+    Array.from({ length: SEEDED }, (_, i) => seedTask(`Board task ${i}`, 'todo')),
   );
 
   await page.goto('/tasks');
-  // Wait until the board has rendered cards (windowed rows expose data-index).
-  await expect(page.locator('[data-index]').first()).toBeVisible();
 
-  const mounted = await page.locator('[data-index]').count();
-  // Bounded: far fewer nodes than seeded (visible window + overscan), but non-zero.
-  expect(mounted).toBeGreaterThan(0);
-  expect(mounted).toBeLessThan(SEEDED);
+  // The first and last seeded cards both render — with windowing the off-screen
+  // last card would not be in the DOM.
+  await expect(page.getByText('Board task 0', { exact: true })).toBeVisible();
+  await expect(page.getByText(`Board task ${SEEDED - 1}`, { exact: true })).toBeAttached();
+
+  // The document scrolls (it's taller than the viewport) rather than a nested
+  // per-column scroll region.
+  const docHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+  const viewport = page.viewportSize();
+  expect(docHeight).toBeGreaterThan((viewport?.height ?? 0) + 1);
 });

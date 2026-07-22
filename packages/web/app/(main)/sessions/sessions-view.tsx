@@ -313,7 +313,7 @@ export function SessionsView({
     <div className="space-y-4" data-tour="sessions-list">
       <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
-          <CountPill count={sessions.length} noun="session" className="mr-1" />
+          <CountPill count={sessions.length} className="mr-1" />
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
           <FilterPills options={SESSION_FILTERS} allLabel="All statuses" />
           <FilterPills

@@ -163,7 +163,7 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
       </StickyToolbar>
 
       <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
-        <CountPill count={decks.length} noun="deck" />
+        <CountPill count={decks.length} />
         {filtering && filtered.length !== decks.length ? (
           <span>· {filtered.length} matching</span>
         ) : null}

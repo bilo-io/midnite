@@ -23,10 +23,13 @@ vi.mock('@/lib/api', () => ({
   getTask: (...a: unknown[]) => getTask(...a),
   getProjects: (...a: unknown[]) => getProjects(...a),
   getTasks: (...a: unknown[]) => getTasks(...a),
+  updateTaskProject: vi.fn(),
 }));
 
-// Stub the shared detail body — this spec covers the page's own routing / fetch
-// / not-found logic, not the (separately tested) <TaskDetail> internals.
+// The page (Phase 82) composes a header + sticky actions + rail shell around the
+// shared body. This spec covers the page's own routing / fetch / not-found / tab
+// logic — stub the body + the rail-fill children (agent runs, activity, actions,
+// toast) so the assertions stay on the page's behaviour, not the children's.
 vi.mock('@/components/task-detail', () => ({
   TaskDetail: ({ task, tab, onTabChange }: { task: Task; tab?: string; onTabChange?: (t: string) => void }) => (
     <div data-testid="task-detail" data-tab={tab}>
@@ -36,6 +39,32 @@ vi.mock('@/components/task-detail', () => ({
       </button>
     </div>
   ),
+  Timeline: () => <div data-testid="activity" />,
+  KIND_LABEL: { unknown: 'Task', bug: 'Bugfix', feature: 'Feature', question: 'Question', chore: 'Chore' },
+  STATUS_LABEL: {
+    backlog: 'Backlog',
+    todo: 'Todo',
+    wip: 'In progress',
+    waiting: 'Waiting',
+    done: 'Done',
+    abandoned: 'Abandoned',
+  },
+}));
+vi.mock('@/components/run-timeline', () => ({ RunTimeline: () => <div data-testid="agent-runs" /> }));
+vi.mock('@/components/toast', () => ({
+  useToast: () => ({ error: vi.fn(), success: vi.fn(), info: vi.fn() }),
+}));
+vi.mock('@/components/task-actions', () => ({
+  useTaskActions: () => ({
+    start: vi.fn(),
+    abandon: vi.fn(),
+    reopen: vi.fn(),
+    remove: vi.fn(),
+    statusBusy: false,
+    statusError: null,
+    setStatusError: vi.fn(),
+  }),
+  TaskActionButtons: () => null,
 }));
 
 import { TaskDetailView } from './task-detail-view';
@@ -73,6 +102,15 @@ describe('TaskDetailView', () => {
     expect(getTask).toHaveBeenCalledWith('t1');
   });
 
+  it('surfaces the agent-runs and activity rails alongside the body', async () => {
+    getTask.mockResolvedValue(task());
+    render(withQueryClient(<TaskDetailView />));
+
+    expect(await screen.findByTestId('task-detail')).toBeInTheDocument();
+    expect(screen.getByTestId('agent-runs')).toBeInTheDocument();
+    expect(screen.getByTestId('activity')).toBeInTheDocument();
+  });
+
   it('shows an inline not-found when the task fetch fails', async () => {
     getTask.mockRejectedValue(new Error('404'));
     render(withQueryClient(<TaskDetailView />));
@@ -88,22 +126,19 @@ describe('TaskDetailView', () => {
     expect(getTask).not.toHaveBeenCalled();
   });
 
-  it('passes ?tab=review through and widens the container (Phase 52 E)', async () => {
+  it('passes ?tab=review through to the body (Phase 52 E)', async () => {
     searchTab = 'review';
     getTask.mockResolvedValue(task({ prUrl: 'https://github.com/o/r/pull/1' }));
-    const { container } = render(withQueryClient(<TaskDetailView />));
+    render(withQueryClient(<TaskDetailView />));
 
     expect(await screen.findByTestId('task-detail')).toHaveAttribute('data-tab', 'review');
-    expect(container.querySelector('.max-w-5xl')).toBeTruthy();
-    expect(container.querySelector('.max-w-3xl')).toBeNull();
   });
 
-  it('defaults to the details tab (narrow) with no tab param', async () => {
+  it('defaults to the details tab with no tab param', async () => {
     getTask.mockResolvedValue(task({ prUrl: 'https://github.com/o/r/pull/1' }));
-    const { container } = render(withQueryClient(<TaskDetailView />));
+    render(withQueryClient(<TaskDetailView />));
 
     expect(await screen.findByTestId('task-detail')).toHaveAttribute('data-tab', 'details');
-    expect(container.querySelector('.max-w-3xl')).toBeTruthy();
   });
 
   it('syncs the tab to the URL via router.replace', async () => {

@@ -178,7 +178,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
     <div className="space-y-4" data-tour="memory-workspace">
       <StickyToolbar className="reveal-controls">
         <div className="flex min-w-0 items-center gap-3">
-          <CountPill count={filtered.length} noun="memory" />
+          <CountPill count={filtered.length} />
           <FilterPills options={scopeOptions} paramKey="scope" allLabel="All scopes" />
         </div>
         <div className="flex shrink-0 items-center gap-2">

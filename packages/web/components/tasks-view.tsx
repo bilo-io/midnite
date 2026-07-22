@@ -12,10 +12,10 @@ import {
   blockedCounts as computeBlockedCounts,
   unmetBlockerCount,
 } from '@/lib/task-dependencies';
-import { DELIVERY_STATES, matchesDelivery } from '@/lib/pr-delivery';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { StickyToolbar } from '@/components/sticky-toolbar';
+import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
@@ -78,24 +78,18 @@ const STATUS_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
   hue: `var(${c.hueVar})`,
 }));
 
-// Single-toggle filter to surface inline-answered questions (Phase 15 Theme C),
-// which resolve to Done and so are otherwise mixed in with completed work.
-const ANSWERED_PARAM = 'answered';
-const ANSWERED_VALUE = '1';
-const ANSWERED_FILTERS: FilterOption[] = [
-  { value: ANSWERED_VALUE, label: 'Answered', hue: 'var(--success)' },
-];
-
-// Delivery filter (Phase 22 Theme D): triage open PRs by what human action they
-// await. Backed by the `delivery` query param, so a filtered board is shareable.
-const DELIVERY_PARAM = 'delivery';
-const DELIVERY_FILTERS: FilterOption[] = [
-  { value: DELIVERY_STATES[0], label: 'Awaiting review', hue: '38 92% 50%' },
-  { value: DELIVERY_STATES[1], label: 'Awaiting merge', hue: 'var(--success)' },
-];
-
 // Sentinel project-filter value for tasks with no project. A UUID can't collide.
 const UNASSIGNED = 'none';
+
+// Board layout style (only meaningful in board view): one shared board across all
+// projects, or one collapsible board per project. Persisted locally like the view.
+type BoardStyle = 'unified' | 'project';
+const BOARD_STYLES: readonly BoardStyle[] = ['unified', 'project'];
+const BOARD_STYLE_STORAGE_KEY = 'midnite.tasks.boardStyle';
+const BOARD_STYLE_OPTIONS: Array<{ value: BoardStyle; label: string }> = [
+  { value: 'unified', label: 'All in one' },
+  { value: 'project', label: 'Per project' },
+];
 
 // View toggle, matching the Projects/Sessions control — list / board / table,
 // persisted to localStorage. "board" is the kanban (where the others have grid).
@@ -227,6 +221,23 @@ export function TasksView({
   useEffect(() => {
     onViewChange?.(view);
   }, [view, onViewChange]);
+
+  // Board layout style (unified vs. per-project accordions), persisted locally.
+  const [boardStyle, setBoardStyleState] = useState<BoardStyle>('unified');
+  useEffect(() => {
+    const stored = localStorage.getItem(BOARD_STYLE_STORAGE_KEY);
+    if (stored && (BOARD_STYLES as readonly string[]).includes(stored)) {
+      setBoardStyleState(stored as BoardStyle);
+    }
+  }, []);
+  const setBoardStyle = useCallback((next: BoardStyle) => {
+    setBoardStyleState(next);
+    try {
+      localStorage.setItem(BOARD_STYLE_STORAGE_KEY, next);
+    } catch {
+      // ignore storage failures (private mode, etc.)
+    }
+  }, []);
   // Board drag-and-drop / Start / Stop: optimistically restatus, then call the
   // gateway. Dropping into "In progress" from todo/backlog spawns an agent session
   // (start endpoint); dragging a running task (wip/waiting) back to todo/backlog
@@ -407,20 +418,8 @@ export function TasksView({
   const rawTags = searchParams.get('tags');
   const activeTags = new Set((rawTags ? rawTags.split(',') : []).filter((t) => allTags.includes(t)));
 
-  // "Answered" toggle: narrow to inline-answered questions (Phase 15 Theme C).
-  const answeredOnly = searchParams.get(ANSWERED_PARAM) === ANSWERED_VALUE;
-
-  // Delivery filter (Phase 22 Theme D): triage open PRs awaiting a human.
-  const rawDelivery = searchParams.get(DELIVERY_PARAM);
-  const activeDelivery = new Set(
-    (rawDelivery ? rawDelivery.split(',') : []).filter((d) =>
-      (DELIVERY_STATES as readonly string[]).includes(d),
-    ),
-  );
-
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const filteredTasks = localTasks
-    .filter((t) => !answeredOnly || (t.answered ?? false))
     .filter((t) => {
       if (activeProjects.size === 0) return true;
       if (t.projectId !== undefined && activeProjects.has(t.projectId)) return true;
@@ -428,7 +427,6 @@ export function TasksView({
       return false;
     })
     .filter((t) => activeTags.size === 0 || t.tags.some((tag) => activeTags.has(tag)))
-    .filter((t) => matchesDelivery(t, activeDelivery))
     .filter(
       (t) =>
         !q ||
@@ -467,13 +465,34 @@ export function TasksView({
     <div className="reveal-staged container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
       <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
+          <CountPill count={filteredTasks.length} className="mr-1" />
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={STATUS_FILTERS} paramKey="status" allLabel="All statuses" />
           {tagFilters.length > 0 && (
             <FilterPills options={tagFilters} paramKey="tags" allLabel="All tags" />
           )}
-          <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll placeholder="Answered" />
-          <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll placeholder="Delivery" />
+          {/* Board layout style — a shared board, or one collapsible board per
+              project. Only meaningful in board view (list/table are flat). */}
+          {view === 'board' ? (
+            <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
+              {BOARD_STYLE_OPTIONS.map(({ value, label }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-pressed={boardStyle === value}
+                  onClick={() => setBoardStyle(value)}
+                  className={cn(
+                    'h-7 px-2.5 text-xs',
+                    boardStyle === value && 'bg-accent text-accent-foreground',
+                  )}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
@@ -533,7 +552,7 @@ export function TasksView({
         ) : view === 'list' ? (
           <ListView {...viewProps} />
         ) : (
-          <BoardView {...viewProps} />
+          <BoardView {...viewProps} groupByProject={boardStyle === 'project'} projects={projects} />
         )}
       </div>
 

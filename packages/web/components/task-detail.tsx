@@ -57,7 +57,7 @@ const STATUS_HUE_VAR: Record<Status, string> = {
   abandoned: '--status-abandoned',
 };
 
-const STATUS_LABEL: Record<Status, string> = {
+export const STATUS_LABEL: Record<Status, string> = {
   backlog: 'Backlog',
   todo: 'Todo',
   wip: 'In progress',
@@ -66,7 +66,7 @@ const STATUS_LABEL: Record<Status, string> = {
   abandoned: 'Abandoned',
 };
 
-const KIND_LABEL: Record<NonNullable<Task['kind']>, string> = {
+export const KIND_LABEL: Record<NonNullable<Task['kind']>, string> = {
   bug: 'Bugfix',
   feature: 'Feature',
   question: 'Question',
@@ -126,6 +126,15 @@ type Props = {
    * taking their own row inside the Session pane. Rendered just before "Open page".
    */
   sessionActions?: ReactNode;
+  /**
+   * Page-embedded mode (Phase 82): the full-page layout wraps this body in a
+   * `PageHeader` + sticky action bar + rail shell (like the session cockpit), so
+   * it suppresses this component's own header, and the Agent-runs + Activity
+   * sections move out to the rails. Defaults are off (the modal renders them all).
+   */
+  hideHeader?: boolean;
+  hideAgentRuns?: boolean;
+  hideActivity?: boolean;
 };
 
 export type TaskDetailTab = 'details' | 'review' | 'retro' | 'session';
@@ -173,6 +182,9 @@ export function TaskDetail({
   sessionSlot,
   disableNavigation = false,
   sessionActions,
+  hideHeader = false,
+  hideAgentRuns = false,
+  hideActivity = false,
 }: Props) {
   // Phase 52 E: a Details|Review tab strip for a task with a PR. Phase 62 F: a
   // Retro tab joins once the task is terminal (a retro skeleton is always built
@@ -378,6 +390,7 @@ export function TaskDetail({
 
   return (
     <>
+      {hideHeader ? null : (
       <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
         <span
           aria-hidden
@@ -444,6 +457,7 @@ export function TaskDetail({
           ) : null}
         </div>
       </header>
+      )}
 
       {showTabs ? (
         <div className="flex items-center gap-1 border-b border-border/60 px-5" role="tablist" aria-label="Task detail sections">
@@ -870,27 +884,42 @@ export function TaskDetail({
           <TaskFailureHistory taskId={task.id} />
         ) : null}
 
-        {/* Phase 61 G — per-task run strip (attempts / retries / live run). */}
-        <section>
-          <details className="group">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground marker:content-none">
-              <span className="transition-transform group-open:rotate-90" aria-hidden>
-                ›
-              </span>
-              Agent runs
-            </summary>
-            <div className="mt-2">
-              <RunTimeline taskId={task.id} />
-            </div>
-          </details>
-        </section>
+        {/* Phase 61 G — per-task run strip (attempts / retries / live run).
+            Hidden on the full page, where it lives in the left "Agent events" rail. */}
+        {hideAgentRuns ? null : (
+          <section>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground marker:content-none">
+                <span className="transition-transform group-open:rotate-90" aria-hidden>
+                  ›
+                </span>
+                Agent runs
+              </summary>
+              <div className="mt-2">
+                <RunTimeline taskId={task.id} />
+              </div>
+            </details>
+          </section>
+        )}
 
-        <section>
-          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Activity
-          </h3>
-          <Timeline events={task.events} />
-        </section>
+        {/* Activity (event timeline). An accordion in the modal (Phase 82) so it
+            doesn't dominate the body; hidden on the full page, where it lives in
+            the right "Activity" rail. */}
+        {hideActivity ? null : (
+          <section>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground marker:content-none">
+                <span className="transition-transform group-open:rotate-90" aria-hidden>
+                  ›
+                </span>
+                Activity
+              </summary>
+              <div className="mt-2">
+                <Timeline events={task.events} />
+              </div>
+            </details>
+          </section>
+        )}
       </div>
       )}
     </>
@@ -912,7 +941,7 @@ const EVENT_KIND_LABEL: Record<string, string> = {
   'task.replanned': 'Re-planned',
 };
 
-function Timeline({ events }: { events: TaskEvent[] }) {
+export function Timeline({ events }: { events: TaskEvent[] }) {
   if (events.length === 0) {
     return <p className="text-sm text-muted-foreground">No activity recorded yet.</p>;
   }

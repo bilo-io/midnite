@@ -13,12 +13,11 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { useTranslations } from 'next-intl';
-import { Play, RotateCcw, Square } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, Play, RotateCcw, Square } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { Status, TaskSummary } from '@midnite/shared';
+import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
-import { VirtualList } from '@/components/ui/virtual-list';
 import { useConfirm } from '@/components/confirm-dialog';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { TapToMoveMenu } from '@/components/tap-to-move-menu';
@@ -58,7 +57,24 @@ function visibleModalOpen(): boolean {
  * Cards drag between columns via dnd-kit; on touch, a tap-to-move fallback menu
  * supersedes the finicky hold-drag (Phase 24 Theme B).
  */
-export function BoardView({
+type BoardViewProps = TaskViewProps & {
+  /** Per-project accordions (each its own board) instead of one shared board. */
+  groupByProject?: boolean;
+  /** The project list — supplies tag/colour/order for the per-project accordions. */
+  projects?: Project[];
+};
+
+/**
+ * Dispatcher: the unified single board ("All in one") or the per-project
+ * accordions ("Per project"). Split so each keeps its own hooks — the unified
+ * board's keyboard-nav / mobile-snap machinery never runs in per-project mode.
+ */
+export function BoardView({ groupByProject = false, projects = [], ...props }: BoardViewProps) {
+  if (groupByProject) return <ProjectBoardsView {...props} projects={projects} />;
+  return <UnifiedBoard {...props} />;
+}
+
+function UnifiedBoard({
   tasks,
   columns,
   projectsById,
@@ -229,7 +245,7 @@ export function BoardView({
   const clearFocus = useCallback(() => setFocusedId(null), []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex flex-1 flex-col">
       {/* Mobile column tab bar — hidden on md+ */}
       <div className="flex border-b border-border/60 md:hidden">
         {columns.map((col, idx) => {
@@ -269,9 +285,12 @@ export function BoardView({
         onDragCancel={() => setActiveId(null)}
       >
         {/*
-         * Desktop: flex row with gap + horizontal scroll (unchanged behaviour).
-         * Mobile: snap-scroll — each column fills the viewport width; swipe left/right
-         * to page between columns. No gap between columns on mobile (inner padding used).
+         * Desktop (md+): a plain flex row — columns grow to their content height and
+         * the whole PAGE scrolls, so a full board reads as a tall page (no per-column
+         * scroll). `items-start` keeps each column at its natural height; `overflow-visible`
+         * means this row is not a scroll container, so vertical content flows to the document.
+         * Mobile: snap-scroll — each column fills the viewport width; swipe left/right to
+         * page between columns. No gap between columns on mobile (inner padding used).
          */}
         <div
           ref={scrollRef}
@@ -282,7 +301,7 @@ export function BoardView({
           role="group"
           aria-label={t('title')}
           data-tour="board"
-          className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1 max-md:snap-x max-md:snap-mandatory max-md:scroll-smooth max-md:gap-0"
+          className="flex gap-3 overflow-x-auto pb-1 max-md:snap-x max-md:snap-mandatory max-md:scroll-smooth max-md:gap-0 md:items-start md:overflow-x-visible"
         >
           {columns.map((col) => (
             <Column
@@ -292,14 +311,13 @@ export function BoardView({
               hueVar={col.hueVar}
               count={(grouped.get(col.status) ?? []).length}
             >
-              <VirtualList
-                items={grouped.get(col.status) ?? []}
-                rowKey={(t) => t.id}
-                gap={8}
-                estimateRow={92}
-                className="-m-1.5 min-h-0 flex-1 p-1.5"
-                renderRow={(t) => (
+              {/* Plain, un-windowed list: every card renders so the column grows to
+                  its full height and the page scrolls. Boards hold tens–hundreds of
+                  cards, well within a comfortable DOM budget. */}
+              <div className="flex flex-col gap-2">
+                {(grouped.get(col.status) ?? []).map((t) => (
                   <DraggableCard
+                    key={t.id}
                     task={t}
                     project={t.projectId ? projectsById.get(t.projectId) : undefined}
                     onSelect={() => onSelect(t)}
@@ -314,8 +332,8 @@ export function BoardView({
                     moveColumns={isMobile && onMove ? columns : undefined}
                     onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
                   />
-                )}
-              />
+                ))}
+              </div>
             </Column>
           ))}
         </div>
@@ -353,6 +371,233 @@ export function BoardView({
   );
 }
 
+type ProjectGroup = { key: string; label: string; color?: string; tasks: TaskSummary[] };
+
+/** Partition tasks into per-project groups (in the project list's order), with an
+ *  "Unassigned" group last. Only groups that actually hold tasks are returned. */
+function groupTasksByProject(tasks: TaskSummary[], projects: Project[]): ProjectGroup[] {
+  const byId = new Map<string, TaskSummary[]>();
+  const unassigned: TaskSummary[] = [];
+  for (const t of tasks) {
+    if (t.projectId) {
+      const list = byId.get(t.projectId) ?? [];
+      list.push(t);
+      byId.set(t.projectId, list);
+    } else {
+      unassigned.push(t);
+    }
+  }
+  const groups: ProjectGroup[] = [];
+  for (const p of projects) {
+    const list = byId.get(p.id);
+    if (list && list.length > 0) groups.push({ key: p.id, label: p.tag, color: p.color, tasks: list });
+  }
+  if (unassigned.length > 0) {
+    groups.push({ key: '__unassigned__', label: 'Unassigned', color: '#94a3b8', tasks: unassigned });
+  }
+  return groups;
+}
+
+/**
+ * "Per project" board: one collapsible board per project (like the Abandoned
+ * accordion), each with the same status columns as the unified board. Every
+ * project board is an independent DndContext, so status drag works *within* a
+ * project (moving to another project's column isn't offered — that would reassign
+ * the project). The heavier unified-board machinery (keyboard nav, mobile snap)
+ * is intentionally omitted here; this mode is an overview.
+ */
+function ProjectBoardsView({
+  tasks,
+  columns,
+  projectsById,
+  onSelect,
+  onMove,
+  onReopen,
+  isSelected,
+  onToggleSelect,
+  blockedCounts,
+  showAbandoned,
+  projects,
+}: TaskViewProps & { projects: Project[] }) {
+  const t = useTranslations('board');
+  const confirm = useConfirm();
+  const isMobile = useIsMobile();
+  const groups = useMemo(() => groupTasksByProject(tasks, projects), [tasks, projects]);
+  const abandoned = useMemo(() => tasks.filter((x) => x.status === 'abandoned'), [tasks]);
+
+  const handleReopen = useCallback(
+    async (id: string) => {
+      if (!onReopen) return;
+      const ok = await confirm({
+        title: 'Reopen this task?',
+        description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
+        confirmLabel: 'Reopen',
+        destructive: false,
+      });
+      if (!ok) return;
+      await onReopen(id);
+    },
+    [confirm, onReopen],
+  );
+
+  return (
+    <div className="flex flex-1 flex-col gap-4">
+      {groups.length === 0 ? (
+        <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('nothingHere')}</p>
+      ) : (
+        groups.map((g) => (
+          <ProjectBoardSection
+            key={g.key}
+            label={g.label}
+            color={g.color}
+            tasks={g.tasks}
+            columns={columns}
+            projectsById={projectsById}
+            onSelect={onSelect}
+            onMove={onMove}
+            onReopen={onReopen ? handleReopen : undefined}
+            isSelected={isSelected}
+            onToggleSelect={onToggleSelect}
+            blockedCounts={blockedCounts}
+            isMobile={isMobile}
+          />
+        ))
+      )}
+      {showAbandoned ? (
+        <AbandonedRow
+          tasks={abandoned}
+          onSelect={onSelect}
+          projectsById={projectsById}
+          blockedCounts={blockedCounts}
+          onReopen={onReopen ? (id) => void handleReopen(id) : undefined}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ProjectBoardSection({
+  label,
+  color,
+  tasks,
+  columns,
+  projectsById,
+  onSelect,
+  onMove,
+  onReopen,
+  isSelected,
+  onToggleSelect,
+  blockedCounts,
+  isMobile,
+}: {
+  label: string;
+  color?: string;
+  tasks: TaskSummary[];
+  columns: ColumnDef[];
+  projectsById: Map<string, ProjectTagInfo>;
+  onSelect: (task: TaskSummary) => void;
+  onMove?: (taskId: string, target: Status) => void;
+  onReopen?: (id: string) => void | Promise<void>;
+  isSelected?: (id: string) => boolean;
+  onToggleSelect?: (id: string, shiftKey: boolean) => void;
+  blockedCounts?: Map<string, number>;
+  isMobile: boolean;
+}) {
+  const t = useTranslations('board');
+  const [open, setOpen] = useState(true);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
+  const grouped = groupByStatus(tasks);
+  const activeTask = activeId ? tasks.find((x) => x.id === activeId) : undefined;
+
+  return (
+    <section className="rounded-lg border surface-glass">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 rounded-t-lg p-3 text-sm text-muted-foreground hover:bg-accent/50"
+      >
+        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        {color ? (
+          <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+        ) : null}
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="rounded bg-secondary px-1.5 py-0.5 text-xs tabular-nums">{tasks.length}</span>
+      </button>
+      {open ? (
+        <DndContext
+          sensors={sensors}
+          onDragStart={(e) => setActiveId(String(e.active.id))}
+          onDragEnd={(e) => {
+            setActiveId(null);
+            const target = e.over?.id;
+            const id = e.active.id;
+            if (typeof target === 'string' && typeof id === 'string') onMove?.(id, target as Status);
+          }}
+          onDragCancel={() => setActiveId(null)}
+        >
+          {/* Columns grow to content; the row scrolls horizontally only if the
+              columns overflow (vertical growth flows to the page). */}
+          <div className="flex flex-col gap-3 overflow-x-auto p-3 pt-0 md:flex-row md:items-start">
+            {columns.map((col) => {
+              const colTasks = grouped.get(col.status) ?? [];
+              return (
+                <Column
+                  key={col.status}
+                  status={col.status}
+                  label={t(`columns.${col.status}`)}
+                  hueVar={col.hueVar}
+                  count={colTasks.length}
+                >
+                  <div className="flex flex-col gap-2">
+                    {colTasks.map((tk) => (
+                      <DraggableCard
+                        key={tk.id}
+                        task={tk}
+                        project={tk.projectId ? projectsById.get(tk.projectId) : undefined}
+                        onSelect={() => onSelect(tk)}
+                        onStart={onMove ? () => onMove(tk.id, 'wip') : undefined}
+                        onStop={onMove ? () => onMove(tk.id, 'todo') : undefined}
+                        onReopen={onReopen ? () => void onReopen(tk.id) : undefined}
+                        selected={isSelected?.(tk.id) ?? false}
+                        onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(tk.id, sk) : undefined}
+                        blockedBy={blockedCounts?.get(tk.id)}
+                        moveColumns={isMobile && onMove ? columns : undefined}
+                        onMoveTo={onMove ? (target) => onMove(tk.id, target) : undefined}
+                      />
+                    ))}
+                  </div>
+                </Column>
+              );
+            })}
+          </div>
+          {mounted &&
+            createPortal(
+              <DragOverlay dropAnimation={null}>
+                {activeTask ? (
+                  <div className="rotate-2 cursor-grabbing opacity-90 shadow-2xl">
+                    <TaskCard
+                      task={activeTask}
+                      project={activeTask.projectId ? projectsById.get(activeTask.projectId) : undefined}
+                      onSelect={() => {}}
+                      blockedBy={blockedCounts?.get(activeTask.id)}
+                    />
+                  </div>
+                ) : null}
+              </DragOverlay>,
+              document.body,
+            )}
+        </DndContext>
+      ) : null}
+    </section>
+  );
+}
+
 function Column({
   status,
   label,
@@ -373,8 +618,10 @@ function Column({
       ref={setNodeRef}
       data-tour={`board-column-${status}`}
       className={cn(
-        // Desktop: flexible columns that grow to fill available space.
-        'relative flex h-full min-w-[240px] flex-1 flex-col overflow-hidden rounded-lg border surface-glass p-3 transition-colors',
+        // Desktop: equal-width columns that grow to their content height (the page,
+        // not the column, scrolls). `self-start` via the row's items-start keeps each
+        // at its natural height.
+        'relative flex min-w-[240px] flex-1 flex-col rounded-lg border surface-glass p-3 transition-colors',
         // Mobile: each column is exactly the viewport width (fills the snap container).
         // No side borders on mobile — the tab bar above provides the column affordance.
         'max-md:w-full max-md:min-w-0 max-md:shrink-0 max-md:snap-start max-md:rounded-none max-md:border-x-0',
@@ -407,12 +654,10 @@ function Column({
         </span>
       </div>
       {count === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground">
+        <div className="flex min-h-[6rem] items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground">
           {t('nothingHere')}
         </div>
       ) : (
-        // The card list (VirtualList) brings its own scroll container so it can be
-        // the virtualizer's scroll element (Phase 57 F).
         children
       )}
     </section>

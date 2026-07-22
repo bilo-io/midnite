@@ -172,7 +172,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
   return (
     <div className="space-y-4">
       <StickyToolbar className="reveal-controls">
-        <CountPill count={filtered.length} noun="workflow" />
+        <CountPill count={filtered.length} />
         <div className="flex items-center gap-2">
           {/* Templates — icon-only left of search, revealing its label on hover
               (the shared HoverExpandButton pattern, as on the tasks board). */}
