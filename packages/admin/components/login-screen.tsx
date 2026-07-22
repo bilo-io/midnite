@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { LOGIN_PROVIDERS, type LoginProvider } from '@midnite/shared';
 import { LockScreen } from '@midnite/shell';
 import { GithubIcon, buttonVariants } from '@midnite/ui';
@@ -39,8 +40,18 @@ export function LoginScreen() {
   return (
     <LockScreen label="Sign in to the operator console">
       <div className="flex w-full max-w-xs flex-col items-center gap-6">
-        <div className="flex flex-col items-center gap-1">
-          <span className="font-brand text-3xl text-foreground">midnite</span>
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.PNG"
+              alt=""
+              width={48}
+              height={48}
+              priority
+              className="h-12 w-12 rounded-full object-cover ring-1 ring-border"
+            />
+            <span className="font-brand text-3xl font-semibold text-foreground">midnite</span>
+          </div>
           <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">operator console</span>
         </div>
         <div className="flex w-full flex-col gap-2">

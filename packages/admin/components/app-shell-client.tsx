@@ -86,13 +86,13 @@ export function AppShellClient({ children }: { children: ReactNode }) {
     brand: ({ expanded }) =>
       expanded ? (
         <Link href="/" aria-label="midnite operator" className="flex items-center gap-2">
-          <span className="font-brand text-lg leading-none text-foreground">midnite</span>
+          <span className="font-brand text-lg font-semibold leading-none text-foreground">midnite</span>
           <span className="rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
             v{APP_VERSION}
           </span>
         </Link>
       ) : (
-        <Link href="/" aria-label="midnite operator" className="font-brand text-base leading-none text-foreground">
+        <Link href="/" aria-label="midnite operator" className="font-brand text-base font-semibold leading-none text-foreground">
           m
         </Link>
       ),
