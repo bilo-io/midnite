@@ -1,8 +1,12 @@
 'use client';
 
 import { ArrowLeft } from 'lucide-react';
+import type { SessionSummary } from '@midnite/shared';
 import { WorkItemModal } from '@/components/work-item-modal';
+import { useConfirm } from '@/components/confirm-dialog';
 import { type OfficeAgent } from '@/lib/office/agents';
+import { archiveSession, deleteSession, unarchiveSession } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
 import { CharacterPicker } from './CharacterPicker';
@@ -182,19 +186,50 @@ function Key({ children }: { children: React.ReactNode }) {
  * Approaching an agent opens its session directly — no call/message menu, since
  * an office occupant *is* an agent running a known task. It opens the unified
  * work-item modal (Phase 70) on its Session tab — a live terminal for a running
- * agent, a transcript otherwise — with the task's Details tab a click away.
- * `disableNavigation` hides the Session tab's "Open page" link so the modal stays
- * over the office; clicking through never leaves `/office`. The modal portals to
- * <body> itself, so a persisted page-reveal transform / the stage's
+ * agent, a transcript otherwise — with the task's Details tab a click away. It
+ * carries the full control row the board modal has (archive / delete / export /
+ * lifecycle + "Open page", which expands into the session cockpit). The modal
+ * portals to <body> itself, so a persisted page-reveal transform / the stage's
  * `overflow-hidden` can't clip it.
  */
 function InteractionPanel({ agent, onClose }: { agent: OfficeAgent; onClose: () => void }) {
+  const confirm = useConfirm();
+
+  const onArchiveToggle = async (session: SessionSummary) => {
+    if (!session.archivedAt) {
+      const ok = await confirm({
+        title: 'Archive this session?',
+        description: 'It moves out of the active board. You can unarchive it again later.',
+        confirmLabel: 'Archive',
+        destructive: false,
+      });
+      if (!ok) return;
+    }
+    try {
+      if (session.archivedAt) await unarchiveSession(session.id);
+      else await archiveSession(session.id);
+    } finally {
+      onClose();
+      invalidateData();
+    }
+  };
+
+  const onDelete = async (session: SessionSummary) => {
+    try {
+      await deleteSession(session.id);
+    } finally {
+      onClose();
+      invalidateData();
+    }
+  };
+
   return (
     <WorkItemModal
       origin={{ kind: 'session', session: agent.session }}
       projects={[]}
       onClose={onClose}
-      disableNavigation
+      onArchiveToggle={(s) => void onArchiveToggle(s)}
+      onDelete={(s) => void onDelete(s)}
     />
   );
 }
