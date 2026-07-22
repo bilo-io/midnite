@@ -563,11 +563,15 @@ html[data-motion='reduced'] .screensaver-title {
   /* The card-rise animation (transform + fill-mode: both) makes each row its own
      stacking context. Without explicit order, the later .reveal-content would
      paint over dropdowns/menus opened from the controls row — so rank the
-     controls above the content. */
+     controls above the content.
+
+     .reveal-controls deliberately sets NO position/z-index of its own: the
+     controls rows all render through <StickyToolbar>, which supplies
+     `sticky z-20`. A `position: relative` here would silently win over the
+     `.sticky` utility (same layer, later source order) and un-stick the bar —
+     that was a real bug, don't reintroduce it. */
   .reveal-controls {
     animation-delay: 60ms;
-    position: relative;
-    z-index: 20;
   }
   .reveal-content {
     animation-delay: 300ms;

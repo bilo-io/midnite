@@ -42,8 +42,13 @@ export function BulkActionBar({ count, actions, onClear, className, extra }: Pro
     <div
       aria-hidden={!open}
       className={cn(
-        'overflow-hidden transition-all duration-200 ease-out motion-reduce:transition-none',
-        open ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0',
+        // Sticks just below the <StickyToolbar> row: 48px (title bar / collapsed
+        // header) + 52px (toolbar: py-2 + h-9 controls) = 6.25rem — so the bulk
+        // actions stay on screen with the rest of the list controls.
+        'sticky top-[6.25rem] z-20 -mx-2 overflow-hidden rounded-lg px-2 transition-all duration-200 ease-out motion-reduce:transition-none',
+        open
+          ? 'max-h-16 bg-background/80 opacity-100 backdrop-blur supports-[backdrop-filter]:bg-background/60'
+          : 'max-h-0 opacity-0',
         className,
       )}
     >
