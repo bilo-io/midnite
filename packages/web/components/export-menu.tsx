@@ -41,6 +41,10 @@ type Props = {
   /** Render the trigger as a compact download icon button (no "Export" label),
    *  while keeping the same dropdown. Used where header space is tight. */
   iconOnly?: boolean;
+  /** Render the trigger as an icon that reveals its "Export" label on hover/focus
+   *  (the {@link HoverExpandButton} pattern) so it sits flush with the control bar's
+   *  other hover-expand actions. Takes precedence over `iconOnly`. */
+  hoverExpand?: boolean;
   className?: string;
 };
 
@@ -76,7 +80,7 @@ function triggerDownload(filename: string, content: string, mimeType: string): v
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, iconOnly, className }: Props) {
+export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, iconOnly, hoverExpand, className }: Props) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | 'html' | null>(null);
@@ -218,15 +222,33 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
         aria-label="Export"
-        title={iconOnly ? 'Export' : undefined}
+        title={iconOnly && !hoverExpand ? 'Export' : undefined}
         aria-expanded={open}
         className={
-          iconOnly
+          hoverExpand
+            ? 'group inline-flex h-8 items-center gap-0 rounded-md border border-input bg-background px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+            : iconOnly
             ? 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
             : 'flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
         }
       >
-        {iconOnly ? (
+        {hoverExpand ? (
+          <>
+            <span className="grid shrink-0 place-items-center">
+              <Download className="h-4 w-4" />
+            </span>
+            <span
+              className={cn(
+                'max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium opacity-0',
+                'transition-all duration-200 ease-in-out motion-reduce:transition-none',
+                'group-hover:ml-1.5 group-hover:max-w-[10rem] group-hover:opacity-100',
+                'group-focus-visible:ml-1.5 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100',
+              )}
+            >
+              Export
+            </span>
+          </>
+        ) : iconOnly ? (
           <Download className="h-4 w-4" />
         ) : (
           <>

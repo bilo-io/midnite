@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowUpRight, Check, ExternalLink, GitCompare, Plus, RefreshCw, X } from 'lucide-react';
+import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
@@ -119,6 +120,12 @@ type Props = {
    * `/office`.
    */
   disableNavigation?: boolean;
+  /**
+   * Session-scoped actions (archive / delete) supplied by the unified modal so
+   * they share the tab-strip row with the task controls + "Open page" instead of
+   * taking their own row inside the Session pane. Rendered just before "Open page".
+   */
+  sessionActions?: ReactNode;
 };
 
 export type TaskDetailTab = 'details' | 'review' | 'retro' | 'session';
@@ -165,6 +172,7 @@ export function TaskDetail({
   onTabChange,
   sessionSlot,
   disableNavigation = false,
+  sessionActions,
 }: Props) {
   // Phase 52 E: a Details|Review tab strip for a task with a PR. Phase 62 F: a
   // Retro tab joins once the task is terminal (a retro skeleton is always built
@@ -472,11 +480,14 @@ export function TaskDetail({
                 />
               ) : null}
               <TaskActionButtons task={task} actions={actions} />
+              {sessionActions}
               {!disableNavigation ? (
-                <Button type="button" variant="secondary" size="sm" onClick={openPage}>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                  Open page
-                </Button>
+                <HoverExpandButton
+                  icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                  label="Open page"
+                  variant="secondary"
+                  onClick={openPage}
+                />
               ) : null}
             </div>
           ) : null}

@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { ArrowUpRight, X } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowUpRight, X } from 'lucide-react';
 import type { Project, SessionSummary, Task, TaskSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { HoverExpandButton } from '@/components/hover-expand-button';
+import { DeleteConfirmButton } from '@/components/delete-confirm-button';
 import { SessionStatusDot } from '@/components/session-card';
 import { TaskDetail, type TaskDetailTab } from '@/components/task-detail';
 import { SessionPane } from '@/components/session-pane';
@@ -62,7 +64,14 @@ export function WorkItemModal({
   );
   const [sessionLoading, setSessionLoading] = useState(origin.kind === 'task');
   const [tasks, setTasks] = useState<TaskSummary[]>(tasksProp ?? []);
-  const [tab, setTab] = useState<TaskDetailTab>(origin.kind === 'session' ? 'session' : 'details');
+  // Open on the Session tab when the work item is live — a session origin (the
+  // user clicked a session), or a task that's mid-run (`wip`/`waiting`), where the
+  // terminal is the thing to see. Anything else opens on Details.
+  const [tab, setTab] = useState<TaskDetailTab>(() =>
+    origin.kind === 'session' || origin.task.status === 'wip' || origin.task.status === 'waiting'
+      ? 'session'
+      : 'details',
+  );
 
   // Resolve the counterpart the origin didn't supply. A missing counterpart
   // (a task that never ran; a session with no linked task) is not an error —
@@ -118,14 +127,34 @@ export function WorkItemModal({
 
   const title = task?.title ?? session?.title ?? 'Work item';
 
-  const sessionSlot = (
-    <SessionPane
-      session={session}
-      loading={sessionLoading}
-      onArchiveToggle={onArchiveToggle && session ? () => onArchiveToggle(session) : undefined}
-      onDelete={onDelete && session ? () => onDelete(session) : undefined}
-    />
-  );
+  const sessionSlot = <SessionPane session={session} loading={sessionLoading} />;
+
+  // Session-scoped actions (archive / delete), hoisted out of the Session pane so
+  // they sit on the shared control row (the tab strip for a task-backed modal, the
+  // header for the session-only shell) rather than eating their own row (Phase 74 follow-up).
+  const sessionActions =
+    session && (onArchiveToggle || (onDelete && session.archivedAt)) ? (
+      <>
+        {onArchiveToggle ? (
+          <HoverExpandButton
+            icon={
+              session.archivedAt ? (
+                <ArchiveRestore className="h-4 w-4" />
+              ) : (
+                <Archive className="h-4 w-4" />
+              )
+            }
+            label={session.archivedAt ? 'Unarchive' : 'Archive'}
+            variant="ghost"
+            onClick={() => onArchiveToggle(session)}
+            className="text-muted-foreground"
+          />
+        ) : null}
+        {onDelete && session.archivedAt ? (
+          <DeleteConfirmButton noun="session" onConfirm={() => onDelete(session)} />
+        ) : null}
+      </>
+    ) : null;
 
   // Session-only shell (no linked task) has no tab strip to host "Open page", so
   // it carries its own — unless navigation is suppressed (e.g. the office).
@@ -163,6 +192,7 @@ export function WorkItemModal({
               onTabChange={setTab}
               sessionSlot={sessionSlot}
               disableNavigation={disableNavigation}
+              sessionActions={sessionActions}
             />
           ) : (
             // Session with no linked task — no task surface to show, so the modal
@@ -179,11 +209,14 @@ export function WorkItemModal({
                     {session ? <span className="truncate font-mono">{session.projectDisplay}</span> : null}
                   </div>
                 </div>
+                {sessionActions}
                 {session && !disableNavigation ? (
-                  <Button type="button" variant="secondary" size="sm" onClick={openSessionPage}>
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                    Open page
-                  </Button>
+                  <HoverExpandButton
+                    icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                    label="Open page"
+                    variant="secondary"
+                    onClick={openSessionPage}
+                  />
                 ) : null}
                 <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
                   <X className="h-4 w-4" />

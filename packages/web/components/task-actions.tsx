@@ -201,7 +201,7 @@ export function TaskActionButtons({
           onClick={onOpenSession}
         />
       ) : null}
-      <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={taskExportFilename(task)} iconOnly />
+      <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={taskExportFilename(task)} hoverExpand />
       {task.status !== 'abandoned' ? (
         <HoverExpandButton
           icon={<Ban className="h-4 w-4" />}

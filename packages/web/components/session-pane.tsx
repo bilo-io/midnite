@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Archive, ArchiveRestore } from 'lucide-react';
 import type { SessionSummary, SessionStatus, SessionTranscript } from '@midnite/shared';
-import { Button } from '@/components/ui/button';
-import { DeleteConfirmButton } from '@/components/delete-confirm-button';
 import { SessionTerminal } from '@/components/session-terminal';
 import { SessionTranscriptBody } from '@/components/session-transcript-body';
 import { getSessionTranscript } from '@/lib/api';
@@ -20,17 +17,15 @@ type Props = {
   session: SessionSummary | null;
   /** Whether the counterpart session is still being resolved. */
   loading?: boolean;
-  onArchiveToggle?: () => void;
-  onDelete?: () => void;
 };
 
 /**
  * The Session tab body of the unified work-item modal (Phase 70): a live terminal
  * for an active session, a replayed transcript for a completed one, or an empty
- * state when the task has yet to spawn a session. Owns its session-scoped
- * archive/delete actions; "Open page" lives on the modal's tab strip.
+ * state when the task has yet to spawn a session. Session-scoped actions
+ * (archive / delete) + "Open page" live on the modal's shared control row, not here.
  */
-export function SessionPane({ session, loading = false, onArchiveToggle, onDelete }: Props) {
+export function SessionPane({ session, loading = false }: Props) {
   const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,31 +75,6 @@ export function SessionPane({ session, loading = false, onArchiveToggle, onDelet
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {(onArchiveToggle || (onDelete && session.archivedAt)) && (
-        <div className="flex shrink-0 items-center justify-end gap-1.5 border-b border-border/60 px-5 py-2">
-          {onArchiveToggle ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onArchiveToggle}
-              aria-label={session.archivedAt ? 'Unarchive session' : 'Archive session'}
-              title={session.archivedAt ? 'Unarchive' : 'Archive'}
-              className="text-muted-foreground"
-            >
-              {session.archivedAt ? (
-                <ArchiveRestore className="h-4 w-4" />
-              ) : (
-                <Archive className="h-4 w-4" />
-              )}
-            </Button>
-          ) : null}
-          {onDelete && session.archivedAt ? (
-            <DeleteConfirmButton noun="session" onConfirm={onDelete} />
-          ) : null}
-        </div>
-      )}
-
       {live ? (
         <div className="min-h-0 flex-1 px-5 py-4">
           <SessionTerminal session={session} />
