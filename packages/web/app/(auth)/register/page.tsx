@@ -3,16 +3,20 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
+import { useAuthErrorMessage } from '@/lib/auth-errors';
 
 // This page is behind NEXT_PUBLIC_REGISTRATION_OPEN=true. When the flag is
 // absent, navigation to /register shows a "registration closed" notice rather
 // than a 404 so the route still renders gracefully.
 
 export default function RegisterPage() {
+  const t = useTranslations('auth');
+  const authError = useAuthErrorMessage();
   const { register } = useAuth();
   const router = useRouter();
 
@@ -32,7 +36,7 @@ export default function RegisterPage() {
       await register(email, name, password);
       router.push('/login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(authError(err, 'registrationFailed'));
     } finally {
       setPending(false);
     }
@@ -42,14 +46,14 @@ export default function RegisterPage() {
     return (
       <div className="w-full">
         <h1 className="mb-3 text-2xl font-semibold tracking-tight text-foreground">
-          Registration closed
+          {t('registrationClosed')}
         </h1>
         <p className="mb-6 text-sm text-muted-foreground">
-          New account registration is not available on this instance.
+          {t('registrationClosedBody')}
         </p>
         <Link href="/login">
           <Button variant="outline" className="w-full">
-            Back to sign in
+            {t('backToSignIn')}
           </Button>
         </Link>
       </div>
@@ -58,14 +62,14 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">Create account</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">{t('createAccount')}</h1>
       <div className="mb-4">
         <SsoButtons redirect="/" />
       </div>
       <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="name" className="text-sm font-medium text-foreground">
-            Name
+            {t('name')}
           </label>
           <Input
             id="name"
@@ -74,12 +78,12 @@ export default function RegisterPage() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t('namePlaceholder')}
           />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
+            {t('email')}
           </label>
           <Input
             id="email"
@@ -88,12 +92,12 @@ export default function RegisterPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder={t('emailPlaceholder')}
           />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="password" className="text-sm font-medium text-foreground">
-            Password
+            {t('password')}
           </label>
           <Input
             id="password"
@@ -103,17 +107,17 @@ export default function RegisterPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Min 8 characters"
+            placeholder={t('passwordMinPlaceholder')}
           />
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" disabled={pending} className="w-full">
-          {pending ? 'Creating account…' : 'Create account'}
+          {pending ? t('creatingAccount') : t('createAccount')}
         </Button>
         <p className="text-sm text-center text-muted-foreground">
-          Already have an account?{' '}
+          {t('haveAccount')}{' '}
           <Link href="/login" className="underline hover:text-foreground">
-            Sign in
+            {t('signIn')}
           </Link>
         </p>
       </form>

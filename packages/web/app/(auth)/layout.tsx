@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { WindowChromeBridge } from '@midnite/shared';
 import { TitleBarDragStrip } from '@midnite/shell';
 import { useIsDesktop } from '@/hooks/use-media-query';
@@ -140,6 +141,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
 /** Simple click-to-flip light/dark toggle (no dropdown) for the auth corner. */
 function AuthThemeToggle() {
+  const t = useTranslations('common');
   const { resolved, setPreference } = useTheme();
   const Icon = resolved === 'dark' ? Sun : Moon;
   return (
@@ -147,7 +149,7 @@ function AuthThemeToggle() {
       type="button"
       variant="ghost"
       size="icon"
-      aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}
+      aria-label={resolved === 'dark' ? t('switchToLightTheme') : t('switchToDarkTheme')}
       onClick={() => setPreference(resolved === 'dark' ? 'light' : 'dark')}
     >
       <Icon className="h-4 w-4" />

@@ -18,5 +18,11 @@
   "item": "élément",
   "deleteNounTitle": "Supprimer cet élément ({noun}) ?",
   "deletePermanent": "Cette action est définitive et irréversible.",
-  "reorderSection": "Réorganiser la section"
+  "reorderSection": "Réorganiser la section",
+  "switchToLightTheme": "Passer au thème clair",
+  "switchToDarkTheme": "Passer au thème sombre",
+  "errorTitle": "Une erreur est survenue",
+  "emptyTitle": "Rien ici pour l’instant",
+  "saving": "Enregistrement…",
+  "saved": "Enregistré"
 }

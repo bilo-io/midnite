@@ -18,5 +18,11 @@
   "item": "item",
   "deleteNounTitle": "Delete this {noun}?",
   "deletePermanent": "This is permanent and can't be undone.",
-  "reorderSection": "Reorder section"
+  "reorderSection": "Reorder section",
+  "switchToLightTheme": "Switch to light theme",
+  "switchToDarkTheme": "Switch to dark theme",
+  "errorTitle": "Something went wrong",
+  "emptyTitle": "Nothing here yet",
+  "saving": "Saving…",
+  "saved": "Saved"
 }
