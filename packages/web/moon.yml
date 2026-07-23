@@ -103,16 +103,41 @@ tasks:
       - 'e2e/**/*'
       - 'playwright.config.ts'
       - '/eslint.config.mjs'
+      - '/eslint.i18n-exempt.mjs'
 
-  # i18n catalog key-parity gate (Phase 79 E). Fails on orphan/drift keys in any
-  # locale and on missing keys in a locale declared `complete` (fr-FR); de-DE/es-ES
-  # are intentionally-incomplete fallbacks and only reported for coverage. Runs in
-  # `moon ci` (runInCI default) so a drifted catalog can't merge.
+  # i18n catalog key-parity gate (Phase 79 E; split-catalog layout in Phase 82 A).
+  # Fails on orphan/drift keys in any locale and on missing keys in a locale declared
+  # `complete` (fr-FR); de-DE/es-ES are intentionally-incomplete fallbacks and only
+  # reported for coverage. Also prints the progress meter (per-namespace key totals +
+  # exempt-list count). Runs in `moon ci` (runInCI default) so a drifted catalog can't merge.
   i18n-validate:
     command: 'node ../../scripts/i18n-validate.mjs'
     inputs:
       - 'messages/**/*.json'
       - '/scripts/i18n-validate.mjs'
+      - '/eslint.i18n-exempt.mjs'
+
+  # Guards the generated per-locale barrels (messages/<locale>/index.ts) against the
+  # namespace fragments — a fragment added/removed without re-running the generator
+  # fails CI. `moon run web:i18n-barrels` regenerates them.
+  i18n-barrels:
+    command: 'node ../../scripts/i18n-barrels.mjs --check'
+    inputs:
+      - 'messages/**/*.json'
+      - 'messages/**/index.ts'
+      - '/scripts/i18n-barrels.mjs'
+
+  # Guards the generated ESLint exempt tail — fails CI if a listed file was renamed or
+  # deleted (stale entry) or the list drifts out of sorted/deduped order. New files are
+  # born enforced (never auto-added). `moon run web:i18n-exempt` prunes + re-sorts.
+  i18n-exempt:
+    command: 'node ../../scripts/i18n-exempt.mjs --check'
+    inputs:
+      - 'app/**/*.tsx'
+      - 'components/**/*.tsx'
+      - '/packages/shell/src/**/*.tsx'
+      - '/scripts/i18n-exempt.mjs'
+      - '/eslint.i18n-exempt.mjs'
 
   test:
     command: 'pnpm exec vitest run'
