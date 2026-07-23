@@ -100,11 +100,18 @@ export function TaskRow({
   );
 
   // Base row: flex-col (two-line card) on mobile, single-line row on sm+.
+  // Executing (an agent is actively running it) — the signature rotating,
+  // pulsating gradient frame, shared across every task view. Waiting (parked
+  // for input/approval) gets a gentler, orange-toned cousin.
+  const isRunning = task.status === 'wip';
+  const isWaiting = task.status === 'waiting';
   const rowBase = cn(
     'flex w-full flex-col gap-1 border-b border-border/40 px-3 py-2.5 text-left last:border-b-0',
     'sm:flex-row sm:items-center sm:gap-3 sm:py-2',
     (interactive || selectable) && 'hover:bg-accent/40',
     selected && 'bg-accent/30',
+    isRunning && 'task-running',
+    isWaiting && 'task-waiting',
   );
   const style = { ['--kind-hue' as string]: `var(${KIND_HUE_VARS[kind]})` };
 
@@ -118,6 +125,8 @@ export function TaskRow({
       'sm:items-center sm:py-2',
       (interactive || selectable) && 'hover:bg-accent/40',
       selected && 'bg-accent/30',
+      isRunning && 'task-running',
+      isWaiting && 'task-waiting',
     );
     const innerClass = cn(
       'flex min-w-0 flex-1 flex-col gap-1 text-left',

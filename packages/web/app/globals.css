@@ -372,6 +372,164 @@
   z-index: -2;
 }
 
+/* An *executing* task (`wip` — an agent is actively running it) wears the app's
+ * signature rotating + pulsating gradient, so a live task reads the same on the
+ * board, in the list/table rows, and on the dependency graph. Applied as a
+ * non-invasive ring + halo (never touching the element's own border/background),
+ * so one class drops onto the card, the row, and the graph node alike. Reuses
+ * the shared `gradient-border-spin` (the `--gradient-angle` rotation) and
+ * `gradient-border-glow-pulse` (opacity breathing) keyframes from
+ * `@midnite/ui/styles`, with the same conic stops as `.gradient-border`. */
+.task-running {
+  position: relative;
+  isolation: isolate;
+}
+/* The frame: a conic gradient masked down to a 2px ring hugging the box edge. */
+.task-running::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f43f5e,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f43f5e
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+  animation:
+    gradient-border-spin 4s linear infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite;
+}
+/* The bloom: a blurred copy bleeding out from behind the box. Clipped inside
+ * `overflow-hidden` containers (the graph node), which is fine — the ring alone
+ * still carries the state there. */
+.task-running::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f43f5e,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f43f5e
+  );
+  filter: blur(18px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+  animation:
+    gradient-border-spin 4s linear infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite;
+}
+html[data-motion='reduced'] .task-running::before,
+html[data-motion='reduced'] .task-running::after {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .task-running::before,
+  html:not([data-motion='full']) .task-running::after {
+    animation: none;
+  }
+}
+
+/* A *waiting* task (parked on `needs-input` / approval) wears a warm, orange
+ * cousin of `.task-running`: the same rotating + pulsating ring + halo, but
+ * shifted to an amber→orange conic gradient and dialled down in intensity —
+ * a slower spin, a gentler opacity breath, a softer bloom — so a parked task
+ * reads as "needs attention, but idle" rather than "live and executing". */
+.task-waiting {
+  position: relative;
+  isolation: isolate;
+}
+/* Gentler opacity breath than `gradient-border-glow-pulse` (0.5→0.9). */
+@keyframes task-waiting-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.32;
+  }
+  50% {
+    opacity: 0.62;
+  }
+}
+.task-waiting::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f97316,
+    #fbbf24,
+    #f59e0b,
+    #fb923c,
+    #ea580c,
+    #f97316
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+  animation:
+    gradient-border-spin 6s linear infinite,
+    task-waiting-glow-pulse 3.2s ease-in-out infinite;
+}
+.task-waiting::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f97316,
+    #fbbf24,
+    #f59e0b,
+    #fb923c,
+    #ea580c,
+    #f97316
+  );
+  filter: blur(14px);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+  animation:
+    gradient-border-spin 6s linear infinite,
+    task-waiting-glow-pulse 3.2s ease-in-out infinite;
+}
+html[data-motion='reduced'] .task-waiting::before,
+html[data-motion='reduced'] .task-waiting::after {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .task-waiting::before,
+  html:not([data-motion='full']) .task-waiting::after {
+    animation: none;
+  }
+}
+
 /* Entry cascade — the sign-in column reveal, final beat of the auth intro
  * (use-auth-intro.ts). Applied to the form wrapper once the intro reaches
  * 'done': the heading drops in from above, everything after rises from below,
@@ -1146,5 +1304,25 @@ html[data-motion='reduced'] .screensaver-title {
   }
   .surface-glass-interactive:hover {
     background-image: linear-gradient(180deg, hsl(var(--accent) / 0.6), hsl(var(--accent) / 0.25));
+  }
+}
+
+/* The board + graph task cards read as frosted glass — like the app's other
+   panels — but a touch more solid and more blurred than the generic
+   `.surface-glass`: ~30% more opaque fill (0.7 → 0.9) and a deeper backdrop
+   blur (12px → 20px), so a card reads as a distinct object floating above its
+   glass column / the starfield. Fallback stays near-opaque where
+   `backdrop-filter` is unavailable so the backdrop can't bleed through. In
+   `@layer components` so per-element Tailwind utilities still win. */
+@layer components {
+  .task-surface {
+    background-color: hsl(var(--background) / 0.97);
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .task-surface {
+      background-color: hsl(var(--background) / 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
   }
 }

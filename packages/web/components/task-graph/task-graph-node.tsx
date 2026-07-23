@@ -24,17 +24,29 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
   const hue = statusHueVar(node.status);
   const priority = PRIORITY_LABEL[node.priority];
   const blocked = node.unmetBlockerCount > 0;
+  const done = node.status === 'done';
 
   return (
     <div
       className={cn(
-        'flex flex-col justify-between overflow-hidden rounded-lg border bg-card px-3 py-2 text-left shadow-sm transition-shadow hover:shadow-md',
+        'flex flex-col justify-between overflow-hidden rounded-lg border task-surface px-3 py-2 text-left shadow-sm transition-shadow hover:shadow-md',
         node.foreign && 'border-dashed opacity-70',
+        // Blocked (unmet blockers) reads dimmed, mirroring the board's blocked card.
+        blocked && 'opacity-60',
         selected && 'ring-2 ring-ring',
+        // Executing (an agent is actively running it) — the signature rotating,
+        // pulsating gradient frame, shared across every task view.
+        node.status === 'wip' && 'task-running',
+        // Waiting (parked for input/approval) — a gentler, orange-toned cousin.
+        node.status === 'waiting' && 'task-waiting',
       )}
       style={{
         width: GRAPH_NODE_WIDTH,
         height: GRAPH_NODE_HEIGHT,
+        // Completed tasks wear a slightly thicker green border around the whole
+        // card so "done" reads at a glance; the left accent stays the status hue.
+        borderColor: done ? 'hsl(var(--status-done))' : undefined,
+        borderWidth: done ? 2 : undefined,
         borderLeftColor: `hsl(${hue.startsWith('--') ? `var(${hue})` : hue})`,
         borderLeftWidth: 4,
       }}

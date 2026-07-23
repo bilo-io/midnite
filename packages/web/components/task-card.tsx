@@ -184,8 +184,13 @@ export function TaskCard({
   );
 
   const className = cn(
-    'group block w-full rounded-md border bg-background p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow',
+    'group block w-full rounded-md border task-surface p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow',
     isBlocked && 'opacity-60',
+    // Executing (an agent is actively running it) — the signature rotating,
+    // pulsating gradient frame, shared across every task view.
+    task.status === 'wip' && 'task-running',
+    // Waiting (parked for input/approval) — a gentler, orange-toned cousin.
+    task.status === 'waiting' && 'task-waiting',
   );
 
   // Phase 69 D — a *live* wait (`needs-input`) can be answered from the board

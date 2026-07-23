@@ -63,16 +63,55 @@ export function layoutTaskGraph(graph: TaskGraph): LayoutedGraph {
   const edges: Edge[] = graph.edges
     .filter((e) => known.has(e.from) && known.has(e.to))
     .map((e) => {
-      // The dependent (`from`) is still blocked while its blocker (`to`) isn't done.
-      const unmet = byId.get(e.to)?.status !== 'done';
+      // Edge runs blocker (`to`, the source/upstream) → dependent (`from`, target).
+      const appearance = edgeAppearance(byId.get(e.to), byId.get(e.from));
       return {
         id: `${e.to}->${e.from}`,
         source: e.to,
         target: e.from,
-        animated: unmet,
-        style: unmet ? { stroke: 'hsl(var(--status-waiting))', strokeWidth: 2 } : undefined,
+        ...appearance,
       };
     });
 
   return { nodes, edges };
+}
+
+/**
+ * Edge appearance encodes the dependency's state at a glance, keyed off its two
+ * endpoints (source = the blocker, target = the dependent it feeds):
+ *
+ * - both `done`           → solid green, slightly thicker: the chain is complete.
+ * - blocker `done`        → animated green dotted: a finished blocker has opened
+ *                           the flow to its (now-unblocked) dependent.
+ * - blocker `wip`/`waiting` → animated orange dotted: work is happening upstream
+ *                           of a still-blocked dependent.
+ * - otherwise             → static white: a quiet, not-yet-started dependency.
+ */
+function edgeAppearance(
+  source: TaskGraphNode | undefined,
+  target: TaskGraphNode | undefined,
+): Pick<Edge, 'animated' | 'style'> {
+  const green = 'hsl(var(--status-done))';
+  const orange = 'hsl(var(--status-wip))';
+  const neutral = 'hsl(var(--foreground))';
+  const dotted = '6 4';
+
+  const sourceDone = source?.status === 'done';
+  const targetDone = target?.status === 'done';
+  const sourceActive = source?.status === 'wip' || source?.status === 'waiting';
+
+  // Both endpoints complete — the dependency is satisfied end-to-end.
+  if (sourceDone && targetDone) {
+    return { animated: false, style: { stroke: green, strokeWidth: 2.5 } };
+  }
+  // A completed blocker feeding its now-unblocked dependent.
+  if (sourceDone) {
+    return { animated: true, style: { stroke: green, strokeWidth: 2, strokeDasharray: dotted } };
+  }
+  // An in-progress blocker (wip / waiting) feeding a still-blocked dependent.
+  if (sourceActive) {
+    return { animated: true, style: { stroke: orange, strokeWidth: 2, strokeDasharray: dotted } };
+  }
+  // A quiet, not-yet-started dependency chain.
+  return { animated: false, style: { stroke: neutral, strokeWidth: 1.5 } };
 }

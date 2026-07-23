@@ -46,25 +46,50 @@ describe('layoutTaskGraph', () => {
     expect(a.position.x).toBeLessThan(b.position.x);
   });
 
-  it('draws the edge blocker→dependent and animates it while unmet', () => {
+  it('draws an in-progress blocker → blocked dependent as an animated orange edge', () => {
     const graph: TaskGraph = {
       ...base,
-      nodes: [node('a', { status: 'wip' }), node('b')],
+      nodes: [node('a', { status: 'wip' }), node('b', { ready: false, unmetBlockerCount: 1 })],
       edges: [{ from: 'b', to: 'a' }],
     };
     const { edges } = layoutTaskGraph(graph);
     expect(edges).toHaveLength(1);
     expect(edges[0]).toMatchObject({ source: 'a', target: 'b', animated: true });
+    expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--status-wip))', strokeDasharray: '6 4' });
   });
 
-  it('does not animate an edge whose blocker is done', () => {
+  it('draws a done blocker → unblocked dependent as an animated green dotted edge', () => {
     const graph: TaskGraph = {
       ...base,
       nodes: [node('a', { status: 'done' }), node('b')],
       edges: [{ from: 'b', to: 'a' }],
     };
     const { edges } = layoutTaskGraph(graph);
+    expect(edges[0]).toMatchObject({ animated: true });
+    expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--status-done))', strokeDasharray: '6 4' });
+  });
+
+  it('draws a fully-complete dependency as a solid, thicker green edge', () => {
+    const graph: TaskGraph = {
+      ...base,
+      nodes: [node('a', { status: 'done' }), node('b', { status: 'done' })],
+      edges: [{ from: 'b', to: 'a' }],
+    };
+    const { edges } = layoutTaskGraph(graph);
     expect(edges[0]?.animated).toBe(false);
+    expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--status-done))', strokeWidth: 2.5 });
+    expect(edges[0]?.style).not.toHaveProperty('strokeDasharray');
+  });
+
+  it('draws a quiet, not-yet-started dependency as a static white edge', () => {
+    const graph: TaskGraph = {
+      ...base,
+      nodes: [node('a', { status: 'todo' }), node('b', { status: 'todo' })],
+      edges: [{ from: 'b', to: 'a' }],
+    };
+    const { edges } = layoutTaskGraph(graph);
+    expect(edges[0]?.animated).toBe(false);
+    expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--foreground))' });
   });
 
   it('drops edges with an endpoint outside the node set (capped graph)', () => {
