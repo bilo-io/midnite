@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 6/40 | `██░░░░░░░░` | 15% | B | C D E F |
+| [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 10/40 | `███░░░░░░░` | 25% | — | C D E F |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 27/34 | `████████░░` | 79% | — | — |
@@ -138,7 +138,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 82 — Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md)
 *The blanket on top of Phase 79's stack: every user-facing string in `web` + `shell` + desktop chrome goes through the i18n gate, en-GB + fr-FR authored together in every PR (fr parity CI-enforced). Out: admin pages, Phaser canvas text, de/es authoring.*
 - ✅ **A** — Gate flip & catalog machinery (ESLint allowlist → generated `I18N_EXEMPT` exception list, default-on; catalogs split to `messages/<locale>/<namespace>.json` + generated barrels; progress meter) — runs first (PR #530)
-- 🔄 **B** — Board & tasks (cards, task detail, dialogs, bulk bar, toasts)
+- ✅ **B** — Board & tasks (cards, task detail, dialogs, bulk bar, toasts; new `task` namespace, exempt 406→384) (PR #533)
 - ◻ **C** — Auth & Settings sweep (register/forgot/invite; every settings subpage; shared error/empty states)
 - ◻ **D** — Feature areas, per-slice (assistant/council, workflows, memory, projects, pr-review, search+palette, dashboard, guide, roadmap/slides/safety, residue → exempt list to zero)
 - ◻ **E** — Chrome, desktop & office DOM (header, update banners, lock screen labels, title-bar residue, office React UI; `ui` default-label propify audit)

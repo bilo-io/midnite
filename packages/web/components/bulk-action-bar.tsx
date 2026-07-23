@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 /** Shared chip colors so every collection's bulk actions read the same. */
@@ -37,6 +38,7 @@ const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}
  * reduced opacity until hovered or focused, when it becomes fully opaque.
  */
 export function BulkActionBar({ count, actions, onClear, className, extra }: Props) {
+  const t = useTranslations('common');
   const open = count > 0;
   return (
     <div
@@ -63,7 +65,7 @@ export function BulkActionBar({ count, actions, onClear, className, extra }: Pro
           onClick={onClear}
           className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
         >
-          <span className="tabular-nums">{count} selected</span>
+          <span className="tabular-nums">{t('selectedCount', { count })}</span>
           <X className="h-3 w-3" />
         </button>
         {actions.map((a) => (

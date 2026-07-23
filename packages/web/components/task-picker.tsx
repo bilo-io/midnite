@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { TaskSummary } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ export function TaskPicker({
   placeholder?: string;
   label?: string;
 }) {
+  const t = useTranslations('task');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,8 +65,8 @@ export function TaskPicker({
         type="text"
         value={query}
         disabled={disabled}
-        aria-label={label ?? 'Search tasks'}
-        placeholder={placeholder ?? 'Search tasks…'}
+        aria-label={label ?? t('picker.searchAria')}
+        placeholder={placeholder ?? t('picker.searchPlaceholder')}
         className={INPUT_CLASS}
         onChange={(e) => {
           setQuery(e.target.value);

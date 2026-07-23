@@ -2,18 +2,17 @@
 
 import Link from 'next/link';
 import { AlertTriangle, Clock, Hourglass, PauseCircle } from 'lucide-react';
-import {
-  FAILURE_CLASS_LABEL,
-  WAIT_REASON_LABEL,
-  type DoctorTaskRef,
-  type TasksDoctorReport,
-} from '@midnite/shared';
+import { useTranslations } from 'next-intl';
+import { FAILURE_CLASSES, type DoctorTaskRef, type TasksDoctorReport } from '@midnite/shared';
+import { useWaitReasonLabel } from '@/lib/i18n-labels';
 
 /** Phase 53 E — the operator's "what's wedged?" panel on the Ops page: derived
  *  needs-attention / stuck / aged / waiting-too-long buckets + failure counts. */
 export function TaskHealthPanel({ report }: { report: TasksDoctorReport | null | undefined }) {
+  const t = useTranslations('task');
   if (!report) return null;
   const failureCounts = Object.entries(report.failureCountsByClass).sort((a, b) => b[1] - a[1]);
+  const knownClasses = new Set<string>(FAILURE_CLASSES);
   const empty =
     report.needsAttention.length === 0 &&
     report.stuckWip.length === 0 &&
@@ -23,21 +22,21 @@ export function TaskHealthPanel({ report }: { report: TasksDoctorReport | null |
   return (
     <section aria-labelledby="task-health-heading" className="rounded-lg border surface-glass p-4">
       <h2 id="task-health-heading" className="mb-3 text-sm font-semibold">
-        Task health
+        {t('health.title')}
       </h2>
       {empty ? (
-        <p className="text-sm text-muted-foreground">Nothing wedged — no failures or stuck tasks.</p>
+        <p className="text-sm text-muted-foreground">{t('health.empty')}</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <Bucket
-            title="Needs attention"
+            title={t('health.needsAttention')}
             Icon={AlertTriangle}
             tone="text-destructive"
             rows={report.needsAttention}
             reason
           />
           <Bucket
-            title="Waiting too long"
+            title={t('health.waitingTooLong')}
             Icon={Hourglass}
             tone="text-amber-600 dark:text-amber-400"
             rows={report.waitingTooLong}
@@ -45,14 +44,14 @@ export function TaskHealthPanel({ report }: { report: TasksDoctorReport | null |
             since
           />
           <Bucket
-            title="Stuck (silent) in progress"
+            title={t('health.stuckWip')}
             Icon={PauseCircle}
             tone="text-amber-600 dark:text-amber-400"
             rows={report.stuckWip}
             since
           />
           <Bucket
-            title="Aged to-do"
+            title={t('health.agedTodo')}
             Icon={Clock}
             tone="text-muted-foreground"
             rows={report.agedTodo}
@@ -63,7 +62,7 @@ export function TaskHealthPanel({ report }: { report: TasksDoctorReport | null |
       {failureCounts.length > 0 ? (
         <div className="mt-4 border-t pt-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Recent failures by class ({report.recentFailures.length})
+            {t('health.recentFailures', { count: report.recentFailures.length })}
           </p>
           <div className="flex flex-wrap gap-2">
             {failureCounts.map(([cls, n]) => (
@@ -71,7 +70,7 @@ export function TaskHealthPanel({ report }: { report: TasksDoctorReport | null |
                 key={cls}
                 className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs font-medium"
               >
-                {FAILURE_CLASS_LABEL[cls as keyof typeof FAILURE_CLASS_LABEL] ?? cls}
+                {knownClasses.has(cls) ? t(`failures.classes.${cls}`) : cls}
                 <span className="text-muted-foreground">{n}</span>
               </span>
             ))}
@@ -97,6 +96,8 @@ function Bucket({
   reason?: boolean;
   since?: boolean;
 }) {
+  const t = useTranslations('task');
+  const waitReasonLabel = useWaitReasonLabel();
   return (
     <div>
       <p className={`mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider ${tone}`}>
@@ -105,7 +106,7 @@ function Bucket({
         <span className="text-muted-foreground">({rows.length})</span>
       </p>
       {rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground">none</p>
+        <p className="text-xs text-muted-foreground">{t('health.none')}</p>
       ) : (
         <ul className="space-y-1">
           {rows.map((r) => (
@@ -115,7 +116,7 @@ function Bucket({
               </Link>
               {reason && r.waitReason ? (
                 <span className="ml-1 text-xs text-muted-foreground">
-                  · {WAIT_REASON_LABEL[r.waitReason]}
+                  · {waitReasonLabel(r.waitReason)}
                 </span>
               ) : null}
               {since ? <span className="ml-1 text-xs text-muted-foreground">· {humanMs(r.sinceMs)}</span> : null}

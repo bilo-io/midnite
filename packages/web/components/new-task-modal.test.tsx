@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { BulkCreateTaskResponse, Repo } from '@midnite/shared';
 
 const createBulk = vi.fn();

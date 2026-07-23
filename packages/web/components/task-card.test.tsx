@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { Task } from '@midnite/shared';
 
 import { TaskCard } from './task-card';

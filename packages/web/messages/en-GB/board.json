@@ -9,5 +9,136 @@
     "waiting": "Waiting",
     "done": "Done",
     "abandoned": "Abandoned"
+  },
+  "kinds": {
+    "bug": "Bugfix",
+    "feature": "Feature",
+    "question": "Question",
+    "chore": "Chore",
+    "unknown": "Task"
+  },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "waitReasons": {
+    "needs-input": "Needs input",
+    "no-pr": "No PR opened",
+    "agent-failed": "Agent failed",
+    "timed-out": "Timed out",
+    "gate-failed": "Gate failed",
+    "retries-exhausted": "Retries exhausted"
+  },
+  "heldReasons": {
+    "over-budget": "over budget",
+    "rate-limited": "rate-limited"
+  },
+  "aiReview": {
+    "approved": "AI: LGTM",
+    "commented": "AI: Reviewed",
+    "changes-requested": "AI: Changes"
+  },
+  "card": {
+    "answered": "Answered",
+    "checksFailing": "Checks failing",
+    "held": "Held: {reason}",
+    "heldTitle": "Held: the scheduler won't start an agent until the cap clears",
+    "needsAttentionTitle": "Needs attention — a failure parked this task; requeue, re-plan, or abandon it",
+    "blocked": "Blocked",
+    "blockedBy": "Blocked by {count, plural, one {# task} other {# tasks}}",
+    "start": "Start",
+    "startTask": "Start task",
+    "stop": "Stop",
+    "stopTask": "Stop task",
+    "reopen": "Reopen",
+    "reopenTask": "Reopen task",
+    "moveTo": "Move to…",
+    "moveToColumn": "Move to column"
+  },
+  "confirm": {
+    "reopenTitle": "Reopen this task?",
+    "reopenDescription": "It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.",
+    "reopenConfirm": "Reopen",
+    "doneAgainTitle": "Mark this task done again?",
+    "doneAgainDescription": "It is already in Done.",
+    "doneAgainConfirm": "Mark done",
+    "abandonTitle": "Abandon this task?",
+    "abandonDescription": "It moves to Abandoned and its session (if any) is archived.",
+    "abandonConfirm": "Abandon",
+    "startBlockedTitle": "Start a blocked task?",
+    "startBlockedDescription": "{count, plural, one {# blocker isn't} other {# blockers aren't}} done yet. The scheduler skips blocked tasks; starting it manually runs it anyway.",
+    "startBlockedConfirm": "Start anyway",
+    "deleteTasksTitle": "Delete {count, plural, one {# task} other {# tasks}}?",
+    "deleteTasksDescription": "This cannot be undone.",
+    "deleteTasksConfirm": "Delete"
+  },
+  "bulk": {
+    "abandon": "Abandon",
+    "restore": "Restore",
+    "delete": "Delete",
+    "moveTo": "Move to"
+  },
+  "toolbar": {
+    "newTask": "New task",
+    "searchPlaceholder": "Search tasks",
+    "graph": "Graph",
+    "allStatuses": "All statuses",
+    "allTags": "All tags",
+    "views": {
+      "list": "List view",
+      "board": "Board view",
+      "table": "Table view"
+    },
+    "boardStyles": {
+      "unified": "All in one",
+      "project": "Per project"
+    }
+  },
+  "sections": {
+    "empty": "Empty",
+    "summary": "{tasks, plural, one {# task} other {# tasks}} · {projects, plural, one {# project} other {# projects}}"
+  },
+  "unassigned": "Unassigned",
+  "newTask": {
+    "title": "New task",
+    "addModeAria": "Add mode",
+    "single": "Single",
+    "bulk": "Bulk paste",
+    "titleLabel": "Title",
+    "titlePlaceholder": "What needs doing?",
+    "descriptionLabel": "Description",
+    "optional": "(optional)",
+    "descriptionPlaceholder": "Add detail, context, or acceptance criteria — included in the agent's prompt.",
+    "tasksLabel": "Tasks",
+    "bulkPlaceholder": "One task per line…\nBlank lines, # comments and - bullets are ignored.",
+    "bulkEmptyHint": "Paste a list to create one task per line.",
+    "bulkDetected": "{count, plural, one {# task} other {# tasks}} detected.",
+    "bulkOverLimit": "{count, plural, one {# task} other {# tasks}} detected — over the {limit}-line limit.",
+    "projectLabel": "Project",
+    "noProject": "No project",
+    "repoLabel": "Repo",
+    "statusLabel": "Status",
+    "priorityLabel": "Priority",
+    "blockedByLabel": "Blocked by",
+    "createFailed": "Failed to create task",
+    "createBulkFailed": "Failed to create tasks",
+    "createdCount": "{count} created",
+    "skippedCount": "{count} skipped",
+    "failedCount": "{count} failed",
+    "createTask": "Create task",
+    "createTasks": "Create tasks",
+    "createN": "Create {count, plural, one {# task} other {# tasks}}",
+    "done": "Done"
+  },
+  "toasts": {
+    "taskCreated": "Task created",
+    "tasksCreated": "{count, plural, one {# task created} other {# tasks created}}",
+    "moveFailed": "Failed to move task",
+    "movesFailed": "Failed to move tasks",
+    "reorderFailed": "Failed to reorder tasks",
+    "reopenFailed": "Failed to reopen task",
+    "deleteFailed": "Failed to delete tasks"
   }
 }

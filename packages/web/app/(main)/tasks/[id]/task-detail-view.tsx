@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { Project, Task, TaskSummary } from '@midnite/shared';
 import { RailShell, RailHeaderToggle } from '@midnite/ui';
-import {
-  KIND_LABEL,
-  STATUS_LABEL,
-  TaskDetail,
-  Timeline,
-  type TaskDetailTab,
-} from '@/components/task-detail';
+import { TaskDetail, Timeline, type TaskDetailTab } from '@/components/task-detail';
 import { PageHeader } from '@/components/page-header';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { ProjectSelect } from '@/components/project-select';
@@ -21,6 +16,7 @@ import { BackLink } from '@/components/back-link';
 import { useToast } from '@/components/toast';
 import { getProjects, getTask, getTasks, updateTaskProject } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
@@ -35,6 +31,8 @@ import { useIsMobile } from '@/hooks/use-media-query';
  * the dependency/blocker UI matches the modal exactly (Decision §6).
  */
 export function TaskDetailView() {
+  const t = useTranslations('task');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
@@ -71,7 +69,7 @@ export function TaskDetailView() {
     };
   }, [task]);
 
-  const back = <BackLink href="/tasks" label="All tasks" className="mb-4" />;
+  const back = <BackLink href="/tasks" label={t('allTasks')} className="mb-4" />;
 
   if (!id || error || (!loading && !task)) {
     return (
@@ -86,7 +84,7 @@ export function TaskDetailView() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -125,6 +123,9 @@ function TaskDetailPage({
   onTabChange: (tab: TaskDetailTab) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('task');
+  const kindLabel = useKindLabel();
+  const statusLabel = useStatusLabel();
   const router = useRouter();
   const toast = useToast();
   const isMobile = useIsMobile();
@@ -152,7 +153,7 @@ function TaskDetailPage({
       invalidateData();
     } catch (e) {
       setProjectId(prev); // roll back
-      toast.error(e instanceof Error ? e.message : 'Failed to change project');
+      toast.error(e instanceof Error ? e.message : t('project.changeFailed'));
     } finally {
       setProjectBusy(false);
     }
@@ -168,9 +169,9 @@ function TaskDetailPage({
         icon="ListChecks"
         description={
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span>{KIND_LABEL[kind]}</span>
+            <span>{kindLabel(kind)}</span>
             <span aria-hidden>·</span>
-            <span>{STATUS_LABEL[task.status]}</span>
+            <span>{statusLabel(task.status)}</span>
             {task.repo ? (
               <>
                 <span aria-hidden>·</span>
@@ -186,7 +187,7 @@ function TaskDetailPage({
             tucks behind the desktop title bar — same pattern as the session page. */}
         <StickyToolbar className="reveal-controls">
           <div className="flex items-center gap-2">
-            <BackLink href="/tasks" label="All tasks" />
+            <BackLink href="/tasks" label={t('allTasks')} />
           </div>
           <div className="flex items-center gap-2">
             {projects.length > 0 ? (
@@ -211,13 +212,13 @@ function TaskDetailPage({
         <RailShell
           isMobile={isMobile}
           left={{
-            title: 'Agent runs',
+            title: t('runs.title'),
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: <RunTimeline taskId={task.id} />,
           }}
           right={{
-            title: 'Activity',
+            title: t('activity.title'),
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <Timeline events={task.events} />,

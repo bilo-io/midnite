@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { TaskRow } from '@/components/task-row';
@@ -21,6 +22,7 @@ export function TableView({
   onToggleSelect,
   blockedCounts,
 }: TaskViewProps) {
+  const t = useTranslations('board');
   const grouped = groupByStatus(tasks);
 
   const sections: AccordionSection[] = columns.map((col) => {
@@ -28,18 +30,16 @@ export function TableView({
     const projects = distinctProjectCount(items);
     return {
       id: col.status,
-      label: col.label,
+      label: t(`columns.${col.status}`),
       hue: `var(${col.hueVar})`,
       count: items.length,
       summary:
         items.length === 0
-          ? 'Empty'
-          : `${items.length} task${items.length === 1 ? '' : 's'} · ${projects} project${
-              projects === 1 ? '' : 's'
-            }`,
+          ? t('sections.empty')
+          : t('sections.summary', { tasks: items.length, projects }),
       body:
         items.length === 0 ? (
-          <div className="px-4 py-3 text-xs text-muted-foreground">Nothing here</div>
+          <div className="px-4 py-3 text-xs text-muted-foreground">{t('nothingHere')}</div>
         ) : (
           items.map((t) => (
             <TaskRow

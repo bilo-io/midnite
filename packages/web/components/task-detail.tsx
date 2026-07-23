@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowUpRight, Check, ExternalLink, GitCompare, Plus, RefreshCw, X } from 'lucide-react';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ChecksPanel } from '@/components/checks-panel';
@@ -45,6 +46,7 @@ import {
   updateTaskProject,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { dependentsOf } from '@/lib/task-dependencies';
 import { useTaskPaletteCommands } from '@/hooks/use-task-palette-commands';
 
@@ -55,23 +57,6 @@ const STATUS_HUE_VAR: Record<Status, string> = {
   waiting: '--status-waiting',
   done: '--status-done',
   abandoned: '--status-abandoned',
-};
-
-export const STATUS_LABEL: Record<Status, string> = {
-  backlog: 'Backlog',
-  todo: 'Todo',
-  wip: 'In progress',
-  waiting: 'Waiting',
-  done: 'Done',
-  abandoned: 'Abandoned',
-};
-
-export const KIND_LABEL: Record<NonNullable<Task['kind']>, string> = {
-  bug: 'Bugfix',
-  feature: 'Feature',
-  question: 'Question',
-  chore: 'Chore',
-  unknown: 'Task',
 };
 
 const KIND_HUE_VAR: Record<NonNullable<Task['kind']>, string> = {
@@ -205,6 +190,11 @@ export function TaskDetail({
           : 'details';
   const selectTab = (next: TaskDetailTab) => onTabChange?.(next);
 
+  const t = useTranslations('task');
+  const tBoard = useTranslations('board');
+  const tCommon = useTranslations('common');
+  const kindLabel = useKindLabel();
+  const statusLabel = useStatusLabel();
   const kind = task.kind ?? 'unknown';
   const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
@@ -266,7 +256,7 @@ export function TaskDetail({
       invalidateData();
     } catch (e) {
       // Surfaces the gateway's self-reference / cycle / unknown-task message.
-      setDepError(e instanceof Error ? e.message : 'Failed to add dependency');
+      setDepError(e instanceof Error ? e.message : t('dependencies.addFailed'));
     } finally {
       setDepBusy(false);
     }
@@ -280,7 +270,7 @@ export function TaskDetail({
       setDependsOn(updated.dependsOn ?? []);
       invalidateData();
     } catch (e) {
-      setDepError(e instanceof Error ? e.message : 'Failed to remove dependency');
+      setDepError(e instanceof Error ? e.message : t('dependencies.removeFailed'));
     } finally {
       setDepBusy(false);
     }
@@ -320,7 +310,7 @@ export function TaskDetail({
       invalidateData();
     } catch (e) {
       setProjectId(prev); // roll back
-      setStatusError(e instanceof Error ? e.message : 'Failed to change project');
+      setStatusError(e instanceof Error ? e.message : t('project.changeFailed'));
     } finally {
       setProjectBusy(false);
     }
@@ -351,7 +341,7 @@ export function TaskDetail({
     try {
       new URL(url);
     } catch {
-      setLinkError('Enter a full URL, including https://');
+      setLinkError(t('links.urlError'));
       return;
     }
     setBusy(true);
@@ -362,7 +352,7 @@ export function TaskDetail({
       setLinkUrl('');
       invalidateData();
     } catch (e) {
-      setLinkError(e instanceof Error ? e.message : 'Failed to add link');
+      setLinkError(e instanceof Error ? e.message : t('links.addFailed'));
     } finally {
       setBusy(false);
     }
@@ -370,9 +360,9 @@ export function TaskDetail({
 
   const removeLink = async (linkId: string) => {
     const ok = await confirm({
-      title: 'Remove this link?',
-      description: 'It will be detached from this task.',
-      confirmLabel: 'Remove',
+      title: t('links.removeTitle'),
+      description: t('links.removeDescription'),
+      confirmLabel: t('links.removeConfirm'),
     });
     if (!ok) return;
     setBusy(true);
@@ -382,7 +372,7 @@ export function TaskDetail({
       setLinks(updated.links ?? []);
       invalidateData();
     } catch (e) {
-      setLinkError(e instanceof Error ? e.message : 'Failed to remove link');
+      setLinkError(e instanceof Error ? e.message : t('links.removeFailed'));
     } finally {
       setBusy(false);
     }
@@ -410,13 +400,13 @@ export function TaskDetail({
                 color: `hsl(var(${KIND_HUE_VAR[kind]}))`,
               }}
             >
-              {KIND_LABEL[kind]}
+              {kindLabel(kind)}
             </span>
-            <span className="shrink-0">{STATUS_LABEL[task.status]}</span>
+            <span className="shrink-0">{statusLabel(task.status)}</span>
             {isAnsweredQuestion(task) ? (
               <span className="inline-flex shrink-0 items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">
                 <Check aria-hidden className="h-3 w-3" />
-                Answered
+                {tBoard('card.answered')}
               </span>
             ) : null}
             {task.repo ? (
@@ -451,7 +441,7 @@ export function TaskDetail({
             </>
           ) : null}
           {variant === 'modal' ? (
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           ) : null}
@@ -460,23 +450,23 @@ export function TaskDetail({
       )}
 
       {showTabs ? (
-        <div className="flex items-center gap-1 border-b border-border/60 px-5" role="tablist" aria-label="Task detail sections">
+        <div className="flex items-center gap-1 border-b border-border/60 px-5" role="tablist" aria-label={t('tabs.sectionsAria')}>
           <TabButton active={activeTab === 'details'} onClick={() => selectTab('details')}>
-            Details
+            {t('tabs.details')}
           </TabButton>
           {showSessionTab && (
             <TabButton active={activeTab === 'session'} onClick={() => selectTab('session')}>
-              Session
+              {t('tabs.session')}
             </TabButton>
           )}
           {showReviewTab && (
             <TabButton active={activeTab === 'review'} onClick={() => selectTab('review')}>
-              Review
+              {t('tabs.review')}
             </TabButton>
           )}
           {showRetroTab && (
             <TabButton active={activeTab === 'retro'} onClick={() => selectTab('retro')}>
-              Retro
+              {t('tabs.retro')}
             </TabButton>
           )}
           {inModal ? (
@@ -498,7 +488,7 @@ export function TaskDetail({
               {!disableNavigation ? (
                 <HoverExpandButton
                   icon={<ArrowUpRight className="h-3.5 w-3.5" />}
-                  label="Open page"
+                  label={t('openPage')}
                   variant="secondary"
                   onClick={openPage}
                 />
@@ -537,14 +527,14 @@ export function TaskDetail({
         {task.status === 'waiting' && task.waitReason === 'needs-input' && task.sessionId ? (
           <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-primary">
-              Agent is waiting on you
+              {t('waiting.banner')}
             </h3>
             <ReplyBox sessionId={task.sessionId} />
           </section>
         ) : null}
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Tags
+            {t('tags.title')}
           </h3>
           <div className="flex flex-wrap items-center gap-1.5">
             {tags.map((tag) => (
@@ -556,7 +546,7 @@ export function TaskDetail({
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
-                  aria-label={`Remove tag ${tag}`}
+                  aria-label={t('tags.remove', { tag })}
                   className="text-muted-foreground hover:text-destructive"
                 >
                   <X className="h-3 w-3" />
@@ -573,24 +563,24 @@ export function TaskDetail({
                 }
               }}
               onBlur={addTag}
-              placeholder="Add tag…"
+              placeholder={t('tags.addPlaceholder')}
               className="min-w-[5rem] flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-              aria-label="Add a tag"
+              aria-label={t('tags.addAria')}
             />
           </div>
         </section>
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Milestone
+            {t('milestone.title')}
           </h3>
           <TaskMilestonePicker taskId={task.id} projectId={projectId} currentMilestoneId={task.milestoneId} />
         </section>
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Dependencies
+            {t('dependencies.title')}
           </h3>
           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Blocked by
+            {t('dependencies.blockedBy')}
           </p>
           {dependsOn.length > 0 ? (
             <ul className="mb-2 space-y-1.5">
@@ -613,20 +603,20 @@ export function TaskDetail({
                       }}
                     />
                     <span className="min-w-0 flex-1 truncate text-sm">
-                      {blocker ? blocker.title : '(unknown)'}
+                      {blocker ? blocker.title : t('dependencies.unknown')}
                     </span>
                     <span
                       className={`shrink-0 text-[10px] font-medium uppercase tracking-wider ${
                         done ? 'text-success' : 'text-muted-foreground'
                       }`}
                     >
-                      {done ? 'done' : 'pending'}
+                      {done ? t('dependencies.done') : t('dependencies.pending')}
                     </span>
                     <button
                       type="button"
                       onClick={() => void removeBlocker(id)}
                       disabled={depBusy}
-                      aria-label={`Remove blocker ${blocker ? blocker.title : id}`}
+                      aria-label={t('dependencies.removeBlocker', { title: blocker ? blocker.title : id })}
                       className="shrink-0 text-muted-foreground hover:text-destructive disabled:opacity-50"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -636,20 +626,20 @@ export function TaskDetail({
               })}
             </ul>
           ) : (
-            <p className="mb-2 text-sm text-muted-foreground">No blockers.</p>
+            <p className="mb-2 text-sm text-muted-foreground">{t('dependencies.none')}</p>
           )}
           <TaskPicker
             candidates={blockerCandidates}
-            onPick={(t) => void addBlocker(t.id)}
+            onPick={(picked) => void addBlocker(picked.id)}
             disabled={depBusy}
-            label="Search tasks to block on"
-            placeholder="Add a blocking task…"
+            label={t('dependencies.searchLabel')}
+            placeholder={t('dependencies.searchPlaceholder')}
           />
           {depError ? <p className="mt-1.5 text-xs text-destructive">{depError}</p> : null}
           {dependents.length > 0 ? (
             <div className="mt-3">
               <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                Blocks
+                {t('dependencies.blocks')}
               </p>
               <ul className="space-y-1.5">
                 {dependents.map((d) => (
@@ -664,7 +654,7 @@ export function TaskDetail({
                     />
                     <span className="min-w-0 flex-1 truncate text-sm">{d.title}</span>
                     <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      {STATUS_LABEL[d.status]}
+                      {statusLabel(d.status)}
                     </span>
                   </li>
                 ))}
@@ -674,7 +664,7 @@ export function TaskDetail({
         </section>
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Review &amp; links
+            {t('links.title')}
           </h3>
           {links.length > 0 ? (
             <ul className="mb-2 space-y-1.5">
@@ -697,7 +687,7 @@ export function TaskDetail({
                     type="button"
                     onClick={() => void removeLink(link.id)}
                     disabled={busy}
-                    aria-label="Remove link"
+                    aria-label={t('links.remove')}
                     className="text-muted-foreground hover:text-destructive"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -706,7 +696,7 @@ export function TaskDetail({
               ))}
             </ul>
           ) : (
-            <p className="mb-2 text-sm text-muted-foreground">No links yet.</p>
+            <p className="mb-2 text-sm text-muted-foreground">{t('links.none')}</p>
           )}
           <div className="flex items-center gap-2">
             <input
@@ -718,7 +708,7 @@ export function TaskDetail({
                   void addLink();
                 }
               }}
-              placeholder="Paste a GitHub PR, Figma, Google Docs, or Notion link"
+              placeholder={t('links.placeholder')}
               className="flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
             <Button
@@ -728,7 +718,7 @@ export function TaskDetail({
               className="h-8 w-8"
               onClick={() => void addLink()}
               disabled={busy || !linkUrl.trim()}
-              aria-label="Add link"
+              aria-label={t('links.add')}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -739,7 +729,7 @@ export function TaskDetail({
         {task.prompt ? (
           <section>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Prompt
+              {t('prompt.title')}
             </h3>
             <p className="whitespace-pre-wrap break-words rounded-lg bg-muted/50 px-3 py-2 text-sm">
               {task.prompt}
@@ -750,7 +740,7 @@ export function TaskDetail({
         {images.length > 0 ? (
           <section>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Attachments
+              {t('attachments.title')}
             </h3>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {images.map((a) => (
@@ -769,13 +759,13 @@ export function TaskDetail({
           <section>
             <div className="mb-1.5 flex items-center justify-between">
               <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Pull request
+                {t('pr.title')}
               </h3>
               <button
                 type="button"
                 onClick={() => void refreshPr()}
                 disabled={prRefreshing}
-                aria-label="Refresh PR status"
+                aria-label={t('pr.refresh')}
                 className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${prRefreshing ? 'animate-spin' : ''}`} />
@@ -785,7 +775,7 @@ export function TaskDetail({
               {prStatus ? (
                 <PrStatusChip status={prStatus} />
               ) : (
-                <span className="text-xs text-muted-foreground">Status unknown</span>
+                <span className="text-xs text-muted-foreground">{t('pr.statusUnknown')}</span>
               )}
               {prStatus?.reviewDecision ? (
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
@@ -800,7 +790,7 @@ export function TaskDetail({
                   onClick={() => selectTab('review')}
                   className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
                 >
-                  <GitCompare className="h-3 w-3" /> Review
+                  <GitCompare className="h-3 w-3" /> {t('pr.review')}
                 </button>
               ) : (
                 // In the board modal, open the full-screen diff, plus a deep-link
@@ -811,7 +801,7 @@ export function TaskDetail({
                     onClick={() => setShowDiff(true)}
                     className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
                   >
-                    <GitCompare className="h-3 w-3" /> View diff
+                    <GitCompare className="h-3 w-3" /> {t('pr.viewDiff')}
                   </button>
                   <button
                     type="button"
@@ -820,7 +810,7 @@ export function TaskDetail({
                     }
                     className="flex items-center gap-1 text-xs text-primary hover:underline"
                   >
-                    Review page <ExternalLink className="h-3 w-3" />
+                    {t('pr.reviewPage')} <ExternalLink className="h-3 w-3" />
                   </button>
                 </>
               )}
@@ -830,7 +820,7 @@ export function TaskDetail({
                 rel="noreferrer"
                 className="flex items-center gap-1 text-xs text-primary hover:underline"
               >
-                Open PR <ExternalLink className="h-3 w-3" />
+                {t('pr.open')} <ExternalLink className="h-3 w-3" />
               </a>
             </div>
             {showDiff ? (
@@ -842,7 +832,7 @@ export function TaskDetail({
         {task.aiReview ? (
           <section>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              AI Review
+              {t('aiReview.title')}
             </h3>
             <div className="rounded-lg border border-border/60 px-3 py-2 space-y-2">
               <div className="flex items-center gap-2">
@@ -857,10 +847,10 @@ export function TaskDetail({
                   ].join(' ')}
                 >
                   {task.aiReview.verdict === 'approved'
-                    ? 'LGTM'
+                    ? t('aiReview.lgtm')
                     : task.aiReview.verdict === 'changes-requested'
-                    ? 'Changes requested'
-                    : 'Reviewed'}
+                    ? t('aiReview.changesRequested')
+                    : t('aiReview.reviewed')}
                 </span>
                 <span className="ml-auto text-[11px] text-muted-foreground">
                   {new Date(task.aiReview.reviewedAt).toLocaleString()}
@@ -893,7 +883,7 @@ export function TaskDetail({
                 <span className="transition-transform group-open:rotate-90" aria-hidden>
                   ›
                 </span>
-                Agent runs
+                {t('runs.title')}
               </summary>
               <div className="mt-2">
                 <RunTimeline taskId={task.id} />
@@ -912,7 +902,7 @@ export function TaskDetail({
                 <span className="transition-transform group-open:rotate-90" aria-hidden>
                   ›
                 </span>
-                Activity
+                {t('activity.title')}
               </summary>
               <div className="mt-2">
                 <Timeline events={task.events} />
@@ -926,24 +916,25 @@ export function TaskDetail({
   );
 }
 
-// Friendly labels for the lifecycle event kinds (docs/LIFECYCLE.md). Anything not
-// listed falls back to the raw kind. Phase 69 D adds `agent.resumed` — a waiting
-// agent picked back up by a reply or an approval.
-const EVENT_KIND_LABEL: Record<string, string> = {
-  'agent.started': 'Agent started',
-  'agent.waiting': 'Agent waiting on input',
-  'agent.resumed': 'Resumed by reply / approval',
-  'agent.escalated': 'Escalated — needs attention',
-  'agent.requeued': 'Requeued',
-  'agent.retried': 'Retried',
-  'agent.done': 'Agent finished',
-  'task.reopened': 'Reopened',
-  'task.replanned': 'Re-planned',
+// Catalog keys for the lifecycle event kinds (docs/LIFECYCLE.md → `task.events.*`).
+// Anything not listed falls back to the raw kind. Phase 69 D adds `agent.resumed`
+// — a waiting agent picked back up by a reply or an approval.
+const EVENT_KIND_KEY: Record<string, string> = {
+  'agent.started': 'agentStarted',
+  'agent.waiting': 'agentWaiting',
+  'agent.resumed': 'agentResumed',
+  'agent.escalated': 'agentEscalated',
+  'agent.requeued': 'agentRequeued',
+  'agent.retried': 'agentRetried',
+  'agent.done': 'agentDone',
+  'task.reopened': 'taskReopened',
+  'task.replanned': 'taskReplanned',
 };
 
 export function Timeline({ events }: { events: TaskEvent[] }) {
+  const t = useTranslations('task');
   if (events.length === 0) {
-    return <p className="text-sm text-muted-foreground">No activity recorded yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t('activity.none')}</p>;
   }
   return (
     <ol className="space-y-3">
@@ -957,7 +948,11 @@ export function Timeline({ events }: { events: TaskEvent[] }) {
           </div>
           <div className="min-w-0 flex-1 pb-1">
             <p className="text-sm font-medium leading-snug">
-              {ev.kind === ANSWER_EVENT_KIND ? 'Answer' : (EVENT_KIND_LABEL[ev.kind] ?? ev.kind)}
+              {ev.kind === ANSWER_EVENT_KIND
+                ? t('activity.answer')
+                : EVENT_KIND_KEY[ev.kind]
+                  ? t(`events.${EVENT_KIND_KEY[ev.kind]}`)
+                  : ev.kind}
             </p>
             <p className="text-[11px] text-muted-foreground">{formatTime(ev.at)}</p>
             {ev.kind === ANSWER_EVENT_KIND && typeof ev.data?.text === 'string' ? (

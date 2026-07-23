@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-23 — feat: Phase 82 Theme B — board & tasks i18n sweep (en-GB + fr-FR) 🟢
+
+PR #533. The core product surface reads from the catalogs: board, task detail, dialogs, bulk flows — 22 files leave the exemption list (406 → 384).
+
+- [x] **Task cards** — kind/priority/wait/held/AI-review chips, blocked-by ICU plural, card actions → `board`; `lib/i18n-labels.ts` centralises the status/kind/wait/held enum lookups (web-side counterpart of the shared English maps).
+- [x] **Task detail** — new `task` namespace (116 keys): tabs, sections, lifecycle actions + confirms (shared with the session cockpit via `task-actions`), failure history, task health, PR chip composition, pickers, timeline event kinds (catalog keys with raw-kind fallback).
+- [x] **Dialogs & bulk** — new-task modal (single + bulk modes, ICU counts), bulk bar + Move-to menu, all board confirms + toasts; delete-confirm defaults + accordion handle → `common`.
+- [x] **fr-FR same-PR** — 224 keys authored + flagged `needsReview`; validator green (302 en-GB keys / 6 namespaces, fr complete at parity).
+- [x] **Tests + shots** — `vitest.render-intl.tsx` (LocaleProvider-wrapped RTL render; 13 suites swapped), `board-task-i18n-fr.test.tsx` (one fr render per group), `board-i18n-fr.shots.ts` (fr board + dialog PNGs).
+- [x] Gate: `:typecheck` + `:lint` + `:test` green (one pre-existing gateway bcrypt-timeout flake re-ran green; no gateway code touched).
+
+---
+
 ## 2026-07-23 — feat: Phase 82 Theme A — i18n gate flip & catalog machinery 🟢
 
 PR #530. Inverts the enforcement model and splits the catalogs so the blanket sweep (B–E) can run wide and in parallel. Runs first.

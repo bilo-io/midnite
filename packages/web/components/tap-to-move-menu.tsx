@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeftRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { Status } from '@midnite/shared';
 import type { ColumnDef } from '@/components/task-columns';
@@ -25,6 +26,7 @@ export function TapToMoveMenu({
   onMove: (target: Status) => void;
   className?: string;
 }) {
+  const t = useTranslations('board');
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -60,9 +62,9 @@ export function TapToMoveMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        aria-label="Move to column"
+        aria-label={t('card.moveToColumn')}
         aria-expanded={open}
-        title="Move to…"
+        title={t('card.moveTo')}
         className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border/60 bg-background/90 text-muted-foreground shadow-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
         <ArrowLeftRight className="h-4 w-4" />
@@ -87,7 +89,7 @@ export function TapToMoveMenu({
                     className="h-2 w-2 shrink-0 rounded-full"
                     style={{ background: `hsl(var(${col.hueVar}))` }}
                   />
-                  <span>{col.label}</span>
+                  <span>{t(`columns.${col.status}`)}</span>
                 </button>
               </li>
             ))}

@@ -13,5 +13,10 @@
   "delete": "Supprimer",
   "remove": "Retirer",
   "back": "Retour",
-  "none": "Aucun"
+  "none": "Aucun",
+  "selectedCount": "{count, plural, one {# sélectionné} other {# sélectionnés}}",
+  "item": "élément",
+  "deleteNounTitle": "Supprimer cet élément ({noun}) ?",
+  "deletePermanent": "Cette action est définitive et irréversible.",
+  "reorderSection": "Réorganiser la section"
 }

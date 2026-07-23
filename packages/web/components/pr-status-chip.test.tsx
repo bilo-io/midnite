@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { describe, expect, it } from 'vitest';
 import type { PrStatus } from '@midnite/shared';
 import { PrStatusChip } from './pr-status-chip';

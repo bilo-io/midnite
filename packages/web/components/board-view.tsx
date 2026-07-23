@@ -218,15 +218,15 @@ function UnifiedBoard({
     async (id: string) => {
       if (!onReopen) return;
       const ok = await confirm({
-        title: 'Reopen this task?',
-        description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
-        confirmLabel: 'Reopen',
+        title: t('confirm.reopenTitle'),
+        description: t('confirm.reopenDescription'),
+        confirmLabel: t('confirm.reopenConfirm'),
         destructive: false,
       });
       if (!ok) return;
       await onReopen(id);
     },
-    [confirm, onReopen],
+    [confirm, onReopen, t],
   );
 
   // The visible grid, in render order, rebuilt each render from the same grouping
@@ -235,8 +235,8 @@ function UnifiedBoard({
 
   // Keep a ref to the latest grid + handlers so the keydown effect can stay
   // subscribed once without re-binding on every task/grouping change.
-  const navRef = useRef({ grid, focusedId, tasks, onSelect, onMove, confirm });
-  navRef.current = { grid, focusedId, tasks, onSelect, onMove, confirm };
+  const navRef = useRef({ grid, focusedId, tasks, onSelect, onMove, confirm, t });
+  navRef.current = { grid, focusedId, tasks, onSelect, onMove, confirm, t };
 
   useEffect(() => {
     const onKey = async (e: KeyboardEvent) => {
@@ -245,7 +245,7 @@ function UnifiedBoard({
       if (visibleModalOpen()) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      const { grid, focusedId, tasks, onSelect, onMove, confirm } = navRef.current;
+      const { grid, focusedId, tasks, onSelect, onMove, confirm, t } = navRef.current;
 
       const dir = arrowDir(e.key);
       if (dir) {
@@ -273,9 +273,9 @@ function UnifiedBoard({
           // guards the odd no-op the phase doc calls out.
           if (task.status === 'done') {
             const ok = await confirm({
-              title: 'Mark this task done again?',
-              description: 'It is already in Done.',
-              confirmLabel: 'Mark done',
+              title: t('confirm.doneAgainTitle'),
+              description: t('confirm.doneAgainDescription'),
+              confirmLabel: t('confirm.doneAgainConfirm'),
               destructive: false,
             });
             if (!ok) return;
@@ -287,9 +287,9 @@ function UnifiedBoard({
         case 'A': {
           e.preventDefault();
           const ok = await confirm({
-            title: 'Abandon this task?',
-            description: 'It moves to Abandoned and its session (if any) is archived.',
-            confirmLabel: 'Abandon',
+            title: t('confirm.abandonTitle'),
+            description: t('confirm.abandonDescription'),
+            confirmLabel: t('confirm.abandonConfirm'),
           });
           if (ok) onMove?.(task.id, 'abandoned');
           break;
@@ -330,7 +330,7 @@ function UnifiedBoard({
                 className="h-1.5 w-1.5 rounded-full"
                 style={{ background: `hsl(var(${col.hueVar}))` }}
               />
-              {col.label}
+              {t(`columns.${col.status}`)}
               <span className="rounded-full bg-muted/70 px-1.5 py-px tabular-nums">{count}</span>
             </button>
           );
@@ -454,7 +454,11 @@ type ProjectGroup = {
 
 /** Partition tasks into per-project groups (in the project list's order), with an
  *  "Unassigned" group last. Only groups that actually hold tasks are returned. */
-function groupTasksByProject(tasks: TaskSummary[], projects: Project[]): ProjectGroup[] {
+function groupTasksByProject(
+  tasks: TaskSummary[],
+  projects: Project[],
+  unassignedLabel: string,
+): ProjectGroup[] {
   const byId = new Map<string, TaskSummary[]>();
   const unassigned: TaskSummary[] = [];
   for (const t of tasks) {
@@ -473,7 +477,7 @@ function groupTasksByProject(tasks: TaskSummary[], projects: Project[]): Project
       groups.push({ key: p.id, projectId: p.id, name: p.name, tag: p.tag, color: p.color, tasks: list });
   }
   if (unassigned.length > 0) {
-    groups.push({ key: '__unassigned__', name: 'Unassigned', color: '#94a3b8', tasks: unassigned });
+    groups.push({ key: '__unassigned__', name: unassignedLabel, color: '#94a3b8', tasks: unassigned });
   }
   return groups;
 }
@@ -510,22 +514,25 @@ function ProjectBoardsView({
   const t = useTranslations('board');
   const confirm = useConfirm();
   const isMobile = useIsMobile();
-  const groups = useMemo(() => groupTasksByProject(tasks, projects), [tasks, projects]);
+  const groups = useMemo(
+    () => groupTasksByProject(tasks, projects, t('unassigned')),
+    [tasks, projects, t],
+  );
   const abandoned = useMemo(() => tasks.filter((x) => x.status === 'abandoned'), [tasks]);
 
   const handleReopen = useCallback(
     async (id: string) => {
       if (!onReopen) return;
       const ok = await confirm({
-        title: 'Reopen this task?',
-        description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
-        confirmLabel: 'Reopen',
+        title: t('confirm.reopenTitle'),
+        description: t('confirm.reopenDescription'),
+        confirmLabel: t('confirm.reopenConfirm'),
         destructive: false,
       });
       if (!ok) return;
       await onReopen(id);
     },
-    [confirm, onReopen],
+    [confirm, onReopen, t],
   );
 
   const sections: AccordionSection[] = groups.map((g) => ({
@@ -812,6 +819,7 @@ function DraggableCard({
   moveColumns?: ColumnDef[];
   onMoveTo?: (target: Status) => void;
 }) {
+  const t = useTranslations('board');
   // useSortable = draggable + a drop target + within-list ordering, so cards can be
   // dragged across columns (status move) AND reordered vertically within one.
   // Only `listeners` (pointer handlers) are spread — NOT `attributes`. dnd-kit's
@@ -883,8 +891,8 @@ function DraggableCard({
       ) : canStart && onStart ? (
         <CardActionButton
           onClick={onStart}
-          label="Start task"
-          title="Start"
+          label={t('card.startTask')}
+          title={t('card.start')}
           className="text-muted-foreground hover:text-foreground"
         >
           <Play className="h-3 w-3" />
@@ -892,8 +900,8 @@ function DraggableCard({
       ) : canStop && onStop ? (
         <CardActionButton
           onClick={onStop}
-          label="Stop task"
-          title="Stop"
+          label={t('card.stopTask')}
+          title={t('card.stop')}
           className="text-muted-foreground hover:border-destructive/50 hover:text-destructive"
         >
           <Square className="h-3 w-3 fill-current" />
@@ -901,8 +909,8 @@ function DraggableCard({
       ) : canReopen && onReopen ? (
         <CardActionButton
           onClick={onReopen}
-          label="Reopen task"
-          title="Reopen"
+          label={t('card.reopenTask')}
+          title={t('card.reopen')}
           className="text-muted-foreground hover:text-foreground"
         >
           <RotateCcw className="h-3 w-3" />

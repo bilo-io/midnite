@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Ban, Play, RotateCcw, SquareTerminal, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Task, TaskSummary } from '@midnite/shared';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ExportMenu } from '@/components/export-menu';
@@ -39,6 +40,8 @@ export function useTaskActions({
   tasksById?: Map<string, TaskSummary>;
   onActionComplete?: () => void;
 }): TaskActionsController {
+  const t = useTranslations('task');
+  const tBoard = useTranslations('board');
   const confirm = useConfirm();
   const [statusBusy, setStatusBusy] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -50,9 +53,9 @@ export function useTaskActions({
     const unmet = tasksById && tasksById.size > 0 ? unmetBlockerCount(task, tasksById) : 0;
     if (unmet > 0) {
       const ok = await confirm({
-        title: 'Start a blocked task?',
-        description: `${unmet} blocker${unmet === 1 ? " isn't" : "s aren't"} done yet. The scheduler skips blocked tasks; starting it manually runs it anyway.`,
-        confirmLabel: 'Start anyway',
+        title: tBoard('confirm.startBlockedTitle'),
+        description: tBoard('confirm.startBlockedDescription', { count: unmet }),
+        confirmLabel: tBoard('confirm.startBlockedConfirm'),
       });
       if (!ok) return;
     }
@@ -63,7 +66,7 @@ export function useTaskActions({
       invalidateData();
       onActionComplete?.();
     } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to start task');
+      setStatusError(e instanceof Error ? e.message : t('actions.startFailed'));
     } finally {
       setStatusBusy(false);
     }
@@ -71,9 +74,9 @@ export function useTaskActions({
 
   const abandon = async () => {
     const ok = await confirm({
-      title: 'Abandon this task?',
-      description: 'It will be archived and its session stopped. You can permanently delete it afterwards.',
-      confirmLabel: 'Abandon',
+      title: t('actions.abandonTitle'),
+      description: t('actions.abandonDescription'),
+      confirmLabel: t('actions.abandonConfirm'),
     });
     if (!ok) return;
     setStatusBusy(true);
@@ -83,7 +86,7 @@ export function useTaskActions({
       invalidateData();
       onActionComplete?.();
     } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to abandon task');
+      setStatusError(e instanceof Error ? e.message : t('actions.abandonFailed'));
     } finally {
       setStatusBusy(false);
     }
@@ -93,9 +96,9 @@ export function useTaskActions({
   // session binding + retry state and re-blocks dependents; PR history is kept.
   const reopen = async () => {
     const ok = await confirm({
-      title: 'Reopen this task?',
-      description: 'It returns to To do, clears its agent session, and re-blocks any tasks that depend on it.',
-      confirmLabel: 'Reopen',
+      title: tBoard('confirm.reopenTitle'),
+      description: tBoard('confirm.reopenDescription'),
+      confirmLabel: tBoard('confirm.reopenConfirm'),
     });
     if (!ok) return;
     setStatusBusy(true);
@@ -105,7 +108,7 @@ export function useTaskActions({
       invalidateData();
       onActionComplete?.();
     } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to reopen task');
+      setStatusError(e instanceof Error ? e.message : t('actions.reopenFailed'));
     } finally {
       setStatusBusy(false);
     }
@@ -120,7 +123,7 @@ export function useTaskActions({
       invalidateData();
       onActionComplete?.();
     } catch (e) {
-      setStatusError(e instanceof Error ? e.message : 'Failed to delete task');
+      setStatusError(e instanceof Error ? e.message : t('actions.deleteFailed'));
       setStatusBusy(false);
     }
   };
@@ -159,6 +162,7 @@ export function TaskActionButtons({
   onOpenSession?: () => void;
   className?: string;
 }) {
+  const t = useTranslations('task');
   const confirm = useConfirm();
   const { start, abandon, reopen, remove, statusBusy } = actions;
   const canStart = task.status === 'todo' || task.status === 'backlog';
@@ -166,9 +170,9 @@ export function TaskActionButtons({
 
   const confirmRemove = async () => {
     const ok = await confirm({
-      title: 'Delete this task?',
-      description: 'This is permanent and can’t be undone.',
-      confirmLabel: 'Delete',
+      title: t('actions.deleteTitle'),
+      description: t('actions.deleteDescription'),
+      confirmLabel: t('actions.deleteConfirm'),
     });
     if (ok) void remove();
   };
@@ -178,7 +182,7 @@ export function TaskActionButtons({
       {canStart ? (
         <HoverExpandButton
           icon={<Play className="h-3.5 w-3.5" />}
-          label="Start"
+          label={t('actions.start')}
           variant="secondary"
           onClick={() => void start()}
           disabled={statusBusy}
@@ -187,7 +191,7 @@ export function TaskActionButtons({
       {canReopen ? (
         <HoverExpandButton
           icon={<RotateCcw className="h-3.5 w-3.5" />}
-          label="Reopen"
+          label={t('actions.reopen')}
           variant="secondary"
           onClick={() => void reopen()}
           disabled={statusBusy}
@@ -196,7 +200,7 @@ export function TaskActionButtons({
       {showSession && onOpenSession ? (
         <HoverExpandButton
           icon={<SquareTerminal className="h-3.5 w-3.5" />}
-          label="Session"
+          label={t('actions.session')}
           variant="secondary"
           onClick={onOpenSession}
         />
@@ -205,7 +209,7 @@ export function TaskActionButtons({
       {task.status !== 'abandoned' ? (
         <HoverExpandButton
           icon={<Ban className="h-4 w-4" />}
-          label="Abandon"
+          label={t('actions.abandon')}
           variant="ghost"
           onClick={() => void abandon()}
           disabled={statusBusy}
@@ -215,7 +219,7 @@ export function TaskActionButtons({
       {task.archivedAt ? (
         <HoverExpandButton
           icon={<Trash2 className="h-4 w-4" />}
-          label="Delete"
+          label={t('actions.delete')}
           variant="ghost"
           onClick={() => void confirmRemove()}
           className="text-destructive hover:bg-destructive/15 hover:text-destructive"

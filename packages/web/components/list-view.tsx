@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { CollapsibleStatusGroups, type StatusGroup } from '@/components/collapsible-status-groups';
 import { TaskRow } from '@/components/task-row';
@@ -20,18 +21,19 @@ export function ListView({
   onToggleSelect,
   blockedCounts,
 }: TaskViewProps) {
+  const t = useTranslations('board');
   const grouped = groupByStatus(tasks);
 
   const groups: StatusGroup[] = columns.map((col) => {
     const items = grouped.get(col.status) ?? [];
     return {
       id: col.status,
-      label: col.label,
+      label: t(`columns.${col.status}`),
       hue: `var(${col.hueVar})`,
       count: items.length,
       body:
         items.length === 0 ? (
-          <p className="px-1 text-xs text-muted-foreground">Nothing here</p>
+          <p className="px-1 text-xs text-muted-foreground">{t('nothingHere')}</p>
         ) : (
           <div className="overflow-hidden rounded-lg border surface-glass">
             {items.map((t) => (

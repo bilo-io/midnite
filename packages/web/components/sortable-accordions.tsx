@@ -21,6 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical } from 'lucide-react';
 import { Collapse } from '@/components/ui/collapse';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 export type AccordionSection = {
@@ -186,6 +187,7 @@ function Section({
   onToggle: () => void;
   variant?: AccordionVariant;
 }) {
+  const t = useTranslations('common');
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
   const dot = section.color ?? `hsl(${section.hue ?? '215 14% 52%'})`;
@@ -214,7 +216,7 @@ function Section({
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          aria-label="Reorder section"
+          aria-label={t('reorderSection')}
           className="cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-accent/50 hover:text-foreground active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />

@@ -1,0 +1,154 @@
+{
+  "tabs": {
+    "details": "Details",
+    "session": "Session",
+    "review": "Review",
+    "retro": "Retro",
+    "sectionsAria": "Task detail sections"
+  },
+  "openPage": "Open page",
+  "allTasks": "All tasks",
+  "waiting": {
+    "banner": "Agent is waiting on you",
+    "reply": "Reply",
+    "replyToAgent": "Reply to agent",
+    "cancelReply": "Cancel reply"
+  },
+  "tags": {
+    "title": "Tags",
+    "addPlaceholder": "Add tag…",
+    "addAria": "Add a tag",
+    "remove": "Remove tag {tag}"
+  },
+  "milestone": {
+    "title": "Milestone",
+    "none": "No milestone",
+    "pickerAria": "Task milestone",
+    "needsProject": "Assign this task to a project to use milestones.",
+    "noMilestones": "This project has no milestones yet.",
+    "assignFailed": "Failed to assign milestone"
+  },
+  "dependencies": {
+    "title": "Dependencies",
+    "blockedBy": "Blocked by",
+    "blocks": "Blocks",
+    "none": "No blockers.",
+    "unknown": "(unknown)",
+    "done": "done",
+    "pending": "pending",
+    "removeBlocker": "Remove blocker {title}",
+    "searchLabel": "Search tasks to block on",
+    "searchPlaceholder": "Add a blocking task…",
+    "addFailed": "Failed to add dependency",
+    "removeFailed": "Failed to remove dependency"
+  },
+  "picker": {
+    "searchAria": "Search tasks",
+    "searchPlaceholder": "Search tasks…"
+  },
+  "project": {
+    "changeFailed": "Failed to change project"
+  },
+  "links": {
+    "title": "Review & links",
+    "none": "No links yet.",
+    "add": "Add link",
+    "remove": "Remove link",
+    "removeTitle": "Remove this link?",
+    "removeDescription": "It will be detached from this task.",
+    "removeConfirm": "Remove",
+    "placeholder": "Paste a GitHub PR, Figma, Google Docs, or Notion link",
+    "urlError": "Enter a full URL, including https://",
+    "addFailed": "Failed to add link",
+    "removeFailed": "Failed to remove link"
+  },
+  "prompt": { "title": "Prompt" },
+  "attachments": { "title": "Attachments" },
+  "pr": {
+    "title": "Pull request",
+    "refresh": "Refresh PR status",
+    "statusUnknown": "Status unknown",
+    "viewDiff": "View diff",
+    "reviewPage": "Review page",
+    "open": "Open PR",
+    "review": "Review",
+    "chip": "PR #{number} — {state}",
+    "chipChecks": " · CI {checks}",
+    "states": {
+      "open": "Open",
+      "draft": "Draft",
+      "merged": "Merged",
+      "closed": "Closed"
+    },
+    "checks": {
+      "passing": "passing",
+      "failing": "failing",
+      "pending": "pending"
+    }
+  },
+  "aiReview": {
+    "title": "AI Review",
+    "lgtm": "LGTM",
+    "changesRequested": "Changes requested",
+    "reviewed": "Reviewed"
+  },
+  "runs": { "title": "Agent runs" },
+  "activity": {
+    "title": "Activity",
+    "none": "No activity recorded yet.",
+    "answer": "Answer"
+  },
+  "events": {
+    "agentStarted": "Agent started",
+    "agentWaiting": "Agent waiting on input",
+    "agentResumed": "Resumed by reply / approval",
+    "agentEscalated": "Escalated — needs attention",
+    "agentRequeued": "Requeued",
+    "agentRetried": "Retried",
+    "agentDone": "Agent finished",
+    "taskReopened": "Reopened",
+    "taskReplanned": "Re-planned"
+  },
+  "actions": {
+    "start": "Start",
+    "reopen": "Reopen",
+    "session": "Session",
+    "abandon": "Abandon",
+    "delete": "Delete",
+    "abandonTitle": "Abandon this task?",
+    "abandonDescription": "It will be archived and its session stopped. You can permanently delete it afterwards.",
+    "abandonConfirm": "Abandon",
+    "deleteTitle": "Delete this task?",
+    "deleteDescription": "This is permanent and can't be undone.",
+    "deleteConfirm": "Delete",
+    "startFailed": "Failed to start task",
+    "abandonFailed": "Failed to abandon task",
+    "reopenFailed": "Failed to reopen task",
+    "deleteFailed": "Failed to delete task"
+  },
+  "failures": {
+    "title": "Failure history ({count})",
+    "attempt": "attempt {index}",
+    "exit": "· exit {code}",
+    "classes": {
+      "crash": "Crashed",
+      "timeout": "Timed out",
+      "no-pr": "No PR opened",
+      "gate-failed": "Gate failed",
+      "tool-denied": "Tool denied",
+      "inactivity": "Went silent",
+      "retries-exhausted": "Retries exhausted",
+      "unknown": "Unknown"
+    }
+  },
+  "health": {
+    "title": "Task health",
+    "empty": "Nothing wedged — no failures or stuck tasks.",
+    "needsAttention": "Needs attention",
+    "waitingTooLong": "Waiting too long",
+    "stuckWip": "Stuck (silent) in progress",
+    "agedTodo": "Aged to-do",
+    "recentFailures": "Recent failures by class ({count})",
+    "none": "none"
+  }
+}
