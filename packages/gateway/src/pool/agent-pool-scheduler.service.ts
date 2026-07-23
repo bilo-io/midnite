@@ -87,6 +87,23 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
       if (event.type === 'guardrails.updated' && event.emergencyStop) {
         this.abortInFlight(event.scope);
       }
+      // A manual move to a terminal state (board drag / REST `updateStatus`
+      // wip|waiting → done|abandoned) or a delete bypasses the runner, so the run
+      // it leaves behind — live session, armed timeout, busy slot — would leak
+      // until the watchdog sweeps, which never happens when `poolEnabled` is off
+      // (the tick loop isn't running). Reap it here, off the same bus the move
+      // emits on. Deferred a macrotask so the hook-driven path (`markDone` then
+      // `complete()` in the same sync frame) settles first and the reap no-ops.
+      const id =
+        event.type === 'task.deleted'
+          ? event.id
+          : event.type === 'task.updated' &&
+              (event.task.status === 'done' || event.task.status === 'abandoned')
+            ? event.task.id
+            : undefined;
+      if (id && this.pool.slotForTask(id)) {
+        setImmediate(() => this.reapLeakedSlot(id));
+      }
     });
 
     if (!this.config.agent.poolEnabled) {
@@ -118,12 +135,25 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     if (aborted > 0) this.logger.warn(`emergency stop (${target.kind}): aborted ${aborted} in-flight agent(s)`);
   }
 
-  private safeGetTask(taskId: string): { repo?: string | null; teamId?: string | null } | undefined {
+  private safeGetTask(taskId: string): Task | undefined {
     try {
       return this.tasks.getTask(taskId);
     } catch {
       return undefined;
     }
+  }
+
+  /** Reap a run left behind by a manual terminal transition or delete: the task
+   *  is `done`/`abandoned`/gone but its slot is still busy and nothing else freed
+   *  it in the same frame (a hook-driven `complete()` already has by now). A task
+   *  revived in the interim (`reopen()`) is left alone — its state is no longer
+   *  terminal, so reaping would kill a run the revival may be about to restart. */
+  private reapLeakedSlot(taskId: string): void {
+    if (!this.pool.slotForTask(taskId)) return;
+    const task = this.safeGetTask(taskId);
+    if (task && task.status !== 'done' && task.status !== 'abandoned') return;
+    this.logger.warn(`reclaiming slot leaked by a terminal move/delete of task ${taskId}`);
+    this.runner.reclaimOrphanedSlot(taskId);
   }
 
   onModuleDestroy(): void {
