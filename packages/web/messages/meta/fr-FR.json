@@ -562,6 +562,7 @@
     "settings.repos.fields.path",
     "settings.repos.fields.prTemplate",
     "settings.repos.nameAndPathRequired",
+    "settings.repos.placeholders.branchPrefix",
     "settings.repos.placeholders.branchPrefixExample",
     "settings.repos.placeholders.name",
     "settings.repos.placeholders.ownerRepo",

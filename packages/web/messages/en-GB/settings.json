@@ -538,7 +538,8 @@
       "ownerRepoExample": "owner/repo (e.g. bilo-io/midnite)",
       "branchPrefixExample": "Branch prefix (e.g. feature/)",
       "prTemplateOptional": "PR body template (optional)",
-      "prTemplate": "## Summary\n\n## Testing"
+      "prTemplate": "## Summary\n\n## Testing",
+      "branchPrefix": "feature/"
     },
     "addRepo": "Add repo",
     "aria": {

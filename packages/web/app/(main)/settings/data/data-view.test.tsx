@@ -225,4 +225,10 @@ describe('DataView — export secrets (Phase 49 G)', () => {
       expect(downloadBackup).toHaveBeenCalledWith({ includeSecrets: true, passphrase: 'secret-pw' }),
     );
   });
+
+  // Phase 82 C — renders under fr-FR (the "included in a backup" section heading).
+  it('renders in fr-FR', () => {
+    render(<DataView />, { locale: 'fr-FR' });
+    expect(screen.getByText('Inclus dans une sauvegarde')).toBeInTheDocument();
+  });
 });
