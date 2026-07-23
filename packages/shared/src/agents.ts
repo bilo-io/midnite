@@ -22,58 +22,105 @@ export const AgentCliSchema = z.enum(AGENT_CLIS);
 export type AgentCli = z.infer<typeof AgentCliSchema>;
 export const AGENT_CLI_DEFAULT: AgentCli = 'claude';
 
-/** Human label for each CLI, for menus. */
-export const AGENT_CLI_LABEL: Record<AgentCli, string> = {
-  claude: 'Claude',
-  gemini: 'Gemini',
-  codex: 'Codex',
-  opencode: 'OpenCode',
-  aider: 'Aider',
-};
-
-/** Homepage / install docs for each CLI, linked from the agent settings UI. */
-export const AGENT_CLI_HOMEPAGE_URL: Record<AgentCli, string> = {
-  claude: 'https://docs.anthropic.com/en/docs/claude-code/overview',
-  gemini: 'https://github.com/google-gemini/gemini-cli',
-  codex: 'https://github.com/openai/codex',
-  opencode: 'https://opencode.ai',
-  aider: 'https://aider.chat',
-};
-
-/** The shell command typed into a fresh session shell to launch each CLI. */
-export const AGENT_CLI_COMMAND: Record<AgentCli, string> = {
-  claude: 'claude',
-  gemini: 'gemini',
-  codex: 'codex',
-  opencode: 'opencode',
-  aider: 'aider',
-};
-
 /**
- * The install command pasted into the install terminal — npm global where the CLI
- * ships on npm, else the vendor's recommended installer (pip for Aider). The user
- * reviews it and presses Enter to run.
+ * One installable CLI utility the app knows how to set up and launch. This catalog
+ * array is the **single source of truth** for the per-CLI metadata — the lookup maps
+ * below (`AGENT_CLI_LABEL`, `AGENT_CLI_COMMAND`, `AGENT_CLI_INSTALL_COMMAND`, …) are
+ * all derived from it, so a new CLI is added in exactly one place.
  */
-export const AGENT_CLI_INSTALL_COMMAND: Record<AgentCli, string> = {
-  claude: 'npm install -g @anthropic-ai/claude-code',
-  gemini: 'npm install -g @google/gemini-cli',
-  codex: 'npm install -g @openai/codex',
-  opencode: 'npm install -g opencode-ai',
-  aider: 'python -m pip install aider-install && aider-install',
+export type AgentCliCatalogEntry = {
+  /** Stable machine key — the `AgentCli` enum value, also used in URLs + config. */
+  key: AgentCli;
+  /** Human label for menus. */
+  name: string;
+  /** Homepage / install docs, linked from the agent settings UI. */
+  homepageUrl: string;
+  /** The shell command typed into a fresh session shell to launch the CLI. */
+  command: string;
+  /**
+   * The preferred install command pasted into the install terminal — the user
+   * reviews it and presses Enter to run. **Homebrew by default**; a vendor-specific
+   * installer only where the vendor recommends one over brew:
+   *  - `claude`  → Anthropic's native install script (auto-updates, no Node dep;
+   *                the Homebrew cask lags releases and disables built-in updates).
+   *  - `aider`   → `aider-install`, which isolates Aider in its own Python env
+   *                (the Homebrew formula lags upstream and can miss its model deps).
+   */
+  setupCommand: string;
+  /** The uninstall command, paired with `setupCommand` (same tool that installed it). */
+  uninstallCommand: string;
 };
 
-/**
- * The uninstall command, paired with the install method above. The uninstall
- * terminal first runs `which <cli>` to surface where the binary lives, then this.
- * The user reviews it and presses Enter.
- */
-export const AGENT_CLI_UNINSTALL_COMMAND: Record<AgentCli, string> = {
-  claude: 'npm uninstall -g @anthropic-ai/claude-code',
-  gemini: 'npm uninstall -g @google/gemini-cli',
-  codex: 'npm uninstall -g @openai/codex',
-  opencode: 'npm uninstall -g opencode-ai',
-  aider: 'python -m pip uninstall -y aider-chat aider-install',
-};
+export const AGENT_CLI_CATALOG: readonly AgentCliCatalogEntry[] = [
+  {
+    key: 'claude',
+    name: 'Claude',
+    homepageUrl: 'https://docs.anthropic.com/en/docs/claude-code/overview',
+    command: 'claude',
+    setupCommand: 'curl -fsSL https://claude.ai/install.sh | bash',
+    uninstallCommand: 'rm -f ~/.local/bin/claude && rm -rf ~/.local/share/claude',
+  },
+  {
+    key: 'gemini',
+    name: 'Gemini',
+    homepageUrl: 'https://github.com/google-gemini/gemini-cli',
+    command: 'gemini',
+    setupCommand: 'brew install gemini-cli',
+    uninstallCommand: 'brew uninstall gemini-cli',
+  },
+  {
+    key: 'codex',
+    name: 'Codex',
+    homepageUrl: 'https://github.com/openai/codex',
+    command: 'codex',
+    setupCommand: 'brew install --cask codex',
+    uninstallCommand: 'brew uninstall --cask codex',
+  },
+  {
+    key: 'opencode',
+    name: 'OpenCode',
+    homepageUrl: 'https://opencode.ai',
+    command: 'opencode',
+    setupCommand: 'brew install sst/tap/opencode',
+    uninstallCommand: 'brew uninstall sst/tap/opencode',
+  },
+  {
+    key: 'aider',
+    name: 'Aider',
+    homepageUrl: 'https://aider.chat',
+    command: 'aider',
+    setupCommand: 'python -m pip install aider-install && aider-install',
+    uninstallCommand: 'python -m pip uninstall -y aider-chat aider-install',
+  },
+];
+
+/** The catalog keyed by `AgentCli` for O(1) lookup. */
+export const AGENT_CLI_BY_KEY: Record<AgentCli, AgentCliCatalogEntry> = Object.fromEntries(
+  AGENT_CLI_CATALOG.map((entry) => [entry.key, entry]),
+) as Record<AgentCli, AgentCliCatalogEntry>;
+
+/** Build a `Record<AgentCli, string>` from one field of the catalog. */
+const catalogField = (field: keyof Omit<AgentCliCatalogEntry, 'key'>): Record<AgentCli, string> =>
+  Object.fromEntries(AGENT_CLI_CATALOG.map((entry) => [entry.key, entry[field]])) as Record<
+    AgentCli,
+    string
+  >;
+
+/** Human label for each CLI, for menus. Derived from {@link AGENT_CLI_CATALOG}. */
+export const AGENT_CLI_LABEL: Record<AgentCli, string> = catalogField('name');
+
+/** Homepage / install docs for each CLI. Derived from {@link AGENT_CLI_CATALOG}. */
+export const AGENT_CLI_HOMEPAGE_URL: Record<AgentCli, string> = catalogField('homepageUrl');
+
+/** The shell command that launches each CLI. Derived from {@link AGENT_CLI_CATALOG}. */
+export const AGENT_CLI_COMMAND: Record<AgentCli, string> = catalogField('command');
+
+/** The preferred install command per CLI. Derived from {@link AGENT_CLI_CATALOG}. */
+export const AGENT_CLI_INSTALL_COMMAND: Record<AgentCli, string> = catalogField('setupCommand');
+
+/** The uninstall command per CLI. Derived from {@link AGENT_CLI_CATALOG}. */
+export const AGENT_CLI_UNINSTALL_COMMAND: Record<AgentCli, string> =
+  catalogField('uninstallCommand');
 
 /** Installed-state of a CLI, as detected by probing for its binary on PATH. */
 export const AgentCliStatusSchema = z.object({
