@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Ban, Play, RotateCcw, SquareTerminal, Trash2 } from 'lucide-react';
+import { Ban, Check, Play, RotateCcw, SquareTerminal, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Task, TaskSummary } from '@midnite/shared';
 import { HoverExpandButton } from '@/components/hover-expand-button';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
  */
 export type TaskActionsController = {
   start: () => Promise<void>;
+  markDone: () => Promise<void>;
   abandon: () => Promise<void>;
   reopen: () => Promise<void>;
   remove: () => Promise<void>;
@@ -67,6 +68,29 @@ export function useTaskActions({
       onActionComplete?.();
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : t('actions.startFailed'));
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  // Manual completion (Phase 82): mark a running/queued task done without waiting
+  // for the agent to finish. Only offered where `done` is a legal edge (Phase 60 E) —
+  // `backlog` has no direct edge to `done`, so the button hides itself there.
+  const markDone = async () => {
+    const ok = await confirm({
+      title: t('actions.markDoneTitle'),
+      description: t('actions.markDoneDescription'),
+      confirmLabel: t('actions.markDoneConfirm'),
+    });
+    if (!ok) return;
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      await updateTaskStatus(task.id, 'done');
+      invalidateData();
+      onActionComplete?.();
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : t('actions.markDoneFailed'));
     } finally {
       setStatusBusy(false);
     }
@@ -128,7 +152,7 @@ export function useTaskActions({
     }
   };
 
-  return { start, abandon, reopen, remove, statusBusy, statusError, setStatusError };
+  return { start, markDone, abandon, reopen, remove, statusBusy, statusError, setStatusError };
 }
 
 /** Slugged base name for the export download / print title. */
@@ -164,9 +188,12 @@ export function TaskActionButtons({
 }) {
   const t = useTranslations('task');
   const confirm = useConfirm();
-  const { start, abandon, reopen, remove, statusBusy } = actions;
+  const { start, markDone, abandon, reopen, remove, statusBusy } = actions;
   const canStart = task.status === 'todo' || task.status === 'backlog';
   const canReopen = task.status === 'done' || task.status === 'abandoned';
+  // `done` is a legal edge from todo/wip/waiting only (backlog has none — see
+  // ALLOWED_TRANSITIONS in @midnite/shared/task.ts); done/abandoned are terminal.
+  const canMarkDone = task.status === 'todo' || task.status === 'wip' || task.status === 'waiting';
 
   const confirmRemove = async () => {
     const ok = await confirm({
@@ -203,6 +230,16 @@ export function TaskActionButtons({
           label={t('actions.session')}
           variant="secondary"
           onClick={onOpenSession}
+        />
+      ) : null}
+      {canMarkDone ? (
+        <HoverExpandButton
+          icon={<Check className="h-4 w-4" />}
+          label={t('actions.markDone')}
+          variant="ghost"
+          onClick={() => void markDone()}
+          disabled={statusBusy}
+          className="text-success hover:bg-success/15 hover:text-success"
         />
       ) : null}
       <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={taskExportFilename(task)} hoverExpand />

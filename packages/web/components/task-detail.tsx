@@ -27,6 +27,7 @@ import {
   type TaskEvent,
   type TaskLink,
 } from '@midnite/shared';
+import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { PrStatusChip } from '@/components/pr-status-chip';
@@ -48,6 +49,7 @@ import {
 import { invalidateData } from '@/lib/data-refresh';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { dependentsOf } from '@/lib/task-dependencies';
+import { cn } from '@/lib/utils';
 import { useTaskPaletteCommands } from '@/hooks/use-task-palette-commands';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
@@ -66,6 +68,56 @@ const KIND_HUE_VAR: Record<NonNullable<Task['kind']>, string> = {
   chore: '--kind-chore',
   unknown: '--kind-unknown',
 };
+
+/** A compact "chip" for a blocker/dependent task — used by the Dependencies accordion
+ *  so a task with many links doesn't force one full-width row per link (Phase 82). */
+function DependencyPill({
+  title,
+  hue,
+  statusText,
+  statusClassName,
+  onRemove,
+  removeAriaLabel,
+  disabled,
+}: {
+  title: string;
+  hue?: string;
+  statusText: string;
+  statusClassName?: string;
+  onRemove?: () => void;
+  removeAriaLabel?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <span className="inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 py-1 pl-2.5 pr-1.5 text-xs">
+      <span
+        aria-hidden
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: hue ? `hsl(var(${hue}))` : 'hsl(var(--muted-foreground))' }}
+      />
+      <span className="min-w-0 truncate">{title}</span>
+      <span
+        className={cn(
+          'shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground',
+          statusClassName,
+        )}
+      >
+        {statusText}
+      </span>
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={disabled}
+          aria-label={removeAriaLabel}
+          className="shrink-0 rounded-full p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      ) : null}
+    </span>
+  );
+}
 
 type Props = {
   task: Task;
@@ -512,8 +564,8 @@ export function TaskDetail({
       <div
         className={
           variant === 'modal'
-            ? 'flex-1 space-y-5 overflow-y-auto px-5 py-4'
-            : 'space-y-5 px-5 py-4'
+            ? 'flex-1 space-y-3 overflow-y-auto px-5 py-4'
+            : 'space-y-3 px-5 py-4'
         }
       >
         {statusError ? (
@@ -532,213 +584,191 @@ export function TaskDetail({
             <ReplyBox sessionId={task.sessionId} />
           </section>
         ) : null}
-        <section>
-          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t('tags.title')}
-          </h3>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  aria-label={t('tags.remove', { tag })}
-                  className="text-muted-foreground hover:text-destructive"
+
+        {/* Tags + milestone: two short, always-relevant fields sharing one compact
+            card (Phase 82) instead of two full-width headings stacked in a row. */}
+        <section className="grid gap-4 rounded-lg border bg-card/60 p-3 sm:grid-cols-2">
+          <div>
+            <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {t('tags.title')}
+            </h3>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-            <input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
-              onBlur={addTag}
-              placeholder={t('tags.addPlaceholder')}
-              className="min-w-[5rem] flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-              aria-label={t('tags.addAria')}
-            />
-          </div>
-        </section>
-        <section>
-          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t('milestone.title')}
-          </h3>
-          <TaskMilestonePicker taskId={task.id} projectId={projectId} currentMilestoneId={task.milestoneId} />
-        </section>
-        <section>
-          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t('dependencies.title')}
-          </h3>
-          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            {t('dependencies.blockedBy')}
-          </p>
-          {dependsOn.length > 0 ? (
-            <ul className="mb-2 space-y-1.5">
-              {dependsOn.map((id) => {
-                const blocker = tasksById.get(id);
-                const done = blocker?.status === 'done';
-                const blockerStatus = blocker?.status;
-                return (
-                  <li
-                    key={id}
-                    className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
-                  >
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{
-                        background: blockerStatus
-                          ? `hsl(var(${STATUS_HUE_VAR[blockerStatus]}))`
-                          : 'hsl(var(--muted-foreground))',
-                      }}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      {blocker ? blocker.title : t('dependencies.unknown')}
-                    </span>
-                    <span
-                      className={`shrink-0 text-[10px] font-medium uppercase tracking-wider ${
-                        done ? 'text-success' : 'text-muted-foreground'
-                      }`}
-                    >
-                      {done ? t('dependencies.done') : t('dependencies.pending')}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => void removeBlocker(id)}
-                      disabled={depBusy}
-                      aria-label={t('dependencies.removeBlocker', { title: blocker ? blocker.title : id })}
-                      className="shrink-0 text-muted-foreground hover:text-destructive disabled:opacity-50"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="mb-2 text-sm text-muted-foreground">{t('dependencies.none')}</p>
-          )}
-          <TaskPicker
-            candidates={blockerCandidates}
-            onPick={(picked) => void addBlocker(picked.id)}
-            disabled={depBusy}
-            label={t('dependencies.searchLabel')}
-            placeholder={t('dependencies.searchPlaceholder')}
-          />
-          {depError ? <p className="mt-1.5 text-xs text-destructive">{depError}</p> : null}
-          {dependents.length > 0 ? (
-            <div className="mt-3">
-              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {t('dependencies.blocks')}
-              </p>
-              <ul className="space-y-1.5">
-                {dependents.map((d) => (
-                  <li
-                    key={d.id}
-                    className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
-                  >
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{ background: `hsl(var(${STATUS_HUE_VAR[d.status]}))` }}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm">{d.title}</span>
-                    <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      {statusLabel(d.status)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </section>
-        <section>
-          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t('links.title')}
-          </h3>
-          {links.length > 0 ? (
-            <ul className="mb-2 space-y-1.5">
-              {links.map((link) => (
-                <li
-                  key={link.id}
-                  className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
-                >
-                  <SourceIcon kind={link.kind} className="shrink-0 text-foreground/80" />
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-w-0 flex-1 items-center gap-1 text-sm hover:underline"
-                  >
-                    <span className="truncate">{linkLabel(link)}</span>
-                    <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
-                  </a>
+                  {tag}
                   <button
                     type="button"
-                    onClick={() => void removeLink(link.id)}
-                    disabled={busy}
-                    aria-label={t('links.remove')}
+                    onClick={() => removeTag(tag)}
+                    aria-label={t('tags.remove', { tag })}
                     className="text-muted-foreground hover:text-destructive"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3" />
                   </button>
-                </li>
+                </span>
               ))}
-            </ul>
-          ) : (
-            <p className="mb-2 text-sm text-muted-foreground">{t('links.none')}</p>
-          )}
-          <div className="flex items-center gap-2">
-            <input
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void addLink();
-                }
-              }}
-              placeholder={t('links.placeholder')}
-              className="flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => void addLink()}
-              disabled={busy || !linkUrl.trim()}
-              aria-label={t('links.add')}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
+                onBlur={addTag}
+                placeholder={t('tags.addPlaceholder')}
+                className="min-w-[5rem] flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                aria-label={t('tags.addAria')}
+              />
+            </div>
           </div>
-          {linkError ? <p className="mt-1.5 text-xs text-destructive">{linkError}</p> : null}
+          <div>
+            <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {t('milestone.title')}
+            </h3>
+            <TaskMilestonePicker taskId={task.id} projectId={projectId} currentMilestoneId={task.milestoneId} />
+          </div>
         </section>
 
+        {/* Dependencies: blockers/dependents as flex-wrapping pills rather than
+            one full-width row each, so a busy task doesn't push everything below
+            it off-screen (Phase 82). */}
+        <Accordion title={t('dependencies.title')} count={dependsOn.length + dependents.length} defaultOpen>
+          <div className="space-y-3 p-3">
+            <div>
+              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t('dependencies.blockedBy')}
+              </p>
+              {dependsOn.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {dependsOn.map((id) => {
+                    const blocker = tasksById.get(id);
+                    const done = blocker?.status === 'done';
+                    return (
+                      <DependencyPill
+                        key={id}
+                        title={blocker ? blocker.title : t('dependencies.unknown')}
+                        hue={blocker ? STATUS_HUE_VAR[blocker.status] : undefined}
+                        statusText={done ? t('dependencies.done') : t('dependencies.pending')}
+                        statusClassName={done ? 'text-success' : undefined}
+                        onRemove={() => void removeBlocker(id)}
+                        removeAriaLabel={t('dependencies.removeBlocker', {
+                          title: blocker ? blocker.title : id,
+                        })}
+                        disabled={depBusy}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('dependencies.none')}</p>
+              )}
+            </div>
+            <TaskPicker
+              candidates={blockerCandidates}
+              onPick={(picked) => void addBlocker(picked.id)}
+              disabled={depBusy}
+              label={t('dependencies.searchLabel')}
+              placeholder={t('dependencies.searchPlaceholder')}
+            />
+            {depError ? <p className="text-xs text-destructive">{depError}</p> : null}
+            {dependents.length > 0 ? (
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {t('dependencies.blocks')}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {dependents.map((d) => (
+                    <DependencyPill
+                      key={d.id}
+                      title={d.title}
+                      hue={STATUS_HUE_VAR[d.status]}
+                      statusText={statusLabel(d.status)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </Accordion>
+
+        <Accordion title={t('links.title')} count={links.length} defaultOpen={links.length > 0}>
+          <div className="space-y-2 p-3">
+            {links.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {links.map((link) => (
+                  <span
+                    key={link.id}
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-background/60 py-1 pl-2.5 pr-1.5 text-xs"
+                  >
+                    <SourceIcon kind={link.kind} className="h-3.5 w-3.5 shrink-0 text-foreground/80" />
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="min-w-0 truncate hover:underline"
+                    >
+                      {linkLabel(link)}
+                    </a>
+                    <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <button
+                      type="button"
+                      onClick={() => void removeLink(link.id)}
+                      disabled={busy}
+                      aria-label={t('links.remove')}
+                      className="shrink-0 rounded-full p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('links.none')}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void addLink();
+                  }
+                }}
+                placeholder={t('links.placeholder')}
+                className="flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => void addLink()}
+                disabled={busy || !linkUrl.trim()}
+                aria-label={t('links.add')}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {linkError ? <p className="text-xs text-destructive">{linkError}</p> : null}
+          </div>
+        </Accordion>
+
         {task.prompt ? (
-          <section>
+          <section className="rounded-lg border bg-card/60 p-3">
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('prompt.title')}
             </h3>
-            <p className="whitespace-pre-wrap break-words rounded-lg bg-muted/50 px-3 py-2 text-sm">
-              {task.prompt}
-            </p>
+            <p className="whitespace-pre-wrap break-words text-sm">{task.prompt}</p>
           </section>
         ) : null}
 
         {images.length > 0 ? (
-          <section>
+          <section className="rounded-lg border bg-card/60 p-3">
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('attachments.title')}
             </h3>
@@ -756,22 +786,22 @@ export function TaskDetail({
         ) : null}
 
         {task.prUrl ? (
-          <section>
-            <div className="mb-1.5 flex items-center justify-between">
-              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {t('pr.title')}
-              </h3>
+          <Accordion
+            title={t('pr.title')}
+            defaultOpen
+            action={
               <button
                 type="button"
                 onClick={() => void refreshPr()}
                 disabled={prRefreshing}
                 aria-label={t('pr.refresh')}
-                className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${prRefreshing ? 'animate-spin' : ''}`} />
               </button>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2">
+            }
+          >
+            <div className="flex flex-wrap items-center gap-2 p-3">
               {prStatus ? (
                 <PrStatusChip status={prStatus} />
               ) : (
@@ -826,15 +856,12 @@ export function TaskDetail({
             {showDiff ? (
               <PrDiffModal taskId={task.id} prUrl={task.prUrl} onClose={() => setShowDiff(false)} />
             ) : null}
-          </section>
+          </Accordion>
         ) : null}
 
         {task.aiReview ? (
-          <section>
-            <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t('aiReview.title')}
-            </h3>
-            <div className="rounded-lg border border-border/60 px-3 py-2 space-y-2">
+          <Accordion title={t('aiReview.title')} defaultOpen>
+            <div className="space-y-2 p-3">
               <div className="flex items-center gap-2">
                 <span
                   className={[
@@ -862,10 +889,10 @@ export function TaskDetail({
                 </p>
               ) : null}
             </div>
-          </section>
+          </Accordion>
         ) : null}
 
-        <section>
+        <section className="rounded-lg border bg-card/60 p-3">
           <ChecksPanel taskId={task.id} />
         </section>
 
@@ -877,38 +904,22 @@ export function TaskDetail({
         {/* Phase 61 G — per-task run strip (attempts / retries / live run).
             Hidden on the full page, where it lives in the left "Agent events" rail. */}
         {hideAgentRuns ? null : (
-          <section>
-            <details className="group">
-              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground marker:content-none">
-                <span className="transition-transform group-open:rotate-90" aria-hidden>
-                  ›
-                </span>
-                {t('runs.title')}
-              </summary>
-              <div className="mt-2">
-                <RunTimeline taskId={task.id} />
-              </div>
-            </details>
-          </section>
+          <Accordion title={t('runs.title')}>
+            <div className="p-3">
+              <RunTimeline taskId={task.id} />
+            </div>
+          </Accordion>
         )}
 
         {/* Activity (event timeline). An accordion in the modal (Phase 82) so it
             doesn't dominate the body; hidden on the full page, where it lives in
             the right "Activity" rail. */}
         {hideActivity ? null : (
-          <section>
-            <details className="group">
-              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground marker:content-none">
-                <span className="transition-transform group-open:rotate-90" aria-hidden>
-                  ›
-                </span>
-                {t('activity.title')}
-              </summary>
-              <div className="mt-2">
-                <Timeline events={task.events} />
-              </div>
-            </details>
-          </section>
+          <Accordion title={t('activity.title')} count={task.events.length}>
+            <div className="p-3">
+              <Timeline events={task.events} />
+            </div>
+          </Accordion>
         )}
       </div>
       )}
