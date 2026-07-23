@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import type { TaskSummary } from '@midnite/shared';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,8 @@ const INPUT_CLASS =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50';
 
 const MAX_MATCHES = 8;
+
+type Rect = { top: number; left: number; width: number };
 
 /**
  * A dependency-free combobox over a set of candidate tasks (Phase 27). Filters
@@ -33,19 +36,39 @@ export function TaskPicker({
   const t = useTranslations('task');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [rect, setRect] = useState<Rect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
-  // Close on a click outside the combobox.
+  // The list renders in a portal with fixed positioning so it never gets
+  // trapped behind sibling content by an ancestor's stacking context (e.g. a
+  // backdrop-blur card) or clipped by an ancestor's overflow.
+  const place = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  // Close on a click outside the combobox (input or portalled list).
   useEffect(() => {
     if (!open) return;
+    place();
     const onDown = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target) || listRef.current?.contains(target)) return;
+      setOpen(false);
     };
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
     document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [open, place]);
 
   const q = query.trim().toLowerCase();
   const matches = (q ? candidates.filter((t) => t.title.toLowerCase().includes(q)) : candidates).slice(
@@ -62,6 +85,7 @@ export function TaskPicker({
   return (
     <div ref={containerRef} className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={query}
         disabled={disabled}
@@ -84,25 +108,32 @@ export function TaskPicker({
           }
         }}
       />
-      {open && matches.length > 0 ? (
-        <ul className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
-          {matches.map((task) => (
-            <li key={task.id}>
-              <button
-                type="button"
-                // Keep the click off the input's blur race — mousedown fires first.
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pick(task)}
-                className={cn(
-                  'flex w-full items-center rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent',
-                )}
-              >
-                <span className="truncate">{task.title}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {open && rect && matches.length > 0
+        ? createPortal(
+            <ul
+              ref={listRef}
+              style={{ position: 'fixed', top: rect.top, left: rect.left, width: rect.width }}
+              className="z-[60] max-h-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+            >
+              {matches.map((task) => (
+                <li key={task.id}>
+                  <button
+                    type="button"
+                    // Keep the click off the input's blur race — mousedown fires first.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => pick(task)}
+                    className={cn(
+                      'flex w-full items-center rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent',
+                    )}
+                  >
+                    <span className="truncate">{task.title}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

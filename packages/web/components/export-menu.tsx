@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { Check, Copy, Download, FileCode2, FileDown, FileText, Loader2 } from 'lucide-react';
 import { MarkdownPreview } from '@/components/markdown-preview';
@@ -51,6 +52,8 @@ type Props = {
 const PRINT_CONTAINER_ID = 'midnite-print-root';
 const PRINT_STYLE_ID = 'midnite-print-style';
 
+type Rect = { top: number; right: number };
+
 /** The `@media print` rules that isolate the print container from the app. Kept
  *  in a `<style>` injected on demand so it never affects normal screen layout. */
 const PRINT_CSS = `
@@ -85,23 +88,43 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | 'html' | null>(null);
   const [copied, setCopied] = useState(false);
+  const [rect, setRect] = useState<Rect | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   // The print container + its React root persist across prints so we can unmount.
   const printRootRef = useRef<Root | null>(null);
 
+  // The dropdown renders in a portal with fixed positioning so it's never
+  // trapped behind sibling content by an ancestor's stacking context (e.g. a
+  // backdrop-blur list card — Phase 74's `.surface-glass-interactive`) or
+  // clipped by an ancestor's overflow.
+  const place = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.bottom + 8, right: window.innerWidth - r.right });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
+    place();
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (ref.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
     window.addEventListener('mousedown', onDown);
     window.addEventListener('keydown', onKey);
     return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [open, place]);
 
   // Tear down the print container's React root on unmount.
   useEffect(() => {
@@ -258,29 +281,36 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-lg border bg-popover shadow-lg">
-          <ul className="p-1">
-            {items.map(({ key, label, icon: Icon, run }) => (
-              <li key={key}>
-                <button
-                  type="button"
-                  onClick={run}
-                  disabled={busy !== null}
-                  className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent disabled:opacity-60"
-                >
-                  {busy === key ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
-                  ) : (
-                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                  )}
-                  <span>{label}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {open && rect
+        ? createPortal(
+            <div
+              ref={menuRef}
+              style={{ position: 'fixed', top: rect.top, right: rect.right }}
+              className="z-[60] w-48 overflow-hidden rounded-lg border bg-popover shadow-lg"
+            >
+              <ul className="p-1">
+                {items.map(({ key, label, icon: Icon, run }) => (
+                  <li key={key}>
+                    <button
+                      type="button"
+                      onClick={run}
+                      disabled={busy !== null}
+                      className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent disabled:opacity-60"
+                    >
+                      {busy === key ? (
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+                      ) : (
+                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                      )}
+                      <span>{label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
