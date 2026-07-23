@@ -3,6 +3,7 @@ import { AgentModule } from '../agent/agent.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
 import { ChecksModule } from '../checks/checks.module';
 import { HealthModule } from '../health/health.module';
+import { MetricsModule } from '../metrics/metrics.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReposModule } from '../repos/repos.module';
 import { SessionUsageModule } from '../sessions/session-usage.module';
@@ -26,6 +27,10 @@ import { WaitingNudgeService } from './waiting-nudge.service';
     TerminalModule,
     // Phase 61 A — Stop hook harvests real session tokens from the transcript.
     SessionUsageModule,
+    // Run-lifecycle metrics (agent_run_stats): AgentRunnerService/AgentPoolService/
+    // AgentPoolScheduler all inject MetricsService @Optional — without this import
+    // it silently resolves to undefined (no error, no rows ever written).
+    MetricsModule,
     // Phase 50 B — hard spend/rate caps: UsageService.checkBudget() gates spawns,
     // NotificationsService surfaces a held alert. Both consumed @Optional.
     UsageModule,
