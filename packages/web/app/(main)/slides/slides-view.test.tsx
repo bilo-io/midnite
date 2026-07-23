@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { ToastProvider } from '@/components/toast';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { createDeck } from '@/lib/slides/store';

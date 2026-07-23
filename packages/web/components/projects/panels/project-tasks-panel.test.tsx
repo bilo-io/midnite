@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { Task } from '@midnite/shared';
 
 import { ProjectTasksPanel } from './project-tasks-panel';

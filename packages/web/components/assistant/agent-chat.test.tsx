@@ -1,6 +1,7 @@
 import type { AssistantQueryResponse, TaskSummary } from '@midnite/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const assistantQuery = vi.fn();
 const getTasks = vi.fn();
