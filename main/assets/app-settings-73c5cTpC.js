@@ -1,0 +1,1 @@
+import{D as s,ad as a}from"./iframe-Bex7MJ7s.js";import{D as t}from"./features-CICcbl21.js";const o=4;a.map(e=>({value:{kind:"solid",swatch:e.id},label:e.label,swatch:e.id}));const l="system",{theme:r,features:_,...E}=s,c={...E,features:t,agentPoolSize:o,requirePasscode:!1,passcodeOnlyWhenLocked:!1,notifyTaskUpdates:!1,editorAutosaveSeconds:30};export{c as D,l as M};
