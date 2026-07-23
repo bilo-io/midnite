@@ -2,6 +2,10 @@
   "reset": "Reset to defaults",
   "syncedToAccount": "Synced to your account",
   "signInToSync": "Sign in to sync across devices",
+  "hub": {
+    "title": "Settings",
+    "description": "Tune how midnite looks, locks, and runs your agents."
+  },
   "groups": {
     "general": "General",
     "workspace": "Workspace",

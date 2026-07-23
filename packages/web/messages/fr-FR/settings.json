@@ -2,6 +2,10 @@
   "reset": "Réinitialiser les valeurs par défaut",
   "syncedToAccount": "Synchronisé avec votre compte",
   "signInToSync": "Connectez-vous pour synchroniser entre appareils",
+  "hub": {
+    "title": "Paramètres",
+    "description": "Réglez l’apparence de midnite, son verrouillage et l’exécution de vos agents."
+  },
   "groups": {
     "general": "Général",
     "workspace": "Espace de travail",
