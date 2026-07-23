@@ -280,8 +280,8 @@ export function AgentsView() {
       confirmLabel: tc('remove'),
     });
     if (!ok) return;
-    const t = subTimers.current.get(id);
-    if (t) clearTimeout(t);
+    const pendingTimer = subTimers.current.get(id);
+    if (pendingTimer) clearTimeout(pendingTimer);
     subTimers.current.delete(id);
     try {
       await deleteSubAgent(id);
