@@ -35,6 +35,12 @@ type Props = {
   /** Board list — feeds the project picker + the task-detail modal's blocker pickers. */
   tasks: TaskSummary[];
   projects: Project[];
+  /** False when a host page already renders a `?task=`-driven modal of its own
+   *  (e.g. the Tasks page's graph view mode) — clicking a node still pushes the
+   *  same `?task=` param, but this instance skips opening a second, redundant
+   *  modal on top of the host's. Defaults to true (the standalone `/tasks/graph`
+   *  route owns its own modal). */
+  showTaskModal?: boolean;
 };
 
 /**
@@ -43,7 +49,7 @@ type Props = {
  * left-to-right auto-layout. Live via the shared reliable task channel; clicking
  * a node opens the existing `?task=` modal without leaving the graph.
  */
-export function TaskGraphView({ tasks, projects }: Props) {
+export function TaskGraphView({ tasks, projects, showTaskModal = true }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,11 +106,13 @@ export function TaskGraphView({ tasks, projects }: Props) {
     [graph],
   );
 
-  // Open the shared task modal in place (Phase 42 `?task=` param) — stays on the graph.
+  // Open the shared task modal in place (Phase 42 `?task=` param) — stays on the
+  // graph. Skipped when a host page (the Tasks page's graph view mode) already
+  // owns a modal for the same param, so a node click doesn't pop two.
   const openId = searchParams.get(TASK_MODAL_PARAM);
   const [selected, setSelected] = useState<Task | null>(null);
   useEffect(() => {
-    if (!openId) {
+    if (!showTaskModal || !openId) {
       setSelected(null);
       return;
     }
@@ -115,7 +123,7 @@ export function TaskGraphView({ tasks, projects }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [openId]);
+  }, [openId, showTaskModal]);
 
   const onNodeClick = useCallback<NodeMouseHandler>(
     (_, node: Node) => {
@@ -207,7 +215,7 @@ export function TaskGraphView({ tasks, projects }: Props) {
         )}
       </div>
 
-      {selected ? (
+      {showTaskModal && selected ? (
         <WorkItemModal
           origin={{ kind: 'task', task: selected }}
           projects={projects}

@@ -89,7 +89,8 @@
     "views": {
       "list": "List view",
       "board": "Board view",
-      "table": "Table view"
+      "table": "Table view",
+      "graph": "Graph view"
     },
     "boardStyles": {
       "unified": "All in one",

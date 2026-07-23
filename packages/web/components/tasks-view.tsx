@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Columns3, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
 import { deleteTask, getTask, reopenTask, reorderTasks, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
-import { HoverExpandButton } from '@/components/hover-expand-button';
 import { useGuardrails } from '@/hooks/use-guardrails';
 import { useConfirm } from '@/components/confirm-dialog';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
@@ -30,6 +29,7 @@ import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { SearchBar } from '@/components/search-bar';
 import { TableView } from '@/components/table-view';
+import { TaskGraphView } from '@/components/task-graph/task-graph-view';
 import { WorkItemModal } from '@/components/work-item-modal';
 import { COLUMNS, COLUMN_STATUSES } from '@/components/task-columns';
 import { useToast } from '@/components/toast';
@@ -83,15 +83,18 @@ type BoardStyle = 'unified' | 'project';
 const BOARD_STYLES: readonly BoardStyle[] = ['unified', 'project'];
 const BOARD_STYLE_STORAGE_KEY = 'midnite.tasks.boardStyle';
 
-// View toggle, matching the Projects/Sessions control — list / board / table,
-// persisted to localStorage. "board" is the kanban (where the others have grid).
-export type TaskView = 'list' | 'board' | 'table';
-const VIEWS: readonly TaskView[] = ['list', 'board', 'table'];
+// View toggle, matching the Projects/Sessions control — list / board / table /
+// graph, persisted to localStorage. "board" is the kanban (where the others
+// have grid); "graph" is the read-only dependency DAG (Phase 58 B), rendered
+// in-page instead of the separate `/tasks/graph` route.
+export type TaskView = 'list' | 'board' | 'table' | 'graph';
+const VIEWS: readonly TaskView[] = ['list', 'board', 'table', 'graph'];
 const VIEW_STORAGE_KEY = 'midnite.tasks.view';
 const VIEW_ICONS: Array<{ value: TaskView; Icon: LucideIcon }> = [
-  { value: 'list', Icon: List },
+  { value: 'list', Icon: ListTree },
   { value: 'board', Icon: Columns3 },
   { value: 'table', Icon: ListTree },
+  { value: 'graph', Icon: Workflow },
 ];
 
 /**
@@ -526,14 +529,6 @@ export function TasksView({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
-          {/* Phase 58 B — the dependency DAG (read-only) for the current scope.
-              Icon-only left of search; reveals its label on hover/focus. */}
-          <HoverExpandButton
-            href="/tasks/graph"
-            icon={<Workflow className="h-3.5 w-3.5" />}
-            label={t('toolbar.graph')}
-            variant="outline"
-          />
           <SearchBar placeholder={t('toolbar.searchPlaceholder')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             {VIEW_ICONS.map(({ value, Icon }) => (
@@ -581,6 +576,8 @@ export function TasksView({
           <TableView {...viewProps} />
         ) : view === 'list' ? (
           <ListView {...viewProps} />
+        ) : view === 'graph' ? (
+          <TaskGraphView tasks={filteredTasks} projects={projects} showTaskModal={false} />
         ) : (
           <BoardView
             {...viewProps}

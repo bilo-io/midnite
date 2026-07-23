@@ -89,7 +89,8 @@
     "views": {
       "list": "Vue liste",
       "board": "Vue kanban",
-      "table": "Vue table"
+      "table": "Vue table",
+      "graph": "Vue graphe"
     },
     "boardStyles": {
       "unified": "Tout-en-un",
