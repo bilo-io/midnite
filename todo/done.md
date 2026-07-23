@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-23 — feat: Phase 82 Theme A — i18n gate flip & catalog machinery 🟢
+
+PR #530. Inverts the enforcement model and splits the catalogs so the blanket sweep (B–E) can run wide and in parallel. Runs first.
+
+- [x] **Split catalogs per namespace** — `messages/<locale>/<namespace>.json`; generated per-locale barrel (`index.ts`, `scripts/i18n-barrels.mjs`) statically imports the fragments; runtime `i18n/messages.ts` imports the barrels. Static-export-safe (verified builds 57/57 under `output:'export'`). 1:1 split, meta kept as one keyed file per locale.
+- [x] **Tooling for split layout** — `i18n-validate.mjs` `loadCatalogs` walks + merges per-namespace fragments; `i18n-extract` reuses it.
+- [x] **Gate flipped default-on** — `I18N_ENFORCED` allowlist → generated `eslint.i18n-exempt.mjs` exception list (`scripts/i18n-exempt.mjs`); `no-literal-string` (jsx-text-only) errors on all `packages/web` + `packages/shell/src` `.tsx` except the tail + test/story; bracketed Next route paths glob-escaped; new files born enforced.
+- [x] **Guards** — `web:i18n-exempt --check` (removal-only, fails on stale) + `web:i18n-barrels --check`; fr-FR hard-parity guard test (blocks demoting fr-FR).
+- [x] **Progress meter** — `web:i18n-validate` prints per-namespace key totals + exempt count (starts **406**).
+- [x] **Tests** — split-layout `loadCatalogs`/`namespaceTotals` (shared); surface-render barrel spot-checks + flipped-gate config guard + exempt invariants + fr-FR parity (web).
+- [x] Gate: `:typecheck` + `:lint` green; `web:i18n-validate`/`i18n-barrels`/`i18n-exempt` green; `:test` green bar one pre-existing gateway SSO flake (passes 24/24 in isolation, no gateway code touched).
+
+---
+
 ## 2026-07-22 — feat: Phase 79 Theme E — i18n catalog gate + tooling + lint 🟢
 
 PR #513. The four locales are now enforceable and new hardcoded copy is blocked on migrated surfaces.
