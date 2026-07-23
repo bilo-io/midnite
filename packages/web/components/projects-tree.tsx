@@ -119,5 +119,5 @@ export function ProjectsTree({
     });
   }
 
-  return <SortableAccordions sections={sections} storageKey="midnite.projects.tree" />;
+  return <SortableAccordions sections={sections} storageKey="midnite.projects.tree" variant="split" />;
 }

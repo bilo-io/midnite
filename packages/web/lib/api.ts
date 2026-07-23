@@ -165,6 +165,7 @@ import {
   type UpdateMilestoneRequest,
   TaskSchema,
   TasksPageSchema,
+  ReorderTasksResponseSchema,
   TaskActivityResponseSchema,
   type TaskActivityEntry,
   type TaskSummary,
@@ -817,6 +818,17 @@ export async function updateTaskStatus(id: string, status: Status): Promise<Task
     `/tasks/${encodeURIComponent(id)}/status`,
     { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ status }) },
     TaskSchema,
+  );
+}
+
+/** Persist the manual within-column board order: `ids` are one column's task ids
+ *  in their new top-to-bottom order. Display-only — the scheduler keeps picking by
+ *  priority + age. The board reorders optimistically and calls this to persist. */
+export async function reorderTasks(ids: string[]): Promise<void> {
+  await fetchJson(
+    '/tasks/reorder',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ ids }) },
+    ReorderTasksResponseSchema,
   );
 }
 

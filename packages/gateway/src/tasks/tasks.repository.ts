@@ -356,6 +356,12 @@ export class TasksRepository {
       .get();
   }
 
+  // Set a task's manual board position (its 0-based index within a column). The
+  // service reindexes a whole column inside one transaction on a drag-reorder.
+  setPosition(id: string, position: number, updatedAt: string, db: DbOrTx = this.db): void {
+    db.update(tasks).set({ position, updatedAt }).where(eq(tasks.id, id)).run();
+  }
+
   setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)
@@ -422,11 +428,16 @@ export class TasksRepository {
     const total = Number(
       this.db.select({ count: sql<number>`COUNT(*)` }).from(tasks).where(where).get()?.count ?? 0,
     );
+    // Board display order: manual within-column `position` first (all-0 until a
+    // column is drag-reordered, so untouched boards keep the priority+age order),
+    // then the same priority+age tiebreak. The client regroups by status, so the
+    // position-first flat order only ranks tasks *within* a column. Display-only —
+    // the scheduler's ready-set (listReadyTodoTasks) still orders by priority+age.
     const ordered = this.db
       .select()
       .from(tasks)
       .where(where)
-      .orderBy(desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id));
+      .orderBy(asc(tasks.position), desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id));
     const rows =
       opts?.limit != null
         ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()

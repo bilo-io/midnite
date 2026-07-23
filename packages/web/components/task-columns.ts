@@ -17,6 +17,10 @@ export type TaskViewProps = {
    *  `wip` from todo/backlog spawns an agent session; other moves just restatus.
    *  Only the board wires this; list/table ignore it. */
   onMove?: (taskId: string, target: Status) => void;
+  /** Persist a manual within-column reorder: `orderedIds` are one column's task ids
+   *  in their new top-to-bottom order. Display-only — the scheduler still picks by
+   *  priority + age. Only the board (vertical drag) wires this. */
+  onReorder?: (orderedIds: string[]) => void;
   /** Reopen a terminal task (done/abandoned → todo, Phase 69 E). A dedicated verb,
    *  not a status move — the board confirms, then calls this. Only the board wires it. */
   onReopen?: (taskId: string) => void | Promise<void>;

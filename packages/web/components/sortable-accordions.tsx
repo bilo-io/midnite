@@ -57,20 +57,26 @@ export type AccordionSection = {
  * reconciled (known ids keep their order, new ids append). Shared by the Tasks
  * table, the Projects tree and the Sessions table.
  */
+/**
+ * How much card chrome a section wears:
+ * - `card` (default): one bordered glass card wraps the header + body together,
+ *   split by a divider — the classic accordion.
+ * - `bare`: no chrome at all — just a naked header row over the body, so the
+ *   content floats freely (matches the Sessions list). Used by the per-project board.
+ * - `split`: a naked header floating above the body, with the body enclosed in its
+ *   own bordered glass card — the header reads light while the rows stay contained.
+ */
+export type AccordionVariant = 'card' | 'bare' | 'split';
+
 export function SortableAccordions({
   sections,
   storageKey,
-  bare = false,
+  variant = 'card',
 }: {
   sections: AccordionSection[];
   storageKey: string;
-  /**
-   * Drop the bordered glass-card chrome for a "naked" stack — just the header row
-   * (grip · dot · label · count · actions · chevron) over an animated body, matching
-   * the Sessions list's CollapsibleStatusGroups so the section content floats
-   * freely. Sections still drag-reorder and persist. Defaults to the carded look.
-   */
-  bare?: boolean;
+  /** Card-chrome treatment for each section — see {@link AccordionVariant}. */
+  variant?: AccordionVariant;
 }) {
   const orderKey = `${storageKey}.order`;
   const collapsedKey = `${storageKey}.collapsed`;
@@ -153,14 +159,14 @@ export function SortableAccordions({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ordered.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-        <div className={cn('flex flex-col', bare ? 'gap-4' : 'gap-2')}>
+        <div className={cn('flex flex-col', variant === 'card' ? 'gap-2' : 'gap-4')}>
           {ordered.map((section) => (
             <Section
               key={section.id}
               section={section}
               collapsed={collapsed.has(section.id)}
               onToggle={() => toggle(section.id)}
-              bare={bare}
+              variant={variant}
             />
           ))}
         </div>
@@ -173,12 +179,12 @@ function Section({
   section,
   collapsed,
   onToggle,
-  bare = false,
+  variant = 'card',
 }: {
   section: AccordionSection;
   collapsed: boolean;
   onToggle: () => void;
-  bare?: boolean;
+  variant?: AccordionVariant;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
@@ -187,18 +193,22 @@ function Section({
     ? `0 0 8px -1px color-mix(in srgb, ${section.color} 70%, transparent)`
     : `0 0 8px -1px hsl(${section.hue ?? '215 14% 52%'} / 0.7)`;
 
+  // `card` wraps the whole section; `bare`/`split` leave the header naked (only
+  // `split` re-cards the body — see the Collapse below).
+  const headerNaked = variant !== 'card';
+
   return (
     <section
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         'relative',
-        bare
+        headerNaked
           ? isDragging && 'z-10 opacity-90'
           : cn('overflow-hidden rounded-lg border surface-glass', isDragging && 'z-10 shadow-lg'),
       )}
     >
-      <div className={cn('flex items-center gap-2', bare ? 'py-1' : 'px-2 py-2')}>
+      <div className={cn('flex items-center gap-2', headerNaked ? 'py-1' : 'px-2 py-2')}>
         <button
           type="button"
           ref={setActivatorNodeRef}
@@ -247,7 +257,17 @@ function Section({
         ) : null}
       </div>
       <Collapse open={!collapsed}>
-        <div className={cn(!bare && 'border-t border-border/60')}>{section.body}</div>
+        <div
+          className={cn(
+            // `card`: a divider under the shared card's header.
+            variant === 'card' && 'border-t border-border/60',
+            // `split`: the body gets its own bordered glass card under the naked header.
+            variant === 'split' && 'mt-1 overflow-hidden rounded-lg border surface-glass',
+            // `bare`: nothing — the body floats.
+          )}
+        >
+          {section.body}
+        </div>
       </Collapse>
     </section>
   );

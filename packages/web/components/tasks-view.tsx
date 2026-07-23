@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
-import { deleteTask, getTask, reopenTask, updateTaskStatus } from '@/lib/api';
+import { deleteTask, getTask, reopenTask, reorderTasks, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { moveTask, spawnsSession } from '@/lib/task-transitions';
 import { TASK_MODAL_PARAM, TASK_MODAL_LEGACY_PARAM } from '@/lib/task-route';
@@ -305,6 +305,34 @@ export function TasksView({
     [localTasks, toast],
   );
 
+  // Vertical drag-reorder within a column (Phase — task reorder). `orderedIds` is
+  // that column's task ids in their new top-to-bottom order. Optimistically permute
+  // localTasks (the board regroups by status preserving array order, so the column
+  // re-renders in the new order), then persist; roll back via a refetch on failure.
+  // Display-only — the gateway keeps scheduling by priority + age.
+  const onReorder = useCallback(
+    (orderedIds: string[]) => {
+      const idSet = new Set(orderedIds);
+      setLocalTasks((prev) => {
+        const byId = new Map(prev.map((t) => [t.id, t] as const));
+        const queue = orderedIds
+          .map((id) => byId.get(id))
+          .filter((t): t is TaskSummary => Boolean(t));
+        let qi = 0;
+        // Refill each reordered-column slot (in array order) with the next task from
+        // the new order; tasks outside the column keep their positions.
+        return prev.map((t) => (idSet.has(t.id) ? queue[qi++]! : t));
+      });
+      void reorderTasks(orderedIds)
+        .then(invalidateData)
+        .catch((e) => {
+          toast.error(e instanceof Error ? e.message : 'Failed to reorder tasks');
+          invalidateData(); // resync from the server order
+        });
+    },
+    [toast],
+  );
+
   const onSetView = useCallback((next: TaskView) => {
     setView(next);
     try {
@@ -457,6 +485,7 @@ export function TasksView({
     onSelect: openTask,
     showAbandoned: showAllStatuses,
     onMove,
+    onReorder,
     onReopen,
     isSelected,
     onToggleSelect: (id: string, sk: boolean) => toggleSelect(id, sk, orderedIds),

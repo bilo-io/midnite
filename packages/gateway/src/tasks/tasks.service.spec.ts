@@ -85,6 +85,7 @@ class InMemoryRepo extends TasksRepository {
       waitReason: row.waitReason ?? null,
       prompt: row.prompt ?? null,
       description: row.description ?? null,
+      position: row.position ?? 0,
       repo: row.repo ?? null,
       agentId: row.agentId ?? null,
       sessionId: row.sessionId ?? null,

@@ -1203,6 +1203,24 @@ export class TasksService implements OnModuleDestroy {
     return this.emit('task.updated', this.getTask(id));
   }
 
+  /**
+   * Persist the manual board order for one column: reindex each task's `position`
+   * to its 0-based slot in `ids`, atomically. Display-only — the scheduler's
+   * ready-set (`listReadyTodoTasks`) still orders by priority + age, so dragging a
+   * card never changes which task runs next. Validates every id is a visible task
+   * first (404 otherwise), and de-dupes a malformed payload. No `task.updated`
+   * broadcast: the acting client reorders optimistically then invalidates, and the
+   * new order persists for any subsequent refetch on any client.
+   */
+  reorderTasks(ids: string[], scope?: TeamScope): void {
+    const unique = [...new Set(ids)];
+    for (const id of unique) this.getTask(id, scope); // 404s if not visible in scope
+    const now = new Date().toISOString();
+    this.repo.transaction((tx) => {
+      unique.forEach((id, index) => this.repo.setPosition(id, index, now, tx));
+    });
+  }
+
   // Replace a task's tag set (normalised: trimmed, de-duped, length/count-capped).
   setTags(id: string, tags: string[]): Task {
     const now = new Date().toISOString();

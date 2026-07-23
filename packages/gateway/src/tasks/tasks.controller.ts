@@ -36,6 +36,7 @@ import {
   ReportFormatSchema,
   ResolveTaskRequestSchema,
   TaskFailuresQuerySchema,
+  ReorderTasksRequestSchema,
   SetTaskPriorityRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
@@ -125,6 +126,27 @@ export class TasksController {
       page,
       limit,
     });
+  }
+
+  /**
+   * Persist the manual within-column board order (task reorder). Body is one
+   * column's task ids in their new top-to-bottom order; the service reindexes each
+   * task's `position`. Display-only — the scheduler is unaffected. Static route,
+   * declared before `:id` so the param route can't shadow it.
+   */
+  @Patch('reorder')
+  @RequiresRole('member')
+  reorder(
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): { ok: true } {
+    const parsed = ReorderTasksRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid reorder request');
+    }
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    this.service.reorderTasks(parsed.data.ids, scope);
+    return { ok: true };
   }
 
   /** Recent failures across tasks (Phase 53 E). Static route — declared before

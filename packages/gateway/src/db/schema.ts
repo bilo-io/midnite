@@ -35,6 +35,10 @@ export const tasks = sqliteTable(
     // Optional longer free-form detail typed alongside the title; folded into the
     // agent's seed prompt at spawn. Null/absent = none.
     description: text('description'),
+    // Manual board order within a column (Phase — task reorder). Reindexed 0..N on
+    // a drag-reorder; default 0 leaves untouched columns on the priority+age order.
+    // Display-only: the scheduler's ready-set still orders by priority+age.
+    position: integer('position').notNull().default(0),
     repo: text('repo'),
     agentId: text('agent_id'),
     sessionId: text('session_id'),
@@ -61,6 +65,8 @@ export const tasks = sqliteTable(
     archivedIdx: index('tasks_archived_idx').on(t.archivedAt),
     // Backs the scheduler's "highest-priority, oldest-first" todo selection.
     statusPriorityIdx: index('tasks_status_priority_idx').on(t.status, t.priority),
+    // Backs the board's within-column ordering (manual position first).
+    statusPositionIdx: index('tasks_status_position_idx').on(t.status, t.position),
     // Phase 58 D — roadmap groups tasks by milestone; index the lookup.
     milestoneIdx: index('tasks_milestone_idx').on(t.milestoneId),
     // Both teamScopeFilter OR-arms are already indexed (migration 0048); declared

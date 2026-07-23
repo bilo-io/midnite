@@ -374,6 +374,21 @@ export const SetTaskPriorityRequestSchema = z.object({
   priority: z.number().int().min(0).max(3),
 });
 
+/** Max task ids accepted in one reorder — a sane bound on a single column. */
+export const MAX_REORDER_TASKS = 500;
+
+/**
+ * Body for `PATCH /tasks/reorder` — the task ids of one board column in their new
+ * top-to-bottom order. The service writes each task's board `position` = its
+ * index, so the board's within-column order persists across clients. This is
+ * *display-only*: the scheduler still picks ready tasks by priority + age.
+ */
+export const ReorderTasksRequestSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(MAX_REORDER_TASKS),
+});
+
+export const ReorderTasksResponseSchema = z.object({ ok: z.literal(true) });
+
 export const CreateTaskResponseSchema = z.object({
   task: TaskSchema,
 });
@@ -396,6 +411,7 @@ export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
 export type AddTaskDependencyRequest = z.infer<typeof AddTaskDependencyRequestSchema>;
 export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSchema>;
 export type SetTaskTagsRequest = z.infer<typeof SetTaskTagsRequestSchema>;
+export type ReorderTasksRequest = z.infer<typeof ReorderTasksRequestSchema>;
 export type SetTaskPriorityRequest = z.infer<typeof SetTaskPriorityRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;

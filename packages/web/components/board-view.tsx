@@ -5,13 +5,20 @@ import {
   DragOverlay,
   MouseSensor,
   TouchSensor,
-  useDraggable,
+  closestCenter,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useTranslations } from 'next-intl';
 import { Play, Plus, RotateCcw, Square } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -33,6 +40,51 @@ import { cn } from '@/lib/utils';
  *  directly into In-progress/Waiting/Done (those follow the agent session), so
  *  the per-column "+" affordance only appears on these. */
 const CREATABLE_STATUSES = new Set<Status>(['backlog', 'todo']);
+
+/**
+ * Resolve a board drag-end into one of two intents, shared by the unified and
+ * per-project boards:
+ *  - dropped over another column (or a card in one) → a **status move** (`onMove`),
+ *    which may spawn/stop a session — the existing cross-column behaviour.
+ *  - dropped within the same column → a **reorder** (`onReorder`) of that column's
+ *    ids, persisted as the manual board order (display-only).
+ * `over.id` is either a column's status (its droppable) or a card's task id.
+ */
+function resolveBoardDragEnd(
+  event: DragEndEvent,
+  tasks: TaskSummary[],
+  columns: ColumnDef[],
+  onMove?: (taskId: string, target: Status) => void,
+  onReorder?: (orderedIds: string[]) => void,
+): void {
+  const { active, over } = event;
+  if (!over) return;
+  const activeId = String(active.id);
+  const overId = String(over.id);
+  const activeTask = tasks.find((t) => t.id === activeId);
+  if (!activeTask) return;
+
+  const statuses = new Set<string>(columns.map((c) => c.status));
+  const overTask = tasks.find((t) => t.id === overId);
+  // Target column: the over id is a column status (dropped on the column itself)
+  // or a card whose status names the column.
+  const targetStatus = (statuses.has(overId) ? (overId as Status) : overTask?.status) ?? undefined;
+  if (!targetStatus) return;
+
+  if (targetStatus !== activeTask.status) {
+    onMove?.(activeId, targetStatus);
+    return;
+  }
+
+  // Same column → reorder. Build the column's id list and move the active card to
+  // the drop target's slot (end of the column when dropped on empty space).
+  if (!onReorder || activeId === overId) return;
+  const colIds = tasks.filter((t) => t.status === targetStatus).map((t) => t.id);
+  const from = colIds.indexOf(activeId);
+  const to = overTask ? colIds.indexOf(overId) : colIds.length - 1;
+  if (from === -1 || to === -1 || from === to) return;
+  onReorder(arrayMove(colIds, from, to));
+}
 
 /** True when focus sits in an editable element — board shortcuts are suppressed then. */
 function inEditableElement(): boolean {
@@ -90,6 +142,7 @@ function UnifiedBoard({
   onSelect,
   showAbandoned,
   onMove,
+  onReorder,
   onReopen,
   isSelected,
   onToggleSelect,
@@ -131,11 +184,7 @@ function UnifiedBoard({
 
   const onDragEnd = (event: DragEndEvent) => {
     setActiveId(null);
-    const target = event.over?.id;
-    const taskId = event.active.id;
-    if (typeof target === 'string' && typeof taskId === 'string') {
-      onMove?.(taskId, target as Status);
-    }
+    resolveBoardDragEnd(event, tasks, columns, onMove, onReorder);
   };
 
   // Mobile snap-scroll: track which column is currently visible via scrollLeft.
@@ -290,6 +339,7 @@ function UnifiedBoard({
 
       <DndContext
         sensors={sensors}
+        collisionDetection={closestCenter}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
@@ -328,27 +378,33 @@ function UnifiedBoard({
             >
               {/* Plain, un-windowed list: every card renders so the column grows to
                   its full height and the page scrolls. Boards hold tens–hundreds of
-                  cards, well within a comfortable DOM budget. */}
-              <div className="flex flex-col gap-2">
-                {(grouped.get(col.status) ?? []).map((t) => (
-                  <DraggableCard
-                    key={t.id}
-                    task={t}
-                    project={t.projectId ? projectsById.get(t.projectId) : undefined}
-                    onSelect={() => onSelect(t)}
-                    onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
-                    onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
-                    onReopen={onReopen ? () => void handleReopen(t.id) : undefined}
-                    selected={isSelected?.(t.id) ?? false}
-                    onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
-                    blockedBy={blockedCounts?.get(t.id)}
-                    focused={t.id === focusedId}
-                    // On a phone, drag is finicky — offer the tap-to-move fallback.
-                    moveColumns={isMobile && onMove ? columns : undefined}
-                    onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
-                  />
-                ))}
-              </div>
+                  cards, well within a comfortable DOM budget. A SortableContext lets
+                  cards be dragged to reorder vertically within the column. */}
+              <SortableContext
+                items={(grouped.get(col.status) ?? []).map((tk) => tk.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col gap-2">
+                  {(grouped.get(col.status) ?? []).map((t) => (
+                    <DraggableCard
+                      key={t.id}
+                      task={t}
+                      project={t.projectId ? projectsById.get(t.projectId) : undefined}
+                      onSelect={() => onSelect(t)}
+                      onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
+                      onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
+                      onReopen={onReopen ? () => void handleReopen(t.id) : undefined}
+                      selected={isSelected?.(t.id) ?? false}
+                      onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
+                      blockedBy={blockedCounts?.get(t.id)}
+                      focused={t.id === focusedId}
+                      // On a phone, drag is finicky — offer the tap-to-move fallback.
+                      moveColumns={isMobile && onMove ? columns : undefined}
+                      onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
             </Column>
           ))}
         </div>
@@ -439,6 +495,7 @@ function ProjectBoardsView({
   projectsById,
   onSelect,
   onMove,
+  onReorder,
   onReopen,
   isSelected,
   onToggleSelect,
@@ -490,6 +547,7 @@ function ProjectBoardsView({
         projectsById={projectsById}
         onSelect={onSelect}
         onMove={onMove}
+        onReorder={onReorder}
         onReopen={onReopen ? handleReopen : undefined}
         isSelected={isSelected}
         onToggleSelect={onToggleSelect}
@@ -505,7 +563,7 @@ function ProjectBoardsView({
       {groups.length === 0 ? (
         <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('nothingHere')}</p>
       ) : (
-        <SortableAccordions sections={sections} storageKey="midnite.tasks.projectBoards" bare />
+        <SortableAccordions sections={sections} storageKey="midnite.tasks.projectBoards" variant="bare" />
       )}
       {showAbandoned ? (
         <AbandonedRow
@@ -532,6 +590,7 @@ function ProjectBoardBody({
   projectsById,
   onSelect,
   onMove,
+  onReorder,
   onReopen,
   isSelected,
   onToggleSelect,
@@ -546,6 +605,7 @@ function ProjectBoardBody({
   projectsById: Map<string, ProjectTagInfo>;
   onSelect: (task: TaskSummary) => void;
   onMove?: (taskId: string, target: Status) => void;
+  onReorder?: (orderedIds: string[]) => void;
   onReopen?: (id: string) => void | Promise<void>;
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
@@ -567,12 +627,11 @@ function ProjectBoardBody({
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={closestCenter}
       onDragStart={(e) => setActiveId(String(e.active.id))}
       onDragEnd={(e) => {
         setActiveId(null);
-        const target = e.over?.id;
-        const id = e.active.id;
-        if (typeof target === 'string' && typeof id === 'string') onMove?.(id, target as Status);
+        resolveBoardDragEnd(e, tasks, columns, onMove, onReorder);
       }}
       onDragCancel={() => setActiveId(null)}
     >
@@ -595,24 +654,29 @@ function ProjectBoardBody({
                   : undefined
               }
             >
-              <div className="flex flex-col gap-2">
-                {colTasks.map((tk) => (
-                  <DraggableCard
-                    key={tk.id}
-                    task={tk}
-                    project={tk.projectId ? projectsById.get(tk.projectId) : undefined}
-                    onSelect={() => onSelect(tk)}
-                    onStart={onMove ? () => onMove(tk.id, 'wip') : undefined}
-                    onStop={onMove ? () => onMove(tk.id, 'todo') : undefined}
-                    onReopen={onReopen ? () => void onReopen(tk.id) : undefined}
-                    selected={isSelected?.(tk.id) ?? false}
-                    onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(tk.id, sk) : undefined}
-                    blockedBy={blockedCounts?.get(tk.id)}
-                    moveColumns={isMobile && onMove ? columns : undefined}
-                    onMoveTo={onMove ? (target) => onMove(tk.id, target) : undefined}
-                  />
-                ))}
-              </div>
+              <SortableContext
+                items={colTasks.map((tk) => tk.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col gap-2">
+                  {colTasks.map((tk) => (
+                    <DraggableCard
+                      key={tk.id}
+                      task={tk}
+                      project={tk.projectId ? projectsById.get(tk.projectId) : undefined}
+                      onSelect={() => onSelect(tk)}
+                      onStart={onMove ? () => onMove(tk.id, 'wip') : undefined}
+                      onStop={onMove ? () => onMove(tk.id, 'todo') : undefined}
+                      onReopen={onReopen ? () => void onReopen(tk.id) : undefined}
+                      selected={isSelected?.(tk.id) ?? false}
+                      onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(tk.id, sk) : undefined}
+                      blockedBy={blockedCounts?.get(tk.id)}
+                      moveColumns={isMobile && onMove ? columns : undefined}
+                      onMoveTo={onMove ? (target) => onMove(tk.id, target) : undefined}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
             </Column>
           );
         })}
@@ -748,14 +812,23 @@ function DraggableCard({
   moveColumns?: ColumnDef[];
   onMoveTo?: (target: Status) => void;
 }) {
+  // useSortable = draggable + a drop target + within-list ordering, so cards can be
+  // dragged across columns (status move) AND reordered vertically within one.
   // Only `listeners` (pointer handlers) are spread — NOT `attributes`. dnd-kit's
   // `attributes` add `role="button"`/`tabIndex`/`aria-roledescription` for keyboard
   // drag, but the board wires only Mouse+Touch sensors (no KeyboardSensor), so those
   // semantics are inert and merely nest the card's own button inside an interactive
   // wrapper (axe `nested-interactive`). Dropping them keeps pointer drag intact.
-  const { setNodeRef, listeners, isDragging } = useDraggable({
+  const { setNodeRef, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
   });
+  // Siblings shift via their sortable transform to open a gap; the dragged card
+  // itself stays put as a dimmed placeholder (the DragOverlay renders the moving
+  // copy), so its own transform is suppressed to avoid a double image.
+  const sortableStyle = {
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
+    transition,
+  };
   const canStart = task.status === 'todo' || task.status === 'backlog';
   // A running task (its session is live) can be stopped: interrupt the agent and
   // send the task back to todo. Mirrors the Start affordance on idle cards.
@@ -775,6 +848,7 @@ function DraggableCard({
         setNodeRef(node);
         rootRef.current = node;
       }}
+      style={sortableStyle}
       {...listeners}
       data-focused={focused || undefined}
       // The floating card follows the cursor via DragOverlay; here we just leave

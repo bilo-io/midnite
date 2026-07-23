@@ -62,6 +62,38 @@ describe('TasksRepository', () => {
     expect(repo.listReadyTodoTasks(at).map((t) => t.id)).toEqual(['t1', 't2', 't3']);
   });
 
+  describe('manual board position (within-column reorder)', () => {
+    it('defaults position to 0 so an untouched board keeps the priority+age order', () => {
+      insert('low', { priority: 0, createdAt: '2026-06-01T00:00:00.000Z' });
+      insert('urgent', { priority: 3, createdAt: '2026-06-02T00:00:00.000Z' });
+      insert('normal', { priority: 1, createdAt: '2026-06-03T00:00:00.000Z' });
+      // The board page uses the same priority+age order as listTasks until reordered.
+      expect(repo.listTaskPage('todo').rows.map((t) => t.id)).toEqual(['urgent', 'normal', 'low']);
+    });
+
+    it('orders the board page by manual position first once a column is reindexed', () => {
+      insert('urgent', { priority: 3, createdAt: '2026-06-01T00:00:00.000Z' });
+      insert('normal', { priority: 1, createdAt: '2026-06-02T00:00:00.000Z' });
+      insert('low', { priority: 0, createdAt: '2026-06-03T00:00:00.000Z' });
+      // Drag "low" to the top, then "normal", then "urgent" — reindex 0..2.
+      const now = '2026-06-04T00:00:00.000Z';
+      ['low', 'normal', 'urgent'].forEach((id, i) => repo.setPosition(id, i, now));
+      expect(repo.listTaskPage('todo').rows.map((t) => t.id)).toEqual(['low', 'normal', 'urgent']);
+    });
+
+    it('leaves the scheduler ready-set on priority+age (reorder is display-only)', () => {
+      insert('urgent', { priority: 3, createdAt: '2026-06-01T00:00:00.000Z' });
+      insert('normal', { priority: 1, createdAt: '2026-06-02T00:00:00.000Z' });
+      insert('low', { priority: 0, createdAt: '2026-06-03T00:00:00.000Z' });
+      const now = '2026-06-04T00:00:00.000Z';
+      // Manually invert the board order…
+      ['low', 'normal', 'urgent'].forEach((id, i) => repo.setPosition(id, i, now));
+      expect(repo.listTaskPage('todo').rows.map((t) => t.id)).toEqual(['low', 'normal', 'urgent']);
+      // …the scheduler still picks highest-priority, oldest-first — unchanged.
+      expect(repo.listReadyTodoTasks(now).map((t) => t.id)).toEqual(['urgent', 'normal', 'low']);
+    });
+  });
+
   it('incrementRetry bumps the counter by one', () => {
     insert('t1', {});
     repo.incrementRetry('t1', '2026-06-02T00:00:00.000Z', null);
