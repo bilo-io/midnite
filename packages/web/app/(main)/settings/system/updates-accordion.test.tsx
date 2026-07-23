@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '../../../../vitest.render-intl';
 
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { UpdatesAccordion } from './updates-accordion';
@@ -37,5 +38,13 @@ describe('UpdatesAccordion', () => {
     fireEvent.click(screen.getByRole('button', { name: /updates/i }));
     expect(screen.getByRole('option', { name: 'Stable' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Beta' })).toBeInTheDocument();
+  });
+
+  // Phase 82 C — renders under fr-FR (exercises the t.rich channel description too).
+  it('renders in fr-FR', () => {
+    render(<UpdatesAccordion />, { locale: 'fr-FR' });
+    fireEvent.click(screen.getByRole('button', { name: /mises à jour/i }));
+    expect(screen.getByLabelText('Canal de publication')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Bêta' })).toBeInTheDocument();
   });
 });

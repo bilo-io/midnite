@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ClipboardCopy, Trash2, UserMinus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { TeamInvite, TeamRole, TeamWithMembers } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,18 +17,15 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
-
 const ROLE_OPTIONS: TeamRole[] = ['owner', 'admin', 'member', 'viewer'];
 
 function CopyButton({ value, label }: { value: string; label: string }) {
+  const t = useTranslations('settings');
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
-      aria-label={`Copy ${label}`}
+      aria-label={t('team.invite.copyAria', { label })}
       onClick={() => {
         void navigator.clipboard.writeText(value).then(() => {
           setCopied(true);
@@ -37,12 +35,16 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground"
     >
       {copied ? <Check className="h-3 w-3 text-success" /> : <ClipboardCopy className="h-3 w-3" />}
-      {copied ? 'Copied' : 'Copy link'}
+      {copied ? t('team.invite.copied') : t('team.invite.copyLink')}
     </button>
   );
 }
 
 export function TeamDetailView({ teamId }: { teamId: string }) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
+  const errMsg = (e: unknown): string =>
+    e instanceof Error ? e.message : t('team.errors.generic');
   const { user, setActiveTeam } = useAuth();
   const router = useRouter();
   const [team, setTeam] = useState<TeamWithMembers | null>(null);
@@ -123,7 +125,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   const inviteUrl = (token: string) =>
     `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?token=${encodeURIComponent(token)}`;
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{tc('loading')}</p>;
   if (error) return <p className="text-sm text-destructive">{error}</p>;
   if (!team) return null;
 
@@ -139,11 +141,11 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
 
       {/* Members */}
       <section className="space-y-3">
-        <h3 className="text-sm font-medium">Members</h3>
+        <h3 className="text-sm font-medium">{t('team.members.heading')}</h3>
         <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
           {team.members.map((m) => (
             <li key={m.userId} className="flex items-center justify-between px-4 py-2.5 gap-3">
-              <span className="text-sm truncate">{m.userId === user?.id ? `${user.name} (you)` : m.userId}</span>
+              <span className="text-sm truncate">{m.userId === user?.id ? t('team.members.you', { name: user.name }) : m.userId}</span>
               <div className="flex items-center gap-2 shrink-0">
                 {isAdminPlus && m.userId !== user?.id ? (
                   <select
@@ -152,16 +154,16 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
                     className="text-xs rounded border border-border bg-background px-1.5 py-0.5"
                   >
                     {ROLE_OPTIONS.map((r) => (
-                      <option key={r} value={r} disabled={r === 'owner' && !isOwner}>{r}</option>
+                      <option key={r} value={r} disabled={r === 'owner' && !isOwner}>{t(`team.roles.${r}`)}</option>
                     ))}
                   </select>
                 ) : (
-                  <span className="text-xs text-muted-foreground">{m.role}</span>
+                  <span className="text-xs text-muted-foreground">{t(`team.roles.${m.role}`)}</span>
                 )}
                 {isAdminPlus && m.userId !== user?.id && m.role !== 'owner' && (
                   <button
                     type="button"
-                    aria-label="Remove member"
+                    aria-label={t('team.members.removeAria')}
                     onClick={() => void handleRemoveMember(m.userId)}
                     className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   >
@@ -177,7 +179,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
       {/* Invite tokens */}
       {isAdminPlus && (
         <section className="space-y-3">
-          <h3 className="text-sm font-medium">Invite link</h3>
+          <h3 className="text-sm font-medium">{t('team.invite.heading')}</h3>
           <div className="flex items-center gap-2">
             <select
               value={inviteRole}
@@ -185,11 +187,11 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
               className="text-xs rounded border border-border bg-background px-2 py-1.5"
             >
               {ROLE_OPTIONS.filter((r) => r !== 'owner').map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>{t(`team.roles.${r}`)}</option>
               ))}
             </select>
             <Button size="sm" variant="outline" onClick={() => void handleCreateInvite()} disabled={creating}>
-              {creating ? 'Generating…' : 'Generate link'}
+              {creating ? t('team.invite.generating') : t('team.invite.generate')}
             </Button>
           </div>
           {inviteError && <p className="text-xs text-destructive">{inviteError}</p>}
@@ -201,14 +203,17 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
                   <div className="min-w-0">
                     <span className="text-xs font-mono truncate block">{inviteUrl(inv.token)}</span>
                     <span className="text-xs text-muted-foreground">
-                      {inv.role} · expires {new Date(inv.expiresAt).toLocaleDateString()}
+                      {t('team.invite.roleExpires', {
+                        role: t(`team.roles.${inv.role}`),
+                        date: new Date(inv.expiresAt).toLocaleDateString(),
+                      })}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <CopyButton value={inviteUrl(inv.token)} label="invite link" />
+                    <CopyButton value={inviteUrl(inv.token)} label={t('team.invite.linkLabel')} />
                     <button
                       type="button"
-                      aria-label="Revoke invite"
+                      aria-label={t('team.invite.revokeAria')}
                       onClick={() => void handleRevokeInvite(inv.id)}
                       className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     >
@@ -225,22 +230,25 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
       {/* Danger zone */}
       {isOwner && (
         <section className="space-y-3 rounded-lg border border-destructive/40 p-4">
-          <h3 className="text-sm font-medium text-destructive">Danger zone</h3>
+          <h3 className="text-sm font-medium text-destructive">{t('team.danger.heading')}</h3>
           {!confirmDelete ? (
             <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
-              Delete team
+              {t('team.danger.delete')}
             </Button>
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                This will permanently delete <strong>{team.name}</strong> and remove all members. Are you sure?
+                {t.rich('team.danger.confirm', {
+                  name: team.name,
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
               <div className="flex gap-2">
                 <Button size="sm" variant="destructive" onClick={() => void handleDeleteTeam()} disabled={deleting}>
-                  {deleting ? 'Deleting…' : 'Yes, delete'}
+                  {deleting ? t('team.danger.deleting') : t('team.danger.confirmDelete')}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
-                  Cancel
+                  {tc('cancel')}
                 </Button>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
+import { renderWithIntl as render } from '../../../vitest.render-intl';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   STATUSES,
   WEBHOOK_EVENTS,
@@ -39,6 +40,9 @@ function fmtTime(iso: string): string {
 // ── Deliveries panel ──────────────────────────────────────────────────────────
 
 function DeliveriesPanel({ webhookId }: { webhookId: string }) {
+  const t = useTranslations('settings');
+  const errMsg = (e: unknown): string =>
+    e instanceof Error ? e.message : t('integrations.errors.generic');
   const [deliveries, setDeliveries] = useState<WebhookDelivery[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [redelivering, setRedelivering] = useState<string | null>(null);
@@ -66,11 +70,16 @@ function DeliveriesPanel({ webhookId }: { webhookId: string }) {
   };
 
   if (error) return <p className="px-4 py-3 text-xs text-destructive">{error}</p>;
-  if (!deliveries) return <p className="px-4 py-3 text-xs text-muted-foreground">Loading deliveries…</p>;
+  if (!deliveries)
+    return (
+      <p className="px-4 py-3 text-xs text-muted-foreground">
+        {t('integrations.deliveriesPanel.loading')}
+      </p>
+    );
   if (deliveries.length === 0)
     return (
       <p className="px-4 py-3 text-xs text-muted-foreground">
-        No deliveries yet. Move a matching task — or hit “Send test”.
+        {t('integrations.deliveriesPanel.empty')}
       </p>
     );
 
@@ -102,7 +111,9 @@ function DeliveriesPanel({ webhookId }: { webhookId: string }) {
                 disabled={redelivering === d.id}
                 onClick={() => void handleRedeliver(d.id)}
               >
-                {redelivering === d.id ? 'Redelivering…' : 'Redeliver'}
+                {redelivering === d.id
+                  ? t('integrations.deliveriesPanel.redelivering')
+                  : t('integrations.deliveriesPanel.redeliver')}
               </Button>
             </td>
           </tr>
@@ -110,10 +121,6 @@ function DeliveriesPanel({ webhookId }: { webhookId: string }) {
       </tbody>
     </table>
   );
-}
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
 }
 
 function hostOf(url: string): string {
@@ -145,6 +152,10 @@ function CreateWebhookModal({
   onCreated: (secret: string, webhook: Webhook) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
+  const errMsg = (e: unknown): string =>
+    e instanceof Error ? e.message : t('integrations.errors.generic');
   const [url, setUrl] = useState('');
   const [provider, setProvider] = useState<WebhookProvider>('slack');
   const [events, setEvents] = useState<WebhookEvent[]>(['task.updated']);
@@ -181,18 +192,22 @@ function CreateWebhookModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-card border border-border rounded-lg p-6 w-full max-w-md shadow-xl">
-        <h2 className="text-lg font-semibold mb-4">Add webhook endpoint</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('integrations.create.title')}</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Payload URL</label>
+            <label className="block text-sm font-medium mb-1">
+              {t('integrations.create.payloadUrl')}
+            </label>
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://hooks.slack.com/services/…"
+              placeholder={t('integrations.create.payloadUrlPlaceholder')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Provider</label>
+            <label className="block text-sm font-medium mb-1">
+              {t('integrations.create.provider')}
+            </label>
             <select
               value={provider}
               onChange={(e) => setProvider(e.target.value as WebhookProvider)}
@@ -206,7 +221,9 @@ function CreateWebhookModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Events</label>
+            <label className="block text-sm font-medium mb-1">
+              {t('integrations.create.events')}
+            </label>
             <div className="flex flex-wrap gap-2">
               {WEBHOOK_EVENTS.map((e) => (
                 <button
@@ -226,7 +243,10 @@ function CreateWebhookModal({
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Only on these statuses <span className="text-muted-foreground">(optional, for updates)</span>
+              {t('integrations.create.statuses')}{' '}
+              <span className="text-muted-foreground">
+                {t('integrations.create.statusesHint')}
+              </span>
             </label>
             <div className="flex flex-wrap gap-2">
               {STATUSES.map((s) => (
@@ -249,10 +269,10 @@ function CreateWebhookModal({
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>
-            Cancel
+            {tc('cancel')}
           </Button>
           <Button size="sm" onClick={() => void handleCreate()} disabled={!canSubmit}>
-            {loading ? 'Creating…' : 'Add endpoint'}
+            {loading ? t('integrations.create.creating') : t('integrations.create.addEndpoint')}
           </Button>
         </div>
       </div>
@@ -263,6 +283,7 @@ function CreateWebhookModal({
 // ── Secret reveal modal ───────────────────────────────────────────────────────
 
 function SecretModal({ secret, onClose }: { secret: string; onClose: () => void }) {
+  const t = useTranslations('settings');
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     void navigator.clipboard.writeText(secret).then(() => {
@@ -273,20 +294,21 @@ function SecretModal({ secret, onClose }: { secret: string; onClose: () => void 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-card border border-border rounded-lg p-6 w-full max-w-md shadow-xl">
-        <h2 className="text-lg font-semibold mb-2">Signing secret</h2>
+        <h2 className="text-lg font-semibold mb-2">{t('integrations.secret.title')}</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Copy this now — it will not be shown again. Use it to verify the{' '}
-          <code className="bg-muted rounded px-1">X-Midnite-Signature</code> header.
+          {t.rich('integrations.secret.description', {
+            code: (chunks) => <code className="bg-muted rounded px-1">{chunks}</code>,
+          })}
         </p>
         <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 font-mono text-xs break-all">
           <span className="flex-1 select-all">{secret}</span>
           <button onClick={handleCopy} className="shrink-0 rounded px-2 py-1 text-xs hover:bg-accent">
-            {copied ? '✓ Copied' : 'Copy'}
+            {copied ? t('integrations.secret.copied') : t('integrations.secret.copy')}
           </button>
         </div>
         <div className="mt-6 flex justify-end">
           <Button size="sm" onClick={onClose}>
-            Done
+            {t('integrations.secret.done')}
           </Button>
         </div>
       </div>
@@ -297,6 +319,10 @@ function SecretModal({ secret, onClose }: { secret: string; onClose: () => void 
 // ── Main view ─────────────────────────────────────────────────────────────────
 
 export function IntegrationsView() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
+  const errMsg = (e: unknown): string =>
+    e instanceof Error ? e.message : t('integrations.errors.generic');
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -375,13 +401,11 @@ export function IntegrationsView() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Integrations</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Outbound webhooks — push task events to Slack, Discord, or any receiver.
-          </p>
+          <h1 className="text-xl font-semibold">{t('integrations.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('integrations.description')}</p>
         </div>
         <Button size="sm" onClick={() => setShowCreate(true)}>
-          Add endpoint
+          {t('integrations.addEndpoint')}
         </Button>
       </div>
 
@@ -389,21 +413,21 @@ export function IntegrationsView() {
 
       {loading ? (
         <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
-          Loading…
+          {tc('loading')}
         </div>
       ) : webhooks.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          No webhook endpoints yet. Add one to push task events to a channel or service.
+          {t('integrations.empty')}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs font-medium text-muted-foreground">
               <tr>
-                <th className="px-4 py-2 text-left">Provider</th>
-                <th className="px-4 py-2 text-left">Target</th>
-                <th className="px-4 py-2 text-left">Events</th>
-                <th className="px-4 py-2 text-left">Enabled</th>
+                <th className="px-4 py-2 text-left">{t('integrations.columns.provider')}</th>
+                <th className="px-4 py-2 text-left">{t('integrations.columns.target')}</th>
+                <th className="px-4 py-2 text-left">{t('integrations.columns.events')}</th>
+                <th className="px-4 py-2 text-left">{t('integrations.columns.enabled')}</th>
                 <th className="px-4 py-2" />
               </tr>
             </thead>
@@ -423,7 +447,7 @@ export function IntegrationsView() {
                         checked={w.enabled}
                         disabled={busy === w.id}
                         onCheckedChange={() => void handleToggle(w)}
-                        aria-label={`Toggle ${hostOf(w.url)}`}
+                        aria-label={t('integrations.toggleAria', { host: hostOf(w.url) })}
                       />
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -431,7 +455,9 @@ export function IntegrationsView() {
                         <span
                           className={`mr-2 text-xs ${testNote.ok ? 'text-success' : 'text-destructive'}`}
                         >
-                          {testNote.ok ? '✓ test sent' : '✗ test failed'}
+                          {testNote.ok
+                            ? t('integrations.testSent')
+                            : t('integrations.testFailed')}
                         </span>
                       )}
                       <Button
@@ -440,7 +466,7 @@ export function IntegrationsView() {
                         disabled={busy === w.id}
                         onClick={() => void handleSendTest(w.id)}
                       >
-                        Send test
+                        {t('integrations.sendTest')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -448,7 +474,7 @@ export function IntegrationsView() {
                         onClick={() => toggleExpanded(w.id)}
                         aria-expanded={expanded === w.id}
                       >
-                        {expanded === w.id ? 'Hide log' : 'Deliveries'}
+                        {expanded === w.id ? t('integrations.hideLog') : t('integrations.deliveries')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -456,7 +482,7 @@ export function IntegrationsView() {
                         disabled={busy === w.id}
                         onClick={() => void handleRotate(w.id)}
                       >
-                        Rotate secret
+                        {t('integrations.rotateSecret')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -465,7 +491,7 @@ export function IntegrationsView() {
                         disabled={busy === w.id}
                         onClick={() => void handleDelete(w.id)}
                       >
-                        Delete
+                        {tc('delete')}
                       </Button>
                     </td>
                   </tr>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { WorkflowCredentialType, CreateWorkflowCredentialRequest, OAuthProvider } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { getOAuthStartUrl } from '@/lib/api';
@@ -12,33 +13,35 @@ type Props = {
   onCancel: () => void;
 };
 
-type FieldDef = { key: string; label: string; type?: 'text' | 'password' | 'number'; placeholder?: string; required?: boolean };
+type FieldDef = { key: string; labelKey: string; type?: 'text' | 'password' | 'number'; placeholderKey?: string; required?: boolean };
 
 const TYPE_FIELDS: Record<WorkflowCredentialType, FieldDef[]> = {
-  'http-bearer': [{ key: 'token', label: 'Bearer token', type: 'password', required: true }],
+  'http-bearer': [{ key: 'token', labelKey: 'credentials.fields.bearerToken', type: 'password', required: true }],
   'http-basic': [
-    { key: 'username', label: 'Username', required: true },
-    { key: 'password', label: 'Password', type: 'password', required: true },
+    { key: 'username', labelKey: 'credentials.fields.username', required: true },
+    { key: 'password', labelKey: 'credentials.fields.password', type: 'password', required: true },
   ],
   'http-header': [
-    { key: 'header', label: 'Header name', placeholder: 'X-API-Key', required: true },
-    { key: 'value', label: 'Header value', type: 'password', required: true },
+    { key: 'header', labelKey: 'credentials.fields.headerName', placeholderKey: 'credentials.fields.headerNamePlaceholder', required: true },
+    { key: 'value', labelKey: 'credentials.fields.headerValue', type: 'password', required: true },
   ],
-  slack: [{ key: 'token', label: 'Bot token', type: 'password', placeholder: 'xoxb-…', required: true }],
+  slack: [{ key: 'token', labelKey: 'credentials.fields.botToken', type: 'password', placeholderKey: 'credentials.fields.botTokenPlaceholder', required: true }],
   smtp: [
-    { key: 'host', label: 'SMTP host', placeholder: 'smtp.example.com', required: true },
-    { key: 'port', label: 'Port', type: 'number', placeholder: '587', required: true },
-    { key: 'username', label: 'Username / email', required: true },
-    { key: 'password', label: 'Password', type: 'password', required: true },
-    { key: 'from', label: 'From address (optional)', placeholder: 'sender@example.com' },
+    { key: 'host', labelKey: 'credentials.fields.smtpHost', placeholderKey: 'credentials.fields.smtpHostPlaceholder', required: true },
+    { key: 'port', labelKey: 'credentials.fields.port', type: 'number', placeholderKey: 'credentials.fields.portPlaceholder', required: true },
+    { key: 'username', labelKey: 'credentials.fields.usernameEmail', required: true },
+    { key: 'password', labelKey: 'credentials.fields.password', type: 'password', required: true },
+    { key: 'from', labelKey: 'credentials.fields.fromAddress', placeholderKey: 'credentials.fields.fromAddressPlaceholder' },
   ],
-  github: [{ key: 'token', label: 'Personal access token', type: 'password', placeholder: 'ghp_…', required: true }],
+  github: [{ key: 'token', labelKey: 'credentials.fields.pat', type: 'password', placeholderKey: 'credentials.fields.patPlaceholder', required: true }],
   // OAuth types have no manual fields — the form renders an "Authorize" button instead.
   'google-oauth': [],
   'slack-oauth': [],
 };
 
 export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [name, setName] = useState('');
   const [credType, setCredType] = useState<WorkflowCredentialType>(types[0]!);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -58,22 +61,22 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-border/60 p-4">
-      <h3 className="text-sm font-semibold">New credential</h3>
+      <h3 className="text-sm font-semibold">{t('credentials.form.title')}</h3>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor="cred-name">Name</label>
+        <label className="text-xs font-medium text-muted-foreground" htmlFor="cred-name">{t('credentials.form.name')}</label>
         <input
           id="cred-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="My Slack bot"
+          placeholder={t('credentials.form.namePlaceholder')}
           required
           className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor="cred-type">Type</label>
+        <label className="text-xs font-medium text-muted-foreground" htmlFor="cred-type">{t('credentials.form.type')}</label>
         <select
           id="cred-type"
           value={credType}
@@ -86,15 +89,15 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
         </select>
       </div>
 
-      {fieldDefs.map(({ key, label, type = 'text', placeholder, required }) => (
+      {fieldDefs.map(({ key, labelKey, type = 'text', placeholderKey, required }) => (
         <div key={key} className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground" htmlFor={`cred-${key}`}>{label}</label>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={`cred-${key}`}>{t(labelKey)}</label>
           <input
             id={`cred-${key}`}
             type={type}
             value={fields[key] ?? ''}
             onChange={(e) => setField(key, e.target.value)}
-            placeholder={placeholder}
+            placeholder={placeholderKey ? t(placeholderKey) : undefined}
             required={required}
             className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
           />
@@ -103,8 +106,7 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
 
       {isOAuthType(credType) && (
         <p className="text-xs text-muted-foreground">
-          Clicking &ldquo;Authorize&rdquo; will redirect you to the provider&apos;s consent page.
-          The credential will be saved automatically on return.
+          {t('credentials.form.oauthNote')}
         </p>
       )}
 
@@ -123,12 +125,12 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
               );
             }}
           >
-            Authorize
+            {t('credentials.form.authorize')}
           </Button>
         ) : (
-          <Button type="submit" size="sm">Save</Button>
+          <Button type="submit" size="sm">{tc('save')}</Button>
         )}
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>{tc('cancel')}</Button>
       </div>
     </form>
   );

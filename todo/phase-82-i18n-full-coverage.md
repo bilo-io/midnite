@@ -39,14 +39,14 @@ The core product surface: everything a user reads while running tasks.
 - [x] **Dialogs & bulk bar** — new-task modal (single + bulk), bulk bar + Move-to menu, move/abandon/reopen/start-blocked/delete confirms, board-flow toasts → `board` + `common`; 22 files leave `I18N_EXEMPT` (406 → 384).
 - [x] **fr-FR keys + tests** — 224 fr-FR keys same-PR (meta `needsReview`); `board-task-i18n-fr.test.tsx` renders a representative component per group under fr-FR; `vitest.render-intl.tsx` intl-wraps the 13 affected suites; fr board screenshots via `board-i18n-fr.shots.ts`.
 
-## Theme C — Auth & Settings sweep — **M**
+## Theme C — Auth & Settings sweep — **L** — ✅ DONE (PR #535, 2026-07-23)
 
 Finishes what Phase 79's Theme D started at the "primary copy" level.
 
-- [ ] **Remaining auth pages** — register, forgot-password, invite/accept flows in [`app/(auth)`](../packages/web/app/(auth)) + [`components/auth/`](../packages/web/components/auth), including zod-driven validation/error strings surfaced in the UI → `auth`.
-- [ ] **Every Settings subpage** — the deep field copy Phase 79 deferred: account, appearance internals, integrations, tokens, teams/members, safety/autonomy, data portability, etc. under [`app/(main)/settings/`](../packages/web/app/(main)/settings) → `settings` (sub-namespaced per page if large).
-- [ ] **Cross-cutting error/empty states** — shared error boundaries, empty states, retry prompts used by these pages → `common`.
-- [ ] **fr-FR keys + tests** — as Theme B's closing item.
+- [x] **Remaining auth pages** — register (+ closed-registration state), forgot-password, invite/accept flows in `app/(auth)` + the layout's theme toggle → `auth`; `lib/auth-errors.ts` `useAuthErrorMessage()` centralises the message-vs-fallback resolution (a gateway error-code → key map slots in later without touching call sites).
+- [x] **Every Settings subpage** — all ~40 files under `app/(main)/settings/` (profile, agents, api-tokens, approvals, credentials, data, editor, integrations, repos, safety, screen-lock, security, personalization, system ×8, team ×4, appearance + accent-builder) → `settings`, one subtree per page (settings.json grows to 604 keys). Built via 7 parallel subagents on disjoint file sets, merged centrally; a static key-audit (`lib/i18n-settings-keys.test.ts`) scans every auth/settings source for `t()`/`t.rich()` calls and asserts each resolves in en-GB — it caught one real dropped key (`repos.placeholders.branchPrefix`) and a `t`-variable shadowing bug (a pre-existing local timer named `t` in `agents-view.tsx`) that `tsc`'s per-file moon cache missed on the first pass.
+- [x] **Cross-cutting error/empty states** — `common.errorTitle`/`emptyTitle`/`saving`/`saved` + reused existing `common.*` keys throughout.
+- [x] **fr-FR keys + tests** — 838 fr-FR keys flagged `needsReview`; `vitest.render-intl.tsx` gains an optional `{ locale }` so specs can render fr; 2 behavioural fr renders (updates-accordion, data-view) plus the static audit's blanket coverage across every migrated file; fr auth (closed-registration) + settings-appearance Playwright shots.
 
 ## Theme D — Feature areas — **L**
 

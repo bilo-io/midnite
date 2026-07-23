@@ -87,24 +87,11 @@ import {
 } from '@/lib/wordmark-fonts';
 import { cn } from '@/lib/utils';
 
-const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [
-  { value: 'light', label: 'Light', Icon: Sun },
-  { value: 'dark', label: 'Dark', Icon: Moon },
-  { value: 'system', label: 'System', Icon: Laptop },
-  { value: 'time', label: 'Time', Icon: Clock },
-];
-
 const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((l) => ({
   value: l.code,
   label: `${l.nativeLabel} (${l.code})`,
   icon: <LocaleFlag locale={l.code} className="h-4 w-4" />,
 }));
-
-const NAV_MODE_OPTIONS: { value: NavMode; label: string; hint: string }[] = [
-  { value: 'auto', label: 'Auto', hint: 'Collapsed; expands on hover' },
-  { value: 'expanded', label: 'Locked open', hint: 'Always expanded' },
-  { value: 'collapsed', label: 'Locked closed', hint: 'Always the icon bar' },
-];
 
 export function AppearanceSection() {
   const { preference, setPreference } = useTheme();
@@ -120,6 +107,19 @@ export function AppearanceSection() {
   // Active locale (resolved by the shell provider); one write path via setSettings.
   const locale = useLocale() as Locale;
   const t = useTranslations('settings');
+
+  const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [
+    { value: 'light', label: t('appearance.themeOptions.light'), Icon: Sun },
+    { value: 'dark', label: t('appearance.themeOptions.dark'), Icon: Moon },
+    { value: 'system', label: t('appearance.themeOptions.system'), Icon: Laptop },
+    { value: 'time', label: t('appearance.themeOptions.time'), Icon: Clock },
+  ];
+
+  const NAV_MODE_OPTIONS: { value: NavMode; label: string; hint: string }[] = [
+    { value: 'auto', label: t('appearance.navModeOptions.auto.label'), hint: t('appearance.navModeOptions.auto.hint') },
+    { value: 'expanded', label: t('appearance.navModeOptions.expanded.label'), hint: t('appearance.navModeOptions.expanded.hint') },
+    { value: 'collapsed', label: t('appearance.navModeOptions.collapsed.label'), hint: t('appearance.navModeOptions.collapsed.hint') },
+  ];
 
   const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
   const setBackgroundPattern = (pattern: BackgroundPattern) =>
@@ -212,7 +212,7 @@ export function AppearanceSection() {
               options={LOCALE_OPTIONS}
               value={locale}
               onChange={(next) => setLocalePreference(setSettings, next)}
-              aria-label="Language"
+              aria-label={t('appearance.language')}
               className="w-56"
             />
           </SettingRow>
@@ -222,11 +222,11 @@ export function AppearanceSection() {
       <Accordion title={t('appearance.theme')} icon={<Palette className="h-3.5 w-3.5" />} defaultOpen>
         <div className="p-5">
           <SettingRow
-            title="Colour theme"
-            description="Light, dark, follow your system, or switch automatically by time of day."
+            title={t('appearance.colourTheme')}
+            description={t('appearance.colourThemeDescription')}
           >
             <Segmented
-              ariaLabel="Colour theme"
+              ariaLabel={t('appearance.colourTheme')}
               value={preference}
               onChange={setPreference}
               options={THEME_OPTIONS}
@@ -235,11 +235,11 @@ export function AppearanceSection() {
           </SettingRow>
           <div className="mt-4 border-t border-border/60 pt-4">
             <SettingRow
-              title="Interface font"
-              description="The font used for body text across the app. System fonts only — no download, applies instantly. Code, terminals, and the wordmark keep their own type."
+              title={t('appearance.interfaceFont')}
+              description={t('appearance.interfaceFontDescription')}
             >
               <Segmented
-                ariaLabel="Interface font"
+                ariaLabel={t('appearance.interfaceFont')}
                 value={uiFont}
                 onChange={setUiFont}
                 options={UI_FONT_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
@@ -250,7 +250,7 @@ export function AppearanceSection() {
               className="mt-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm"
               style={{ fontFamily: 'var(--font-ui, inherit)' }}
             >
-              The quick brown fox jumps over the lazy dog — 0123456789
+              {t('appearance.fontPreview')}
             </p>
           </div>
         </div>
@@ -259,11 +259,11 @@ export function AppearanceSection() {
       <Accordion title={t('appearance.navigation')} icon={<PanelLeft className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <SettingRow
-            title="Side navigation"
-            description="Lock the nav open or closed, or let it stay collapsed and expand on hover."
+            title={t('appearance.sideNavigation')}
+            description={t('appearance.sideNavigationDescription')}
           >
             <Segmented
-              ariaLabel="Side navigation"
+              ariaLabel={t('appearance.sideNavigation')}
               value={navMode}
               onChange={setNavMode}
               options={NAV_MODE_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
@@ -277,18 +277,17 @@ export function AppearanceSection() {
       </Accordion>
 
       <Accordion
-        title="Background pattern"
+        title={t('appearance.backgroundPattern')}
         icon={<LayoutGrid className="h-3.5 w-3.5" />}
         defaultOpen
       >
         <div className="space-y-4 p-5">
           <p className="text-xs text-muted-foreground">
-            The decorative backdrop drawn behind every page — plus the dashboard header, the
-            landing screen, and the screensaver. The starfield adapts to your theme and accent.
+            {t('appearance.backgroundPatternDescription')}
           </p>
           <div
             role="radiogroup"
-            aria-label="Background pattern"
+            aria-label={t('appearance.backgroundPattern')}
             className={cn(
               'grid grid-cols-3 gap-2 sm:grid-cols-4 transition-opacity',
               hydrated ? 'opacity-100' : 'opacity-0',
@@ -331,22 +330,20 @@ export function AppearanceSection() {
           <div className="border-t border-border/60 pt-4">
             <label className="flex items-center justify-between gap-4">
               <span className="space-y-0.5">
-                <span className="block text-sm font-medium">Dynamic motion</span>
+                <span className="block text-sm font-medium">{t('appearance.dynamicMotion')}</span>
                 <span className="block text-xs text-muted-foreground">
-                  Subtly animate the pattern and let it react to your cursor — the starfield
-                  swirls and fires, dots scatter, rulers track, gradients drift like clouds.
+                  {t('appearance.dynamicMotionDescription')}
                 </span>
               </span>
               <Switch
                 checked={hydrated && bgDynamic}
                 onCheckedChange={setBgDynamic}
-                aria-label="Dynamic motion"
+                aria-label={t('appearance.dynamicMotion')}
               />
             </label>
             {bgDynamic && motion === 'reduced' && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Your Motion setting is &ldquo;Reduced&rdquo;, so the static pattern is shown
-                instead until motion is allowed again.
+                {t('appearance.motionReducedNotice')}
               </p>
             )}
           </div>
@@ -354,11 +351,11 @@ export function AppearanceSection() {
           {/* Intensity control — only visible when the animated gradient is selected */}
           {backgroundPattern === 'gradient' && (
             <SettingRow
-              title="Intensity"
-              description="How visible the animated gradient backdrop is."
+              title={t('appearance.intensity')}
+              description={t('appearance.intensityDescription')}
             >
               <Segmented
-                ariaLabel="Gradient intensity"
+                ariaLabel={t('appearance.gradientIntensity')}
                 value={bgIntensity}
                 onChange={setBgIntensity}
                 options={BG_INTENSITY_OPTIONS}
@@ -372,8 +369,7 @@ export function AppearanceSection() {
       <Accordion title={t('appearance.accent')} icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <p className="text-xs text-muted-foreground">
-            Retints buttons, links, and focus rings across the app. Pick the brand gradient, a
-            gradient preset, or a solid — or build your own. Adapts to light and dark.
+            {t('appearance.accentDescription')}
           </p>
           <AccentBuilder
             value={accent}
@@ -388,11 +384,11 @@ export function AppearanceSection() {
       <Accordion title={t('appearance.motionEffects')} icon={<Zap className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <SettingRow
-            title="Density"
-            description="Comfortable uses the default spacing; compact fits more on screen."
+            title={t('appearance.density')}
+            description={t('appearance.densityDescription')}
           >
             <Segmented
-              ariaLabel="Density"
+              ariaLabel={t('appearance.density')}
               value={density}
               onChange={setDensity}
               options={DENSITY_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
@@ -404,11 +400,11 @@ export function AppearanceSection() {
           </p>
           <div className="border-t border-border/60 pt-4">
             <SettingRow
-              title="Motion"
-              description="Follow your system's reduced-motion setting, minimise animation, or always animate."
+              title={t('appearance.motion')}
+              description={t('appearance.motionDescription')}
             >
               <Segmented
-                ariaLabel="Motion"
+                ariaLabel={t('appearance.motion')}
                 value={motion}
                 onChange={setMotion}
                 options={MOTION_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
@@ -440,11 +436,11 @@ export function AppearanceSection() {
           </div>
           <div className="border-t border-border/60 pt-4">
             <SettingRow
-              title="Shimmer cascade"
-              description="Which way the live status-pill shimmer sweeps across the home screen and screensaver."
+              title={t('appearance.shimmerCascade')}
+              description={t('appearance.shimmerCascadeDescription')}
             >
               <Segmented
-                ariaLabel="Shimmer cascade direction"
+                ariaLabel={t('appearance.shimmerCascadeDirection')}
                 value={shimmerDirection}
                 onChange={setShimmerDirection}
                 options={SHIMMER_DIRECTION_OPTIONS.map((o) => ({
@@ -462,26 +458,25 @@ export function AppearanceSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Product guides" icon={<Compass className="h-3.5 w-3.5" />}>
+      <Accordion title={t('appearance.productGuides')} icon={<Compass className="h-3.5 w-3.5" />}>
         <div className="p-5">
-          <label className="flex items-center justify-between gap-4" title="Auto-show guides">
+          <label className="flex items-center justify-between gap-4" title={t('appearance.autoShowGuides')}>
             <span className="space-y-0.5">
-              <span className="block text-sm font-medium">Auto-show guides</span>
+              <span className="block text-sm font-medium">{t('appearance.autoShowGuides')}</span>
               <span className="block text-xs text-muted-foreground">
-                Show a page&apos;s product guide once, the first time you visit it. Turn this off to keep
-                guides available only on demand from the assistant menu.
+                {t('appearance.autoShowGuidesDescription')}
               </span>
             </span>
             <Switch
               checked={autoShowGuides}
               onCheckedChange={setAutoShowGuides}
-              aria-label="Auto-show guides"
+              aria-label={t('appearance.autoShowGuides')}
             />
           </label>
         </div>
       </Accordion>
 
-      <Accordion title="Install app" icon={<Download className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('appearance.installApp')} icon={<Download className="h-3.5 w-3.5" />} defaultOpen>
         <div className="p-5">
           <PwaInstall />
         </div>
@@ -500,6 +495,7 @@ export function AppearanceSection() {
  * that casing, so each face can be judged in the chosen form.
  */
 function LogoCard() {
+  const t = useTranslations('settings');
   const [font, setFont, hydrated] = useLocalStorage<string>(
     WORDMARK_FONT_STORAGE_KEY,
     WORDMARK_LOGO_FONT,
@@ -511,14 +507,14 @@ function LogoCard() {
   const [showIcon, setShowIcon] = useState(true);
 
   return (
-    <Accordion title="Logo" icon={<Type className="h-3.5 w-3.5" />} defaultOpen>
+    <Accordion title={t('appearance.logo')} icon={<Type className="h-3.5 w-3.5" />} defaultOpen>
       <div className="space-y-4 p-5">
         <SettingRow
-          title="Capitalisation"
-          description="How the wordmark is cased everywhere it renders. Trial each form against the font below."
+          title={t('appearance.capitalisation')}
+          description={t('appearance.capitalisationDescription')}
         >
           <Segmented
-            ariaLabel="Wordmark capitalisation"
+            ariaLabel={t('appearance.wordmarkCapitalisation')}
             value={wordmarkCase}
             onChange={setWordmarkCase}
             options={WORDMARK_CASE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -528,11 +524,11 @@ function LogoCard() {
 
         <div className="flex items-center justify-between gap-4 border-t border-border/60 pt-4">
           <p className="text-xs text-muted-foreground">
-            The font the midnite wordmark is set in across the app.
+            {t('appearance.wordmarkFontDescription')}
           </p>
           <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-            <span>Show icon</span>
-            <Switch checked={showIcon} onCheckedChange={setShowIcon} aria-label="Show icon" />
+            <span>{t('appearance.showIcon')}</span>
+            <Switch checked={showIcon} onCheckedChange={setShowIcon} aria-label={t('appearance.showIcon')} />
           </label>
         </div>
 
@@ -555,7 +551,7 @@ function LogoCard() {
                 {selected ? (
                   <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary-foreground">
                     <Check className="h-3 w-3" />
-                    Active
+                    {t('appearance.active')}
                   </span>
                 ) : null}
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { renderWithIntl as render } from '../../../../vitest.render-intl';
 import type { Repo } from '@midnite/shared';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 

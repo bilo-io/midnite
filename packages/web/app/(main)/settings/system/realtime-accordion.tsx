@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Radio } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { WS_RING_SIZES, type WsRingSize } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { getWsSettings, updateWsSettings } from '@/lib/api';
@@ -17,6 +18,7 @@ const inputClass =
  * (in-memory — resets to the midnite.json default on gateway restart).
  */
 export function RealtimeAccordion() {
+  const t = useTranslations('settings');
   const { data: ringSize, refresh } = useApiData(getWsSettings, []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,27 +30,25 @@ export function RealtimeAccordion() {
       await updateWsSettings(value);
       refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update — admin only');
+      setError(e instanceof Error ? e.message : t('system.realtime.updateError'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Accordion title="Realtime" icon={<Radio className="h-3.5 w-3.5" />}>
+    <Accordion title={t('system.realtime.title')} icon={<Radio className="h-3.5 w-3.5" />}>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-6">
           <div className="space-y-1">
-            <p className="text-sm font-medium">Event buffer size</p>
+            <p className="text-sm font-medium">{t('system.realtime.bufferSize')}</p>
             <p className="text-xs text-muted-foreground">
-              How many recent live events the gateway retains per channel so a briefly disconnected
-              client can catch up instead of missing updates. Larger = longer catch-up window, more
-              memory. Applied live (admin only); resets to the configured default on restart.
+              {t('system.realtime.bufferDescription')}
             </p>
             {error ? <p className="text-xs text-destructive">{error}</p> : null}
           </div>
           <select
-            aria-label="Event buffer size"
+            aria-label={t('system.realtime.bufferSize')}
             className={inputClass}
             value={ringSize ?? ''}
             disabled={saving || ringSize === null}
@@ -57,7 +57,7 @@ export function RealtimeAccordion() {
             {ringSize === null ? <option value="">…</option> : null}
             {WS_RING_SIZES.map((n) => (
               <option key={n} value={n}>
-                {n} events
+                {t('system.realtime.eventsCount', { count: n })}
               </option>
             ))}
           </select>

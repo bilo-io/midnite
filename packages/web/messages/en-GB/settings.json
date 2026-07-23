@@ -2,6 +2,10 @@
   "reset": "Reset to defaults",
   "syncedToAccount": "Synced to your account",
   "signInToSync": "Sign in to sync across devices",
+  "hub": {
+    "title": "Settings",
+    "description": "Tune how midnite looks, locks, and runs your agents."
+  },
   "groups": {
     "general": "General",
     "workspace": "Workspace",
@@ -27,6 +31,741 @@
     "theme": "Theme",
     "navigation": "Navigation",
     "accent": "Accent",
-    "motionEffects": "Motion & effects"
+    "motionEffects": "Motion & effects",
+    "themeOptions": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "time": "Time"
+    },
+    "navModeOptions": {
+      "auto": {
+        "label": "Auto",
+        "hint": "Collapsed; expands on hover"
+      },
+      "expanded": {
+        "label": "Locked open",
+        "hint": "Always expanded"
+      },
+      "collapsed": {
+        "label": "Locked closed",
+        "hint": "Always the icon bar"
+      }
+    },
+    "colourTheme": "Colour theme",
+    "colourThemeDescription": "Light, dark, follow your system, or switch automatically by time of day.",
+    "interfaceFont": "Interface font",
+    "interfaceFontDescription": "The font used for body text across the app. System fonts only — no download, applies instantly. Code, terminals, and the wordmark keep their own type.",
+    "fontPreview": "The quick brown fox jumps over the lazy dog — 0123456789",
+    "sideNavigation": "Side navigation",
+    "sideNavigationDescription": "Lock the nav open or closed, or let it stay collapsed and expand on hover.",
+    "backgroundPattern": "Background pattern",
+    "backgroundPatternDescription": "The decorative backdrop drawn behind every page — plus the dashboard header, the landing screen, and the screensaver. The starfield adapts to your theme and accent.",
+    "intensity": "Intensity",
+    "intensityDescription": "How visible the animated gradient backdrop is.",
+    "gradientIntensity": "Gradient intensity",
+    "dynamicMotion": "Dynamic motion",
+    "dynamicMotionDescription": "Subtly animate the pattern and let it react to your cursor — the starfield swirls and fires, dots scatter, rulers track, gradients drift like clouds.",
+    "motionReducedNotice": "Your Motion setting is “Reduced”, so the static pattern is shown instead until motion is allowed again.",
+    "accentDescription": "Retints buttons, links, and focus rings across the app. Pick the brand gradient, a gradient preset, or a solid — or build your own. Adapts to light and dark.",
+    "density": "Density",
+    "densityDescription": "Comfortable uses the default spacing; compact fits more on screen.",
+    "motion": "Motion",
+    "motionDescription": "Follow your system's reduced-motion setting, minimise animation, or always animate.",
+    "shimmerCascade": "Shimmer cascade",
+    "shimmerCascadeDescription": "Which way the live status-pill shimmer sweeps across the home screen and screensaver.",
+    "shimmerCascadeDirection": "Shimmer cascade direction",
+    "productGuides": "Product guides",
+    "autoShowGuides": "Auto-show guides",
+    "autoShowGuidesDescription": "Show a page's product guide once, the first time you visit it. Turn this off to keep guides available only on demand from the assistant menu.",
+    "installApp": "Install app",
+    "logo": "Logo",
+    "capitalisation": "Capitalisation",
+    "capitalisationDescription": "How the wordmark is cased everywhere it renders. Trial each form against the font below.",
+    "wordmarkCapitalisation": "Wordmark capitalisation",
+    "wordmarkFontDescription": "The font the midnite wordmark is set in across the app.",
+    "showIcon": "Show icon",
+    "active": "Active",
+    "accentBuilder": {
+      "button": "Button",
+      "badge": "Badge",
+      "secondaryAccent": "Secondary accent",
+      "secondaryShort": "2nd",
+      "secondaryAccentDescription": "An independent second colour for secondary UI accents. Off by default.",
+      "animateGradient": "Animate the gradient",
+      "respectsMotion": "(respects your motion setting)",
+      "gradients": "Gradients",
+      "gradientPresets": "Gradient presets",
+      "solids": "Solids",
+      "solidAccent": "Solid accent",
+      "customGradient": "Custom gradient",
+      "customGradientDescription": "Build your own gradient — pick linear or conic, one colour (mono-shade) or up to three, and an angle.",
+      "editing": "Editing",
+      "customise": "Customise",
+      "type": "Type",
+      "style": "Style",
+      "mono": "Mono",
+      "multi": "Multi",
+      "colour": "Colour",
+      "stops": "Stops",
+      "addStop": "+ stop",
+      "removeStop": "– stop",
+      "hue": "Hue",
+      "gradientStop": "Gradient stop {number}",
+      "angle": "Angle"
+    }
+  },
+  "profile": {
+    "genericError": "Something went wrong",
+    "passwordsNoMatch": "New passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "displayName": "Display name",
+    "displayNameHint": "How you appear to teammates.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailHint": "Your sign-in address. Not editable.",
+    "changePassword": "Change password",
+    "changePasswordHint": "Choose a new password for your account.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "updating": "Updating…",
+    "updatePassword": "Update password",
+    "passwordUpdated": "Password updated",
+    "linkedAccounts": "Linked accounts",
+    "linkedAccountsHint": "Third-party providers you can sign in with. Linked automatically the first time you use “Continue with Google / GitHub”.",
+    "noLinkedAccounts": "No linked accounts yet.",
+    "couldNotSaveName": "Could not save name",
+    "emailReadonly": "Email cannot be changed.",
+    "couldNotUpdatePassword": "Could not update password",
+    "minChars": "Minimum 8 characters.",
+    "passwordsMismatch": "Passwords don't match.",
+    "account": "Account"
+  },
+  "agents": {
+    "genericError": "Something went wrong",
+    "loadFailed": "Couldn't load agents: {error}",
+    "providerUnconfigured": "<b>{name}</b> is set as your AI provider but has no API key, so AI features (task triage, plan drafting, the heartbeat) will be skipped. Add a key under its <b>API</b> tab below, or switch the active provider.",
+    "theActiveProvider": "The active provider",
+    "primaryAgent": "Primary Agent",
+    "name": "Name",
+    "orchestratorPlaceholder": "Orchestrator",
+    "descriptionPrompt": "Description / prompt",
+    "primaryDescriptionHint": "The orchestrator's system prompt — how it should plan, delegate and decide what to work on.",
+    "primaryDescriptionPlaceholder": "You are the orchestrator. You triage incoming work, break it into tasks…",
+    "heartbeat": "Heartbeat",
+    "heartbeatHint": "A prompt the orchestrator runs on a schedule — for sweeps, check-ins or any standing task.",
+    "enableHeartbeat": "Enable heartbeat",
+    "interval": "Interval",
+    "intervalHint": "How often the heartbeat prompt runs — from every hour up to once a month.",
+    "heartbeatInterval": "Heartbeat interval",
+    "heartbeatPrompt": "Heartbeat prompt",
+    "heartbeatPromptPlaceholder": "Review open tasks and surface anything that's stalled or needs a decision…",
+    "agentPool": "Agent pool",
+    "parallelAgents": "Parallel agents",
+    "parallelAgentsHint": "How many agent sessions may run at once. Extra tasks queue until a slot frees up.",
+    "poolDefault": "Default {default} · maximum {max}.",
+    "agentsTitle": "Agents",
+    "agentsIntro": "Every coding agent midnite knows about. Expand one to install or update its CLI (used to run task sessions) or, under the API tab, add your own key so that provider can power midnite's own AI features.",
+    "subAgents": "Sub Agents",
+    "noSubagents": "No subagents yet",
+    "noSubagentsHint": "Add focused workers the orchestrator can delegate to.",
+    "addSubagent": "Add subagent",
+    "removeSubagentTitle": "Remove this subagent?",
+    "removeSubagentDescription": "{name} will be deleted and the orchestrator can no longer delegate to it.",
+    "thisSubagent": "This subagent",
+    "cliTab": "CLI",
+    "apiTab": "API",
+    "primaryAgentRouting": "Primary agent routing",
+    "sessionCli": "Session CLI",
+    "sessionCliHint": "The coding agent launched in a session terminal to run tasks.",
+    "sessionAgentCli": "Session agent CLI",
+    "aiProvider": "AI provider",
+    "aiProviderHint": "Powers midnite's own AI (triage, plan drafting, heartbeat). Add each provider's key in its card below.",
+    "activeAiProvider": "Active AI provider",
+    "collapseSubagent": "Collapse subagent",
+    "expandSubagent": "Expand subagent",
+    "subagentNumber": "Subagent {number}",
+    "subagentName": "Subagent name",
+    "removeSubagent": "Remove subagent",
+    "role": "Role",
+    "rolePlaceholder": "Condenses long threads into a brief",
+    "description": "Description",
+    "subDescriptionHint": "The full system prompt for this subagent.",
+    "subDescriptionPlaceholder": "You are a summariser. Given a transcript, produce a tight, faithful summary…",
+    "markdown": "Markdown",
+    "markdownHint": "Markdown mode — written as the agent's prompt document."
+  },
+  "apiTokens": {
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "genericError": "Something went wrong",
+    "createTitle": "Create API token",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. CI/CD pipeline",
+    "expiresLabel": "Expires (optional)",
+    "creating": "Creating…",
+    "createButton": "Create token",
+    "secretTitle": "Token created: {name}",
+    "secretWarning": "Copy this token now — it will not be shown again.",
+    "copied": "✓ Copied",
+    "copy": "Copy",
+    "secretUsage": "Pass as <code>Authorization: Bearer {token}</code> on API requests.",
+    "done": "Done",
+    "title": "API Tokens",
+    "description": "Machine-readable tokens for CI/CD pipelines and scripted integrations.",
+    "newToken": "New token",
+    "empty": "No API tokens yet. Create one to authenticate scripts and CI/CD pipelines.",
+    "colPrefix": "Prefix",
+    "colLastUsed": "Last used",
+    "colExpires": "Expires",
+    "never": "Never",
+    "revoking": "Revoking…",
+    "revoke": "Revoke"
+  },
+  "approvals": {
+    "errorFallback": "Something went wrong",
+    "mode": {
+      "title": "Autonomy mode",
+      "description": "Controls how midnite handles tool-use approvals during agent sessions.",
+      "active": "Active",
+      "options": {
+        "manual": {
+          "label": "Manual",
+          "description": "Ask before every tool call. No automatic decisions."
+        },
+        "guarded": {
+          "label": "Guarded",
+          "description": "Auto-allow read-only tools (Read, Grep, Glob, LS). Ask for everything else."
+        },
+        "autonomous": {
+          "label": "Autonomous",
+          "description": "Rules decide. Escalate only when no rule matches."
+        }
+      }
+    },
+    "safeTools": {
+      "title": "Always auto-allowed in guarded mode"
+    },
+    "rules": {
+      "title": "Rules",
+      "description": "Durable allow/deny rules evaluated in <em>guarded</em> and <em>autonomous</em> modes.",
+      "add": "Add rule",
+      "empty": "No rules yet. Add one above to start customising tool behaviour.",
+      "enable": "Enable rule",
+      "disable": "Disable rule",
+      "delete": "Delete rule",
+      "form": {
+        "toolName": "Tool name",
+        "toolNamePlaceholder": "e.g. Bash, Read, * (all)",
+        "toolNameRequired": "Tool name is required",
+        "effect": "Effect",
+        "effectAllow": "Allow",
+        "effectDeny": "Deny",
+        "note": "Note (optional)",
+        "notePlaceholder": "Why this rule exists",
+        "submit": "Save rule"
+      }
+    },
+    "history": {
+      "title": "History",
+      "description": "Every tool-use decision — by you or the policy engine.",
+      "empty": "No decisions recorded yet.",
+      "range": "{from}–{to} of {total}",
+      "prev": "← Prev",
+      "next": "Next →",
+      "resolution": {
+        "allow": "Allow",
+        "allow-session": "Allow (session)",
+        "deny": "Deny",
+        "auto-allow": "Auto-allow",
+        "auto-deny": "Auto-deny",
+        "timeout": "Timeout",
+        "expired": "Expired"
+      }
+    }
+  },
+  "credentials": {
+    "title": "Workflow credentials",
+    "description": "Secrets used by workflow integration nodes (Slack, SMTP, HTTP auth). Secret material is encrypted at rest and never returned by the API — only the name and type are visible here.",
+    "empty": "No credentials saved yet.",
+    "add": "Add credential",
+    "deleteNamed": "Delete {name}",
+    "types": {
+      "httpBearer": "HTTP Bearer token",
+      "httpBasic": "HTTP Basic auth",
+      "httpHeader": "HTTP custom header",
+      "slack": "Slack",
+      "smtp": "SMTP (email)",
+      "github": "GitHub (PAT)",
+      "googleOauth": "Google (OAuth)",
+      "slackOauth": "Slack (OAuth)"
+    },
+    "fields": {
+      "bearerToken": "Bearer token",
+      "username": "Username",
+      "password": "Password",
+      "headerName": "Header name",
+      "headerNamePlaceholder": "X-API-Key",
+      "headerValue": "Header value",
+      "botToken": "Bot token",
+      "botTokenPlaceholder": "xoxb-…",
+      "smtpHost": "SMTP host",
+      "smtpHostPlaceholder": "smtp.example.com",
+      "port": "Port",
+      "portPlaceholder": "587",
+      "usernameEmail": "Username / email",
+      "fromAddress": "From address (optional)",
+      "fromAddressPlaceholder": "sender@example.com",
+      "pat": "Personal access token",
+      "patPlaceholder": "ghp_…"
+    },
+    "form": {
+      "title": "New credential",
+      "name": "Name",
+      "namePlaceholder": "My Slack bot",
+      "type": "Type",
+      "oauthNote": "Clicking “Authorize” will redirect you to the provider’s consent page. The credential will be saved automatically on return.",
+      "authorize": "Authorize"
+    },
+    "delete": {
+      "title": "Delete credential?",
+      "description": "\"{name}\" will be permanently removed. Any workflow node that references it will fail until updated."
+    },
+    "toast": {
+      "saved": "Credential saved",
+      "saveError": "Could not save credential",
+      "deleted": "Credential deleted",
+      "deleteError": "Could not delete credential"
+    }
+  },
+  "data": {
+    "errorFallback": "Backup failed",
+    "title": "Data",
+    "description": "Back up and restore your whole midnite store — for disaster recovery or moving instances.",
+    "download": {
+      "title": "Download a backup",
+      "description": "A portable <code>.zip</code> archive of every work domain, restorable onto this or a fresh instance.",
+      "includeSecrets": "Include secrets",
+      "includeSecretsDesc": "— API keys, webhook signing secrets & workflow credentials, re-encrypted under a passphrase.",
+      "passphraseLabel": "Passphrase (you’ll need it to restore — it’s never stored)",
+      "passphrasePlaceholder": "A strong passphrase",
+      "passphraseRequired": "A passphrase is required to include secrets.",
+      "preparing": "Preparing…",
+      "button": "Download backup",
+      "included": "Included in a backup",
+      "lockNoteIncluded": "Secrets are re-encrypted under your passphrase — the raw instance key never leaves this box.",
+      "lockNoteExcluded": "Secrets (API keys, tokens) are excluded — enable “Include secrets” to carry them, or reconfigure integrations after a restore.",
+      "lastBackup": "Last backup: schema v{version} · {count} records across {domains} domains.",
+      "toastSuccess": "Backup downloaded — {filename}"
+    },
+    "autoBackup": {
+      "title": "Scheduled auto-backup",
+      "description": "Automatic timestamped backups on an interval, pruned to a retention count.",
+      "loading": "Loading auto-backup status…",
+      "error": "Couldn’t load auto-backup status.",
+      "disabled": "Scheduled auto-backup is <strong>off</strong>. Enable it by setting <code>backup.enabled</code> in <code>midnite.json</code>.",
+      "schedule": "Every {hours}h → <code>{dir}</code> (keep {retention})",
+      "last": "Last: {when}",
+      "never": "never",
+      "next": " · next ~{when}",
+      "noArchives": "No archives written yet."
+    },
+    "restore": {
+      "title": "Restore from a backup",
+      "description": "Upload an archive to preview it, then restore — <strong>merge</strong> keeps existing records, <strong>replace</strong> wipes them first.",
+      "chooseAria": "Choose backup archive",
+      "choose": "Choose archive…",
+      "reading": "Reading archive…",
+      "blocked": "This archive was made by a newer midnite (schema v{schemaVersion}, {compat}) than this instance understands. Upgrade midnite, then retry — it can’t be imported safely.",
+      "previewLabel": "Preview — schema v{version} ({compat}): {count, plural, one {# record} other {# records}}",
+      "conflicts": "· {count} existing",
+      "passphraseLabel": "Passphrase (to restore this archive’s secrets — leave blank to skip them)",
+      "passphrasePlaceholder": "Export passphrase",
+      "modeLegend": "Restore mode",
+      "merge": "Merge",
+      "replace": "Replace",
+      "mergeDesc": "— insert new records, keep existing ones.",
+      "replaceDesc": "— wipe the listed domains, then restore. Destructive.",
+      "confirmLabel": "Type <code>replace</code> to confirm wiping existing data:",
+      "restoring": "Restoring…",
+      "restoreMode": "Restore ({mode})",
+      "toastRestored": "Restored {count, plural, one {# record} other {# records}} ({mode}).",
+      "stage": {
+        "uploading": "Uploading archive…",
+        "restoring": "Restoring records…",
+        "reindexing": "Rebuilding search index…",
+        "done": "Done"
+      },
+      "result": {
+        "summary": "Restored ({mode}): {inserted} inserted, {skipped} skipped",
+        "secrets": " · secrets: {restored} restored",
+        "secretsSkipped": ", {skipped} skipped",
+        "reindexWarned": " · search reindex warned"
+      }
+    }
+  },
+  "editor": {
+    "autosave": {
+      "title": "Autosave",
+      "description": "How often editors save your work automatically. The Save button always stays available and is enabled only when there are unsaved changes. Choose <strong>Off</strong> to save manually.",
+      "intervalAria": "Autosave interval"
+    }
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Outbound webhooks — push task events to Slack, Discord, or any receiver.",
+    "addEndpoint": "Add endpoint",
+    "empty": "No webhook endpoints yet. Add one to push task events to a channel or service.",
+    "errors": {
+      "generic": "Something went wrong"
+    },
+    "columns": {
+      "provider": "Provider",
+      "target": "Target",
+      "events": "Events",
+      "enabled": "Enabled"
+    },
+    "toggleAria": "Toggle {host}",
+    "testSent": "✓ test sent",
+    "testFailed": "✗ test failed",
+    "sendTest": "Send test",
+    "hideLog": "Hide log",
+    "deliveries": "Deliveries",
+    "rotateSecret": "Rotate secret",
+    "deliveriesPanel": {
+      "loading": "Loading deliveries…",
+      "empty": "No deliveries yet. Move a matching task — or hit “Send test”.",
+      "redelivering": "Redelivering…",
+      "redeliver": "Redeliver"
+    },
+    "create": {
+      "title": "Add webhook endpoint",
+      "payloadUrl": "Payload URL",
+      "payloadUrlPlaceholder": "https://hooks.slack.com/services/…",
+      "provider": "Provider",
+      "events": "Events",
+      "statuses": "Only on these statuses",
+      "statusesHint": "(optional, for updates)",
+      "creating": "Creating…",
+      "addEndpoint": "Add endpoint"
+    },
+    "secret": {
+      "title": "Signing secret",
+      "description": "Copy this now — it will not be shown again. Use it to verify the <code>X-Midnite-Signature</code> header.",
+      "copied": "✓ Copied",
+      "copy": "Copy",
+      "done": "Done"
+    },
+    "inbound": {
+      "title": "Inbound sources",
+      "subtitle": "Let GitHub, Linear, or any signed sender open tasks on your board.",
+      "addSource": "Add source",
+      "empty": "No inbound sources yet. Add one to receive external events.",
+      "allEvents": "all events",
+      "columns": {
+        "provider": "Provider",
+        "receiverUrl": "Receiver URL",
+        "events": "Events",
+        "defaultRouting": "Default routing",
+        "enabled": "Enabled"
+      },
+      "hideDeliveries": "Hide deliveries",
+      "deliveries": "Deliveries",
+      "rotateSecret": "Rotate secret",
+      "deliveriesLog": {
+        "loading": "Loading deliveries…",
+        "empty": "No deliveries received yet.",
+        "result": "Result",
+        "event": "Event",
+        "task": "Task",
+        "when": "When",
+        "viewTask": "view task"
+      },
+      "created": {
+        "title": "Source created",
+        "description": "Paste the signing secret into the sender's webhook config. It is shown <strong>once</strong> — rotate if you lose it.",
+        "receiverUrl": "Receiver URL",
+        "signingSecret": "Signing secret",
+        "copied": "Copied",
+        "copy": "Copy",
+        "done": "Done"
+      },
+      "add": {
+        "title": "Add inbound source",
+        "provider": "Provider",
+        "events": "Events",
+        "eventsHint": "(none selected = accept all)",
+        "genericPlaceholder": "comma-separated event keys (blank = accept all)",
+        "defaultRepo": "Default repo",
+        "defaultProjectId": "Default project id",
+        "optional": "optional",
+        "creating": "Creating…",
+        "createSource": "Create source"
+      }
+    }
+  },
+  "repos": {
+    "title": "Repos",
+    "description": "Named checkouts the orchestrator runs agents against. A task's repo resolves to the checkout's folder when its session opens. Paths may use <home>~</home> for your home directory. Set <ownerRepo>owner/repo</ownerRepo> to enable GitHub webhook wiring.",
+    "nameAndPathRequired": "Both a name and a path are required.",
+    "empty": "No repos yet — add one below.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyLabel": "Copy {label}",
+    "errors": {
+      "generic": "Something went wrong"
+    },
+    "remove": {
+      "title": "Remove \"{name}\"?",
+      "description": "Tasks referencing it fall back to the default working directory."
+    },
+    "fields": {
+      "name": "Name",
+      "path": "Path",
+      "ownerRepo": "GitHub owner/repo",
+      "branchPrefix": "Branch prefix",
+      "prTemplate": "PR template",
+      "optional": "(optional)"
+    },
+    "placeholders": {
+      "name": "api",
+      "path": "~/Dev/api",
+      "ownerRepo": "owner/repo",
+      "ownerRepoExample": "owner/repo (e.g. bilo-io/midnite)",
+      "branchPrefixExample": "Branch prefix (e.g. feature/)",
+      "prTemplateOptional": "PR body template (optional)",
+      "prTemplate": "## Summary\n\n## Testing",
+      "branchPrefix": "feature/"
+    },
+    "addRepo": "Add repo",
+    "aria": {
+      "name": "Repo name",
+      "path": "Repo path",
+      "ownerRepo": "GitHub owner/repo",
+      "branchPrefix": "Branch prefix",
+      "prTemplate": "PR template",
+      "edit": "Edit {name}",
+      "remove": "Remove {name}"
+    },
+    "prTemplateBadge": "· PR template",
+    "webhook": {
+      "title": "GitHub webhook",
+      "description": "Link a webhook-trigger workflow to receive GitHub <code>pull_request</code> events and automatically review PRs with Claude.",
+      "setOwnerRepo": "Set <strong>owner/repo</strong> on this repo to enable payload filtering.",
+      "workflow": "Workflow",
+      "selectWorkflow": "Select workflow",
+      "noWorkflows": "No webhook-trigger workflows found. Install the <strong>AI Code Review</strong> template from <link>Workflows → Templates</link>.",
+      "regenerate": "Regenerate",
+      "getUrl": "Get URL",
+      "saveSecret": "Save the secret now — it will not be shown again.",
+      "webhookUrl": "Webhook URL",
+      "urlLabel": "webhook URL",
+      "secret": "Secret",
+      "secretLabel": "webhook secret",
+      "setupInstructions": "Setup instructions",
+      "yourRepo": "your GitHub repo",
+      "steps": {
+        "step1": "Go to <target></target> → Settings → Webhooks → Add webhook.",
+        "step2": "Paste the URL above into the Payload URL field.",
+        "step3": "Set <strong>Content type</strong> to <code>application/json</code>.",
+        "step4": "Paste the secret above into the Secret field.",
+        "step5": "Under “Which events…”, choose <selectEvents>Let me select individual events</selectEvents> and tick <pullRequests>Pull requests</pullRequests> only.",
+        "step6": "Click Add webhook."
+      }
+    }
+  },
+  "safety": {
+    "title": "Safety",
+    "description": "Guardrails for autonomous agents — pause, policy, caps, and blast-radius limits.",
+    "killSwitch": {
+      "title": "Kill switch & pause",
+      "description": "Pause scheduling (running agents finish) or emergency-stop (abort in-flight agents, requeued)."
+    },
+    "spend": {
+      "title": "Spend, rate & blast-radius",
+      "description": "What blocks or denies agent work — configured, shown read-only."
+    },
+    "recentDecisions": {
+      "title": "Recent decisions",
+      "description": "Latest act-path allow / deny / escalate decisions."
+    }
+  },
+  "screenLock": {
+    "screensaver": "Screensaver",
+    "inactivityTimeout": "Inactivity timeout",
+    "inactivityTimeoutDescription": "How long without any input before the screensaver appears. Any activity wakes it.",
+    "inactivityRange": "Default {default} · range {min}–{max}.",
+    "cycleDuration": "Cycle duration",
+    "cycleDurationDescription": "How long each phrase is shown before the next is typed out — on the screensaver and the home screen.",
+    "cycleRange": "Default {default}s · range {min}–{max}s.",
+    "screenLock": "Screen lock",
+    "requirePasscode": "Require passcode",
+    "requirePasscodeDescription": "Ask for a {length}-digit passcode to wake the screensaver. Stored only on this device — clear it any time if you forget it.",
+    "onlyWhenLocked": "Only when locked",
+    "onlyWhenLockedDescription": "Skip the passcode for the idle screensaver — only ask when you lock manually with the power button.",
+    "onlyWhenLockedAriaLabel": "Only require passcode when locked",
+    "passcodeSet": "Passcode set",
+    "noPasscodeSet": "No passcode set",
+    "change": "Change",
+    "setPasscode": "Set passcode",
+    "clear": "Clear",
+    "secondsShort": "{value}s"
+  },
+  "security": {
+    "modes": {
+      "manual": {
+        "label": "Manual",
+        "description": "Claude asks for approval before every tool call."
+      },
+      "guarded": {
+        "label": "Guarded",
+        "description": "Approval rules control which tools are auto-allowed; everything else waits."
+      },
+      "autonomous": {
+        "label": "Autonomous",
+        "description": "All tool calls proceed without approval. Use with care."
+      }
+    },
+    "disabled": "disabled",
+    "prefix": "prefix: {values}",
+    "glob": "glob: {values}",
+    "deleteRuleAriaLabel": "Delete rule for {toolName}",
+    "newRule": "New rule",
+    "toolNamePlaceholder": "Tool name (e.g. Bash, Write, *)",
+    "allow": "Allow",
+    "deny": "Deny",
+    "notePlaceholder": "Note (optional)",
+    "autonomyMode": "Autonomy mode",
+    "autonomyModeDescription": "Controls how much Claude acts without waiting for your explicit approval.",
+    "approvalRules": "Approval rules",
+    "approvalRulesDescription": "Rules are evaluated in order; first match wins. Active in Guarded mode.",
+    "viewDecisionsLog": "View decisions log →",
+    "noRulesYet": "No rules yet."
+  },
+  "personalization": {
+    "couldNotSave": "Could not save",
+    "aboutYou": "About you",
+    "aboutYouDescription": "Tell midnite who you are — your role, how you like to work, the kinds of things you build. Agents can use this for context.",
+    "aboutPlaceholder": "e.g. I'm a backend engineer who cares about small, well-tested commits…",
+    "workingDirectory": "Working directory",
+    "workingDirectoryDescription": "The folder session terminals fall back to when a task has no project directory of its own. Leave it unset to use the gateway's own directory.",
+    "notSet": "Not set — uses the gateway's directory",
+    "browse": "Browse",
+    "clear": "Clear",
+    "agentGuidelines": "Agent guidelines",
+    "agentGuidelinesDescription": "Guidance applied to every session, layered on top of each project's own guidelines. Good for standing preferences — tone, conventions, things to always or never do.",
+    "guidelinesPlaceholder": "e.g. Prefer functional style. Always run the linter before finishing. Keep PRs focused…"
+  },
+  "system": {
+    "env": {
+      "title": "Environment",
+      "description": "The local toolchain midnite needs, detected on the gateway host.",
+      "osAriaLabel": "Operating system",
+      "detectedSystem": "Detected system: {os}.",
+      "notConfigured": "{os} tools aren't configured yet.",
+      "referenceDetected": "Detected system is {host} — these {tab} tools are shown for reference.",
+      "referenceNoDetect": "Shown for reference — couldn't detect the host OS.",
+      "checking": "checking…",
+      "installed": "installed",
+      "notInstalled": "not installed",
+      "updateNeeded": "· update needed",
+      "installedVia": " · installed via {via}",
+      "docs": "Docs",
+      "verbInstall": "Install",
+      "verbUpdate": "Update",
+      "verbUninstall": "Uninstall",
+      "startingTerminal": "Starting terminal…",
+      "startFailed": "Failed to start {action}",
+      "actionTitle": "{verb} {label}",
+      "runHint": "The {action} command is typed below — press <kbd>Enter</kbd> to run it. Close anytime.",
+      "terminalLabel": "{verb} {label} terminal",
+      "preparing": "Preparing {action}…"
+    },
+    "features": {
+      "title": "Features",
+      "description": "Turn sections of the app on or off. Disabled features are hidden from the sidebar; if you open one directly you'll be prompted to re-enable it here. These groups mirror the sidebar's sections.",
+      "enableAria": "Enable {feature}"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "taskUpdates": "Task updates",
+      "taskUpdatesDescription": "Get a desktop notification when a task needs your input or finishes. Works in the browser and the desktop app.",
+      "blockedHint": "Notifications are blocked in your browser — allow them in site settings to enable this.",
+      "notifyAria": "Notify on task updates"
+    },
+    "realtime": {
+      "title": "Realtime",
+      "bufferSize": "Event buffer size",
+      "bufferDescription": "How many recent live events the gateway retains per channel so a briefly disconnected client can catch up instead of missing updates. Larger = longer catch-up window, more memory. Applied live (admin only); resets to the configured default on restart.",
+      "eventsCount": "{count, plural, one {# event} other {# events}}",
+      "updateError": "Could not update — admin only"
+    },
+    "setup": {
+      "title": "Setup readiness",
+      "ready": "Ready",
+      "incomplete": "Setup incomplete",
+      "description": "Whether this install can run agents — live provider, secret-key, agent-CLI, pool and repo state. The same checklist drives the first-run prompt.",
+      "loadError": "Couldn't load setup status — is the gateway running?",
+      "checking": "checking…",
+      "manage": "Manage",
+      "fix": "Fix",
+      "recheck": "Re-check"
+    },
+    "updates": {
+      "title": "Updates",
+      "releaseChannel": "Release channel",
+      "channelStable": "Stable",
+      "channelBeta": "Beta",
+      "channelDescription": "<strong>Stable</strong> tracks tagged releases. <strong>Beta</strong> opts into pre-release builds to test the newest features early — expect rough edges. The update banner and the desktop auto-updater both follow this choice."
+    }
+  },
+  "team": {
+    "title": "Teams",
+    "subtitle": "Collaborate with others by joining or creating a team.",
+    "new": "New team",
+    "empty": "You're not in any teams yet.",
+    "errors": {
+      "generic": "Something went wrong"
+    },
+    "create": {
+      "heading": "Create a team",
+      "namePlaceholder": "Team name",
+      "slugPlaceholder": "slug (url-safe)",
+      "creating": "Creating…",
+      "submit": "Create"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member",
+      "viewer": "Viewer"
+    },
+    "members": {
+      "heading": "Members",
+      "you": "{name} (you)",
+      "removeAria": "Remove member"
+    },
+    "invite": {
+      "heading": "Invite link",
+      "linkLabel": "invite link",
+      "copyAria": "Copy {label}",
+      "copied": "Copied",
+      "copyLink": "Copy link",
+      "generating": "Generating…",
+      "generate": "Generate link",
+      "roleExpires": "{role} · expires {date}",
+      "revokeAria": "Revoke invite"
+    },
+    "danger": {
+      "heading": "Danger zone",
+      "delete": "Delete team",
+      "confirm": "This will permanently delete <strong>{name}</strong> and remove all members. Are you sure?",
+      "deleting": "Deleting…",
+      "confirmDelete": "Yes, delete"
+    }
   }
 }

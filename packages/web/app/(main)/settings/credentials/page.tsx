@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   WORKFLOW_CREDENTIAL_TYPES,
   type WorkflowCredential,
@@ -21,18 +22,9 @@ import {
 import { invalidateData } from '@/lib/data-refresh';
 import { CredentialForm } from './credential-form';
 
-const TYPE_LABELS: Record<WorkflowCredentialType, string> = {
-  'http-bearer': 'HTTP Bearer token',
-  'http-basic': 'HTTP Basic auth',
-  'http-header': 'HTTP custom header',
-  slack: 'Slack',
-  smtp: 'SMTP (email)',
-  github: 'GitHub (PAT)',
-  'google-oauth': 'Google (OAuth)',
-  'slack-oauth': 'Slack (OAuth)',
-};
-
 export default function CredentialsPage() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const { data, error } = useApiData(listWorkflowCredentials);
   const credentials = data ?? [];
   useGatewayErrorToast(error);
@@ -41,41 +33,51 @@ export default function CredentialsPage() {
   const toast = useToast();
   const [adding, setAdding] = useState(false);
 
+  const TYPE_LABELS: Record<WorkflowCredentialType, string> = {
+    'http-bearer': t('credentials.types.httpBearer'),
+    'http-basic': t('credentials.types.httpBasic'),
+    'http-header': t('credentials.types.httpHeader'),
+    slack: t('credentials.types.slack'),
+    smtp: t('credentials.types.smtp'),
+    github: t('credentials.types.github'),
+    'google-oauth': t('credentials.types.googleOauth'),
+    'slack-oauth': t('credentials.types.slackOauth'),
+  };
+
   const handleCreate = async (req: CreateWorkflowCredentialRequest) => {
     try {
       await createWorkflowCredential(req);
       invalidateData();
       setAdding(false);
-      toast.success('Credential saved');
+      toast.success(t('credentials.toast.saved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save credential');
+      toast.error(err instanceof Error ? err.message : t('credentials.toast.saveError'));
     }
   };
 
   const handleDelete = async (cred: WorkflowCredential) => {
     const ok = await confirm({
-      title: 'Delete credential?',
-      description: `"${cred.name}" will be permanently removed. Any workflow node that references it will fail until updated.`,
-      confirmLabel: 'Delete',
+      title: t('credentials.delete.title'),
+      description: t('credentials.delete.description', { name: cred.name }),
+      confirmLabel: tc('delete'),
       destructive: true,
     });
     if (!ok) return;
     try {
       await deleteWorkflowCredential(cred.id);
       invalidateData();
-      toast.success('Credential deleted');
+      toast.success(t('credentials.toast.deleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete credential');
+      toast.error(err instanceof Error ? err.message : t('credentials.toast.deleteError'));
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-sm font-semibold">Workflow credentials</h2>
+        <h2 className="text-sm font-semibold">{t('credentials.title')}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Secrets used by workflow integration nodes (Slack, SMTP, HTTP auth). Secret material is
-          encrypted at rest and never returned by the API — only the name and type are visible here.
+          {t('credentials.description')}
         </p>
       </div>
 
@@ -92,7 +94,7 @@ export default function CredentialsPage() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={`Delete ${cred.name}`}
+                aria-label={t('credentials.deleteNamed', { name: cred.name })}
                 onClick={() => void handleDelete(cred)}
                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
               >
@@ -104,7 +106,7 @@ export default function CredentialsPage() {
       )}
 
       {credentials.length === 0 && !adding && (
-        <p className="text-sm text-muted-foreground">No credentials saved yet.</p>
+        <p className="text-sm text-muted-foreground">{t('credentials.empty')}</p>
       )}
 
       {adding ? (
@@ -117,7 +119,7 @@ export default function CredentialsPage() {
       ) : (
         <Button type="button" variant="outline" size="sm" onClick={() => setAdding(true)}>
           <Plus className="h-4 w-4" />
-          Add credential
+          {t('credentials.add')}
         </Button>
       )}
     </div>

@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-23 — feat: Phase 82 Theme C — auth & settings i18n sweep (en-GB + fr-FR) 🟢
+
+PR #535. Every auth page and settings subpage (~47 files) reads from the catalogs — the biggest single slice of Phase 82, built via 7 parallel subagents merged centrally.
+
+- [x] **Auth flows** — register + closed-registration state, forgot-password, invite/accept, the auth layout's theme toggle → `auth`; `lib/auth-errors.ts` centralises message-vs-fallback resolution for future gateway error codes.
+- [x] **All settings subpages** — profile, agents, api-tokens, approvals, credentials, data, editor, integrations, repos, safety, screen-lock, security, personalization, system (8 files), team (4 files), appearance + accent-builder → `settings` (604 keys). 7 subagents on disjoint file sets, subtrees merged into one catalog.
+- [x] **Static key-audit** (`lib/i18n-settings-keys.test.ts`) — scans every migrated source for `t()`/`t.rich()` calls and asserts each resolves in en-GB; caught a genuinely dropped key (`repos.placeholders.branchPrefix`) and a `t`-shadowing bug in `agents-view.tsx` (a pre-existing local timer variable named `t`) that per-file moon typecheck caching missed.
+- [x] **fr-FR** — 838 keys flagged `needsReview`; `vitest.render-intl.tsx` gains an optional locale param; behavioural fr renders + fr Playwright shots (closed-registration auth screen, settings → appearance).
+- [x] Exempt list: 384 → 334 (auth 379→376 core-shell, then settings −42).
+- [x] Gate: `:typecheck` + `:lint` + `:test` green (one pre-existing gateway bcrypt-timeout flake re-ran green in isolation, no gateway code touched).
+
+---
+
 ## 2026-07-23 — feat: Phase 82 Theme B — board & tasks i18n sweep (en-GB + fr-FR) 🟢
 
 PR #533. The core product surface reads from the catalogs: board, task detail, dialogs, bulk flows — 22 files leave the exemption list (406 → 384).

@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '../../vitest.render-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const routerPush = vi.fn();

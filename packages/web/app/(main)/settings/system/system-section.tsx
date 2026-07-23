@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Blocks } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Accordion } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
 import { FEATURES, groupNavSections, isFeatureEnabled, type Feature, type FeatureKey } from '@/lib/features';
@@ -12,6 +13,7 @@ import { UpdatesAccordion } from './updates-accordion';
 import { SetupStatusPanel } from './setup-status-panel';
 
 export function SystemSection() {
+  const t = useTranslations('settings');
   const [settings, setSettings] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -43,7 +45,7 @@ export function SystemSection() {
         <Switch
           checked={isFeatureEnabled(settings.features, f.key)}
           onCheckedChange={(on) => setFeatureEnabled(f.key, on)}
-          aria-label={`Enable ${f.label}`}
+          aria-label={t('system.features.enableAria', { feature: f.label })}
         />
       </div>
     );
@@ -79,17 +81,13 @@ export function SystemSection() {
       <EnvironmentAccordion />
 
       <Accordion
-        title="Features"
+        title={t('system.features.title')}
         icon={<Blocks className="h-3.5 w-3.5" />}
         count={FEATURES.length}
         defaultOpen
       >
         <div className="p-5">
-          <p className="pb-2 text-xs text-muted-foreground">
-            Turn sections of the app on or off. Disabled features are hidden from the sidebar; if
-            you open one directly you&apos;ll be prompted to re-enable it here. These groups mirror
-            the sidebar&apos;s sections.
-          </p>
+          <p className="pb-2 text-xs text-muted-foreground">{t('system.features.description')}</p>
           <div>
             {pinned.map((f, i) => renderFeatureRow(f, i > 0))}
             {sections.map((section) => (
@@ -104,24 +102,21 @@ export function SystemSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Notifications" icon={<Bell className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('system.notifications.title')} icon={<Bell className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Task updates</p>
+              <p className="text-sm font-medium">{t('system.notifications.taskUpdates')}</p>
               <p className="text-xs text-muted-foreground">
-                Get a desktop notification when a task needs your input or finishes. Works in the
-                browser and the desktop app.
-                {notifyDenied
-                  ? ' Notifications are blocked in your browser — allow them in site settings to enable this.'
-                  : ''}
+                {t('system.notifications.taskUpdatesDescription')}
+                {notifyDenied ? ` ${t('system.notifications.blockedHint')}` : ''}
               </p>
             </div>
             <Switch
               checked={settings.notifyTaskUpdates}
               onCheckedChange={toggleNotify}
               disabled={notifyDenied}
-              aria-label="Notify on task updates"
+              aria-label={t('system.notifications.notifyAria')}
             />
           </div>
         </div>

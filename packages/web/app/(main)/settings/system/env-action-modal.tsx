@@ -4,26 +4,27 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { EnvToolAction, EnvToolMeta } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { createEnvTerminal } from '@/lib/api';
+
+/** Client-only loading fallback so the translated copy renders inside the provider. */
+function StartingTerminal() {
+  const t = useTranslations('settings');
+  return (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      {t('system.env.startingTerminal')}
+    </div>
+  );
+}
 
 // xterm.js touches the DOM — load the terminal view client-only, same as the CLI
 // install modal.
 const LiveTerminal = dynamic(() => import('@/components/live-terminal').then((m) => m.LiveTerminal), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      Starting terminal…
-    </div>
-  ),
+  loading: () => <StartingTerminal />,
 });
-
-const VERB: Record<EnvToolAction, string> = {
-  install: 'Install',
-  update: 'Update',
-  uninstall: 'Uninstall',
-};
 
 /**
  * A standalone terminal that pastes the install/update/uninstall command for a
@@ -38,6 +39,8 @@ export function EnvActionModal({
   action: EnvToolAction;
   onClose: () => void;
 }) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [terminalId, setTerminalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,12 +51,13 @@ export function EnvActionModal({
         if (!cancelled) setTerminalId(id);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : `Failed to start ${action}`);
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : t('system.env.startFailed', { action }));
       });
     return () => {
       cancelled = true;
     };
-  }, [meta.id, action]);
+  }, [meta.id, action, t]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,6 +69,11 @@ export function EnvActionModal({
 
   if (typeof document === 'undefined') return null;
 
+  const VERB: Record<EnvToolAction, string> = {
+    install: t('system.env.verbInstall'),
+    update: t('system.env.verbUpdate'),
+    uninstall: t('system.env.verbUninstall'),
+  };
   const verb = VERB[action];
 
   return createPortal(
@@ -78,22 +87,27 @@ export function EnvActionModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`${verb} ${meta.label}`}
+          aria-label={t('system.env.actionTitle', { verb, label: meta.label })}
           className="pointer-events-auto flex h-[80vh] max-h-[80vh] w-full max-w-4xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-sm font-semibold leading-tight">
-                {verb} {meta.label}
+                {t('system.env.actionTitle', { verb, label: meta.label })}
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                The {action} command is typed below — press{' '}
-                <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">Enter</kbd> to
-                run it. Close anytime.
+                {t.rich('system.env.runHint', {
+                  action,
+                  kbd: (chunks) => (
+                    <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">
+                      {chunks}
+                    </kbd>
+                  ),
+                })}
               </p>
             </div>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button type="button" variant="ghost" size="icon" aria-label={tc('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -105,11 +119,11 @@ export function EnvActionModal({
               <LiveTerminal
                 attachId={terminalId}
                 label={meta.label}
-                ariaLabel={`${verb} ${meta.label} terminal`}
+                ariaLabel={t('system.env.terminalLabel', { verb, label: meta.label })}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Preparing {action}…
+                {t('system.env.preparing', { action })}
               </div>
             )}
           </div>

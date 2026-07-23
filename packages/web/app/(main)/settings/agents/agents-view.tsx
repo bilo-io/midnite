@@ -15,6 +15,7 @@ import {
   TriangleAlert,
   Users,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   AGENT_CLIS,
   AGENT_CLI_LABEL,
@@ -83,11 +84,13 @@ const PROVIDER_OPTIONS: SelectOption<LlmProvider>[] = LLM_PROVIDERS.map((p) => (
   label: LLM_PROVIDER_LABEL[p],
 }));
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 export function AgentsView() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [agents, setAgents] = useState<AgentsConfig | null>(null);
   const [statuses, setStatuses] = useState<AgentCliStatus[]>([]);
   const [statusBusy, setStatusBusy] = useState(true);
@@ -121,8 +124,8 @@ export function AgentsView() {
   const subTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
-    getAgentsConfig().then(setAgents).catch((e) => setError(errMsg(e)));
-    getProviders().then(setProviders).catch((e) => setError(errMsg(e)));
+    getAgentsConfig().then(setAgents).catch((e) => setError(errMsg(e, t('agents.genericError'))));
+    getProviders().then(setProviders).catch((e) => setError(errMsg(e, t('agents.genericError'))));
   }, []);
 
   const refreshCliStatuses = () => {
@@ -191,7 +194,7 @@ export function AgentsView() {
       if (p.name.trim()) body.name = p.name;
       updatePrimaryAgent(body)
         .then(flashSaved)
-        .catch((e) => setError(errMsg(e)));
+        .catch((e) => setError(errMsg(e, t('agents.genericError'))));
     }, SAVE_DEBOUNCE_MS);
   };
 
@@ -205,7 +208,7 @@ export function AgentsView() {
         if (!sub) return;
         updateSubAgent(id, { name: sub.name, role: sub.role, description: sub.description })
           .then(flashSaved)
-          .catch((e) => setError(errMsg(e)));
+          .catch((e) => setError(errMsg(e, t('agents.genericError'))));
       }, SAVE_DEBOUNCE_MS),
     );
   };
@@ -220,7 +223,7 @@ export function AgentsView() {
     setAgents((prev) => (prev ? { ...prev, cli } : prev));
     updateAgentCli(cli)
       .then(flashSaved)
-      .catch((e) => setError(errMsg(e)));
+      .catch((e) => setError(errMsg(e, t('agents.genericError'))));
   };
 
   // The heartbeat cadence is a discrete choice too — save it immediately rather
@@ -231,7 +234,7 @@ export function AgentsView() {
     );
     updatePrimaryAgent({ heartbeatIntervalH: hours })
       .then(flashSaved)
-      .catch((e) => setError(errMsg(e)));
+      .catch((e) => setError(errMsg(e, t('agents.genericError'))));
   };
 
   // --- Provider (API) handlers ---
@@ -263,20 +266,22 @@ export function AgentsView() {
       setAgents((prev) => (prev ? { ...prev, subAgents: [...prev.subAgents, created] } : prev));
       flashSaved();
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('agents.genericError')));
     }
   };
 
   const removeSubAgent = async (id: string) => {
     const sub = latest.current?.subAgents.find((s) => s.id === id);
     const ok = await confirm({
-      title: 'Remove this subagent?',
-      description: `${sub?.name.trim() || 'This subagent'} will be deleted and the orchestrator can no longer delegate to it.`,
-      confirmLabel: 'Remove',
+      title: t('agents.removeSubagentTitle'),
+      description: t('agents.removeSubagentDescription', {
+        name: sub?.name.trim() || t('agents.thisSubagent'),
+      }),
+      confirmLabel: tc('remove'),
     });
     if (!ok) return;
-    const t = subTimers.current.get(id);
-    if (t) clearTimeout(t);
+    const pendingTimer = subTimers.current.get(id);
+    if (pendingTimer) clearTimeout(pendingTimer);
     subTimers.current.delete(id);
     try {
       await deleteSubAgent(id);
@@ -284,14 +289,14 @@ export function AgentsView() {
         prev ? { ...prev, subAgents: prev.subAgents.filter((s) => s.id !== id) } : prev,
       );
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('agents.genericError')));
     }
   };
 
   if (!agents) {
     return (
       <p className="py-2 text-sm text-muted-foreground">
-        {error ? `Couldn't load agents: ${error}` : 'Loading…'}
+        {error ? t('agents.loadFailed', { error }) : tc('loading')}
       </p>
     );
   }
@@ -316,7 +321,7 @@ export function AgentsView() {
         aria-live="polite"
       >
         <Check className="h-3.5 w-3.5" />
-        Saved
+        {tc('saved')}
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -325,17 +330,17 @@ export function AgentsView() {
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            <span className="font-medium">
-              {activeProvider ? LLM_PROVIDER_LABEL[activeProvider] : 'The active provider'}
-            </span>{' '}
-            is set as your AI provider but has no API key, so AI features (task triage, plan
-            drafting, the heartbeat) will be skipped. Add a key under its{' '}
-            <span className="font-medium">API</span> tab below, or switch the active provider.
+            {t.rich('agents.providerUnconfigured', {
+              name: activeProvider
+                ? LLM_PROVIDER_LABEL[activeProvider]
+                : t('agents.theActiveProvider'),
+              b: (chunks) => <span className="font-medium">{chunks}</span>,
+            })}
           </span>
         </div>
       ) : null}
 
-      <Accordion title="Primary Agent" icon={<Bot className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('agents.primaryAgent')} icon={<Bot className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-5 p-5">
           <PrimaryAgentRouting
             cli={cli}
@@ -344,21 +349,21 @@ export function AgentsView() {
             onSetProvider={(p) => void activateProvider(p)}
           />
 
-          <Field label="Name" htmlFor="primary-name">
+          <Field label={t('agents.name')} htmlFor="primary-name">
             <Input
               id="primary-name"
               value={primary.name}
               onChange={(e) => editPrimary({ name: e.target.value })}
-              placeholder="Orchestrator"
+              placeholder={t('agents.orchestratorPlaceholder')}
             />
           </Field>
 
           <MarkdownField
-            label="Description / prompt"
-            hint="The orchestrator's system prompt — how it should plan, delegate and decide what to work on."
+            label={t('agents.descriptionPrompt')}
+            hint={t('agents.primaryDescriptionHint')}
             value={primary.description}
             onChange={(v) => editPrimary({ description: v })}
-            placeholder="You are the orchestrator. You triage incoming work, break it into tasks…"
+            placeholder={t('agents.primaryDescriptionPlaceholder')}
           />
 
           <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
@@ -366,31 +371,30 @@ export function AgentsView() {
               <div className="space-y-1">
                 <p className="flex items-center gap-2 text-sm font-medium">
                   <Activity className="h-3.5 w-3.5" />
-                  Heartbeat
+                  {t('agents.heartbeat')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  A prompt the orchestrator runs on a schedule — for sweeps, check-ins or any
-                  standing task.
+                  {t('agents.heartbeatHint')}
                 </p>
               </div>
               <Switch
                 checked={primary.heartbeatEnabled}
                 onCheckedChange={(on) => editPrimary({ heartbeatEnabled: on })}
-                aria-label="Enable heartbeat"
+                aria-label={t('agents.enableHeartbeat')}
               />
             </div>
 
             <div className="flex items-start justify-between gap-6">
               <div className="space-y-1">
-                <p className="text-sm font-medium">Interval</p>
+                <p className="text-sm font-medium">{t('agents.interval')}</p>
                 <p className="text-xs text-muted-foreground">
-                  How often the heartbeat prompt runs — from every hour up to once a month.
+                  {t('agents.intervalHint')}
                 </p>
               </div>
               <select
                 value={primary.heartbeatIntervalH}
                 onChange={(e) => editHeartbeatInterval(Number(e.target.value))}
-                aria-label="Heartbeat interval"
+                aria-label={t('agents.heartbeatInterval')}
                 className="h-9 shrink-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {HEARTBEAT_PRESETS.some((p) => p.hours === primary.heartbeatIntervalH) ? null : (
@@ -413,10 +417,10 @@ export function AgentsView() {
               )}
             >
               <MarkdownField
-                label="Heartbeat prompt"
+                label={t('agents.heartbeatPrompt')}
                 value={primary.heartbeatPrompt}
                 onChange={(v) => editPrimary({ heartbeatPrompt: v })}
-                placeholder="Review open tasks and surface anything that's stalled or needs a decision…"
+                placeholder={t('agents.heartbeatPromptPlaceholder')}
                 minHeight={100}
               />
             </div>
@@ -424,13 +428,13 @@ export function AgentsView() {
         </div>
       </Accordion>
 
-      <Accordion title="Agent pool" icon={<Gauge className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('agents.agentPool')} icon={<Gauge className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Parallel agents</p>
+              <p className="text-sm font-medium">{t('agents.parallelAgents')}</p>
               <p className="text-xs text-muted-foreground">
-                How many agent sessions may run at once. Extra tasks queue until a slot frees up.
+                {t('agents.parallelAgentsHint')}
               </p>
             </div>
             <div
@@ -454,24 +458,25 @@ export function AgentsView() {
               step={1}
               value={poolSize}
               onChange={(e) => setPoolSize(Number(e.target.value))}
-              aria-label="Parallel agents"
+              aria-label={t('agents.parallelAgents')}
               className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
             />
             <span className="w-6 text-xs text-muted-foreground tabular-nums">{AGENT_POOL_MAX}</span>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Default {DEFAULT_SETTINGS.agentPoolSize} · maximum {AGENT_POOL_MAX}.
+            {t('agents.poolDefault', {
+              default: DEFAULT_SETTINGS.agentPoolSize,
+              max: AGENT_POOL_MAX,
+            })}
           </p>
         </div>
       </Accordion>
 
-      <Accordion title="Agents" icon={<Cpu className="h-3.5 w-3.5" />} count={AGENT_CLIS.length} defaultOpen>
+      <Accordion title={t('agents.agentsTitle')} icon={<Cpu className="h-3.5 w-3.5" />} count={AGENT_CLIS.length} defaultOpen>
         <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
-            Every coding agent midnite knows about. Expand one to install or update its CLI (used to
-            run task sessions) or, under the API tab, add your own key so that provider can power
-            midnite&apos;s own AI features.
+            {t('agents.agentsIntro')}
           </p>
           {AGENT_CLIS.map((c) => {
             const provider = CLI_PROVIDER_MAP[c];
@@ -495,7 +500,7 @@ export function AgentsView() {
       </Accordion>
 
       <Accordion
-        title="Sub Agents"
+        title={t('agents.subAgents')}
         icon={<Users className="h-3.5 w-3.5" />}
         count={subAgents.length}
         defaultOpen
@@ -510,7 +515,7 @@ export function AgentsView() {
             }}
           >
             <Plus className="h-4 w-4" />
-            Add
+            {tc('add')}
           </Button>
         }
       >
@@ -518,9 +523,9 @@ export function AgentsView() {
           {subAgents.length === 0 ? (
             <EmptyState
               Icon={Bot}
-              title="No subagents yet"
-              description="Add focused workers the orchestrator can delegate to."
-              actionLabel="Add subagent"
+              title={t('agents.noSubagents')}
+              description={t('agents.noSubagentsHint')}
+              actionLabel={t('agents.addSubagent')}
               onAction={() => void addSubAgent()}
             />
           ) : (
@@ -568,38 +573,38 @@ function PrimaryAgentRouting({
   onSetCli: (cli: AgentCli) => void;
   onSetProvider: (provider: LlmProvider) => void;
 }) {
+  const t = useTranslations('settings');
   const [tab, setTab] = useState<'cli' | 'api'>('cli');
   const tabs: TabOption<'cli' | 'api'>[] = [
-    { value: 'cli', label: 'CLI', icon: <Terminal className="h-3.5 w-3.5" /> },
-    { value: 'api', label: 'API', icon: <Cpu className="h-3.5 w-3.5" /> },
+    { value: 'cli', label: t('agents.cliTab'), icon: <Terminal className="h-3.5 w-3.5" /> },
+    { value: 'api', label: t('agents.apiTab'), icon: <Cpu className="h-3.5 w-3.5" /> },
   ];
 
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
-      <Tabs options={tabs} value={tab} onChange={setTab} ariaLabel="Primary agent routing" />
+      <Tabs options={tabs} value={tab} onChange={setTab} ariaLabel={t('agents.primaryAgentRouting')} />
       {tab === 'cli' ? (
         <div className="flex items-start justify-between gap-6">
           <div className="space-y-1">
-            <p className="text-sm font-medium">Session CLI</p>
+            <p className="text-sm font-medium">{t('agents.sessionCli')}</p>
             <p className="text-xs text-muted-foreground">
-              The coding agent launched in a session terminal to run tasks.
+              {t('agents.sessionCliHint')}
             </p>
           </div>
           <StyledSelect
             options={CLI_OPTIONS}
             value={cli}
             onChange={onSetCli}
-            aria-label="Session agent CLI"
+            aria-label={t('agents.sessionAgentCli')}
             className="w-44 shrink-0"
           />
         </div>
       ) : (
         <div className="flex items-start justify-between gap-6">
           <div className="space-y-1">
-            <p className="text-sm font-medium">AI provider</p>
+            <p className="text-sm font-medium">{t('agents.aiProvider')}</p>
             <p className="text-xs text-muted-foreground">
-              Powers midnite&apos;s own AI (triage, plan drafting, heartbeat). Add each provider&apos;s
-              key in its card below.
+              {t('agents.aiProviderHint')}
             </p>
           </div>
           {activeProvider ? (
@@ -607,7 +612,7 @@ function PrimaryAgentRouting({
               options={PROVIDER_OPTIONS}
               value={activeProvider}
               onChange={onSetProvider}
-              aria-label="Active AI provider"
+              aria-label={t('agents.activeAiProvider')}
               className="w-44 shrink-0"
             />
           ) : null}
@@ -628,6 +633,7 @@ function SubAgentCard({
   onChange: (patch: Partial<SubAgent>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations('settings');
   // Start expanded only when the subagent is still blank (e.g. just added),
   // so existing ones stay collapsed and the list reads as a compact accordion.
   const [open, setOpen] = useState(
@@ -641,7 +647,7 @@ function SubAgentCard({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          aria-label={open ? 'Collapse subagent' : 'Expand subagent'}
+          aria-label={open ? t('agents.collapseSubagent') : t('agents.expandSubagent')}
           className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronDown className={cn('h-4 w-4 transition-transform', !open && '-rotate-90')} />
@@ -652,8 +658,8 @@ function SubAgentCard({
         <input
           value={subAgent.name}
           onChange={(e) => onChange({ name: e.target.value })}
-          placeholder={`Subagent ${index + 1}`}
-          aria-label="Subagent name"
+          placeholder={t('agents.subagentNumber', { number: index + 1 })}
+          aria-label={t('agents.subagentName')}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
         />
         <Button
@@ -661,7 +667,7 @@ function SubAgentCard({
           variant="ghost"
           size="icon"
           onClick={onRemove}
-          aria-label="Remove subagent"
+          aria-label={t('agents.removeSubagent')}
           className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
         >
           <Trash2 className="h-4 w-4" />
@@ -670,21 +676,21 @@ function SubAgentCard({
 
       <Collapse open={open}>
         <div className="space-y-4 border-t border-border/60 p-4">
-          <Field label="Role" htmlFor={`sub-role-${subAgent.id}`}>
+          <Field label={t('agents.role')} htmlFor={`sub-role-${subAgent.id}`}>
             <Input
               id={`sub-role-${subAgent.id}`}
               value={subAgent.role}
               onChange={(e) => onChange({ role: e.target.value })}
-              placeholder="Condenses long threads into a brief"
+              placeholder={t('agents.rolePlaceholder')}
             />
           </Field>
 
           <MarkdownField
-            label="Description"
-            hint="The full system prompt for this subagent."
+            label={t('agents.description')}
+            hint={t('agents.subDescriptionHint')}
             value={subAgent.description}
             onChange={(v) => onChange({ description: v })}
-            placeholder="You are a summariser. Given a transcript, produce a tight, faithful summary…"
+            placeholder={t('agents.subDescriptionPlaceholder')}
           />
         </div>
       </Collapse>
@@ -709,6 +715,7 @@ function MarkdownField({
   placeholder?: string;
   minHeight?: number;
 }) {
+  const t = useTranslations('settings');
   const [markdown, setMarkdown] = useState(false);
 
   return (
@@ -727,7 +734,7 @@ function MarkdownField({
           )}
         >
           <FileText className="h-3.5 w-3.5" />
-          Markdown
+          {t('agents.markdown')}
         </button>
       </div>
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
@@ -741,7 +748,7 @@ function MarkdownField({
       />
       {markdown ? (
         <p className="text-[11px] text-muted-foreground">
-          Markdown mode — written as the agent&apos;s prompt document.
+          {t('agents.markdownHint')}
         </p>
       ) : null}
     </div>

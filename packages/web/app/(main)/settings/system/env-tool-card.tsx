@@ -12,6 +12,7 @@ import {
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   meetsMinVersion,
   type EnvToolAction,
@@ -52,6 +53,7 @@ export function EnvToolCard({
   live: boolean;
   onAction: (action: EnvToolAction) => void;
 }) {
+  const t = useTranslations('settings');
   const Icon = TOOL_ICON[meta.id];
   const installed = status?.installed ?? false;
   const version = status?.version;
@@ -73,18 +75,24 @@ export function EnvToolCard({
         {loading ? (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            checking…
+            {t('system.env.checking')}
           </span>
         ) : live ? (
           <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: dot }} />
             {installed ? (
               <>
-                {version ? <span className="truncate font-mono">{version}</span> : 'installed'}
-                {outdated ? <span style={{ color: DOT_WARN }}>· update needed</span> : null}
+                {version ? (
+                  <span className="truncate font-mono">{version}</span>
+                ) : (
+                  t('system.env.installed')
+                )}
+                {outdated ? (
+                  <span style={{ color: DOT_WARN }}>{t('system.env.updateNeeded')}</span>
+                ) : null}
               </>
             ) : (
-              'not installed'
+              t('system.env.notInstalled')
             )}
           </span>
         ) : (
@@ -103,7 +111,7 @@ export function EnvToolCard({
                   className="text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Uninstall
+                  {t('system.env.verbUninstall')}
                 </Button>
               ) : null}
               {installed ? (
@@ -114,12 +122,12 @@ export function EnvToolCard({
                   onClick={() => onAction('update')}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Update
+                  {t('system.env.verbUpdate')}
                 </Button>
               ) : (
                 <Button type="button" variant="default" size="sm" onClick={() => onAction('install')}>
                   <Download className="h-3.5 w-3.5" />
-                  Install
+                  {t('system.env.verbInstall')}
                 </Button>
               )}
             </>
@@ -130,7 +138,7 @@ export function EnvToolCard({
               rel="noreferrer"
               className="inline-flex items-center gap-0.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
-              Docs
+              {t('system.env.docs')}
               <ExternalLink className="h-3 w-3" />
             </a>
           )}
@@ -139,7 +147,7 @@ export function EnvToolCard({
 
       <div className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
         {meta.description}
-        {meta.via ? ` · installed via ${meta.via}` : ''}
+        {meta.via ? t('system.env.installedVia', { via: meta.via }) : ''}
       </div>
     </section>
   );

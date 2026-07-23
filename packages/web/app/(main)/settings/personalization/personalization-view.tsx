@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, FolderOpen, Sparkles, UserRound } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,8 @@ import { DEFAULT_PROFILE, PROFILE_STORAGE_KEY, type Profile } from '@/lib/app-se
 import { cn } from '@/lib/utils';
 
 export function PersonalizationView() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [profile, setProfile, hydrated] = useLocalStorage<Profile>(
     PROFILE_STORAGE_KEY,
     DEFAULT_PROFILE,
@@ -53,7 +56,7 @@ export function PersonalizationView() {
         setWorkDir(primary.defaultWorkDir ?? '');
         flashSaved();
       })
-      .catch((e) => setWorkDirError(e instanceof Error ? e.message : 'Could not save'));
+      .catch((e) => setWorkDirError(e instanceof Error ? e.message : t('personalization.couldNotSave')));
   };
 
   return (
@@ -66,29 +69,27 @@ export function PersonalizationView() {
         aria-live="polite"
       >
         <Check className="h-3.5 w-3.5" />
-        Saved
+        {tc('saved')}
       </div>
 
-      <Accordion title="About you" icon={<UserRound className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('personalization.aboutYou')} icon={<UserRound className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
-            Tell midnite who you are — your role, how you like to work, the kinds of things you
-            build. Agents can use this for context.
+            {t('personalization.aboutYouDescription')}
           </p>
           <Textarea
             value={profile.about}
             onChange={(e) => setProfile((p) => ({ ...p, about: e.target.value }))}
-            placeholder="e.g. I'm a backend engineer who cares about small, well-tested commits…"
+            placeholder={t('personalization.aboutPlaceholder')}
             className="min-h-[120px] resize-y"
           />
         </div>
       </Accordion>
 
-      <Accordion title="Working directory" icon={<FolderOpen className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('personalization.workingDirectory')} icon={<FolderOpen className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
-            The folder session terminals fall back to when a task has no project directory of its
-            own. Leave it unset to use the gateway&apos;s own directory.
+            {t('personalization.workingDirectoryDescription')}
           </p>
           <div className="flex items-center gap-2">
             <div
@@ -102,7 +103,7 @@ export function PersonalizationView() {
                   {workDir}
                 </span>
               ) : (
-                <span className="text-muted-foreground">Not set — uses the gateway&apos;s directory</span>
+                <span className="text-muted-foreground">{t('personalization.notSet')}</span>
               )}
             </div>
             <Button
@@ -114,7 +115,7 @@ export function PersonalizationView() {
               disabled={workDir === null}
             >
               <FolderOpen className="h-3.5 w-3.5" />
-              Browse
+              {t('personalization.browse')}
             </Button>
             {workDir ? (
               <Button
@@ -124,7 +125,7 @@ export function PersonalizationView() {
                 className="shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={() => saveWorkDir('')}
               >
-                Clear
+                {t('personalization.clear')}
               </Button>
             ) : null}
           </div>
@@ -132,17 +133,15 @@ export function PersonalizationView() {
         </div>
       </Accordion>
 
-      <Accordion title="Agent guidelines" icon={<Sparkles className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('personalization.agentGuidelines')} icon={<Sparkles className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
-            Guidance applied to every session, layered on top of each project&apos;s own
-            guidelines. Good for standing preferences — tone, conventions, things to always or
-            never do.
+            {t('personalization.agentGuidelinesDescription')}
           </p>
           <Textarea
             value={profile.guidelines}
             onChange={(e) => setProfile((p) => ({ ...p, guidelines: e.target.value }))}
-            placeholder="e.g. Prefer functional style. Always run the linter before finishing. Keep PRs focused…"
+            placeholder={t('personalization.guidelinesPlaceholder')}
             className="min-h-[160px] resize-y"
           />
         </div>

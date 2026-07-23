@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Check, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { SetupItemState, SetupStatus } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { getSetupStatus } from '@/lib/api';
@@ -24,6 +25,8 @@ function worstState(status: SetupStatus): SetupItemState {
  * here without a reload.
  */
 export function SetupStatusPanel() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -52,37 +55,34 @@ export function SetupStatusPanel() {
         style={{ background: status.ready ? SETUP_DOT.ok : SETUP_DOT[worstState(status)] }}
         aria-hidden
       />
-      {status.ready ? 'Ready' : 'Setup incomplete'}
+      {status.ready ? t('system.setup.ready') : t('system.setup.incomplete')}
     </span>
   ) : null;
 
   return (
     <Accordion
-      title="Setup readiness"
+      title={t('system.setup.title')}
       icon={<ShieldCheck className="h-3.5 w-3.5" />}
       action={badge}
       defaultOpen
     >
       <div className="space-y-4 p-5">
-        <p className="text-xs text-muted-foreground">
-          Whether this install can run agents — live provider, secret-key, agent-CLI, pool and repo
-          state. The same checklist drives the first-run prompt.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('system.setup.description')}</p>
 
         {error ? (
           <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
-            <span>Couldn’t load setup status — is the gateway running?</span>
+            <span>{t('system.setup.loadError')}</span>
             <button
               type="button"
               onClick={refresh}
               className="inline-flex items-center gap-1 rounded-md text-muted-foreground hover:text-foreground"
             >
-              <RefreshCw className="h-3 w-3" /> Retry
+              <RefreshCw className="h-3 w-3" /> {tc('retry')}
             </button>
           </div>
         ) : !status ? (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> checking…
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('system.setup.checking')}
           </div>
         ) : (
           <ul className="space-y-3">
@@ -115,7 +115,7 @@ export function SetupStatusPanel() {
                     href={SETUP_ITEM_HREF[item.id]}
                     className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    {done ? 'Manage' : 'Fix'}
+                    {done ? t('system.setup.manage') : t('system.setup.fix')}
                     <ArrowUpRight className="h-3 w-3" />
                   </Link>
                 </li>
@@ -131,7 +131,8 @@ export function SetupStatusPanel() {
             disabled={loading}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
           >
-            <RefreshCw className={loading ? 'h-3 w-3 animate-spin' : 'h-3 w-3'} /> Re-check
+            <RefreshCw className={loading ? 'h-3 w-3 animate-spin' : 'h-3 w-3'} />{' '}
+            {t('system.setup.recheck')}
           </button>
         ) : null}
       </div>
