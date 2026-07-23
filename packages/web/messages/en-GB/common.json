@@ -13,5 +13,6 @@
   "delete": "Delete",
   "remove": "Remove",
   "back": "Back",
-  "none": "None"
+  "none": "None",
+  "selectedCount": "{count, plural, one {# selected} other {# selected}}"
 }

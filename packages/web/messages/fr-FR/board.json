@@ -9,5 +9,104 @@
     "waiting": "En pause",
     "done": "Terminé",
     "abandoned": "Abandonné"
+  },
+  "kinds": {
+    "bug": "Correctif",
+    "feature": "Fonctionnalité",
+    "question": "Question",
+    "chore": "Corvée",
+    "unknown": "Tâche"
+  },
+  "priority": {
+    "low": "Basse",
+    "high": "Haute",
+    "urgent": "Urgente"
+  },
+  "waitReasons": {
+    "needs-input": "Réponse requise",
+    "no-pr": "Aucune PR ouverte",
+    "agent-failed": "Échec de l'agent",
+    "timed-out": "Délai dépassé",
+    "gate-failed": "Contrôles échoués",
+    "retries-exhausted": "Tentatives épuisées"
+  },
+  "heldReasons": {
+    "over-budget": "budget dépassé",
+    "rate-limited": "débit limité"
+  },
+  "aiReview": {
+    "approved": "IA : Approuvé",
+    "commented": "IA : Relu",
+    "changes-requested": "IA : Modifications"
+  },
+  "card": {
+    "answered": "Répondu",
+    "checksFailing": "Contrôles en échec",
+    "held": "Suspendu : {reason}",
+    "heldTitle": "Suspendu : le planificateur ne démarrera pas d'agent tant que le plafond n'est pas levé",
+    "needsAttentionTitle": "Attention requise — un échec a mis cette tâche en attente ; relancez-la, replanifiez-la ou abandonnez-la",
+    "blocked": "Bloquée",
+    "blockedBy": "Bloquée par {count, plural, one {# tâche} other {# tâches}}",
+    "start": "Démarrer",
+    "startTask": "Démarrer la tâche",
+    "stop": "Arrêter",
+    "stopTask": "Arrêter la tâche",
+    "reopen": "Rouvrir",
+    "reopenTask": "Rouvrir la tâche",
+    "moveTo": "Déplacer vers…",
+    "moveToColumn": "Déplacer vers une colonne"
+  },
+  "confirm": {
+    "reopenTitle": "Rouvrir cette tâche ?",
+    "reopenDescription": "Elle revient dans À faire, sa session d'agent est effacée et les tâches qui en dépendent sont de nouveau bloquées.",
+    "reopenConfirm": "Rouvrir",
+    "doneAgainTitle": "Marquer cette tâche comme terminée à nouveau ?",
+    "doneAgainDescription": "Elle est déjà dans Terminé.",
+    "doneAgainConfirm": "Marquer terminée",
+    "abandonTitle": "Abandonner cette tâche ?",
+    "abandonDescription": "Elle passe dans Abandonné et sa session (le cas échéant) est archivée.",
+    "abandonConfirm": "Abandonner",
+    "startBlockedTitle": "Démarrer une tâche bloquée ?",
+    "startBlockedDescription": "{count, plural, one {# bloqueur n'est pas encore terminé} other {# bloqueurs ne sont pas encore terminés}}. Le planificateur ignore les tâches bloquées ; la démarrer manuellement l'exécute quand même.",
+    "startBlockedConfirm": "Démarrer quand même",
+    "deleteTasksTitle": "Supprimer {count, plural, one {# tâche} other {# tâches}} ?",
+    "deleteTasksDescription": "Cette action est irréversible.",
+    "deleteTasksConfirm": "Supprimer"
+  },
+  "bulk": {
+    "abandon": "Abandonner",
+    "restore": "Restaurer",
+    "delete": "Supprimer",
+    "moveTo": "Déplacer vers"
+  },
+  "toolbar": {
+    "newTask": "Nouvelle tâche",
+    "searchPlaceholder": "Rechercher des tâches",
+    "graph": "Graphe",
+    "allStatuses": "Tous les statuts",
+    "allTags": "Tous les tags",
+    "views": {
+      "list": "Vue liste",
+      "board": "Vue kanban",
+      "table": "Vue table"
+    },
+    "boardStyles": {
+      "unified": "Tout-en-un",
+      "project": "Par projet"
+    }
+  },
+  "sections": {
+    "empty": "Vide",
+    "summary": "{tasks, plural, one {# tâche} other {# tâches}} · {projects, plural, one {# projet} other {# projets}}"
+  },
+  "unassigned": "Sans projet",
+  "toasts": {
+    "taskCreated": "Tâche créée",
+    "tasksCreated": "{count, plural, one {# tâche créée} other {# tâches créées}}",
+    "moveFailed": "Échec du déplacement de la tâche",
+    "movesFailed": "Échec du déplacement des tâches",
+    "reorderFailed": "Échec de la réorganisation des tâches",
+    "reopenFailed": "Échec de la réouverture de la tâche",
+    "deleteFailed": "Échec de la suppression des tâches"
   }
 }

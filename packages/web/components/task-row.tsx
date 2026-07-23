@@ -4,16 +4,10 @@ import { BlockedBadge } from '@/components/blocked-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import type { ProjectTagInfo } from '@/components/task-card';
-import { statusLabel, statusHueVar } from '@/components/task-columns';
+import { statusHueVar } from '@/components/task-columns';
+import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
-const KIND_LABELS: Record<NonNullable<TaskSummary['kind']>, string> = {
-  bug: 'Bugfix',
-  feature: 'Feature',
-  question: 'Question',
-  chore: 'Chore',
-  unknown: 'Task',
-};
 const KIND_HUE_VARS: Record<NonNullable<TaskSummary['kind']>, string> = {
   bug: '--kind-bug',
   feature: '--kind-feature',
@@ -46,6 +40,8 @@ export function TaskRow({
   /** Count of unmet blockers (Phase 27); shows a chip when > 0. */
   blockedBy?: number;
 }) {
+  const kindLabel = useKindLabel();
+  const statusLabel = useStatusLabel();
   const kind = task.kind ?? 'unknown';
   const interactive = Boolean(onSelect);
   const selectable = Boolean(onToggleSelect);
@@ -64,7 +60,7 @@ export function TaskRow({
         style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
       >
         <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
-        {KIND_LABELS[kind]}
+        {kindLabel(kind)}
       </span>
     </span>
   );

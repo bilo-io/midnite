@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
 import { deleteTask, getTask, reopenTask, reorderTasks, updateTaskStatus } from '@/lib/api';
@@ -36,6 +37,7 @@ import { cn } from '@/lib/utils';
 
 /** Bulk "Move to…" status menu shown in the selection toolbar. */
 function MoveToMenu({ onMove }: { onMove: (status: Status) => void }) {
+  const t = useTranslations('board');
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -44,7 +46,7 @@ function MoveToMenu({ onMove }: { onMove: (status: Status) => void }) {
         onClick={() => setOpen((o) => !o)}
         className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
       >
-        Move to
+        {t('bulk.moveTo')}
         <ChevronDown className="h-3 w-3" />
       </button>
       {open ? (
@@ -62,7 +64,7 @@ function MoveToMenu({ onMove }: { onMove: (status: Status) => void }) {
                 className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
               >
                 <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: `hsl(var(${c.hueVar}))` }} />
-                {c.label}
+                {t(`columns.${c.status}`)}
               </button>
             ))}
           </div>
@@ -72,12 +74,6 @@ function MoveToMenu({ onMove }: { onMove: (status: Status) => void }) {
   );
 }
 
-const STATUS_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
-  value: c.status,
-  label: c.label,
-  hue: `var(${c.hueVar})`,
-}));
-
 // Sentinel project-filter value for tasks with no project. A UUID can't collide.
 const UNASSIGNED = 'none';
 
@@ -86,20 +82,16 @@ const UNASSIGNED = 'none';
 type BoardStyle = 'unified' | 'project';
 const BOARD_STYLES: readonly BoardStyle[] = ['unified', 'project'];
 const BOARD_STYLE_STORAGE_KEY = 'midnite.tasks.boardStyle';
-const BOARD_STYLE_OPTIONS: Array<{ value: BoardStyle; label: string }> = [
-  { value: 'unified', label: 'All in one' },
-  { value: 'project', label: 'Per project' },
-];
 
 // View toggle, matching the Projects/Sessions control — list / board / table,
 // persisted to localStorage. "board" is the kanban (where the others have grid).
 export type TaskView = 'list' | 'board' | 'table';
 const VIEWS: readonly TaskView[] = ['list', 'board', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.tasks.view';
-const VIEW_OPTIONS: Array<{ value: TaskView; label: string; Icon: LucideIcon }> = [
-  { value: 'list', label: 'List view', Icon: List },
-  { value: 'board', label: 'Board view', Icon: Columns3 },
-  { value: 'table', label: 'Table view', Icon: ListTree },
+const VIEW_ICONS: Array<{ value: TaskView; Icon: LucideIcon }> = [
+  { value: 'list', Icon: List },
+  { value: 'board', Icon: Columns3 },
+  { value: 'table', Icon: ListTree },
 ];
 
 /**
@@ -122,6 +114,7 @@ export function TasksView({
    *  bounded viewport-height layout; list/table flow with the document). */
   onViewChange?: (view: TaskView) => void;
 }) {
+  const t = useTranslations('board');
   const [localTasks, setLocalTasks] = useState<TaskSummary[]>(tasks);
   // The page fetches tasks client-side, so the first render passes an empty
   // array (data still loading) and only later the real list. useState seeds
@@ -259,9 +252,9 @@ export function TasksView({
         const unmet = unmetBlockerCount(current, tasksById);
         if (unmet > 0) {
           const ok = await confirm({
-            title: 'Start a blocked task?',
-            description: `${unmet} blocker${unmet === 1 ? " isn't" : "s aren't"} done yet. The scheduler skips blocked tasks; starting it manually runs it anyway.`,
-            confirmLabel: 'Start anyway',
+            title: t('confirm.startBlockedTitle'),
+            description: t('confirm.startBlockedDescription', { count: unmet }),
+            confirmLabel: t('confirm.startBlockedConfirm'),
           });
           if (!ok) return;
         }
@@ -276,10 +269,10 @@ export function TasksView({
         setLocalTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)),
         );
-        toast.error(e instanceof Error ? e.message : 'Failed to move task');
+        toast.error(e instanceof Error ? e.message : t('toasts.moveFailed'));
       }
     },
-    [localTasks, toast, confirm],
+    [localTasks, toast, confirm, t],
   );
 
   // Reopen a terminal task (Phase 69 E). The board owns the confirm; here we
@@ -299,10 +292,10 @@ export function TasksView({
         setLocalTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)),
         );
-        toast.error(e instanceof Error ? e.message : 'Failed to reopen task');
+        toast.error(e instanceof Error ? e.message : t('toasts.reopenFailed'));
       }
     },
-    [localTasks, toast],
+    [localTasks, toast, t],
   );
 
   // Vertical drag-reorder within a column (Phase — task reorder). `orderedIds` is
@@ -326,11 +319,11 @@ export function TasksView({
       void reorderTasks(orderedIds)
         .then(invalidateData)
         .catch((e) => {
-          toast.error(e instanceof Error ? e.message : 'Failed to reorder tasks');
+          toast.error(e instanceof Error ? e.message : t('toasts.reorderFailed'));
           invalidateData(); // resync from the server order
         });
     },
-    [toast],
+    [toast, t],
   );
 
   const onSetView = useCallback((next: TaskView) => {
@@ -366,58 +359,58 @@ export function TasksView({
       void Promise.all(ids.map((id) => updateTaskStatus(id, status)))
         .then(invalidateData)
         .catch((e) => {
-          toast.error(e instanceof Error ? e.message : 'Failed to move tasks');
+          toast.error(e instanceof Error ? e.message : t('toasts.movesFailed'));
           invalidateData();
         });
     },
-    [clearSelection, toast],
+    [clearSelection, toast, t],
   );
 
   const deleteSelected = useCallback(async () => {
     const ids = [...selectedIds];
     if (ids.length === 0) return;
     const ok = await confirm({
-      title: `Delete ${ids.length} task${ids.length === 1 ? '' : 's'}?`,
-      description: 'This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('confirm.deleteTasksTitle', { count: ids.length }),
+      description: t('confirm.deleteTasksDescription'),
+      confirmLabel: t('confirm.deleteTasksConfirm'),
     });
     if (!ok) return;
-    setLocalTasks((prev) => prev.filter((t) => !ids.includes(t.id)));
+    setLocalTasks((prev) => prev.filter((task) => !ids.includes(task.id)));
     clearSelection();
     try {
       await Promise.all(ids.map((id) => deleteTask(id)));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to delete tasks');
+      toast.error(e instanceof Error ? e.message : t('toasts.deleteFailed'));
     }
     invalidateData();
-  }, [selectedIds, confirm, clearSelection, toast]);
+  }, [selectedIds, confirm, clearSelection, toast, t]);
 
   const bulkActions = useMemo<BulkAction[]>(() => {
     const actions: BulkAction[] = [];
-    const nonAbandoned = selectedTasks.filter((t) => t.status !== 'abandoned').map((t) => t.id);
-    const abandoned = selectedTasks.filter((t) => t.status === 'abandoned').map((t) => t.id);
+    const nonAbandoned = selectedTasks.filter((x) => x.status !== 'abandoned').map((x) => x.id);
+    const abandoned = selectedTasks.filter((x) => x.status === 'abandoned').map((x) => x.id);
     if (nonAbandoned.length)
       actions.push({
         key: 'abandon',
-        label: 'Abandon',
+        label: t('bulk.abandon'),
         color: BULK_COLORS.archive,
         onClick: () => applyStatus(nonAbandoned, 'abandoned'),
       });
     if (abandoned.length)
       actions.push({
         key: 'restore',
-        label: 'Restore',
+        label: t('bulk.restore'),
         color: BULK_COLORS.archive,
         onClick: () => applyStatus(abandoned, 'todo'),
       });
     actions.push({
       key: 'delete',
-      label: 'Delete',
+      label: t('bulk.delete'),
       color: BULK_COLORS.delete,
       onClick: () => void deleteSelected(),
     });
     return actions;
-  }, [selectedTasks, applyStatus, deleteSelected]);
+  }, [selectedTasks, applyStatus, deleteSelected, t]);
 
   const projectsById = new Map(
     projects.map((p) => [p.id, { tag: p.tag, color: p.color }] as const),
@@ -467,9 +460,15 @@ export function TasksView({
     );
 
   const projectFilters: FilterOption[] = [
-    { value: UNASSIGNED, label: 'Unassigned', color: '#94a3b8' },
+    { value: UNASSIGNED, label: t('unassigned'), color: '#94a3b8' },
     ...projects.map((p) => ({ value: p.id, label: p.tag, color: p.color })),
   ];
+
+  const statusFilters: FilterOption[] = COLUMNS.map((c) => ({
+    value: c.status,
+    label: t(`columns.${c.status}`),
+    hue: `var(${c.hueVar})`,
+  }));
 
   const tagFilters: FilterOption[] = allTags.map((tag) => ({ value: tag, label: tag }));
 
@@ -498,15 +497,15 @@ export function TasksView({
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={filteredTasks.length} className="mr-1" />
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
-          <FilterPills options={STATUS_FILTERS} paramKey="status" allLabel="All statuses" />
+          <FilterPills options={statusFilters} paramKey="status" allLabel={t('toolbar.allStatuses')} />
           {tagFilters.length > 0 && (
-            <FilterPills options={tagFilters} paramKey="tags" allLabel="All tags" />
+            <FilterPills options={tagFilters} paramKey="tags" allLabel={t('toolbar.allTags')} />
           )}
           {/* Board layout style — a shared board, or one collapsible board per
               project. Only meaningful in board view (list/table are flat). */}
           {view === 'board' ? (
             <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-              {BOARD_STYLE_OPTIONS.map(({ value, label }) => (
+              {BOARD_STYLES.map((value) => (
                 <Button
                   key={value}
                   type="button"
@@ -519,7 +518,7 @@ export function TasksView({
                     boardStyle === value && 'bg-accent text-accent-foreground',
                   )}
                 >
-                  {label}
+                  {t(`toolbar.boardStyles.${value}`)}
                 </Button>
               ))}
             </div>
@@ -532,18 +531,18 @@ export function TasksView({
           <HoverExpandButton
             href="/tasks/graph"
             icon={<Workflow className="h-3.5 w-3.5" />}
-            label="Graph"
+            label={t('toolbar.graph')}
             variant="outline"
           />
-          <SearchBar placeholder="Search tasks" />
+          <SearchBar placeholder={t('toolbar.searchPlaceholder')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-            {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+            {VIEW_ICONS.map(({ value, Icon }) => (
               <Button
                 key={value}
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={label}
+                aria-label={t(`toolbar.views.${value}`)}
                 aria-pressed={view === value}
                 onClick={() => onSetView(value)}
                 className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
@@ -559,7 +558,7 @@ export function TasksView({
             className="h-8 gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
-            New task
+            {t('toolbar.newTask')}
           </Button>
         </div>
       </StickyToolbar>
@@ -610,12 +609,12 @@ export function TasksView({
           defaultProjectId={newTask.projectId}
           onCreated={(task) => {
             setLocalTasks((prev) => [task, ...prev]);
-            toast.success('Task created');
+            toast.success(t('toasts.taskCreated'));
             // Reconcile with the server list and refresh counts/widgets.
             invalidateData();
           }}
           onBulkCreated={({ counts }) => {
-            if (counts.created > 0) toast.success(`${counts.created} task${counts.created === 1 ? '' : 's'} created`);
+            if (counts.created > 0) toast.success(t('toasts.tasksCreated', { count: counts.created }));
             // The coalesced `tasks.bulkCreated` WS event also refreshes the board;
             // invalidate directly too so it updates without a live socket.
             invalidateData();

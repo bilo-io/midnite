@@ -1,10 +1,6 @@
 import { AlertTriangle, Check, Milestone, PauseCircle, ShieldAlert } from 'lucide-react';
-import {
-  isNeedsAttention,
-  TASK_HELD_REASON_LABEL,
-  WAIT_REASON_LABEL,
-  type TaskSummary,
-} from '@midnite/shared';
+import { useTranslations } from 'next-intl';
+import { isNeedsAttention, type TaskSummary } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
 import { WaitingQuickReply } from '@/components/waiting-quick-reply';
 import { PrStatusChip } from '@/components/pr-status-chip';
@@ -12,17 +8,10 @@ import { ProjectTag } from '@/components/project-tag';
 import { RepoChip } from '@/components/repo-chip';
 import { SourceIcon } from '@/components/source-icon';
 import { gatewayUrl } from '@/lib/api';
+import { useHeldReasonLabel, useKindLabel, useWaitReasonLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
 export type ProjectTagInfo = { tag: string; color: string };
-
-const KIND_LABELS: Record<NonNullable<TaskSummary['kind']>, string> = {
-  bug: 'Bugfix',
-  feature: 'Feature',
-  question: 'Question',
-  chore: 'Chore',
-  unknown: 'Task',
-};
 
 const KIND_HUE_VARS: Record<NonNullable<TaskSummary['kind']>, string> = {
   bug: '--kind-bug',
@@ -32,31 +21,28 @@ const KIND_HUE_VARS: Record<NonNullable<TaskSummary['kind']>, string> = {
   unknown: '--kind-unknown',
 };
 
-const AI_REVIEW_CHIP: Record<
-  'approved' | 'commented' | 'changes-requested',
-  { label: string; className: string }
-> = {
-  approved: { label: 'AI: LGTM', className: 'bg-success/15 text-success' },
-  commented: { label: 'AI: Reviewed', className: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
-  'changes-requested': { label: 'AI: Changes', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+const AI_REVIEW_CHIP_CLASS: Record<'approved' | 'commented' | 'changes-requested', string> = {
+  approved: 'bg-success/15 text-success',
+  commented: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+  'changes-requested': 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
 };
 
 function AiReviewChip({ verdict }: { verdict: 'approved' | 'commented' | 'changes-requested' }) {
-  const { label, className } = AI_REVIEW_CHIP[verdict];
+  const t = useTranslations('board');
   return (
     <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${className}`}
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${AI_REVIEW_CHIP_CLASS[verdict]}`}
     >
-      {label}
+      {t(`aiReview.${verdict}`)}
     </span>
   );
 }
 
 // Badge shown only for non-Normal priorities (Normal=1 is the unmarked default).
-const PRIORITY_BADGES: Record<number, { label: string; className: string }> = {
-  0: { label: 'Low', className: 'bg-muted text-muted-foreground' },
-  2: { label: 'High', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
-  3: { label: 'Urgent', className: 'bg-destructive/15 text-destructive' },
+const PRIORITY_BADGES: Record<number, { labelKey: 'low' | 'high' | 'urgent'; className: string }> = {
+  0: { labelKey: 'low', className: 'bg-muted text-muted-foreground' },
+  2: { labelKey: 'high', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  3: { labelKey: 'urgent', className: 'bg-destructive/15 text-destructive' },
 };
 
 export function TaskCard({
@@ -71,6 +57,10 @@ export function TaskCard({
   /** Count of unmet blockers (Phase 27); when > 0 shows a chip and dims the card. */
   blockedBy?: number;
 }) {
+  const t = useTranslations('board');
+  const kindLabel = useKindLabel();
+  const waitReasonLabel = useWaitReasonLabel();
+  const heldReasonLabel = useHeldReasonLabel();
   const kind = task.kind ?? 'unknown';
   const firstImage = task.attachments?.find((a) => a.mime.startsWith('image/'));
   const hue = KIND_HUE_VARS[kind];
@@ -92,21 +82,21 @@ export function TaskCard({
             className="h-1.5 w-1.5 rounded-full"
             style={{ background: 'hsl(var(--kind-hue))' }}
           />
-          {KIND_LABELS[kind]}
+          {kindLabel(kind)}
         </span>
         {task.answered ? (
           // A question resolved inline at intake (Phase 15 Theme C) — distinguish
           // it from ordinary completed work sitting in the Done column.
           <span className="inline-flex items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">
             <Check aria-hidden className="h-3 w-3" />
-            Answered
+            {t('card.answered')}
           </span>
         ) : null}
         {priorityBadge ? (
           <span
             className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${priorityBadge.className}`}
           >
-            {priorityBadge.label}
+            {t(`priority.${priorityBadge.labelKey}`)}
           </span>
         ) : null}
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
@@ -116,29 +106,29 @@ export function TaskCard({
           // Phase 50 B — the scheduler is holding this ready task because a hard
           // budget/rate cap is blocking spawns (derived, not a status change).
           <span
-            title="Held: the scheduler won't start an agent until the cap clears"
+            title={t('card.heldTitle')}
             className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400"
           >
             <PauseCircle aria-hidden className="h-3 w-3" />
-            Held: {TASK_HELD_REASON_LABEL[task.heldReason]}
+            {t('card.held', { reason: heldReasonLabel(task.heldReason) })}
           </span>
         ) : null}
         {isNeedsAttention(task.waitReason) ? (
           // Phase 53 E — a failure escalated this task to a needs-attention
           // `waiting` state (retries exhausted / non-retryable / gate-failed).
           <span
-            title="Needs attention — a failure parked this task; requeue, re-plan, or abandon it"
+            title={t('card.needsAttentionTitle')}
             className="inline-flex items-center gap-1 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive"
           >
             <AlertTriangle aria-hidden className="h-3 w-3" />
-            {WAIT_REASON_LABEL[task.waitReason!]}
+            {waitReasonLabel(task.waitReason!)}
             {task.retryCount > 0 ? ` · ${task.retryCount}×` : ''}
           </span>
         ) : null}
         {task.checkRunStatus === 'failing' ? (
           <span className="inline-flex items-center gap-1 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive">
             <ShieldAlert aria-hidden className="h-3 w-3" />
-            Checks failing
+            {t('card.checksFailing')}
           </span>
         ) : null}
         {task.prStatus ? <PrStatusChip status={task.prStatus} /> : null}
