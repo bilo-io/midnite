@@ -12,10 +12,24 @@ import type {
 import { MIDNITE_CONFIG } from '../config.token';
 import { ApprovalsService } from '../approvals/approvals.service';
 import { hashToken, tokenMatches } from '../lib/token-hash';
+import { TasksService } from '../tasks/tasks.service';
 import { HookSecretRepository } from './hook-secret.repository';
 import { summarizeToolCall } from './lib/summarize-tool-call';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
 import { ApprovalEventBus } from './approval-event-bus';
+
+/**
+ * Resolutions that hand Claude a decision so its turn continues (the tool runs, or
+ * the deny is delivered and the agent carries on) — as opposed to `expired`/`ask`,
+ * where the hook request was aborted because the session/connection went away.
+ * Only the former should flip a blocked task `waiting → wip`.
+ */
+const RESUMING_RESOLUTIONS = new Set<ApprovalResolution>([
+  'allow',
+  'allow-session',
+  'deny',
+  'timeout',
+]);
 
 interface PendingEntry {
   sessionId: string;
@@ -51,6 +65,10 @@ export class ApprovalService {
     @Optional() @Inject(HookSecretRepository) private readonly secretStore?: HookSecretRepository,
     @Optional() @Inject(ApprovalsService) private readonly approvalsService?: ApprovalsService,
     @Optional() @Inject(ApprovalEventBus) private readonly eventBus?: ApprovalEventBus,
+    // Optional so the positional unit specs (config + terminal [+ store]) keep
+    // constructing without a stub; Nest provides it in production (TasksModule is
+    // imported by TerminalModule). Absent ⇒ the resume-on-resolve is skipped.
+    @Optional() @Inject(TasksService) private readonly tasks?: TasksService,
   ) {}
 
   // ---- per-session secret ----
@@ -263,6 +281,23 @@ export class ApprovalService {
       requestId,
       decision: resolution,
     });
+
+    // Resolving a tool approval unblocks the PreToolUse hook, so the agent's turn
+    // continues *mid-turn with no fresh prompt* — the UserPromptSubmit resume never
+    // fires, and the PreToolUse resume already ran (as a no-op) before this wait
+    // was even set by the Notification hook. Without this the task would sit in
+    // `waiting` until Claude happened to make another tool call. resumeFromWaiting
+    // is idempotent (only a live `needs-input` wait flips), so it's a safe no-op on
+    // any session that isn't currently parked awaiting this approval.
+    if (this.tasks && RESUMING_RESOLUTIONS.has(resolution)) {
+      try {
+        this.tasks.resumeFromWaiting(entry.sessionId);
+      } catch (err) {
+        this.logger.warn(
+          `resume-on-approval for ${entry.sessionId} failed: ${err instanceof Error ? err.message : 'unknown'}`,
+        );
+      }
+    }
 
     this.eventBus?.emit({ type: 'approval.resolved', id: requestId, resolution });
 

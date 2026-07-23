@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import { ApprovalService } from './approval.service';
 import type { HookSecretRepository } from './hook-secret.repository';
+import type { TasksService } from '../tasks/tasks.service';
 import type { TerminalService } from './terminal.service';
 
 /** In-memory stand-in for the durable hook-secret store. */
@@ -50,6 +51,7 @@ class FakeTerminal {
 function setup(approvals: Record<string, unknown> = {}): {
   service: ApprovalService;
   terminal: FakeTerminal;
+  resumeFromWaiting: ReturnType<typeof vi.fn>;
 } {
   const config: MidniteConfig = parseConfig({
     agent: {},
@@ -58,8 +60,18 @@ function setup(approvals: Record<string, unknown> = {}): {
     gateway: {},
   });
   const terminal = new FakeTerminal();
-  const service = new ApprovalService(config, terminal as unknown as TerminalService);
-  return { service, terminal };
+  // Only resumeFromWaiting is exercised here; the rest of TasksService is unused.
+  const resumeFromWaiting = vi.fn();
+  const tasks = { resumeFromWaiting } as unknown as TasksService;
+  const service = new ApprovalService(
+    config,
+    terminal as unknown as TerminalService,
+    undefined,
+    undefined,
+    undefined,
+    tasks,
+  );
+  return { service, terminal, resumeFromWaiting };
 }
 
 const SID = 's1';
@@ -173,5 +185,53 @@ describe('ApprovalService.requestDecision', () => {
     service.clearSession(SID);
     await expect(p).resolves.toMatchObject({ decision: 'deny' });
     expect(service.verifySecret(SID, secret)).toBe(false);
+  });
+});
+
+// Regression: answering a permission modal must flip the task back to wip. The
+// task is parked in `waiting` by the Notification hook while the PreToolUse hook
+// blocks on the human; resolving it unblocks Claude mid-turn with no fresh prompt,
+// so neither the UserPromptSubmit nor the (already-fired) PreToolUse resume runs —
+// the resolve itself has to drive `waiting → wip`.
+describe('ApprovalService — resolving resumes the blocked task', () => {
+  it('resumes on a user allow', async () => {
+    const { service, terminal, resumeFromWaiting } = setup({ timeoutMs: 10000 });
+    const p = service.requestDecision(SID, bash, new AbortController().signal);
+    service.resolveByUser(SID, terminal.lastRequestId(), 'allow');
+    await p;
+    expect(resumeFromWaiting).toHaveBeenCalledWith(SID);
+  });
+
+  it('resumes on allow-session and on deny (Claude continues its turn either way)', async () => {
+    for (const decision of ['allow-session', 'deny'] as const) {
+      const { service, terminal, resumeFromWaiting } = setup({ timeoutMs: 10000 });
+      const p = service.requestDecision(SID, bash, new AbortController().signal);
+      service.resolveByUser(SID, terminal.lastRequestId(), decision);
+      await p;
+      expect(resumeFromWaiting).toHaveBeenCalledWith(SID);
+    }
+  });
+
+  it('resumes on a timeout fail-safe (the decision is still handed to Claude)', async () => {
+    const { service, resumeFromWaiting } = setup({ timeoutMs: 20, onTimeout: 'deny' });
+    await service.requestDecision(SID, bash, new AbortController().signal);
+    expect(resumeFromWaiting).toHaveBeenCalledWith(SID);
+  });
+
+  it('does NOT resume when the request is aborted (session/connection gone)', async () => {
+    const { service, resumeFromWaiting } = setup({ timeoutMs: 10000 });
+    const ac = new AbortController();
+    const p = service.requestDecision(SID, bash, ac.signal);
+    ac.abort();
+    await p;
+    expect(resumeFromWaiting).not.toHaveBeenCalled();
+  });
+
+  it('does NOT resume when clearSession tears down an in-flight approval', async () => {
+    const { service, resumeFromWaiting } = setup({ timeoutMs: 10000 });
+    const p = service.requestDecision(SID, bash, new AbortController().signal);
+    service.clearSession(SID);
+    await p;
+    expect(resumeFromWaiting).not.toHaveBeenCalled();
   });
 });
