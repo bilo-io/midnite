@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquareReply, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { ReplyBox } from '@/components/reply-box';
 
 /**
@@ -13,6 +14,7 @@ import { ReplyBox } from '@/components/reply-box';
  * a small action row beneath the card body.
  */
 export function WaitingQuickReply({ sessionId }: { sessionId: string }) {
+  const t = useTranslations('task');
   const [open, setOpen] = useState(false);
 
   if (!open) {
@@ -23,7 +25,7 @@ export function WaitingQuickReply({ sessionId }: { sessionId: string }) {
         className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary transition-colors hover:bg-primary/20"
       >
         <MessageSquareReply aria-hidden className="h-3 w-3" />
-        Reply
+        {t('waiting.reply')}
       </button>
     );
   }
@@ -32,12 +34,12 @@ export function WaitingQuickReply({ sessionId }: { sessionId: string }) {
     <div className="rounded-md border border-primary/30 bg-primary/5 p-1.5">
       <div className="mb-1 flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
-          Reply to agent
+          {t('waiting.replyToAgent')}
         </span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          aria-label="Cancel reply"
+          aria-label={t('waiting.cancelReply')}
           className="rounded p-0.5 text-muted-foreground hover:bg-muted"
         >
           <X aria-hidden className="h-3 w-3" />

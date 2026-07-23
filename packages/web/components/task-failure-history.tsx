@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FAILURE_CLASS_LABEL, type TaskFailure } from '@midnite/shared';
+import { useTranslations } from 'next-intl';
+import type { TaskFailure } from '@midnite/shared';
 import { fetchTaskFailures } from '@/lib/api';
 
 /** Phase 53 E — the structured `task_failures` history for a task (what failed,
  *  when, exit code, last-output snippet), shown in the task detail. Fetched lazily;
  *  renders nothing when the task has no recorded failures. */
 export function TaskFailureHistory({ taskId }: { taskId: string }) {
+  const t = useTranslations('task');
   const [failures, setFailures] = useState<TaskFailure[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -33,16 +35,16 @@ export function TaskFailureHistory({ taskId }: { taskId: string }) {
   return (
     <section>
       <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        Failure history ({failures.length})
+        {t('failures.title', { count: failures.length })}
       </h3>
       <ol className="space-y-2">
         {failures.map((f) => (
           <li key={f.id} className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-              <span className="font-medium">{FAILURE_CLASS_LABEL[f.class]}</span>
-              <span className="text-xs text-muted-foreground">attempt {f.retryIndex}</span>
+              <span className="font-medium">{t(`failures.classes.${f.class}`)}</span>
+              <span className="text-xs text-muted-foreground">{t('failures.attempt', { index: f.retryIndex })}</span>
               {f.exitCode != null ? (
-                <span className="text-xs text-muted-foreground">· exit {f.exitCode}</span>
+                <span className="text-xs text-muted-foreground">{t('failures.exit', { code: f.exitCode })}</span>
               ) : null}
               <span className="ml-auto text-[11px] text-muted-foreground">
                 {new Date(f.at).toLocaleString(undefined, {

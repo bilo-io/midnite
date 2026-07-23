@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { assignTaskMilestone, listMilestones } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useApiData } from '@/lib/use-api-data';
@@ -20,6 +21,7 @@ type Props = {
  * writes the same `PATCH /tasks/:id/milestone`.
  */
 export function TaskMilestonePicker({ taskId, projectId, currentMilestoneId }: Props) {
+  const t = useTranslations('task');
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const { data: milestones } = useApiData(
@@ -29,17 +31,17 @@ export function TaskMilestonePicker({ taskId, projectId, currentMilestoneId }: P
 
   const options = useMemo(
     () => [
-      { value: '', label: 'No milestone' },
+      { value: '', label: t('milestone.none') },
       ...(milestones ?? []).map((m) => ({ value: m.id, label: m.name })),
     ],
-    [milestones],
+    [milestones, t],
   );
 
   if (!projectId) {
-    return <p className="text-xs text-muted-foreground">Assign this task to a project to use milestones.</p>;
+    return <p className="text-xs text-muted-foreground">{t('milestone.needsProject')}</p>;
   }
   if ((milestones ?? []).length === 0) {
-    return <p className="text-xs text-muted-foreground">This project has no milestones yet.</p>;
+    return <p className="text-xs text-muted-foreground">{t('milestone.noMilestones')}</p>;
   }
 
   const assign = async (next: string) => {
@@ -48,7 +50,7 @@ export function TaskMilestonePicker({ taskId, projectId, currentMilestoneId }: P
       await assignTaskMilestone(taskId, next || null);
       invalidateData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to assign milestone');
+      toast.error(err instanceof Error ? err.message : t('milestone.assignFailed'));
     } finally {
       setBusy(false);
     }
@@ -56,7 +58,7 @@ export function TaskMilestonePicker({ taskId, projectId, currentMilestoneId }: P
 
   return (
     <StyledSelect
-      aria-label="Task milestone"
+      aria-label={t('milestone.pickerAria')}
       options={options}
       value={currentMilestoneId ?? ''}
       onChange={(v) => void assign(v)}

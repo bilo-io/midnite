@@ -1,0 +1,154 @@
+{
+  "tabs": {
+    "details": "Détails",
+    "session": "Session",
+    "review": "Revue",
+    "retro": "Rétro",
+    "sectionsAria": "Sections du détail de la tâche"
+  },
+  "openPage": "Ouvrir la page",
+  "allTasks": "Toutes les tâches",
+  "waiting": {
+    "banner": "L'agent attend votre réponse",
+    "reply": "Répondre",
+    "replyToAgent": "Répondre à l'agent",
+    "cancelReply": "Annuler la réponse"
+  },
+  "tags": {
+    "title": "Tags",
+    "addPlaceholder": "Ajouter un tag…",
+    "addAria": "Ajouter un tag",
+    "remove": "Retirer le tag {tag}"
+  },
+  "milestone": {
+    "title": "Jalon",
+    "none": "Aucun jalon",
+    "pickerAria": "Jalon de la tâche",
+    "needsProject": "Assignez cette tâche à un projet pour utiliser les jalons.",
+    "noMilestones": "Ce projet n'a pas encore de jalons.",
+    "assignFailed": "Échec de l'assignation du jalon"
+  },
+  "dependencies": {
+    "title": "Dépendances",
+    "blockedBy": "Bloquée par",
+    "blocks": "Bloque",
+    "none": "Aucun bloqueur.",
+    "unknown": "(inconnue)",
+    "done": "terminée",
+    "pending": "en attente",
+    "removeBlocker": "Retirer le bloqueur {title}",
+    "searchLabel": "Rechercher des tâches bloquantes",
+    "searchPlaceholder": "Ajouter une tâche bloquante…",
+    "addFailed": "Échec de l'ajout de la dépendance",
+    "removeFailed": "Échec du retrait de la dépendance"
+  },
+  "picker": {
+    "searchAria": "Rechercher des tâches",
+    "searchPlaceholder": "Rechercher des tâches…"
+  },
+  "project": {
+    "changeFailed": "Échec du changement de projet"
+  },
+  "links": {
+    "title": "Revue et liens",
+    "none": "Aucun lien pour l'instant.",
+    "add": "Ajouter un lien",
+    "remove": "Retirer le lien",
+    "removeTitle": "Retirer ce lien ?",
+    "removeDescription": "Il sera détaché de cette tâche.",
+    "removeConfirm": "Retirer",
+    "placeholder": "Collez un lien GitHub PR, Figma, Google Docs ou Notion",
+    "urlError": "Saisissez une URL complète, avec https://",
+    "addFailed": "Échec de l'ajout du lien",
+    "removeFailed": "Échec du retrait du lien"
+  },
+  "prompt": { "title": "Prompt" },
+  "attachments": { "title": "Pièces jointes" },
+  "pr": {
+    "title": "Pull request",
+    "refresh": "Actualiser le statut de la PR",
+    "statusUnknown": "Statut inconnu",
+    "viewDiff": "Voir le diff",
+    "reviewPage": "Page de revue",
+    "open": "Ouvrir la PR",
+    "review": "Revue",
+    "chip": "PR n°{number} — {state}",
+    "chipChecks": " · CI {checks}",
+    "states": {
+      "open": "Ouverte",
+      "draft": "Brouillon",
+      "merged": "Fusionnée",
+      "closed": "Fermée"
+    },
+    "checks": {
+      "passing": "au vert",
+      "failing": "en échec",
+      "pending": "en cours"
+    }
+  },
+  "aiReview": {
+    "title": "Revue IA",
+    "lgtm": "Approuvé",
+    "changesRequested": "Modifications demandées",
+    "reviewed": "Relu"
+  },
+  "runs": { "title": "Exécutions de l'agent" },
+  "activity": {
+    "title": "Activité",
+    "none": "Aucune activité enregistrée pour l'instant.",
+    "answer": "Réponse"
+  },
+  "events": {
+    "agentStarted": "Agent démarré",
+    "agentWaiting": "Agent en attente d'une réponse",
+    "agentResumed": "Repris suite à une réponse / approbation",
+    "agentEscalated": "Escaladé — attention requise",
+    "agentRequeued": "Remis en file",
+    "agentRetried": "Relancé",
+    "agentDone": "Agent terminé",
+    "taskReopened": "Rouverte",
+    "taskReplanned": "Replanifiée"
+  },
+  "actions": {
+    "start": "Démarrer",
+    "reopen": "Rouvrir",
+    "session": "Session",
+    "abandon": "Abandonner",
+    "delete": "Supprimer",
+    "abandonTitle": "Abandonner cette tâche ?",
+    "abandonDescription": "Elle sera archivée et sa session arrêtée. Vous pourrez la supprimer définitivement ensuite.",
+    "abandonConfirm": "Abandonner",
+    "deleteTitle": "Supprimer cette tâche ?",
+    "deleteDescription": "Cette action est définitive et irréversible.",
+    "deleteConfirm": "Supprimer",
+    "startFailed": "Échec du démarrage de la tâche",
+    "abandonFailed": "Échec de l'abandon de la tâche",
+    "reopenFailed": "Échec de la réouverture de la tâche",
+    "deleteFailed": "Échec de la suppression de la tâche"
+  },
+  "failures": {
+    "title": "Historique des échecs ({count})",
+    "attempt": "tentative {index}",
+    "exit": "· code de sortie {code}",
+    "classes": {
+      "crash": "Plantage",
+      "timeout": "Délai dépassé",
+      "no-pr": "Aucune PR ouverte",
+      "gate-failed": "Contrôles échoués",
+      "tool-denied": "Outil refusé",
+      "inactivity": "Resté silencieux",
+      "retries-exhausted": "Tentatives épuisées",
+      "unknown": "Inconnu"
+    }
+  },
+  "health": {
+    "title": "Santé des tâches",
+    "empty": "Rien de coincé — aucun échec ni tâche bloquée.",
+    "needsAttention": "Attention requise",
+    "waitingTooLong": "En attente depuis trop longtemps",
+    "stuckWip": "Bloquée (silencieuse) en cours",
+    "agedTodo": "À faire depuis longtemps",
+    "recentFailures": "Échecs récents par catégorie ({count})",
+    "none": "aucun"
+  }
+}
