@@ -1,6 +1,7 @@
 'use client';
 
 import { DownloadCloud } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { UPDATE_CHANNELS, type UpdateChannel } from '@midnite/shared';
 
 import { Accordion } from '@/components/ui/accordion';
@@ -9,11 +10,6 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 
 const inputClass =
   'h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
-
-const CHANNEL_LABEL: Record<UpdateChannel, string> = {
-  stable: 'Stable',
-  beta: 'Beta',
-};
 
 /**
  * Phase 71 Theme H — the app-update channel. `stable` follows tagged releases;
@@ -24,27 +20,34 @@ const CHANNEL_LABEL: Record<UpdateChannel, string> = {
  * newer build without a reload.
  */
 export function UpdatesAccordion() {
+  const t = useTranslations('settings');
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const channel = settings.updateChannel ?? DEFAULT_SETTINGS.updateChannel;
 
   const onChange = (value: UpdateChannel) =>
     setSettings((prev) => ({ ...prev, updateChannel: value }));
 
+  const CHANNEL_LABEL: Record<UpdateChannel, string> = {
+    stable: t('system.updates.channelStable'),
+    beta: t('system.updates.channelBeta'),
+  };
+
   return (
-    <Accordion title="Updates" icon={<DownloadCloud className="h-3.5 w-3.5" />}>
+    <Accordion title={t('system.updates.title')} icon={<DownloadCloud className="h-3.5 w-3.5" />}>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-6">
           <div className="space-y-1">
-            <p className="text-sm font-medium">Release channel</p>
+            <p className="text-sm font-medium">{t('system.updates.releaseChannel')}</p>
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Stable</span> tracks tagged releases.{' '}
-              <span className="font-medium text-foreground">Beta</span> opts into pre-release builds
-              to test the newest features early — expect rough edges. The update banner and the
-              desktop auto-updater both follow this choice.
+              {t.rich('system.updates.channelDescription', {
+                strong: (chunks) => (
+                  <span className="font-medium text-foreground">{chunks}</span>
+                ),
+              })}
             </p>
           </div>
           <select
-            aria-label="Release channel"
+            aria-label={t('system.updates.releaseChannel')}
             className={inputClass}
             value={channel}
             onChange={(e) => onChange(e.target.value as UpdateChannel)}

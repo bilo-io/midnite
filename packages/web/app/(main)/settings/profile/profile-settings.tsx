@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Check, KeyRound, UserRound } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { User } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { updateMyProfile, updateMyPassword } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 function SavedBadge({ visible }: { visible: boolean }) {
+  const tc = useTranslations('common');
   return (
     <span
       aria-live="polite"
@@ -20,7 +22,7 @@ function SavedBadge({ visible }: { visible: boolean }) {
       )}
     >
       <Check className="h-3.5 w-3.5" />
-      Saved
+      {tc('saved')}
     </span>
   );
 }
@@ -45,6 +47,8 @@ function AvatarInitial({ user }: { user: User | null }) {
 }
 
 function DisplayNameSection({ user }: { user: User | null }) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [name, setName] = useState(user?.name ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -63,7 +67,7 @@ function DisplayNameSection({ user }: { user: User | null }) {
       clearTimeout(savedTimer.current);
       savedTimer.current = setTimeout(() => setSaved(false), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save name');
+      setError(err instanceof Error ? err.message : t('profile.couldNotSaveName'));
     } finally {
       setSaving(false);
     }
@@ -80,13 +84,13 @@ function DisplayNameSection({ user }: { user: User | null }) {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="display-name" className="text-sm font-medium">Display name</label>
+        <label htmlFor="display-name" className="text-sm font-medium">{t('profile.displayName')}</label>
         <div className="flex gap-2">
           <Input
             id="display-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t('profile.namePlaceholder')}
             maxLength={120}
             className="max-w-xs"
           />
@@ -96,7 +100,7 @@ function DisplayNameSection({ user }: { user: User | null }) {
             disabled={!isDirty || saving}
             onClick={() => void handleSave()}
           >
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? tc('saving') : tc('save')}
           </Button>
           <SavedBadge visible={saved} />
         </div>
@@ -104,15 +108,16 @@ function DisplayNameSection({ user }: { user: User | null }) {
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-sm font-medium">Email</p>
+        <p className="text-sm font-medium">{t('profile.email')}</p>
         <p className="text-sm text-muted-foreground">{user?.email ?? '—'}</p>
-        <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+        <p className="text-xs text-muted-foreground">{t('profile.emailReadonly')}</p>
       </div>
     </div>
   );
 }
 
 function ChangePasswordSection() {
+  const t = useTranslations('settings');
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -137,7 +142,7 @@ function ChangePasswordSection() {
       clearTimeout(savedTimer.current);
       savedTimer.current = setTimeout(() => setSaved(false), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not update password');
+      setError(err instanceof Error ? err.message : t('profile.couldNotUpdatePassword'));
     } finally {
       setSaving(false);
     }
@@ -146,7 +151,7 @@ function ChangePasswordSection() {
   return (
     <div className="space-y-4 p-5">
       <div className="space-y-1.5">
-        <label htmlFor="current-password" className="text-sm font-medium">Current password</label>
+        <label htmlFor="current-password" className="text-sm font-medium">{t('profile.currentPassword')}</label>
         <Input
           id="current-password"
           type="password"
@@ -158,7 +163,7 @@ function ChangePasswordSection() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="new-password" className="text-sm font-medium">New password</label>
+        <label htmlFor="new-password" className="text-sm font-medium">{t('profile.newPassword')}</label>
         <Input
           id="new-password"
           type="password"
@@ -168,11 +173,11 @@ function ChangePasswordSection() {
           minLength={8}
           className="max-w-xs"
         />
-        <p className="text-xs text-muted-foreground">Minimum 8 characters.</p>
+        <p className="text-xs text-muted-foreground">{t('profile.minChars')}</p>
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="confirm-password" className="text-sm font-medium">Confirm new password</label>
+        <label htmlFor="confirm-password" className="text-sm font-medium">{t('profile.confirmPassword')}</label>
         <Input
           id="confirm-password"
           type="password"
@@ -181,7 +186,7 @@ function ChangePasswordSection() {
           autoComplete="new-password"
           className={cn('max-w-xs', mismatch && 'border-destructive')}
         />
-        {mismatch ? <p className="text-xs text-destructive">Passwords don&apos;t match.</p> : null}
+        {mismatch ? <p className="text-xs text-destructive">{t('profile.passwordsMismatch')}</p> : null}
       </div>
 
       <div className="flex items-center gap-3">
@@ -191,7 +196,7 @@ function ChangePasswordSection() {
           disabled={!canSave || saving}
           onClick={() => void handleSave()}
         >
-          {saving ? 'Updating…' : 'Update password'}
+          {saving ? t('profile.updating') : t('profile.updatePassword')}
         </Button>
         <SavedBadge visible={saved} />
       </div>
@@ -201,15 +206,16 @@ function ChangePasswordSection() {
 }
 
 export function ProfileSettings() {
+  const t = useTranslations('settings');
   const { user } = useAuth();
 
   return (
     <div className="space-y-4">
-      <Accordion title="Account" icon={<UserRound className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('profile.account')} icon={<UserRound className="h-3.5 w-3.5" />} defaultOpen>
         <DisplayNameSection user={user} />
       </Accordion>
 
-      <Accordion title="Change password" icon={<KeyRound className="h-3.5 w-3.5" />}>
+      <Accordion title={t('profile.changePassword')} icon={<KeyRound className="h-3.5 w-3.5" />}>
         <ChangePasswordSection />
       </Accordion>
     </div>

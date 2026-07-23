@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Wrench } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   ENV_OSES,
   ENV_OS_LABEL,
@@ -29,6 +30,7 @@ const TAB_OPTIONS: TabOption<EnvOs>[] = ENV_OSES.map((os) => ({
  * reference-only.
  */
 export function EnvironmentAccordion() {
+  const t = useTranslations('settings');
   const [env, setEnv] = useState<EnvironmentResponse | null>(null);
   const [busy, setBusy] = useState(true);
   const [tab, setTab] = useState<EnvOs>('mac');
@@ -54,32 +56,38 @@ export function EnvironmentAccordion() {
   const statusFor = (id: EnvToolMeta['id']) => env?.tools.find((t) => t.id === id);
 
   return (
-    <Accordion title="Environment" icon={<Wrench className="h-3.5 w-3.5" />} defaultOpen>
+    <Accordion title={t('system.env.title')} icon={<Wrench className="h-3.5 w-3.5" />} defaultOpen>
       <div className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            The local toolchain midnite needs, detected on the gateway host.
-          </p>
-          <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} ariaLabel="Operating system" />
+          <p className="text-xs text-muted-foreground">{t('system.env.description')}</p>
+          <Tabs
+            options={TAB_OPTIONS}
+            value={tab}
+            onChange={setTab}
+            ariaLabel={t('system.env.osAriaLabel')}
+          />
         </div>
 
         {hostOs && hostOs !== 'other' ? (
           <p className="text-[11px] text-muted-foreground">
-            Detected system: {ENV_OS_LABEL[hostOs]}.
+            {t('system.env.detectedSystem', { os: ENV_OS_LABEL[hostOs] })}
           </p>
         ) : null}
 
         {tools.length === 0 ? (
           <p className="rounded-md border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
-            {ENV_OS_LABEL[tab]} tools aren&apos;t configured yet.
+            {t('system.env.notConfigured', { os: ENV_OS_LABEL[tab] })}
           </p>
         ) : (
           <div className="space-y-2.5">
             {!busy && !live ? (
               <p className="text-[11px] text-muted-foreground">
                 {hostOs && hostOs !== 'other'
-                  ? `Detected system is ${ENV_OS_LABEL[hostOs]} — these ${ENV_OS_LABEL[tab]} tools are shown for reference.`
-                  : `Shown for reference — couldn't detect the host OS.`}
+                  ? t('system.env.referenceDetected', {
+                      host: ENV_OS_LABEL[hostOs],
+                      tab: ENV_OS_LABEL[tab],
+                    })
+                  : t('system.env.referenceNoDetect')}
               </p>
             ) : null}
             {tools.map((meta) => (

@@ -2,6 +2,7 @@
 
 import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   ACCENT_GRADIENT_PRESETS,
@@ -103,6 +104,7 @@ export function AccentBuilder({
   onSecondaryChange: (next: AccentValue) => void;
   hydrated: boolean;
 }) {
+  const t = useTranslations('settings');
   const isDark = useIsDark();
   const isGradient = isGradientAccent(value);
   const isCustom = isGradient && value.preset === 'custom';
@@ -149,13 +151,13 @@ export function AccentBuilder({
             className="rounded-md px-3 py-1.5 text-xs font-semibold text-primary-foreground"
             style={{ background: accentBackground(value, isDark) }}
           >
-            Button
+            {t('appearance.accentBuilder.button')}
           </span>
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground"
             style={{ background: accentBackground(value, isDark) }}
           >
-            Badge
+            {t('appearance.accentBuilder.badge')}
           </span>
           <span className="h-2 w-24 overflow-hidden rounded-full bg-muted">
             <span className="block h-full w-2/3" style={{ background: accentBackground(value, isDark) }} />
@@ -168,9 +170,9 @@ export function AccentBuilder({
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white"
               style={{ background: accentBackground(secondary, isDark) }}
-              title="Secondary accent"
+              title={t('appearance.accentBuilder.secondaryAccent')}
             >
-              2nd
+              {t('appearance.accentBuilder.secondaryShort')}
             </span>
           ) : null}
         </div>
@@ -182,16 +184,16 @@ export function AccentBuilder({
               onChange={(e) => onChange({ ...value, animate: e.target.checked })}
               className="h-3.5 w-3.5 accent-[hsl(var(--primary))]"
             />
-            Animate the gradient
-            <span className="text-[10px] opacity-70">(respects your motion setting)</span>
+            {t('appearance.accentBuilder.animateGradient')}
+            <span className="text-[10px] opacity-70">{t('appearance.accentBuilder.respectsMotion')}</span>
           </label>
         ) : null}
       </div>
 
       {/* Gradient presets — brand first */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground">Gradients</p>
-        <div role="radiogroup" aria-label="Gradient presets" className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+        <p className="text-xs font-medium text-muted-foreground">{t('appearance.accentBuilder.gradients')}</p>
+        <div role="radiogroup" aria-label={t('appearance.accentBuilder.gradientPresets')} className="grid grid-cols-4 gap-2 sm:grid-cols-5">
           {ACCENT_GRADIENT_PRESETS.map((preset) => {
             const active = hydrated && sameAccent(value, preset.value);
             return (
@@ -224,12 +226,12 @@ export function AccentBuilder({
 
       {/* Solid swatches */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground">Solids</p>
+        <p className="text-xs font-medium text-muted-foreground">{t('appearance.accentBuilder.solids')}</p>
         <SwatchRow
           value={value.kind === 'solid' ? value.swatch : ('__none__' as AccentId)}
           onPick={(id) => onChange({ kind: 'solid', swatch: id })}
           includeDefault
-          ariaLabel="Solid accent"
+          ariaLabel={t('appearance.accentBuilder.solidAccent')}
           isDark={isDark}
         />
       </div>
@@ -237,7 +239,7 @@ export function AccentBuilder({
       {/* Custom builder */}
       <div className="space-y-3 rounded-lg border border-border/60 p-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium">Custom gradient</p>
+          <p className="text-xs font-medium">{t('appearance.accentBuilder.customGradient')}</p>
           <button
             type="button"
             aria-pressed={isCustom}
@@ -247,7 +249,7 @@ export function AccentBuilder({
               isCustom ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
             )}
           >
-            {isCustom ? 'Editing' : 'Customise'}
+            {isCustom ? t('appearance.accentBuilder.editing') : t('appearance.accentBuilder.customise')}
           </button>
         </div>
 
@@ -256,17 +258,17 @@ export function AccentBuilder({
             {/* Type + mono/multi */}
             <div className="flex flex-wrap gap-4">
               <PillGroup
-                label="Type"
+                label={t('appearance.accentBuilder.type')}
                 value={draft.type}
                 options={GRADIENT_TYPE_OPTIONS}
                 onChange={(v) => setType(v as GradientType)}
               />
               <PillGroup
-                label="Style"
+                label={t('appearance.accentBuilder.style')}
                 value={isMono ? 'mono' : 'multi'}
                 options={[
-                  { value: 'mono', label: 'Mono' },
-                  { value: 'multi', label: 'Multi' },
+                  { value: 'mono', label: t('appearance.accentBuilder.mono') },
+                  { value: 'multi', label: t('appearance.accentBuilder.multi') },
                 ]}
                 onChange={(v) => setMono(v === 'mono')}
               />
@@ -275,7 +277,7 @@ export function AccentBuilder({
             {/* Stops */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{isMono ? 'Colour' : 'Stops'}</p>
+                <p className="text-xs font-medium text-muted-foreground">{isMono ? t('appearance.accentBuilder.colour') : t('appearance.accentBuilder.stops')}</p>
                 {!isMono ? (
                   <div className="flex gap-1">
                     <button
@@ -284,7 +286,7 @@ export function AccentBuilder({
                       disabled={draft.stops.length <= 2}
                       className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
                     >
-                      – stop
+                      {t('appearance.accentBuilder.removeStop')}
                     </button>
                     <button
                       type="button"
@@ -292,7 +294,7 @@ export function AccentBuilder({
                       disabled={draft.stops.length >= 3}
                       className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
                     >
-                      + stop
+                      {t('appearance.accentBuilder.addStop')}
                     </button>
                   </div>
                 ) : null}
@@ -300,13 +302,13 @@ export function AccentBuilder({
               {draft.stops.map((stop, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="w-10 shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {isMono ? 'Hue' : `#${i + 1}`}
+                    {isMono ? t('appearance.accentBuilder.hue') : `#${i + 1}`}
                   </span>
                   <SwatchRow
                     value={stop}
                     onPick={(id) => setStop(i, id)}
                     includeDefault={false}
-                    ariaLabel={`Gradient stop ${i + 1}`}
+                    ariaLabel={t('appearance.accentBuilder.gradientStop', { number: i + 1 })}
                     isDark={isDark}
                   />
                 </div>
@@ -317,7 +319,7 @@ export function AccentBuilder({
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label htmlFor="accent-angle" className="text-xs font-medium text-muted-foreground">
-                  Angle
+                  {t('appearance.accentBuilder.angle')}
                 </label>
                 <span className="text-xs tabular-nums text-muted-foreground">{draft.angle}°</span>
               </div>
@@ -335,7 +337,7 @@ export function AccentBuilder({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Build your own gradient — pick linear or conic, one colour (mono-shade) or up to three, and an angle.
+            {t('appearance.accentBuilder.customGradientDescription')}
           </p>
         )}
       </div>
@@ -343,16 +345,16 @@ export function AccentBuilder({
       {/* Secondary accent */}
       <div className="space-y-2 border-t border-border/60 pt-4">
         <div className="space-y-0.5">
-          <p className="text-sm font-medium">Secondary accent</p>
+          <p className="text-sm font-medium">{t('appearance.accentBuilder.secondaryAccent')}</p>
           <p className="text-xs text-muted-foreground">
-            An independent second colour for secondary UI accents. Off by default.
+            {t('appearance.accentBuilder.secondaryAccentDescription')}
           </p>
         </div>
         <SwatchRow
           value={secondary.kind === 'solid' ? secondary.swatch : ('__none__' as AccentId)}
           onPick={(id) => onSecondaryChange({ kind: 'solid', swatch: id })}
           includeDefault
-          ariaLabel="Secondary accent"
+          ariaLabel={t('appearance.accentBuilder.secondaryAccent')}
           isDark={isDark}
         />
       </div>

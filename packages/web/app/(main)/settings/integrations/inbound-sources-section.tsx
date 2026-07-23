@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   INBOUND_PROVIDER_EVENTS,
   INBOUND_PROVIDERS,
@@ -21,10 +22,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-
-function inbErr(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
 
 /** The receiver URL a sender posts to, for a given source id. */
 function receiverUrl(id: string): string {
@@ -51,6 +48,7 @@ function InboundSecretModal({
   url: string;
   onClose: () => void;
 }) {
+  const t = useTranslations('settings');
   const [copied, setCopied] = useState<'secret' | 'url' | null>(null);
   const copy = (text: string, which: 'secret' | 'url') => {
     void navigator.clipboard?.writeText(text).then(() => setCopied(which));
@@ -61,28 +59,37 @@ function InboundSecretModal({
         className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-2 text-lg font-semibold">Source created</h2>
+        <h2 className="mb-2 text-lg font-semibold">{t('integrations.inbound.created.title')}</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Paste the signing secret into the sender&apos;s webhook config. It is shown{' '}
-          <strong>once</strong> — rotate if you lose it.
+          {t.rich('integrations.inbound.created.description', {
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Receiver URL</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          {t('integrations.inbound.created.receiverUrl')}
+        </label>
         <div className="mb-3 flex gap-2">
           <Input readOnly value={url} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
           <Button size="sm" variant="outline" onClick={() => copy(url, 'url')}>
-            {copied === 'url' ? 'Copied' : 'Copy'}
+            {copied === 'url'
+              ? t('integrations.inbound.created.copied')
+              : t('integrations.inbound.created.copy')}
           </Button>
         </div>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Signing secret</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          {t('integrations.inbound.created.signingSecret')}
+        </label>
         <div className="flex gap-2">
           <Input readOnly value={secret} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
           <Button size="sm" variant="outline" onClick={() => copy(secret, 'secret')}>
-            {copied === 'secret' ? 'Copied' : 'Copy'}
+            {copied === 'secret'
+              ? t('integrations.inbound.created.copied')
+              : t('integrations.inbound.created.copy')}
           </Button>
         </div>
         <div className="mt-6 flex justify-end">
           <Button size="sm" onClick={onClose}>
-            Done
+            {t('integrations.inbound.created.done')}
           </Button>
         </div>
       </div>
@@ -99,6 +106,10 @@ function AddInboundSourceModal({
   onCreated: (secret: string, url: string) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
+  const inbErr = (e: unknown): string =>
+    e instanceof Error ? e.message : t('integrations.errors.generic');
   const [provider, setProvider] = useState<InboundProvider>('github');
   const [events, setEvents] = useState<string[]>([]);
   const [genericEvents, setGenericEvents] = useState('');
@@ -140,9 +151,11 @@ function AddInboundSourceModal({
         className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-lg font-semibold">Add inbound source</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t('integrations.inbound.add.title')}</h2>
 
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Provider</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          {t('integrations.inbound.add.provider')}
+        </label>
         <select
           className="mb-4 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
           value={provider}
@@ -159,12 +172,13 @@ function AddInboundSourceModal({
         </select>
 
         <label className="mb-1 block text-xs font-medium text-muted-foreground">
-          Events {provider !== 'generic' && '(none selected = accept all)'}
+          {t('integrations.inbound.add.events')}{' '}
+          {provider !== 'generic' && t('integrations.inbound.add.eventsHint')}
         </label>
         {provider === 'generic' ? (
           <Input
             className="mb-4"
-            placeholder="comma-separated event keys (blank = accept all)"
+            placeholder={t('integrations.inbound.add.genericPlaceholder')}
             value={genericEvents}
             onChange={(e) => setGenericEvents(e.target.value)}
           />
@@ -181,13 +195,21 @@ function AddInboundSourceModal({
 
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">Default repo</label>
-            <Input placeholder="optional" value={defaultRepo} onChange={(e) => setDefaultRepo(e.target.value)} />
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              {t('integrations.inbound.add.defaultRepo')}
+            </label>
+            <Input
+              placeholder={t('integrations.inbound.add.optional')}
+              value={defaultRepo}
+              onChange={(e) => setDefaultRepo(e.target.value)}
+            />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">Default project id</label>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              {t('integrations.inbound.add.defaultProjectId')}
+            </label>
             <Input
-              placeholder="optional"
+              placeholder={t('integrations.inbound.add.optional')}
               value={defaultProjectId}
               onChange={(e) => setDefaultProjectId(e.target.value)}
             />
@@ -198,10 +220,12 @@ function AddInboundSourceModal({
 
         <div className="flex justify-end gap-2">
           <Button size="sm" variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            {tc('cancel')}
           </Button>
           <Button size="sm" onClick={() => void submit()} disabled={busy}>
-            {busy ? 'Creating…' : 'Create source'}
+            {busy
+              ? t('integrations.inbound.add.creating')
+              : t('integrations.inbound.add.createSource')}
           </Button>
         </div>
       </div>
@@ -213,6 +237,9 @@ function AddInboundSourceModal({
 
 /** Lazy-loaded per-source deliveries log (Theme D), rendered in an expanded row. */
 function DeliveriesLog({ sourceId }: { sourceId: string }) {
+  const t = useTranslations('settings');
+  const inbErr = (e: unknown): string =>
+    e instanceof Error ? e.message : t('integrations.errors.generic');
   const [rows, setRows] = useState<InboundDelivery[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -227,18 +254,27 @@ function DeliveriesLog({ sourceId }: { sourceId: string }) {
   }, [sourceId]);
 
   if (error) return <p className="p-3 text-sm text-destructive">{error}</p>;
-  if (rows === null) return <p className="p-3 text-sm text-muted-foreground">Loading deliveries…</p>;
+  if (rows === null)
+    return (
+      <p className="p-3 text-sm text-muted-foreground">
+        {t('integrations.inbound.deliveriesLog.loading')}
+      </p>
+    );
   if (rows.length === 0)
-    return <p className="p-3 text-sm text-muted-foreground">No deliveries received yet.</p>;
+    return (
+      <p className="p-3 text-sm text-muted-foreground">
+        {t('integrations.inbound.deliveriesLog.empty')}
+      </p>
+    );
 
   return (
     <table className="w-full text-xs">
       <thead>
         <tr className="text-left text-muted-foreground">
-          <th className="px-3 py-2">Result</th>
-          <th className="px-3 py-2">Event</th>
-          <th className="px-3 py-2">Task</th>
-          <th className="px-3 py-2">When</th>
+          <th className="px-3 py-2">{t('integrations.inbound.deliveriesLog.result')}</th>
+          <th className="px-3 py-2">{t('integrations.inbound.deliveriesLog.event')}</th>
+          <th className="px-3 py-2">{t('integrations.inbound.deliveriesLog.task')}</th>
+          <th className="px-3 py-2">{t('integrations.inbound.deliveriesLog.when')}</th>
         </tr>
       </thead>
       <tbody>
@@ -249,7 +285,7 @@ function DeliveriesLog({ sourceId }: { sourceId: string }) {
             <td className="px-3 py-2">
               {d.taskId ? (
                 <a className="text-primary hover:underline" href={`/tasks/view?id=${encodeURIComponent(d.taskId)}`}>
-                  view task
+                  {t('integrations.inbound.deliveriesLog.viewTask')}
                 </a>
               ) : d.error ? (
                 <span className="text-destructive" title={d.error}>
@@ -268,6 +304,10 @@ function DeliveriesLog({ sourceId }: { sourceId: string }) {
 }
 
 export function InboundSourcesSection() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
+  const inbErr = (e: unknown): string =>
+    e instanceof Error ? e.message : t('integrations.errors.generic');
   const [sources, setSources] = useState<InboundSource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -327,13 +367,13 @@ export function InboundSourcesSection() {
     <div className="space-y-4 border-t border-border pt-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Inbound sources</h2>
+          <h2 className="text-lg font-semibold">{t('integrations.inbound.title')}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Let GitHub, Linear, or any signed sender open tasks on your board.
+            {t('integrations.inbound.subtitle')}
           </p>
         </div>
         <Button size="sm" onClick={() => setShowAdd(true)}>
-          Add source
+          {t('integrations.inbound.addSource')}
         </Button>
       </div>
 
@@ -341,22 +381,22 @@ export function InboundSourcesSection() {
 
       {sources === null ? (
         <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
-          Loading…
+          {tc('loading')}
         </div>
       ) : sources.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          No inbound sources yet. Add one to receive external events.
+          {t('integrations.inbound.empty')}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="p-3">Provider</th>
-                <th className="p-3">Receiver URL</th>
-                <th className="p-3">Events</th>
-                <th className="p-3">Default routing</th>
-                <th className="p-3">Enabled</th>
+                <th className="p-3">{t('integrations.inbound.columns.provider')}</th>
+                <th className="p-3">{t('integrations.inbound.columns.receiverUrl')}</th>
+                <th className="p-3">{t('integrations.inbound.columns.events')}</th>
+                <th className="p-3">{t('integrations.inbound.columns.defaultRouting')}</th>
+                <th className="p-3">{t('integrations.inbound.columns.enabled')}</th>
                 <th className="p-3" />
               </tr>
             </thead>
@@ -367,7 +407,9 @@ export function InboundSourcesSection() {
                     <td className="p-3 font-medium">{s.provider}</td>
                     <td className="p-3 font-mono text-xs text-muted-foreground">{receiverUrl(s.id)}</td>
                     <td className="p-3 text-xs">
-                      {s.eventFilter.events.length ? s.eventFilter.events.join(', ') : 'all events'}
+                      {s.eventFilter.events.length
+                        ? s.eventFilter.events.join(', ')
+                        : t('integrations.inbound.allEvents')}
                     </td>
                     <td className="p-3 text-xs text-muted-foreground">
                       {s.defaultRepo || s.defaultProjectId
@@ -384,10 +426,12 @@ export function InboundSourcesSection() {
                         aria-expanded={expanded === s.id}
                         onClick={() => setExpanded((cur) => (cur === s.id ? null : s.id))}
                       >
-                        {expanded === s.id ? 'Hide deliveries' : 'Deliveries'}
+                        {expanded === s.id
+                          ? t('integrations.inbound.hideDeliveries')
+                          : t('integrations.inbound.deliveries')}
                       </Button>
                       <Button variant="ghost" size="sm" disabled={busy === s.id} onClick={() => void handleRotate(s.id)}>
-                        Rotate secret
+                        {t('integrations.inbound.rotateSecret')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -396,7 +440,7 @@ export function InboundSourcesSection() {
                         disabled={busy === s.id}
                         onClick={() => void handleDelete(s.id)}
                       >
-                        Delete
+                        {tc('delete')}
                       </Button>
                     </td>
                   </tr>

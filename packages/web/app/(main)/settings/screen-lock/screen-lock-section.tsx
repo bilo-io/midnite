@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Clock, Lock } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ function formatDuration(seconds: number): string {
 }
 
 export function ScreenLockSection() {
+  const t = useTranslations('settings');
   const [settings, setSettings, hydrated] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -77,13 +79,13 @@ export function ScreenLockSection() {
 
   return (
     <div className="space-y-4">
-      <Accordion title="Screensaver" icon={<Clock className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('screenLock.screensaver')} icon={<Clock className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Inactivity timeout</p>
+              <p className="text-sm font-medium">{t('screenLock.inactivityTimeout')}</p>
               <p className="text-xs text-muted-foreground">
-                How long without any input before the screensaver appears. Any activity wakes it.
+                {t('screenLock.inactivityTimeoutDescription')}
               </p>
             </div>
             <div
@@ -107,7 +109,7 @@ export function ScreenLockSection() {
               step={1}
               value={nearestInactivityPresetIndex(idleTimeout)}
               onChange={(e) => setIdleTimeout(INACTIVITY_PRESETS_S[Number(e.target.value)]!)}
-              aria-label="Inactivity timeout"
+              aria-label={t('screenLock.inactivityTimeout')}
               className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
             />
             <span className="w-8 text-xs text-muted-foreground tabular-nums">
@@ -116,17 +118,19 @@ export function ScreenLockSection() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Default {formatDuration(DEFAULT_SETTINGS.inactivityTimeoutS)} · range{' '}
-            {formatDuration(INACTIVITY_MIN_S)}–{formatDuration(INACTIVITY_MAX_S)}.
+            {t('screenLock.inactivityRange', {
+              default: formatDuration(DEFAULT_SETTINGS.inactivityTimeoutS),
+              min: formatDuration(INACTIVITY_MIN_S),
+              max: formatDuration(INACTIVITY_MAX_S),
+            })}
           </p>
 
           <div className="space-y-4 border-t border-border/60 pt-4">
             <div className="flex items-start justify-between gap-6">
               <div className="space-y-1">
-                <p className="text-sm font-medium">Cycle duration</p>
+                <p className="text-sm font-medium">{t('screenLock.cycleDuration')}</p>
                 <p className="text-xs text-muted-foreground">
-                  How long each phrase is shown before the next is typed out — on the screensaver
-                  and the home screen.
+                  {t('screenLock.cycleDurationDescription')}
                 </p>
               </div>
               <div
@@ -135,13 +139,13 @@ export function ScreenLockSection() {
                   hydrated ? 'opacity-100' : 'opacity-0',
                 )}
               >
-                {cycleDuration}s
+                {t('screenLock.secondsShort', { value: cycleDuration })}
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               <span className="w-8 text-right text-xs text-muted-foreground tabular-nums">
-                {CYCLE_MIN_S}s
+                {t('screenLock.secondsShort', { value: CYCLE_MIN_S })}
               </span>
               <input
                 type="range"
@@ -150,33 +154,36 @@ export function ScreenLockSection() {
                 step={1}
                 value={cycleDuration}
                 onChange={(e) => setCycleDuration(Number(e.target.value))}
-                aria-label="Cycle duration"
+                aria-label={t('screenLock.cycleDuration')}
                 className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
               />
-              <span className="w-8 text-xs text-muted-foreground tabular-nums">{CYCLE_MAX_S}s</span>
+              <span className="w-8 text-xs text-muted-foreground tabular-nums">{t('screenLock.secondsShort', { value: CYCLE_MAX_S })}</span>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Default {CYCLE_DEFAULT_S}s · range {CYCLE_MIN_S}–{CYCLE_MAX_S}s.
+              {t('screenLock.cycleRange', {
+                default: CYCLE_DEFAULT_S,
+                min: CYCLE_MIN_S,
+                max: CYCLE_MAX_S,
+              })}
             </p>
           </div>
         </div>
       </Accordion>
 
-      <Accordion title="Screen lock" icon={<Lock className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('screenLock.screenLock')} icon={<Lock className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-5 p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Require passcode</p>
+              <p className="text-sm font-medium">{t('screenLock.requirePasscode')}</p>
               <p className="text-xs text-muted-foreground">
-                Ask for a {PASSCODE_LENGTH}-digit passcode to wake the screensaver. Stored only on
-                this device — clear it any time if you forget it.
+                {t('screenLock.requirePasscodeDescription', { length: PASSCODE_LENGTH })}
               </p>
             </div>
             <Switch
               checked={settings.requirePasscode}
               onCheckedChange={toggleRequirePasscode}
-              aria-label="Require passcode"
+              aria-label={t('screenLock.requirePasscode')}
             />
           </div>
 
@@ -187,17 +194,16 @@ export function ScreenLockSection() {
             )}
           >
             <div className="space-y-1">
-              <p className="text-sm font-medium">Only when locked</p>
+              <p className="text-sm font-medium">{t('screenLock.onlyWhenLocked')}</p>
               <p className="text-xs text-muted-foreground">
-                Skip the passcode for the idle screensaver — only ask when you lock manually with the
-                power button.
+                {t('screenLock.onlyWhenLockedDescription')}
               </p>
             </div>
             <Switch
               checked={settings.passcodeOnlyWhenLocked}
               onCheckedChange={setOnlyWhenLocked}
               disabled={!settings.requirePasscode}
-              aria-label="Only require passcode when locked"
+              aria-label={t('screenLock.onlyWhenLockedAriaLabel')}
             />
           </div>
 
@@ -211,12 +217,12 @@ export function ScreenLockSection() {
                 )}
               />
               <span className={hasPasscode ? 'text-foreground' : 'text-muted-foreground'}>
-                {hasPasscode ? 'Passcode set' : 'No passcode set'}
+                {hasPasscode ? t('screenLock.passcodeSet') : t('screenLock.noPasscodeSet')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setSetup('change')}>
-                {hasPasscode ? 'Change' : 'Set passcode'}
+                {hasPasscode ? t('screenLock.change') : t('screenLock.setPasscode')}
               </Button>
               {hasPasscode ? (
                 <Button
@@ -226,7 +232,7 @@ export function ScreenLockSection() {
                   onClick={() => setPasscode(null)}
                   className="text-destructive hover:text-destructive"
                 >
-                  Clear
+                  {t('screenLock.clear')}
                 </Button>
               ) : null}
             </div>

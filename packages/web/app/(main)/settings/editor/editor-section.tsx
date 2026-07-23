@@ -1,6 +1,7 @@
 'use client';
 
 import { Save } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Accordion } from '@/components/ui/accordion';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
  * holds the autosave interval shared by editors like the Slides deck editor.
  */
 export function EditorSection() {
+  const t = useTranslations('settings');
   const [settings, setSettings] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -26,16 +28,16 @@ export function EditorSection() {
 
   return (
     <div className="space-y-4">
-      <Accordion title="Autosave" icon={<Save className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title={t('editor.autosave.title')} icon={<Save className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-3 p-5">
           <p className="text-sm text-muted-foreground">
-            How often editors save your work automatically. The Save button always stays available
-            and is enabled only when there are unsaved changes. Choose <strong>Off</strong> to save
-            manually.
+            {t.rich('editor.autosave.description', {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
           <div
             role="radiogroup"
-            aria-label="Autosave interval"
+            aria-label={t('editor.autosave.intervalAria')}
             className="inline-flex flex-wrap items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5"
           >
             {EDITOR_AUTOSAVE_OPTIONS.map((opt) => (

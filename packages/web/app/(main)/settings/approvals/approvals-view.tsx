@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ApprovalLogEntry, ApprovalRule, ApprovalSettings, AutonomyMode, CreateApprovalRule } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,41 +18,27 @@ import {
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
-const MODE_OPTIONS: { value: AutonomyMode; label: string; description: string }[] = [
-  {
-    value: 'manual',
-    label: 'Manual',
-    description: 'Ask before every tool call. No automatic decisions.',
-  },
-  {
-    value: 'guarded',
-    label: 'Guarded',
-    description: 'Auto-allow read-only tools (Read, Grep, Glob, LS). Ask for everything else.',
-  },
-  {
-    value: 'autonomous',
-    label: 'Autonomous',
-    description: 'Rules decide. Escalate only when no rule matches.',
-  },
-];
+const MODE_VALUES: AutonomyMode[] = ['manual', 'guarded', 'autonomous'];
 
 const SAFE_TOOLS = ['Read', 'Grep', 'Glob', 'LS'];
 
-const RESOLUTION_LABELS: Record<string, { label: string; className: string }> = {
-  'allow': { label: 'Allow', className: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-  'allow-session': { label: 'Allow (session)', className: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-  'deny': { label: 'Deny', className: 'bg-destructive/10 text-destructive' },
-  'auto-allow': { label: 'Auto-allow', className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  'auto-deny': { label: 'Auto-deny', className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
-  'timeout': { label: 'Timeout', className: 'bg-muted text-muted-foreground' },
-  'expired': { label: 'Expired', className: 'bg-muted text-muted-foreground' },
+const RESOLUTION_CLASSNAMES: Record<string, string> = {
+  'allow': 'bg-green-500/10 text-green-600 dark:text-green-400',
+  'allow-session': 'bg-green-500/10 text-green-600 dark:text-green-400',
+  'deny': 'bg-destructive/10 text-destructive',
+  'auto-allow': 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  'auto-deny': 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  'timeout': 'bg-muted text-muted-foreground',
+  'expired': 'bg-muted text-muted-foreground',
 };
 
 export function ApprovalsView() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [settings, setSettings] = useState<ApprovalSettings | null>(null);
   const [rules, setRules] = useState<ApprovalRule[]>([]);
   const [log, setLog] = useState<ApprovalLogEntry[]>([]);
@@ -89,7 +76,7 @@ export function ApprovalsView() {
   useEffect(() => {
     Promise.all([getApprovalSettings(), listApprovalRules()])
       .then(([s, r]) => { setSettings(s); setRules(r); })
-      .catch((e) => setError(errMsg(e)))
+      .catch((e) => setError(errMsg(e, t('approvals.errorFallback'))))
       .finally(() => setLoading(false));
     void loadLog(1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,7 +88,7 @@ export function ApprovalsView() {
       const updated = await setApprovalMode(mode);
       setSettings(updated);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('approvals.errorFallback')));
     } finally {
       setModeUpdating(false);
     }
@@ -112,7 +99,7 @@ export function ApprovalsView() {
       const updated = await updateApprovalRule(rule.id, { enabled: !rule.enabled });
       setRules((prev) => prev.map((r) => (r.id === rule.id ? updated : r)));
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('approvals.errorFallback')));
     }
   };
 
@@ -121,13 +108,13 @@ export function ApprovalsView() {
       await deleteApprovalRule(id);
       setRules((prev) => prev.filter((r) => r.id !== id));
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('approvals.errorFallback')));
     }
   };
 
   const handleCreateRule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!toolName.trim()) { setFormError('Tool name is required'); return; }
+    if (!toolName.trim()) { setFormError(t('approvals.rules.form.toolNameRequired')); return; }
     setFormError(null);
     setFormSaving(true);
     try {
@@ -142,13 +129,13 @@ export function ApprovalsView() {
       setRules((prev) => [...prev, created]);
       setToolName(''); setEffect('allow'); setNote(''); setShowForm(false);
     } catch (err) {
-      setFormError(errMsg(err));
+      setFormError(errMsg(err, t('approvals.errorFallback')));
     } finally {
       setFormSaving(false);
     }
   };
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{tc('loading')}</p>;
   if (error) return <p className="text-sm text-destructive">{error}</p>;
 
   return (
@@ -156,22 +143,22 @@ export function ApprovalsView() {
       {/* Mode picker */}
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-medium">Autonomy mode</h2>
+          <h2 className="text-sm font-medium">{t('approvals.mode.title')}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Controls how midnite handles tool-use approvals during agent sessions.
+            {t('approvals.mode.description')}
           </p>
         </div>
-        <div className="space-y-2" role="radiogroup" aria-label="Autonomy mode">
-          {MODE_OPTIONS.map((opt) => {
-            const active = settings?.mode === opt.value;
+        <div className="space-y-2" role="radiogroup" aria-label={t('approvals.mode.title')}>
+          {MODE_VALUES.map((value) => {
+            const active = settings?.mode === value;
             return (
               <button
-                key={opt.value}
+                key={value}
                 type="button"
                 role="radio"
                 aria-checked={active}
                 disabled={modeUpdating}
-                onClick={() => void handleSetMode(opt.value)}
+                onClick={() => void handleSetMode(value)}
                 className={cn(
                   'w-full text-left rounded-lg border px-4 py-3 transition-colors',
                   active
@@ -180,10 +167,10 @@ export function ApprovalsView() {
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{opt.label}</span>
-                  {active && <span className="text-xs text-primary font-medium">Active</span>}
+                  <span className="text-sm font-medium">{t(`approvals.mode.options.${value}.label`)}</span>
+                  {active && <span className="text-xs text-primary font-medium">{t('approvals.mode.active')}</span>}
                 </div>
-                <p className="text-xs mt-0.5 opacity-80">{opt.description}</p>
+                <p className="text-xs mt-0.5 opacity-80">{t(`approvals.mode.options.${value}.description`)}</p>
               </button>
             );
           })}
@@ -194,7 +181,7 @@ export function ApprovalsView() {
       {settings?.mode === 'guarded' && (
         <section className="space-y-2">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Always auto-allowed in guarded mode
+            {t('approvals.safeTools.title')}
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {SAFE_TOOLS.map((t) => (
@@ -215,14 +202,16 @@ export function ApprovalsView() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-medium">Rules</h2>
+            <h2 className="text-sm font-medium">{t('approvals.rules.title')}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Durable allow/deny rules evaluated in <em>guarded</em> and <em>autonomous</em> modes.
+              {t.rich('approvals.rules.description', {
+                em: (chunks) => <em>{chunks}</em>,
+              })}
             </p>
           </div>
           <Button size="sm" variant="outline" onClick={() => setShowForm((v) => !v)}>
             <Plus className="h-3.5 w-3.5" />
-            Add rule
+            {t('approvals.rules.add')}
           </Button>
         </div>
 
@@ -233,30 +222,30 @@ export function ApprovalsView() {
           >
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Tool name</label>
+                <label className="text-xs text-muted-foreground">{t('approvals.rules.form.toolName')}</label>
                 <Input
-                  placeholder="e.g. Bash, Read, * (all)"
+                  placeholder={t('approvals.rules.form.toolNamePlaceholder')}
                   value={toolName}
                   onChange={(e) => setToolName(e.target.value)}
                   autoFocus
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Effect</label>
+                <label className="text-xs text-muted-foreground">{t('approvals.rules.form.effect')}</label>
                 <select
                   value={effect}
                   onChange={(e) => setEffect(e.target.value as 'allow' | 'deny')}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="allow">Allow</option>
-                  <option value="deny">Deny</option>
+                  <option value="allow">{t('approvals.rules.form.effectAllow')}</option>
+                  <option value="deny">{t('approvals.rules.form.effectDeny')}</option>
                 </select>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Note (optional)</label>
+              <label className="text-xs text-muted-foreground">{t('approvals.rules.form.note')}</label>
               <Input
-                placeholder="Why this rule exists"
+                placeholder={t('approvals.rules.form.notePlaceholder')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
@@ -264,10 +253,10 @@ export function ApprovalsView() {
             {formError && <p className="text-xs text-destructive">{formError}</p>}
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={formSaving}>
-                {formSaving ? 'Saving…' : 'Save rule'}
+                {formSaving ? tc('saving') : t('approvals.rules.form.submit')}
               </Button>
               <Button type="button" size="sm" variant="ghost" onClick={() => setShowForm(false)}>
-                Cancel
+                {tc('cancel')}
               </Button>
             </div>
           </form>
@@ -275,7 +264,7 @@ export function ApprovalsView() {
 
         {rules.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            No rules yet. Add one above to start customising tool behaviour.
+            {t('approvals.rules.empty')}
           </p>
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
@@ -289,7 +278,7 @@ export function ApprovalsView() {
               >
                 <button
                   type="button"
-                  aria-label={rule.enabled ? 'Disable rule' : 'Enable rule'}
+                  aria-label={rule.enabled ? t('approvals.rules.disable') : t('approvals.rules.enable')}
                   onClick={() => void handleToggleRule(rule)}
                   className={cn(
                     'h-4 w-4 shrink-0 rounded border transition-colors',
@@ -318,7 +307,7 @@ export function ApprovalsView() {
                 </div>
                 <button
                   type="button"
-                  aria-label="Delete rule"
+                  aria-label={t('approvals.rules.delete')}
                   onClick={() => void handleDeleteRule(rule.id)}
                   className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0"
                 >
@@ -335,17 +324,17 @@ export function ApprovalsView() {
       {/* History */}
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-medium">History</h2>
+          <h2 className="text-sm font-medium">{t('approvals.history.title')}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Every tool-use decision — by you or the policy engine.
+            {t('approvals.history.description')}
           </p>
         </div>
 
         {logLoading && log.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Loading…</p>
+          <p className="text-sm text-muted-foreground py-4 text-center">{tc('loading')}</p>
         ) : log.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            No decisions recorded yet.
+            {t('approvals.history.empty')}
           </p>
         ) : (
           <>
@@ -355,19 +344,20 @@ export function ApprovalsView() {
               estimateRow={52}
               className="max-h-[60vh] rounded-lg border border-border"
               renderRow={(entry) => {
-                const res = RESOLUTION_LABELS[entry.resolution] ?? {
-                  label: entry.resolution,
-                  className: 'bg-muted text-muted-foreground',
-                };
+                const resClassName = RESOLUTION_CLASSNAMES[entry.resolution] ?? 'bg-muted text-muted-foreground';
+                const resLabel =
+                  entry.resolution in RESOLUTION_CLASSNAMES
+                    ? t(`approvals.history.resolution.${entry.resolution}`)
+                    : entry.resolution;
                 return (
                   <div className="flex items-start gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
                     <span
                       className={cn(
                         'mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold',
-                        res.className,
+                        resClassName,
                       )}
                     >
-                      {res.label}
+                      {resLabel}
                     </span>
                     <div className="min-w-0 flex-1">
                       <span className="font-mono text-sm">{entry.toolName}</span>
@@ -391,8 +381,11 @@ export function ApprovalsView() {
             {logTotal > LOG_LIMIT && (
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
-                  {(logPage - 1) * LOG_LIMIT + 1}–
-                  {Math.min(logPage * LOG_LIMIT, logTotal)} of {logTotal}
+                  {t('approvals.history.range', {
+                    from: (logPage - 1) * LOG_LIMIT + 1,
+                    to: Math.min(logPage * LOG_LIMIT, logTotal),
+                    total: logTotal,
+                  })}
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -401,7 +394,7 @@ export function ApprovalsView() {
                     onClick={() => void loadLog(logPage - 1)}
                     className="rounded px-2 py-1 hover:bg-accent disabled:opacity-40"
                   >
-                    ← Prev
+                    {t('approvals.history.prev')}
                   </button>
                   <button
                     type="button"
@@ -409,7 +402,7 @@ export function ApprovalsView() {
                     onClick={() => void loadLog(logPage + 1)}
                     className="rounded px-2 py-1 hover:bg-accent disabled:opacity-40"
                   >
-                    Next →
+                    {t('approvals.history.next')}
                   </button>
                 </div>
               </div>

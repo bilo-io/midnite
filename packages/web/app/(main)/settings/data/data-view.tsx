@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CalendarClock, CheckCircle2, Database, Download, Lock, Upload } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   PORTABLE_DOMAINS,
   type BackupStatus,
@@ -13,8 +14,8 @@ import { downloadBackup, getBackupStatus, importArchive, previewImport } from '@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Backup failed';
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 function fmtBytes(n: number): string {
@@ -25,6 +26,7 @@ function fmtBytes(n: number): string {
 
 /** Phase 49 F — read-only auto-backup status (scheduler is config-driven). */
 function AutoBackupPanel() {
+  const t = useTranslations('settings');
   const [status, setStatus] = useState<BackupStatus | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -42,16 +44,18 @@ function AutoBackupPanel() {
     };
   }, []);
 
-  if (state === 'loading') return <p className="text-sm text-muted-foreground">Loading auto-backup status…</p>;
+  if (state === 'loading') return <p className="text-sm text-muted-foreground">{t('data.autoBackup.loading')}</p>;
   if (state === 'error' || !status) {
-    return <p className="text-sm text-muted-foreground">Couldn’t load auto-backup status.</p>;
+    return <p className="text-sm text-muted-foreground">{t('data.autoBackup.error')}</p>;
   }
 
   if (!status.enabled) {
     return (
       <p className="text-xs text-muted-foreground">
-        Scheduled auto-backup is <span className="font-medium">off</span>. Enable it by setting{' '}
-        <code className="font-mono">backup.enabled</code> in <code className="font-mono">midnite.json</code>.
+        {t.rich('data.autoBackup.disabled', {
+          strong: (chunks) => <span className="font-medium">{chunks}</span>,
+          code: (chunks) => <code className="font-mono">{chunks}</code>,
+        })}
       </p>
     );
   }
@@ -61,12 +65,18 @@ function AutoBackupPanel() {
       <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
         <p className="flex items-center gap-1.5 font-medium">
           <CalendarClock className="h-3.5 w-3.5" />
-          Every {status.intervalHours}h → <code className="font-mono">{status.destinationDir}</code> (keep{' '}
-          {status.retention})
+          {t.rich('data.autoBackup.schedule', {
+            hours: status.intervalHours,
+            dir: status.destinationDir,
+            retention: status.retention,
+            code: (chunks) => <code className="font-mono">{chunks}</code>,
+          })}
         </p>
         <p className="mt-1 text-muted-foreground">
-          Last: {status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : 'never'}
-          {status.nextRunAt ? ` · next ~${new Date(status.nextRunAt).toLocaleString()}` : ''}
+          {t('data.autoBackup.last', {
+            when: status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : t('data.autoBackup.never'),
+          })}
+          {status.nextRunAt ? t('data.autoBackup.next', { when: new Date(status.nextRunAt).toLocaleString() }) : ''}
         </p>
       </div>
       {status.recent.length > 0 ? (
@@ -79,7 +89,7 @@ function AutoBackupPanel() {
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-muted-foreground">No archives written yet.</p>
+        <p className="text-xs text-muted-foreground">{t('data.autoBackup.noArchives')}</p>
       )}
     </div>
   );
@@ -102,12 +112,6 @@ function saveBlob(blob: Blob, filename: string): void {
  *  in-flight, then snaps to `done` on the result. */
 const RESTORE_STAGES = ['uploading', 'restoring', 'reindexing'] as const;
 type RestorePhase = 'idle' | 'previewing' | (typeof RESTORE_STAGES)[number] | 'done' | 'error';
-const STAGE_LABEL: Record<(typeof RESTORE_STAGES)[number] | 'done', string> = {
-  uploading: 'Uploading archive…',
-  restoring: 'Restoring records…',
-  reindexing: 'Rebuilding search index…',
-  done: 'Done',
-};
 
 /**
  * Phase 49 E — Restore. Upload an archive → auto dry-run preview (per-domain
@@ -116,6 +120,7 @@ const STAGE_LABEL: Record<(typeof RESTORE_STAGES)[number] | 'done', string> = {
  * A newer-than-us archive is hard-blocked (no override), mirroring the CLI.
  */
 function RestorePanel() {
+  const t = useTranslations('settings');
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -159,9 +164,9 @@ function RestorePanel() {
       setPreview(p);
       setPhase('idle');
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('data.errorFallback')));
       setPhase('error');
-      toast.error(errMsg(e));
+      toast.error(errMsg(e, t('data.errorFallback')));
     }
   };
 
@@ -178,12 +183,12 @@ function RestorePanel() {
       setResult(r);
       setPhase('done');
       const inserted = Object.values(r.inserted).reduce((a, b) => a + b, 0);
-      toast.success(`Restored ${inserted} records (${r.mode}).`);
+      toast.success(t('data.restore.toastRestored', { count: inserted, mode: r.mode }));
     } catch (e) {
       clearTimers();
-      setError(errMsg(e));
+      setError(errMsg(e, t('data.errorFallback')));
       setPhase('error');
-      toast.error(errMsg(e));
+      toast.error(errMsg(e, t('data.errorFallback')));
     }
   };
 
@@ -196,24 +201,26 @@ function RestorePanel() {
         ref={fileRef}
         type="file"
         accept=".zip,application/zip"
-        aria-label="Choose backup archive"
+        aria-label={t('data.restore.chooseAria')}
         className="hidden"
         onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
       />
       <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} disabled={inFlight} className="gap-1.5">
         <Upload className="h-4 w-4" />
-        {file ? file.name : 'Choose archive…'}
+        {file ? file.name : t('data.restore.choose')}
       </Button>
 
-      {phase === 'previewing' ? <p className="text-xs text-muted-foreground">Reading archive…</p> : null}
+      {phase === 'previewing' ? <p className="text-xs text-muted-foreground">{t('data.restore.reading')}</p> : null}
 
       {/* Version-incompatible archive — hard block, no override (mirrors the CLI). */}
       {blocked && preview ? (
         <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
-            This archive was made by a newer midnite (schema v{preview.manifest.schemaVersion}, {preview.compat}) than
-            this instance understands. Upgrade midnite, then retry — it can’t be imported safely.
+            {t('data.restore.blocked', {
+              schemaVersion: preview.manifest.schemaVersion,
+              compat: preview.compat,
+            })}
           </span>
         </div>
       ) : null}
@@ -222,8 +229,11 @@ function RestorePanel() {
       {preview && preview.importable ? (
         <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
           <p className="text-xs font-medium text-muted-foreground">
-            Preview — schema v{preview.manifest.schemaVersion} ({preview.compat}):{' '}
-            {Object.values(preview.domainCounts).reduce((a, b) => a + b, 0)} records
+            {t('data.restore.previewLabel', {
+              version: preview.manifest.schemaVersion,
+              compat: preview.compat,
+              count: Object.values(preview.domainCounts).reduce((a, b) => a + b, 0),
+            })}
           </p>
           <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px]">
             {preview.manifest.domains.map((d) => {
@@ -233,7 +243,7 @@ function RestorePanel() {
                   <span className="truncate">{d}</span>
                   <span className="shrink-0 text-muted-foreground">
                     {preview.domainCounts[d] ?? 0}
-                    {conflicts ? <span className="text-amber-600"> · {conflicts} existing</span> : null}
+                    {conflicts ? <span className="text-amber-600"> {t('data.restore.conflicts', { count: conflicts })}</span> : null}
                   </span>
                 </li>
               );
@@ -256,7 +266,7 @@ function RestorePanel() {
           {preview.manifest.secretsMode === 'passphrase' ? (
             <div className="space-y-1">
               <label htmlFor="restore-passphrase" className="block text-[11px] text-muted-foreground">
-                Passphrase (to restore this archive’s secrets — leave blank to skip them)
+                {t('data.restore.passphraseLabel')}
               </label>
               <input
                 id="restore-passphrase"
@@ -264,7 +274,7 @@ function RestorePanel() {
                 autoComplete="off"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Export passphrase"
+                placeholder={t('data.restore.passphrasePlaceholder')}
                 className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
               />
             </div>
@@ -272,7 +282,7 @@ function RestorePanel() {
 
           {/* Mode — merge is the safe default; replace is guarded below. */}
           <fieldset className="space-y-1.5">
-            <legend className="text-[11px] font-medium text-muted-foreground">Restore mode</legend>
+            <legend className="text-[11px] font-medium text-muted-foreground">{t('data.restore.modeLegend')}</legend>
             {(['merge', 'replace'] as const).map((m) => (
               <label key={m} className="flex items-start gap-2 text-xs">
                 <input
@@ -287,11 +297,11 @@ function RestorePanel() {
                   className="mt-0.5"
                 />
                 <span>
-                  <span className="font-medium">{m === 'merge' ? 'Merge' : 'Replace'}</span>{' '}
+                  <span className="font-medium">{m === 'merge' ? t('data.restore.merge') : t('data.restore.replace')}</span>{' '}
                   <span className="text-muted-foreground">
                     {m === 'merge'
-                      ? '— insert new records, keep existing ones.'
-                      : '— wipe the listed domains, then restore. Destructive.'}
+                      ? t('data.restore.mergeDesc')
+                      : t('data.restore.replaceDesc')}
                   </span>
                 </span>
               </label>
@@ -302,7 +312,9 @@ function RestorePanel() {
           {mode === 'replace' ? (
             <div className="space-y-1">
               <label htmlFor="replace-confirm" className="block text-[11px] text-destructive">
-                Type <code className="font-mono font-semibold">replace</code> to confirm wiping existing data:
+                {t.rich('data.restore.confirmLabel', {
+                  code: (chunks) => <code className="font-mono font-semibold">{chunks}</code>,
+                })}
               </label>
               <input
                 id="replace-confirm"
@@ -317,7 +329,7 @@ function RestorePanel() {
 
           <Button type="button" onClick={() => void onRestore()} disabled={!canRestore} className="gap-1.5">
             <Download className="h-4 w-4 rotate-180" />
-            {inFlight ? 'Restoring…' : `Restore (${mode})`}
+            {inFlight ? t('data.restore.restoring') : t('data.restore.restoreMode', { mode })}
           </Button>
         </div>
       ) : null}
@@ -331,7 +343,7 @@ function RestorePanel() {
               style={{ width: `${barPct}%` }}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">{STAGE_LABEL[phase as (typeof RESTORE_STAGES)[number]]}</p>
+          <p className="text-[11px] text-muted-foreground">{t(`data.restore.stage.${phase}`)}</p>
         </div>
       ) : null}
 
@@ -341,12 +353,16 @@ function RestorePanel() {
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
           <div>
             <p className="font-medium">
-              Restored ({result.mode}): {Object.values(result.inserted).reduce((a, b) => a + b, 0)} inserted,{' '}
-              {Object.values(result.skipped).reduce((a, b) => a + b, 0)} skipped
+              {t('data.restore.result.summary', {
+                mode: result.mode,
+                inserted: Object.values(result.inserted).reduce((a, b) => a + b, 0),
+                skipped: Object.values(result.skipped).reduce((a, b) => a + b, 0),
+              })}
               {result.secretsRestored || result.secretsSkipped
-                ? ` · secrets: ${result.secretsRestored} restored${result.secretsSkipped ? `, ${result.secretsSkipped} skipped` : ''}`
+                ? t('data.restore.result.secrets', { restored: result.secretsRestored }) +
+                  (result.secretsSkipped ? t('data.restore.result.secretsSkipped', { skipped: result.secretsSkipped }) : '')
                 : ''}
-              {result.reindexed ? '' : ' · search reindex warned'}
+              {result.reindexed ? '' : t('data.restore.result.reindexWarned')}
             </p>
           </div>
         </div>
@@ -366,6 +382,7 @@ function RestorePanel() {
  * preview → merge/replace → staged progress → summary; Theme C's import service).
  */
 export function DataView() {
+  const t = useTranslations('settings');
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<BackupSummary | null>(null);
@@ -383,9 +400,9 @@ export function DataView() {
       );
       saveBlob(blob, filename);
       setSummary(s);
-      toast.success(`Backup downloaded — ${filename}`);
+      toast.success(t('data.download.toastSuccess', { filename }));
     } catch (e) {
-      toast.error(errMsg(e));
+      toast.error(errMsg(e, t('data.errorFallback')));
     } finally {
       setBusy(false);
     }
@@ -394,19 +411,20 @@ export function DataView() {
   return (
     <div className="max-w-lg space-y-8">
       <div>
-        <h1 className="text-base font-semibold">Data</h1>
+        <h1 className="text-base font-semibold">{t('data.title')}</h1>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Back up and restore your whole midnite store — for disaster recovery or moving instances.
+          {t('data.description')}
         </p>
       </div>
 
       {/* Download backup */}
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-medium">Download a backup</h2>
+          <h2 className="text-sm font-medium">{t('data.download.title')}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            A portable <code className="font-mono">.zip</code> archive of every work domain, restorable onto this
-            or a fresh instance.
+            {t.rich('data.download.description', {
+              code: (chunks) => <code className="font-mono">{chunks}</code>,
+            })}
           </p>
         </div>
         {/* Theme G — opt into including secrets, re-wrapped under a passphrase. */}
@@ -419,16 +437,16 @@ export function DataView() {
               className="mt-0.5"
             />
             <span>
-              <span className="font-medium">Include secrets</span>{' '}
+              <span className="font-medium">{t('data.download.includeSecrets')}</span>{' '}
               <span className="text-muted-foreground">
-                — API keys, webhook signing secrets & workflow credentials, re-encrypted under a passphrase.
+                {t('data.download.includeSecretsDesc')}
               </span>
             </span>
           </label>
           {includeSecrets ? (
             <div className="space-y-1 pl-6">
               <label htmlFor="export-passphrase" className="block text-[11px] text-muted-foreground">
-                Passphrase (you’ll need it to restore — it’s never stored)
+                {t('data.download.passphraseLabel')}
               </label>
               <input
                 id="export-passphrase"
@@ -436,11 +454,11 @@ export function DataView() {
                 autoComplete="new-password"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="A strong passphrase"
+                placeholder={t('data.download.passphrasePlaceholder')}
                 className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
               />
               {secretsNeedPassphrase ? (
-                <p className="text-[11px] text-destructive">A passphrase is required to include secrets.</p>
+                <p className="text-[11px] text-destructive">{t('data.download.passphraseRequired')}</p>
               ) : null}
             </div>
           ) : null}
@@ -448,11 +466,11 @@ export function DataView() {
 
         <Button type="button" onClick={() => void onDownload()} disabled={busy || secretsNeedPassphrase} className="gap-1.5">
           <Download className="h-4 w-4" />
-          {busy ? 'Preparing…' : 'Download backup'}
+          {busy ? t('data.download.preparing') : t('data.download.button')}
         </Button>
 
         <div className="rounded-md border border-border bg-muted/30 p-3">
-          <p className="text-xs font-medium text-muted-foreground">Included in a backup</p>
+          <p className="text-xs font-medium text-muted-foreground">{t('data.download.included')}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {PORTABLE_DOMAINS.map((d) => (
               <span key={d.name} className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
@@ -464,15 +482,18 @@ export function DataView() {
           <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
             <Lock className="h-3 w-3" />
             {includeSecrets
-              ? 'Secrets are re-encrypted under your passphrase — the raw instance key never leaves this box.'
-              : 'Secrets (API keys, tokens) are excluded — enable “Include secrets” to carry them, or reconfigure integrations after a restore.'}
+              ? t('data.download.lockNoteIncluded')
+              : t('data.download.lockNoteExcluded')}
           </p>
         </div>
 
         {summary ? (
           <p className="text-xs text-muted-foreground">
-            Last backup: schema v{summary.schemaVersion} · {Object.values(summary.counts).reduce((a, b) => a + b, 0)}{' '}
-            records across {summary.domains.length} domains.
+            {t('data.download.lastBackup', {
+              version: summary.schemaVersion,
+              count: Object.values(summary.counts).reduce((a, b) => a + b, 0),
+              domains: summary.domains.length,
+            })}
           </p>
         ) : null}
       </section>
@@ -480,9 +501,9 @@ export function DataView() {
       {/* Scheduled auto-backup status (Phase 49 F) */}
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-medium">Scheduled auto-backup</h2>
+          <h2 className="text-sm font-medium">{t('data.autoBackup.title')}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Automatic timestamped backups on an interval, pruned to a retention count.
+            {t('data.autoBackup.description')}
           </p>
         </div>
         <AutoBackupPanel />
@@ -492,11 +513,12 @@ export function DataView() {
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <Database className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium">Restore from a backup</h2>
+          <h2 className="text-sm font-medium">{t('data.restore.title')}</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          Upload an archive to preview it, then restore — <span className="font-medium">merge</span> keeps existing
-          records, <span className="font-medium">replace</span> wipes them first.
+          {t.rich('data.restore.description', {
+            strong: (chunks) => <span className="font-medium">{chunks}</span>,
+          })}
         </p>
         <RestorePanel />
       </section>

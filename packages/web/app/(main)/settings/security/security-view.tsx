@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { type LucideIcon, Plus, ShieldAlert, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 import type { ApprovalRule, AutonomyMode, CreateApprovalRule } from '@midnite/shared';
@@ -18,8 +19,6 @@ import {
 
 type ModeCard = {
   mode: AutonomyMode;
-  label: string;
-  description: string;
   // Precise icon type: `React.ElementType` maps over `keyof JSX.IntrinsicElements`,
   // which @react-three/fiber (Phase 63) bloats to hundreds of three.js elements —
   // exploding the mapped type to `never`. `LucideIcon` is exact + immune.
@@ -27,24 +26,9 @@ type ModeCard = {
 };
 
 const MODE_CARDS: ModeCard[] = [
-  {
-    mode: 'manual',
-    label: 'Manual',
-    description: 'Claude asks for approval before every tool call.',
-    Icon: ShieldOff,
-  },
-  {
-    mode: 'guarded',
-    label: 'Guarded',
-    description: 'Approval rules control which tools are auto-allowed; everything else waits.',
-    Icon: ShieldAlert,
-  },
-  {
-    mode: 'autonomous',
-    label: 'Autonomous',
-    description: 'All tool calls proceed without approval. Use with care.',
-    Icon: ShieldCheck,
-  },
+  { mode: 'manual', Icon: ShieldOff },
+  { mode: 'guarded', Icon: ShieldAlert },
+  { mode: 'autonomous', Icon: ShieldCheck },
 ];
 
 function ModePicker({
@@ -54,9 +38,10 @@ function ModePicker({
   value: AutonomyMode;
   onChange: (m: AutonomyMode) => void;
 }) {
+  const t = useTranslations('settings');
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      {MODE_CARDS.map(({ mode, label, description, Icon }) => (
+      {MODE_CARDS.map(({ mode, Icon }) => (
         <button
           key={mode}
           type="button"
@@ -75,8 +60,10 @@ function ModePicker({
             )}
           />
           <div>
-            <p className="text-sm font-medium">{label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+            <p className="text-sm font-medium">{t(`security.modes.${mode}.label`)}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t(`security.modes.${mode}.description`)}
+            </p>
           </div>
         </button>
       ))}
@@ -95,6 +82,7 @@ function RuleRow({
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
 }) {
+  const t = useTranslations('settings');
   return (
     <div className="flex items-start gap-3 rounded-lg border bg-card p-3">
       <div className="flex-1 min-w-0">
@@ -112,19 +100,19 @@ function RuleRow({
           </span>
           {!rule.enabled && (
             <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              disabled
+              {t('security.disabled')}
             </span>
           )}
         </div>
         {rule.note && <p className="mt-0.5 text-xs text-muted-foreground">{rule.note}</p>}
         {rule.match?.commandPrefix && (
           <p className="mt-0.5 text-xs text-muted-foreground">
-            prefix: {rule.match.commandPrefix.join(', ')}
+            {t('security.prefix', { values: rule.match.commandPrefix.join(', ') })}
           </p>
         )}
         {rule.match?.pathGlob && (
           <p className="mt-0.5 text-xs text-muted-foreground">
-            glob: {rule.match.pathGlob.join(', ')}
+            {t('security.glob', { values: rule.match.pathGlob.join(', ') })}
           </p>
         )}
       </div>
@@ -149,7 +137,7 @@ function RuleRow({
         <button
           type="button"
           onClick={() => onDelete(rule.id)}
-          aria-label={`Delete rule for ${rule.toolName}`}
+          aria-label={t('security.deleteRuleAriaLabel', { toolName: rule.toolName })}
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -162,6 +150,8 @@ function RuleRow({
 // ---- Add rule form ----
 
 function AddRuleForm({ onAdd }: { onAdd: (rule: CreateApprovalRule) => void; prefill?: Partial<CreateApprovalRule> }) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [toolName, setToolName] = useState('');
   const [effect, setEffect] = useState<'allow' | 'deny'>('allow');
   const [note, setNote] = useState('');
@@ -182,12 +172,12 @@ function AddRuleForm({ onAdd }: { onAdd: (rule: CreateApprovalRule) => void; pre
 
   return (
     <form onSubmit={submit} className="rounded-xl border bg-card p-4">
-      <p className="mb-3 text-sm font-medium">New rule</p>
+      <p className="mb-3 text-sm font-medium">{t('security.newRule')}</p>
       <div className="flex flex-wrap gap-2">
         <input
           value={toolName}
           onChange={(e) => setToolName(e.target.value)}
-          placeholder="Tool name (e.g. Bash, Write, *)"
+          placeholder={t('security.toolNamePlaceholder')}
           className="flex-1 min-w-36 rounded-md border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <select
@@ -195,13 +185,13 @@ function AddRuleForm({ onAdd }: { onAdd: (rule: CreateApprovalRule) => void; pre
           onChange={(e) => setEffect(e.target.value as 'allow' | 'deny')}
           className="rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
-          <option value="allow">Allow</option>
-          <option value="deny">Deny</option>
+          <option value="allow">{t('security.allow')}</option>
+          <option value="deny">{t('security.deny')}</option>
         </select>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="Note (optional)"
+          placeholder={t('security.notePlaceholder')}
           className="flex-1 min-w-36 rounded-md border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <button
@@ -209,7 +199,7 @@ function AddRuleForm({ onAdd }: { onAdd: (rule: CreateApprovalRule) => void; pre
           className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          Add
+          {tc('add')}
         </button>
       </div>
     </form>
@@ -219,6 +209,8 @@ function AddRuleForm({ onAdd }: { onAdd: (rule: CreateApprovalRule) => void; pre
 // ---- Main view ----
 
 export function SecurityView() {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const searchParams = useSearchParams();
   const [mode, setModeState] = useState<AutonomyMode>('guarded');
   const [rules, setRules] = useState<ApprovalRule[]>([]);
@@ -267,15 +259,15 @@ export function SecurityView() {
   }
 
   if (loading) {
-    return <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>;
+    return <div className="py-12 text-center text-sm text-muted-foreground">{tc('loading')}</div>;
   }
 
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-1 text-sm font-semibold">Autonomy mode</h2>
+        <h2 className="mb-1 text-sm font-semibold">{t('security.autonomyMode')}</h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          Controls how much Claude acts without waiting for your explicit approval.
+          {t('security.autonomyModeDescription')}
         </p>
         <ModePicker value={mode} onChange={(m) => { void changeMode(m); }} />
       </section>
@@ -283,21 +275,21 @@ export function SecurityView() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold">Approval rules</h2>
+            <h2 className="text-sm font-semibold">{t('security.approvalRules')}</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Rules are evaluated in order; first match wins. Active in Guarded mode.
+              {t('security.approvalRulesDescription')}
             </p>
           </div>
           <a
             href="/ops"
             className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            View decisions log →
+            {t('security.viewDecisionsLog')}
           </a>
         </div>
 
         {rules.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">No rules yet.</p>
+          <p className="py-4 text-sm text-muted-foreground">{t('security.noRulesYet')}</p>
         ) : (
           <div className="space-y-2">
             {rules.map((r) => (

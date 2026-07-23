@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
 import { SafetyCapsPanel } from '@/components/safety/safety-caps-panel';
 import { SafetyDecisionsFeed } from '@/components/safety/safety-decisions-feed';
@@ -38,20 +39,19 @@ function Section({
  * recent act-path decisions. Write actions are admin-gated server-side.
  */
 export function SafetyView() {
+  const t = useTranslations('settings');
   const { guardrails, setLocal } = useGuardrails();
 
   return (
     <div className="max-w-lg space-y-8">
       <div>
-        <h1 className="text-base font-semibold">Safety</h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Guardrails for autonomous agents — pause, policy, caps, and blast-radius limits.
-        </p>
+        <h1 className="text-base font-semibold">{t('safety.title')}</h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">{t('safety.description')}</p>
       </div>
 
       <Section
-        title="Kill switch & pause"
-        description="Pause scheduling (running agents finish) or emergency-stop (abort in-flight agents, requeued)."
+        title={t('safety.killSwitch.title')}
+        description={t('safety.killSwitch.description')}
         action={<GuardrailsControl guardrails={guardrails} onChange={setLocal} />}
       >
         <GuardrailsBanner guardrails={guardrails} onChange={setLocal} />
@@ -60,11 +60,14 @@ export function SafetyView() {
       {/* Autonomy mode + durable allow/deny rules (reused from Settings → Approvals). */}
       <ApprovalsView />
 
-      <Section title="Spend, rate & blast-radius" description="What blocks or denies agent work — configured, shown read-only.">
+      <Section title={t('safety.spend.title')} description={t('safety.spend.description')}>
         <SafetyCapsPanel />
       </Section>
 
-      <Section title="Recent decisions" description="Latest act-path allow / deny / escalate decisions.">
+      <Section
+        title={t('safety.recentDecisions.title')}
+        description={t('safety.recentDecisions.description')}
+      >
         <SafetyDecisionsFeed />
       </Section>
     </div>
