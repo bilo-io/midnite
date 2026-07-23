@@ -69,6 +69,18 @@ excluded from the transition matrix (abandon archives as a side-effect above).
 For agent sessions **`sessionId == taskId`**. Hook callbacks are authenticated by
 the per-session secret **header** (never the body) — see the controllers.
 
+**Terminal-move reap.** A manual move to `done`/`abandoned` (or a delete) on a
+task still holding a pool slot goes through `updateStatus`/`deleteTask`, which
+never touch the runner — so the run it leaves behind (live session, armed
+timeout, busy slot) would leak. The watchdog sweep only runs on the scheduler
+tick, which doesn't exist when `agent.poolEnabled` is off, so the pool would
+wedge after `agent.pool` such moves ("no free agent slot"). The scheduler's bus
+subscription ([`AgentPoolScheduler.onModuleInit`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts),
+active regardless of `poolEnabled`) therefore reaps on `task.updated`-to-terminal /
+`task.deleted` for a slot-holding task, deferred one macrotask so the hook-driven
+`markDone → complete()` path settles first and the reap no-ops. Not a status
+writer — it only reclaims the run (kill session, clear timeout, free slot).
+
 ---
 
 ## 3 · Dead-edge accounting

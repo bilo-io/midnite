@@ -119,7 +119,10 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
   const pool = new AgentPoolService(config, tasks);
   const urlContext = { enrich: async (p: string) => p } as unknown as UrlContextService;
   const runner = new AgentRunnerService(config, pool, tasks, terminal.service, urlContext, repos);
-  const scheduler = new AgentPoolScheduler(config, tasks, pool, runner);
+  // Bus wired (positional: metrics/approvals absent) so `onModuleInit`'s
+  // subscription — the terminal-move slot reap — is exercisable; tests that
+  // don't call onModuleInit are unaffected.
+  const scheduler = new AgentPoolScheduler(config, tasks, pool, runner, undefined, undefined, bus);
 
   let order = 0;
   function seedTask(id: string, status: Status = 'todo', partial: Record<string, unknown> = {}): void {
@@ -211,6 +214,77 @@ describe('agent pool — completion frees the slot for the next task', () => {
     expect(status(h, 'b')).toBe('wip');
     expect(h.pool.slotForTask('b')).toBeDefined();
     expect(h.pool.slotForTask('a')).toBeUndefined();
+  });
+});
+
+describe('agent pool — a manual terminal move reaps the leaked run (bus-driven)', () => {
+  /** Let the deferred (setImmediate) reap scheduled by the bus subscription run. */
+  const flushReap = () => new Promise((r) => setImmediate(r));
+
+  /** Harness in "manual mode" (poolEnabled off — the user drives the board, the
+   *  tick loop and its watchdog sweep never run) with the bus subscription armed,
+   *  and one task already started by hand (drag to In progress). */
+  async function makeManualHarness(): Promise<Harness> {
+    const h = makeHarness({ pool: 1, poolEnabled: false });
+    h.scheduler.onModuleInit(); // subscribes to the bus; no interval when disabled
+    h.seedTask('a');
+    expect(await h.runner.start(h.tasks.getTask('a'))).toBe(true);
+    expect(status(h, 'a')).toBe('wip');
+    expect(h.pool.freeSlotCount()).toBe(0);
+    return h;
+  }
+
+  it('drag wip → done frees the slot and kills the session (no scheduler tick needed)', async () => {
+    const h = await makeManualHarness();
+
+    // Board drag to Done: a plain status write — the runner is never told.
+    h.tasks.updateStatus('a', 'done');
+    await flushReap();
+
+    expect(h.pool.slotForTask('a')).toBeUndefined();
+    expect(h.pool.freeSlotCount()).toBe(1);
+    expect(h.terminal.kill).toHaveBeenCalledWith('a');
+
+    // The freed slot is immediately claimable by the next manual start.
+    h.seedTask('b');
+    expect(await h.runner.start(h.tasks.getTask('b'))).toBe(true);
+  });
+
+  it('drag wip → abandoned frees the slot too', async () => {
+    const h = await makeManualHarness();
+
+    h.tasks.updateStatus('a', 'abandoned');
+    await flushReap();
+
+    expect(h.pool.slotForTask('a')).toBeUndefined();
+    expect(h.terminal.kill).toHaveBeenCalledWith('a');
+  });
+
+  it('deleting a running task frees the slot', async () => {
+    const h = await makeManualHarness();
+
+    // Delete is gated on archive; archiving alone must not reap (still wip).
+    h.tasks.archive('a');
+    h.tasks.deleteTask('a');
+    await flushReap();
+
+    expect(h.pool.slotForTask('a')).toBeUndefined();
+    expect(h.terminal.kill).toHaveBeenCalledWith('a');
+  });
+
+  it('the hook-driven done path is untouched — the deferred reap no-ops after complete()', async () => {
+    const h = await makeManualHarness();
+
+    // Stop hook: markDone emits (scheduling a reap) then complete() frees the
+    // slot in the same frame — the deferred reap must find nothing left to do.
+    h.tasks.markDone('a', 'https://example.com/pr/1');
+    h.runner.complete('a');
+    const killsAfterComplete = h.terminal.kill.mock.calls.length;
+    await flushReap();
+
+    expect(h.terminal.kill.mock.calls.length).toBe(killsAfterComplete);
+    expect(h.pool.freeSlotCount()).toBe(1);
+    expect(status(h, 'a')).toBe('done');
   });
 });
 
