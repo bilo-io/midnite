@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, X } from 'lucide-react';
 import {
   MAX_BULK_LINES,
@@ -52,6 +53,10 @@ export function NewTaskModal({
   onBulkCreated,
   onClose,
 }: Props) {
+  const t = useTranslations('board.newTask');
+  const tBoard = useTranslations('board');
+  const tTask = useTranslations('task');
+  const tCommon = useTranslations('common');
   const [mode, setMode] = useState<Mode>('single');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -127,7 +132,7 @@ export function NewTaskModal({
       onCreated(task);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create task');
+      setError(e instanceof Error ? e.message : t('createFailed'));
       setBusy(false);
     }
   };
@@ -146,13 +151,11 @@ export function NewTaskModal({
       setResult(response);
       onBulkCreated?.(response);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create tasks');
+      setError(e instanceof Error ? e.message : t('createBulkFailed'));
     } finally {
       setBusy(false);
     }
   };
-
-  const taskWord = (n: number) => `${n} task${n === 1 ? '' : 's'}`;
 
   return (
     <>
@@ -165,20 +168,20 @@ export function NewTaskModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="New task"
+          aria-label={t('title')}
           className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-card shadow-2xl sm:max-w-lg"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
-            <h2 className="text-sm font-semibold">New task</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose} disabled={busy}>
+            <h2 className="text-sm font-semibold">{t('title')}</h2>
+            <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose} disabled={busy}>
               <X className="h-4 w-4" />
             </Button>
           </header>
 
           <div className="space-y-3 px-5 py-4">
             {/* Single vs bulk toggle */}
-            <div role="group" aria-label="Add mode" className="inline-flex rounded-md border border-border/60 bg-card/40 p-0.5">
+            <div role="group" aria-label={t('addModeAria')} className="inline-flex rounded-md border border-border/60 bg-card/40 p-0.5">
               {(['single', 'bulk'] as const).map((m) => (
                 <button
                   key={m}
@@ -191,7 +194,7 @@ export function NewTaskModal({
                     mode === m ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {m === 'single' ? 'Single' : 'Bulk paste'}
+                  {m === 'single' ? t('single') : t('bulk')}
                 </button>
               ))}
             </div>
@@ -200,7 +203,7 @@ export function NewTaskModal({
               <div className="space-y-3">
                 <div>
                   <label htmlFor="new-task-title" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Title
+                    {t('titleLabel')}
                   </label>
                   <input
                     id="new-task-title"
@@ -208,21 +211,21 @@ export function NewTaskModal({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') void submit(); }}
-                    placeholder="What needs doing?"
+                    placeholder={t('titlePlaceholder')}
                     className={INPUT_CLASS}
                     disabled={busy}
                   />
                 </div>
                 <div>
                   <label htmlFor="new-task-description" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Description
-                    <span className="ml-1.5 font-normal text-muted-foreground/70">(optional)</span>
+                    {t('descriptionLabel')}
+                    <span className="ml-1.5 font-normal text-muted-foreground/70">{t('optional')}</span>
                   </label>
                   <textarea
                     id="new-task-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add detail, context, or acceptance criteria — included in the agent's prompt."
+                    placeholder={t('descriptionPlaceholder')}
                     rows={3}
                     className={cn(INPUT_CLASS, 'h-auto resize-y leading-relaxed')}
                     disabled={busy}
@@ -232,23 +235,23 @@ export function NewTaskModal({
             ) : (
               <div>
                 <label htmlFor="new-task-bulk" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Tasks
+                  {t('tasksLabel')}
                 </label>
                 <textarea
                   id="new-task-bulk"
                   value={bulkText}
                   onChange={(e) => onBulkTextChange(e.target.value)}
-                  placeholder={'One task per line…\nBlank lines, # comments and - bullets are ignored.'}
+                  placeholder={t('bulkPlaceholder')}
                   rows={7}
                   className={cn(INPUT_CLASS, 'h-auto resize-y font-mono leading-relaxed')}
                   disabled={busy}
                 />
                 <p className={cn('mt-1.5 text-xs', overLimit ? 'text-destructive' : 'text-muted-foreground')}>
                   {parsedLines.length === 0
-                    ? 'Paste a list to create one task per line.'
+                    ? t('bulkEmptyHint')
                     : overLimit
-                      ? `${taskWord(parsedLines.length)} detected — over the ${MAX_BULK_LINES}-line limit.`
-                      : `${taskWord(parsedLines.length)} detected.`}
+                      ? t('bulkOverLimit', { count: parsedLines.length, limit: MAX_BULK_LINES })
+                      : t('bulkDetected', { count: parsedLines.length })}
                 </p>
                 {/* The cleaned prompts (markers stripped, blanks/comments dropped) so the
                     user sees exactly what will be created before submitting. */}
@@ -270,7 +273,7 @@ export function NewTaskModal({
               {projects.length > 0 && (
                 <div className="min-w-[8.5rem] flex-1">
                   <label htmlFor="new-task-project" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Project
+                    {t('projectLabel')}
                   </label>
                   <select
                     id="new-task-project"
@@ -279,7 +282,7 @@ export function NewTaskModal({
                     disabled={busy}
                     className={SELECT_CLASS}
                   >
-                    <option value="">No project</option>
+                    <option value="">{t('noProject')}</option>
                     {projects.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -289,7 +292,7 @@ export function NewTaskModal({
               {repos.length > 0 && (
                 <div className="min-w-[8.5rem] flex-1">
                   <label htmlFor="new-task-repo" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Repo
+                    {t('repoLabel')}
                   </label>
                   <select
                     id="new-task-repo"
@@ -298,7 +301,7 @@ export function NewTaskModal({
                     disabled={busy}
                     className={SELECT_CLASS}
                   >
-                    <option value="">Unassigned</option>
+                    <option value="">{tBoard('unassigned')}</option>
                     {repos.map((r) => (
                       <option key={r.id} value={r.name}>{r.name}</option>
                     ))}
@@ -310,7 +313,7 @@ export function NewTaskModal({
               {mode === 'single' && (
                 <div className="min-w-[8.5rem] flex-1">
                   <label htmlFor="new-task-status" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Status
+                    {t('statusLabel')}
                   </label>
                   <select
                     id="new-task-status"
@@ -319,14 +322,14 @@ export function NewTaskModal({
                     disabled={busy}
                     className={SELECT_CLASS}
                   >
-                    <option value="backlog">Backlog</option>
-                    <option value="todo">Todo</option>
+                    <option value="backlog">{tBoard('columns.backlog')}</option>
+                    <option value="todo">{tBoard('columns.todo')}</option>
                   </select>
                 </div>
               )}
               <div className="min-w-[8.5rem] flex-1">
                 <label htmlFor="new-task-priority" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Priority
+                  {t('priorityLabel')}
                 </label>
                 <select
                   id="new-task-priority"
@@ -335,10 +338,10 @@ export function NewTaskModal({
                   disabled={busy}
                   className={SELECT_CLASS}
                 >
-                  <option value={0}>Low</option>
-                  <option value={1}>Normal</option>
-                  <option value={2}>High</option>
-                  <option value={3}>Urgent</option>
+                  <option value={0}>{tBoard('priority.low')}</option>
+                  <option value={1}>{tBoard('priority.normal')}</option>
+                  <option value={2}>{tBoard('priority.high')}</option>
+                  <option value={3}>{tBoard('priority.urgent')}</option>
                 </select>
               </div>
             </div>
@@ -348,7 +351,7 @@ export function NewTaskModal({
             {mode === 'single' && tasks.length > 0 && (
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Blocked by
+                  {t('blockedByLabel')}
                 </label>
                 {selectedBlockers.length > 0 && (
                   <div className="mb-1.5 flex flex-wrap gap-1.5">
@@ -363,7 +366,7 @@ export function NewTaskModal({
                           onClick={() =>
                             setSelectedBlockerIds((ids) => ids.filter((id) => id !== b.id))
                           }
-                          aria-label={`Remove blocker ${b.title}`}
+                          aria-label={tTask('dependencies.removeBlocker', { title: b.title })}
                           className="shrink-0 text-muted-foreground hover:text-destructive"
                           disabled={busy}
                         >
@@ -375,10 +378,10 @@ export function NewTaskModal({
                 )}
                 <TaskPicker
                   candidates={blockerCandidates}
-                  onPick={(t) => setSelectedBlockerIds((ids) => [...ids, t.id])}
+                  onPick={(picked) => setSelectedBlockerIds((ids) => [...ids, picked.id])}
                   disabled={busy}
-                  label="Search tasks to block on"
-                  placeholder="Add a blocking task…"
+                  label={tTask('dependencies.searchLabel')}
+                  placeholder={tTask('dependencies.searchPlaceholder')}
                 />
               </div>
             )}
@@ -388,10 +391,10 @@ export function NewTaskModal({
             {result && (
               <div className="space-y-2 rounded-md border border-border/60 bg-background/40 p-3 text-xs">
                 <p className="font-medium">
-                  <span className="text-foreground">{result.counts.created} created</span>
-                  <span className="text-muted-foreground"> · {result.counts.skipped} skipped · </span>
+                  <span className="text-foreground">{t('createdCount', { count: result.counts.created })}</span>
+                  <span className="text-muted-foreground"> · {t('skippedCount', { count: result.counts.skipped })} · </span>
                   <span className={result.counts.failed > 0 ? 'text-destructive' : 'text-muted-foreground'}>
-                    {result.counts.failed} failed
+                    {t('failedCount', { count: result.counts.failed })}
                   </span>
                 </p>
                 {failedRows.length > 0 && (
@@ -410,7 +413,7 @@ export function NewTaskModal({
 
           <footer className="flex justify-end gap-2 border-t border-border/60 px-5 py-3.5">
             <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={busy}>
-              {result ? 'Close' : 'Cancel'}
+              {result ? tCommon('close') : tCommon('cancel')}
             </Button>
             {mode === 'single' ? (
               <Button
@@ -421,11 +424,11 @@ export function NewTaskModal({
                 className="gap-1.5"
               >
                 {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Create task
+                {t('createTask')}
               </Button>
             ) : result ? (
               <Button type="button" size="sm" onClick={onClose}>
-                Done
+                {t('done')}
               </Button>
             ) : (
               <Button
@@ -436,7 +439,7 @@ export function NewTaskModal({
                 className="gap-1.5"
               >
                 {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {parsedLines.length > 0 ? `Create ${taskWord(parsedLines.length)}` : 'Create tasks'}
+                {parsedLines.length > 0 ? t('createN', { count: parsedLines.length }) : t('createTasks')}
               </Button>
             )}
           </footer>

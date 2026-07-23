@@ -14,5 +14,9 @@
   "remove": "Remove",
   "back": "Back",
   "none": "None",
-  "selectedCount": "{count, plural, one {# selected} other {# selected}}"
+  "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+  "item": "item",
+  "deleteNounTitle": "Delete this {noun}?",
+  "deletePermanent": "This is permanent and can't be undone.",
+  "reorderSection": "Reorder section"
 }
