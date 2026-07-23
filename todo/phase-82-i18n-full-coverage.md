@@ -19,16 +19,16 @@
 
 ---
 
-## Theme A — Gate flip & catalog machinery — **M**
+## Theme A — Gate flip & catalog machinery — **M** — ✅ DONE (PR #530, 2026-07-23)
 
 Invert the enforcement model and restructure the catalogs so the sweep can run wide and in parallel. Runs first.
 
-- [ ] **Split catalogs per namespace** — `messages/<locale>/<namespace>.json` (e.g. `messages/en-GB/board.json`), merged into one message tree at load in [`packages/web/i18n/`](../packages/web/i18n)'s static import map (still static-export-safe — plain `import` per file, no dynamic `require`). Migrate the existing 5 namespaces; meta sidecars become `messages/meta/<locale>/<namespace>.json` (or a keyed single file — keep whichever diff-reviews smaller).
-- [ ] **Update the tooling for the split layout** — [`i18n-extract.mjs`](../scripts/i18n-extract.mjs) + [`i18n-validate.mjs`](../scripts/i18n-validate.mjs) walk the per-namespace files; parity/orphan/missing rules unchanged; `moon run web:i18n-validate` inputs updated (remember moon caches on inputs — [importing-untyped-mjs gotcha](importing-untyped-mjs-into-ts-breaks-typecheck.md) if a TS test imports the script).
-- [ ] **Flip the ESLint gate to default-on** — replace `I18N_ENFORCED` (allowlist) with `I18N_EXEMPT` (exception list): `i18next/no-literal-string` (`jsx-text-only`) errors on **all** of `packages/web/**/*.tsx` + `packages/shell/src/**/*.tsx` **except** the generated exception list, seeded from today's unmigrated set. New files are born enforced. Each migration PR deletes its files from the list.
-- [ ] **fr-FR hard parity in CI** — the validator already fails a `complete` locale missing keys; assert fr-FR stays marked `complete` and add a guard test so nobody "fixes" a red CI by demoting fr-FR to incomplete.
-- [ ] **Progress meter** — `i18n-extract` (or the validator) prints the exception-list count + per-namespace key totals, so `/exec` slices and humans can watch the number fall to zero.
-- [ ] **Tests** — loader merges namespaces correctly (spot-check a key per namespace per locale); validator units cover the split layout; an ESLint config guard pins the exempt-list mechanism (rule enabled, list bounded, no allowlist resurrection).
+- [x] **Split catalogs per namespace** — `messages/<locale>/<namespace>.json` (e.g. `messages/en-GB/board.json`), merged at load via a **generated per-locale barrel** (`messages/<locale>/index.ts`, from [`scripts/i18n-barrels.mjs`](../scripts/i18n-barrels.mjs)) that the runtime ([`i18n/messages.ts`](../packages/web/i18n/messages.ts)) imports — static-export-safe (plain `import` per fragment, no dynamic `require`; verified builds 57/57 under `output:'export'`). Migrated the existing 5 namespaces 1:1 (no reshaping); meta sidecars **kept as one keyed `messages/meta/<locale>.json`** (smaller diff than a per-namespace split).
+- [x] **Update the tooling for the split layout** — [`i18n-validate.mjs`](../scripts/i18n-validate.mjs)'s `loadCatalogs` walks the per-namespace files and merges them back into one namespace-keyed catalog; [`i18n-extract.mjs`](../scripts/i18n-extract.mjs) reuses it; parity/orphan/missing rules unchanged; `web:i18n-validate` inputs already glob `messages/**/*.json` (+ added the exempt file for the meter).
+- [x] **Flip the ESLint gate to default-on** — replaced `I18N_ENFORCED` (allowlist) with `I18N_EXEMPT` (generated exception list in [`eslint.i18n-exempt.mjs`](../eslint.i18n-exempt.mjs), from [`scripts/i18n-exempt.mjs`](../scripts/i18n-exempt.mjs)): `i18next/no-literal-string` (`jsx-text-only`) errors on **all** of `packages/web/**/*.tsx` + `packages/shell/src/**/*.tsx` **except** the exempt tail + test/story fixtures, seeded from today's unmigrated set (406 files). New files are born enforced; each migration PR deletes its files. Bracketed Next dynamic-route paths glob-escaped in the ignore list. `web:i18n-exempt --check` (removal-only) + `web:i18n-barrels --check` guard both generated files in CI.
+- [x] **fr-FR hard parity in CI** — the validator fails a `complete` locale missing keys; added a guard test ([`i18n-fr-parity.test.ts`](../packages/web/lib/i18n-fr-parity.test.ts)) asserting fr-FR stays `complete` so a red CI can't be "fixed" by demoting it.
+- [x] **Progress meter** — `web:i18n-validate` prints the exempt-list count (starts at 406) + per-namespace key totals, so slices + humans watch the number fall to zero.
+- [x] **Tests** — split-layout `loadCatalogs` merge + `namespaceTotals` units (shared); the existing surface-render test now spot-checks the barrels per namespace per locale; a flipped-gate config guard pins the default-on posture + exempt-list invariants (bounded/sorted/deduped, no allowlist resurrection, no migrated file re-exempted).
 
 ## Theme B — Board & tasks — **M**
 

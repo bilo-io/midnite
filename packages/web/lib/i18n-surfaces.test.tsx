@@ -4,8 +4,8 @@ import type { Locale } from '@midnite/shared';
 import { useTranslations } from 'next-intl';
 import { describe, expect, it } from 'vitest';
 
-import enGB from '@/messages/en-GB.json';
-import frFR from '@/messages/fr-FR.json';
+import enGB from '@/messages/en-GB';
+import frFR from '@/messages/fr-FR';
 import { CATALOGS } from '@/i18n/messages';
 
 /** Recursively collect the dotted key paths of a catalog for parity comparison. */

@@ -5,18 +5,19 @@ import i18next from 'eslint-plugin-i18next';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
-// Phase 79 E — files whose user-facing JSX copy is fully externalized to next-intl.
-// The no-hardcoded-string rule errors *only* here, so a regression (a new literal
-// string added to a migrated surface) fails CI, while the ~500 un-migrated files
-// stay unaffected. A file joins this list once its visible copy is converted.
-const I18N_ENFORCED = [
-  'packages/web/components/locale-flag.tsx',
-  'packages/web/components/language-switcher.tsx',
-  'packages/web/components/auth/sso-buttons.tsx',
-  'packages/web/app/(auth)/login/page.tsx',
-  'packages/web/app/(main)/settings/settings-sidebar.tsx',
-  'packages/web/components/confirm-dialog.tsx',
-];
+import { I18N_EXEMPT } from './eslint.i18n-exempt.mjs';
+
+// Phase 82 A — the no-hardcoded-string gate is **default-on** for every `.tsx` in
+// `packages/web` + `packages/shell/src`; a file is unenforced only while it's on the
+// generated `I18N_EXEMPT` tail (see scripts/i18n-exempt.mjs). New files are therefore
+// born enforced, and each migration slice shrinks the list toward zero. Test/story
+// fixtures are excluded below (they carry deliberate literal strings for assertions).
+const I18N_GATED = ['packages/web/**/*.tsx', 'packages/shell/src/**/*.tsx'];
+const I18N_NON_COPY = ['**/*.test.tsx', '**/*.spec.tsx', '**/*.stories.tsx'];
+// Next.js dynamic-route dirs contain `[param]`; as a glob pattern the brackets read
+// as a character class, so a raw exempt path would never match its own file. Escape
+// them (the exempt list stays real, readable paths — escaping happens only here).
+const escapeGlob = (p) => p.replace(/[[\]]/g, '\\$&');
 
 export default tseslint.config(
   {
@@ -85,11 +86,13 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser, ...globals.serviceworker } },
   },
 
-  // i18n no-hardcoded-string gate (Phase 79 E), scoped to the migrated surfaces.
-  // `jsx-text-only` targets visible copy (JSX text) and ignores structural
-  // attributes (className, data-*, aria/role) so it doesn't flag non-copy.
+  // i18n no-hardcoded-string gate (Phase 82 A) — default-on across web + shell/src,
+  // exempting only the generated tail + test/story fixtures. `jsx-text-only` targets
+  // visible copy (JSX text) and ignores structural attributes (className, data-*,
+  // aria/role) so it doesn't flag non-copy.
   {
-    files: I18N_ENFORCED,
+    files: I18N_GATED,
+    ignores: [...I18N_NON_COPY, ...I18N_EXEMPT.map(escapeGlob)],
     plugins: { i18next },
     rules: {
       'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],

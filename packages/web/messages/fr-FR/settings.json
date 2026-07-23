@@ -1,0 +1,32 @@
+{
+  "reset": "Réinitialiser les valeurs par défaut",
+  "syncedToAccount": "Synchronisé avec votre compte",
+  "signInToSync": "Connectez-vous pour synchroniser entre appareils",
+  "groups": {
+    "general": "Général",
+    "workspace": "Espace de travail",
+    "security": "Sécurité"
+  },
+  "items": {
+    "appearance": "Apparence",
+    "system": "Système",
+    "agents": "Agents",
+    "apiTokens": "Jetons d’API",
+    "data": "Données",
+    "editor": "Éditeur",
+    "integrations": "Intégrations",
+    "repos": "Dépôts",
+    "safety": "Sûreté",
+    "credentials": "Identifiants",
+    "screenLock": "Verrouillage d’écran",
+    "security": "Sécurité"
+  },
+  "appearance": {
+    "language": "Langue",
+    "languageDescription": "La langue utilisée dans toute l’application. Synchronisée avec votre compte lorsque vous êtes connecté.",
+    "theme": "Thème",
+    "navigation": "Navigation",
+    "accent": "Accentuation",
+    "motionEffects": "Mouvement et effets"
+  }
+}

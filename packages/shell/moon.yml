@@ -52,3 +52,4 @@ tasks:
       - 'src/**/*'
       - 'vite.config.ts'
       - '/eslint.config.mjs'
+      - '/eslint.i18n-exempt.mjs'
