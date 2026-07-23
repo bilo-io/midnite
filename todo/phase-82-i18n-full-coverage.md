@@ -30,14 +30,14 @@ Invert the enforcement model and restructure the catalogs so the sweep can run w
 - [x] **Progress meter** — `web:i18n-validate` prints the exempt-list count (starts at 406) + per-namespace key totals, so slices + humans watch the number fall to zero.
 - [x] **Tests** — split-layout `loadCatalogs` merge + `namespaceTotals` units (shared); the existing surface-render test now spot-checks the barrels per namespace per locale; a flipped-gate config guard pins the default-on posture + exempt-list invariants (bounded/sorted/deduped, no allowlist resurrection, no migrated file re-exempted).
 
-## Theme B — Board & tasks — **M**
+## Theme B — Board & tasks — **M** — ✅ DONE (PR #533, 2026-07-23)
 
 The core product surface: everything a user reads while running tasks.
 
-- [ ] **Task cards** — status/priority chips, "blocked by N" chip, relative timestamps (via `useLocaleFormat`), card context menus → `board` namespace.
-- [ ] **Task detail** — tabs, action buttons (resume/reply/stop/retry), failure panes, session/terminal chrome labels → `board` (or a `task` namespace if it outgrows it).
-- [ ] **Dialogs & bulk bar** — create/edit task dialogs, bulk-select bar actions, move/abandon confirms, toasts fired from board flows → `board` + `common`.
-- [ ] **fr-FR keys + tests** — every key authored in fr-FR same PR (meta `needsReview`); RTL renders a representative component per group under fr-FR; migrated files leave `I18N_EXEMPT`.
+- [x] **Task cards** — kind/priority/wait/held/AI-review chips, "blocked by N" chip (ICU plural), card action buttons → `board`; enum label lookups centralised in `lib/i18n-labels.ts`.
+- [x] **Task detail** — split into a new **`task` namespace** (116 keys): tabs, lifecycle actions + confirms (shared with the session cockpit), tags/milestone/dependencies/links/PR/AI-review sections, failure history + task health, timeline event kinds.
+- [x] **Dialogs & bulk bar** — new-task modal (single + bulk), bulk bar + Move-to menu, move/abandon/reopen/start-blocked/delete confirms, board-flow toasts → `board` + `common`; 22 files leave `I18N_EXEMPT` (406 → 384).
+- [x] **fr-FR keys + tests** — 224 fr-FR keys same-PR (meta `needsReview`); `board-task-i18n-fr.test.tsx` renders a representative component per group under fr-FR; `vitest.render-intl.tsx` intl-wraps the 13 affected suites; fr board screenshots via `board-i18n-fr.shots.ts`.
 
 ## Theme C — Auth & Settings sweep — **M**
 
