@@ -1,4 +1,5 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { renderWithIntl as render } from '../../../../vitest.render-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Webhook } from '@midnite/shared';
 

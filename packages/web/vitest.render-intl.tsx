@@ -5,16 +5,22 @@
 import type { ReactElement, ReactNode } from 'react';
 import { render as rtlRender, type RenderOptions } from '@testing-library/react';
 import { LocaleProvider } from '@midnite/shell';
+import type { Locale } from '@midnite/shared';
 import { CATALOGS } from '@/i18n/messages';
 
-function IntlWrapper({ children }: { children: ReactNode }) {
-  return (
-    <LocaleProvider catalogs={CATALOGS} initialLocale="en-GB">
-      {children}
-    </LocaleProvider>
-  );
-}
-
-export function renderWithIntl(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
-  return rtlRender(ui, { wrapper: IntlWrapper, ...options });
+/** Render pre-wrapped in the app's LocaleProvider. Defaults to en-GB so existing
+ *  specs keep asserting English copy; pass `{ locale: 'fr-FR' }` for a fr render. */
+export function renderWithIntl(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'> & { locale?: Locale },
+) {
+  const { locale = 'en-GB', ...rest } = options ?? {};
+  function IntlWrapper({ children }: { children: ReactNode }) {
+    return (
+      <LocaleProvider catalogs={CATALOGS} initialLocale={locale}>
+        {children}
+      </LocaleProvider>
+    );
+  }
+  return rtlRender(ui, { wrapper: IntlWrapper, ...rest });
 }

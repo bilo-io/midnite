@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '../../../../vitest.render-intl';
 
 const updateWsSettings = vi.fn();
 vi.mock('@/lib/api', () => ({
