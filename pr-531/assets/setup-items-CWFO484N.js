@@ -1,0 +1,1 @@
+const s={ok:"hsl(142 71% 45%)",warn:"hsl(38 92% 50%)",missing:"hsl(0 72% 55%)"},t={provider:"/settings/agents","secret-key":"/settings/system","agent-cli":"/settings/system","agent-pool":"/settings/agents",repo:"/settings/repos"};export{s as S,t as a};
