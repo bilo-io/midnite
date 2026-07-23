@@ -1,0 +1,32 @@
+{
+  "reset": "Reset to defaults",
+  "syncedToAccount": "Synced to your account",
+  "signInToSync": "Sign in to sync across devices",
+  "groups": {
+    "general": "General",
+    "workspace": "Workspace",
+    "security": "Security"
+  },
+  "items": {
+    "appearance": "Appearance",
+    "system": "System",
+    "agents": "Agents",
+    "apiTokens": "API Tokens",
+    "data": "Data",
+    "editor": "Editor",
+    "integrations": "Integrations",
+    "repos": "Repos",
+    "safety": "Safety",
+    "credentials": "Credentials",
+    "screenLock": "Screen lock",
+    "security": "Security"
+  },
+  "appearance": {
+    "language": "Language",
+    "languageDescription": "The language used across the app. Syncs to your account when you're signed in.",
+    "theme": "Theme",
+    "navigation": "Navigation",
+    "accent": "Accent",
+    "motionEffects": "Motion & effects"
+  }
+}

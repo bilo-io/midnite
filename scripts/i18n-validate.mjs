@@ -15,7 +15,7 @@
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const CANONICAL_LOCALE = 'en-GB';
 
@@ -64,14 +64,26 @@ export function validateCatalogs({ catalogs, meta = {} }) {
   return { ok: errors.length === 0, errors, coverage };
 }
 
-/** Load every `<locale>.json` catalog + optional `meta/<locale>.json` sidecar. */
+/**
+ * Load every locale catalog + optional `meta/<locale>.json` sidecar.
+ *
+ * Catalogs are split per namespace (Phase 82 Theme A): `messages/<locale>/<ns>.json`.
+ * Each locale sub-directory's `*.json` fragments are merged into one catalog keyed by
+ * namespace (the shape the runtime barrel and the pre-split single files produced).
+ * The `meta` sidecar layout is unchanged — one `messages/meta/<locale>.json` per locale.
+ */
 export function loadCatalogs(messagesDir) {
   const catalogs = {};
   const meta = {};
-  for (const file of readdirSync(messagesDir)) {
-    if (!file.endsWith('.json')) continue;
-    const locale = file.replace(/\.json$/, '');
-    catalogs[locale] = JSON.parse(readFileSync(join(messagesDir, file), 'utf8'));
+  for (const entry of readdirSync(messagesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name === 'meta') continue;
+    const localeDir = join(messagesDir, entry.name);
+    const catalog = {};
+    for (const file of readdirSync(localeDir)) {
+      if (!file.endsWith('.json')) continue;
+      catalog[file.replace(/\.json$/, '')] = JSON.parse(readFileSync(join(localeDir, file), 'utf8'));
+    }
+    catalogs[entry.name] = catalog;
   }
   const metaDir = join(messagesDir, 'meta');
   if (existsSync(metaDir)) {
@@ -83,8 +95,29 @@ export function loadCatalogs(messagesDir) {
   return { catalogs, meta };
 }
 
-function main() {
-  const messagesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'packages', 'web', 'messages');
+/**
+ * Per-namespace key totals for the canonical catalog — the size of each surface's
+ * copy, surfaced in the progress meter so slices can see where the keys live.
+ */
+export function namespaceTotals(canonical) {
+  return Object.fromEntries(
+    Object.keys(canonical)
+      .sort()
+      .map((ns) => [ns, keyPaths(canonical[ns]).length]),
+  );
+}
+
+/** Read the generated ESLint exempt list; [] if it hasn't been seeded yet. */
+async function loadExemptCount(rootDir) {
+  const exemptPath = join(rootDir, 'eslint.i18n-exempt.mjs');
+  if (!existsSync(exemptPath)) return null;
+  const mod = await import(pathToFileURL(exemptPath).href);
+  return Array.isArray(mod.I18N_EXEMPT) ? mod.I18N_EXEMPT.length : null;
+}
+
+async function main() {
+  const rootDir = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const messagesDir = join(rootDir, 'packages', 'web', 'messages');
   const { catalogs, meta } = loadCatalogs(messagesDir);
   const { ok, errors, coverage } = validateCatalogs({ catalogs, meta });
 
@@ -94,6 +127,18 @@ function main() {
     const flag = meta[locale]?.complete ? ' [complete]' : locale === CANONICAL_LOCALE ? ' [canonical]' : '';
     console.log(`  ${locale.padEnd(6)} ${String(pct).padStart(3)}%  (${translated}/${total})${flag}`);
   }
+
+  // Progress meter (Phase 82 Theme A): per-namespace en-GB key totals + how many
+  // files still sit on the lint-exempt list (the number the sweep drives to zero).
+  const totals = namespaceTotals(catalogs[CANONICAL_LOCALE] ?? {});
+  const totalKeys = Object.values(totals).reduce((a, b) => a + b, 0);
+  console.log(`\nen-GB namespaces (${totalKeys} keys across ${Object.keys(totals).length}):`);
+  for (const [ns, n] of Object.entries(totals)) console.log(`  ${ns.padEnd(10)} ${n}`);
+  const exemptCount = await loadExemptCount(rootDir);
+  if (exemptCount !== null) {
+    console.log(`\ni18n exempt files remaining (lint gate): ${exemptCount}`);
+  }
+
   if (!ok) {
     console.error(`\n✖ i18n:validate failed — ${errors.length} problem(s):`);
     for (const e of errors) console.error(`  • ${e}`);
@@ -102,4 +147,4 @@ function main() {
   console.log('\n✓ i18n:validate passed (no key drift; complete locales at full parity).');
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) await main();

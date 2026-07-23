@@ -1,0 +1,26 @@
+{
+  "categories": {
+    "app": "App",
+    "agents": "Agents",
+    "overview": "Overview"
+  },
+  "features": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "slides": "Slides",
+    "workflows": "Workflows",
+    "memory": "Memory",
+    "sessions": "Sessions",
+    "office": "Office",
+    "councils": "Councils",
+    "media": "Media",
+    "ops": "Ops"
+  },
+  "footer": {
+    "settings": "Settings",
+    "lock": "Lock",
+    "language": "Language",
+    "changelog": "View changelog"
+  }
+}

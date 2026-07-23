@@ -19,3 +19,5 @@ export function loadCatalogs(messagesDir: string): {
   catalogs: Record<string, Record<string, unknown>>;
   meta: Record<string, { complete?: boolean; needsReview?: string[] }>;
 };
+
+export function namespaceTotals(canonical: Record<string, unknown>): Record<string, number>;

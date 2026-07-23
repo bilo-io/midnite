@@ -1,0 +1,17 @@
+{
+  "appName": "midnite",
+  "loading": "Chargement…",
+  "save": "Enregistrer",
+  "cancel": "Annuler",
+  "close": "Fermer",
+  "confirm": "Confirmer",
+  "retry": "Réessayer",
+  "search": "Rechercher",
+  "settings": "Paramètres",
+  "add": "Ajouter",
+  "edit": "Modifier",
+  "delete": "Supprimer",
+  "remove": "Retirer",
+  "back": "Retour",
+  "none": "Aucun"
+}

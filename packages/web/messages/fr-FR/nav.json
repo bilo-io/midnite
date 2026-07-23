@@ -1,0 +1,26 @@
+{
+  "categories": {
+    "app": "Application",
+    "agents": "Agents",
+    "overview": "Vue d’ensemble"
+  },
+  "features": {
+    "dashboard": "Tableau de bord",
+    "projects": "Projets",
+    "tasks": "Tâches",
+    "slides": "Diapositives",
+    "workflows": "Flux de travail",
+    "memory": "Mémoire",
+    "sessions": "Sessions",
+    "office": "Bureau",
+    "councils": "Conseils",
+    "media": "Médias",
+    "ops": "Opérations"
+  },
+  "footer": {
+    "settings": "Paramètres",
+    "lock": "Verrouiller",
+    "language": "Langue",
+    "changelog": "Voir le journal des modifications"
+  }
+}
