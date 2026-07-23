@@ -58,15 +58,31 @@ describe('layoutTaskGraph', () => {
     expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--status-wip))', strokeDasharray: '6 4' });
   });
 
-  it('draws a done blocker → unblocked dependent as an animated green dotted edge', () => {
+  it('draws a done blocker → unblocked dependent as an animated green dotted edge with a green glow', () => {
     const graph: TaskGraph = {
       ...base,
-      nodes: [node('a', { status: 'done' }), node('b')],
+      // b (default ready: true) has its only blocker a done → b is unblocked.
+      nodes: [node('a', { status: 'done' }), node('b', { ready: true })],
       edges: [{ from: 'b', to: 'a' }],
     };
     const { edges } = layoutTaskGraph(graph);
     expect(edges[0]).toMatchObject({ animated: true });
     expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--status-done))', strokeDasharray: '6 4' });
+    // The cleared-path glow: a green drop-shadow halo around the stroke.
+    expect(edges[0]?.style?.filter).toContain('drop-shadow');
+    expect(edges[0]?.style?.filter).toContain('hsl(var(--status-done)');
+  });
+
+  it('draws a done blocker → still-blocked dependent as green dotted WITHOUT a glow', () => {
+    const graph: TaskGraph = {
+      ...base,
+      // b is done from a's side but still held by another blocker → not ready.
+      nodes: [node('a', { status: 'done' }), node('b', { ready: false, unmetBlockerCount: 1 })],
+      edges: [{ from: 'b', to: 'a' }],
+    };
+    const { edges } = layoutTaskGraph(graph);
+    expect(edges[0]?.style).toMatchObject({ stroke: 'hsl(var(--status-done))', strokeDasharray: '6 4' });
+    expect(edges[0]?.style?.filter).toBeUndefined();
   });
 
   it('draws a fully-complete dependency as a solid, thicker green edge', () => {

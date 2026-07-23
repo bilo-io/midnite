@@ -81,8 +81,11 @@ export function layoutTaskGraph(graph: TaskGraph): LayoutedGraph {
  * endpoints (source = the blocker, target = the dependent it feeds):
  *
  * - both `done`           → solid green, slightly thicker: the chain is complete.
- * - blocker `done`        → animated green dotted: a finished blocker has opened
- *                           the flow to its (now-unblocked) dependent.
+ * - `done` → unblocked    → animated green dotted with a soft green glow: a
+ *                           finished blocker has cleared the path to a dependent
+ *                           that is now `ready` (every blocker done, spawnable).
+ * - blocker `done`        → animated green dotted: a finished blocker feeding a
+ *                           dependent still held by its other blockers.
  * - blocker `wip`/`waiting` → animated orange dotted: work is happening upstream
  *                           of a still-blocked dependent.
  * - otherwise             → static white: a quiet, not-yet-started dependency.
@@ -95,16 +98,28 @@ function edgeAppearance(
   const orange = 'hsl(var(--status-wip))';
   const neutral = 'hsl(var(--foreground))';
   const dotted = '6 4';
+  // A slight green halo for a cleared path into a ready task — layered so it
+  // reads as a soft bloom around the dotted stroke, not a hard outline.
+  const greenGlow =
+    'drop-shadow(0 0 3px hsl(var(--status-done) / 0.8)) drop-shadow(0 0 6px hsl(var(--status-done) / 0.45))';
 
   const sourceDone = source?.status === 'done';
   const targetDone = target?.status === 'done';
+  const targetReady = target?.ready === true;
   const sourceActive = source?.status === 'wip' || source?.status === 'waiting';
 
   // Both endpoints complete — the dependency is satisfied end-to-end.
   if (sourceDone && targetDone) {
     return { animated: false, style: { stroke: green, strokeWidth: 2.5 } };
   }
-  // A completed blocker feeding its now-unblocked dependent.
+  // A completed blocker that has *unblocked* its dependent (now `ready`) — glow.
+  if (sourceDone && targetReady) {
+    return {
+      animated: true,
+      style: { stroke: green, strokeWidth: 2, strokeDasharray: dotted, filter: greenGlow },
+    };
+  }
+  // A completed blocker feeding a dependent still held by its other blockers.
   if (sourceDone) {
     return { animated: true, style: { stroke: green, strokeWidth: 2, strokeDasharray: dotted } };
   }
