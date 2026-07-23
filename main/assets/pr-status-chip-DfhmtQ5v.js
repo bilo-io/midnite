@@ -1,0 +1,11 @@
+import{aI as s,aU as t,aG as d,o,n as m}from"./iframe-CT9nlirp.js";import{n as x}from"./index-Ba2Sy5VO.js";import{G as g}from"./git-merge-DMVmwjxh.js";/**
+ * @license lucide-react v1.17.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const h=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}]],i=s("circle",h);/**
+ * @license lucide-react v1.17.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const k=[["circle",{cx:"18",cy:"18",r:"3",key:"1xkwt0"}],["circle",{cx:"6",cy:"6",r:"3",key:"1lh9wr"}],["path",{d:"M13 6h3a2 2 0 0 1 2 2v7",key:"1yeb86"}],["line",{x1:"6",x2:"6",y1:"9",y2:"21",key:"rroup"}]],y=s("git-pull-request",k);function b({status:e,className:r}){const c=x("task"),a=c(`pr.states.${e.state}`),l=e.checks!=="none"?c("pr.chipChecks",{checks:c(`pr.checks.${e.checks}`)}):"",n=c("pr.chip",{number:e.number,state:a})+l,{icon:p,colour:u}=f(e);return t.jsxs("span",{className:d("inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",u,r),title:n,"aria-label":n,children:[p,t.jsx("span",{children:e.number})]})}function f(e){if(e.state==="merged")return{icon:t.jsx(g,{className:"h-3 w-3"}),colour:"bg-purple-500/15 text-purple-600 dark:text-purple-400"};if(e.state==="closed")return{icon:t.jsx(o,{className:"h-3 w-3"}),colour:"bg-muted text-muted-foreground"};if(e.state==="draft")return{icon:t.jsx(i,{className:"h-3 w-3"}),colour:"bg-muted text-muted-foreground"};const r=N[e.checks];return{icon:t.jsx(r,{className:"h-3 w-3"}),colour:C[e.checks]}}const C={passing:"bg-green-500/15 text-green-700 dark:text-green-400",failing:"bg-destructive/15 text-destructive",pending:"bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",none:"bg-blue-500/15 text-blue-700 dark:text-blue-400"},N={passing:m,failing:o,pending:i,none:y};b.__docgenInfo={description:"Compact one-glyph chip summarising a PR's state + CI checks.",methods:[],displayName:"PrStatusChip",props:{status:{required:!0,tsType:{name:"PrStatus"},description:""},className:{required:!1,tsType:{name:"string"},description:""}}};export{y as G,b as P};

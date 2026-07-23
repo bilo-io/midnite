@@ -1,0 +1,1 @@
+import{a4 as t}from"./iframe-CT9nlirp.js";const n=new t({defaultOptions:{queries:{staleTime:5e3,retry:!1,refetchOnWindowFocus:!0}}}),o=300;let e,i=!1;function a(){e===void 0?(n.invalidateQueries(),e=setTimeout(s,o)):i=!0}function s(){e=void 0,i&&(i=!1,a())}export{a as i};
