@@ -56,6 +56,7 @@ excluded from the transition matrix (abandon archives as a side-effect above).
 | **Notification hook** (blocked on user) | `LifecycleHookController.notification` | `markWaiting('needs-input')` → `wip → waiting` |
 | **UserPromptSubmit hook** (new prompt) | `LifecycleHookController.userPromptSubmit` (Phase 69 B) | `resumeFromWaiting` → `waiting → wip` |
 | **PreToolUse hook** (approval-resume fallback) | [`ApprovalController.preToolUse`](../packages/gateway/src/terminal/approval.controller.ts) (Phase 69 B) | `resumeFromWaiting` → `waiting → wip` |
+| **Approval resolved** (modal answered / timeout) | [`ApprovalService.settle`](../packages/gateway/src/terminal/approval.service.ts) | `resumeFromWaiting` → `waiting → wip` |
 | PTY exits while live (crash) | `AgentRunnerService.onExit` → `resolveFailedRun` | `retry` \| `escalate` \| `updateStatus('abandoned')` — `wip → todo`/`waiting`/`abandoned` |
 | Run exceeds `runTimeoutMs` | `AgentRunnerService.onTimeout` → `resolveFailedRun` | same as onExit |
 | Watchdog finds a run unhealthy | `AgentRunnerService.reconcileUnhealthy` → `resolveFailedRun` (Phase 54 C) | same as onExit |
@@ -80,6 +81,20 @@ active regardless of `poolEnabled`) therefore reaps on `task.updated`-to-termina
 `task.deleted` for a slot-holding task, deferred one macrotask so the hook-driven
 `markDone → complete()` path settles first and the reap no-ops. Not a status
 writer — it only reclaims the run (kill session, clear timeout, free slot).
+
+**Approval-resolve resume.** When Claude asks a tool-permission question (the
+`allow` / `allow for this session` / `deny` modal), the PreToolUse hook blocks in
+[`ApprovalService.requestDecision`](../packages/gateway/src/terminal/approval.service.ts)
+and the Notification hook parks the task in `waiting`. Answering the modal
+resolves the held hook so Claude continues **mid-turn with no fresh prompt** — the
+UserPromptSubmit resume never fires, and the PreToolUse resume already ran (a
+no-op) *before* the wait was even set. So `settle` itself drives the
+`waiting → wip` edge via `resumeFromWaiting` for every resolution that hands
+Claude a decision (`allow`/`allow-session`/`deny`/`timeout`) — but **not** for
+`expired`/`ask` (the request was aborted because the session/connection went
+away). Without it the task sat in `waiting` until Claude happened to make another
+tool call. `resumeFromWaiting` is idempotent (only a live `needs-input` wait
+flips), so it's safe on all paths.
 
 ---
 
