@@ -283,4 +283,139 @@ describe('SsoService', () => {
       expect(h2.sso.enabledProviders()).toEqual(['google']);
     });
   });
+
+  // Distribution SSO — the secretless GitHub device flow a bare install uses.
+  describe('device flow', () => {
+    const GOOGLE_ONLY = { google: { clientId: GOOGLE_CLIENT_ID, clientSecretEnv: 'GOOGLE_SECRET' } };
+
+    /** Stub the device endpoints: `grants` is the sequence of token responses. */
+    function stubDeviceFetch(grants: unknown[], opts: { interval?: number } = {}) {
+      const calls = { deviceCode: 0, token: 0 };
+      vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+        const url = String(input instanceof Request ? input.url : input);
+        if (url.startsWith('https://github.com/login/device/code')) {
+          calls.deviceCode += 1;
+          return json({
+            device_code: 'dev-code-1',
+            user_code: 'ABCD-1234',
+            verification_uri: 'https://github.com/login/device',
+            expires_in: 900,
+            interval: opts.interval ?? 0, // 0 ⇒ throttle-free polling in tests
+          });
+        }
+        if (url.startsWith('https://github.com/login/oauth/access_token')) {
+          const next = grants[Math.min(calls.token, grants.length - 1)];
+          calls.token += 1;
+          return json(next);
+        }
+        if (url.startsWith('https://api.github.com/user/emails')) {
+          return json([{ email: 'octo@example.com', primary: true, verified: true }]);
+        }
+        if (url.startsWith('https://api.github.com/user')) {
+          return json({ id: 424242, login: 'octo', name: 'Octo Cat' });
+        }
+        throw new Error(`unexpected fetch ${url}`);
+      }));
+      return calls;
+    }
+
+    it('offers github via device flow exactly when the web flow is not configured', () => {
+      // No github secret resolvable → device flow active.
+      expect(makeHarness(GOOGLE_ONLY).sso.deviceProviders()).toEqual(['github']);
+      // Fully-configured web flow → redirect flow keeps precedence.
+      expect(makeHarness().sso.deviceProviders()).toEqual([]);
+    });
+
+    it('starts a device auth and never leaks the provider device_code', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      stubDeviceFetch([]);
+      const start = await h2.sso.startDeviceAuth('github');
+      expect(start.userCode).toBe('ABCD-1234');
+      expect(start.verificationUri).toBe('https://github.com/login/device');
+      expect(start.expiresInSeconds).toBe(900);
+      // The opaque handle is ours, not GitHub's device_code.
+      expect(start.deviceAuthId).not.toBe('dev-code-1');
+      expect(JSON.stringify(start)).not.toContain('dev-code-1');
+    });
+
+    it('uses the configured client id when a secretless github block exists, else the built-in', async () => {
+      const fetchSpy = vi.fn(async (_input: unknown, _init?: { body?: unknown }) =>
+        json({ device_code: 'd', user_code: 'U', verification_uri: 'https://github.com/login/device' }),
+      );
+      vi.stubGlobal('fetch', fetchSpy);
+
+      const configured = makeHarness({ github: { clientId: 'my-own-app', clientSecretEnv: 'UNSET_DEVICE_SECRET' } });
+      await configured.sso.startDeviceAuth('github');
+      expect(String(fetchSpy.mock.calls[0]?.[1]?.body)).toContain('client_id=my-own-app');
+
+      const bare = makeHarness(GOOGLE_ONLY);
+      await bare.sso.startDeviceAuth('github');
+      expect(String(fetchSpy.mock.calls[1]?.[1]?.body)).toContain('client_id=Ov23liKqbNR5atXqqRQk');
+    });
+
+    it('refuses to start when the web flow is configured (redirect keeps precedence)', async () => {
+      await expect(makeHarness().sso.startDeviceAuth('github')).rejects.toThrow('not configured');
+    });
+
+    it('surfaces a device_flow_disabled style error instead of hanging', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      vi.stubGlobal('fetch', vi.fn(async () => json({ error: 'device_flow_disabled' })));
+      await expect(h2.sso.startDeviceAuth('github')).rejects.toThrow('device_flow_disabled');
+    });
+
+    it('polls pending → complete, provisioning the user and issuing JWTs', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      stubDeviceFetch([{ error: 'authorization_pending' }, { access_token: 'gh-token' }]);
+      const { deviceAuthId } = await h2.sso.startDeviceAuth('github');
+
+      expect(await h2.sso.pollDeviceAuth(deviceAuthId)).toEqual({ status: 'pending' });
+
+      const result = await h2.sso.pollDeviceAuth(deviceAuthId);
+      if (result.status !== 'complete') throw new Error(`expected complete, got ${result.status}`);
+      expect(result.auth.user.email).toBe('octo@example.com');
+      expect(result.auth.accessToken).toBeTruthy();
+      expect(result.auth.refreshToken).toBeTruthy();
+      expect(result.auth.user.identities).toEqual([{ provider: 'github', email: 'octo@example.com' }]);
+
+      // One-shot: the handle is gone after completion.
+      expect(await h2.sso.pollDeviceAuth(deviceAuthId)).toEqual({ status: 'expired' });
+    });
+
+    it('throttles forwarded polls to the provider interval', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      const calls = stubDeviceFetch([{ error: 'authorization_pending' }], { interval: 5 });
+      const { deviceAuthId } = await h2.sso.startDeviceAuth('github');
+
+      await h2.sso.pollDeviceAuth(deviceAuthId); // forwards (first)
+      await h2.sso.pollDeviceAuth(deviceAuthId); // throttled — no provider call
+      expect(calls.token).toBe(1);
+    });
+
+    it('backs off on slow_down', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      const calls = stubDeviceFetch([{ error: 'slow_down', interval: 10 }, { access_token: 'gh-token' }]);
+      const { deviceAuthId } = await h2.sso.startDeviceAuth('github');
+
+      expect(await h2.sso.pollDeviceAuth(deviceAuthId)).toEqual({ status: 'pending' });
+      // The bumped 10s interval now throttles the immediate retry.
+      expect(await h2.sso.pollDeviceAuth(deviceAuthId)).toEqual({ status: 'pending' });
+      expect(calls.token).toBe(1);
+    });
+
+    it('maps expired_token and access_denied to terminal states', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      stubDeviceFetch([{ error: 'expired_token' }]);
+      const a = await h2.sso.startDeviceAuth('github');
+      expect(await h2.sso.pollDeviceAuth(a.deviceAuthId)).toEqual({ status: 'expired' });
+
+      stubDeviceFetch([{ error: 'access_denied' }]);
+      const b = await h2.sso.startDeviceAuth('github');
+      expect(await h2.sso.pollDeviceAuth(b.deviceAuthId)).toEqual({ status: 'denied' });
+    });
+
+    it('treats an unknown poll handle as expired', async () => {
+      const h2 = makeHarness(GOOGLE_ONLY);
+      expect(await h2.sso.pollDeviceAuth('nope')).toEqual({ status: 'expired' });
+    });
+  });
 });

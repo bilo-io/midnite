@@ -30,6 +30,45 @@ const GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const GITHUB_USER_URL = 'https://api.github.com/user';
 const GITHUB_EMAILS_URL = 'https://api.github.com/user/emails';
+const GITHUB_DEVICE_CODE_URL = 'https://github.com/login/device/code';
+const GITHUB_DEVICE_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:device_code';
+const GITHUB_DEFAULT_SCOPES = 'read:user user:email';
+
+/**
+ * The midnite GitHub OAuth app's client ID — the built-in fallback for the
+ * **device flow** when no operator config exists. Client IDs are public
+ * identifiers by design (they ride in every authorize URL); the device flow
+ * needs no client secret, which is exactly why a downloaded app can sign users
+ * in with zero per-machine configuration (the `gh` CLI ships its client ID the
+ * same way). An operator's `sso.github.clientId` overrides it.
+ */
+export const DEFAULT_GITHUB_DEVICE_CLIENT_ID = 'Ov23liKqbNR5atXqqRQk';
+
+/** How long we keep polling a pending device authorization before giving up. */
+const DEVICE_AUTH_FALLBACK_TTL_MS = 15 * 60 * 1000;
+
+/** A pending device-flow authorization, kept server-side (the browser only ever
+ *  holds the opaque `deviceAuthId` key — never GitHub's `device_code`). In-memory
+ *  is fine: the gateway is a single local process, and a restart mid-login just
+ *  means the user restarts the (sub-minute) flow. */
+interface PendingDeviceAuth {
+  provider: LoginProvider;
+  deviceCode: string;
+  clientId: string;
+  /** Minimum ms between forwarded polls to GitHub (bumped on `slow_down`). */
+  intervalMs: number;
+  expiresAt: number;
+  /** Last time we actually forwarded a poll to GitHub (0 = never). */
+  lastForwardAt: number;
+}
+
+/** Service-level poll outcome; provisioning failures (allowlist, conflicts)
+ *  propagate as their domain errors for the controller to map. */
+export type DeviceAuthPollResult =
+  | { status: 'pending' }
+  | { status: 'expired' }
+  | { status: 'denied' }
+  | { status: 'complete'; auth: AuthResponse };
 
 /** The provider is not configured (no config block, or its client secret env is unset). */
 export class SsoNotConfiguredError extends Error {
@@ -68,6 +107,8 @@ export class SsoService {
   private readonly logger = new Logger(SsoService.name);
   // Lazily-built remote JWKS for Google id_token verification (cached across calls).
   private googleJwks?: JWTVerifyGetKey;
+  // Pending device-flow authorizations, keyed by the opaque id the client polls with.
+  private readonly deviceAuths = new Map<string, PendingDeviceAuth>();
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -91,6 +132,143 @@ export class SsoService {
   /** Providers with a config block whose client secret env var is actually set. */
   enabledProviders(): LoginProvider[] {
     return LOGIN_PROVIDERS.filter((p) => this.resolveClient(p) !== null);
+  }
+
+  /**
+   * Providers available via the **device flow** — the secretless path a bare
+   * install uses. GitHub only (Google's web flow already works secret-adjacent
+   * for desktop clients, and its device flow has scope limits). Active exactly
+   * when the redirect flow ISN'T (no resolvable client secret): an operator who
+   * configured the web flow keeps it; everyone else gets device flow via the
+   * configured-or-built-in client ID.
+   */
+  deviceProviders(): LoginProvider[] {
+    return this.resolveClient('github') === null ? ['github'] : [];
+  }
+
+  /** The client ID the device flow authenticates as (operator override or built-in). */
+  private deviceClientId(): string {
+    return this.config.gateway.auth.sso?.github?.clientId ?? DEFAULT_GITHUB_DEVICE_CLIENT_ID;
+  }
+
+  /**
+   * Begin a GitHub device-flow authorization: ask GitHub for a user code, stash
+   * the device_code server-side, and hand the client the code + verification URL
+   * plus an opaque poll handle.
+   */
+  async startDeviceAuth(provider: LoginProvider): Promise<{
+    deviceAuthId: string;
+    userCode: string;
+    verificationUri: string;
+    expiresInSeconds: number;
+    intervalSeconds: number;
+  }> {
+    if (!this.deviceProviders().includes(provider)) throw new SsoNotConfiguredError(provider);
+    const clientId = this.deviceClientId();
+    const scopes = this.config.gateway.auth.sso?.github?.scopes?.join(' ') || GITHUB_DEFAULT_SCOPES;
+
+    const resp = await fetch(GITHUB_DEVICE_CODE_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+      body: new URLSearchParams({ client_id: clientId, scope: scopes }),
+    });
+    if (!resp.ok) throw new SsoProviderError('GitHub device code request failed');
+    const body = (await resp.json()) as {
+      device_code?: string;
+      user_code?: string;
+      verification_uri?: string;
+      expires_in?: number;
+      interval?: number;
+      error?: string;
+    };
+    // GitHub reports "device flow not enabled on this OAuth app" (and similar) as
+    // an error field — surface it as a provider error, not a silent hang.
+    if (body.error || !body.device_code || !body.user_code || !body.verification_uri) {
+      throw new SsoProviderError(`GitHub device code error: ${body.error ?? 'malformed response'}`);
+    }
+
+    const now = Date.now();
+    // Opportunistically drop expired pending auths — no scheduler for a tiny map.
+    for (const [id, auth] of this.deviceAuths) {
+      if (auth.expiresAt < now) this.deviceAuths.delete(id);
+    }
+
+    const deviceAuthId = randomUUID();
+    const expiresInSeconds = body.expires_in ?? Math.floor(DEVICE_AUTH_FALLBACK_TTL_MS / 1000);
+    const intervalSeconds = body.interval ?? 5;
+    this.deviceAuths.set(deviceAuthId, {
+      provider,
+      deviceCode: body.device_code,
+      clientId,
+      intervalMs: intervalSeconds * 1000,
+      expiresAt: now + expiresInSeconds * 1000,
+      lastForwardAt: 0,
+    });
+    return {
+      deviceAuthId,
+      userCode: body.user_code,
+      verificationUri: body.verification_uri,
+      expiresInSeconds,
+      intervalSeconds,
+    };
+  }
+
+  /**
+   * Poll a pending device authorization. Client polls the gateway freely; we
+   * forward to GitHub at most once per `interval` (honouring `slow_down` bumps),
+   * so an eager client can't trip GitHub's rate limit. On grant: resolve the
+   * profile, find-or-create the user (allowlist enforced inside), and mint the
+   * same `AuthResponse` the redirect flow's exchange issues.
+   */
+  async pollDeviceAuth(deviceAuthId: string): Promise<DeviceAuthPollResult> {
+    const auth = this.deviceAuths.get(deviceAuthId);
+    if (!auth) return { status: 'expired' };
+    const now = Date.now();
+    if (auth.expiresAt < now) {
+      this.deviceAuths.delete(deviceAuthId);
+      return { status: 'expired' };
+    }
+    // Throttle: only forward to GitHub when the provider's interval has elapsed.
+    if (now - auth.lastForwardAt < auth.intervalMs) return { status: 'pending' };
+    auth.lastForwardAt = now;
+
+    const resp = await fetch(GITHUB_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+      body: new URLSearchParams({
+        client_id: auth.clientId,
+        device_code: auth.deviceCode,
+        grant_type: GITHUB_DEVICE_GRANT_TYPE,
+      }),
+    });
+    if (!resp.ok) throw new SsoProviderError('GitHub device token request failed');
+    const body = (await resp.json()) as { access_token?: string; error?: string; interval?: number };
+
+    if (body.error === 'authorization_pending') return { status: 'pending' };
+    if (body.error === 'slow_down') {
+      // Spec: back off. GitHub sends the new interval; else add the standard 5s.
+      auth.intervalMs = typeof body.interval === 'number' ? body.interval * 1000 : auth.intervalMs + 5000;
+      return { status: 'pending' };
+    }
+    if (body.error === 'expired_token') {
+      this.deviceAuths.delete(deviceAuthId);
+      return { status: 'expired' };
+    }
+    if (body.error === 'access_denied') {
+      this.deviceAuths.delete(deviceAuthId);
+      return { status: 'denied' };
+    }
+    if (body.error || !body.access_token) {
+      this.deviceAuths.delete(deviceAuthId);
+      throw new SsoProviderError(`GitHub device grant error: ${body.error ?? 'no access_token'}`);
+    }
+
+    // Granted — one-shot from here: drop the pending entry before provisioning so
+    // a failed allowlist check can't be re-polled into a different outcome.
+    this.deviceAuths.delete(deviceAuthId);
+    const profile = await this.githubProfileFromToken(body.access_token);
+    const user = await this.users.findOrCreateFromSso(profile, { signupOpen: true });
+    return { status: 'complete', auth: this.issueAuthFor(user.id) };
   }
 
   /**
@@ -192,7 +370,12 @@ export class SsoService {
   exchangeCode(code: string): AuthResponse {
     const row = this.stateRepo.take(code, 'code');
     if (!row || row.expiresAt < Date.now() || !row.userId) throw new SsoStateInvalidError();
-    const user = this.users.getUser(row.userId);
+    return this.issueAuthFor(row.userId);
+  }
+
+  /** Mint the login `AuthResponse` for a resolved user (redirect + device flows). */
+  private issueAuthFor(userId: string): AuthResponse {
+    const user = this.users.getUser(userId);
     const teamId = this.teams.listTeamsForUser(user.id)[0]?.id ?? null;
     const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email, teamId);
     const refreshToken = this.jwtSvc.issueRefreshToken(user.id);
@@ -263,9 +446,14 @@ export class SsoService {
     if (!tokenResp.ok) throw new SsoProviderError('GitHub token exchange failed');
     const token = (await tokenResp.json()) as { access_token?: string; error?: string };
     if (!token.access_token) throw new SsoProviderError(`GitHub token exchange error: ${token.error ?? 'unknown'}`);
+    return this.githubProfileFromToken(token.access_token);
+  }
 
+  /** Resolve the GitHub identity behind an access token — shared by the redirect
+   *  and device flows (both end with a token; the profile logic is identical). */
+  private async githubProfileFromToken(accessToken: string): Promise<SsoProfile> {
     const authHeaders = {
-      authorization: `Bearer ${token.access_token}`,
+      authorization: `Bearer ${accessToken}`,
       accept: 'application/vnd.github+json',
       'user-agent': 'midnite',
     };
