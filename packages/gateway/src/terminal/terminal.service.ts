@@ -789,12 +789,15 @@ export class TerminalService implements OnModuleDestroy {
     if (!terminal.inheritSecrets) env = scrubSecretEnv(env);
     env['TERM'] = 'xterm-256color';
 
-    // Ad-hoc terminals (CLI installs) are not tied to a session: spawn a plain
-    // shell at the gateway cwd and paste their own init command — no agent launch,
-    // no approval wiring.
+    // Ad-hoc terminals (CLI installs, "New session" launches) are not tied to a
+    // task, so they have no project/repo cwd — but they still honour the configured
+    // fallback working directory (resolveCwd finds no task for an `adhoc-*` id and
+    // falls through to `defaultWorkDir` → gateway cwd). Both spawners start the PTY
+    // in this cwd, so a new session opens directly in the user's chosen folder. They
+    // paste their own init command — no agent launch/approval wiring here.
     const adHoc = this.adHoc.get(sessionId);
     if (adHoc) {
-      return { command, args, cwd: process.cwd(), env, initCommand: adHoc.initCommand };
+      return { command, args, cwd: this.resolveCwd(sessionId), env, initCommand: adHoc.initCommand };
     }
 
     // Wire human-in-the-loop approvals for Claude Code sessions only (no

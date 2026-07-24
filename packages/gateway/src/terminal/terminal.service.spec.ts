@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
@@ -171,6 +171,75 @@ describe('TerminalService', () => {
     // `--` immediately precedes the prompt (nothing between them).
     expect(captured).toContain('--');
     expect(captured[captured.indexOf('--') + 1]).toBe(prompt);
+  });
+
+  it('opens an ad-hoc "New session" terminal in the configured fallback working directory', () => {
+    // The Sessions-page "New session" button spawns an ad-hoc terminal with no task.
+    // It must still honour the personalization "Working directory" fallback so the
+    // session opens in the user's chosen folder (~ expanded), not the gateway's cwd.
+    let capturedCwd: string | undefined;
+    const fakeSpawner: Spawner = {
+      spawn(spec) {
+        capturedCwd = spec.cwd;
+        return {
+          pid: 7,
+          write() {},
+          resize() {},
+          onData: () => ({ dispose() {} }),
+          onExit: () => ({ dispose() {} }),
+          kill() {},
+        };
+      },
+    };
+    const agents = {
+      getAgentCli: () => 'claude' as const,
+      getDefaultWorkDir: () => '~/Dev',
+    } as unknown as AgentsService;
+    service = new TerminalService(
+      makeConfig({}),
+      noTasks,
+      noProjects,
+      noRepos,
+      agents,
+      noApprovals,
+      fakeSpawner,
+    );
+
+    const id = service.createAdHocTerminal('clear\rclaude\r');
+    service.attach(id, makeCollector().sub, { cols: 80, rows: 24 });
+
+    expect(capturedCwd).toBe(join(homedir(), 'Dev'));
+  });
+
+  it('falls back to the gateway cwd for an ad-hoc terminal when no working directory is configured', () => {
+    let capturedCwd: string | undefined;
+    const fakeSpawner: Spawner = {
+      spawn(spec) {
+        capturedCwd = spec.cwd;
+        return {
+          pid: 8,
+          write() {},
+          resize() {},
+          onData: () => ({ dispose() {} }),
+          onExit: () => ({ dispose() {} }),
+          kill() {},
+        };
+      },
+    };
+    service = new TerminalService(
+      makeConfig({}),
+      noTasks,
+      noProjects,
+      noRepos,
+      noAgents, // getDefaultWorkDir() → undefined
+      noApprovals,
+      fakeSpawner,
+    );
+
+    const id = service.createAdHocTerminal('clear\rclaude\r');
+    service.attach(id, makeCollector().sub, { cols: 80, rows: 24 });
+
+    expect(capturedCwd).toBe(process.cwd());
   });
 
   it('spawns a PTY, streams output, and echoes input back', async () => {
