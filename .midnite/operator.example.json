@@ -20,7 +20,8 @@
         },
         "webBaseUrl": "http://localhost:3000"
       },
-      "allowlist": ["you@example.com"]
+      "_allowlist_comment": "Who may sign in. Each entry is a full email OR a domain pattern like \"@example.com\" that admits everyone at that domain. Empty/omitted = no restriction (open sign-up).",
+      "allowlist": ["you@example.com", "@example.com"]
     }
   }
 }
