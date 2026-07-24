@@ -35,6 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/settings', key: 'appearance', Icon: Palette },
       { href: '/settings/system', key: 'system', Icon: SlidersHorizontal },
+      { href: '/settings/editor', key: 'editor', Icon: FileEdit },
     ],
   },
   {
@@ -43,7 +44,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/settings/agents', key: 'agents', Icon: Bot },
       { href: '/settings/api-tokens', key: 'apiTokens', Icon: Ticket },
       { href: '/settings/data', key: 'data', Icon: Database },
-      { href: '/settings/editor', key: 'editor', Icon: FileEdit },
       { href: '/settings/integrations', key: 'integrations', Icon: Webhook },
       { href: '/settings/repos', key: 'repos', Icon: FolderGit2 },
     ],
