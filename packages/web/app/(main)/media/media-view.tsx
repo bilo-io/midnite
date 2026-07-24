@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ImageIcon, Images, Layers2, LayoutGrid, List, ListTree, Music2, PanelLeftClose, PanelLeftOpen, Play, Video, type LucideIcon } from 'lucide-react';
+import { Select, type SelectOption } from '@midnite/ui';
 import type { Media, MediaType, Project } from '@midnite/shared';
 import { MEDIA_TYPES } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
@@ -15,7 +16,8 @@ import { NewMediaButton } from './new-media-button';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { MEDIA_PROVIDER_CATALOG, useMediaModels } from '@/lib/use-media-models';
-import { ModelSelect, ProjectSelect, ProviderSelectRS } from '@/components/media-select';
+import { ProjectSelect } from '@/components/project-select';
+import { ProviderIcon } from '@/components/provider-icon';
 import { mediaFileUrl } from '@/lib/api';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import Lightbox from 'yet-another-react-lightbox';
@@ -373,8 +375,9 @@ export function MediaView({ items, projects, error }: Props) {
               </label>
               <ProjectSelect
                 projects={projects}
-                value={selectedProjectId}
-                onChange={setSelectedProjectId}
+                value={selectedProjectId || null}
+                onChange={(id) => setSelectedProjectId(id ?? '')}
+                placeholder="All projects"
               />
             </div>
 
@@ -412,22 +415,33 @@ export function MediaView({ items, projects, error }: Props) {
                 const sel = mediaModels[type];
                 const providers = MEDIA_PROVIDER_CATALOG[type];
                 const currentProvider = providers.find((p) => p.provider === sel.provider) ?? providers[0]!;
+                const providerOptions: SelectOption<string>[] = providers.map((p) => ({
+                  value: p.provider,
+                  label: p.label,
+                  icon: <ProviderIcon provider={p.provider} size={14} />,
+                }));
+                const modelOptions: SelectOption<string>[] = currentProvider.models.map((m) => ({
+                  value: m.value,
+                  label: m.label,
+                }));
                 return (
                   <div key={type} className="mb-3">
                     <p className="mb-1 text-[11px] capitalize text-muted-foreground">{type}</p>
-                    <ProviderSelectRS
-                      providers={providers}
+                    <Select
+                      options={providerOptions}
                       value={sel.provider}
                       onChange={(prov) => {
                         const p = providers.find((x) => x.provider === prov) ?? providers[0]!;
                         setMediaModel(type, { provider: p.provider, model: p.models[0]!.value });
                       }}
+                      aria-label={`${type} provider`}
                     />
                     <div className="mt-1">
-                      <ModelSelect
-                        models={currentProvider.models}
+                      <Select
+                        options={modelOptions}
                         value={sel.model}
                         onChange={(model) => setMediaModel(type, { provider: sel.provider, model })}
+                        aria-label={`${type} model`}
                       />
                     </div>
                   </div>
