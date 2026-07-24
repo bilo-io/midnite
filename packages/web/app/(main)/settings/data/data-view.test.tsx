@@ -5,11 +5,13 @@ import type { BackupStatus, BackupSummary, ImportPreview, ImportResult } from '@
 
 const downloadBackup = vi.fn();
 const getBackupStatus = vi.fn();
+const updateBackupConfig = vi.fn();
 const previewImport = vi.fn();
 const importArchive = vi.fn();
 vi.mock('@/lib/api', () => ({
   downloadBackup: (opts?: unknown) => downloadBackup(opts),
   getBackupStatus: () => getBackupStatus(),
+  updateBackupConfig: (config: unknown) => updateBackupConfig(config),
   previewImport: (f: File) => previewImport(f),
   importArchive: (f: File, mode: string, passphrase?: string) => importArchive(f, mode, passphrase),
 }));
@@ -105,11 +107,14 @@ describe('DataView (Phase 49 E)', () => {
   });
 });
 
-describe('DataView — auto-backup status (Phase 49 F)', () => {
-  it('shows the off state + how to enable when auto-backup is disabled', async () => {
+describe('DataView — auto-backup config (Phase 49 F)', () => {
+  it('shows an off switch + the frequency/directory fields when disabled, with no schedule summary', async () => {
     render(<DataView />); // default mock → disabled
-    await waitFor(() => expect(screen.getByText(/Scheduled auto-backup is/)).toBeInTheDocument());
-    expect(screen.getByText('backup.enabled')).toBeInTheDocument();
+    const toggle = await screen.findByRole('switch', { name: 'Enable scheduled backups' });
+    expect(toggle).not.toBeChecked();
+    expect(screen.getByLabelText('Directory')).toHaveValue('./.midnite/backups');
+    // No read-only schedule summary while disabled — nothing to summarize yet.
+    expect(screen.queryByText(/Every \d+h/)).not.toBeInTheDocument();
   });
 
   it('renders interval + recent archives when enabled', async () => {
@@ -126,10 +131,52 @@ describe('DataView — auto-backup status (Phase 49 F)', () => {
     await waitFor(() => expect(screen.getByText('midnite-backup-x.zip')).toBeInTheDocument());
     expect(screen.getByText(/\/srv\/backups/)).toBeInTheDocument();
     expect(screen.getByText('2 KB')).toBeInTheDocument();
+    expect(await screen.findByRole('switch', { name: 'Enable scheduled backups' })).toBeChecked();
+  });
+
+  it('saves the frequency + directory and refreshes the status from the response', async () => {
+    updateBackupConfig.mockResolvedValue({
+      enabled: true,
+      intervalHours: 168,
+      destinationDir: '~/backups-2',
+      retention: 7,
+      lastRunAt: null,
+      nextRunAt: null,
+      recent: [],
+    } satisfies BackupStatus);
+    render(<DataView />);
+    await screen.findByRole('switch', { name: 'Enable scheduled backups' });
+
+    fireEvent.change(screen.getByLabelText('Directory'), { target: { value: '~/backups-2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(updateBackupConfig).toHaveBeenCalledWith({
+        enabled: false,
+        intervalHours: 24,
+        destinationDir: '~/backups-2',
+      }),
+    );
+    expect(await screen.findByText(/Every 168h/)).toBeInTheDocument();
   });
 });
 
 describe('DataView — restore (Phase 49 E)', () => {
+  it('keeps the chosen file + preview after switching to Backup and back', async () => {
+    previewImport.mockResolvedValue(importPreview);
+    render(<DataView />);
+    chooseArchive();
+    await screen.findByText(/schema v67/);
+
+    // Both tab panels stay mounted so in-flight restore state survives a round
+    // trip through the other tab, rather than resetting on unmount.
+    fireEvent.click(screen.getByRole('tab', { name: /Backup/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Restore/ }));
+
+    expect(screen.getByRole('button', { name: 'backup.zip' })).toBeInTheDocument();
+    expect(screen.getByText(/schema v67/)).toBeInTheDocument();
+  });
+
   it('previews on file select, then merges (default) and shows the summary', async () => {
     previewImport.mockResolvedValue(importPreview);
     importArchive.mockResolvedValue({

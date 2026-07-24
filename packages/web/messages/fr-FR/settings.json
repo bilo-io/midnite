@@ -377,7 +377,20 @@
       "last": "Dernière : {when}",
       "never": "jamais",
       "next": " · prochaine ~{when}",
-      "noArchives": "Aucune archive écrite pour l’instant."
+      "noArchives": "Aucune archive écrite pour l’instant.",
+      "enableLabel": "Activer les sauvegardes planifiées",
+      "enableHint": "Exécute une sauvegarde automatique selon la fréquence ci-dessous.",
+      "frequencyLabel": "Fréquence",
+      "directoryLabel": "Répertoire",
+      "frequency": {
+        "hourly": "Toutes les heures",
+        "daily": "Quotidienne",
+        "weekly": "Hebdomadaire",
+        "monthly": "Mensuelle"
+      },
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "toastSaved": "Paramètres de sauvegarde planifiée enregistrés"
     },
     "restore": {
       "title": "Restaurer depuis une sauvegarde",

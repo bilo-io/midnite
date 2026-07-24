@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,11 +20,24 @@ import {
   type ImportPreview,
   type ImportResult,
 } from '@midnite/shared';
-import { downloadBackup, getBackupStatus, importArchive, previewImport } from '@/lib/api';
+import { downloadBackup, getBackupStatus, importArchive, previewImport, updateBackupConfig } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { StyledSelect } from '@/components/ui/styled-select';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, type TabOption } from '@/components/ui/tabs';
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
+
+/** Frequency presets for the scheduled auto-backup — mapped to `intervalHours`. */
+const BACKUP_FREQUENCIES = [
+  { key: 'hourly', hours: 1 },
+  { key: 'daily', hours: 24 },
+  { key: 'weekly', hours: 168 },
+  { key: 'monthly', hours: 720 },
+] as const;
+type BackupFrequency = (typeof BACKUP_FREQUENCIES)[number]['key'];
+
+const DEFAULT_BACKUP_DIR = '~/.midnite/data/backups';
 
 type DataTab = 'backup' | 'restore';
 
@@ -55,11 +68,33 @@ function fmtBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/** Phase 49 F — read-only auto-backup status (scheduler is config-driven). */
+/** A labelled control row, shared by the frequency/directory fields below. */
+function ConfigField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Phase 49 F — scheduled auto-backup. Configurable (frequency + directory +
+ * on/off) from the Settings → Data page — an in-memory runtime override of the
+ * `midnite.json` `backup.*` config (like `ws/settings`'s ring size), so it
+ * resets to the config default on restart rather than rewriting the file.
+ * Below the config, a read-only schedule summary + recent-archives list once
+ * enabled.
+ */
 function AutoBackupPanel() {
   const t = useTranslations('settings');
+  const toast = useToast();
   const [status, setStatus] = useState<BackupStatus | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [enabled, setEnabled] = useState(false);
+  const [frequency, setFrequency] = useState<BackupFrequency>('daily');
+  const [directory, setDirectory] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -67,6 +102,9 @@ function AutoBackupPanel() {
       .then((s) => {
         if (!alive) return;
         setStatus(s);
+        setEnabled(s.enabled);
+        setFrequency(BACKUP_FREQUENCIES.find((f) => f.hours === s.intervalHours)?.key ?? 'daily');
+        setDirectory(s.destinationDir);
         setState('ready');
       })
       .catch(() => alive && setState('error'));
@@ -80,48 +118,104 @@ function AutoBackupPanel() {
     return <p className="text-sm text-muted-foreground">{t('data.autoBackup.error')}</p>;
   }
 
-  if (!status.enabled) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        {t.rich('data.autoBackup.disabled', {
-          strong: (chunks) => <span className="font-medium">{chunks}</span>,
-          code: (chunks) => <code className="font-mono">{chunks}</code>,
-        })}
-      </p>
-    );
-  }
+  const frequencyOptions = BACKUP_FREQUENCIES.map((f) => ({
+    value: f.key as BackupFrequency,
+    label: t(`data.autoBackup.frequency.${f.key}`),
+  }));
+  const dirty =
+    enabled !== status.enabled ||
+    frequency !== (BACKUP_FREQUENCIES.find((f) => f.hours === status.intervalHours)?.key ?? 'daily') ||
+    directory.trim() !== status.destinationDir;
+
+  const onSave = async (): Promise<void> => {
+    setSaving(true);
+    try {
+      const intervalHours = BACKUP_FREQUENCIES.find((f) => f.key === frequency)?.hours ?? 24;
+      const next = await updateBackupConfig({
+        enabled,
+        intervalHours,
+        destinationDir: directory.trim() || DEFAULT_BACKUP_DIR,
+      });
+      setStatus(next);
+      setDirectory(next.destinationDir);
+      toast.success(t('data.autoBackup.toastSaved'));
+    } catch (e) {
+      toast.error(errMsg(e, t('data.errorFallback')));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="space-y-2">
-      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-        <p className="flex items-center gap-1.5 font-medium">
-          <CalendarClock className="h-3.5 w-3.5" />
-          {t.rich('data.autoBackup.schedule', {
-            hours: status.intervalHours,
-            dir: status.destinationDir,
-            retention: status.retention,
-            code: (chunks) => <code className="font-mono">{chunks}</code>,
-          })}
-        </p>
-        <p className="mt-1 text-muted-foreground">
-          {t('data.autoBackup.last', {
-            when: status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : t('data.autoBackup.never'),
-          })}
-          {status.nextRunAt ? t('data.autoBackup.next', { when: new Date(status.nextRunAt).toLocaleString() }) : ''}
-        </p>
+    <div className="space-y-3">
+      <div className="space-y-3 rounded-md border border-border bg-muted/20 p-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-0.5">
+            <p className="text-xs font-medium">{t('data.autoBackup.enableLabel')}</p>
+            <p className="text-[11px] text-muted-foreground">{t('data.autoBackup.enableHint')}</p>
+          </div>
+          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label={t('data.autoBackup.enableLabel')} />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ConfigField label={t('data.autoBackup.frequencyLabel')}>
+            <StyledSelect
+              options={frequencyOptions}
+              value={frequency}
+              onChange={setFrequency}
+              aria-label={t('data.autoBackup.frequencyLabel')}
+            />
+          </ConfigField>
+          <ConfigField label={t('data.autoBackup.directoryLabel')}>
+            <input
+              type="text"
+              value={directory}
+              onChange={(e) => setDirectory(e.target.value)}
+              placeholder={DEFAULT_BACKUP_DIR}
+              aria-label={t('data.autoBackup.directoryLabel')}
+              className="w-full rounded border border-input bg-background px-2 py-1.5 font-mono text-xs"
+            />
+          </ConfigField>
+        </div>
+
+        <Button type="button" size="sm" onClick={() => void onSave()} disabled={saving || !dirty} className="gap-1.5">
+          {saving ? t('data.autoBackup.saving') : t('data.autoBackup.save')}
+        </Button>
       </div>
-      {status.recent.length > 0 ? (
-        <ul className="divide-y divide-border/60">
-          {status.recent.map((a) => (
-            <li key={a.filename} className="flex items-center gap-2 py-1 text-xs">
-              <span className="truncate font-mono">{a.filename}</span>
-              <span className="ml-auto shrink-0 text-muted-foreground">{fmtBytes(a.sizeBytes)}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-xs text-muted-foreground">{t('data.autoBackup.noArchives')}</p>
-      )}
+
+      {status.enabled ? (
+        <div className="space-y-2">
+          <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
+            <p className="flex items-center gap-1.5 font-medium">
+              <CalendarClock className="h-3.5 w-3.5" />
+              {t.rich('data.autoBackup.schedule', {
+                hours: status.intervalHours,
+                dir: status.destinationDir,
+                retention: status.retention,
+                code: (chunks) => <code className="font-mono">{chunks}</code>,
+              })}
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              {t('data.autoBackup.last', {
+                when: status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : t('data.autoBackup.never'),
+              })}
+              {status.nextRunAt ? t('data.autoBackup.next', { when: new Date(status.nextRunAt).toLocaleString() }) : ''}
+            </p>
+          </div>
+          {status.recent.length > 0 ? (
+            <ul className="divide-y divide-border/60">
+              {status.recent.map((a) => (
+                <li key={a.filename} className="flex items-center gap-2 py-1 text-xs">
+                  <span className="truncate font-mono">{a.filename}</span>
+                  <span className="ml-auto shrink-0 text-muted-foreground">{fmtBytes(a.sizeBytes)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t('data.autoBackup.noArchives')}</p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -456,122 +550,125 @@ export function DataView() {
 
       <Tabs options={tabOptions} value={tab} onChange={setTab} ariaLabel={t('data.tabs.ariaLabel')} />
 
-      {tab === 'backup' ? (
-        <div className="space-y-8">
-          {/* Download backup */}
-          <section className="space-y-3">
-            <div>
-              <h2 className="flex items-center gap-2 text-sm font-medium">
-                <FlowIcon tab="backup" />
-                {t('data.download.title')}
-              </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {t.rich('data.download.description', {
-                  code: (chunks) => <code className="font-mono">{chunks}</code>,
-                })}
-              </p>
-            </div>
-            {/* Theme G — opt into including secrets, re-wrapped under a passphrase. */}
-            <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
-              <label className="flex items-start gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={includeSecrets}
-                  onChange={(e) => setIncludeSecrets(e.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>
-                  <span className="font-medium">{t('data.download.includeSecrets')}</span>{' '}
-                  <span className="text-muted-foreground">
-                    {t('data.download.includeSecretsDesc')}
-                  </span>
+      {/* Both panels stay mounted (toggled via `hidden`, not unmounted) so
+          in-progress state — the restore panel's chosen file/preview — survives
+          switching tabs and back. */}
+      <div className={cn('space-y-8', tab !== 'backup' && 'hidden')}>
+        {/* Download backup */}
+        <section className="space-y-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <FlowIcon tab="backup" />
+              {t('data.download.title')}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t.rich('data.download.description', {
+                code: (chunks) => <code className="font-mono">{chunks}</code>,
+              })}
+            </p>
+          </div>
+          {/* Theme G — opt into including secrets, re-wrapped under a passphrase. */}
+          <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
+            <label className="flex items-start gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={includeSecrets}
+                onChange={(e) => setIncludeSecrets(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium">{t('data.download.includeSecrets')}</span>{' '}
+                <span className="text-muted-foreground">
+                  {t('data.download.includeSecretsDesc')}
                 </span>
-              </label>
-              {includeSecrets ? (
-                <div className="space-y-1 pl-6">
-                  <label htmlFor="export-passphrase" className="block text-[11px] text-muted-foreground">
-                    {t('data.download.passphraseLabel')}
-                  </label>
-                  <input
-                    id="export-passphrase"
-                    type="password"
-                    autoComplete="new-password"
-                    value={passphrase}
-                    onChange={(e) => setPassphrase(e.target.value)}
-                    placeholder={t('data.download.passphrasePlaceholder')}
-                    className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
-                  />
-                  {secretsNeedPassphrase ? (
-                    <p className="text-[11px] text-destructive">{t('data.download.passphraseRequired')}</p>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
-            <Button type="button" onClick={() => void onDownload()} disabled={busy || secretsNeedPassphrase} className="gap-1.5">
-              <Download className="h-4 w-4" />
-              {busy ? t('data.download.preparing') : t('data.download.button')}
-            </Button>
-
-            <div className="rounded-md border border-border bg-muted/30 p-3">
-              <p className="text-xs font-medium text-muted-foreground">{t('data.download.included')}</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {PORTABLE_DOMAINS.map((d) => (
-                  <span key={d.name} className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
-                    {d.label}
-                    {summary ? <span className="ml-1 text-muted-foreground">{summary.counts[d.name] ?? 0}</span> : null}
-                  </span>
-                ))}
+              </span>
+            </label>
+            {includeSecrets ? (
+              <div className="space-y-1 pl-6">
+                <label htmlFor="export-passphrase" className="block text-[11px] text-muted-foreground">
+                  {t('data.download.passphraseLabel')}
+                </label>
+                <input
+                  id="export-passphrase"
+                  type="password"
+                  autoComplete="new-password"
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  placeholder={t('data.download.passphrasePlaceholder')}
+                  className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
+                />
+                {secretsNeedPassphrase ? (
+                  <p className="text-[11px] text-destructive">{t('data.download.passphraseRequired')}</p>
+                ) : null}
               </div>
-              <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Lock className="h-3 w-3" />
-                {includeSecrets
-                  ? t('data.download.lockNoteIncluded')
-                  : t('data.download.lockNoteExcluded')}
-              </p>
-            </div>
-
-            {summary ? (
-              <p className="text-xs text-muted-foreground">
-                {t('data.download.lastBackup', {
-                  version: summary.schemaVersion,
-                  count: Object.values(summary.counts).reduce((a, b) => a + b, 0),
-                  domains: summary.domains.length,
-                })}
-              </p>
             ) : null}
-          </section>
+          </div>
 
-          {/* Scheduled auto-backup status (Phase 49 F) */}
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-sm font-medium">{t('data.autoBackup.title')}</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {t('data.autoBackup.description')}
-              </p>
+          <div className="rounded-md border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">{t('data.download.included')}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {PORTABLE_DOMAINS.map((d) => (
+                <span key={d.name} className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
+                  {d.label}
+                  {summary ? <span className="ml-1 text-muted-foreground">{summary.counts[d.name] ?? 0}</span> : null}
+                </span>
+              ))}
             </div>
-            <AutoBackupPanel />
-          </section>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {/* Restore (Phase 49 E · Theme C import service) */}
-          <section className="space-y-3">
-            <div>
-              <h2 className="flex items-center gap-2 text-sm font-medium">
-                <FlowIcon tab="restore" />
-                {t('data.restore.title')}
-              </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {t.rich('data.restore.description', {
-                  strong: (chunks) => <span className="font-medium">{chunks}</span>,
-                })}
-              </p>
-            </div>
-            <RestorePanel />
-          </section>
-        </div>
-      )}
+            <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              {includeSecrets
+                ? t('data.download.lockNoteIncluded')
+                : t('data.download.lockNoteExcluded')}
+            </p>
+          </div>
+
+          {summary ? (
+            <p className="text-xs text-muted-foreground">
+              {t('data.download.lastBackup', {
+                version: summary.schemaVersion,
+                count: Object.values(summary.counts).reduce((a, b) => a + b, 0),
+                domains: summary.domains.length,
+              })}
+            </p>
+          ) : null}
+
+          <Button type="button" onClick={() => void onDownload()} disabled={busy || secretsNeedPassphrase} className="gap-1.5">
+            <Download className="h-4 w-4" />
+            {busy ? t('data.download.preparing') : t('data.download.button')}
+          </Button>
+        </section>
+
+        <div className="border-t border-border/60" />
+
+        {/* Scheduled auto-backup (Phase 49 F) */}
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-sm font-medium">{t('data.autoBackup.title')}</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t('data.autoBackup.description')}
+            </p>
+          </div>
+          <AutoBackupPanel />
+        </section>
+      </div>
+
+      <div className={cn('space-y-8', tab !== 'restore' && 'hidden')}>
+        {/* Restore (Phase 49 E · Theme C import service) */}
+        <section className="space-y-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <FlowIcon tab="restore" />
+              {t('data.restore.title')}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t.rich('data.restore.description', {
+                strong: (chunks) => <span className="font-medium">{chunks}</span>,
+              })}
+            </p>
+          </div>
+          <RestorePanel />
+        </section>
+      </div>
     </div>
   );
 }

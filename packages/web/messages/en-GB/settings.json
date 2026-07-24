@@ -377,7 +377,20 @@
       "last": "Last: {when}",
       "never": "never",
       "next": " · next ~{when}",
-      "noArchives": "No archives written yet."
+      "noArchives": "No archives written yet.",
+      "enableLabel": "Enable scheduled backups",
+      "enableHint": "Run an automatic backup on the frequency below.",
+      "frequencyLabel": "Frequency",
+      "directoryLabel": "Directory",
+      "frequency": {
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly"
+      },
+      "save": "Save",
+      "saving": "Saving…",
+      "toastSaved": "Scheduled backup settings saved"
     },
     "restore": {
       "title": "Restore from a backup",

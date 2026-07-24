@@ -318,6 +318,7 @@ import {
   type BackupSummary,
   BackupStatusSchema,
   type BackupStatus,
+  type UpdateBackupConfigRequest,
   ImportPreviewSchema,
   type ImportPreview,
   ImportResultSchema,
@@ -2167,6 +2168,15 @@ export async function downloadBackup(
 /** Phase 49 F — scheduled auto-backup status (admin-gated) for the Data page. */
 export async function getBackupStatus(signal?: AbortSignal): Promise<BackupStatus> {
   return fetchJson('/portability/backup/status', { signal }, BackupStatusSchema);
+}
+
+/** Retune the scheduled auto-backup's frequency/directory/enabled (admin). */
+export async function updateBackupConfig(config: UpdateBackupConfigRequest): Promise<BackupStatus> {
+  return fetchJson(
+    '/portability/backup/config',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(config) },
+    BackupStatusSchema,
+  );
 }
 
 /**
