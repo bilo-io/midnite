@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * payload — e.g. a raw zod validation body that leaked through the gateway
  * (`[ { "code": "invalid_type", … } ]`) — it's pretty-printed in a monospace
  * block; anything else shows as plain text. Red border + a semi-transparent
- * destructive wash, sized to its content (`fit-content`, capped at full width).
+ * destructive wash, filling the available width of its container.
  */
 export function ErrorPanel({
   message,
@@ -21,7 +21,7 @@ export function ErrorPanel({
     <div
       role="alert"
       className={cn(
-        'w-fit max-w-full overflow-x-auto rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive',
+        'w-full overflow-x-auto rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive',
         className,
       )}
     >
