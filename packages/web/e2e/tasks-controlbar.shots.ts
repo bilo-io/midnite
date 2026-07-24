@@ -2,8 +2,10 @@ import { test } from '@playwright/test';
 
 /**
  * Screenshot capture for the tasks control bar (not an assertion spec). Run with
- * SHOTS=1 to write PNGs: the default (icon-only Graph + Pause + Emergency stop,
- * Graph left of the search input) and the hover-expanded states.
+ * SHOTS=1 to write PNGs: the default (icon-only Pause + Emergency stop, left of
+ * the search input) and the hover-expanded states. The dependency graph is a
+ * view-mode toggle (list/board/graph, right of search) rather than a standalone
+ * hover-expand link.
  */
 const OUT = process.env['SHOTS_DIR'] || '/tmp/tasks-controlbar-shots';
 
@@ -31,8 +33,8 @@ test.describe('tasks control bar shots', () => {
       await page.waitForTimeout(450);
       await bar.screenshot({ path: `${OUT}/controlbar-hover-pause-${theme}.png` });
 
-      // Hover Graph → label reveals (it sits just left of the search input).
-      await page.getByRole('link', { name: 'Graph' }).hover();
+      // Hover the Graph view toggle (right of search, in the list/board/graph group).
+      await page.getByRole('button', { name: 'Graph view' }).hover();
       await page.waitForTimeout(450);
       await bar.screenshot({ path: `${OUT}/controlbar-hover-graph-${theme}.png` });
     });

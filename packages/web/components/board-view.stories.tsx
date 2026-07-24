@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { projectsById, taskFeature, tasks } from '@/stories/fixtures';
+import { project, projectsById, taskFeature, tasks } from '@/stories/fixtures';
 
 import { BoardView } from './board-view';
 import { ConfirmProvider } from './confirm-dialog';
@@ -23,6 +23,15 @@ const meta = {
     ),
   ],
   args: { onSelect: fn() },
+  // Collapsed end columns persist to localStorage; clear it so a collapse story
+  // can't leak its state into a later story (e.g. hiding the Done column's cards).
+  beforeEach: () => {
+    try {
+      localStorage.removeItem('midnite.tasks.collapsedColumns');
+    } catch {
+      // ignore unavailable storage
+    }
+  },
 } satisfies Meta<typeof BoardView>;
 
 export default meta;
@@ -69,6 +78,58 @@ export const KeyboardNavigation: Story = {
     // Enter opens the focused card's detail modal.
     await userEvent.keyboard('{Enter}');
     await expect(args.onSelect).toHaveBeenCalledOnce();
+  },
+};
+
+/**
+ * The Backlog and Done end columns collapse to a slim vertical rail (name +
+ * count), reclaiming width for the active middle columns. Collapsing hides the
+ * column's cards but keeps it as a drop target; clicking the rail expands it.
+ */
+export const CollapsibleEndColumns: Story = {
+  args: {
+    tasks,
+    columns: COLUMNS,
+    projectsById,
+    showAbandoned: false,
+    onMove: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Backlog starts expanded — the header exposes a collapse affordance.
+    const collapse = await canvas.findByRole('button', { name: 'Collapse Backlog column' });
+    await userEvent.click(collapse);
+    // Now it's a slim rail whose whole surface expands it back.
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Expand Backlog column' })).toBeInTheDocument(),
+    );
+  },
+};
+
+/**
+ * Collapse is a single shared preference — it works the same inside the
+ * per-project accordions, where collapsing an end column reclaims width in
+ * every project's board at once.
+ */
+export const CollapseInPerProjectBoards: Story = {
+  args: {
+    tasks,
+    columns: COLUMNS,
+    projectsById,
+    showAbandoned: false,
+    groupByProject: true,
+    projects: [project],
+    onMove: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Several project groups render, each with its own Done column. Collapse is a
+    // single shared preference, so collapsing one collapses Done in *every* group.
+    const collapses = await canvas.findAllByRole('button', { name: 'Collapse Done column' });
+    await userEvent.click(collapses[0]!);
+    await waitFor(() =>
+      expect(canvas.getAllByRole('button', { name: 'Expand Done column' }).length).toBeGreaterThan(0),
+    );
   },
 };
 

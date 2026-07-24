@@ -2,6 +2,8 @@
   "title": "Tableau des tâches",
   "nothingHere": "Rien ici",
   "addTask": "Ajouter une tâche à {column}",
+  "collapseColumn": "Réduire la colonne {column}",
+  "expandColumn": "Développer la colonne {column}",
   "columns": {
     "backlog": "En attente",
     "todo": "À faire",

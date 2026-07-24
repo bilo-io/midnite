@@ -47,11 +47,15 @@ test.describe('Dependency graph', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 
-  test('is reachable from the board via the Graph link', async ({ page }) => {
+  test('is reachable from the Tasks page as a view mode', async ({ page }) => {
     await page.goto('/tasks');
-    await page.getByRole('link', { name: 'View dependency graph' }).click();
-    await expect(page).toHaveURL(/\/tasks\/graph/);
-    await expect(page.getByRole('heading', { name: 'Dependency graph' })).toBeVisible();
+    await page.getByRole('button', { name: 'Graph view' }).click();
+
+    // Renders inline — no navigation to the standalone /tasks/graph route.
+    // (`trailingSlash: true` means the URL is `/tasks/`, not `/tasks`.)
+    await expect(page).toHaveURL(/\/tasks\/(?:\?.*)?$/);
+    await expect(page.getByText(blocker.title)).toBeVisible();
+    await expect(page.getByText(dependent.title)).toBeVisible();
   });
 
   test('shows per-project completion only when scoped to a project (Phase 58 C)', async ({ page }) => {

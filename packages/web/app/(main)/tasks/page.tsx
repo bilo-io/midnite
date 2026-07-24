@@ -36,7 +36,7 @@ export default function TasksPage() {
       <PageHeader
         title="Tasks"
         icon="ListChecks"
-        description="Tasks grouped by status. Switch between board, table, and graph, and filter by status or project."
+        description="Tasks grouped by status. Switch between list, board, and graph, and filter by status or project."
       />
       <TasksView
         tasks={tasks}

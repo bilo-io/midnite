@@ -20,7 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslations } from 'next-intl';
-import { Play, Plus, RotateCcw, Square } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Play, Plus, RotateCcw, Square } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
@@ -40,6 +40,55 @@ import { cn } from '@/lib/utils';
  *  directly into In-progress/Waiting/Done (those follow the agent session), so
  *  the per-column "+" affordance only appears on these. */
 const CREATABLE_STATUSES = new Set<Status>(['backlog', 'todo']);
+
+/** The two end columns can be collapsed to a slim rail — they sit at either edge
+ *  of the board and tend to accumulate the most cards (a long backlog, an
+ *  ever-growing done pile), so hiding them reclaims room for the active middle.
+ *  `side` picks which way the collapse/expand chevrons point (outward when
+ *  collapsing, inward when expanding). Only these statuses are collapsible. */
+const COLLAPSIBLE_STATUSES = new Map<Status, 'left' | 'right'>([
+  ['backlog', 'left'],
+  ['done', 'right'],
+]);
+const COLLAPSED_STORAGE_KEY = 'midnite.tasks.collapsedColumns';
+
+/**
+ * The set of collapsed end columns, persisted to localStorage. A single shared
+ * preference across both board styles: collapsing "Done" hides it in the unified
+ * board *and* in every per-project accordion. Only the two collapsible statuses
+ * are ever stored (a stale/foreign value is filtered out on load).
+ */
+function useCollapsedColumns(): { collapsed: Set<Status>; toggle: (status: Status) => void } {
+  const [collapsed, setCollapsed] = useState<Set<Status>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        setCollapsed(
+          new Set(parsed.filter((s): s is Status => COLLAPSIBLE_STATUSES.has(s as Status))),
+        );
+      }
+    } catch {
+      // ignore malformed / unavailable storage (private mode, etc.)
+    }
+  }, []);
+  const toggle = useCallback((status: Status) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      try {
+        localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify([...next]));
+      } catch {
+        // ignore storage failures
+      }
+      return next;
+    });
+  }, []);
+  return { collapsed, toggle };
+}
 
 /**
  * Resolve a board drag-end into one of two intents, shared by the unified and
@@ -165,6 +214,12 @@ function UnifiedBoard({
   const isMobile = useIsMobile();
   const t = useTranslations('board');
 
+  // Collapsed end columns (Backlog / Done). Persisted locally like the view +
+  // board-style prefs. Collapse is a desktop affordance only: on mobile the board
+  // snap-scrolls one full-width column at a time (the tab bar above), so a slim
+  // rail has nowhere to live — `isMobile` gates it off at render time.
+  const { collapsed: collapsedCols, toggle: toggleCollapse } = useCollapsedColumns();
+
   // Split mouse vs. touch so each gets the right activation (Phase 24 Theme B):
   // - Mouse: a 6px distance — a plain click still reaches the card button (open
   //   the modal) while a deliberate drag starts after the pointer moves.
@@ -230,8 +285,13 @@ function UnifiedBoard({
   );
 
   // The visible grid, in render order, rebuilt each render from the same grouping
-  // the columns use — so navigation always matches what's on screen.
-  const grid: FocusGrid = columns.map((col) => (grouped.get(col.status) ?? []).map((t) => t.id));
+  // the columns use — so navigation always matches what's on screen. A collapsed
+  // column contributes no cards (they aren't rendered), so arrow-nav skips it.
+  const grid: FocusGrid = columns.map((col) =>
+    !isMobile && collapsedCols.has(col.status)
+      ? []
+      : (grouped.get(col.status) ?? []).map((t) => t.id),
+  );
 
   // Keep a ref to the latest grid + handlers so the keydown effect can stay
   // subscribed once without re-binding on every task/grouping change.
@@ -370,6 +430,15 @@ function UnifiedBoard({
               label={t(`columns.${col.status}`)}
               hueVar={col.hueVar}
               count={(grouped.get(col.status) ?? []).length}
+              // Collapse is desktop-only (see `collapsedCols`); on mobile every
+              // column renders full-width in the snap scroller.
+              side={COLLAPSIBLE_STATUSES.get(col.status)}
+              collapsed={!isMobile && collapsedCols.has(col.status)}
+              onToggleCollapse={
+                !isMobile && COLLAPSIBLE_STATUSES.has(col.status)
+                  ? () => toggleCollapse(col.status)
+                  : undefined
+              }
               onAdd={
                 onAddTask && CREATABLE_STATUSES.has(col.status)
                   ? () => onAddTask(col.status)
@@ -514,6 +583,9 @@ function ProjectBoardsView({
   const t = useTranslations('board');
   const confirm = useConfirm();
   const isMobile = useIsMobile();
+  // One shared collapse preference across every project accordion (and the
+  // unified board) — collapsing "Done" hides it in all of them at once.
+  const { collapsed: collapsedCols, toggle: toggleCollapse } = useCollapsedColumns();
   const groups = useMemo(
     () => groupTasksByProject(tasks, projects, t('unassigned')),
     [tasks, projects, t],
@@ -560,6 +632,8 @@ function ProjectBoardsView({
         onToggleSelect={onToggleSelect}
         blockedCounts={blockedCounts}
         isMobile={isMobile}
+        collapsedCols={collapsedCols}
+        onToggleCollapse={toggleCollapse}
         onAddTask={onAddTask}
       />
     ),
@@ -603,6 +677,8 @@ function ProjectBoardBody({
   onToggleSelect,
   blockedCounts,
   isMobile,
+  collapsedCols,
+  onToggleCollapse,
   onAddTask,
 }: {
   /** The project id to seed a new task with (undefined for the Unassigned group). */
@@ -618,6 +694,9 @@ function ProjectBoardBody({
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
   blockedCounts?: Map<string, number>;
   isMobile: boolean;
+  /** Shared collapsed-column set + toggle (desktop-only; see `useCollapsedColumns`). */
+  collapsedCols: Set<Status>;
+  onToggleCollapse: (status: Status) => void;
   onAddTask?: (status: Status, projectId?: string) => void;
 }) {
   const t = useTranslations('board');
@@ -655,6 +734,15 @@ function ProjectBoardBody({
               label={t(`columns.${col.status}`)}
               hueVar={col.hueVar}
               count={colTasks.length}
+              // Collapse is desktop-only; on mobile the per-project board stacks
+              // its columns full-width, where a slim rail has no place.
+              side={COLLAPSIBLE_STATUSES.get(col.status)}
+              collapsed={!isMobile && collapsedCols.has(col.status)}
+              onToggleCollapse={
+                !isMobile && COLLAPSIBLE_STATUSES.has(col.status)
+                  ? () => onToggleCollapse(col.status)
+                  : undefined
+              }
               onAdd={
                 onAddTask && CREATABLE_STATUSES.has(col.status)
                   ? () => onAddTask(col.status, projectKey)
@@ -714,6 +802,9 @@ function Column({
   hueVar,
   count,
   onAdd,
+  side,
+  collapsed = false,
+  onToggleCollapse,
   children,
 }: {
   status: Status;
@@ -722,10 +813,69 @@ function Column({
   count: number;
   /** When set, a "+" button in the header opens the new-task modal for this column. */
   onAdd?: () => void;
+  /** Which board edge this column sits on — orients the collapse/expand chevrons.
+   *  Only set for the collapsible end columns (Backlog = left, Done = right). */
+  side?: 'left' | 'right';
+  /** Rendered as a slim vertical rail when true. */
+  collapsed?: boolean;
+  /** When set, the column is collapsible: a header chevron collapses it and the
+   *  whole rail expands it back. Undefined ⇒ not collapsible (no affordance). */
+  onToggleCollapse?: () => void;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const t = useTranslations('board');
+
+  // Collapsed: a slim rail that still accepts drops (the droppable ref stays wired),
+  // showing only the accent, an expand chevron, the count, and the vertical label.
+  // The whole rail is the expand target (click / Enter / Space).
+  if (collapsed && onToggleCollapse) {
+    // Chevron points inward (toward the board's centre) to signal "expand".
+    const ExpandIcon = side === 'right' ? ChevronsLeft : ChevronsRight;
+    return (
+      <button
+        type="button"
+        ref={setNodeRef}
+        data-tour={`board-column-${status}`}
+        aria-expanded={false}
+        aria-label={t('expandColumn', { column: label })}
+        title={t('expandColumn', { column: label })}
+        onClick={onToggleCollapse}
+        className={cn(
+          'group/rail relative flex w-11 shrink-0 grow-0 cursor-pointer flex-col items-center gap-2 rounded-lg border surface-glass py-3 transition-colors hover:bg-card/80',
+          isOver && 'border-foreground/30 bg-card/90 ring-1 ring-foreground/20',
+        )}
+        style={{ ['--col-hue' as string]: `var(${hueVar})` }}
+      >
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-px"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, transparent, hsl(var(--col-hue) / 0.7), transparent)',
+          }}
+        />
+        <ExpandIcon className="h-4 w-4 text-muted-foreground transition-colors group-hover/rail:text-foreground" />
+        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+          {count}
+        </span>
+        <span
+          aria-hidden
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{
+            background: 'hsl(var(--col-hue))',
+            boxShadow: '0 0 8px -1px hsl(var(--col-hue) / 0.7)',
+          }}
+        />
+        {/* Vertical label fills the rest of the rail (reads top-to-bottom). */}
+        <span className="mt-1 select-none text-xs font-medium uppercase tracking-wider text-muted-foreground [writing-mode:vertical-rl]">
+          {label}
+        </span>
+      </button>
+    );
+  }
+
+  const CollapseIcon = side === 'right' ? ChevronsRight : ChevronsLeft;
   return (
     <section
       ref={setNodeRef}
@@ -775,6 +925,17 @@ function Column({
               className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             >
               <Plus className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {onToggleCollapse ? (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              aria-label={t('collapseColumn', { column: label })}
+              title={t('collapseColumn', { column: label })}
+              className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+            >
+              <CollapseIcon className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>

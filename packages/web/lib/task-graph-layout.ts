@@ -76,6 +76,35 @@ export function layoutTaskGraph(graph: TaskGraph): LayoutedGraph {
   return { nodes, edges };
 }
 
+/** A bounding box (React Flow's `Rect` shape) — top-left origin + size. */
+export type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Translate a graph's bounding box into a **top-aligned** viewport within a
+ * canvas of `width`, at an already-clamped `zoom`.
+ *
+ * React Flow's `fitView` *centres* the fitted bounds. For a board far taller than
+ * the canvas the fit zoom bottoms out at the min, and centring the still-
+ * overflowing graph pushes it down — wasting a band at the top and clipping the
+ * bottom. Top-aligning instead pins the graph's top edge `padding` px below the
+ * canvas top, so it uses that top space and overflows *downward* (still reaching,
+ * and running past, the bottom). Horizontally it's centred when it fits, else
+ * left-aligned. Pure arithmetic so it's unit-testable without a live canvas.
+ */
+export function topAlignedViewport(
+  bounds: Rect,
+  width: number,
+  zoom: number,
+  padding: number,
+): { x: number; y: number; zoom: number } {
+  const scaledWidth = bounds.width * zoom;
+  const x =
+    scaledWidth <= width - 2 * padding
+      ? (width - scaledWidth) / 2 - bounds.x * zoom // fits horizontally → centre
+      : padding - bounds.x * zoom; // overflows → left-align
+  return { x, y: padding - bounds.y * zoom, zoom };
+}
+
 /**
  * Edge appearance encodes the dependency's state at a glance, keyed off its two
  * endpoints (source = the blocker, target = the dependent it feeds):

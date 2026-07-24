@@ -27,8 +27,8 @@ import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ListView } from '@/components/list-view';
 import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
+import { ProjectProgressBar } from '@/components/project-progress';
 import { SearchBar } from '@/components/search-bar';
-import { TableView } from '@/components/table-view';
 import { TaskGraphView } from '@/components/task-graph/task-graph-view';
 import { WorkItemModal } from '@/components/work-item-modal';
 import { COLUMNS, COLUMN_STATUSES } from '@/components/task-columns';
@@ -83,24 +83,23 @@ type BoardStyle = 'unified' | 'project';
 const BOARD_STYLES: readonly BoardStyle[] = ['unified', 'project'];
 const BOARD_STYLE_STORAGE_KEY = 'midnite.tasks.boardStyle';
 
-// View toggle, matching the Projects/Sessions control — list / board / table /
-// graph, persisted to localStorage. "board" is the kanban (where the others
-// have grid); "graph" is the read-only dependency DAG (Phase 58 B), rendered
+// View toggle, matching the Projects/Sessions control — list / board / graph,
+// persisted to localStorage. "board" is the kanban (where the others have
+// grid); "graph" is the read-only dependency DAG (Phase 58 B), rendered
 // in-page instead of the separate `/tasks/graph` route.
-export type TaskView = 'list' | 'board' | 'table' | 'graph';
-const VIEWS: readonly TaskView[] = ['list', 'board', 'table', 'graph'];
+export type TaskView = 'list' | 'board' | 'graph';
+const VIEWS: readonly TaskView[] = ['list', 'board', 'graph'];
 const VIEW_STORAGE_KEY = 'midnite.tasks.view';
 const VIEW_ICONS: Array<{ value: TaskView; Icon: LucideIcon }> = [
   { value: 'list', Icon: ListTree },
   { value: 'board', Icon: Columns3 },
-  { value: 'table', Icon: ListTree },
   { value: 'graph', Icon: Workflow },
 ];
 
 /**
- * Owns the Tasks page chrome: the list/board/table toggle, the status and
+ * Owns the Tasks page chrome: the list/board/graph toggle, the status and
  * project filters (backed by the URL query string), the project lookup and the
- * task detail modal. Delegates rendering to ListView, BoardView or TableView.
+ * task detail modal. Delegates rendering to ListView, BoardView or TaskGraphView.
  */
 export function TasksView({
   tasks,
@@ -435,6 +434,14 @@ export function TasksView({
   const activeProjects = new Set(
     (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
   );
+  // A single explicit project selection scopes the graph view and surfaces its
+  // completion in the toolbar; "no project" or "several projects" don't map to
+  // one dependency-graph scope, so both leave it unscoped (shows everything).
+  const singleSelectedProjectId = activeProjects.size === 1 ? [...activeProjects][0] : undefined;
+  const scopedProject =
+    singleSelectedProjectId && singleSelectedProjectId !== UNASSIGNED
+      ? projects.find((p) => p.id === singleSelectedProjectId)
+      : undefined;
   // Tag filter: keep tasks carrying at least one of the selected tags. The
   // active set lives in the `tags` query param, so a filtered board is a
   // shareable/bookmarkable view — the "saved filter".
@@ -495,7 +502,15 @@ export function TasksView({
   };
 
   return (
-    <div className="reveal-staged container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
+    <div
+      className={cn(
+        'reveal-staged container flex min-h-0 flex-1 flex-col pt-2',
+        // The graph is a bounded, full-height canvas — sit it close under the
+        // toolbar and let it run to the very bottom (no gap/padding to waste).
+        // List/board flow with the document, so they keep the roomier spacing.
+        view === 'graph' ? 'gap-2 pb-0' : 'gap-4 pb-4',
+      )}
+    >
       <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={filteredTasks.length} className="mr-1" />
@@ -526,6 +541,9 @@ export function TasksView({
               ))}
             </div>
           ) : null}
+          {/* A single project filter doubles as the graph view's scope — its
+              completion reads here instead of a second bar inside the canvas. */}
+          {scopedProject ? <ProjectProgressBar project={scopedProject} className="w-40" /> : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
@@ -572,12 +590,16 @@ export function TasksView({
       />
 
       <div className="reveal-content flex min-h-0 flex-1 flex-col">
-        {view === 'table' ? (
-          <TableView {...viewProps} />
-        ) : view === 'list' ? (
+        {view === 'list' ? (
           <ListView {...viewProps} />
         ) : view === 'graph' ? (
-          <TaskGraphView tasks={filteredTasks} projects={projects} showTaskModal={false} />
+          <TaskGraphView
+            tasks={filteredTasks}
+            projects={projects}
+            showTaskModal={false}
+            embedded
+            projectId={scopedProject?.id}
+          />
         ) : (
           <BoardView
             {...viewProps}

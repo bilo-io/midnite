@@ -4,24 +4,28 @@ import { gatewayUrl } from '@/lib/api';
 export async function POST(req: NextRequest) {
   const refreshToken = req.cookies.get('__midnite_rt')?.value;
 
-  if (!refreshToken) {
-    return NextResponse.json({ message: 'no_cookie' }, { status: 401 });
-  }
-
   let gRes: Response;
   try {
     gRes = await fetch(`${gatewayUrl()}/auth/refresh`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      // A non-empty placeholder when there's no cookie still reaches the
+      // gateway's `enabled` check (which runs before body validation) — mirrors
+      // the desktop transport (lib/auth-transport.ts) so a JWT-disabled gateway
+      // correctly reports 400 here too, instead of us assuming "logged out"
+      // (401) for every anonymous visitor and forcing a spurious /login redirect.
+      body: JSON.stringify({ refreshToken: refreshToken ?? 'unauthenticated' }),
     });
   } catch {
     return NextResponse.json({ message: 'gateway_unavailable' }, { status: 503 });
   }
 
   if (!gRes.ok) {
-    const res = NextResponse.json({ message: 'session_expired' }, { status: 401 });
-    res.cookies.delete('__midnite_rt');
+    const res = NextResponse.json(
+      { message: refreshToken ? 'session_expired' : 'no_cookie' },
+      { status: gRes.status },
+    );
+    if (refreshToken) res.cookies.delete('__midnite_rt');
     return res;
   }
 
