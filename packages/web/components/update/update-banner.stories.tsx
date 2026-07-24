@@ -95,3 +95,19 @@ export const ReadyToRestart: Story = {
 export const Failed: Story = {
   args: { headline: 'Update failed', actionLabel: 'Retry' },
 };
+
+/**
+ * Desktop, unsigned macOS build: updates can't install in place (no Developer ID
+ * signature), so the action is "copy the curl installer command" instead.
+ */
+export const ManualInstall: Story = {
+  args: {
+    copyCommand:
+      'curl -fsSL https://raw.githubusercontent.com/bilo-io/midnite-app/main/install.sh | sh',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.queryByRole('button', { name: 'Update' })).toBeNull();
+    expect(canvas.getByRole('button', { name: /copy install command/i })).toBeInTheDocument();
+  },
+};

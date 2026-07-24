@@ -53,6 +53,11 @@ export type UpdateContextValue = {
   downloadPercent: number | null;
   /** The desktop update failed — the banner can offer a retry. */
   errored: boolean;
+  /**
+   * Unsigned/ad-hoc macOS desktop build: updates can't install in place, so the
+   * banner offers the curl installer command instead of download→restart.
+   */
+  manualInstall: boolean;
   /** Hide the banner for the current view (ephemeral — never persisted). */
   dismiss: () => void;
   /** Take the update: web → SW handoff/reload; desktop → download→restart. */
@@ -182,6 +187,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       desktopPhase,
       downloadPercent: desktop?.phase === 'downloading' ? desktop.percent : null,
       errored: desktop?.phase === 'error',
+      manualInstall: isDesktop ? desktop?.manualInstall ?? false : false,
       dismiss: () => setDismissed(true),
       applyUpdate,
     }),

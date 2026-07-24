@@ -32,6 +32,14 @@ export type UpdateState = {
    * as the web. Omitted on the state constructors → treated as `false`.
    */
   belowFloor?: boolean;
+  /**
+   * This macOS build has no real Developer ID signature (ad-hoc or unsigned), so
+   * Squirrel.Mac would refuse to install a downloaded update. The banner offers
+   * the curl installer command instead of download→restart; version *detection*
+   * still works (the feed check is a plain fetch). Merged into every pushed state
+   * by the main process (see main/updater.ts). Omitted → treated as `false`.
+   */
+  manualInstall?: boolean;
 };
 
 // IPC channels. State flows main→renderer on UPDATE_STATE_CHANNEL; the renderer

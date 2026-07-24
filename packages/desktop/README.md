@@ -279,6 +279,18 @@ Store the cert/creds as repo secrets of the same names (see
 [`release.yml`](../../.github/workflows/release.yml)); notarization uses hardened
 runtime + [`resources/entitlements.mac.plist`](resources/entitlements.mac.plist).
 
+**Manual-install mode (unsigned macOS builds).** Squirrel.Mac only installs an
+update signed with the same identity as the running app, so an ad-hoc/unsigned
+build can *detect* new versions but never install them. On boot the main process
+probes its own signature (`codesign --display` →
+[`src/updates/install-mode.ts`](src/updates/install-mode.ts)) and merges
+`manualInstall` into every pushed `UpdateState`; the web `UpdateBanner` then
+swaps download→restart for a copy-to-clipboard button carrying the curl
+installer one-liner (`bilo-io/midnite-app` `install.sh` — installing via curl
+also avoids Gatekeeper quarantine entirely). A Developer ID-signed build is
+unaffected (the probe is fail-soft: only a positive adhoc/unsigned match flips
+the mode).
+
 **Manual smoke (two real builds — not runnable in the unit harness):** build vX,
 publish a vY release to `bilo-io/midnite-app`, launch the signed vX → the banner
 appears, **Update** downloads (progress shown), **Restart to install** relaunches

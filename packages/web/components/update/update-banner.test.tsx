@@ -96,4 +96,37 @@ describe('UpdateBannerView', () => {
     render(<UpdateBannerView {...base} />);
     expect(screen.queryByRole('progressbar')).toBeNull();
   });
+
+  // Manual-install mode (unsigned macOS desktop build): the update can't install
+  // in place, so the action becomes "copy the curl installer command".
+  describe('manual-install mode (copyCommand)', () => {
+    const command = 'curl -fsSL https://example.com/install.sh | sh';
+
+    it('replaces the Update action with a copy button and shows the command', () => {
+      render(<UpdateBannerView {...base} copyCommand={command} />);
+      expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
+      expect(screen.getByRole('button', { name: /copy install command/i })).toBeInTheDocument();
+      expect(screen.getByText(command)).toBeInTheDocument();
+    });
+
+    it('copies the command to the clipboard and confirms', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+      try {
+        render(<UpdateBannerView {...base} copyCommand={command} />);
+        fireEvent.click(screen.getByRole('button', { name: /copy install command/i }));
+        expect(writeText).toHaveBeenCalledWith(command);
+        expect(await screen.findByRole('button', { name: /copied!/i })).toBeInTheDocument();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('still allows dismissing the banner', () => {
+      const onDismiss = vi.fn();
+      render(<UpdateBannerView {...base} copyCommand={command} onDismiss={onDismiss} />);
+      fireEvent.click(screen.getByRole('button', { name: /dismiss update notice/i }));
+      expect(onDismiss).toHaveBeenCalledOnce();
+    });
+  });
 });
