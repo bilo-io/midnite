@@ -64,6 +64,35 @@ authorize step succeeds, then the token exchange fails.
 2. Set the **Authorization callback URL** for your environment. One callback per app ⇒ create a
    **dev** app and a **prod** app.
 3. Copy the **Client ID**, generate a **Client secret**; export it as `MIDNITE_GITHUB_CLIENT_SECRET`.
+4. Tick **Enable Device Flow** on the app — it powers the secretless login below.
+
+### GitHub device flow — the zero-config default for distributed installs
+
+A downloaded app's local gateway usually has **no operator config and no client
+secret** — and GitHub's web flow can't run secretless (unlike Google, GitHub's
+token endpoint rejects PKCE-without-secret). So the gateway also implements the
+OAuth **device flow**: the login screen shows a short code, the user approves it
+at `github.com/login/device`, and the gateway polls for the grant. No secret, no
+redirect URI, no per-machine setup — it even survives the desktop app's
+fall-back-to-a-random-port case, since there's no callback at all.
+
+- **When it's active:** JWT enabled and the GitHub *web* flow **not** fully
+  configured (no resolvable `clientSecretEnv`). An operator-configured web flow
+  always wins — `GET /auth/sso/providers` reports each provider under
+  `providers` (redirect) or `deviceProviders` (device), never both.
+- **Client ID:** `sso.github.clientId` when a (secretless) block exists, else the
+  **built-in midnite OAuth app ID** baked into the gateway (client IDs are public
+  identifiers; this is how the `gh` CLI ships too). The OAuth app must have
+  **Enable Device Flow** ticked or the start call fails loudly.
+- **Endpoints:** `POST /auth/sso/:provider/device/start` →
+  `{ deviceAuthId, userCode, verificationUri, … }`;
+  `POST /auth/sso/device/poll` with `{ deviceAuthId }` → `pending | complete |
+  expired | denied | error`. The browser only ever holds the opaque
+  `deviceAuthId`; GitHub's `device_code` stays in the gateway, which also
+  throttles its provider polls to the granted interval (honouring `slow_down`).
+- **Same provisioning path:** the grant resolves the same profile → allowlist →
+  find-or-create pipeline as the redirect flow; on `complete` the poll returns
+  the standard `AuthResponse`.
 
 ## 3 · Fill in the operator config
 
