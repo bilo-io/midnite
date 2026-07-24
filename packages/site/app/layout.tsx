@@ -22,7 +22,7 @@ const cassandra = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://midnite.dev'),
+  metadataBase: new URL('https://midnite-app.vercel.app'),
   title: 'midnite — Multitask Claude Code',
   description:
     'A task orchestrator wrapped around a pool of Claude Code agents. Drop in a list, let midnite classify and queue it, and run every task in parallel — tracked on one live board.',
