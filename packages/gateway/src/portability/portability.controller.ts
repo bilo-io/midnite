@@ -1,8 +1,9 @@
-import { BadRequestException, Controller, Get, Headers, Inject, Post, Query, Req, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, Inject, Patch, Post, Query, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
   ExportOptionsSchema,
   ImportOptionsSchema,
+  UpdateBackupConfigRequestSchema,
   type BackupStatus,
   type ImportPreview,
   type ImportResult,
@@ -35,6 +36,17 @@ export class PortabilityController {
   @RequiresRole('admin')
   backupStatus(): Promise<BackupStatus> {
     return this.backups.status();
+  }
+
+  /** Phase 49 F — tune the scheduled auto-backup's frequency + directory from the
+   *  Settings → Data page. In-memory only (like `ws/settings`): resets to the
+   *  `midnite.json` `backup.*` default on restart. */
+  @Patch('backup/config')
+  @RequiresRole('admin')
+  updateBackupConfig(@Body() body: unknown): Promise<BackupStatus> {
+    const parsed = UpdateBackupConfigRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.backups.updateConfig(parsed.data);
   }
 
   @Get('export')

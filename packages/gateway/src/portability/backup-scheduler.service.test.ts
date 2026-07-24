@@ -104,6 +104,22 @@ describe('BackupSchedulerService (Phase 49 F)', () => {
     expect(portability.export).not.toHaveBeenCalled();
   });
 
+  it('updateConfig applies new frequency/directory, reflected in status()', async () => {
+    const { svc } = harness(config({ enabled: false }));
+    // Stays disabled — isolates the knob-mutation contract from the (separately
+    // covered) timer-(re)arming side effect of flipping `enabled` on.
+    const result = await svc.updateConfig({ enabled: false, intervalHours: 6, destinationDir: dir });
+    expect(result).toMatchObject({ enabled: false, intervalHours: 6, destinationDir: dir });
+    expect(await svc.status()).toMatchObject({ enabled: false, intervalHours: 6, destinationDir: dir });
+  });
+
+  it('updateConfig(enabled: false) makes tick() a no-op even if it was on', async () => {
+    const { svc, portability } = harness(config({ enabled: true }));
+    await svc.updateConfig({ enabled: false, intervalHours: 24, destinationDir: dir });
+    await svc.tick();
+    expect(portability.export).not.toHaveBeenCalled();
+  });
+
   it('status() reports config + recent archives, newest first', async () => {
     await writeArchive('midnite-backup-old.zip', 48 * HOUR);
     await writeArchive('midnite-backup-new.zip', 1 * HOUR);

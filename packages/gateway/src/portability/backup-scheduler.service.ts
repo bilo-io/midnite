@@ -36,46 +36,78 @@ export class BackupSchedulerService implements OnModuleInit, OnModuleDestroy {
   private timer: ReturnType<typeof setInterval> | undefined;
   private running = false;
 
+  // Runtime-tunable knobs (Settings → Data page), seeded from `midnite.json`'s
+  // `backup.*` and overridable via `PATCH portability/backup/config` — like
+  // `ws/settings`, an in-memory override that resets to the config default on
+  // restart, not a rewrite of the config file. `retention`/`tickMs` aren't
+  // exposed to the UI (yet), so they stay config-only.
+  private enabled: boolean;
+  private intervalHours: number;
+  private destinationDir: string;
+
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(PortabilityService) private readonly portability: PortabilityService,
     @Optional() @Inject(NotificationsService) private readonly notifications?: NotificationsService,
-  ) {}
+  ) {
+    this.enabled = config.backup.enabled;
+    this.intervalHours = config.backup.intervalHours;
+    this.destinationDir = config.backup.destinationDir;
+  }
 
   onModuleInit(): void {
-    const cfg = this.config.backup;
-    if (!cfg.enabled) {
+    if (!this.enabled) {
       this.logger.log('scheduled auto-backup disabled (backup.enabled = false)');
       return;
     }
-    this.timer = setInterval(() => void this.tick(), cfg.tickMs);
-    this.timer.unref?.();
-    // Run once shortly after boot so a due backup doesn't wait a full tick.
-    void this.tick();
-    this.logger.log(
-      `auto-backup loop started (every ${cfg.intervalHours}h → ${cfg.destinationDir}, keep ${cfg.retention})`,
-    );
+    this.startTimer();
   }
 
   onModuleDestroy(): void {
     if (this.timer) clearInterval(this.timer);
   }
 
+  private startTimer(): void {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => void this.tick(), this.config.backup.tickMs);
+    this.timer.unref?.();
+    // Run once shortly after (re)start so a due backup doesn't wait a full tick.
+    void this.tick();
+    this.logger.log(
+      `auto-backup loop started (every ${this.intervalHours}h → ${this.destinationDir}, keep ${this.config.backup.retention})`,
+    );
+  }
+
+  /** Apply new runtime knobs from the Settings → Data page, restarting/stopping
+   *  the loop as needed. Returns the fresh status for the caller to relay. */
+  async updateConfig(next: { enabled: boolean; intervalHours: number; destinationDir: string }): Promise<BackupStatus> {
+    this.enabled = next.enabled;
+    this.intervalHours = next.intervalHours;
+    this.destinationDir = next.destinationDir;
+    if (this.enabled) {
+      this.startTimer();
+    } else if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+    return this.status();
+  }
+
   private dir(): string {
-    return resolve(expandTilde(this.config.backup.destinationDir));
+    return resolve(expandTilde(this.destinationDir));
   }
 
   /** Evaluate whether a backup is due and, if so, run it. Public so tests can
    *  drive it with an injected `now`. Fail-open — never throws into the tick. */
   async tick(now: number = Date.now()): Promise<void> {
-    if (!this.config.backup.enabled || this.running) return;
+    if (!this.enabled || this.running) return;
     this.running = true;
     try {
       const dir = this.dir();
       await mkdir(dir, { recursive: true });
       const archives = await this.listArchives(dir);
       const newestMs = archives[0]?.mtimeMs ?? 0;
-      const dueMs = this.config.backup.intervalHours * 3_600_000;
+      const dueMs = this.intervalHours * 3_600_000;
       if (archives.length > 0 && now - newestMs < dueMs) return; // not due yet
 
       // Secret-free archive (the export is, this slice) — no passphrase.
@@ -116,12 +148,11 @@ export class BackupSchedulerService implements OnModuleInit, OnModuleDestroy {
   /** Read-only status for the Settings → Data page (Phase 49 F). Fail-open: an
    *  unreadable directory yields an empty recent list rather than throwing. */
   async status(): Promise<BackupStatus> {
-    const cfg = this.config.backup;
     const archives = await this.listArchives(this.dir()).catch(() => []);
     const lastRunAt = archives[0] ? new Date(archives[0].mtimeMs).toISOString() : null;
     const nextRunAt =
-      cfg.enabled && lastRunAt
-        ? new Date(archives[0]!.mtimeMs + cfg.intervalHours * 3_600_000).toISOString()
+      this.enabled && lastRunAt
+        ? new Date(archives[0]!.mtimeMs + this.intervalHours * 3_600_000).toISOString()
         : null;
     const recent: BackupArchiveInfo[] = archives.slice(0, 10).map((a) => ({
       filename: a.name,
@@ -129,10 +160,10 @@ export class BackupSchedulerService implements OnModuleInit, OnModuleDestroy {
       createdAt: new Date(a.mtimeMs).toISOString(),
     }));
     return {
-      enabled: cfg.enabled,
-      intervalHours: cfg.intervalHours,
-      destinationDir: cfg.destinationDir,
-      retention: cfg.retention,
+      enabled: this.enabled,
+      intervalHours: this.intervalHours,
+      destinationDir: this.destinationDir,
+      retention: this.config.backup.retention,
       lastRunAt,
       nextRunAt,
       recent,

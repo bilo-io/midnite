@@ -127,6 +127,18 @@ export const BackupStatusSchema = z.object({
 export type BackupStatus = z.infer<typeof BackupStatusSchema>;
 
 /**
+ * Update the scheduled auto-backup's runtime knobs (Settings → Data page). Like
+ * `ws/settings`, this is an **in-memory** runtime override — it resets to the
+ * `midnite.json` `backup.*` default on restart, not a rewrite of the config file.
+ */
+export const UpdateBackupConfigRequestSchema = z.object({
+  enabled: z.boolean(),
+  intervalHours: z.number().positive(),
+  destinationDir: z.string().min(1),
+});
+export type UpdateBackupConfigRequest = z.infer<typeof UpdateBackupConfigRequestSchema>;
+
+/**
  * Envelope for one domain's exported rows (`domains/<name>.json`). Generic over the
  * row shape so each domain validates its own records on both ends. `count` is a
  * self-check against `records.length`.

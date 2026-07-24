@@ -467,7 +467,7 @@ export const BackupConfigSchema = z.object({
   // Hours between auto-backups (measured from the newest existing archive).
   intervalHours: z.number().positive().default(24),
   // Where archives are written. `~` and relative paths are resolved by the gateway.
-  destinationDir: z.string().default('./.midnite/backups'),
+  destinationDir: z.string().default('~/.midnite/data/backups'),
   // How many archives to keep; older ones are pruned after each run. Must be ≥1.
   retention: z.number().int().positive().default(7),
   // How often the loop wakes to check whether a backup is due (coarse vs the
