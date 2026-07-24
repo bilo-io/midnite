@@ -41,7 +41,7 @@ export class NotificationsGateway
     @Inject(NotificationEventBus) private readonly bus: NotificationEventBus,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(WsBroadcastService) private readonly wsBroadcast: WsBroadcastService,
-    @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(JwtService) private readonly jwtSvc?: JwtService,
   ) {}
 
   onModuleInit(): void {

@@ -44,7 +44,7 @@ export class MetricsGateway
     @Inject(MetricsEventBus) private readonly bus: MetricsEventBus,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
-    @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(JwtService) private readonly jwtSvc?: JwtService,
     @Optional() @Inject(WsMetricsService) private readonly metrics?: WsMetricsService,
   ) {}
 

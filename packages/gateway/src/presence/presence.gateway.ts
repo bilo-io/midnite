@@ -36,7 +36,7 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(PresenceService) private readonly presence: PresenceService,
-    @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(JwtService) private readonly jwtSvc?: JwtService,
   ) {}
 
   onModuleInit(): void {

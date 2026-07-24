@@ -44,7 +44,7 @@ export class TasksGateway
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
-    @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(JwtService) private readonly jwtSvc?: JwtService,
     @Optional() @Inject(WsMetricsService) private readonly metrics?: WsMetricsService,
   ) {}
 

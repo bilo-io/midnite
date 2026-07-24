@@ -68,7 +68,7 @@ export class MetricsService {
     // design:paramtypes for the whole constructor, so type-only injection left
     // `repo` undefined and every repo-backed read (e.g. GET /metrics/ops) 500'd.
     @Inject(MetricsRepository) private readonly repo: MetricsRepository,
-    @Optional() private readonly bus?: MetricsEventBus,
+    @Optional() @Inject(MetricsEventBus) private readonly bus?: MetricsEventBus,
   ) {}
 
   // ── Gauge setters (called by scheduler / pool / runner) ─────────────────────
