@@ -14,6 +14,20 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.7.2] - 2026-07-24
+
+Sign in with GitHub on any machine — no setup required.
+
+### Added
+
+- **GitHub device-flow sign-in** — a freshly-installed midnite can now sign you
+  in with GitHub out of the box, with **zero configuration on the machine**: the
+  login screen shows a short code, you approve it at `github.com/login/device`,
+  and you're in. No client secret is ever stored on the machine (this is the
+  same secretless flow the `gh` CLI uses). Instances configured with the classic
+  redirect sign-in keep it unchanged. The device flow also keeps working when
+  the app's preferred port is taken — it needs no callback URL at all.
+
 ## [0.7.1] - 2026-07-24
 
 An auth-hardening release for distribution: a downloaded app now requires a
@@ -407,6 +421,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.7.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.2
 [0.7.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.1
 [0.7.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.0
 [0.6.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.6.0
