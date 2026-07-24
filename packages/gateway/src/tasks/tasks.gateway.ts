@@ -86,8 +86,16 @@ export class TasksGateway
     request?: IncomingMessage,
   ): { userId: string | null; teamId: string | null } | null {
     const token = extractQueryToken(request?.url);
-    if (!token || !this.jwtSvc?.enabled) {
+    // JWT disabled (local mode): no login exists, so the socket is anonymous.
+    if (!this.jwtSvc?.enabled) {
       return { userId: null, teamId: null };
+    }
+    // JWT enabled: a valid token is REQUIRED. An anonymous socket is refused so the
+    // live board isn't reachable behind the UI login gate (a missing token is as
+    // unauthenticated as an invalid one).
+    if (!token) {
+      try { client.close(4001, 'authentication required'); } catch { /* closing */ }
+      return null;
     }
     try {
       const payload = this.jwtSvc.verifyAccessToken(token);

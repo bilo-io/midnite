@@ -216,6 +216,23 @@ describe('TasksGateway — D3: WS scoping', () => {
     expect(closedWith).toBe(4001);
   });
 
+  it('closes with 4001 when JWT mode is on and no token is supplied', () => {
+    const { gateway } = makeGateway(jwtMulti);
+
+    let closedWith: number | undefined;
+    const ws = {
+      readyState: 1,
+      on() {},
+      send() {},
+      close(code: number) { closedWith = code; },
+    } as unknown as WebSocket;
+
+    // Same allowed origin, but no `?token=` — an anonymous socket to an
+    // auth-required gateway must be refused, not registered anonymously.
+    gateway.handleConnection(ws, req);
+    expect(closedWith).toBe(4001);
+  });
+
   it('static-token client (no JWT) receives all events', () => {
     const { gateway, bus } = makeGateway({ enabled: false, verifyAccessToken: (_t: string) => ({ sub: '' }) });
 
