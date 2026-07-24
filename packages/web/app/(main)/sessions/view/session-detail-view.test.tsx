@@ -25,6 +25,14 @@ const renderView = (ui: ReactElement) =>
 // unit (session-terminal-region.test.tsx) — stub it so this test stays about the
 // cockpit shell (rails, header, links) and doesn't pull in the WS terminal / API.
 vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false, useMediaQuery: () => false }));
+// The cockpit's "View task" counterpart link uses the app router; stub navigation
+// so the shell renders without a mounted Next router (the container's search-param
+// read is unused here since we render the view directly).
+const routerPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: routerPush }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 // The terminal region (Theme C) is its own unit — stub it so this stays about the shell.
 vi.mock('@/components/session-terminal-region', () => ({
   SessionTerminalRegion: ({ session }: { session: { status: string } }) => (

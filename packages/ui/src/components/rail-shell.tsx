@@ -44,6 +44,7 @@ export function RailShell({
   children,
   centerActions,
   className,
+  stickyRails = false,
 }: {
   left?: RailConfig;
   right?: RailConfig;
@@ -57,11 +58,20 @@ export function RailShell({
    */
   centerActions?: ReactNode;
   className?: string;
+  /**
+   * Pin the desktop rails to the viewport (`lg:sticky lg:top-16`) so their own
+   * content scrolls internally while the center scrolls the page — the council
+   * cockpit pattern. Opt-in: pages whose center has its own sticky bar at
+   * `top-12` (tabs / chat header) pair this so the whole cockpit stays put while
+   * only the body scrolls. Off by default (pages with a `top-12` StickyToolbar
+   * above the shell need a larger offset than this provides).
+   */
+  stickyRails?: boolean;
 }) {
   const hasRail = Boolean(left || right);
   return (
     <div className={cn('flex flex-col gap-5 lg:flex-row lg:items-start', className)}>
-      {left ? <Rail side="left" isMobile={isMobile} {...left} /> : null}
+      {left ? <Rail side="left" isMobile={isMobile} sticky={stickyRails} {...left} /> : null}
 
       <div className="relative min-w-0 flex-1">
         {/* Toggles float in the content layer and glide with the rail as its
@@ -88,7 +98,7 @@ export function RailShell({
         <div className={cn(hasRail && 'lg:pt-11')}>{children}</div>
       </div>
 
-      {right ? <Rail side="right" isMobile={isMobile} {...right} /> : null}
+      {right ? <Rail side="right" isMobile={isMobile} sticky={stickyRails} {...right} /> : null}
     </div>
   );
 }
@@ -101,7 +111,8 @@ function Rail({
   width = DEFAULT_WIDTH,
   content,
   isMobile,
-}: RailConfig & { side: 'left' | 'right'; isMobile: boolean }) {
+  sticky = false,
+}: RailConfig & { side: 'left' | 'right'; isMobile: boolean; sticky?: boolean }) {
   const header = (
     <div className="mb-3 flex items-center gap-1.5">
       {icon}
@@ -123,6 +134,9 @@ function Rail({
   // Desktop: always mounted, animating its width between `width` and 0 so it
   // slides. The inner panel keeps a fixed width and is clipped by the wrapper's
   // overflow-hidden, so it slides rather than reflowing as the width animates.
+  // When `sticky`, the rail pins to the viewport (`lg:top-16`) and its own content
+  // scrolls internally (inner `max-h` + `overflow-y-auto`) while the center scrolls
+  // the page — the council cockpit pattern.
   return (
     <aside
       aria-label={title}
@@ -130,6 +144,7 @@ function Rail({
       className={cn(
         'hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block',
         side === 'left' ? 'lg:order-first' : 'lg:order-last',
+        sticky && 'lg:sticky lg:top-16',
       )}
       style={{ width: open ? width : 0 } as CSSProperties}
     >
@@ -137,6 +152,7 @@ function Rail({
         className={cn(
           'rounded-lg border border-border/60 bg-card/40 p-4 transition-opacity duration-200 motion-reduce:transition-none',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
+          sticky && 'lg:max-h-[calc(100dvh-4.5rem)] lg:overflow-y-auto',
         )}
         style={{ width } as CSSProperties}
       >

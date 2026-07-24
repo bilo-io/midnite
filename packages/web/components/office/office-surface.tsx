@@ -56,13 +56,17 @@ export function OfficeSurface() {
 
   return (
     <div className="space-y-4">
-      <div
-        role="tablist"
-        aria-label="Office view"
-        data-tour="office-view-toggle"
-        className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
-      >
-        {VIEWS.map(({ value, label, Icon }) => {
+      {/* Pin the 2D/3D switcher under the collapsed header (top-12) so it stays
+          reachable while the office scene scrolls behind it — the app-wide sticky
+          pattern (StickyToolbar / council cockpit). */}
+      <div className="sticky top-12 z-20 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div
+          role="tablist"
+          aria-label="Office view"
+          data-tour="office-view-toggle"
+          className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
+        >
+          {VIEWS.map(({ value, label, Icon }) => {
           const selected = active === value;
           return (
             <button
@@ -81,6 +85,7 @@ export function OfficeSurface() {
             </button>
           );
         })}
+        </div>
       </div>
       {active === '3d' ? <Office3DView /> : <OfficeView />}
     </div>

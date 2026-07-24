@@ -92,25 +92,30 @@ function OpsPageInner() {
         description="Fleet health — live slot utilization, run throughput, duration distribution, retry/abandon rates, and LLM spend."
       />
 
-      <div className="container flex items-center justify-between gap-2 pt-2">
-        <div role="tablist" aria-label="Ops sections" className="flex w-fit gap-1 rounded-lg border p-1 text-sm">
-          {TABS.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={tab === value}
-              onClick={() => setTab(value)}
-              className={cn(
-                'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-                tab === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {label}
-            </button>
-          ))}
+      {/* Pin the tab strip + "+" under the collapsed header (top-12) so it stays
+          reachable while the metric cards scroll behind it — the app-wide sticky
+          pattern (StickyToolbar / council cockpit). */}
+      <div className="sticky top-12 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="container flex items-center justify-between gap-2 py-2">
+          <div role="tablist" aria-label="Ops sections" className="flex w-fit gap-1 rounded-lg border p-1 text-sm">
+            {TABS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={tab === value}
+                onClick={() => setTab(value)}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  tab === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {tab === 'metrics' ? <OpsAddWidget /> : null}
         </div>
-        {tab === 'metrics' ? <OpsAddWidget /> : null}
       </div>
 
       {tab === 'metrics' && (
