@@ -86,6 +86,14 @@
   html[data-accent-gradient] button.bg-primary:hover {
     filter: brightness(1.06);
   }
+  /* `--primary-foreground` is tuned to contrast the SOLID `--primary` token,
+     which flips between near-black (light theme) and near-white (dark theme) —
+     so it flips too. The gradient itself stays a saturated blue/violet/rose
+     sweep in both themes, so white is the correct foreground in either case
+     once the gradient is actually painted. */
+  html[data-accent-gradient] .text-primary-foreground {
+    color: #fff;
+  }
   /* Progress fills + any surface that opts in explicitly. */
   html[data-accent-gradient] [data-accent-surface] {
     background-image: var(--accent-gradient);

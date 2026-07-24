@@ -148,13 +148,19 @@ export function AccentBuilder({
         />
         <div className="flex flex-wrap items-center gap-3">
           <span
-            className="rounded-md px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+            className={cn(
+              'rounded-md px-3 py-1.5 text-xs font-semibold',
+              isGradientAccent(value) ? 'text-white' : 'text-primary-foreground',
+            )}
             style={{ background: accentBackground(value, isDark) }}
           >
             {t('appearance.accentBuilder.button')}
           </span>
           <span
-            className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground"
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+              isGradientAccent(value) ? 'text-white' : 'text-primary-foreground',
+            )}
             style={{ background: accentBackground(value, isDark) }}
           >
             {t('appearance.accentBuilder.badge')}
