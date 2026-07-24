@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Download as DownloadIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { RELEASES_URL } from '@/lib/site';
+import { InstallCommand } from '@/components/install-command';
+import { MAC_INSTALL_COMMAND } from '@/lib/downloads';
 
-// The macOS build is Apple Silicon only, so there's a single Mac download; we
-// detect the OS only to nudge non-Mac visitors.
+// macOS installs via the curl one-liner (no Gatekeeper popup — see
+// lib/downloads.ts); we detect the OS only to nudge non-Mac visitors to the
+// /download page, which carries the Windows/Linux builds.
 export function Download() {
   const [isMac, setIsMac] = useState(true);
   useEffect(() => {
@@ -19,25 +19,26 @@ export function Download() {
     <section id="download" className="container scroll-mt-20 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-3xl font-semibold tracking-tight text-transparent sm:text-4xl">
-          Download midnite
+          Install midnite
         </h2>
         <p className="mt-4 text-muted-foreground">
           The gateway and the board, bundled into one desktop app that runs entirely on your
-          machine. macOS only for now.
+          machine. One command on macOS — paste it into a terminal:
         </p>
 
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href={RELEASES_URL} target="_blank" rel="noreferrer">
-            <Button size="lg">
-              <DownloadIcon className="mr-2 h-4 w-4" />
-              Apple Silicon (.dmg)
-            </Button>
-          </a>
+        <div className="mx-auto mt-8 max-w-xl">
+          <InstallCommand command={MAC_INSTALL_COMMAND} />
         </div>
+
+        <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-muted-foreground">
+          Installs to /Applications with no Gatekeeper warnings, and links the{' '}
+          <code className="rounded bg-muted px-1 py-0.5">midnite</code> CLI. Re-run the same
+          command any time to update.
+        </p>
 
         {!isMac && (
           <p className="mt-4 text-sm text-muted-foreground">
-            Looks like you&apos;re not on macOS — desktop builds are macOS-only for now.
+            Looks like you&apos;re not on macOS — grab the Windows or Linux build below.
           </p>
         )}
 
@@ -48,15 +49,6 @@ export function Download() {
           >
             All platforms (Windows &amp; Linux too) →
           </Link>
-        </p>
-
-        <p className="mx-auto mt-8 max-w-md text-xs leading-relaxed text-muted-foreground">
-          Builds are currently unsigned. On first open, right-click the app and choose{' '}
-          <strong className="text-foreground">Open</strong>, or run{' '}
-          <code className="rounded bg-muted px-1 py-0.5">
-            xattr -dr com.apple.quarantine /Applications/midnite.app
-          </code>
-          .
         </p>
       </div>
     </section>

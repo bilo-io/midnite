@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { Download as DownloadIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { InstallCommand } from '@/components/install-command';
 import {
-  DOWNLOAD_TARGETS,
+  MAC_INSTALL_COMMAND,
   PLATFORM_LABELS,
   PLATFORM_ORDER,
   assetUrl,
@@ -15,6 +16,7 @@ import {
   type Platform,
 } from '@/lib/downloads';
 import { detectPlatform } from '@/lib/platform';
+import { RELEASES_URL } from '@/lib/site';
 
 function ComingSoon() {
   return (
@@ -56,6 +58,19 @@ function DownloadButton({ target, primary }: { target: DownloadTarget; primary?:
   );
 }
 
+/** The macOS entry: the curl one-liner instead of a direct (quarantined) download. */
+function MacInstall() {
+  return (
+    <div className="text-left">
+      <InstallCommand command={MAC_INSTALL_COMMAND} />
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        Paste into a terminal — installs to /Applications with no Gatekeeper warnings, and
+        re-running it updates in place. Apple Silicon only.
+      </p>
+    </div>
+  );
+}
+
 export function DownloadPicker() {
   // null until mounted (SSR-safe): no platform is highlighted server-side.
   const [detected, setDetected] = useState<Platform | null>(null);
@@ -68,9 +83,7 @@ export function DownloadPicker() {
 
   const featured: Platform = detected ?? 'mac';
   const featuredTargets = targetsFor(featured);
-  const featuredAvailable = platformAvailable(featured);
-  // The unsigned-app note is relevant whenever a macOS build is on the page.
-  const showMacNote = DOWNLOAD_TARGETS.some((t) => t.platform === 'mac' && t.available);
+  const featuredAvailable = featured === 'mac' || platformAvailable(featured);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -86,7 +99,11 @@ export function DownloadPicker() {
           </p>
           <p className="mt-1 text-lg font-semibold tracking-tight">{PLATFORM_LABELS[featured]}</p>
 
-          {featuredAvailable ? (
+          {featured === 'mac' ? (
+            <div className="mx-auto mt-6 max-w-xl">
+              <MacInstall />
+            </div>
+          ) : featuredAvailable ? (
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               {featuredTargets.map((t, i) => (
                 <DownloadButton key={t.label} target={t} primary={i === 0} />
@@ -100,8 +117,8 @@ export function DownloadPicker() {
                 <ComingSoon />
               </Button>
               <p className="mt-3 text-sm text-muted-foreground">
-                {PLATFORM_LABELS[featured]} builds aren&apos;t ready yet — grab macOS below, or check
-                back soon.
+                {PLATFORM_LABELS[featured]} builds aren&apos;t ready yet — install on macOS below,
+                or check back soon.
               </p>
             </div>
           )}
@@ -121,26 +138,40 @@ export function DownloadPicker() {
               className="flex flex-col gap-3 p-4 transition-colors hover:bg-card/60 sm:flex-row sm:items-center sm:justify-between"
             >
               <span className="font-medium">{PLATFORM_LABELS[p]}</span>
-              <div className="flex flex-wrap gap-2">
-                {targetsFor(p).map((t) => (
-                  <DownloadButton key={t.label} target={t} />
-                ))}
-              </div>
+              {p === 'mac' ? (
+                <div className="min-w-0 sm:max-w-xl sm:flex-1 sm:pl-6">
+                  <InstallCommand command={MAC_INSTALL_COMMAND} />
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {targetsFor(p).map((t) => (
+                    <DownloadButton key={t.label} target={t} />
+                  ))}
+                </div>
+              )}
             </li>
           ))}
         </ul>
       </div>
 
-      {showMacNote && (
-        <p className="mx-auto mt-8 max-w-md text-center text-xs leading-relaxed text-muted-foreground">
-          macOS builds are currently unsigned. On first open, right-click the app and choose{' '}
-          <strong className="text-foreground">Open</strong>, or run{' '}
-          <code className="rounded bg-muted px-1 py-0.5">
-            xattr -dr com.apple.quarantine /Applications/midnite.app
-          </code>
-          .
-        </p>
-      )}
+      <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed text-muted-foreground">
+        Prefer a manual macOS download? The .dmg is on the{' '}
+        <a
+          href={RELEASES_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="text-foreground underline-offset-4 hover:underline"
+        >
+          releases page
+        </a>
+        , but browser downloads are quarantined: after the blocked first launch, allow it under{' '}
+        <strong className="text-foreground">System Settings → Privacy &amp; Security → Open
+        Anyway</strong>, or run{' '}
+        <code className="rounded bg-muted px-1 py-0.5">
+          xattr -dr com.apple.quarantine /Applications/midnite.app
+        </code>
+        . The install command above avoids all of that.
+      </p>
     </div>
   );
 }
