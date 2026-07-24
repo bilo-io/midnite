@@ -49,7 +49,7 @@ describe('InboundSourcesSection', () => {
   it('lists a source with its receiver URL and events', async () => {
     listInboundSources.mockResolvedValue({ sources: [source({})] });
     render(<InboundSourcesSection />);
-    expect(await screen.findByText('github')).toBeInTheDocument();
+    expect(await screen.findByText('GitHub')).toBeInTheDocument();
     expect(screen.getByText('http://gw.test/integrations/inbound/s1')).toBeInTheDocument();
     expect(screen.getByText('issues.opened')).toBeInTheDocument();
   });
@@ -95,7 +95,7 @@ describe('InboundSourcesSection', () => {
       ],
     });
     render(<InboundSourcesSection />);
-    await screen.findByText('github');
+    await screen.findByText('GitHub');
 
     // Not fetched until expanded.
     expect(listInboundDeliveries).not.toHaveBeenCalled();

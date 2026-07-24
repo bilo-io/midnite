@@ -1,7 +1,9 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { Webhook as WebhookIcon } from 'lucide-react';
+import { DiscordIcon, SlackIcon, StyledSelect, type SelectOption } from '@midnite/ui';
 import {
   STATUSES,
   WEBHOOK_EVENTS,
@@ -137,6 +139,18 @@ const PROVIDER_LABEL: Record<WebhookProvider, string> = {
   generic: 'Generic',
 };
 
+const PROVIDER_ICON: Record<WebhookProvider, ReactNode> = {
+  slack: <SlackIcon />,
+  discord: <DiscordIcon />,
+  generic: <WebhookIcon className="h-4 w-4" aria-hidden />,
+};
+
+const PROVIDER_OPTIONS: SelectOption<WebhookProvider>[] = WEBHOOK_PROVIDERS.map((p) => ({
+  value: p,
+  label: PROVIDER_LABEL[p],
+  icon: PROVIDER_ICON[p],
+}));
+
 function eventsSummary(w: Webhook): string {
   const evs = w.eventFilter.events.map((e) => e.replace('task.', '')).join(', ');
   const st = w.eventFilter.statuses?.length ? ` → ${w.eventFilter.statuses.join('/')}` : '';
@@ -208,17 +222,12 @@ function CreateWebhookModal({
             <label className="block text-sm font-medium mb-1">
               {t('integrations.create.provider')}
             </label>
-            <select
+            <StyledSelect
+              options={PROVIDER_OPTIONS}
               value={provider}
-              onChange={(e) => setProvider(e.target.value as WebhookProvider)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              {WEBHOOK_PROVIDERS.map((p) => (
-                <option key={p} value={p}>
-                  {PROVIDER_LABEL[p]}
-                </option>
-              ))}
-            </select>
+              onChange={setProvider}
+              aria-label={t('integrations.create.provider')}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -436,7 +445,8 @@ export function IntegrationsView() {
                 <Fragment key={w.id}>
                   <tr>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                        {PROVIDER_ICON[w.provider]}
                         {PROVIDER_LABEL[w.provider]}
                       </span>
                     </td>

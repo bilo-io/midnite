@@ -1,7 +1,9 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { Webhook as WebhookIcon } from 'lucide-react';
+import { GithubIcon, LinearIcon, StyledSelect, type SelectOption } from '@midnite/ui';
 import {
   INBOUND_PROVIDER_EVENTS,
   INBOUND_PROVIDERS,
@@ -22,6 +24,24 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+
+const INBOUND_PROVIDER_LABEL: Record<InboundProvider, string> = {
+  github: 'GitHub',
+  linear: 'Linear',
+  generic: 'Generic',
+};
+
+const INBOUND_PROVIDER_ICON: Record<InboundProvider, ReactNode> = {
+  github: <GithubIcon />,
+  linear: <LinearIcon />,
+  generic: <WebhookIcon className="h-4 w-4" aria-hidden />,
+};
+
+const INBOUND_PROVIDER_OPTIONS: SelectOption<InboundProvider>[] = INBOUND_PROVIDERS.map((p) => ({
+  value: p,
+  label: INBOUND_PROVIDER_LABEL[p],
+  icon: INBOUND_PROVIDER_ICON[p],
+}));
 
 /** The receiver URL a sender posts to, for a given source id. */
 function receiverUrl(id: string): string {
@@ -156,20 +176,16 @@ function AddInboundSourceModal({
         <label className="mb-1 block text-xs font-medium text-muted-foreground">
           {t('integrations.inbound.add.provider')}
         </label>
-        <select
-          className="mb-4 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+        <StyledSelect
+          className="mb-4"
+          options={INBOUND_PROVIDER_OPTIONS}
           value={provider}
-          onChange={(e) => {
-            setProvider(e.target.value as InboundProvider);
+          onChange={(p) => {
+            setProvider(p);
             setEvents([]);
           }}
-        >
-          {INBOUND_PROVIDERS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+          aria-label={t('integrations.inbound.add.provider')}
+        />
 
         <label className="mb-1 block text-xs font-medium text-muted-foreground">
           {t('integrations.inbound.add.events')}{' '}
@@ -404,7 +420,12 @@ export function InboundSourcesSection() {
               {sources.map((s) => (
                 <Fragment key={s.id}>
                   <tr className="border-b border-border/50 last:border-0">
-                    <td className="p-3 font-medium">{s.provider}</td>
+                    <td className="p-3 font-medium">
+                      <span className="inline-flex items-center gap-1.5">
+                        {INBOUND_PROVIDER_ICON[s.provider]}
+                        {INBOUND_PROVIDER_LABEL[s.provider]}
+                      </span>
+                    </td>
                     <td className="p-3 font-mono text-xs text-muted-foreground">{receiverUrl(s.id)}</td>
                     <td className="p-3 text-xs">
                       {s.eventFilter.events.length
