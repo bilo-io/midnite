@@ -507,12 +507,16 @@ export function Screensaver({
             <Ring value={agentsPct} hueVar="--status-waiting" label="Agents" display={`${active}/${poolSize}`} />
             <Ring value={quota} hueVar="--status-done" label="Quota" display={`${Math.round(quota)}%`} />
             {disk ? (
-              // Arc = used fraction; centre = free space, caption = total (Phase 71).
+              // Arc = used fraction; centre = free space (Phase 71). Caption is
+              // kept short ("Storage") so its column matches the other two
+              // rings' width — the full free-of-total detail lives in the
+              // title tooltip instead of a long inline caption.
               <Ring
                 value={disk.usagePct}
                 hueVar="--status-todo"
-                label={`free of ${formatBytes(disk.totalBytes)}`}
+                label="Storage"
                 display={formatBytes(disk.freeBytes)}
+                title={`${formatBytes(disk.freeBytes)} free of ${formatBytes(disk.totalBytes)}`}
               />
             ) : null}
           </div>
@@ -592,11 +596,13 @@ function Ring({
   hueVar,
   label,
   display,
+  title,
 }: {
   value: number;
   hueVar: string;
   label: string;
   display: string;
+  title?: string;
 }) {
   const size = 64;
   const stroke = 6;
@@ -604,7 +610,10 @@ function Ring({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - clamp(value, 0, 100) / 100);
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    // Fixed column width keeps all three rings evenly spaced by `gap-6`
+    // regardless of caption length — without it, a longer caption widens
+    // its own flex column and throws off the visual spacing between circles.
+    <div className="flex w-20 flex-col items-center gap-1.5" title={title}>
       <div className="relative" style={{ height: size, width: size }}>
         <svg width={size} height={size} className="-rotate-90" aria-hidden>
           <circle

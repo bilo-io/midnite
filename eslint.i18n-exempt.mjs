@@ -319,6 +319,7 @@ export const I18N_EXEMPT = [
   "packages/web/components/usage-widget.tsx",
   "packages/web/components/weather-widget.tsx",
   "packages/web/components/widget-card.tsx",
+  "packages/web/components/widget-picker-menu.tsx",
   "packages/web/components/wordmark.tsx",
   "packages/web/components/work-item-modal.tsx",
   "packages/web/components/workflow-canvas.tsx",
