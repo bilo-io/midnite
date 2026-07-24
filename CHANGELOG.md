@@ -14,6 +14,75 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.6.0] - 2026-07-24
+
+A task-graph + operator-polish release: the Tasks page gains a **dependency
+graph view**, backups become **configurable at runtime**, translation coverage
+lands its **full sweep (Phase 82)**, and the board/detail surfaces get a
+consistent **cockpit** treatment.
+
+### Added
+
+- **Task dependency graph view** — the Tasks page has a new **graph** view mode
+  that lays out tasks and their blocker/blocked edges, with status-aware node and
+  edge colouring (blocked / unblocked / done). The graph honours the toolbar's
+  **status multi-select** and the **project filter set**, so it narrows exactly
+  like the board and list do, pulling cross-project blockers in as foreign nodes.
+- **Clickable dependency chips** — "Blocked by" / "Blocks" chips in the task
+  modal are now interactive: clicking one opens that task (with browser-history
+  back), and each chip adopts its linked task's status colour on hover.
+- **Configurable scheduled backups** — Settings → Data gains a real config UI
+  (enable switch, frequency preset, destination directory) wired to a new
+  admin-gated `PATCH portability/backup/config` endpoint, replacing the old
+  read-only "edit midnite.json" notice. The Data page is split into **Backup /
+  Restore tabs** (both panels stay mounted, so a chosen restore file survives
+  switching tabs). The default backup destination moved to `~/.midnite/data/backups`.
+- **Full translation coverage (Phase 82)** — the i18n gate is flipped on with the
+  catalog machinery in place, and the board, tasks, auth, and settings surfaces
+  are swept end to end (en-GB + fr-FR).
+- **Cockpit task/session detail** — task and session detail render as an
+  accordion-based layout with a **"Mark done"** action, sticky cockpit headers
+  across the remaining surfaces (projects, memory, ops, office), and reliable
+  modal → full-page navigation. Adds an item **count pill**, a page-scrolling
+  board with a **per-project view**, and **drag-reorder within a column**.
+- **Task description folded into the session prompt** — a task's description is
+  now included in the spawned session's prompt.
+- **Brand icons in provider dropdowns** — the Integrations webhook/inbound-source
+  selects and the workflow credential-type select move to styled selects with a
+  real brand glyph per option (GitHub, Slack, Discord, Linear, Google, …), with
+  matching icons in the corresponding table rows.
+- **Wordmark font + capitalisation picker** restored in Settings → Appearance.
+- **JSON error panels** now pretty-print leaked JSON error bodies, and
+  notification-feed rows are expandable.
+
+### Changed
+
+- **Unified select styling** — the media page's one-off react-select skin is
+  dropped in favour of the shared `@midnite/ui` select / `ProjectSelect`, and the
+  CLI install catalog becomes a single source of truth in `shared`.
+
+### Fixed
+
+- **No raw API JSON on RSC navigation** — a missing Next RSC flight file
+  (`‹route›/index.txt?_rsc=`) is now answered with a plain 404 so the client
+  router falls back to a clean navigation instead of surfacing raw API JSON
+  (e.g. the Councils page). (#541)
+- **WS sockets stop looping on token expiry** — the access token is refreshed
+  proactively, so live-status sockets no longer cycle reconnecting on a 15-minute
+  expiry. (#536)
+- **Agent-slot lifecycle** — a slot is reaped when its running task is moved to
+  done/abandoned or deleted (#531), a waiting task resumes when its tool-approval
+  is answered (#534), and `MetricsModule` is wired into `PoolModule` so
+  run-lifecycle metrics actually record.
+- **Ad-hoc "New session" terminals** open in the configured working directory. (#537)
+- **Electron builds no longer clobber the gateway's native-module ABI.** (#529)
+- **Gradient-accent buttons keep white text** — primary button text stays white
+  under a gradient accent in both themes (`shell` + `web`).
+- **Dropdown popovers portal to the body** to avoid stacking-context clipping.
+- **No nav hard-reloads** on API-colliding pages, plus a settings pane-only
+  reveal. (#528)
+- **JSON error panel** fills the available width instead of shrinking to content.
+
 ## [0.5.0] - 2026-07-22
 
 A localization + desktop-chrome release: midnite now **speaks multiple
@@ -285,6 +354,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.6.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.6.0
 [0.5.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.5.0
 [0.4.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.2
 [0.4.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.1
