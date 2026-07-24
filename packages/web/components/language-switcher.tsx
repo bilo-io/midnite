@@ -81,10 +81,7 @@ export function LanguageSwitcher({ expanded, locale, onSelect }: LanguageSwitche
       >
         <LocaleFlag locale={locale} className="h-5 w-5" />
         {expanded ? (
-          <>
-            <span className="flex-1 truncate text-left text-sm">{localeInfo(locale).nativeLabel}</span>
-            <span className="shrink-0 text-xs text-muted-foreground">{locale}</span>
-          </>
+          <span className="flex-1 truncate text-left text-sm">{locale}</span>
         ) : (
           <RailTooltip>{localeLabel(locale)}</RailTooltip>
         )}
