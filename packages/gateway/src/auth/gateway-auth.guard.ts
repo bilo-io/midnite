@@ -11,8 +11,12 @@ import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { isAuthExemptPath, isLoopbackHost, isPublicInboundReceiver, resolveAuthToken } from './lib/auth-policy';
 import { authenticateRequest } from './lib/authenticate-request';
-import type { JwtService } from './jwt.service';
-import type { ServiceTokensService } from '../service-tokens/service-tokens.service';
+// SECURITY: these two MUST be value imports. As `import type` they vanish at
+// runtime, tsc emits unusable DI metadata (`Function`), and the @Optional()
+// params silently inject `undefined` — which made this guard fail-open (REST
+// wide open) on every JWT-only install. Pinned by di-explicit-inject.test.ts.
+import { JwtService } from './jwt.service';
+import { ServiceTokensService } from '../service-tokens/service-tokens.service';
 
 type IncomingRequest = {
   url?: string;
@@ -35,8 +39,13 @@ export class GatewayAuthGuard implements CanActivate {
 
   constructor(
     @Inject(MIDNITE_CONFIG) config: MidniteConfig,
-    @Optional() private readonly jwtSvc?: JwtService,
-    @Optional() private readonly serviceTokens?: ServiceTokensService,
+    // REQUIRED in DI (no @Optional): if the wiring ever breaks again, the gateway
+    // refuses to boot instead of silently running with auth off. The `?` typing is
+    // only for unit tests that construct the guard by hand without a JwtService.
+    @Inject(JwtService) private readonly jwtSvc?: JwtService,
+    // Optional by design: the service-token layer is an add-on auth method.
+    // AuthModule imports ServiceTokensModule so this actually resolves.
+    @Optional() @Inject(ServiceTokensService) private readonly serviceTokens?: ServiceTokensService,
   ) {
     this.token = resolveAuthToken(config);
     if (this.token) {

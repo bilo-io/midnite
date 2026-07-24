@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { DbModule } from '../db/db.module';
+import { ServiceTokensModule } from '../service-tokens/service-tokens.module';
 import { UsersModule } from '../users/users.module';
 import { TeamsModule } from '../teams/teams.module';
 import { AuthController } from './auth.controller';
@@ -27,7 +28,10 @@ import { SsoStateRepository } from './sso-state.repository';
  * on mutation routes across all feature modules.
  */
 @Module({
-  imports: [DbModule, UsersModule, TeamsModule],
+  // ServiceTokensModule: so GatewayAuthGuard's @Optional service-token layer
+  // actually resolves — without the import it silently injected undefined and
+  // service-token bearers never authenticated REST calls.
+  imports: [DbModule, UsersModule, TeamsModule, ServiceTokensModule],
   controllers: [AuthController, SsoController],
   providers: [
     RefreshTokensRepository,
