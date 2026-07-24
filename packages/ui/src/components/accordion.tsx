@@ -17,6 +17,7 @@ export function Accordion({
   count,
   action,
   defaultOpen = false,
+  variant = 'card',
   children,
 }: {
   title: string;
@@ -24,18 +25,33 @@ export function Accordion({
   count?: number;
   action?: ReactNode;
   defaultOpen?: boolean;
+  /**
+   * How much chrome the section wears:
+   * - `card` (default): a bordered glass card wraps header + body, split by a
+   *   divider — the settings-page look.
+   * - `bare`: no frame around header or body; the title gets a trailing rule that
+   *   runs to the end of the header (like the sidenav section headers), and the
+   *   body floats with no top border.
+   */
+  variant?: 'card' | 'bare';
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   // Wire the trigger to its region so assistive tech knows which content the
   // button expands, and can jump to it (Phase 60 I).
   const bodyId = useId();
+  const bare = variant === 'bare';
 
   return (
-    <section className="overflow-hidden rounded-lg border bg-card/60">
-      {/* min-height keeps every header the same height whether or not it has an
-          action button (e.g. Sub Agents' Add), so the titles align down the page. */}
-      <div className="flex min-h-[3.25rem] items-center gap-2 px-3 py-2.5">
+    <section className={cn(!bare && 'overflow-hidden rounded-lg border bg-card/60')}>
+      {/* card: min-height keeps every header the same height whether or not it has
+          an action, so titles align down a settings page. bare: a tighter header. */}
+      <div
+        className={cn(
+          'flex items-center gap-2 px-3',
+          bare ? 'py-2' : 'min-h-[3.25rem] py-2.5',
+        )}
+      >
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -55,19 +71,22 @@ export function Accordion({
               {icon}
             </span>
           ) : null}
-          <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <h2 className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {title}
           </h2>
           {typeof count === 'number' ? (
-            <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+            <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
               {count}
             </span>
           ) : null}
+          {/* Rule fills the width to the right of the title, mirroring the sidenav
+              section headers. */}
+          {bare ? <span aria-hidden className="h-px flex-1 bg-border/60" /> : null}
         </button>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       <Collapse open={open} id={bodyId} role="region" aria-label={title}>
-        <div className="border-t border-border/60">{children}</div>
+        <div className={cn(!bare && 'border-t border-border/60')}>{children}</div>
       </Collapse>
     </section>
   );

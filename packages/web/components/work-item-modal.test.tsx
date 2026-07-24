@@ -4,8 +4,10 @@ import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { Task } from '@midnite/shared';
 
 // next/navigation's useRouter throws outside the App Router runtime, so stub it.
+// Shared push spy so dep-chip navigation can be asserted.
+const routerPush = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: routerPush }),
 }));
 
 // data-refresh kicks the SWR cache; a no-op keeps the test gateway-free.
@@ -101,6 +103,26 @@ describe('WorkItemModal — Dependencies (Details tab)', () => {
 
     expect(addTaskDependency).toHaveBeenCalledWith('subj', 'other');
     expect(await screen.findByText('would create a dependency cycle')).toBeInTheDocument();
+  });
+
+  it('opens a blocker in the modal (pushes ?task=) when its chip is clicked', () => {
+    const blocker = task('blk', { title: 'Blocker task', status: 'wip' });
+    const subject = task('subj', { title: 'Subject', dependsOn: ['blk'] });
+    renderModal(subject, [subject, blocker]);
+
+    // The chip is a button whose accessible name starts with the task title; the
+    // remove button ("Remove blocker …") is a separate button, so anchor the match.
+    fireEvent.click(screen.getByRole('button', { name: /^Blocker task/ }));
+    expect(routerPush).toHaveBeenCalledWith('/tasks?task=blk');
+  });
+
+  it('opens a dependent ("Blocks") task in the modal when its chip is clicked', () => {
+    const subject = task('subj', { title: 'Subject' });
+    const dependent = task('dep', { title: 'Dependent task', dependsOn: ['subj'] });
+    renderModal(subject, [subject, dependent]);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Dependent task/ }));
+    expect(routerPush).toHaveBeenCalledWith('/tasks?task=dep');
   });
 
   it('removes a blocker via its remove button', async () => {

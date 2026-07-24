@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowUpRight, Check, ExternalLink, GitCompare, Plus, RefreshCw, X } from 'lucide-react';
@@ -49,6 +49,7 @@ import {
 import { invalidateData } from '@/lib/data-refresh';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { dependentsOf } from '@/lib/task-dependencies';
+import { taskModalHref } from '@/lib/task-route';
 import { cn } from '@/lib/utils';
 import { useTaskPaletteCommands } from '@/hooks/use-task-palette-commands';
 
@@ -70,12 +71,17 @@ const KIND_HUE_VAR: Record<NonNullable<Task['kind']>, string> = {
 };
 
 /** A compact "chip" for a blocker/dependent task — used by the Dependencies accordion
- *  so a task with many links doesn't force one full-width row per link (Phase 82). */
-function DependencyPill({
+ *  so a task with many links doesn't force one full-width row per link (Phase 82).
+ *  When `onOpen` is given the chip is a button that opens that task in the modal, and
+ *  on hover it takes on its status colour (border + a subtle gradient) — see the
+ *  `.dep-pill` rule in globals.css, fed the status hue via `--pill-accent`. Exported
+ *  for unit testing the open/remove wiring. */
+export function DependencyPill({
   title,
   hue,
   statusText,
   statusClassName,
+  onOpen,
   onRemove,
   removeAriaLabel,
   disabled,
@@ -84,16 +90,18 @@ function DependencyPill({
   hue?: string;
   statusText: string;
   statusClassName?: string;
+  onOpen?: () => void;
   onRemove?: () => void;
   removeAriaLabel?: string;
   disabled?: boolean;
 }) {
-  return (
-    <span className="inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 py-1 pl-2.5 pr-1.5 text-xs">
+  const accent = hue ? `var(${hue})` : 'var(--muted-foreground)';
+  const inner = (
+    <>
       <span
         aria-hidden
         className="h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ background: hue ? `hsl(var(${hue}))` : 'hsl(var(--muted-foreground))' }}
+        style={{ background: `hsl(${accent})` }}
       />
       <span className="min-w-0 truncate">{title}</span>
       <span
@@ -104,13 +112,35 @@ function DependencyPill({
       >
         {statusText}
       </span>
+    </>
+  );
+  return (
+    <span
+      className={cn(
+        'inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 py-1 pl-2.5 pr-1.5 text-xs transition-colors',
+        onOpen && 'dep-pill',
+      )}
+      // `--pill-accent` drives the status-coloured hover border + gradient (globals.css).
+      style={onOpen ? ({ '--pill-accent': accent } as CSSProperties) : undefined}
+    >
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+        >
+          {inner}
+        </button>
+      ) : (
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">{inner}</span>
+      )}
       {onRemove ? (
         <button
           type="button"
           onClick={onRemove}
           disabled={disabled}
           aria-label={removeAriaLabel}
-          className="shrink-0 rounded-full p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
+          className="shrink-0 cursor-pointer rounded-full p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
         >
           <X className="h-3 w-3" />
         </button>
@@ -251,11 +281,20 @@ export function TaskDetail({
   const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
 
+  // In the modal the sections read "naked" — accordions lose their card frame and
+  // gain a sidenav-style trailing divider, and the always-open content blocks drop
+  // their frame too. The full page keeps the framed cards (it has its own rails).
+  const accordionVariant = variant === 'modal' ? 'bare' : 'card';
+  const contentFrame = variant === 'modal' ? '' : 'rounded-lg border bg-card/60';
+
   // Contextual ⌘K "Move to…" commands, live only while this detail surface is
   // mounted (modal or full page) — Phase 42 C.
   useTaskPaletteCommands(task, tasks);
 
   const router = useRouter();
+  // Open a linked (blocker/dependent) task in the modal, pushing a history entry so
+  // Back returns to this task. Reuses the `?task=` modal route (task-route.ts).
+  const openLinkedTask = (id: string) => router.push(taskModalHref(id));
   const confirm = useConfirm();
   const [links, setLinks] = useState<TaskLink[]>(task.links ?? []);
   const [linkUrl, setLinkUrl] = useState('');
@@ -587,7 +626,7 @@ export function TaskDetail({
 
         {/* Tags + milestone: two short, always-relevant fields sharing one compact
             card (Phase 82) instead of two full-width headings stacked in a row. */}
-        <section className="grid gap-4 rounded-lg border bg-card/60 p-3 sm:grid-cols-2">
+        <section className={cn('grid gap-4 p-3 sm:grid-cols-2', contentFrame)}>
           <div>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('tags.title')}
@@ -636,7 +675,7 @@ export function TaskDetail({
         {/* Dependencies: blockers/dependents as flex-wrapping pills rather than
             one full-width row each, so a busy task doesn't push everything below
             it off-screen (Phase 82). */}
-        <Accordion title={t('dependencies.title')} count={dependsOn.length + dependents.length} defaultOpen>
+        <Accordion title={t('dependencies.title')} count={dependsOn.length + dependents.length} defaultOpen variant={accordionVariant}>
           <div className="space-y-3 p-3">
             <div>
               <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -654,6 +693,7 @@ export function TaskDetail({
                         hue={blocker ? STATUS_HUE_VAR[blocker.status] : undefined}
                         statusText={done ? t('dependencies.done') : t('dependencies.pending')}
                         statusClassName={done ? 'text-success' : undefined}
+                        onOpen={() => openLinkedTask(id)}
                         onRemove={() => void removeBlocker(id)}
                         removeAriaLabel={t('dependencies.removeBlocker', {
                           title: blocker ? blocker.title : id,
@@ -687,6 +727,7 @@ export function TaskDetail({
                       title={d.title}
                       hue={STATUS_HUE_VAR[d.status]}
                       statusText={statusLabel(d.status)}
+                      onOpen={() => openLinkedTask(d.id)}
                     />
                   ))}
                 </div>
@@ -695,7 +736,7 @@ export function TaskDetail({
           </div>
         </Accordion>
 
-        <Accordion title={t('links.title')} count={links.length} defaultOpen={links.length > 0}>
+        <Accordion title={t('links.title')} count={links.length} defaultOpen={links.length > 0} variant={accordionVariant}>
           <div className="space-y-2 p-3">
             {links.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
@@ -759,7 +800,7 @@ export function TaskDetail({
         </Accordion>
 
         {task.prompt ? (
-          <section className="rounded-lg border bg-card/60 p-3">
+          <section className={cn('p-3', contentFrame)}>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('prompt.title')}
             </h3>
@@ -768,7 +809,7 @@ export function TaskDetail({
         ) : null}
 
         {images.length > 0 ? (
-          <section className="rounded-lg border bg-card/60 p-3">
+          <section className={cn('p-3', contentFrame)}>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('attachments.title')}
             </h3>
@@ -789,6 +830,7 @@ export function TaskDetail({
           <Accordion
             title={t('pr.title')}
             defaultOpen
+            variant={accordionVariant}
             action={
               <button
                 type="button"
@@ -860,7 +902,7 @@ export function TaskDetail({
         ) : null}
 
         {task.aiReview ? (
-          <Accordion title={t('aiReview.title')} defaultOpen>
+          <Accordion title={t('aiReview.title')} defaultOpen variant={accordionVariant}>
             <div className="space-y-2 p-3">
               <div className="flex items-center gap-2">
                 <span
@@ -892,7 +934,7 @@ export function TaskDetail({
           </Accordion>
         ) : null}
 
-        <section className="rounded-lg border bg-card/60 p-3">
+        <section className={cn('p-3', contentFrame)}>
           <ChecksPanel taskId={task.id} />
         </section>
 
@@ -904,7 +946,7 @@ export function TaskDetail({
         {/* Phase 61 G — per-task run strip (attempts / retries / live run).
             Hidden on the full page, where it lives in the left "Agent events" rail. */}
         {hideAgentRuns ? null : (
-          <Accordion title={t('runs.title')}>
+          <Accordion title={t('runs.title')} variant={accordionVariant}>
             <div className="p-3">
               <RunTimeline taskId={task.id} />
             </div>
@@ -915,7 +957,7 @@ export function TaskDetail({
             doesn't dominate the body; hidden on the full page, where it lives in
             the right "Activity" rail. */}
         {hideActivity ? null : (
-          <Accordion title={t('activity.title')} count={task.events.length}>
+          <Accordion title={t('activity.title')} count={task.events.length} variant={accordionVariant}>
             <div className="p-3">
               <Timeline events={task.events} />
             </div>

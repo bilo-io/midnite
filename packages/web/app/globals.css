@@ -896,6 +896,21 @@ html[data-motion='reduced'] .screensaver-title {
   animation-delay: calc((var(--pill-i, 0) - 2) * 0.4s);
 }
 
+/* Clickable dependency chip (task modal). On hover it adopts the linked task's
+   status colour — the component sets `--pill-accent` to the status hue triple
+   (e.g. `var(--status-done)`) so one rule covers every status. */
+.dep-pill {
+  cursor: pointer;
+}
+.dep-pill:hover {
+  border-color: hsl(var(--pill-accent, var(--border)) / 0.9);
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--pill-accent, var(--border)) / 0.16),
+    hsl(var(--pill-accent, var(--border)) / 0.04)
+  );
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   html:not([data-motion='full']) .pill-shimmer {

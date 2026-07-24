@@ -117,5 +117,5 @@ export function WorkflowsTable({
     };
   });
 
-  return <SortableAccordions sections={sections} storageKey="midnite.workflows.sections" />;
+  return <SortableAccordions sections={sections} storageKey="midnite.workflows.sections" variant="split" />;
 }
