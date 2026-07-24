@@ -545,16 +545,18 @@ export async function listTaskSummaries(query?: TaskListQuery): Promise<{ items:
   return fetchJson(`/tasks${suffix}`, undefined, TasksPageSchema);
 }
 
-/** Phase 58 A — the dependency graph (optionally scoped to one project, and — Phase
- *  58 F — one milestone within it). Bounded; check `graph.truncated` /
+/** Phase 58 A — the dependency graph (optionally scoped to a set of projects, and
+ *  — Phase 58 F — one milestone within it). Bounded; check `graph.truncated` /
  *  `graph.totalCount` before assuming it's complete. */
 export async function getTaskGraph(
-  projectId?: string,
+  projectIds?: string | string[],
   milestoneId?: string,
   signal?: AbortSignal,
 ): Promise<TaskGraph> {
   const params = new URLSearchParams();
-  if (projectId) params.set('projectId', projectId);
+  const ids = (Array.isArray(projectIds) ? projectIds : projectIds ? [projectIds] : []).filter(Boolean);
+  // The gateway reads `projectId` as a comma-separated set (one, several, none).
+  if (ids.length) params.set('projectId', ids.join(','));
   if (milestoneId) params.set('milestoneId', milestoneId);
   const qs = params.toString();
   const res = await fetchJson(`/tasks/graph${qs ? `?${qs}` : ''}`, { signal }, TaskGraphResponseSchema);

@@ -48,5 +48,12 @@ export type TaskGraph = z.infer<typeof TaskGraphSchema>;
 export const TaskGraphResponseSchema = z.object({ graph: TaskGraphSchema });
 export type TaskGraphResponse = z.infer<typeof TaskGraphResponseSchema>;
 
+/**
+ * Sentinel project-filter value matching tasks with no project. Shared by the
+ * task board's project filter and the graph's `projectId` query so both agree on
+ * the same "unassigned" token — a UUIDv7 project id can never collide with it.
+ */
+export const UNASSIGNED_PROJECT_ID = 'none';
+
 /** Max nodes returned; beyond this the graph is truncated + flagged. */
 export const TASK_GRAPH_NODE_CAP = 500;

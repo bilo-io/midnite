@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { parseConfig, type Status } from '@midnite/shared';
+import { parseConfig, UNASSIGNED_PROJECT_ID, type Status } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';
@@ -92,7 +92,7 @@ describe('TasksService.buildGraph (Phase 58 A)', () => {
     });
     service.addDependency(dependent.id, blocker.id);
 
-    const graph = service.buildGraph('proj-A');
+    const graph = service.buildGraph(['proj-A']);
     const ids = graph.nodes.map((n) => n.id).sort();
     expect(ids).toEqual([blocker.id, dependent.id].sort());
     expect(graph.nodes.find((n) => n.id === blocker.id)?.foreign).toBe(true);
@@ -100,6 +100,26 @@ describe('TasksService.buildGraph (Phase 58 A)', () => {
     expect(graph.edges).toEqual([{ from: dependent.id, to: blocker.id }]);
     // Only the in-scope project task counts toward totalCount.
     expect(graph.totalCount).toBe(1);
+  });
+
+  it('scopes to several projects at once, keeping only the selected projects’ tasks', async () => {
+    const a = await service.createFromPrompt({ prompt: 'task a', images: [], projectId: 'proj-A' });
+    const b = await service.createFromPrompt({ prompt: 'task b', images: [], projectId: 'proj-B' });
+    await service.createFromPrompt({ prompt: 'task c', images: [], projectId: 'proj-C' });
+
+    const graph = service.buildGraph(['proj-A', 'proj-B']);
+    expect(graph.nodes.map((n) => n.id).sort()).toEqual([a.id, b.id].sort());
+    expect(graph.totalCount).toBe(2);
+  });
+
+  it('scopes to unassigned tasks via the shared sentinel, mixable with a real project', async () => {
+    const orphan = await service.createFromPrompt({ prompt: 'no project', images: [] });
+    const a = await service.createFromPrompt({ prompt: 'task a', images: [], projectId: 'proj-A' });
+    await service.createFromPrompt({ prompt: 'task b', images: [], projectId: 'proj-B' });
+
+    const graph = service.buildGraph([UNASSIGNED_PROJECT_ID, 'proj-A']);
+    expect(graph.nodes.map((n) => n.id).sort()).toEqual([orphan.id, a.id].sort());
+    expect(graph.totalCount).toBe(2);
   });
 
   it('filters to a milestone, surfacing an out-of-milestone blocker as foreign (Phase 58 F)', async () => {

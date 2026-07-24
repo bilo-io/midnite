@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, inArray, isNotNull, lte, notInArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, notInArray, or, sql } from 'drizzle-orm';
 import {
   ANSWER_EVENT_KIND,
   detectSourceKind,
+  UNASSIGNED_PROJECT_ID,
   type CheckResult,
   type CheckRun,
   type CheckRunStatus,
@@ -398,6 +399,34 @@ export class TasksRepository {
     );
     // Highest priority first, then oldest within a priority — this drives the
     // scheduler's todo selection and the board's within-column order.
+    return this.db
+      .select()
+      .from(tasks)
+      .where(where)
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id))
+      .all();
+  }
+
+  /**
+   * Task rows scoped to a *set* of project ids, for the dependency graph
+   * (Phase 58 A multi-select). Same ordering as {@link listTasks} so a truncated
+   * slice keeps the highest-priority/oldest tasks. `undefined`/empty → every task
+   * (no project filter). The {@link UNASSIGNED_PROJECT_ID} sentinel matches tasks
+   * with no project (`projectId IS NULL`), so it can be mixed with real ids.
+   */
+  listTasksForGraph(projectIds: string[] | undefined, scope?: TeamScope): TaskRow[] {
+    const ids = projectIds?.filter((id) => id !== UNASSIGNED_PROJECT_ID) ?? [];
+    const includeUnassigned = projectIds?.includes(UNASSIGNED_PROJECT_ID) ?? false;
+    const projectFilter = projectIds?.length
+      ? or(
+          ids.length ? inArray(tasks.projectId, ids) : undefined,
+          includeUnassigned ? isNull(tasks.projectId) : undefined,
+        )
+      : undefined;
+    const where = and(
+      projectFilter,
+      scope ? teamScopeFilter(tasks.createdBy, tasks.teamId, scope) : undefined,
+    );
     return this.db
       .select()
       .from(tasks)

@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, Columns3, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
-import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
+import {
+  UNASSIGNED_PROJECT_ID,
+  type Project,
+  type Repo,
+  type Status,
+  type Task,
+  type TaskSummary,
+} from '@midnite/shared';
 import { deleteTask, getTask, reopenTask, reorderTasks, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { moveTask, spawnsSession } from '@/lib/task-transitions';
@@ -74,8 +81,9 @@ function MoveToMenu({ onMove }: { onMove: (status: Status) => void }) {
   );
 }
 
-// Sentinel project-filter value for tasks with no project. A UUID can't collide.
-const UNASSIGNED = 'none';
+// Sentinel project-filter value for tasks with no project — shared with the
+// gateway's graph query so both agree on the same "unassigned" token.
+const UNASSIGNED = UNASSIGNED_PROJECT_ID;
 
 // Board layout style (only meaningful in board view): one shared board across all
 // projects, or one collapsible board per project. Persisted locally like the view.
@@ -504,11 +512,12 @@ export function TasksView({
   return (
     <div
       className={cn(
-        'reveal-staged container flex min-h-0 flex-1 flex-col pt-2',
-        // The graph is a bounded, full-height canvas — sit it close under the
-        // toolbar and let it run to the very bottom (no gap/padding to waste).
+        'reveal-staged container flex min-h-0 flex-1 flex-col',
+        // The graph is a bounded, full-height canvas — sit its sticky toolbar
+        // flush under the collapsed header / desktop title bar (no top gap) and
+        // let the canvas run to the very bottom (no gap/padding to waste).
         // List/board flow with the document, so they keep the roomier spacing.
-        view === 'graph' ? 'gap-2 pb-0' : 'gap-4 pb-4',
+        view === 'graph' ? 'gap-2 pb-0 pt-0' : 'gap-4 pb-4 pt-2',
       )}
     >
       <StickyToolbar className="reveal-controls">
@@ -598,7 +607,7 @@ export function TasksView({
             projects={projects}
             showTaskModal={false}
             embedded
-            projectId={scopedProject?.id}
+            projectIds={[...activeProjects]}
           />
         ) : (
           <BoardView
