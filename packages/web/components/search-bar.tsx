@@ -49,7 +49,12 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
     <div className="relative">
       <Search
         aria-hidden
-        className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+        className={cn(
+          'pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground',
+          // Expanded: sit inside the input's left text padding (pl-8).
+          // Collapsed: centre the icon in the square icon-button.
+          expanded ? 'left-2.5' : 'left-1/2 -translate-x-1/2',
+        )}
       />
       <input
         ref={inputRef}
@@ -65,8 +70,16 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
         aria-label={placeholder}
         data-tour="search-input"
         className={cn(
-          'h-8 rounded-md border border-input bg-background pl-8 text-sm placeholder:text-muted-foreground transition-[width] duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring motion-reduce:transition-none',
+          'h-8 rounded-md pl-8 text-sm placeholder:text-muted-foreground transition-[width] duration-200 ease-in-out focus-visible:outline-none motion-reduce:transition-none',
           expanded ? 'w-44 cursor-text pr-7 sm:w-56' : 'w-8 cursor-pointer pr-2 hover:bg-accent',
+          // Focused (always expanded too) wears the same primary gradient as the
+          // "+ New" buttons, but only on the border, with a slow drifting glow —
+          // otherwise a plain input border, so the effect reads as "active".
+          // A single self-sufficient class — see its comment in globals.css for
+          // why it can't be combined with the base `.accent-gradient-border`.
+          focused
+            ? 'accent-gradient-border--spin'
+            : 'border border-input bg-background focus-visible:ring-1 focus-visible:ring-ring',
         )}
       />
       {expanded && value ? (

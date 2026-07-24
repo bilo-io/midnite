@@ -372,6 +372,63 @@
   z-index: -2;
 }
 
+/* A "live" variant for small interactive controls (e.g. the focused search
+ * bar): the accent gradient drifts across the border ring + halo rather than
+ * sitting static. `--accent-gradient` may already be a linear OR conic value
+ * (Phase 68's animated presets), so it can't be re-nested inside another
+ * `conic-gradient(from var(--gradient-angle), …)` the way `.gradient-border`
+ * spins its hardcoded rainbow stops — sweeping `background-position` over an
+ * oversized layer is the same "living gradient" technique `.update-banner-surface`
+ * / `.auth-hero-title` already use elsewhere in this file, applied here to just
+ * the 1px frame. Reuses `@midnite/ui`'s `gradient-border-glow-pulse` keyframe
+ * for the halo's breathing opacity.
+ *
+ * Self-sufficient (repeats `.accent-gradient-border`'s own rules) rather than
+ * meant to be combined with it via `cn()`/`twMerge` — `twMerge` treats any two
+ * classes sharing the `-border` suffix as the same conflict group and silently
+ * drops whichever loses, so `cn('accent-gradient-border', 'accent-gradient-border--spin')`
+ * would render with NO border at all. Apply `--spin` on its own. */
+.accent-gradient-border--spin {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
+    var(--accent-gradient, var(--brand-gradient)) border-box;
+  background-size: 260% 260%;
+  animation: accent-gradient-sweep 3s ease-in-out infinite;
+}
+.accent-gradient-border--spin::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: var(--accent-gradient, var(--brand-gradient));
+  background-size: 260% 260%;
+  filter: blur(14px);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: -2;
+  animation:
+    accent-gradient-sweep 3s ease-in-out infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite;
+}
+@keyframes accent-gradient-sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .accent-gradient-border--spin,
+  html:not([data-motion='full']) .accent-gradient-border--spin::after {
+    animation: none;
+  }
+}
+
 /* An *executing* task (`wip` — an agent is actively running it) wears the app's
  * signature rotating + pulsating gradient, so a live task reads the same on the
  * board, in the list/table rows, and on the dependency graph. Applied as a

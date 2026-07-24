@@ -126,5 +126,5 @@ export function MemoriesTree({
     });
   }
 
-  return <SortableAccordions sections={sections} storageKey="midnite.memory.tree" />;
+  return <SortableAccordions sections={sections} storageKey="midnite.memory.tree" variant="split" />;
 }
