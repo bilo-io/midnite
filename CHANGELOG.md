@@ -14,6 +14,36 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.7.1] - 2026-07-24
+
+An auth-hardening release for distribution: a downloaded app now requires a
+sign-in out of the box, and access can be granted by email domain.
+
+### Added
+
+- **Login required out of the box (packaged desktop)** — a freshly-installed app
+  provisions its own signing + encryption secrets on first launch, so it boots
+  with authentication **on** and the dashboard is never reachable without signing
+  in. This also fills in the setup wizard's "Secret key" step automatically.
+- **Domain allowlist entries** — the access allowlist now accepts a domain
+  pattern like `@example.com` (admits everyone at that domain) alongside
+  individual email addresses, so a whole team can be allowed without listing each
+  person.
+
+### Changed
+
+- **WebSocket connections require a valid token when auth is enabled** — the live
+  board and terminal no longer accept anonymous connections behind the login
+  gate. Local (auth-off) mode is unchanged.
+
+### Fixed
+
+- **No dashboard flash on launch** — a logged-out launch now shows the login
+  screen directly instead of briefly flashing the dashboard before redirecting.
+- **Marketing site canonical URL** — the site's Open Graph / canonical base now
+  points at the live marketing domain so shared and social links resolve
+  correctly.
+
 ## [0.7.0] - 2026-07-24
 
 A macOS distribution release: installing (and updating) no longer walks users
@@ -377,6 +407,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.7.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.1
 [0.7.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.0
 [0.6.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.6.0
 [0.5.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.5.0
