@@ -6,8 +6,8 @@ order: 1
 
 # Getting started
 
-midnite ships as a single desktop download for macOS (Apple Silicon), Windows,
-and Linux. Grab the build for your platform, open it, and you're running — the app
+midnite ships as a single desktop app for macOS (Apple Silicon), Windows,
+and Linux. Install it — one command on macOS — open it, and you're running — the app
 bundles everything it needs (the local [gateway](/) and the UI) and runs entirely
 on your machine. There's no server to stand up, no account to create, and no data
 that leaves your device except the agents' own calls to their model provider.
@@ -25,46 +25,47 @@ The rest of this page walks you from download to a running agent in a few minute
 - A **git repository or two** you want agents to work in — registered under
   [Settings → Repos](/settings/settings).
 
-## Download
+## Install
 
-All builds are published on the releases page:
+### macOS (Apple Silicon) — one command
 
-**→ [github.com/bilo-io/midnite-app/releases/latest](https://github.com/bilo-io/midnite-app/releases/latest)**
+Paste this into a terminal:
 
-Pick the asset for your platform:
+```bash
+curl -fsSL https://raw.githubusercontent.com/bilo-io/midnite-app/main/install.sh | sh
+```
 
-| Platform | File |
-| --- | --- |
-| macOS (Apple Silicon) | `midnite-<version>-arm64.dmg` |
-| Windows (x64) | `midnite-<version>-x64.exe` |
-| Linux (x64) | `midnite-<version>-x86_64.AppImage` |
+It downloads the latest release, installs it to `/Applications`, links the
+`midnite` CLI onto your `PATH` when it can, and launches the app — with **no
+Gatekeeper warnings**. (The builds aren't notarized yet; installing with `curl`
+means macOS never quarantines the app, unlike a browser download.) **Re-run the
+same command any time to update.**
 
 > Intel Macs aren't supported in the current release — the macOS build is Apple Silicon only.
 
-## Install from the command line
+### Windows and Linux
 
-Prefer the terminal? This grabs the latest macOS (Apple Silicon) build and opens
-the installer:
+Download the build from the [releases
+page](https://github.com/bilo-io/midnite-app/releases/latest):
 
-```bash
-curl -fsSL https://api.github.com/repos/bilo-io/midnite-app/releases/latest \
-  | grep -o 'https://[^"]*arm64\.dmg' | head -1 \
-  | xargs curl -L -o ~/Downloads/midnite.dmg
-open ~/Downloads/midnite.dmg
-```
+| Platform | File |
+| --- | --- |
+| Windows (x64) | `midnite-<version>-x64.exe` |
+| Linux (x64) | `midnite-<version>-x86_64.AppImage` |
 
 ## First launch
 
-The desktop builds are **ad-hoc signed but not yet notarized by Apple** (and
-unsigned on Windows), so your OS will warn you the first time you open one. This is
-expected for an early release — here's how to get past it:
-
-- **macOS** — right-click the app in Applications and choose **Open** (instead of
-  double-clicking), then confirm. If it's still blocked, run:
+- **macOS** — installed via the command above, the app just opens. If you instead
+  downloaded the `.dmg` in a browser, macOS quarantines it and blocks the first
+  launch ("Apple could not verify…") — and on macOS 15+ the old *right-click →
+  Open* trick no longer works. Either allow it under **System Settings → Privacy
+  & Security → Open Anyway** after the blocked attempt, or clear the quarantine
+  flag:
   ```bash
   xattr -dr com.apple.quarantine /Applications/midnite.app
   ```
-- **Windows** — on the SmartScreen prompt, click **More info → Run anyway**.
+- **Windows** — the installer is unsigned, so on the SmartScreen prompt click
+  **More info → Run anyway**.
 - **Linux** — make the AppImage executable, then run it:
   ```bash
   chmod +x midnite-*.AppImage
