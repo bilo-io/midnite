@@ -58,14 +58,15 @@ type Props = {
   /** True when hosted inline on another page (the Tasks page's graph view mode)
    *  that already renders its own project-scoping filter + completion bar in its
    *  sticky toolbar — hides this component's own header bar (project picker,
-   *  task/dependency count, milestone chip) and takes its scope from `projectId`
+   *  task/dependency count, milestone chip) and takes its scope from `projectIds`
    *  instead of the `?projectId=`/`?milestoneId=` query params. Defaults to
    *  false (the standalone `/tasks/graph` route owns its own header). */
   embedded?: boolean;
-  /** Project id to scope the graph to when `embedded`; ignored otherwise (the
-   *  standalone route reads its own `?projectId=` query param). Undefined shows
-   *  every project's tasks, matching "no project selected". */
-  projectId?: string;
+  /** Project ids to scope the graph to when `embedded` — the board's project
+   *  multi-select; ignored otherwise (the standalone route reads its own
+   *  `?projectId=` query param). Empty/undefined shows every project's tasks,
+   *  matching "no project selected". */
+  projectIds?: string[];
 };
 
 /**
@@ -79,7 +80,7 @@ export function TaskGraphView({
   projects,
   showTaskModal = true,
   embedded = false,
-  projectId: scopeProjectIdProp,
+  projectIds: scopeProjectIdsProp,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -89,13 +90,24 @@ export function TaskGraphView({
   // Keep the board channel live so the graph tracks status/edge changes (Phase 56).
   useTaskEvents();
 
-  const projectId = embedded ? (scopeProjectIdProp ?? '') : (searchParams.get(PROJECT_PARAM) ?? '');
+  // The standalone route drives its scope from `?projectId=` (single-select in
+  // its own header); the embedded Tasks-page graph takes the board's project
+  // multi-select via `projectIds`.
+  const singleProjectId = embedded ? '' : (searchParams.get(PROJECT_PARAM) ?? '');
+  const scopeProjectIds = useMemo(
+    () => (embedded ? (scopeProjectIdsProp ?? []) : singleProjectId ? [singleProjectId] : []),
+    [embedded, scopeProjectIdsProp, singleProjectId],
+  );
+  // A stable primitive key for the fetch deps + the ReactFlow remount (an array
+  // identity would churn every render).
+  const scopeKey = scopeProjectIds.join(',');
   // Phase 58 F — an optional milestone scope (deep-linked from a roadmap lane);
   // not exposed by the embedded Tasks-page graph, which has no milestone filter.
   const milestoneId = embedded ? '' : (searchParams.get(MILESTONE_PARAM) ?? '');
   const { data: graph, loading } = useApiData(
-    (signal) => getTaskGraph(projectId || undefined, milestoneId || undefined, signal),
-    [projectId, milestoneId],
+    (signal) =>
+      getTaskGraph(scopeProjectIds.length ? scopeProjectIds : undefined, milestoneId || undefined, signal),
+    [scopeKey, milestoneId],
   );
 
   const projectOptions = useMemo(
@@ -109,8 +121,8 @@ export function TaskGraphView({
   // Phase 58 C — when scoped to a project, show its completion (done/total tasks,
   // server-computed via Theme C) next to the picker; hidden for "All projects".
   const selectedProject = useMemo(
-    () => (projectId ? projects.find((p) => p.id === projectId) : undefined),
-    [projectId, projects],
+    () => (singleProjectId ? projects.find((p) => p.id === singleProjectId) : undefined),
+    [singleProjectId, projects],
   );
 
   const setProject = useCallback(
@@ -214,7 +226,7 @@ export function TaskGraphView({
           <StyledSelect
             aria-label="Filter graph by project"
             options={projectOptions}
-            value={projectId}
+            value={singleProjectId}
             onChange={setProject}
             className="w-52"
           />
@@ -255,14 +267,14 @@ export function TaskGraphView({
       <div ref={flowWrapRef} className="relative min-h-0 flex-1">
         {empty ? (
           <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
-            No tasks to graph{projectId ? ' for this project' : ''} yet.
+            No tasks to graph{scopeProjectIds.length ? ' for this scope' : ''} yet.
           </div>
         ) : (
           <ReactFlow
             // Remount to re-place the viewport when the scope (project) or node
             // count changes; steady-state refetches keep the same key, so the
             // user's pan/zoom is preserved.
-            key={`${projectId}:${nodes.length}`}
+            key={`${scopeKey}:${nodes.length}`}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}

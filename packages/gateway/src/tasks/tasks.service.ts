@@ -293,10 +293,12 @@ export class TasksService implements OnModuleDestroy {
    * task whose every blocker is `done`), so a node's state matches the board.
    * Bounded at {@link TASK_GRAPH_NODE_CAP}; beyond it, `truncated` + `totalCount`.
    */
-  buildGraph(projectId: string | undefined, scope?: TeamScope, milestoneId?: string): TaskGraph {
-    // listTasks orders by priority desc, createdAt asc — so a truncated slice keeps
-    // the highest-priority/oldest tasks (the ones that matter most).
-    const allRows = this.repo.listTasks(undefined, projectId, scope);
+  buildGraph(projectIds: string[] | undefined, scope?: TeamScope, milestoneId?: string): TaskGraph {
+    // listTasksForGraph orders by priority desc, createdAt asc — so a truncated
+    // slice keeps the highest-priority/oldest tasks (the ones that matter most).
+    // An empty/undefined set spans every project; multiple ids scope to exactly
+    // those projects (a cross-project blocker still surfaces as a foreign node).
+    const allRows = this.repo.listTasksForGraph(projectIds, scope);
     // Phase 58 F — a milestone filter narrows the graph to that milestone's tasks
     // (a blocker outside it still surfaces as a foreign node via the edge pass).
     const rows = milestoneId ? allRows.filter((r) => r.milestoneId === milestoneId) : allRows;

@@ -100,8 +100,18 @@ export class TasksController {
     @CurrentUser() user?: CurrentUserPayload | null,
   ): TaskGraphResponse {
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    // `projectId` is a comma-separated set (the board's project multi-select) —
+    // one id, several, or none (empty → every project).
+    const projectIds = projectId
+      ?.split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
     return {
-      graph: this.service.buildGraph(projectId?.trim() || undefined, scope, milestoneId?.trim() || undefined),
+      graph: this.service.buildGraph(
+        projectIds?.length ? projectIds : undefined,
+        scope,
+        milestoneId?.trim() || undefined,
+      ),
     };
   }
 
