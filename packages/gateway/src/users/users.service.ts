@@ -108,8 +108,11 @@ export class EmailNotAllowlistedError extends Error {
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  /** Lower-cased access allowlist; empty ⇒ no restriction (Phase 71). */
-  private readonly allowlist: ReadonlySet<string>;
+  /** Lower-cased exact-email allowlist entries; empty ⇒ no email restriction (Phase 71). */
+  private readonly allowedEmails: ReadonlySet<string>;
+  /** Lower-cased domain-pattern entries incl. the leading `@` (e.g. `@ekko.earth`);
+   *  each admits every address at that domain. */
+  private readonly allowedDomains: ReadonlySet<string>;
 
   constructor(
     @Inject(UsersRepository) private readonly repo: UsersRepository,
@@ -124,18 +127,25 @@ export class UsersService {
     // the service by hand (no config) impose no restriction.
     @Optional() @Inject(MIDNITE_CONFIG) config?: MidniteConfig,
   ) {
-    this.allowlist = new Set(
-      (config?.gateway.auth.allowlist ?? []).map((e) => e.toLowerCase()),
-    );
+    const entries = (config?.gateway.auth.allowlist ?? []).map((e) => e.toLowerCase());
+    // A domain pattern starts with `@` (e.g. `@ekko.earth`); everything else is an
+    // exact email address. The schema already rejects malformed entries at load.
+    this.allowedEmails = new Set(entries.filter((e) => !e.startsWith('@')));
+    this.allowedDomains = new Set(entries.filter((e) => e.startsWith('@')));
   }
 
   /**
-   * Refuse an email that isn't on a non-empty allowlist. A no-op when the
-   * allowlist is empty (the default), so open deployments are unaffected.
+   * Refuse an email that isn't on a non-empty allowlist. Matches an exact address
+   * or a `@domain` pattern (case-insensitively). A no-op when the allowlist is
+   * empty (the default), so open deployments are unaffected.
    */
   private assertAllowlisted(email: string): void {
-    if (this.allowlist.size === 0) return;
-    if (!this.allowlist.has(email.toLowerCase())) throw new EmailNotAllowlistedError(email);
+    if (this.allowedEmails.size === 0 && this.allowedDomains.size === 0) return;
+    const normalized = email.toLowerCase();
+    if (this.allowedEmails.has(normalized)) return;
+    const at = normalized.lastIndexOf('@');
+    if (at !== -1 && this.allowedDomains.has(normalized.slice(at))) return;
+    throw new EmailNotAllowlistedError(email);
   }
 
   async register(email: string, name: string, password: string): Promise<User> {
