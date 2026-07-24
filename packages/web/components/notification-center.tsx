@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import {
   Bell,
   CheckCheck,
+  ChevronDown,
   CircleAlert,
   CircleCheck,
   Info,
   Inbox,
   LoaderCircle,
+  SquareArrowOutUpRight,
   Trash2,
   TriangleAlert,
   X,
@@ -167,6 +169,20 @@ export function NotificationFeedActions() {
 export function NotificationFeedList({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { feed, loading, markRead, dismiss } = useNotifications();
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+
+  // Clicking a row (anywhere but the dismiss X) expands/collapses its body and
+  // marks it read; the chevron does the same. Deep-linking to the source entity
+  // moves into an explicit "Open" action revealed in the expanded body.
+  const toggle = (n: Notification) => {
+    markRead([n.id]);
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(n.id)) next.delete(n.id);
+      else next.add(n.id);
+      return next;
+    });
+  };
 
   const openEntry = (n: Notification) => {
     markRead([n.id]);
@@ -192,13 +208,17 @@ export function NotificationFeedList({ onClose }: { onClose: () => void }) {
               const meta = SEVERITY_META[n.severity];
               const RowIcon = n.kind === 'task.done' ? DONE_ICON : meta.Icon;
               const unreadRow = n.readAt === null;
+              const isExpanded = expanded.has(n.id);
+              const bodyId = `notification-body-${n.id}`;
               return (
                 <li key={n.id} className="group/row relative">
                   <button
                     type="button"
-                    onClick={() => openEntry(n)}
+                    onClick={() => toggle(n)}
+                    aria-expanded={isExpanded}
+                    aria-controls={bodyId}
                     className={cn(
-                      'flex w-full items-start gap-2.5 px-3 py-2.5 pr-9 text-left transition-colors hover:bg-accent/60',
+                      'flex w-full items-start gap-2.5 px-3 py-2.5 pr-14 text-left transition-colors hover:bg-accent/60',
                       unreadRow && 'bg-accent/30',
                     )}
                   >
@@ -221,7 +241,13 @@ export function NotificationFeedList({ onClose }: { onClose: () => void }) {
                           />
                         ) : null}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span
+                        id={bodyId}
+                        className={cn(
+                          'block text-xs text-muted-foreground',
+                          isExpanded ? 'whitespace-pre-wrap break-words' : 'truncate',
+                        )}
+                      >
                         {n.body}
                       </span>
                       <span className="mt-0.5 block text-[11px] text-muted-foreground">
@@ -229,16 +255,47 @@ export function NotificationFeedList({ onClose }: { onClose: () => void }) {
                       </span>
                     </span>
                   </button>
-                  {/* Per-row dismiss — sits outside the row button (no nested
-                      buttons); revealed on hover/focus of the row. */}
-                  <button
-                    type="button"
-                    onClick={() => dismiss(n.id)}
-                    aria-label={`Dismiss notification: ${n.title}`}
-                    className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                  {/* When expanded, an explicit deep-link to the source entity —
+                      a real button, so it sits outside the row button (no nested
+                      interactive elements) and aligns under the body text. */}
+                  {isExpanded ? (
+                    <button
+                      type="button"
+                      onClick={() => openEntry(n)}
+                      className="ml-[2.375rem] mb-2 inline-flex items-center gap-1 rounded px-0.5 text-[11px] font-medium text-primary hover:underline"
+                    >
+                      <SquareArrowOutUpRight className="h-3 w-3" aria-hidden />
+                      Open
+                    </button>
+                  ) : null}
+                  {/* Trailing controls — outside the row button (no nested
+                      buttons). The chevron mirrors the row's expand/collapse;
+                      the dismiss X is revealed on hover/focus of the row. */}
+                  <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => toggle(n)}
+                      aria-expanded={isExpanded}
+                      aria-controls={bodyId}
+                      aria-label={isExpanded ? 'Collapse notification' : 'Expand notification'}
+                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          'h-3.5 w-3.5 transition-transform',
+                          isExpanded && 'rotate-180',
+                        )}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dismiss(n.id)}
+                      aria-label={`Dismiss notification: ${n.title}`}
+                      className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </li>
               );
             })}

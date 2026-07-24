@@ -7,6 +7,7 @@ import type { ServiceToken } from '@midnite/shared';
 import { createServiceToken, listServiceTokens, revokeServiceToken } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ErrorPanel } from '@/components/error-panel';
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
@@ -129,7 +130,7 @@ function CreateTokenModal({
               onChange={(e) => setExpiry(e.target.value)}
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <ErrorPanel message={error} />}
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>{tc('cancel')}</Button>
@@ -245,7 +246,7 @@ export function ApiTokensView() {
         </Button>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <ErrorPanel message={error} />}
 
       {loading ? (
         <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
