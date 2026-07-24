@@ -408,16 +408,18 @@ export function TaskDetail({
   };
 
   // session.id === task.id; deep-link straight into the session cockpit (Phase 51 F).
+  // Navigate straight to the page — never call onClose() first: on the board that's
+  // a router.back() which races the push and cancels it (the modal just closes and
+  // the nav is lost). The route change unmounts the board + modal on its own.
   const goToSession = () => {
-    onClose();
     router.push(`/sessions/view?id=${encodeURIComponent(task.id)}`);
   };
 
   // "Open page" (tab-strip level, Phase 70): expand the modal into the full page
   // for whatever's active — the session cockpit on the Session tab, otherwise the
-  // task page (carrying the review/retro sub-tab).
+  // task page (carrying the review/retro sub-tab). Like goToSession, push straight
+  // (no onClose() first) so the board's router.back() can't cancel the navigation.
   const openPage = () => {
-    onClose();
     if (activeTab === 'session') {
       router.push(`/sessions/view?id=${encodeURIComponent(task.id)}`);
       return;

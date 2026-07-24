@@ -138,6 +138,7 @@ export function ProjectDetailView({
       <div className="reveal-staged container space-y-5 pb-8 pt-2" data-tour="project-detail">
         <RailShell
           isMobile={isMobile}
+          stickyRails
           left={{
             title: 'Stats & actions',
             open: leftOpen,
@@ -158,9 +159,13 @@ export function ProjectDetailView({
             content: <ProjectInfoPanel project={project} tasks={tasks} onSelectTask={openTask} />,
           }}
         >
-          {/* Center — the aspect tabs (same panels as the modal). */}
+          {/* Center — the aspect tabs (same panels as the modal). The tab strip
+              pins under the collapsed header (top-12) while the tab body scrolls
+              behind it, matching the council cockpit + the sticky rails. */}
           <div className="space-y-4">
-            <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} ariaLabel="Project sections" />
+            <div className="sticky top-12 z-20 -mx-1 border-b border-border/60 bg-background/95 px-1 pb-2 pt-1 backdrop-blur">
+              <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} ariaLabel="Project sections" />
+            </div>
             <div className="rounded-lg border border-border/60 bg-card/40 p-4">
               {tab === 'details' ? (
                 <ProjectDetailsPanel project={project} memories={memories} onSaved={reload} />

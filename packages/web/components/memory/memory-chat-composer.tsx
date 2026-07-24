@@ -186,8 +186,11 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/30 p-3">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <div className="flex flex-col gap-3">
+        {/* The thread header pins under the collapsed page header (top-12) so it
+            stays put while only the chat history scrolls beneath it — matching
+            the sticky rails + the council/project cockpit pattern. */}
+        <div className="sticky top-12 z-20 -mx-1 flex items-center gap-1.5 border-b border-border/60 bg-background/95 px-1 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-[hsl(262_83%_66%)]" />
           Chat with this memory
         </div>

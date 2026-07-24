@@ -137,6 +137,7 @@ export function MemoryDetailView({
       <div className="reveal-staged container space-y-5 pb-48 pt-2">
         <RailShell
           isMobile={isMobile}
+          stickyRails
           centerActions={metadataButton}
           left={{
             title: 'Sources',

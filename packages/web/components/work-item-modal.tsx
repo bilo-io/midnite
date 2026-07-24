@@ -158,9 +158,11 @@ export function WorkItemModal({
 
   // Session-only shell (no linked task) has no tab strip to host "Open page", so
   // it carries its own — unless navigation is suppressed (e.g. the office).
+  // Push straight to the page — no onClose() first. On the board onClose is a
+  // router.back() that races (and cancels) the push, leaving the modal closed and
+  // the navigation lost; the route change unmounts the board + modal on its own.
   const openSessionPage = () => {
     if (!session) return;
-    onClose();
     router.push(`/sessions/view?id=${encodeURIComponent(session.id)}`);
   };
 

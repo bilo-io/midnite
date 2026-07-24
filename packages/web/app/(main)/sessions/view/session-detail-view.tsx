@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ListChecks } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { BackLink } from '@/components/back-link';
+import { HoverExpandButton } from '@/components/hover-expand-button';
 import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
+import { taskPageHref } from '@/lib/task-route';
 import { useToast } from '@/components/toast';
 import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
@@ -105,6 +108,7 @@ export function SessionDetailView({
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.session.leftOpen', true);
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.session.rightOpen', true);
   const isMobile = useIsMobile();
+  const router = useRouter();
 
   return (
     <>
@@ -123,6 +127,16 @@ export function SessionDetailView({
             <ConnectionStatus variant="compact" />
           </div>
           <div className="flex items-center gap-2">
+            {/* Jump to the counterpart task page (session.id === task.id) — mirrors
+                the "Session" deep-link the task page carries. */}
+            {task ? (
+              <HoverExpandButton
+                icon={<ListChecks className="h-3.5 w-3.5" />}
+                label="View task"
+                variant="secondary"
+                onClick={() => router.push(taskPageHref(task.id))}
+              />
+            ) : null}
             {/* The linked task's lifecycle actions (Phase 74) — start / abandon /
                 reopen / export / delete, icon-only with a label on hover. */}
             {task ? <LinkedTaskActions task={task} onChanged={() => onTaskChanged?.()} /> : null}

@@ -61,7 +61,14 @@ const NAV_GROUPS: NavGroup[] = [
 
 function NavLink({ href, label, Icon }: { href: string; label: string; Icon: LucideIcon }) {
   const pathname = usePathname();
-  const active = href === '/settings' ? pathname === '/settings' : pathname.startsWith(href);
+  // `trailingSlash: true` (static export) makes usePathname() return `/settings/`
+  // etc., so an exact `=== '/settings'` never matched and the default (Appearance)
+  // tab never highlighted. Normalize the trailing slash, then match the sidenav's
+  // semantics: exact for the `/settings` root (it's the parent of every other
+  // item), exact-or-`/`-delimited-descendant for the rest (never a loose prefix).
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  const active =
+    href === '/settings' ? path === '/settings' : path === href || path.startsWith(`${href}/`);
   return (
     <Link
       href={href}
