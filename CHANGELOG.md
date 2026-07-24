@@ -14,6 +14,22 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.7.3] - 2026-07-24
+
+A security fix — please update.
+
+### Fixed
+
+- **The gateway's REST API required no sign-in on downloaded builds.** A
+  dependency-wiring bug meant the API auth check silently disabled itself
+  whenever login was enabled but no static token was set — i.e. every
+  distributed install. The login screen still gated the UI, but the underlying
+  API (tasks, boards, everything) was reachable by any process on the machine
+  that could reach the port. Now fixed and locked down: the API rejects any
+  request without a valid session, and the gateway refuses to start if the auth
+  layer ever fails to wire up (fail-closed rather than fail-open). A build-time
+  guard prevents this class of bug from recurring.
+
 ## [0.7.2] - 2026-07-24
 
 Sign in with GitHub on any machine — no setup required.
@@ -421,6 +437,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.7.3]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.3
 [0.7.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.2
 [0.7.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.1
 [0.7.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.0
