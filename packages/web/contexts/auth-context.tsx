@@ -1,11 +1,12 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { Team, User } from '@midnite/shared';
+import type { AuthResponse, Team, User } from '@midnite/shared';
 import { listTeams, setAccessToken, setTokenRefresher } from '@/lib/api';
 import {
   loginSession,
   logoutSession,
+  persistRefreshToken,
   refreshSession,
   registerAccount,
 } from '@/lib/auth-transport';
@@ -28,6 +29,9 @@ export interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, name: string, password: string) => Promise<User>;
+  /** Apply a session issued outside the password/exchange paths (SSO device
+   *  flow) — the gateway's poll hands the client a full AuthResponse. */
+  applySession: (auth: AuthResponse) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -170,9 +174,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const applySession = useCallback(async (auth: AuthResponse): Promise<void> => {
+    persistRefreshToken(auth.refreshToken);
+    applyTokens(auth.accessToken, auth.user);
+    setJwtEnabled(true);
+    await loadTeams();
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, isLoading, jwtEnabled, teams, activeTeamId, setActiveTeam, setUser, login, logout, register }}
+      value={{ user, accessToken, isLoading, jwtEnabled, teams, activeTeamId, setActiveTeam, setUser, login, logout, register, applySession }}
     >
       {children}
     </AuthContext.Provider>
