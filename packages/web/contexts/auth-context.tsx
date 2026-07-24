@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Team, User } from '@midnite/shared';
-import { listTeams, setAccessToken } from '@/lib/api';
+import { listTeams, setAccessToken, setTokenRefresher } from '@/lib/api';
 import {
   loginSession,
   logoutSession,
@@ -31,6 +31,27 @@ export interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/** Decode a JWT's `exp` claim (epoch ms), or null if it can't be parsed. */
+function jwtExpiryMs(token: string): number | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
+      exp?: unknown;
+    };
+    return typeof json.exp === 'number' ? json.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+// Renew this far ahead of expiry, and never schedule a refresh tighter than the floor
+// (guards against a hot loop on a token that's already near/at expiry).
+const REFRESH_LEAD_MS = 60_000;
+const MIN_REFRESH_DELAY_MS = 15_000;
+// Fallback cadence when the token carries no decodable `exp` (default TTL is 15 min).
+const DEFAULT_REFRESH_MS = 10 * 60_000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -88,6 +109,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Mint a fresh access token from the refresh session (httpOnly cookie in the hosted
+  // BFF, stored refresh token on desktop). Returns the new token, or null when the
+  // session is gone (401 → drop it) or the refresh is transiently unavailable (503 →
+  // keep the current token so a later retry can recover). Registered on the shared api
+  // layer so WS reconnect paths and HTTP 401s can drive it.
+  const refresh = useCallback(async (): Promise<string | null> => {
+    try {
+      const { status, session } = await refreshSession();
+      if (status === 200 && session) {
+        applyTokens(session.accessToken, session.user);
+        return session.accessToken;
+      }
+      if (status === 401) clearTokens();
+      return null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    setTokenRefresher(refresh);
+    return () => setTokenRefresher(null);
+  }, [refresh]);
+
+  // Proactively renew the access token shortly before it expires so a long-lived
+  // session never reaches the point where a WS drop reconnects with a dead token
+  // (the purple "reconnecting" loop) or an HTTP call 401s.
+  useEffect(() => {
+    if (!accessToken) return;
+    const expMs = jwtExpiryMs(accessToken);
+    const delay = expMs
+      ? Math.max(MIN_REFRESH_DELAY_MS, expMs - Date.now() - REFRESH_LEAD_MS)
+      : DEFAULT_REFRESH_MS;
+    const timer = setTimeout(() => void refresh(), delay);
+    return () => clearTimeout(timer);
+  }, [accessToken, refresh]);
 
   const setActiveTeam = useCallback((teamId: string | null) => {
     setActiveTeamId(teamId);

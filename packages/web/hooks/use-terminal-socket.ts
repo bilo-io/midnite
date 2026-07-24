@@ -8,7 +8,7 @@ import {
   type TerminalApprovalRequestMessage,
   type TerminalStatusPhase,
 } from '@midnite/shared';
-import { gatewayWsUrl, getAccessToken, mintTerminalToken } from '@/lib/api';
+import { ApiError, gatewayWsUrl, getAccessToken, mintTerminalToken, refreshAccessToken } from '@/lib/api';
 
 export type TerminalConnectionState = 'connecting' | 'open' | 'closed' | 'error';
 
@@ -98,11 +98,18 @@ export function useTerminalSocket({
     let attempt = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const scheduleReconnect = () => {
+    const scheduleReconnect = (refreshFirst = false) => {
       if (cancelled) return;
       const delay = Math.min(5000, 500 * 2 ** attempt);
       attempt += 1;
-      timer = setTimeout(() => void open(), delay);
+      // An expired access token fails both the token mint (401) and the WS handshake
+      // (4001 close). Reconnecting with the same token loops; refresh first so the
+      // retry carries a live token.
+      timer = setTimeout(() => {
+        if (cancelled) return;
+        if (refreshFirst) void refreshAccessToken().finally(() => void open());
+        else void open();
+      }, delay);
     };
 
     const open = async () => {
@@ -110,10 +117,10 @@ export function useTerminalSocket({
       let token: string;
       try {
         token = (await mintTerminalToken(attachId)).token;
-      } catch {
+      } catch (err) {
         if (cancelled) return;
         setConnectionState('error');
-        scheduleReconnect();
+        scheduleReconnect(err instanceof ApiError && err.status === 401);
         return;
       }
       if (cancelled) return;
@@ -182,11 +189,11 @@ export function useTerminalSocket({
         if (!cancelled) setConnectionState('error');
       };
 
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         wsRef.current = null;
         if (cancelled) return;
         setConnectionState('closed');
-        scheduleReconnect();
+        scheduleReconnect(ev.code === 4001);
       };
     };
 
