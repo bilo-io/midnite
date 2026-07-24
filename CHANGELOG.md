@@ -14,6 +14,29 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.7.0] - 2026-07-24
+
+A macOS distribution release: installing (and updating) no longer walks users
+into Gatekeeper's "unverified app" dead end.
+
+### Added
+
+- **Manual-install update mode (macOS, unsigned builds)** — the desktop app now
+  detects an ad-hoc/unsigned build on boot and, instead of a download→restart
+  update that Squirrel.Mac would refuse to install, the update banner offers the
+  `curl … install.sh | sh` installer command (copy-to-clipboard). Developer
+  ID-signed builds keep one-click updates; the probe is fail-soft.
+
+### Changed
+
+- **macOS installs lead with a `curl … install.sh | sh` one-liner** across the
+  marketing site and docs — installing via `curl` sets no quarantine attribute,
+  so the app opens cleanly on first launch (no Gatekeeper popup, and no reliance
+  on the right-click → Open bypass that macOS 15 removed). The direct macOS
+  `.dmg` download links were removed in favour of the command; Windows and Linux
+  keep their direct downloads. The site's download version now tracks the
+  release so the Windows/Linux links resolve.
+
 ## [0.6.0] - 2026-07-24
 
 A task-graph + operator-polish release: the Tasks page gains a **dependency
@@ -354,6 +377,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.7.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.0
 [0.6.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.6.0
 [0.5.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.5.0
 [0.4.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.4.2
