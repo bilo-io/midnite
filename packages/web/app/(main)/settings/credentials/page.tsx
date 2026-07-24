@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { KeyRound, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   WORKFLOW_CREDENTIAL_TYPES,
@@ -21,6 +21,7 @@ import {
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { CredentialForm } from './credential-form';
+import { CredentialTypeIcon } from './credential-icons';
 
 export default function CredentialsPage() {
   const t = useTranslations('settings');
@@ -85,7 +86,7 @@ export default function CredentialsPage() {
         <ul className="divide-y divide-border/60 rounded-lg border border-border/60">
           {credentials.map((cred) => (
             <li key={cred.id} className="flex items-center gap-3 px-4 py-3">
-              <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <CredentialTypeIcon type={cred.type} className="h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{cred.name}</p>
                 <p className="text-xs text-muted-foreground">{TYPE_LABELS[cred.type] ?? cred.type}</p>

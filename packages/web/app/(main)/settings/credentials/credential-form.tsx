@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { StyledSelect, type SelectOption } from '@midnite/ui';
 import type { WorkflowCredentialType, CreateWorkflowCredentialRequest, OAuthProvider } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { getOAuthStartUrl } from '@/lib/api';
+import { CredentialTypeIcon } from './credential-icons';
 
 type Props = {
   types: readonly WorkflowCredentialType[];
@@ -47,6 +49,11 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
   const [fields, setFields] = useState<Record<string, string>>({});
 
   const fieldDefs = TYPE_FIELDS[credType] ?? [];
+  const typeOptions: SelectOption<WorkflowCredentialType>[] = types.map((ty) => ({
+    value: ty,
+    label: typeLabels[ty],
+    icon: <CredentialTypeIcon type={ty} />,
+  }));
 
   const setField = (key: string, val: string) =>
     setFields((prev) => ({ ...prev, [key]: val }));
@@ -76,17 +83,13 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor="cred-type">{t('credentials.form.type')}</label>
-        <select
-          id="cred-type"
+        <label className="text-xs font-medium text-muted-foreground">{t('credentials.form.type')}</label>
+        <StyledSelect
+          options={typeOptions}
           value={credType}
-          onChange={(e) => { setCredType(e.target.value as WorkflowCredentialType); setFields({}); }}
-          className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-        >
-          {types.map((t) => (
-            <option key={t} value={t}>{typeLabels[t]}</option>
-          ))}
-        </select>
+          onChange={(ty) => { setCredType(ty); setFields({}); }}
+          aria-label={t('credentials.form.type')}
+        />
       </div>
 
       {fieldDefs.map(({ key, labelKey, type = 'text', placeholderKey, required }) => (

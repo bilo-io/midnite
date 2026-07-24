@@ -17,6 +17,7 @@ export { Card, CardHeader, CardTitle, CardContent } from './components/card';
 export { Collapse } from './components/collapse';
 export { ContextRing } from './components/context-ring';
 export { DynamicBackground, type BackgroundPattern } from './components/dynamic-background';
+export { DiscordIcon, GoogleIcon, LinearIcon, SlackIcon } from './components/brand-icons';
 export { GithubIcon } from './components/github-icon';
 export {
   GradientGlow,
