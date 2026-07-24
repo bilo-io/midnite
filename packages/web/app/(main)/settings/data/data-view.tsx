@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, CalendarClock, CheckCircle2, Database, Download, Lock, Upload } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  Database,
+  Download,
+  FileArchive,
+  Lock,
+  Upload,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   PORTABLE_DOMAINS,
@@ -12,7 +22,28 @@ import {
 } from '@midnite/shared';
 import { downloadBackup, getBackupStatus, importArchive, previewImport } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Tabs, type TabOption } from '@/components/ui/tabs';
 import { useToast } from '@/components/toast';
+import { cn } from '@/lib/utils';
+
+type DataTab = 'backup' | 'restore';
+
+/**
+ * Stack ↔ archive flow glyph, shared by the tab labels and each panel's
+ * heading — colours the thing that *gets created* (emerald) so backup vs.
+ * restore reads at a glance: backup makes a file, restore makes the store.
+ */
+function FlowIcon({ tab, className }: { tab: DataTab; className?: string }) {
+  const Source = tab === 'backup' ? Database : FileArchive;
+  const Created = tab === 'backup' ? FileArchive : Database;
+  return (
+    <span className={cn('inline-flex items-center gap-1', className)}>
+      <Source className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+      <ArrowRight className="h-3 w-3 text-muted-foreground/50" aria-hidden />
+      <Created className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
+    </span>
+  );
+}
 
 function errMsg(e: unknown, fallback: string): string {
   return e instanceof Error ? e.message : fallback;
@@ -384,10 +415,16 @@ function RestorePanel() {
 export function DataView() {
   const t = useTranslations('settings');
   const toast = useToast();
+  const [tab, setTab] = useState<DataTab>('backup');
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<BackupSummary | null>(null);
   const [includeSecrets, setIncludeSecrets] = useState(false);
   const [passphrase, setPassphrase] = useState('');
+
+  const tabOptions: TabOption<DataTab>[] = [
+    { value: 'backup', label: t('data.tabs.backup'), icon: <FlowIcon tab="backup" /> },
+    { value: 'restore', label: t('data.tabs.restore'), icon: <FlowIcon tab="restore" /> },
+  ];
 
   const secretsNeedPassphrase = includeSecrets && passphrase.trim().length === 0;
 
@@ -409,7 +446,7 @@ export function DataView() {
   };
 
   return (
-    <div className="max-w-lg space-y-8">
+    <div className="max-w-lg space-y-6">
       <div>
         <h1 className="text-base font-semibold">{t('data.title')}</h1>
         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -417,111 +454,124 @@ export function DataView() {
         </p>
       </div>
 
-      {/* Download backup */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-sm font-medium">{t('data.download.title')}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {t.rich('data.download.description', {
-              code: (chunks) => <code className="font-mono">{chunks}</code>,
-            })}
-          </p>
-        </div>
-        {/* Theme G — opt into including secrets, re-wrapped under a passphrase. */}
-        <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
-          <label className="flex items-start gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={includeSecrets}
-              onChange={(e) => setIncludeSecrets(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              <span className="font-medium">{t('data.download.includeSecrets')}</span>{' '}
-              <span className="text-muted-foreground">
-                {t('data.download.includeSecretsDesc')}
-              </span>
-            </span>
-          </label>
-          {includeSecrets ? (
-            <div className="space-y-1 pl-6">
-              <label htmlFor="export-passphrase" className="block text-[11px] text-muted-foreground">
-                {t('data.download.passphraseLabel')}
+      <Tabs options={tabOptions} value={tab} onChange={setTab} ariaLabel={t('data.tabs.ariaLabel')} />
+
+      {tab === 'backup' ? (
+        <div className="space-y-8">
+          {/* Download backup */}
+          <section className="space-y-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-sm font-medium">
+                <FlowIcon tab="backup" />
+                {t('data.download.title')}
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t.rich('data.download.description', {
+                  code: (chunks) => <code className="font-mono">{chunks}</code>,
+                })}
+              </p>
+            </div>
+            {/* Theme G — opt into including secrets, re-wrapped under a passphrase. */}
+            <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
+              <label className="flex items-start gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={includeSecrets}
+                  onChange={(e) => setIncludeSecrets(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">{t('data.download.includeSecrets')}</span>{' '}
+                  <span className="text-muted-foreground">
+                    {t('data.download.includeSecretsDesc')}
+                  </span>
+                </span>
               </label>
-              <input
-                id="export-passphrase"
-                type="password"
-                autoComplete="new-password"
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                placeholder={t('data.download.passphrasePlaceholder')}
-                className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
-              />
-              {secretsNeedPassphrase ? (
-                <p className="text-[11px] text-destructive">{t('data.download.passphraseRequired')}</p>
+              {includeSecrets ? (
+                <div className="space-y-1 pl-6">
+                  <label htmlFor="export-passphrase" className="block text-[11px] text-muted-foreground">
+                    {t('data.download.passphraseLabel')}
+                  </label>
+                  <input
+                    id="export-passphrase"
+                    type="password"
+                    autoComplete="new-password"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    placeholder={t('data.download.passphrasePlaceholder')}
+                    className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
+                  />
+                  {secretsNeedPassphrase ? (
+                    <p className="text-[11px] text-destructive">{t('data.download.passphraseRequired')}</p>
+                  ) : null}
+                </div>
               ) : null}
             </div>
-          ) : null}
+
+            <Button type="button" onClick={() => void onDownload()} disabled={busy || secretsNeedPassphrase} className="gap-1.5">
+              <Download className="h-4 w-4" />
+              {busy ? t('data.download.preparing') : t('data.download.button')}
+            </Button>
+
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <p className="text-xs font-medium text-muted-foreground">{t('data.download.included')}</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {PORTABLE_DOMAINS.map((d) => (
+                  <span key={d.name} className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
+                    {d.label}
+                    {summary ? <span className="ml-1 text-muted-foreground">{summary.counts[d.name] ?? 0}</span> : null}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                {includeSecrets
+                  ? t('data.download.lockNoteIncluded')
+                  : t('data.download.lockNoteExcluded')}
+              </p>
+            </div>
+
+            {summary ? (
+              <p className="text-xs text-muted-foreground">
+                {t('data.download.lastBackup', {
+                  version: summary.schemaVersion,
+                  count: Object.values(summary.counts).reduce((a, b) => a + b, 0),
+                  domains: summary.domains.length,
+                })}
+              </p>
+            ) : null}
+          </section>
+
+          {/* Scheduled auto-backup status (Phase 49 F) */}
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-sm font-medium">{t('data.autoBackup.title')}</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t('data.autoBackup.description')}
+              </p>
+            </div>
+            <AutoBackupPanel />
+          </section>
         </div>
-
-        <Button type="button" onClick={() => void onDownload()} disabled={busy || secretsNeedPassphrase} className="gap-1.5">
-          <Download className="h-4 w-4" />
-          {busy ? t('data.download.preparing') : t('data.download.button')}
-        </Button>
-
-        <div className="rounded-md border border-border bg-muted/30 p-3">
-          <p className="text-xs font-medium text-muted-foreground">{t('data.download.included')}</p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {PORTABLE_DOMAINS.map((d) => (
-              <span key={d.name} className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
-                {d.label}
-                {summary ? <span className="ml-1 text-muted-foreground">{summary.counts[d.name] ?? 0}</span> : null}
-              </span>
-            ))}
-          </div>
-          <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            {includeSecrets
-              ? t('data.download.lockNoteIncluded')
-              : t('data.download.lockNoteExcluded')}
-          </p>
+      ) : (
+        <div className="space-y-8">
+          {/* Restore (Phase 49 E · Theme C import service) */}
+          <section className="space-y-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-sm font-medium">
+                <FlowIcon tab="restore" />
+                {t('data.restore.title')}
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t.rich('data.restore.description', {
+                  strong: (chunks) => <span className="font-medium">{chunks}</span>,
+                })}
+              </p>
+            </div>
+            <RestorePanel />
+          </section>
         </div>
-
-        {summary ? (
-          <p className="text-xs text-muted-foreground">
-            {t('data.download.lastBackup', {
-              version: summary.schemaVersion,
-              count: Object.values(summary.counts).reduce((a, b) => a + b, 0),
-              domains: summary.domains.length,
-            })}
-          </p>
-        ) : null}
-      </section>
-
-      {/* Scheduled auto-backup status (Phase 49 F) */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-sm font-medium">{t('data.autoBackup.title')}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {t('data.autoBackup.description')}
-          </p>
-        </div>
-        <AutoBackupPanel />
-      </section>
-
-      {/* Restore (Phase 49 E · Theme C import service) */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Database className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium">{t('data.restore.title')}</h2>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {t.rich('data.restore.description', {
-            strong: (chunks) => <span className="font-medium">{chunks}</span>,
-          })}
-        </p>
-        <RestorePanel />
-      </section>
+      )}
     </div>
   );
 }

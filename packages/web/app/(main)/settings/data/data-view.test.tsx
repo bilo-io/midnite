@@ -60,8 +60,14 @@ const importPreview: ImportPreview = {
   warnings: [],
 };
 
+/** Switch to the Restore tab. */
+function openRestoreTab(): void {
+  fireEvent.click(screen.getByRole('tab', { name: /Restore/ }));
+}
+
 /** Select a file on the hidden archive input, triggering the auto-preview. */
 function chooseArchive(): void {
+  openRestoreTab();
   const input = screen.getByLabelText('Choose backup archive') as HTMLInputElement;
   const file = new File(['PKzip'], 'backup.zip', { type: 'application/zip' });
   fireEvent.change(input, { target: { files: [file] } });
@@ -75,6 +81,7 @@ describe('DataView (Phase 49 E)', () => {
     expect(screen.getByText('Workflows')).toBeInTheDocument();
     expect(screen.getByText(/Secrets .* are excluded/)).toBeInTheDocument();
     // Restore section ships enabled now that import (Theme C) is available.
+    openRestoreTab();
     expect(screen.getByRole('button', { name: /Choose archive/ })).toBeEnabled();
   });
 

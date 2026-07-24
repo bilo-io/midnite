@@ -346,6 +346,11 @@
     "errorFallback": "Échec de la sauvegarde",
     "title": "Données",
     "description": "Sauvegardez et restaurez l’intégralité de votre magasin midnite — pour la reprise après sinistre ou le déplacement d’instances.",
+    "tabs": {
+      "ariaLabel": "Sauvegarder ou restaurer",
+      "backup": "Sauvegarder",
+      "restore": "Restaurer"
+    },
     "download": {
       "title": "Télécharger une sauvegarde",
       "description": "Une archive <code>.zip</code> portable de chaque domaine de travail, restaurable sur cette instance ou sur une nouvelle.",

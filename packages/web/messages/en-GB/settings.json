@@ -346,6 +346,11 @@
     "errorFallback": "Backup failed",
     "title": "Data",
     "description": "Back up and restore your whole midnite store — for disaster recovery or moving instances.",
+    "tabs": {
+      "ariaLabel": "Backup or restore",
+      "backup": "Backup",
+      "restore": "Restore"
+    },
     "download": {
       "title": "Download a backup",
       "description": "A portable <code>.zip</code> archive of every work domain, restorable onto this or a fresh instance.",
