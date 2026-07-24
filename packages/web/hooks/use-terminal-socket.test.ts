@@ -4,10 +4,26 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useTerminalSocket } from './use-terminal-socket';
 
 const mintTerminalToken = vi.fn();
+const refreshAccessToken = vi.fn();
+// A stand-in for the real ApiError so the hook's `err instanceof ApiError` (which
+// gates the refresh-on-401 retry) works against the mocked module.
+const { ApiError } = vi.hoisted(() => ({
+  ApiError: class ApiError extends Error {
+    constructor(
+      message: string,
+      readonly status: number,
+    ) {
+      super(message);
+      this.name = 'ApiError';
+    }
+  },
+}));
 vi.mock('@/lib/api', () => ({
   mintTerminalToken: (...args: unknown[]) => mintTerminalToken(...args),
   gatewayWsUrl: () => 'ws://localhost:9999',
   getAccessToken: () => null,
+  refreshAccessToken: (...args: unknown[]) => refreshAccessToken(...args),
+  ApiError,
 }));
 
 /** A controllable WebSocket stub — the hook constructs one; we drive its lifecycle. */
@@ -16,7 +32,7 @@ class FakeWebSocket {
   onopen: (() => void) | null = null;
   onmessage: ((ev: { data: string }) => void) | null = null;
   onerror: (() => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((ev: { code: number }) => void) | null = null;
   sent: string[] = [];
   binaryType = 'blob';
   readyState = 1; // OPEN
@@ -27,8 +43,8 @@ class FakeWebSocket {
   send(data: string) {
     this.sent.push(data);
   }
-  close() {
-    this.onclose?.();
+  close(code = 1006) {
+    this.onclose?.({ code });
   }
   emit(msg: unknown) {
     this.onmessage?.({ data: JSON.stringify(msg) });
@@ -48,6 +64,8 @@ describe('useTerminalSocket (Phase 56 F)', () => {
   beforeEach(() => {
     mintTerminalToken.mockReset();
     mintTerminalToken.mockResolvedValue({ token: 'tok' });
+    refreshAccessToken.mockReset();
+    refreshAccessToken.mockResolvedValue('fresh-token');
     FakeWebSocket.instances = [];
     vi.stubGlobal('WebSocket', FakeWebSocket as unknown as typeof WebSocket);
   });
@@ -106,5 +124,32 @@ describe('useTerminalSocket (Phase 56 F)', () => {
     const msg = sock2.lastSent();
     expect(msg.type).toBe('resume');
     expect(msg.lastSeq).toBe(7);
+  });
+
+  it('refreshes the token before reconnecting after a 4001 (expired-token) close', async () => {
+    const { sock } = await connect();
+    // The gateway rejects an expired access token by closing with 4001. Reconnecting
+    // with the same token would loop forever — the hook must refresh first.
+    act(() => sock.close(4001));
+    await waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(1), { timeout: 2000 });
+    await waitFor(() => expect(FakeWebSocket.instances.length).toBe(2), { timeout: 2000 });
+  });
+
+  it('does not refresh the token on a normal (non-auth) close', async () => {
+    const { sock } = await connect();
+    act(() => sock.close(1006)); // abnormal transport close, not an auth failure
+    await waitFor(() => expect(FakeWebSocket.instances.length).toBe(2), { timeout: 2000 });
+    expect(refreshAccessToken).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the token before retrying when the token mint 401s', async () => {
+    mintTerminalToken.mockReset();
+    mintTerminalToken.mockRejectedValueOnce(new ApiError('unauthorized', 401));
+    mintTerminalToken.mockResolvedValue({ token: 'tok' });
+    const onOutput = vi.fn();
+    renderHook(() => useTerminalSocket({ attachId: 's1', enabled: true, onOutput }));
+    // First mint 401s → refresh, then the retried mint succeeds and the socket opens.
+    await waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(1), { timeout: 2000 });
+    await waitFor(() => expect(FakeWebSocket.instances.length).toBe(1), { timeout: 2000 });
   });
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { gatewayWsUrl, getAccessToken } from '@/lib/api';
+import { gatewayWsUrl, getAccessToken, refreshAccessToken } from '@/lib/api';
 import { ResumeTracker } from '@/lib/resume-cursor';
 import { useConnectionStore } from '@/lib/connection-store';
 
@@ -88,12 +88,18 @@ export function useReliableSubscription<T>(
       }
     });
 
-    const scheduleReconnect = () => {
+    const scheduleReconnect = (closeCode?: number) => {
       if (closed) return;
       setChannelStatus(channel.path, attempt >= STALE_AFTER_ATTEMPTS ? 'stale' : 'reconnecting');
       const delay = Math.min(30_000, 500 * 2 ** attempt);
       attempt += 1;
-      reconnectTimer = setTimeout(connect, delay);
+      // A `4001` close means the token is invalid/expired — reconnecting with the same
+      // token loops forever. Refresh first so the retry carries a live token.
+      reconnectTimer = setTimeout(() => {
+        if (closed) return;
+        if (closeCode === 4001) void refreshAccessToken().finally(connect);
+        else connect();
+      }, delay);
     };
 
     const send = (msg: unknown) => {
@@ -148,9 +154,9 @@ export function useReliableSubscription<T>(
         if (decision.kind === 'event') handlersRef.current.onEvent(decision.event);
         // watermark / duplicate / ignore → nothing
       };
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         wsRef.current = null;
-        scheduleReconnect();
+        scheduleReconnect(ev.code);
       };
       ws.onerror = () => {
         try {

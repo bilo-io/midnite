@@ -351,6 +351,35 @@ export function getAccessToken(): string | null {
   return _accessToken;
 }
 
+// The gateway's access token is short-lived (default 15 min). Rather than fetch it
+// once on mount and let it rot — which turns any WS drop after the TTL into an
+// unrecoverable `4001` reconnect loop and every HTTP call into a 401 until reload —
+// the AuthProvider registers a refresher here so any layer (WS reconnect paths, an
+// HTTP 401) can mint a fresh token on demand.
+let _refresher: (() => Promise<string | null>) | null = null;
+let _refreshInFlight: Promise<string | null> | null = null;
+
+/** Register (or clear) the access-token refresher. Owned by the AuthProvider. */
+export function setTokenRefresher(fn: (() => Promise<string | null>) | null): void {
+  _refresher = fn;
+}
+
+/**
+ * Refresh the access token, coalescing concurrent callers onto a single in-flight
+ * refresh (a WS drop fans out across every channel at once — they must not each
+ * fire a refresh). Resolves to the new token, or `null` when no refresher is
+ * registered or the refresh failed (caller then retries with whatever it has).
+ */
+export function refreshAccessToken(): Promise<string | null> {
+  if (!_refresher) return Promise.resolve(_accessToken);
+  if (!_refreshInFlight) {
+    _refreshInFlight = _refresher().finally(() => {
+      _refreshInFlight = null;
+    });
+  }
+  return _refreshInFlight;
+}
+
 export function gatewayUrl(): string {
   if (typeof window === 'undefined') {
     return process.env['NEXT_PUBLIC_GATEWAY_URL'] ?? 'http://localhost:7777';
@@ -389,6 +418,7 @@ async function fetchJson<T>(
   path: string,
   init?: RequestInit,
   schema?: { parse: (value: unknown) => T },
+  retried = false,
 ): Promise<T> {
   const mergedHeaders: Record<string, string> = {};
   if (_accessToken) mergedHeaders['authorization'] = `Bearer ${_accessToken}`;
@@ -400,6 +430,13 @@ async function fetchJson<T>(
     headers: mergedHeaders,
   });
   if (!res.ok) {
+    // A stale access token (e.g. the tab woke from sleep before the proactive
+    // refresh fired) 401s. Refresh once and retry with the new token before
+    // surfacing the error — the refresh is coalesced, so a burst of calls shares one.
+    if (res.status === 401 && !retried && _accessToken) {
+      const fresh = await refreshAccessToken();
+      if (fresh) return fetchJson(path, init, schema, true);
+    }
     const text = await res.text().catch(() => '');
     throw new ApiError(errorMessage(res, text), res.status);
   }
