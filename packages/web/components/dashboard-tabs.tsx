@@ -99,7 +99,7 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
         if (e.key === 'Escape') setEditingId(null);
       }}
       aria-label={`Rename ${tab.name}`}
-      className="h-8 w-36 rounded-md border border-primary bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className="h-8 w-36 shrink-0 rounded-md border border-primary bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     />
   );
 
@@ -123,7 +123,11 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
     // trailing add-widget button) under the collapsed header / desktop title
     // bar instead of letting it scroll away with the grid.
     <StickyToolbar className="mb-3">
-      <div className="flex flex-wrap items-center gap-1.5">
+      {/* `min-w-0` lets this row shrink below its content width inside the
+          `justify-between` toolbar so it scrolls horizontally instead of
+          wrapping (or pushing the trailing add-widget button off-screen) once
+          enough dashboards are pinned/added to overflow the available space. */}
+      <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto">
         {defaultTab &&
           (editingId === defaultTab.id ? (
             renameInput(defaultTab)
@@ -174,7 +178,7 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
 /** Shared chip styling: solid when active, outlined otherwise. */
 function chipClass(active: boolean): string {
   return cn(
-    'flex h-8 items-center gap-1 rounded-md text-sm transition-colors',
+    'flex h-8 shrink-0 items-center gap-1 rounded-md text-sm transition-colors',
     active
       ? 'bg-primary font-medium text-primary-foreground'
       : 'border border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground',

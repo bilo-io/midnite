@@ -11,6 +11,7 @@ import {
   widgetCatalog,
   type WidgetInstance,
 } from '@/lib/dashboard-widgets';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /**
@@ -63,18 +64,20 @@ export function DashboardAddWidget() {
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <Button
         type="button"
+        size="icon"
         onClick={() => setOpen((v) => !v)}
         aria-label="Add widget"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="h-9 w-9"
       >
         <Plus className="h-4 w-4" />
-      </button>
+      </Button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border bg-popover shadow-lg">
+        <div className="absolute right-0 z-50 mt-2 w-80 rounded-lg accent-gradient-border accent-gradient-border--lit">
+        <div className="overflow-hidden rounded-lg bg-popover shadow-lg">
           <div className="border-b border-border/40 p-2">
             <div className="relative">
               <Search
@@ -134,6 +137,7 @@ export function DashboardAddWidget() {
               ))
             )}
           </div>
+        </div>
         </div>
       )}
     </div>
