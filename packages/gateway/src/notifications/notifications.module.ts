@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { NOTIFICATION_CHANNELS, type NotificationChannel } from './channels/notification-channel';
 import { WebChannel } from './channels/web.channel';
@@ -18,7 +19,10 @@ import { NotificationsService } from './notifications.service';
  * Adding a channel = register the class + list it in NOTIFICATION_CHANNELS.
  */
 @Module({
-  imports: [TasksModule],
+  // AuthModule: exports JwtService so NotificationsGateway's WS handshake can
+  // resolve it — without the import its @Optional injection was silently
+  // undefined and the feed's socket could never scope by user under JWT auth.
+  imports: [AuthModule, TasksModule],
   controllers: [NotificationsController],
   providers: [
     NotificationsService,

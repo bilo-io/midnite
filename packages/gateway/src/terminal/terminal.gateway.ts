@@ -41,7 +41,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     @Inject(ApprovalService) private readonly approvals: ApprovalService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
-    @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(JwtService) private readonly jwtSvc?: JwtService,
   ) {}
 
   handleConnection(client: WebSocket, request?: IncomingMessage): void {

@@ -17,6 +17,12 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { WsBroadcastService } from '../ws/ws-broadcast.service';
 import { WsMetricsService } from '../ws/ws-metrics.service';
 
+/** DI token for the injectable clock override. Never provided in the app (the
+ *  param is @Optional, so Nest injects undefined → wall clock); named so the
+ *  optional param carries an explicit token instead of leaning on type
+ *  metadata (see di-explicit-inject.test.ts). Tests pass a fake positionally. */
+export const PRESENCE_CLOCK = Symbol('PRESENCE_CLOCK');
+
 /** Verified/guest identity resolved by the gateway at handshake time. */
 export interface PresenceIdentity {
   userId: string | null;
@@ -82,9 +88,9 @@ export class PresenceService implements OnModuleDestroy {
     @Inject(WsBroadcastService) private readonly broadcast: WsBroadcastService,
     @Optional() @Inject(MIDNITE_CONFIG) config?: MidniteConfig,
     @Optional() @Inject(WsMetricsService) private readonly metrics?: WsMetricsService,
-    // `@Optional()` (no provider for a bare function) so Nest injects `undefined`
-    // here instead of choking on the constructor; tests pass a fake positionally.
-    @Optional() clock?: () => number,
+    // Never provided (no PRESENCE_CLOCK provider) so Nest injects `undefined`
+    // and the wall clock wins; tests pass a fake positionally.
+    @Optional() @Inject(PRESENCE_CLOCK) clock?: () => number,
   ) {
     this.clock = clock ?? (() => Date.now());
     this.tickMs = config?.presence.tickMs ?? 100;
