@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowUpCircle, RefreshCw, X } from 'lucide-react';
+import { ArrowUpCircle, Check, Copy, RefreshCw, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { ReleaseNotesPopover } from './release-notes-popover';
@@ -23,9 +23,45 @@ export type UpdateBannerViewProps = {
   actionDisabled?: boolean;
   /** Desktop download progress 0–100 — renders a progress bar when set. */
   downloadPercent?: number | null;
+  /**
+   * Manual-install mode (unsigned macOS desktop build — updates can't install in
+   * place): replaces the action button with a copy-to-clipboard button for this
+   * terminal command, shown alongside on wider viewports.
+   */
+  copyCommand?: string;
   onUpdate: () => void;
   onDismiss: () => void;
 };
+
+/** The copy-command action: copies to the clipboard and confirms for a moment. */
+function CopyCommandButton({ command, className }: { command: string; className: string }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(true);
+      clearTimeout(timer.current ?? undefined);
+      timer.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable — the command stays visible for manual selection.
+    }
+  };
+
+  return (
+    <span className="flex min-w-0 shrink items-center gap-2">
+      <code className="hidden min-w-0 max-w-80 truncate rounded-md bg-black/25 px-2 py-1.5 font-mono text-[11px] text-white/90 lg:block">
+        {command}
+      </code>
+      <button type="button" onClick={() => void copy()} className={className}>
+        {copied ? <Check aria-hidden className="h-3.5 w-3.5" /> : <Copy aria-hidden className="h-3.5 w-3.5" />}
+        {copied ? 'Copied!' : 'Copy install command'}
+      </button>
+    </span>
+  );
+}
 
 /**
  * Presentational "App update available" banner (Phase 71 Theme C + E). The surface is
@@ -45,6 +81,7 @@ export function UpdateBannerView({
   actionLabel = 'Update',
   actionDisabled = false,
   downloadPercent = null,
+  copyCommand,
   onUpdate,
   onDismiss,
 }: UpdateBannerViewProps) {
@@ -133,20 +170,31 @@ export function UpdateBannerView({
               </span>
             </p>
 
-            <button
-              type="button"
-              onClick={onUpdate}
-              disabled={actionDisabled}
-              className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-3 py-1.5',
-                'text-xs font-semibold text-slate-900 transition-colors hover:bg-white/90',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
-                'disabled:cursor-default disabled:opacity-60',
-              )}
-            >
-              <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-              {actionLabel}
-            </button>
+            {copyCommand ? (
+              <CopyCommandButton
+                command={copyCommand}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-3 py-1.5',
+                  'text-xs font-semibold text-slate-900 transition-colors hover:bg-white/90',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+                )}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={onUpdate}
+                disabled={actionDisabled}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-3 py-1.5',
+                  'text-xs font-semibold text-slate-900 transition-colors hover:bg-white/90',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+                  'disabled:cursor-default disabled:opacity-60',
+                )}
+              >
+                <RefreshCw aria-hidden className="h-3.5 w-3.5" />
+                {actionLabel}
+              </button>
+            )}
 
             {!belowFloor && (
               <button

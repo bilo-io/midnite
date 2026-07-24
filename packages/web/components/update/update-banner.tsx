@@ -13,7 +13,15 @@ import { useUpdate } from './update-provider';
  * On desktop (Theme E) the electron-updater phase drives the headline, action
  * label, disabled state, and download progress; in a plain browser these fall back
  * to the default "Update → force-refresh" copy.
+ *
+ * Unsigned/ad-hoc macOS builds can't install updates in place (Squirrel.Mac
+ * requires a matching Developer ID signature), so when the main process reports
+ * `manualInstall` the action becomes a copy-to-clipboard button for the curl
+ * installer command (the same one-liner the public downloads repo documents).
  */
+const MAC_INSTALL_COMMAND =
+  'curl -fsSL https://raw.githubusercontent.com/bilo-io/midnite-app/main/install.sh | sh';
+
 export function UpdateBanner() {
   const {
     available,
@@ -23,6 +31,7 @@ export function UpdateBanner() {
     manifest,
     desktopPhase,
     downloadPercent,
+    manualInstall,
     dismiss,
     applyUpdate,
   } = useUpdate();
@@ -61,6 +70,7 @@ export function UpdateBanner() {
       actionLabel={actionLabel}
       actionDisabled={actionDisabled}
       downloadPercent={downloadPercent}
+      copyCommand={manualInstall ? MAC_INSTALL_COMMAND : undefined}
       onUpdate={applyUpdate}
       onDismiss={dismiss}
     />

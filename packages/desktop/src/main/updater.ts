@@ -1,3 +1,6 @@
+import { execFile } from 'node:child_process';
+import path from 'node:path';
+
 import { app, ipcMain, type BrowserWindow } from 'electron';
 // Named import: electron-updater is CJS with `__esModule: true` and no `default`
 // export, so under `module: commonjs` a default import resolves to `undefined`
@@ -8,6 +11,7 @@ import { app, ipcMain, type BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 
 import { fetchBelowFloor, type UpdateChannel } from '../updates/floor';
+import { isManualInstallCodesign } from '../updates/install-mode';
 import {
   availableState,
   checkingState,
@@ -45,11 +49,15 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
   // Merged into every pushed state so the banner enforces the floor on desktop too.
   let channel: UpdateChannel = 'stable';
   let belowFloor = false;
+  // macOS ad-hoc/unsigned build: Squirrel.Mac can't install updates, so the
+  // banner offers the curl installer instead (detected below, merged like the floor).
+  let manualInstall = false;
 
   const push = (state: UpdateState): void => {
     if (state.version) currentVersion = state.version;
     const win = getWindow();
-    if (win && !win.isDestroyed()) win.webContents.send(UPDATE_STATE_CHANNEL, { ...state, belowFloor });
+    if (win && !win.isDestroyed())
+      win.webContents.send(UPDATE_STATE_CHANNEL, { ...state, belowFloor, manualInstall });
   };
 
   // Fetch the channel manifest's floor, then re-push the last-known idle state so
@@ -76,6 +84,24 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
     refreshFloor();
     return;
   }
+
+  // Classify this build's signature once (macOS only): ad-hoc/unsigned means
+  // Squirrel.Mac would reject the downloaded update at install time, so the
+  // banner switches to the curl-installer command instead of download→restart.
+  // codesign prints its report to stderr; a codesign *failure* with no unsigned
+  // marker is treated as a real signature (fail-soft — a signed build must never
+  // lose one-click updates to a flaky probe).
+  const detectInstallMode = (): void => {
+    if (process.platform !== 'darwin') return;
+    // app.getPath('exe') → …/midnite.app/Contents/MacOS/midnite; the bundle is 3 up.
+    const bundle = path.resolve(app.getPath('exe'), '..', '..', '..');
+    execFile('codesign', ['--display', '--verbose=2', bundle], (_err, stdout, stderr) => {
+      if (!isManualInstallCodesign(`${stdout ?? ''}\n${stderr ?? ''}`)) return;
+      manualInstall = true;
+      // Re-push so the renderer learns the mode even before a feed check lands.
+      push(IDLE_STATE);
+    });
+  };
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
@@ -109,8 +135,9 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
     void autoUpdater.checkForUpdates().catch(() => {});
   });
 
-  // Seed the floor on boot (independent of the first feed check).
+  // Seed the floor + install-mode on boot (independent of the first feed check).
   refreshFloor();
+  detectInstallMode();
 }
 
 /**

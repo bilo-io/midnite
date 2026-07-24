@@ -50,6 +50,12 @@ export type UpdateState = {
    * banner enforces the same floor as the web. Absent on older payloads → false.
    */
   belowFloor?: boolean;
+  /**
+   * This macOS build has no real Developer ID signature (ad-hoc or unsigned), so
+   * electron-updater can't install updates in place — the banner offers the curl
+   * installer command instead of download→restart. Absent on older payloads → false.
+   */
+  manualInstall?: boolean;
 };
 
 /**
