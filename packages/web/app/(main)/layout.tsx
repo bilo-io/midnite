@@ -4,7 +4,7 @@ import { useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AppShellClient } from '@/components/app-shell-client';
 import { AppBackdrop } from '@/components/app-backdrop';
-import { AuthGuard } from '@/components/auth-guard';
+import { AuthGate } from '@/components/auth-gate';
 import { FeatureGate } from '@/components/feature-gate';
 import { LiveData } from '@/components/live-data';
 import { PreferenceSync } from '@/components/preference-sync';
@@ -39,30 +39,34 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           48px document scroll on desktop that slides every page (and the
           viewport-fitted shells) behind the fixed bar. */}
       <div className="relative isolate min-h-[calc(100dvh_-_var(--titlebar-h,0px))] bg-background">
+        {/* The backdrop lives OUTSIDE the auth gate so the starfield is what shows
+            while the session restore is in flight — the app content below never
+            paints until auth resolves (no dashboard flash on a logged-out launch). */}
         <AppBackdrop />
-        <AuthGuard />
-        <LiveData />
-        <PreferenceSync />
-        <CommandPalette />
-        <GlobalKeymap />
-        <PullToRefresh />
-        {/* The shared app frame (Phase 73 Theme C): sidenav rail + mobile nav +
-            the padded content region. Its `<main>` reserves the rail width via
-            `--nav-offset`; everything else here floats as a sibling. */}
-        <AppShellClient>
+        <AuthGate>
+          <LiveData />
+          <PreferenceSync />
+          <CommandPalette />
+          <GlobalKeymap />
+          <PullToRefresh />
+          {/* The shared app frame (Phase 73 Theme C): sidenav rail + mobile nav +
+              the padded content region. Its `<main>` reserves the rail width via
+              `--nav-offset`; everything else here floats as a sibling. */}
+          <AppShellClient>
+            <Suspense fallback={null}>
+              <PageReveal>{children}</PageReveal>
+            </Suspense>
+          </AppShellClient>
           <Suspense fallback={null}>
-            <PageReveal>{children}</PageReveal>
+            <FeatureGate />
+            <SetupNudge onOpenWizard={openWizard} />
           </Suspense>
-        </AppShellClient>
-        <Suspense fallback={null}>
-          <FeatureGate />
-          <SetupNudge onOpenWizard={openWizard} />
-        </Suspense>
-        <AssistantFab />
-        <GuideOverlay />
-        <GuideAutoLaunch />
-        <GuidePendingReplay />
-        <SetupWizardController onOpenWizard={registerOpen} />
+          <AssistantFab />
+          <GuideOverlay />
+          <GuideAutoLaunch />
+          <GuidePendingReplay />
+          <SetupWizardController onOpenWizard={registerOpen} />
+        </AuthGate>
       </div>
     </PaletteCommandsProvider>
     </NotificationsProvider>

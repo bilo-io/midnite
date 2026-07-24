@@ -93,14 +93,17 @@ cp .midnite/operator.example.json .midnite/operator.json
           "redirectUri": "http://localhost:7777/auth/sso/github/callback"
         }
       },
-      "allowlist": ["you@example.com"]
+      "allowlist": ["you@example.com", "@example.com"]
     }
   }
 }
 ```
 
 Only the providers you list appear as sign-in buttons. The `allowlist` gates who may
-provision on first login; drop it (or add emails) to open/limit sign-up.
+provision on first login; drop it (or add entries) to open/limit sign-up. Each entry is
+either a **full email** (`you@example.com`) or a **domain pattern** (`@example.com`) that
+admits every address at that domain — so you can allow a whole team by its domain instead
+of listing each person. Matching is case-insensitive.
 
 ## 4 · Run it locally
 

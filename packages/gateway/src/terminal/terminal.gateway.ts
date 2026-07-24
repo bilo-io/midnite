@@ -88,8 +88,16 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     request?: IncomingMessage,
   ): { userId: string | null; teamId: string | null } | null {
     const token = extractQueryToken(request?.url);
-    if (!token || !this.jwtSvc?.enabled) {
+    // JWT disabled (local mode): no login exists, so the socket is anonymous.
+    if (!this.jwtSvc?.enabled) {
       return { userId: null, teamId: null };
+    }
+    // JWT enabled: a valid token is REQUIRED — an anonymous socket must not reach a
+    // PTY behind the UI login gate (the per-session attach token is a second layer,
+    // not a substitute for authenticating the connection).
+    if (!token) {
+      try { client.close(4001, 'authentication required'); } catch { /* closing */ }
+      return null;
     }
     try {
       const payload = this.jwtSvc.verifyAccessToken(token);

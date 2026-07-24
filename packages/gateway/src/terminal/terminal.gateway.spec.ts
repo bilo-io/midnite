@@ -116,6 +116,23 @@ describe('TerminalGateway', () => {
     service = null;
   });
 
+  it('closes with 4001 when JWT auth is on and no token is supplied', () => {
+    const config = makeConfig({ command: 'cat' });
+    service = new TerminalService(config, noTasks, noProjects, noRepos, noAgents, noApprovals);
+    const jwtEnabled = { enabled: true, verifyAccessToken: () => ({ sub: 'u' }) } as never;
+    const gateway = new TerminalGateway(service, noApprovals, config, noRegistry, jwtEnabled);
+
+    const sock = new FakeSocket();
+    // Allowed (loopback) origin, but no `?token=` in the URL — an anonymous socket
+    // to an auth-required gateway must not reach a PTY.
+    const request = {
+      headers: { origin: 'http://localhost:3000' },
+      url: '/ws/terminal',
+    } as unknown as IncomingMessage;
+    gateway.handleConnection(sock.asWebSocket(), request);
+    expect(sock.closeCode).toBe(4001);
+  });
+
   it('attaches with a valid token, then echoes input', async () => {
     const { service: svc, gateway } = harness();
     const sock = new FakeSocket();

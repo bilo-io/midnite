@@ -241,5 +241,39 @@ describe('UsersService', () => {
       const user = await open.register('anyone@example.com', 'Any', 'Password123!');
       expect(user.email).toBe('anyone@example.com');
     });
+
+    it('permits any address at an allowlisted domain pattern (case-insensitive)', async () => {
+      const gated = makeService(['@ekko.earth']);
+      const a = await gated.register('alice@ekko.earth', 'Alice', 'Password123!');
+      expect(a.email).toBe('alice@ekko.earth');
+      // Different local part, mixed case — still matches the domain.
+      const b = await gated.register('Bob@EKKO.earth', 'Bob', 'Password123!');
+      expect(b.email).toBe('bob@ekko.earth');
+    });
+
+    it('refuses an address whose domain is not the allowlisted domain', async () => {
+      const gated = makeService(['@ekko.earth']);
+      await expect(gated.register('someone@evil.com', 'No', 'Password123!')).rejects.toThrow(
+        EmailNotAllowlistedError,
+      );
+      // A domain pattern must not match on a suffix of another domain.
+      await expect(gated.register('x@notekko.earth', 'No', 'Password123!')).rejects.toThrow(
+        EmailNotAllowlistedError,
+      );
+    });
+
+    it('matches either an exact email or a domain when both kinds are listed', async () => {
+      const gated = makeService(['bilo.lwabona@gmail.com', '@ekko.earth']);
+      expect((await gated.register('bilo.lwabona@gmail.com', 'B', 'Password123!')).email).toBe(
+        'bilo.lwabona@gmail.com',
+      );
+      expect((await gated.register('anyone@ekko.earth', 'A', 'Password123!')).email).toBe(
+        'anyone@ekko.earth',
+      );
+      // A different gmail address is NOT admitted by the exact-email entry.
+      await expect(gated.register('other@gmail.com', 'O', 'Password123!')).rejects.toThrow(
+        EmailNotAllowlistedError,
+      );
+    });
   });
 });

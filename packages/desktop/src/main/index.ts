@@ -9,6 +9,7 @@ import {
   stopGatewayProcess,
   writeGatewayEndpoint,
 } from './gateway-process';
+import { ensureGatewaySecrets } from './gateway-secrets';
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
@@ -55,6 +56,22 @@ async function boot(): Promise<void> {
   ensureLoginShellPath();
   const paths = resolvePaths();
   midniteHome = paths.home;
+  // The shipped app must require a login and encrypt secrets at rest out of the box.
+  // A fresh machine has no `~/.midnite/.env`, so without this the embedded gateway
+  // would boot on its local-dev defaults (auth OFF) and expose the dashboard with no
+  // sign-in. Provision the machine-local secrets on first boot, then make sure the
+  // gateway child loads them. Packaged-only: dev flows keep the auth-off local
+  // defaults, and they share this same `~/.midnite/.env`.
+  if (app.isPackaged) {
+    try {
+      paths.envPath = ensureGatewaySecrets(paths.home);
+    } catch (err) {
+      // Non-fatal: a locked-down filesystem shouldn't brick the app. The gateway
+      // then boots without auth (logged, visible), which the user can fix by hand.
+      // eslint-disable-next-line no-console
+      console.error('[midnite desktop] could not provision gateway secrets', err);
+    }
+  }
   // Prefer the stable port (7777) so the SSO callback URL is constant across launches
   // and an existing OAuth app keeps working; fall back to a free port if it's taken.
   const gatewayPort = await resolveGatewayPort();

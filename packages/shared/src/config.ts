@@ -218,6 +218,19 @@ export const GatewaySsoConfigSchema = z.object({
   webBaseUrl: z.string().url().optional(),
 });
 
+// A domain pattern for the access allowlist: `@example.com` (a leading `@` then a
+// DNS-ish domain with at least one dot). Admits every address at that domain.
+const ALLOWLIST_DOMAIN_RE = /^@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
+
+// One access-allowlist entry: a full email address, or a domain pattern like
+// `@example.com`. Kept lenient on purpose (operator-authored policy), validated so a
+// typo like `ekko.earth` (no `@`) is rejected at config-load rather than silently
+// matching nothing.
+export const AllowlistEntrySchema = z.string().refine(
+  (v) => ALLOWLIST_DOMAIN_RE.test(v) || z.string().email().safeParse(v).success,
+  { message: 'must be an email address or a domain pattern like "@example.com"' },
+);
+
 // Optional remote-access auth (Phase 7 A5). Off by default — midnite is local-only
 // out of the box. When a bearer token is configured (or the gateway binds a
 // non-loopback host), a Nest guard requires `Authorization: Bearer <token>` on the
@@ -255,12 +268,16 @@ export const GatewayAuthConfigSchema = z.object({
   // configured provider whose `clientSecretEnv` is unset fails the boot preflight.
   // SSO issues our JWTs, so it also needs `jwt.secretEnv` resolved to work.
   sso: GatewaySsoConfigSchema.optional(),
-  // Email allowlist (Phase 71). When **non-empty**, only these addresses may log
+  // Email allowlist (Phase 71). When **non-empty**, only matching addresses may log
   // in, register, or provision via SSO — everyone else is refused (403). Empty
   // (the default) imposes no restriction, so local / open deployments are
   // unaffected. Compared case-insensitively. Only meaningful when JWT auth is on
   // (a JWT-disabled local gateway has no login to gate).
-  allowlist: z.array(z.string().email()).default([]),
+  //
+  // Each entry is either a full email address (`someone@example.com`) or a **domain
+  // pattern** (`@example.com`) that admits every address at that domain — so a team
+  // can be allowlisted by its domain without listing each person. Mix freely.
+  allowlist: z.array(AllowlistEntrySchema).default([]),
   // Platform **operators** (Phase 73 D) — the emails allowed to reach the operator
   // console's cross-tenant admin routes (`GET /admin/users|teams|overview`). Like
   // `allowlist`, this is operator policy and lives in the gitignored

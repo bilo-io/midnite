@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { User } from '@midnite/shared';
 
@@ -12,36 +12,41 @@ const authState: { user: User | null; isLoading: boolean; jwtEnabled: boolean } 
 };
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => authState }));
 
-import { AuthGuard } from './auth-guard';
+import { AuthGate } from './auth-gate';
 
 const user = (): User => ({ id: 'u1', email: 'a@x.com', name: 'A', createdAt: 't', updatedAt: 't' });
+const child = () => <div data-testid="protected">app</div>;
 
-describe('AuthGuard', () => {
+describe('AuthGate', () => {
   beforeEach(() => {
     replace.mockReset();
     Object.assign(authState, { user: null, isLoading: false, jwtEnabled: true });
   });
 
-  it('redirects to /login when auth is required and nobody is signed in', () => {
-    render(<AuthGuard />);
+  it('redirects to /login and withholds children when auth is required and nobody is signed in', () => {
+    render(<AuthGate>{child()}</AuthGate>);
     expect(replace).toHaveBeenCalledWith('/login');
+    expect(screen.queryByTestId('protected')).toBeNull();
   });
 
-  it('does not redirect while the session restore is still loading', () => {
+  it('withholds children and does not redirect while the session restore is still loading', () => {
     authState.isLoading = true;
-    render(<AuthGuard />);
+    render(<AuthGate>{child()}</AuthGate>);
     expect(replace).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('protected')).toBeNull();
   });
 
-  it('does not redirect when JWT auth is disabled (local mode)', () => {
+  it('renders children without redirect when JWT auth is disabled (local mode)', () => {
     authState.jwtEnabled = false;
-    render(<AuthGuard />);
+    render(<AuthGate>{child()}</AuthGate>);
     expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
   });
 
-  it('does not redirect a signed-in user', () => {
+  it('renders children for a signed-in user', () => {
     authState.user = user();
-    render(<AuthGuard />);
+    render(<AuthGate>{child()}</AuthGate>);
     expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
   });
 });
