@@ -81,6 +81,11 @@ type PageHeaderProps = {
   icon?: PageHeaderIcon;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
   actions?: ReactNode; // right-aligned controls (e.g. a search bar)
+  /** Force the collapsed (tucked) form regardless of scroll position — for a
+   *  view with no page scroll to trigger `useScrolled` (e.g. a canvas view
+   *  that's `overflow-hidden`), so its sticky toolbar still lands flush under
+   *  the header/title bar instead of leaving the full expanded header in place. */
+  forceCollapsed?: boolean;
 };
 
 // Detail views no longer carry a back affordance in the header (Phase 81
@@ -94,8 +99,9 @@ export function PageHeader({
   icon,
   size = 'default',
   actions,
+  forceCollapsed = false,
 }: PageHeaderProps) {
-  const scrolled = useScrolled();
+  const scrolled = useScrolled() || forceCollapsed;
   const Icon = icon ? ICONS[icon] : null;
 
   // Type the title and subtitle out together. Both run over the same duration so
@@ -111,6 +117,21 @@ export function PageHeader({
 
   return (
     <header
+      // `forceCollapsed` fakes the collapsed *styling* without any real scroll
+      // ever happening, so the sticky trick that normally tucks the collapsed
+      // header behind the fixed desktop title bar (an actual scroll offset
+      // sliding it up underneath) never fires — it would just sit as its own
+      // redundant 48px row under the title bar's identical label. Pulling it up
+      // by `--titlebar-h` (0 in a browser, 48px frameless-desktop) reproduces
+      // that same "hidden behind the title bar" end state without a real
+      // scroll: on desktop it cancels its own collapsed height outright; on the
+      // web (titlebar-h unset) the margin is 0 and it stays fully visible.
+      // `position: sticky` would clamp this at its own `top: -1px` (an element
+      // can never sit more than 1px above its scroll container's edge), so
+      // `forceCollapsed` drops sticky for plain flow positioning, where the
+      // margin isn't fought — `forceCollapsed` is only ever used on a
+      // non-scrolling (`overflow-hidden`) page anyway, so sticky buys nothing.
+      style={forceCollapsed ? { marginTop: 'calc(-1 * var(--titlebar-h, 0px))' } : undefined}
       className={cn(
         // The collapsed form is EXACTLY the title bar's height (48px content;
         // its border-b rides within the -1px sticky tuck), an invariant two
@@ -119,7 +140,8 @@ export function PageHeader({
         // toolbars below the header use one offset — `top-12` — that lands
         // flush under the collapsed header in a browser AND under the title
         // bar on desktop. Change one height and the other must follow.
-        'sticky top-[-1px] z-30 border-b transition-colors duration-200 motion-reduce:transition-none',
+        'z-30 border-b transition-[margin-top,background-color,border-color] duration-200 motion-reduce:transition-none',
+        forceCollapsed ? 'relative' : 'sticky top-[-1px]',
         scrolled
           ? 'border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60'
           : 'border-transparent bg-transparent',

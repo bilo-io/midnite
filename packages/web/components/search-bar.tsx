@@ -1,13 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 /**
  * A URL-backed search box (writes `?q=`). Each page's view reads `q` and filters
  * its own content, so the bar lives in the view's control bar (left of the view
  * toggles) and the view stays the source of truth — consistent with the filter pills.
+ *
+ * Collapses to an icon-only button when idle and empty, expanding to the full
+ * input on click/focus — keeps the control bar compact instead of every page
+ * spending 176px+ of width on a search box up front. Stays expanded while
+ * focused or holding an active query, so an active filter is never silently
+ * hidden by a blur.
  */
 export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string }) {
   const router = useRouter();
@@ -15,6 +22,8 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
   const searchParams = useSearchParams();
   const current = searchParams.get('q') ?? '';
   const [value, setValue] = useState(current);
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Reflect external URL changes (e.g. back/forward).
   useEffect(() => {
@@ -34,6 +43,8 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
     return () => clearTimeout(t);
   }, [value, current, pathname, router, searchParams]);
 
+  const expanded = focused || value.length > 0;
+
   return (
     <div className="relative">
       <Search
@@ -41,18 +52,30 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
         className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
       />
       <input
+        ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && value) setValue('');
+        }}
         placeholder={placeholder}
         aria-label={placeholder}
         data-tour="search-input"
-        className="h-8 w-44 rounded-md border border-input bg-background pl-8 pr-7 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-56"
+        className={cn(
+          'h-8 rounded-md border border-input bg-background pl-8 text-sm placeholder:text-muted-foreground transition-[width] duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring motion-reduce:transition-none',
+          expanded ? 'w-44 cursor-text pr-7 sm:w-56' : 'w-8 cursor-pointer pr-2 hover:bg-accent',
+        )}
       />
-      {value ? (
+      {expanded && value ? (
         <button
           type="button"
-          onClick={() => setValue('')}
+          onClick={() => {
+            setValue('');
+            inputRef.current?.focus();
+          }}
           aria-label="Clear search"
           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >

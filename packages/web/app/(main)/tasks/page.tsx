@@ -29,7 +29,7 @@ export default function TasksPage() {
     <div
       className={
         view === 'graph'
-          ? 'flex h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col overflow-hidden'
+          ? 'flex h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col'
           : 'flex min-h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col'
       }
     >
@@ -37,6 +37,11 @@ export default function TasksPage() {
         title="Tasks"
         icon="ListChecks"
         description="Tasks grouped by status. Switch between list, board, and graph, and filter by status or project."
+        // The graph view is overflow-hidden (no page scroll), so `useScrolled`
+        // can never fire on its own — force the tucked header so the sticky
+        // toolbar still sits flush under it/the title bar, not below a full
+        // expanded header eating into the canvas's fixed viewport height.
+        forceCollapsed={view === 'graph'}
       />
       <TasksView
         tasks={tasks}
