@@ -373,7 +373,7 @@ export function SessionsView({
             description="Create a task and its agent session shows up here."
           />
         ) : view === 'table' ? (
-          <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
+          <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" variant="split" />
         ) : sessions.length === 0 ? (
           <EmptyState Icon={BotMessageSquare} title="No sessions match this filter" />
         ) : (
