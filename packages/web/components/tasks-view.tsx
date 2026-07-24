@@ -608,6 +608,7 @@ export function TasksView({
             showTaskModal={false}
             embedded
             projectIds={[...activeProjects]}
+            statusFilter={showAllStatuses ? undefined : (activeStatuses as Status[])}
           />
         ) : (
           <BoardView

@@ -16,7 +16,7 @@ import {
   type NodeTypes,
   type ReactFlowInstance,
 } from '@xyflow/react';
-import type { Project, Task, TaskSummary } from '@midnite/shared';
+import type { Project, Status, Task, TaskSummary } from '@midnite/shared';
 import { getTask, getTaskGraph } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useTaskEvents } from '@/hooks/use-task-events';
@@ -67,6 +67,13 @@ type Props = {
    *  `?projectId=` query param). Empty/undefined shows every project's tasks,
    *  matching "no project selected". */
   projectIds?: string[];
+  /** Statuses to show when `embedded` — the board's status multi-select
+   *  filter pills. Only nodes with one of these statuses are drawn; an edge
+   *  still only renders when both its endpoints survive the filter (the same
+   *  "both endpoints known" rule `layoutTaskGraph` already applies for a
+   *  project-capped graph), so a filtered-out node's dependencies simply
+   *  disappear rather than dangling. Empty/undefined shows every status. */
+  statusFilter?: Status[];
 };
 
 /**
@@ -81,6 +88,7 @@ export function TaskGraphView({
   showTaskModal = true,
   embedded = false,
   projectIds: scopeProjectIdsProp,
+  statusFilter,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -145,10 +153,21 @@ export function TaskGraphView({
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [router, pathname, searchParams]);
 
-  const { nodes, edges } = useMemo(
-    () => (graph ? layoutTaskGraph(graph) : { nodes: [], edges: [] }),
-    [graph],
-  );
+  // A stable primitive key for the memo below — an array prop would otherwise
+  // churn identity every render and defeat the memo (harmless, just wasteful).
+  const statusKey = statusFilter?.join(',') ?? '';
+  const { nodes, edges } = useMemo(() => {
+    if (!graph) return { nodes: [], edges: [] };
+    // Status filter narrows the node set *before* layout; `layoutTaskGraph`
+    // already drops any edge whose endpoint isn't in `graph.nodes` (the
+    // project-scope truncation relies on the same rule), so a filtered-out
+    // node's edges disappear for free and the surviving edges keep the same
+    // appearance rules (done/wip/quiet) unchanged.
+    const scoped = statusFilter?.length
+      ? { ...graph, nodes: graph.nodes.filter((n) => statusFilter.includes(n.status)) }
+      : graph;
+    return layoutTaskGraph(scoped);
+  }, [graph, statusKey]);
 
   // Open the shared task modal in place (Phase 42 `?task=` param) — stays on the
   // graph. Skipped when a host page (the Tasks page's graph view mode) already
