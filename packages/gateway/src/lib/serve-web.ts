@@ -55,6 +55,20 @@ function isHtmlNavigation(req: FastifyRequest): boolean {
 }
 
 /**
+ * A Next.js App Router flight (RSC payload) fetch. The client router appends a
+ * `_rsc=` query param to every `‹route›/index.txt` request it makes on navigation
+ * / prefetch, and sends an `RSC: 1` header — neither of which a normal asset or a
+ * genuine `fetch` API call carries. We use this to tell a page's flight file apart
+ * from an ordinary `.txt` asset so a *missing* one never falls through to a
+ * colliding API route (see the hook below).
+ */
+function isRscFlight(req: FastifyRequest): boolean {
+  if (req.headers.rsc !== undefined) return true;
+  const query = req.url.split('?')[1] ?? '';
+  return new URLSearchParams(query).has('_rsc');
+}
+
+/**
  * Serve the web app's static export from the gateway, so a single process serves
  * both the API and the browser UI in prod (Phase 3) — the model the desktop app
  * relies on for single-origin SSO (Phase 77 D).
@@ -104,11 +118,27 @@ export async function registerWebStatic(
   // above). Sending a reply from `onRequest` short-circuits the matched controller.
   fastify.addHook('onRequest', (req: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void) => {
     if (req.method !== 'GET') return done();
+    const sendFile = (reply as FastifyReply & { sendFile: (path: string) => FastifyReply }).sendFile;
     // Disjoint by construction: assets have an extension, pages don't.
     const rel = assetFileFor(root, req.url) ?? (isHtmlNavigation(req) ? pageFileFor(root, req.url) : null);
-    if (!rel) return done();
-    // Takes over the response — do not call `done()` afterwards.
-    void (reply as FastifyReply & { sendFile: (path: string) => FastifyReply }).sendFile(rel);
+    if (rel) {
+      // Takes over the response — do not call `done()` afterwards.
+      void sendFile.call(reply, rel);
+      return;
+    }
+    // A flight fetch whose payload the export doesn't ship here (a stale/partial
+    // build, or a route the API also owns) must NOT fall through to the colliding
+    // API route — `GET /councils/index.txt?_rsc=…` would otherwise hit
+    // `GET /councils/:id` and return `{"message":"council index.txt does not
+    // exist",…}`, which the client router can't parse as flight. Answer 404 so
+    // Next falls back to a clean full-document navigation instead of surfacing raw
+    // API JSON. (A plain `.txt` asset with no `_rsc`/`RSC` marker still falls
+    // through — it isn't a page flight file.)
+    if (isRscFlight(req)) {
+      void reply.code(404).type('text/plain').send('Not Found');
+      return;
+    }
+    return done();
   });
 
   return { served: true, root };

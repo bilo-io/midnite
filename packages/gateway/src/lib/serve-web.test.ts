@@ -153,6 +153,40 @@ describe('registerWebStatic', () => {
     await app.close();
   });
 
+  it('404s a missing RSC flight file instead of leaking the colliding API JSON', async () => {
+    // Regression: a flight fetch for a payload the export doesn't ship here (a
+    // stale/partial build) must not fall through to `GET /councils/:id`, which
+    // would answer `{"message":"council index.txt does not exist",…}` — the client
+    // router can't parse that as flight and would surface the raw JSON. A flight
+    // request is marked by `_rsc=`/`RSC: 1`; answer 404 so Next falls back to a
+    // clean full-document load.
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>midnite</title>');
+
+    const app = Fastify();
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
+    app.get('/councils/:id', async (req) => {
+      void req;
+      return { message: 'council index.txt does not exist', statusCode: 404 };
+    });
+    await app.ready();
+
+    for (const req of [
+      { url: '/councils/index.txt?_rsc=abc123' },
+      { url: '/councils/index.txt', headers: { rsc: '1' } },
+    ]) {
+      const res = await app.inject({ method: 'GET', ...req });
+      expect(res.statusCode).toBe(404);
+      expect(res.body).not.toContain('does not exist'); // never the API JSON
+    }
+
+    // A plain `.txt` with no flight marker is still treated as a genuine asset
+    // request and falls through to the API (unchanged behaviour).
+    const plain = await app.inject({ method: 'GET', url: '/councils/index.txt' });
+    expect(plain.json()).toEqual({ message: 'council index.txt does not exist', statusCode: 404 });
+
+    await app.close();
+  });
+
   it('never serves a file outside the export root', async () => {
     writeFileSync(join(dir, 'index.html'), '<!doctype html><title>midnite</title>');
     writeFileSync(join(dir, '..', 'outside.txt'), 'secret');
