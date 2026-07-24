@@ -6,8 +6,9 @@ import { type LoginProvider, LOGIN_PROVIDERS } from '@midnite/shared';
 import { GradientGlow } from '@midnite/ui';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { fetchSsoProviders, ssoStartUrl } from '@/lib/api';
+import { fetchSsoProviders, ssoStartUrl, type SsoLoginOptions } from '@/lib/api';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
+import { DeviceFlowPanel } from './device-flow-panel';
 
 /** Vendor names are proper nouns — not translated; only the surrounding copy is. */
 const PROVIDER_NAME: Record<LoginProvider, string> = {
@@ -40,15 +41,18 @@ const PROVIDER_GLOW: Record<LoginProvider, string | undefined> = {
  */
 export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
   const t = useTranslations('auth');
-  const [providers, setProviders] = useState<LoginProvider[] | null>(null);
+  const [options, setOptions] = useState<SsoLoginOptions | null>(null);
   // Read after mount — localStorage is unavailable during the static prerender.
   const [lastUsed, setLastUsed] = useState<string | null>(null);
+  // Non-null while the secretless device flow is in progress — it swaps the
+  // buttons out for the inline code panel.
+  const [deviceProvider, setDeviceProvider] = useState<LoginProvider | null>(null);
 
   useEffect(() => {
     setLastUsed(readLastLoginMethod());
     let active = true;
     void fetchSsoProviders().then((p) => {
-      if (active) setProviders(p);
+      if (active) setOptions(p);
     });
     return () => {
       active = false;
@@ -56,39 +60,70 @@ export function SsoButtons({ redirect = '/' }: { redirect?: string }) {
   }, []);
 
   // Server-reported set when non-empty; else the full pair (loading / unconfigured).
-  const shown: readonly LoginProvider[] =
-    providers && providers.length > 0 ? providers : LOGIN_PROVIDERS;
+  const reported: readonly LoginProvider[] = options
+    ? [...options.providers, ...options.deviceProviders]
+    : [];
+  const shown: readonly LoginProvider[] = reported.length > 0 ? reported : LOGIN_PROVIDERS;
+  const deviceSet = new Set(options?.deviceProviders ?? []);
+
+  if (deviceProvider) {
+    return (
+      <div className="flex flex-col gap-3">
+        <DeviceFlowPanel provider={deviceProvider} onCancel={() => setDeviceProvider(null)} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
-        {shown.map((provider) => (
-          <GradientGlow
-            key={provider}
-            trigger="hover"
-            className={cn(
-              'rounded-lg',
-              PROVIDER_GLOW[provider],
-              lastUsed === provider && 'gradient-border--always',
-            )}
-          >
-            <a
-              href={ssoStartUrl(provider, redirect)}
-              onClick={() => writeLastLoginMethod(provider)}
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                // Neutral hover (not the accent wash) — the glow border is the
-                // hover affordance here.
-                'relative h-11 w-full gap-2.5 rounded-lg bg-background hover:bg-muted/60 hover:text-foreground',
-              )}
-              data-testid={`sso-${provider}`}
-            >
+        {shown.map((provider) => {
+          const inner = (
+            <>
               <ProviderIcon provider={provider} />
               {t('continueWith', { provider: PROVIDER_NAME[provider] })}
               {lastUsed === provider && <LastUsedTag />}
-            </a>
-          </GradientGlow>
-        ))}
+            </>
+          );
+          const buttonClass = cn(
+            buttonVariants({ variant: 'ghost' }),
+            // Neutral hover (not the accent wash) — the glow border is the
+            // hover affordance here.
+            'relative h-11 w-full gap-2.5 rounded-lg bg-background hover:bg-muted/60 hover:text-foreground',
+          );
+          return (
+            <GradientGlow
+              key={provider}
+              trigger="hover"
+              className={cn(
+                'rounded-lg',
+                PROVIDER_GLOW[provider],
+                lastUsed === provider && 'gradient-border--always',
+              )}
+            >
+              {deviceSet.has(provider) ? (
+                // Secretless device flow: swap in the code panel, no navigation.
+                <button
+                  type="button"
+                  onClick={() => setDeviceProvider(provider)}
+                  className={buttonClass}
+                  data-testid={`sso-${provider}`}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <a
+                  href={ssoStartUrl(provider, redirect)}
+                  onClick={() => writeLastLoginMethod(provider)}
+                  className={buttonClass}
+                  data-testid={`sso-${provider}`}
+                >
+                  {inner}
+                </a>
+              )}
+            </GradientGlow>
+          );
+        })}
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-border" />

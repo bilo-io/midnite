@@ -280,6 +280,10 @@ import {
   type OAuthProvider,
   type LoginProvider,
   LoginProviderSchema,
+  type SsoDeviceStartResponse,
+  SsoDeviceStartResponseSchema,
+  type SsoDevicePollResponse,
+  SsoDevicePollResponseSchema,
   CreateServiceTokenResponseSchema,
   ListServiceTokensResponseSchema,
   type CreateServiceTokenRequest,
@@ -2723,21 +2727,58 @@ export function ssoStartUrl(provider: LoginProvider, redirect?: string): string 
   return `${gatewayUrl()}/auth/sso/${encodeURIComponent(provider)}/start${qs}`;
 }
 
+/** Which login methods the gateway offers per provider: `providers` use the
+ *  redirect flow, `deviceProviders` the secretless device flow. */
+export interface SsoLoginOptions {
+  providers: LoginProvider[];
+  deviceProviders: LoginProvider[];
+}
+
 /**
- * Which SSO providers the gateway is configured for (server-authoritative — only
- * providers with a resolvable client secret + JWT enabled). Returns `[]` on any
- * failure so the login page simply shows no buttons (password login unaffected).
+ * Which SSO providers the gateway is configured for (server-authoritative — the
+ * redirect flow needs a resolvable client secret; the device flow is the bare
+ * install's secretless fallback; both need JWT enabled). Returns empty lists on
+ * any failure so the login page simply shows the defaults (password unaffected).
  */
-export async function fetchSsoProviders(): Promise<LoginProvider[]> {
+export async function fetchSsoProviders(): Promise<SsoLoginOptions> {
   try {
     const res = await fetch(`${gatewayUrl()}/auth/sso/providers`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { providers?: unknown };
-    const parsed = LoginProviderSchema.array().safeParse(data.providers);
-    return parsed.success ? parsed.data : [];
+    if (!res.ok) return { providers: [], deviceProviders: [] };
+    const data = (await res.json()) as { providers?: unknown; deviceProviders?: unknown };
+    const providers = LoginProviderSchema.array().safeParse(data.providers);
+    // Optional — an older gateway won't send it.
+    const device = LoginProviderSchema.array().safeParse(data.deviceProviders ?? []);
+    return {
+      providers: providers.success ? providers.data : [],
+      deviceProviders: device.success ? device.data : [],
+    };
   } catch {
-    return [];
+    return { providers: [], deviceProviders: [] };
   }
+}
+
+/**
+ * Begin a secretless device-flow login (Phase: distribution SSO). Returns the
+ * user code + verification URL to show, and the opaque handle to poll with.
+ * Throws on failure — the caller surfaces the SSO error copy.
+ */
+export async function startSsoDeviceAuth(provider: LoginProvider): Promise<SsoDeviceStartResponse> {
+  const res = await fetch(`${gatewayUrl()}/auth/sso/${encodeURIComponent(provider)}/device/start`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new ApiError('device flow unavailable', res.status);
+  return SsoDeviceStartResponseSchema.parse(await res.json());
+}
+
+/** Poll a pending device authorization on the gateway (never GitHub directly). */
+export async function pollSsoDeviceAuth(deviceAuthId: string): Promise<SsoDevicePollResponse> {
+  const res = await fetch(`${gatewayUrl()}/auth/sso/device/poll`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ deviceAuthId }),
+  });
+  if (!res.ok) throw new ApiError('device poll failed', res.status);
+  return SsoDevicePollResponseSchema.parse(await res.json());
 }
 
 /**

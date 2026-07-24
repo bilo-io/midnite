@@ -116,9 +116,59 @@ export type SsoExchangeRequest = z.infer<typeof SsoExchangeRequestSchema>;
 
 /** Response for `GET /auth/sso/providers` — which providers the gateway is
  *  actually configured for, so the web login page renders only usable buttons
- *  instead of trusting a build-time env flag. */
+ *  instead of trusting a build-time env flag. `deviceProviders` (additive,
+ *  optional for old gateways) lists providers available via the **device flow**
+ *  instead of the redirect flow — see the device schemas below. A provider
+ *  appears in at most one of the two lists. */
 export const SsoProvidersResponseSchema = z.object({
   providers: z.array(LoginProviderSchema),
+  deviceProviders: z.array(LoginProviderSchema).optional(),
 });
 
 export type SsoProvidersResponse = z.infer<typeof SsoProvidersResponseSchema>;
+
+// --- SSO device flow (GitHub) ------------------------------------------------
+//
+// The OAuth **device flow** needs no client secret, so a downloaded app whose
+// local gateway has no operator config can still sign users in with GitHub:
+// the gateway asks GitHub for a user code, the user approves it at
+// github.com/login/device, and the gateway polls for the grant. The browser
+// client polls the *gateway* (never GitHub) — the device_code stays server-side.
+
+/** Response for `POST /auth/sso/:provider/device/start`. */
+export const SsoDeviceStartResponseSchema = z.object({
+  /** Opaque handle the client polls with — never the provider's device_code. */
+  deviceAuthId: z.string().min(1).max(128),
+  /** The short code the user types at the provider's verification page. */
+  userCode: z.string().min(1).max(32),
+  /** Where the user approves the code (e.g. https://github.com/login/device). */
+  verificationUri: z.string().url(),
+  /** Seconds until the code expires. */
+  expiresInSeconds: z.number().int().positive(),
+  /** Suggested seconds between polls. */
+  intervalSeconds: z.number().int().positive(),
+});
+
+export type SsoDeviceStartResponse = z.infer<typeof SsoDeviceStartResponseSchema>;
+
+/** Body for `POST /auth/sso/device/poll`. */
+export const SsoDevicePollRequestSchema = z.object({
+  deviceAuthId: z.string().min(1).max(128),
+});
+
+export type SsoDevicePollRequest = z.infer<typeof SsoDevicePollRequestSchema>;
+
+/** Response for `POST /auth/sso/device/poll` — a discriminated flow state. On
+ *  `complete` the full `AuthResponse` rides along (loopback gateway → the tokens
+ *  go straight to the local client, mirroring `POST /auth/sso/exchange`). On
+ *  `error`, `code` reuses the existing `sso_error` vocabulary (`not_allowed`,
+ *  `provider_error`, …) so clients reuse their error copy. */
+export const SsoDevicePollResponseSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('pending') }),
+  z.object({ status: z.literal('complete'), auth: AuthResponseSchema }),
+  z.object({ status: z.literal('expired') }),
+  z.object({ status: z.literal('denied') }),
+  z.object({ status: z.literal('error'), code: z.string().min(1).max(64) }),
+]);
+
+export type SsoDevicePollResponse = z.infer<typeof SsoDevicePollResponseSchema>;

@@ -150,6 +150,18 @@ export async function logoutSession(accessToken: string | null): Promise<void> {
 }
 
 /**
+ * Persist a refresh token issued outside the transport's own calls (the SSO
+ * **device flow** hands the browser a full AuthResponse from the gateway poll).
+ * Desktop: localStorage, so {@link refreshSession} restores the session on the
+ * next launch. Hosted BFF mode has no cookie-setting path for a client-held
+ * token — a no-op there (the in-memory session still works; device flow is only
+ * active on secretless local installs anyway).
+ */
+export function persistRefreshToken(token: string): void {
+  if (isDesktopAuth()) storeRefreshToken(token);
+}
+
+/**
  * Exchange an SSO one-time code for a session. BFF: `/api/auth/sso/callback` (sets the
  * cookie). Desktop: the gateway's `/auth/sso/exchange` + store the refresh token, so
  * the subsequent full navigation restores the session via {@link refreshSession}.

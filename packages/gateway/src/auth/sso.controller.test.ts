@@ -3,6 +3,7 @@ import { BadRequestException, ServiceUnavailableException } from '@nestjs/common
 import { parseConfig, type AuthResponse } from '@midnite/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JwtService } from './jwt.service';
+import { EmailNotAllowlistedError } from '../users/users.service';
 import { SsoController } from './sso.controller';
 import { SsoNotConfiguredError, type SsoService, SsoStateInvalidError } from './sso.service';
 
@@ -28,9 +29,18 @@ function makeController(overrides: {
   const jwt = { enabled: overrides.jwtEnabled ?? true } as unknown as JwtService;
   const service = {
     enabledProviders: vi.fn(() => ['google', 'github']),
+    deviceProviders: vi.fn(() => []),
     buildAuthorizationUrl: vi.fn(() => 'https://accounts.google.com/o/oauth2/v2/auth?x=1'),
     handleCallback: vi.fn(async () => ({ exchangeCode: 'CODE', redirect: '/board' })),
     exchangeCode: vi.fn(() => ({ accessToken: 'a', refreshToken: 'r', user: { id: 'u1' } } as unknown as AuthResponse)),
+    startDeviceAuth: vi.fn(async () => ({
+      deviceAuthId: 'da-1',
+      userCode: 'ABCD-1234',
+      verificationUri: 'https://github.com/login/device',
+      expiresInSeconds: 900,
+      intervalSeconds: 5,
+    })),
+    pollDeviceAuth: vi.fn(async () => ({ status: 'pending' as const })),
     ...overrides.service,
   } as unknown as SsoService;
   return new SsoController(config, service, jwt);
@@ -44,10 +54,91 @@ describe('SsoController', () => {
 
   describe('providers', () => {
     it('lists providers when JWT is enabled', () => {
-      expect(makeController({ jwtEnabled: true }).providers()).toEqual({ providers: ['google', 'github'] });
+      expect(makeController({ jwtEnabled: true }).providers()).toEqual({
+        providers: ['google', 'github'],
+        deviceProviders: [],
+      });
     });
     it('returns none when JWT is disabled', () => {
-      expect(makeController({ jwtEnabled: false }).providers()).toEqual({ providers: [] });
+      expect(makeController({ jwtEnabled: false }).providers()).toEqual({
+        providers: [],
+        deviceProviders: [],
+      });
+    });
+    it('reports the secretless device-flow providers alongside the redirect ones', () => {
+      const controller = makeController({
+        service: {
+          enabledProviders: vi.fn(() => ['google']),
+          deviceProviders: vi.fn(() => ['github']),
+        } as unknown as Partial<SsoService>,
+      });
+      expect(controller.providers()).toEqual({ providers: ['google'], deviceProviders: ['github'] });
+    });
+  });
+
+  describe('device flow', () => {
+    it('starts a device auth and returns the code + verification URL', async () => {
+      const result = await makeController({}).deviceStart('github');
+      expect(result.userCode).toBe('ABCD-1234');
+      expect(result.deviceAuthId).toBe('da-1');
+    });
+
+    it('503s the start when JWT is disabled', async () => {
+      await expect(makeController({ jwtEnabled: false }).deviceStart('github')).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+    });
+
+    it('503s the start when the provider is not available via device flow', async () => {
+      const controller = makeController({
+        service: {
+          startDeviceAuth: vi.fn(async () => {
+            throw new SsoNotConfiguredError('github');
+          }),
+        } as unknown as Partial<SsoService>,
+      });
+      await expect(controller.deviceStart('github')).rejects.toThrow(ServiceUnavailableException);
+    });
+
+    it('rejects an unknown provider on start with 400', async () => {
+      await expect(makeController({}).deviceStart('facebook')).rejects.toThrow(BadRequestException);
+    });
+
+    it('polls through to the service result', async () => {
+      const controller = makeController({
+        service: {
+          pollDeviceAuth: vi.fn(async () => ({
+            status: 'complete' as const,
+            auth: { accessToken: 'a', refreshToken: 'r', user: { id: 'u1' } } as unknown as AuthResponse,
+          })),
+        } as unknown as Partial<SsoService>,
+      });
+      const result = await controller.devicePoll({ deviceAuthId: 'da-1' });
+      expect(result.status).toBe('complete');
+    });
+
+    it('maps a provisioning refusal onto the sso_error vocabulary', async () => {
+      const controller = makeController({
+        service: {
+          pollDeviceAuth: vi.fn(async () => {
+            throw new EmailNotAllowlistedError('intruder@example.com');
+          }),
+        } as unknown as Partial<SsoService>,
+      });
+      expect(await controller.devicePoll({ deviceAuthId: 'da-1' })).toEqual({
+        status: 'error',
+        code: 'not_allowed',
+      });
+    });
+
+    it('400s a malformed poll body', async () => {
+      await expect(makeController({}).devicePoll({})).rejects.toThrow(BadRequestException);
+    });
+
+    it('503s the poll when JWT is disabled', async () => {
+      await expect(
+        makeController({ jwtEnabled: false }).devicePoll({ deviceAuthId: 'da-1' }),
+      ).rejects.toThrow(ServiceUnavailableException);
     });
   });
 

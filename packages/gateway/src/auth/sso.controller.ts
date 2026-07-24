@@ -15,6 +15,9 @@ import {
   type LoginProvider,
   LoginProviderSchema,
   type MidniteConfig,
+  type SsoDevicePollResponse,
+  SsoDevicePollRequestSchema,
+  type SsoDeviceStartResponse,
   SsoExchangeRequestSchema,
   SsoStartParamsSchema,
 } from '@midnite/shared';
@@ -47,10 +50,55 @@ export class SsoController {
     @Inject(JwtService) private readonly jwtSvc: JwtService,
   ) {}
 
-  /** Which providers the gateway is configured for — the web renders only usable buttons. */
+  /** Which providers the gateway is configured for — the web renders only usable
+   *  buttons. `providers` = redirect flow (operator-configured secret);
+   *  `deviceProviders` = secretless device flow (the bare-install default). */
   @Get('providers')
-  providers(): { providers: LoginProvider[] } {
-    return { providers: this.jwtSvc.enabled ? this.service.enabledProviders() : [] };
+  providers(): { providers: LoginProvider[]; deviceProviders: LoginProvider[] } {
+    if (!this.jwtSvc.enabled) return { providers: [], deviceProviders: [] };
+    return {
+      providers: this.service.enabledProviders(),
+      deviceProviders: this.service.deviceProviders(),
+    };
+  }
+
+  /** Begin a secretless device-flow login (Phase: distribution SSO). Pre-auth
+   *  reachable like every `/auth/sso/*` route. */
+  @Post(':provider/device/start')
+  async deviceStart(@Param('provider') providerRaw: string): Promise<SsoDeviceStartResponse> {
+    const provider = this.parseProvider(providerRaw);
+    if (!this.jwtSvc.enabled) throw new ServiceUnavailableException('SSO requires JWT auth to be enabled');
+    try {
+      return await this.service.startDeviceAuth(provider);
+    } catch (err) {
+      if (err instanceof SsoNotConfiguredError) {
+        throw new ServiceUnavailableException(`SSO provider "${provider}" is not available via device flow`);
+      }
+      if (err instanceof SsoProviderError) {
+        throw new ServiceUnavailableException('The sign-in provider rejected the request');
+      }
+      throw err;
+    }
+  }
+
+  /** Poll a pending device authorization. Flow states come back typed; user
+   *  provisioning failures map onto the existing `sso_error` codes so clients
+   *  reuse their error copy. */
+  @Post('device/poll')
+  async devicePoll(@Body() body: unknown): Promise<SsoDevicePollResponse> {
+    if (!this.jwtSvc.enabled) throw new ServiceUnavailableException('SSO requires JWT auth to be enabled');
+    const parsed = SsoDevicePollRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    try {
+      return await this.service.pollDeviceAuth(parsed.data.deviceAuthId);
+    } catch (err) {
+      try {
+        return { status: 'error', code: this.errorCode(err) };
+      } catch {
+        // errorCode re-throws unknowns — those are genuine 500s.
+        throw err;
+      }
+    }
   }
 
   @Get(':provider/start')
