@@ -23,14 +23,16 @@ export type DownloadTarget = {
 export const DESKTOP_VERSION = '0.7.3';
 
 /**
- * macOS installs via the curl one-liner (install.sh in the public downloads
- * repo), not a direct .dmg link: the app isn't notarized yet, so a
+ * macOS installs via the curl one-liner (served from the marketing site itself —
+ * `public/install.sh`), not a direct .dmg link: the app isn't notarized yet, so a
  * browser-downloaded build gets quarantined and blocked by Gatekeeper (and
  * macOS 15 removed the right-click → Open bypass). curl sets no quarantine
  * attribute, so the installed app opens cleanly on first launch — and
- * re-running the same command is also the update path.
+ * re-running the same command is also the update path. The script is
+ * location-independent (it resolves the latest release off GitHub), so serving
+ * it from our own short domain is purely a friendlier, more shareable URL.
  */
-export const MAC_INSTALL_COMMAND = `curl -fsSL https://raw.githubusercontent.com/bilo-io/midnite-app/main/install.sh | sh`;
+export const MAC_INSTALL_COMMAND = `curl -fsSL https://midnite-app.vercel.app/install.sh | sh`;
 
 export const PLATFORM_LABELS: Record<Platform, string> = {
   mac: 'macOS',

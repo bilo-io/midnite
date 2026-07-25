@@ -103,7 +103,7 @@ export const Failed: Story = {
 export const ManualInstall: Story = {
   args: {
     copyCommand:
-      'curl -fsSL https://raw.githubusercontent.com/bilo-io/midnite-app/main/install.sh | sh',
+      'curl -fsSL https://midnite-app.vercel.app/install.sh | sh',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

@@ -20,7 +20,7 @@ import { useUpdate } from './update-provider';
  * installer command (the same one-liner the public downloads repo documents).
  */
 const MAC_INSTALL_COMMAND =
-  'curl -fsSL https://raw.githubusercontent.com/bilo-io/midnite-app/main/install.sh | sh';
+  'curl -fsSL https://midnite-app.vercel.app/install.sh | sh';
 
 export function UpdateBanner() {
   const {
