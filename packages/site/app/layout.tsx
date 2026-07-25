@@ -42,11 +42,22 @@ export const metadata: Metadata = {
     description:
       'Drop in a freeform list. midnite classifies, queues, and runs every task across a pool of agents — tracked on one live board.',
     type: 'website',
+    url: 'https://midnite-app.vercel.app',
+    siteName: 'midnite',
+    images: [
+      {
+        url: '/opengraph-banner.png',
+        width: 1200,
+        height: 630,
+        alt: 'midnite — Multitask Claude Code',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'midnite — Multitask Claude Code',
     description: 'Run Claude Code in parallel. A task orchestrator for a pool of agents.',
+    images: ['/opengraph-banner.png'],
   },
 };
 
