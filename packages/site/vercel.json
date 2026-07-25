@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm --filter @midnite/ui run build && cd packages/site && pnpm run build",
   "ignoreCommand": "node ../../scripts/vercel-ignore.mjs site"
 }
