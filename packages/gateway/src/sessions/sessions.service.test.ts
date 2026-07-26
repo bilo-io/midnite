@@ -119,9 +119,9 @@ describe('SessionsService.list agentCli', () => {
   } as unknown as Task;
 
   it('includes agentCli from AgentsService on each summary', async () => {
-    const svc = makeService({ tasks: [baseTask], agentCli: 'gemini' });
+    const svc = makeService({ tasks: [baseTask], agentCli: 'antigravity' });
     const list = await svc.list();
-    expect(list[0]!.agentCli).toBe('gemini');
+    expect(list[0]!.agentCli).toBe('antigravity');
   });
 
   it('defaults to claude when AgentsService returns claude', async () => {

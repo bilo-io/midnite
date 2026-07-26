@@ -19,7 +19,7 @@ export const SessionSummarySchema = z.object({
   contextLimit: z.number().int().positive().optional(),
   /** ISO timestamp when the session was archived; absent when active. */
   archivedAt: z.string().optional(),
-  /** The agent CLI driving this session (claude | gemini | codex | …). */
+  /** The agent CLI driving this session (claude | antigravity | codex | …). */
   agentCli: z.string().optional(),
   /** LLM provider backing this session (derived from agentCli). */
   provider: LlmProviderSchema.optional(),

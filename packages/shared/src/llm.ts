@@ -40,10 +40,11 @@ export const LLM_PROVIDER_API_KEY_URL: Record<LlmProvider, string> = {
 };
 
 // Which provider an agent CLI's "API" tab configures. `aider` has no first-party
-// API (it proxies other providers), so it is CLI-only → no API tab.
+// API (it proxies other providers); `antigravity` authenticates with a Google
+// account login rather than an API key, so both are CLI-only → no API tab.
 export const CLI_PROVIDER_MAP: Record<AgentCli, LlmProvider | null> = {
   claude: 'anthropic',
-  gemini: 'google',
+  antigravity: null,
   codex: 'openai',
   opencode: 'openai-compatible',
   aider: null,

@@ -11,7 +11,7 @@ const COUNCILS: Council[] = [
   {
     id: 'c1',
     name: 'Architecture review',
-    synthProvider: 'gemini',
+    synthProvider: 'antigravity',
     defaultFormat: 'debate',
     members: [
       {

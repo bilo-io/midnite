@@ -31,7 +31,7 @@ describe('CouncilsService', () => {
   it('defaults provider + format and seeds starter members on a bare create', () => {
     const { service } = makeService();
     const c = service.createCouncil({ name: 'c' });
-    expect(c.synthProvider).toBe('gemini');
+    expect(c.synthProvider).toBe('antigravity');
     expect(c.defaultFormat).toBe('brainstorm');
     expect(c.members).toHaveLength(COUNCIL_STARTER_MEMBERS.length);
   });

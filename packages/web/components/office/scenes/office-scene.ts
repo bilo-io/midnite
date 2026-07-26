@@ -153,11 +153,11 @@ function toolShadowTint(tool: string | undefined): { color: number; alpha: numbe
 
 /** Phase 9 B1: brand-aligned accent per agent CLI. Unknown CLIs get gray. */
 const CLI_BADGE_COLOR: Record<string, number> = {
-  claude: 0xe6521a,    // Anthropic orange
-  gemini: 0x4285f4,    // Google blue
-  codex: 0x10a37f,     // OpenAI green
-  opencode: 0x10a37f,  // OpenAI green (opencode wraps codex)
-  aider: 0x7c3aed,     // Purple
+  claude: 0xe6521a,       // Anthropic orange
+  antigravity: 0x4285f4,  // Google blue
+  codex: 0x10a37f,        // OpenAI green
+  opencode: 0x10a37f,     // OpenAI green (opencode wraps codex)
+  aider: 0x7c3aed,        // Purple
 };
 const CLI_BADGE_DEFAULT = 0x6b7280; // gray for unknown
 const CLI_BADGE_RADIUS = 4;

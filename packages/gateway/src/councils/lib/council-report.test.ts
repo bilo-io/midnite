@@ -13,7 +13,7 @@ function council(overrides: Partial<Council> = {}): Council {
   return {
     id: 'c1',
     name: 'Product Council',
-    synthProvider: 'gemini',
+    synthProvider: 'antigravity',
     defaultFormat: 'brainstorm',
     members: [],
     createdAt: '2026-06-01T00:00:00.000Z',
@@ -46,7 +46,7 @@ function run(overrides: Partial<CouncilRun> = {}): CouncilRun {
     prompt: 'Should we rewrite the gateway in Rust?',
     format: 'brainstorm',
     status: 'completed',
-    synthProvider: 'gemini',
+    synthProvider: 'antigravity',
     syntheses: [],
     members: [],
     startedAt: '2026-06-19T11:00:00.000Z',
@@ -59,7 +59,7 @@ function synthesis(overrides: Partial<CouncilSynthesisEntry> = {}): CouncilSynth
   return {
     format: 'brainstorm',
     synthesis: '## Top ideas\n\n1. Incremental rewrite.',
-    synthProvider: 'gemini',
+    synthProvider: 'antigravity',
     anonymized: false,
     finishedAt: '2026-06-19T11:10:00.000Z',
     ...overrides,
@@ -89,7 +89,7 @@ describe('buildCouncilRunReport — attributed format', () => {
         member({
           id: 'rm2',
           name: 'Skeptic',
-          provider: 'gemini',
+          provider: 'antigravity',
           role: 'Argue the contrary view.',
           output: 'Too risky.',
         }),
@@ -117,7 +117,7 @@ describe('buildCouncilRunReport — attributed format', () => {
     expect(md).toContain('### Optimist');
     expect(md).toContain('### Skeptic');
     expect(md).toContain('Claude');
-    expect(md).toContain('Gemini');
+    expect(md).toContain('Antigravity');
     expect(md).toContain('**Role:** Argue the contrary view.');
     expect(md).toContain('Ship it.');
     expect(md).toContain('Too risky.');

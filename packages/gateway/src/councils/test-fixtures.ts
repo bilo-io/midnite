@@ -43,7 +43,7 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
     const full: CouncilRow = {
       ...row,
       description: row.description ?? null,
-      synthProvider: row.synthProvider ?? 'gemini',
+      synthProvider: row.synthProvider ?? 'antigravity',
       defaultFormat: row.defaultFormat ?? 'brainstorm',
       customPrompt: row.customPrompt ?? null,
       archivedAt: row.archivedAt ?? null,

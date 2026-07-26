@@ -36,19 +36,19 @@ The four things you were unsure about, in one paragraph each:
 
 - **Claude CLI vs Claude API.** midnite uses **both, for different jobs.** Anything
   *interactive or agentic* — your sessions, council debate turns — **spawns a CLI
-  binary** (`claude`, `gemini`, …) inside a PTY. The only place it calls the
+  binary** (`claude`, `agy` (Antigravity), …) inside a PTY. The only place it calls the
   **Anthropic SDK directly** is short, stateless utility calls: the **heartbeat**
   check-in and the agent **`ping`/health-check**. Rule of thumb: *work that needs a
   terminal, tools, or a working directory → CLI subprocess; tiny fire-and-forget
   text completions → API*.
 
-- **Gemini & other models vs sessions.** A **session** is one agent CLI in one PTY
+- **Antigravity & other models vs sessions.** A **session** is one agent CLI in one PTY
   doing one task. A **council** is a different thing: a standing panel of
-  participants, each pinned to a `provider` (`claude` / `gemini` / `codex` /
+  participants, each pinned to a `provider` (`claude` / `antigravity` / `codex` /
   `opencode` / `aider`) and a fixed *perspective*. Submitting a topic spawns every
-  participant as a **one-shot CLI run in parallel** (`claude -p "…"`, `gemini -p "…"`),
+  participant as a **one-shot CLI run in parallel** (`claude -p "…"`, `agy "…"`),
   then anonymizes their answers (shuffle → label A/B/C) and feeds them to a
-  **verdict provider** (defaults to Gemini) for synthesis. Non-Claude models are
+  **verdict provider** (defaults to Antigravity) for synthesis. Non-Claude models are
   **only ever reached as installed CLIs** — there's no Gemini/OpenAI API client in
   the codebase.
 
@@ -342,11 +342,13 @@ global preference (`AgentCli`) and launched via node-pty:
 | Use | How | Where |
 |---|---|---|
 | Interactive session | launch `claude` (or chosen CLI) in a PTY | `terminal/terminal.service.ts` |
-| Council participant turn | one-shot `claude -p "<prompt>"`, `gemini -p "<prompt>"`, … | `councils/lib/oneshot-command.ts` + `council-runner.service.ts` (`spawnManagedRun`) |
+| Council participant turn | one-shot `claude -p "<prompt>"`, `agy "<prompt>"`, … | `councils/lib/oneshot-command.ts` + `council-runner.service.ts` (`spawnManagedRun`) |
 
 `oneshotCommand(cli, prompt)` maps each provider to its non-interactive form
-(`claude -p`, `gemini -p`, `codex exec`, etc.). Because node-pty doesn't go through
-a shell, the prompt is passed as a single argv entry — no shell quoting hazards.
+(`claude -p`, `codex exec`, etc — Antigravity's `agy` has no documented headless
+flag, so it's a best-effort positional-prompt guess pending verification). Because
+node-pty doesn't go through a shell, the prompt is passed as a single argv entry —
+no shell quoting hazards.
 
 ### Anthropic SDK path (the exception)
 
@@ -379,7 +381,7 @@ login (API key or OAuth token) without separate setup.
 
 ---
 
-## 5. Deep dive: councils & multi-model (Gemini et al.)
+## 5. Deep dive: councils & multi-model (Antigravity et al.)
 
 ### Session vs council — the key distinction
 
@@ -394,7 +396,7 @@ reaped) but are otherwise their own subsystem.
 ### Data model
 
 ```
-councils                 (id, name, verdictProvider="gemini" default, …)
+councils                 (id, name, verdictProvider="antigravity" default, …)
   └─ councilParticipants (provider: AgentCli, perspective: text, position)
   └─ councilRuns         (topic, status: running|synthesizing|completed|failed,
                           verdict: markdown, labelMap: JSON {A→participantId})
@@ -416,7 +418,7 @@ historical runs.
 3. **Anonymize.** Successful outputs are **shuffled** and relabeled **A / B / C…**;
    the `label → participantId` map is persisted *before* synthesis so the verdict
    step can't see who said what.
-4. **Synthesize.** The council's **verdict provider** (default **Gemini**) is run
+4. **Synthesize.** The council's **verdict provider** (default **Antigravity**) is run
    as another one-shot CLI over the anonymized entries, producing a markdown
    verdict that weighs the options blind.
 
@@ -425,9 +427,9 @@ historical runs.
 Through the **`AgentCli` abstraction only** (`shared/src/agents.ts`):
 
 ```
-AGENT_CLIS = ['claude', 'gemini', 'codex', 'opencode', 'aider']
-AGENT_CLI_COMMAND        = { claude:'claude', gemini:'gemini', … }
-AGENT_CLI_INSTALL_COMMAND= { gemini:'npm install -g @google/gemini-cli', … }
+AGENT_CLIS = ['claude', 'antigravity', 'codex', 'opencode', 'aider']
+AGENT_CLI_COMMAND        = { claude:'claude', antigravity:'agy', … }
+AGENT_CLI_INSTALL_COMMAND= { antigravity:'curl -fsSL https://antigravity.google/cli/install.sh | bash', … }
 ```
 
 There is **no Gemini/OpenAI API client in the repo**. Every non-Claude model is
@@ -444,7 +446,7 @@ Primary agent (singleton) ──▶ heartbeat (Anthropic API, scheduled)
                           └─▶ subagents (metadata/roster only)
 
 Council (standing panel) ──▶ Run ──▶ N participant one-shot CLIs (parallel, any provider)
-                                  └─▶ anonymize ──▶ verdict provider (CLI, default Gemini)
+                                  └─▶ anonymize ──▶ verdict provider (CLI, default Antigravity)
 ```
 
 ---

@@ -9,7 +9,7 @@ describe('parseVersion', () => {
   });
 
   it('falls back to the first non-empty line when no semver is present', () => {
-    expect(parseVersion('\n  gemini latest  \n')).toBe('gemini latest');
+    expect(parseVersion('\n  antigravity latest  \n')).toBe('antigravity latest');
   });
 
   it('returns undefined for empty output', () => {

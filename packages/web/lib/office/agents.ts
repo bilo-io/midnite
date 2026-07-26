@@ -44,7 +44,7 @@ export interface OfficeAgent {
     summary?: string;
   };
   /**
-   * The agent CLI driving this session (claude | gemini | codex | opencode | aider).
+   * The agent CLI driving this session (claude | antigravity | codex | opencode | aider).
    * Used to render a provider accent badge in the office scene (Phase 9 B1).
    */
   agentCli?: string;
