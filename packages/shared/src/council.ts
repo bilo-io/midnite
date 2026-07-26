@@ -113,7 +113,7 @@ export const COUNCIL_FORMATS_META: Record<CouncilFormat, CouncilFormatMeta> = {
   },
 };
 
-export const COUNCIL_SYNTH_PROVIDER_DEFAULT = 'gemini' as const;
+export const COUNCIL_SYNTH_PROVIDER_DEFAULT = 'antigravity' as const;
 
 /**
  * Starter members seeded into a new council — diverse, reusable roles that give

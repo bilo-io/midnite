@@ -182,12 +182,12 @@ describe('AgentsService', () => {
         ping: async () => ({ ok: true, model: 'claude-haiku-4-5', reply: 'system status: ok' }),
       },
     });
-    service.updateAgentCli('gemini');
+    service.updateAgentCli('antigravity');
 
     const res = await service.ping();
     expect(res).toEqual({
       ok: true,
-      cli: 'gemini', // informational: the CLI preference, not the provider
+      cli: 'antigravity', // informational: the CLI preference, not the provider
       model: 'claude-haiku-4-5',
       reply: 'system status: ok',
     });
@@ -208,7 +208,7 @@ describe('AgentsService', () => {
     service.getCliStatus = async (cli) => ({ cli, installed: true, version: '1.0.0' });
     const statuses = await service.getCliStatuses();
     expect(statuses.map((s) => s.cli).sort()).toEqual(
-      ['aider', 'claude', 'codex', 'gemini', 'opencode'].sort(),
+      ['aider', 'antigravity', 'claude', 'codex', 'opencode'].sort(),
     );
   });
 });

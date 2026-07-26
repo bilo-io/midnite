@@ -131,7 +131,7 @@ export const BRAND_ACCENT: AccentValue = {
   type: 'linear',
   stops: ['blue', 'violet', 'rose'],
   angle: 135,
-  animate: false,
+  animate: true,
 };
 
 /** The secondary accent starts off (a `default` solid = no `--accent-2` override). */

@@ -17,7 +17,7 @@ describe('CouncilSchema', () => {
       id: 'c1',
       name: 'Tech direction',
       description: 'architecture calls',
-      synthProvider: 'gemini',
+      synthProvider: 'antigravity',
       defaultFormat: 'brainstorm',
       customPrompt: 'Summarize as a memo.',
       members: [
@@ -43,7 +43,7 @@ describe('CouncilSchema', () => {
       CouncilSchema.safeParse({
         id: 'c1',
         name: 'x',
-        synthProvider: 'gemini',
+        synthProvider: 'antigravity',
         defaultFormat: 'brainstorm',
         members: [
           {
@@ -68,7 +68,7 @@ describe('CouncilSchema', () => {
       CouncilSchema.safeParse({
         id: 'c1',
         name: 'x',
-        synthProvider: 'gemini',
+        synthProvider: 'antigravity',
         defaultFormat: 'rave',
         members: [],
         createdAt: '',
@@ -83,7 +83,7 @@ describe('CouncilSynthesisEntrySchema', () => {
     const entry = {
       format: 'debate' as const,
       synthesis: '## Verdict\n\nMember B made the strongest case.',
-      synthProvider: 'gemini' as const,
+      synthProvider: 'antigravity' as const,
       anonymized: true,
       labelMap: { A: 'rm2', B: 'rm1' },
       finishedAt: '2026-06-11T00:02:00.000Z',
@@ -110,13 +110,13 @@ describe('CouncilRunSchema', () => {
       prompt: 'Rewrite in Rust?',
       format: 'debate',
       status: 'completed',
-      synthProvider: 'gemini',
+      synthProvider: 'antigravity',
       synthesis: '## Verdict\n\nMember B made the strongest case.',
       syntheses: [
         {
           format: 'debate',
           synthesis: '## Verdict\n\nMember B made the strongest case.',
-          synthProvider: 'gemini',
+          synthProvider: 'antigravity',
           anonymized: true,
           labelMap: { A: 'rm1', B: 'rm1' },
           finishedAt: '2026-06-11T00:02:00.000Z',

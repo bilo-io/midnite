@@ -17,7 +17,7 @@ const HeartbeatIntervalSchema = z.number().int().min(HEARTBEAT_MIN_H).max(HEARTB
 
 // The CLI binary midnite launches inside a session terminal. A global preference
 // (not per-agent): which coding agent the user drives sessions with.
-export const AGENT_CLIS = ['claude', 'gemini', 'codex', 'opencode', 'aider'] as const;
+export const AGENT_CLIS = ['claude', 'antigravity', 'codex', 'opencode', 'aider'] as const;
 export const AgentCliSchema = z.enum(AGENT_CLIS);
 export type AgentCli = z.infer<typeof AgentCliSchema>;
 export const AGENT_CLI_DEFAULT: AgentCli = 'claude';
@@ -41,10 +41,11 @@ export type AgentCliCatalogEntry = {
    * The preferred install command pasted into the install terminal — the user
    * reviews it and presses Enter to run. **Homebrew by default**; a vendor-specific
    * installer only where the vendor recommends one over brew:
-   *  - `claude`  → Anthropic's native install script (auto-updates, no Node dep;
-   *                the Homebrew cask lags releases and disables built-in updates).
-   *  - `aider`   → `aider-install`, which isolates Aider in its own Python env
-   *                (the Homebrew formula lags upstream and can miss its model deps).
+   *  - `claude`      → Anthropic's native install script (auto-updates, no Node dep;
+   *                    the Homebrew cask lags releases and disables built-in updates).
+   *  - `antigravity` → Google's native install script (no Homebrew formula published).
+   *  - `aider`       → `aider-install`, which isolates Aider in its own Python env
+   *                    (the Homebrew formula lags upstream and can miss its model deps).
    */
   setupCommand: string;
   /** The uninstall command, paired with `setupCommand` (same tool that installed it). */
@@ -61,12 +62,12 @@ export const AGENT_CLI_CATALOG: readonly AgentCliCatalogEntry[] = [
     uninstallCommand: 'rm -f ~/.local/bin/claude && rm -rf ~/.local/share/claude',
   },
   {
-    key: 'gemini',
-    name: 'Gemini',
-    homepageUrl: 'https://github.com/google-gemini/gemini-cli',
-    command: 'gemini',
-    setupCommand: 'brew install gemini-cli',
-    uninstallCommand: 'brew uninstall gemini-cli',
+    key: 'antigravity',
+    name: 'Antigravity',
+    homepageUrl: 'https://antigravity.google/docs/cli/overview',
+    command: 'agy',
+    setupCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+    uninstallCommand: 'rm -f ~/.local/bin/agy',
   },
   {
     key: 'codex',

@@ -51,8 +51,8 @@ describe('AgentsController — param/body validation (400)', () => {
 describe('AgentsController — valid input delegates to the service', () => {
   it('updates the CLI preference with the parsed value', () => {
     const { controller, service } = build();
-    expect(controller.updateAgentCli({ cli: 'gemini' })).toEqual({ cli: 'gemini' });
-    expect(service.updateAgentCli).toHaveBeenCalledWith('gemini');
+    expect(controller.updateAgentCli({ cli: 'antigravity' })).toEqual({ cli: 'antigravity' });
+    expect(service.updateAgentCli).toHaveBeenCalledWith('antigravity');
   });
 
   it('reads the active CLI status for a valid CLI', async () => {

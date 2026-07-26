@@ -72,9 +72,18 @@ describe('AccentBuilder', () => {
 
   it('toggles animation on a gradient (Theme E)', () => {
     const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
+    // Starts explicitly un-animated (the brand default itself now animates), so
+    // the click below is exercising the on-toggle, not the off-toggle.
+    render(<Harness onChange={onChange} initial={{ ...BRAND_ACCENT, animate: false }} />);
     fireEvent.click(screen.getByRole('checkbox', { name: /animate the gradient/i }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ animate: true }));
+  });
+
+  it('toggles animation off a gradient', () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /animate the gradient/i }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ animate: false }));
   });
 
   it('sets an independent secondary accent', () => {

@@ -52,11 +52,11 @@ describe('AGENT_CLI_CATALOG', () => {
   });
 
   it('prefers Homebrew for CLIs without a vendor-specific installer', () => {
-    // claude + aider carry vendor-recommended installers; the rest default to brew.
-    expect(AGENT_CLI_INSTALL_COMMAND.gemini).toContain('brew install');
+    // claude + antigravity + aider carry vendor-recommended installers; the rest default to brew.
     expect(AGENT_CLI_INSTALL_COMMAND.codex).toContain('brew install');
     expect(AGENT_CLI_INSTALL_COMMAND.opencode).toContain('brew install');
     expect(AGENT_CLI_INSTALL_COMMAND.claude).toContain('claude.ai/install.sh');
+    expect(AGENT_CLI_INSTALL_COMMAND.antigravity).toContain('antigravity.google/cli/install.sh');
     expect(AGENT_CLI_INSTALL_COMMAND.aider).toContain('aider-install');
   });
 });

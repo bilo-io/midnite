@@ -12,6 +12,29 @@ import { RELEASES_URL } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Download midnite',
   description: 'Download the midnite desktop app for macOS, Windows, or Linux.',
+  // Explicit (rather than inherited from the root layout) so the share preview
+  // describes this page, with its own url and title, instead of the landing page's.
+  openGraph: {
+    title: 'Download midnite',
+    description: 'Download the midnite desktop app for macOS, Windows, or Linux.',
+    type: 'website',
+    url: 'https://midnite-app.vercel.app/download',
+    siteName: 'midnite',
+    images: [
+      {
+        url: '/opengraph-banner.png',
+        width: 1200,
+        height: 630,
+        alt: 'midnite AI Agent Manager',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Download midnite',
+    description: 'Download the midnite desktop app for macOS, Windows, or Linux.',
+    images: ['/opengraph-banner.png'],
+  },
 };
 
 export default function DownloadPage() {

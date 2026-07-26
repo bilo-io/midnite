@@ -23,9 +23,9 @@ const cassandra = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://midnite-app.vercel.app'),
-  title: 'midnite — Multitask Claude Code',
+  title: 'midnite AI Agent Manager',
   description:
-    'A task orchestrator wrapped around a pool of Claude Code agents. Drop in a list, let midnite classify and queue it, and run every task in parallel — tracked on one live board.',
+    'A task orchestrator wrapped around a pool of Claude Code agents. Drop in a list, let midnite classify and queue it, and run every task in parallel. Tracked on one live board.',
   // Favicons copied from packages/web/public/ (source of truth there) so the site
   // and the app share one brand mark; wired identically to the web layout.
   icons: {
@@ -38,9 +38,9 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'midnite — Multitask Claude Code',
+    title: 'midnite AI Agent Manager',
     description:
-      'Drop in a freeform list. midnite classifies, queues, and runs every task across a pool of agents — tracked on one live board.',
+      'Drop in a freeform list. midnite classifies, queues, and runs every task across a pool of agents. Tracked on one live board.',
     type: 'website',
     url: 'https://midnite-app.vercel.app',
     siteName: 'midnite',
@@ -49,13 +49,13 @@ export const metadata: Metadata = {
         url: '/opengraph-banner.png',
         width: 1200,
         height: 630,
-        alt: 'midnite — Multitask Claude Code',
+        alt: 'midnite AI Agent Manager',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'midnite — Multitask Claude Code',
+    title: 'midnite AI Agent Manager',
     description: 'Run Claude Code in parallel. A task orchestrator for a pool of agents.',
     images: ['/opengraph-banner.png'],
   },

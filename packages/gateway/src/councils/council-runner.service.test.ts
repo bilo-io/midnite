@@ -91,7 +91,7 @@ function seedCouncil(
   repo.insertCouncil({
     id: 'c1',
     name: 'council',
-    synthProvider: 'gemini',
+    synthProvider: 'antigravity',
     defaultFormat: opts?.defaultFormat ?? 'brainstorm',
     customPrompt: opts?.customPrompt ?? null,
     createdAt: now,
@@ -105,7 +105,7 @@ function seedCouncil(
 
 const TWO_MEMBERS = [
   { id: 'm1', name: 'Optimist', provider: 'claude', role: 'argue for' },
-  { id: 'm2', name: 'Skeptic', provider: 'gemini', role: 'argue against' },
+  { id: 'm2', name: 'Skeptic', provider: 'antigravity', role: 'argue against' },
 ];
 
 function waitUntil(pred: () => boolean, timeoutMs = 2000): Promise<void> {
@@ -154,14 +154,14 @@ describe('CouncilRunnerService', () => {
     expect(spawn1.args[0]).toBe('-p');
     expect(spawn1.args[1]).toContain('argue for');
     expect(spawn1.args[1]).toContain('Should we rewrite in Rust?');
-    expect(terminal.spawns.get(t2!)!.command).toBe('gemini');
+    expect(terminal.spawns.get(t2!)!.command).toBe('agy');
   });
 
   it('completes the brainstorm flow: capture → clean → attributed synthesis', async () => {
     const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_MEMBERS);
     const run = runner.startRun('c1', 'Rust?');
-    expect(run.synthProvider).toBe('gemini'); // council default synthesizer
+    expect(run.synthProvider).toBe('antigravity'); // council default synthesizer
 
     const [a, b] = run.members;
     terminal.spawns.get(a!.terminalId)!.onData('\x1b[1mYes:\x1b[0m do it\r\n');
@@ -174,7 +174,7 @@ describe('CouncilRunnerService', () => {
     const synthId = `council-${run.id}-synth`;
     await waitUntil(() => terminal.spawns.has(synthId));
     const synthSpawn = terminal.spawns.get(synthId)!;
-    expect(synthSpawn.command).toBe('gemini');
+    expect(synthSpawn.command).toBe('agy');
     const synthPrompt = synthSpawn.args.join(' ');
     expect(synthPrompt).toContain('## Optimist');
     expect(synthPrompt).toContain('## Skeptic');
@@ -369,15 +369,15 @@ describe('CouncilRunnerService', () => {
       terminal.spawns.get(m.terminalId)!.onExit(0, null);
     }
     await settleSynthesis(terminal, run.id, {
-      output: 'ERROR: Please set GEMINI_API_KEY\n',
+      output: 'ERROR: not signed in — run `agy` and complete Google sign-in\n',
       exitCode: 1,
     });
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
     const done = repo.getRun(run.id)!;
     // The output tail rides in the error so auth problems are visible at a glance.
-    expect(done.error).toContain('synthesis (gemini) exited with code 1');
-    expect(done.error).toContain('GEMINI_API_KEY');
+    expect(done.error).toContain('synthesis (antigravity) exited with code 1');
+    expect(done.error).toContain('not signed in');
     expect(repo.listRunMembers(run.id).every((r) => r.output === 'take')).toBe(true);
     // The council frees up for another run after a failed synthesis.
     expect(() => runner.startRun('c1', 'retry')).not.toThrow();
@@ -396,7 +396,7 @@ describe('CouncilRunnerService', () => {
     terminal.spawns.get(b!.terminalId)!.onExit(0, null);
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
-    expect(repo.getRun(run.id)!.error).toContain('synthesis (gemini) failed to start');
+    expect(repo.getRun(run.id)!.error).toContain('synthesis (antigravity) failed to start');
   });
 
   it('skips a hung member and synthesizes once the rest finish', async () => {
@@ -444,12 +444,12 @@ describe('CouncilRunnerService', () => {
     const [a, b] = run.members;
     terminal.spawns.get(a!.terminalId)!.onData('take a\n');
     terminal.spawns.get(a!.terminalId)!.onExit(0, null);
-    terminal.spawns.get(b!.terminalId)!.onExit(1, null); // b (gemini) fails, no output
+    terminal.spawns.get(b!.terminalId)!.onExit(1, null); // b (antigravity) fails, no output
     // brainstorm (min 1) synthesizes over the one response that succeeded.
     await settleSynthesis(terminal, run.id, { output: '# md' });
     await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
 
-    // Fix the failing member on the council, then retry: gemini → claude.
+    // Fix the failing member on the council, then retry: antigravity → claude.
     repo.updateMember('m2', { provider: 'claude', role: 'argue carefully' });
     terminal.spawns.delete(b!.terminalId);
     terminal.spawns.delete(`council-${run.id}-synth`);

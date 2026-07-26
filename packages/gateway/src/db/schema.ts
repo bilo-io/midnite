@@ -568,7 +568,7 @@ export const workflowCredentials = sqliteTable('workflow_credentials', {
 export const primaryAgent = sqliteTable('primary_agent', {
   id: text('id').primaryKey(), // always 'primary'
   name: text('name').notNull(),
-  // Global CLI preference (claude | gemini | codex) launched in session terminals;
+  // Global CLI preference (claude | antigravity | codex) launched in session terminals;
   // stored on the singleton row though surfaced as a top-level AgentsConfig.cli field.
   agentCli: text('agent_cli').notNull().default('claude'),
   description: text('description').notNull().default(''), // markdown system prompt
@@ -666,7 +666,7 @@ export const councils = sqliteTable('councils', {
   name: text('name').notNull(),
   description: text('description'),
   // AgentCli that distils the pooled responses into the synthesis.
-  synthProvider: text('synth_provider').notNull().default('gemini'),
+  synthProvider: text('synth_provider').notNull().default('antigravity'),
   // Synthesis format pre-selected for new runs (each run can override).
   defaultFormat: text('default_format').notNull().default('brainstorm'),
   // Reusable synthesis prompt used when a run's format is 'custom'.

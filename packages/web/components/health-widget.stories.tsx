@@ -12,7 +12,7 @@ const cliStatuses: FetchHandler = {
   json: {
     statuses: [
       { cli: 'claude', installed: true, version: '1.2.3' },
-      { cli: 'gemini', installed: false },
+      { cli: 'antigravity', installed: false },
       { cli: 'codex', installed: false },
       { cli: 'opencode', installed: false },
       { cli: 'aider', installed: true, version: '0.5.0' },

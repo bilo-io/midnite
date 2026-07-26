@@ -13,7 +13,7 @@ import { ProvidersService } from '../providers/providers.service';
 //   - AgentsService — is the configured agent CLI on PATH
 //   - the loaded MidniteConfig — agent pool sizing/enablement + repos
 //
-// NB: the agent-CLI check uses AgentsService (where claude/gemini/… detection
+// NB: the agent-CLI check uses AgentsService (where claude/antigravity/… detection
 // lives) rather than EnvironmentService — that probes the dev toolchain
 // (homebrew/node/proto/moon), none of which gate readiness here.
 @Injectable()

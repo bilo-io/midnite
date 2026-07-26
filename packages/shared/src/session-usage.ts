@@ -14,7 +14,7 @@ import { z } from 'zod';
 export const SessionUsageSchema = z.object({
   /** midnite session id === linked task id. */
   sessionId: z.string(),
-  /** Agent CLI that produced the transcript (claude | gemini | …), when known. */
+  /** Agent CLI that produced the transcript (claude | antigravity | …), when known. */
   agentCli: z.string().optional(),
   /** Concrete model id from the transcript (e.g. `claude-sonnet-4-6`), when known. */
   model: z.string().optional(),

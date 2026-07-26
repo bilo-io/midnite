@@ -69,7 +69,7 @@ describe('buildSynthesisPrompt (anonymized)', () => {
     expect(body).toContain('# Your task — Verdict');
     // Nothing but labels identifies a member — no names, roles, or providers.
     expect(body).not.toMatch(/Optimist|Skeptic|argue for|argue against/);
-    expect(body).not.toMatch(/claude|gemini|codex|aider|opencode/i);
+    expect(body).not.toMatch(/claude|antigravity|codex|aider|opencode/i);
     // The map covers both members and points back at their run-member ids.
     expect(Object.keys(labelMap!).sort()).toEqual(['A', 'B']);
     expect(new Set(Object.values(labelMap!))).toEqual(new Set(['rm1', 'rm2']));
