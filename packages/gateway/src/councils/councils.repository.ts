@@ -1,15 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
-import type {
-  AgentCli,
-  Council,
-  CouncilFormat,
-  CouncilMember,
-  CouncilMemberRunStatus,
-  CouncilRun,
-  CouncilRunMember,
-  CouncilRunStatus,
-  CouncilSynthesisEntry,
+import {
+  AGENT_CLI_DEFAULT,
+  AgentCliSchema,
+  type AgentCli,
+  type Council,
+  type CouncilFormat,
+  type CouncilMember,
+  type CouncilMemberRunStatus,
+  type CouncilRun,
+  type CouncilRunMember,
+  type CouncilRunStatus,
+  type CouncilSynthesisEntry,
 } from '@midnite/shared';
 import { DB_TOKEN, type DbOrTx, type MidniteDb, type Tx } from '../db/db.module';
 import {
@@ -195,7 +197,13 @@ export class CouncilsRepository {
     if (!json) return [];
     try {
       const parsed = JSON.parse(json);
-      return Array.isArray(parsed) ? (parsed as CouncilSynthesisEntry[]) : [];
+      if (!Array.isArray(parsed)) return [];
+      // Each entry snapshots its own synthProvider — same retired-CLI risk as
+      // the row-level columns above.
+      return (parsed as CouncilSynthesisEntry[]).map((entry) => ({
+        ...entry,
+        synthProvider: entry.synthProvider ? coerceAgentCli(entry.synthProvider) : undefined,
+      }));
     } catch {
       return [];
     }
@@ -222,7 +230,7 @@ export class CouncilsRepository {
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
-      synthProvider: row.synthProvider as AgentCli,
+      synthProvider: coerceAgentCli(row.synthProvider),
       defaultFormat: row.defaultFormat as CouncilFormat,
       customPrompt: row.customPrompt ?? undefined,
       members: this.listMembers(row.id).map((m) => this.hydrateMember(m)),
@@ -238,7 +246,7 @@ export class CouncilsRepository {
       id: row.id,
       councilId: row.councilId,
       name: row.name,
-      provider: row.provider as AgentCli,
+      provider: coerceAgentCli(row.provider),
       role: row.role,
       position: row.position,
       createdAt: row.createdAt,
@@ -253,7 +261,7 @@ export class CouncilsRepository {
       prompt: row.prompt,
       format: row.format as CouncilFormat,
       status: row.status as CouncilRunStatus,
-      synthProvider: (row.synthProvider as AgentCli | null) ?? undefined,
+      synthProvider: row.synthProvider ? coerceAgentCli(row.synthProvider) : undefined,
       // Deterministic attach id; the PTY behind it only exists while synthesizing.
       synthTerminalId: `council-${row.id}-synth`,
       synthesis: row.synthesis ?? undefined,
@@ -271,7 +279,7 @@ export class CouncilsRepository {
       runId: row.runId,
       memberId: row.memberId,
       name: row.name,
-      provider: row.provider as AgentCli,
+      provider: coerceAgentCli(row.provider),
       role: row.role,
       status: row.status as CouncilMemberRunStatus,
       terminalId: row.terminalId,
@@ -282,4 +290,17 @@ export class CouncilsRepository {
       finishedAt: row.finishedAt ?? undefined,
     };
   }
+}
+
+// A CLI can be renamed/replaced in the `AgentCli` enum (e.g. `gemini` →
+// `antigravity`) — rows written under the old name must keep loading rather
+// than fail the shared zod schema on the client. Map known-retired values to
+// their successor, then fall back to the configured default for anything else
+// unrecognised, so a stale/garbage value never breaks council listing.
+const RETIRED_AGENT_CLI_MAP: Partial<Record<string, AgentCli>> = { gemini: 'antigravity' };
+
+function coerceAgentCli(value: string): AgentCli {
+  const mapped = RETIRED_AGENT_CLI_MAP[value] ?? value;
+  const parsed = AgentCliSchema.safeParse(mapped);
+  return parsed.success ? parsed.data : AGENT_CLI_DEFAULT;
 }
