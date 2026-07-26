@@ -14,6 +14,36 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.7.4] - 2026-07-26
+
+_Patch release — `gateway`, `shared`, `site`, `web` → 0.7.4; `docs` → 0.7.1.
+`admin`/`cli`/`desktop`/`shell`/`ui` are unaffected and stay put._
+
+### Added
+
+- **Antigravity as an agent CLI option**, replacing Gemini in the session-terminal
+  picker and in Councils' one-shot provider, with Google's official brand mark in
+  the picker. Antigravity has no documented headless/one-shot mode yet, so using
+  it as a council provider is best-effort pending verification against the real
+  CLI.
+- **The brand gradient accent now animates by default** — the signature rainbow
+  drifts out of the box instead of requiring a manual toggle in
+  Settings → Appearance.
+- **Richer link previews** for the marketing site (Open Graph banner + card) and
+  a **one-line install command served directly from the site**.
+
+### Fixed
+
+- **Councils failed to load** ("Could not reach the gateway") for any council
+  created before the Antigravity swap above — old rows had the retired provider
+  value stored, which failed validation on read. Legacy values now coerce to
+  their current equivalent.
+- **Sharing the download page** (e.g. on WhatsApp) showed the landing page's
+  title, description, and image instead of its own — it now carries its own
+  share preview.
+- **The site could fail to deploy on Vercel** when `@midnite/ui` hadn't been
+  built first.
+
 ## [0.7.3] - 2026-07-24
 
 A security fix — please update.
