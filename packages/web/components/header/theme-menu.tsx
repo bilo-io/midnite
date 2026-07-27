@@ -36,33 +36,35 @@ export function ThemeMenu() {
         <div
           role="menu"
           aria-label="Theme"
-          className="absolute right-0 top-full z-50 mt-2 w-44 origin-top-right animate-panel-in rounded-xl accent-gradient-border accent-gradient-border--lit"
+          className="absolute right-0 top-full z-50 mt-2 w-44 origin-top-right animate-panel-in"
         >
-          <div className="overflow-hidden rounded-xl bg-popover p-1 shadow-2xl">
-            {OPTIONS.map(({ value, label, Icon }) => {
-              const active = preference === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={active}
-                  onClick={() => {
-                    setPreference(value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                    'hover:bg-accent hover:text-accent-foreground',
-                    active && 'bg-accent text-accent-foreground',
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{label}</span>
-                  {active ? <Check className="ml-auto h-4 w-4" /> : null}
-                </button>
-              );
-            })}
+          <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
+            <div className="overflow-hidden rounded-xl bg-popover p-1 shadow-2xl">
+              {OPTIONS.map(({ value, label, Icon }) => {
+                const active = preference === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={active}
+                    onClick={() => {
+                      setPreference(value);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                      'hover:bg-accent hover:text-accent-foreground',
+                      active && 'bg-accent text-accent-foreground',
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{label}</span>
+                    {active ? <Check className="ml-auto h-4 w-4" /> : null}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : null}

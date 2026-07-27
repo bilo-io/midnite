@@ -46,34 +46,36 @@ export function UserMenu() {
           <div
             role="menu"
             aria-label="Account"
-            className="absolute right-0 top-full z-50 mt-2 w-56 origin-top-right animate-panel-in rounded-xl accent-gradient-border accent-gradient-border--lit"
+            className="absolute right-0 top-full z-50 mt-2 w-56 origin-top-right animate-panel-in"
           >
-            <div className="overflow-hidden rounded-xl bg-popover py-1 shadow-2xl">
-              <div className="px-3 py-2.5">
-                <p className="text-sm font-medium text-foreground">Not signed in</p>
-                <p className="text-xs text-muted-foreground">Sign in to sync your workspace.</p>
-              </div>
-              <div className="my-1 h-px bg-border/60" />
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                role="menuitem"
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
-              >
-                <LogIn className="h-3.5 w-3.5 shrink-0" />
-                Log in
-              </Link>
-              {registrationOpen ? (
+            <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
+              <div className="overflow-hidden rounded-xl bg-popover py-1 shadow-2xl">
+                <div className="px-3 py-2.5">
+                  <p className="text-sm font-medium text-foreground">Not signed in</p>
+                  <p className="text-xs text-muted-foreground">Sign in to sync your workspace.</p>
+                </div>
+                <div className="my-1 h-px bg-border/60" />
                 <Link
-                  href="/register"
+                  href="/login"
                   onClick={() => setOpen(false)}
                   role="menuitem"
                   className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
                 >
-                  <UserPlus className="h-3.5 w-3.5 shrink-0" />
-                  Create account
+                  <LogIn className="h-3.5 w-3.5 shrink-0" />
+                  Log in
                 </Link>
-              ) : null}
+                {registrationOpen ? (
+                  <Link
+                    href="/register"
+                    onClick={() => setOpen(false)}
+                    role="menuitem"
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
+                  >
+                    <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                    Create account
+                  </Link>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
@@ -112,92 +114,94 @@ export function UserMenu() {
         <div
           role="menu"
           aria-label="Account"
-          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right animate-panel-in rounded-xl accent-gradient-border accent-gradient-border--lit"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right animate-panel-in"
         >
-          <div className="overflow-hidden rounded-xl bg-popover py-1 shadow-2xl">
-            <div className="flex items-center gap-2.5 px-3 py-2.5">
-              <Avatar
-                name={user.name}
-                src={user.avatarUrl}
-                seed={user.email}
-                className="h-9 w-9 text-sm"
-              />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+          <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
+            <div className="overflow-hidden rounded-xl bg-popover py-1 shadow-2xl">
+              <div className="flex items-center gap-2.5 px-3 py-2.5">
+                <Avatar
+                  name={user.name}
+                  src={user.avatarUrl}
+                  seed={user.email}
+                  className="h-9 w-9 text-sm"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                </div>
               </div>
+
+              <div className="my-1 h-px bg-border/60" />
+
+              <Link
+                href="/settings/profile"
+                onClick={() => setOpen(false)}
+                role="menuitem"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
+              >
+                <User className="h-3.5 w-3.5 shrink-0" />
+                Profile
+              </Link>
+              <Link
+                href="/settings/personalization"
+                onClick={() => setOpen(false)}
+                role="menuitem"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                Personalization
+              </Link>
+              <Link
+                href="/settings/team"
+                onClick={() => setOpen(false)}
+                role="menuitem"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
+              >
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                Team
+              </Link>
+
+              {teams.length > 0 ? (
+                <>
+                  <div className="my-1 h-px bg-border/60" />
+                  <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                    Workspace
+                  </p>
+                  {teams.map((team) => {
+                    const active = team.id === activeTeamId;
+                    return (
+                      <button
+                        key={team.id}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => {
+                          setActiveTeam(team.id);
+                          setOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
+                      >
+                        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                          {active ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
+                        </span>
+                        <span className="truncate">{team.name}</span>
+                      </button>
+                    );
+                  })}
+                </>
+              ) : null}
+
+              <div className="my-1 h-px bg-border/60" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void handleLogout()}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
+              >
+                <LogOut className="h-3.5 w-3.5 shrink-0" />
+                Sign out
+              </button>
             </div>
-
-            <div className="my-1 h-px bg-border/60" />
-
-            <Link
-              href="/settings/profile"
-              onClick={() => setOpen(false)}
-              role="menuitem"
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
-            >
-              <User className="h-3.5 w-3.5 shrink-0" />
-              Profile
-            </Link>
-            <Link
-              href="/settings/personalization"
-              onClick={() => setOpen(false)}
-              role="menuitem"
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-              Personalization
-            </Link>
-            <Link
-              href="/settings/team"
-              onClick={() => setOpen(false)}
-              role="menuitem"
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
-            >
-              <Users className="h-3.5 w-3.5 shrink-0" />
-              Team
-            </Link>
-
-            {teams.length > 0 ? (
-              <>
-                <div className="my-1 h-px bg-border/60" />
-                <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-                  Workspace
-                </p>
-                {teams.map((team) => {
-                  const active = team.id === activeTeamId;
-                  return (
-                    <button
-                      key={team.id}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={active}
-                      onClick={() => {
-                        setActiveTeam(team.id);
-                        setOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
-                    >
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-                        {active ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
-                      </span>
-                      <span className="truncate">{team.name}</span>
-                    </button>
-                  );
-                })}
-              </>
-            ) : null}
-
-            <div className="my-1 h-px bg-border/60" />
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => void handleLogout()}
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
-            >
-              <LogOut className="h-3.5 w-3.5 shrink-0" />
-              Sign out
-            </button>
           </div>
         </div>
       ) : null}
