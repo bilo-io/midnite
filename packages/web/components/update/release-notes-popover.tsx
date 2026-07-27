@@ -7,7 +7,6 @@ import { ExternalLink, FileText, Loader2 } from 'lucide-react';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { fetchReleaseNotes } from '@/lib/release-notes';
 import { docsChangelogUrl, GITHUB_RELEASES_URL } from '@midnite/shared';
-import { cn } from '@/lib/utils';
 
 type Rect = { top: number; left: number };
 type FetchStatus = 'idle' | 'loading' | 'ready' | 'failed';
@@ -17,8 +16,15 @@ export type ReleaseNotesPopoverProps = {
   version: string;
   /** Manifest `notesUrl`, if any — the primary target for the secondary "release page" link. */
   notesUrl?: string;
-  className?: string;
+  /** Trigger button classes — defaults to the update banner's inverted-surface link style. */
+  triggerClassName?: string;
+  /** Trigger tooltip (e.g. "Changelog"). */
+  title?: string;
 };
+
+/** Default trigger look: an underlined link readable on the banner's colored surface. */
+const DEFAULT_TRIGGER_CLASSNAME =
+  'font-semibold underline underline-offset-2 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70';
 
 /**
  * The banner's version string as a button that opens a release-notes popover
@@ -33,7 +39,12 @@ export type ReleaseNotesPopoverProps = {
  * it's never clipped by the banner's `overflow-hidden` animation wrapper. It reads
  * as a normal card surface (not the banner's inverted one) since it's on `body`.
  */
-export function ReleaseNotesPopover({ version, notesUrl, className }: ReleaseNotesPopoverProps) {
+export function ReleaseNotesPopover({
+  version,
+  notesUrl,
+  triggerClassName,
+  title,
+}: ReleaseNotesPopoverProps) {
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);
   const [notes, setNotes] = useState<string | null>(null);
@@ -103,14 +114,15 @@ export function ReleaseNotesPopover({ version, notesUrl, className }: ReleaseNot
   const releaseUrl = notesUrl ?? GITHUB_RELEASES_URL;
 
   return (
-    <span className={cn('inline', className)}>
+    <span className="inline">
       <button
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="font-semibold underline underline-offset-2 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background/70"
+        title={title}
+        className={triggerClassName ?? DEFAULT_TRIGGER_CLASSNAME}
       >
         {`v${version}`}
       </button>

@@ -55,6 +55,19 @@ describe('ReleaseNotesPopover', () => {
     expect(releasePage.getAttribute('href')).toContain('/releases');
   });
 
+  it('uses the default banner-link trigger style unless overridden', () => {
+    render(<ReleaseNotesPopover version="1.2.3" />);
+    const trigger = screen.getByRole('button', { name: 'v1.2.3' });
+    expect(trigger.className).toContain('underline');
+  });
+
+  it('lets callers replace the trigger style and add a tooltip (Phase: version pills)', () => {
+    render(<ReleaseNotesPopover version="1.2.3" triggerClassName="rounded-full" title="Changelog" />);
+    const trigger = screen.getByRole('button', { name: 'v1.2.3' });
+    expect(trigger.className).toBe('rounded-full');
+    expect(trigger).toHaveAttribute('title', 'Changelog');
+  });
+
   it('closes on Escape', async () => {
     render(<ReleaseNotesPopover version="1.2.3" />);
     fireEvent.click(screen.getByRole('button', { name: 'v1.2.3' }));

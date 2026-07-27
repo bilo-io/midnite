@@ -10,7 +10,8 @@ import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
 import { PasscodeSetupDialog } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
-import { docsChangelogUrl, type Locale, type WindowChromeBridge } from '@midnite/shared';
+import { type Locale, type WindowChromeBridge } from '@midnite/shared';
+import { ReleaseNotesPopover } from '@/components/update/release-notes-popover';
 import { featuresToNav } from '@/lib/nav-config';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { setLocalePreference } from '@/lib/locale-preference';
@@ -134,15 +135,11 @@ export function AppShellClient({ children }: { children: ReactNode }) {
       </Link>
       {expanded ? (
         <div className="flex items-center gap-1.5">
-          <a
-            href={docsChangelogUrl(getCurrentVersion())}
-            target="_blank"
-            rel="noopener noreferrer"
+          <ReleaseNotesPopover
+            version={getCurrentVersion()}
             title={tNav('footer.changelog')}
-            className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-          >
-            v{getCurrentVersion()}
-          </a>
+            triggerClassName="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
           <button
             type="button"
             onClick={() =>

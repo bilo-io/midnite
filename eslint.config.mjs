@@ -24,6 +24,10 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/.next/**',
+      // web's server-target build (next.config.mjs picks this distDir instead of
+      // .next so it never collides with the static export) — same reasoning as
+      // .next above, just a second directory name.
+      '**/.next-server/**',
       '**/out/**',
       '**/build/**',
       '**/build-staging/**',

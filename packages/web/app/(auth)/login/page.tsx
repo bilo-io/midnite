@@ -12,7 +12,7 @@ import { LastUsedTag, SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
 import { ssoErrorMessage } from '@/lib/api';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
-import { docsChangelogUrl } from '@midnite/shared';
+import { ReleaseNotesPopover } from '@/components/update/release-notes-popover';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
 
@@ -65,15 +65,11 @@ export default function LoginPage() {
     <div className="w-full">
       <div className="mb-6 flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-accent-gradient">{t('signIn')}</h1>
-        <a
-          href={docsChangelogUrl(getCurrentVersion())}
-          target="_blank"
-          rel="noopener noreferrer"
+        <ReleaseNotesPopover
+          version={getCurrentVersion()}
           title={tNav('footer.changelog')}
-          className="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-        >
-          {`v${getCurrentVersion()}`}
-        </a>
+          triggerClassName="cursor-pointer rounded-full border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
       </div>
       {ssoError && (
         <p
