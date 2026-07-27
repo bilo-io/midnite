@@ -221,6 +221,7 @@ export const I18N_EXEMPT = [
   "packages/web/components/projects-tree.tsx",
   "packages/web/components/projects/panels/project-cost-card.tsx",
   "packages/web/components/projects/panels/project-details-panel.tsx",
+  "packages/web/components/projects/panels/project-docs-panel.tsx",
   "packages/web/components/projects/panels/project-phasedocs-panel.tsx",
   "packages/web/components/projects/panels/project-plan-panel.tsx",
   "packages/web/components/projects/panels/project-roadmap-panel.tsx",

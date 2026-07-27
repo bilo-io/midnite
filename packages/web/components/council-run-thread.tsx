@@ -5,7 +5,9 @@ import type { CouncilRun, CouncilRunStatus, Project } from '@midnite/shared';
 import { ProjectSelect } from '@/components/project-select';
 import { cn } from '@/lib/utils';
 
-const STATUS_PILL: Record<CouncilRunStatus, { label: string; className: string }> = {
+/** Exported so other surfaces (e.g. the project cockpit's Docs tab) render the
+ *  same run-status pill instead of reinventing the label/colour mapping. */
+export const STATUS_PILL: Record<CouncilRunStatus, { label: string; className: string }> = {
   running: { label: 'Running', className: 'border-blue-500/40 text-blue-500' },
   synthesizing: { label: 'Synthesizing', className: 'border-blue-500/40 text-blue-500' },
   completed: { label: 'Completed', className: 'border-emerald-500/40 text-emerald-600' },

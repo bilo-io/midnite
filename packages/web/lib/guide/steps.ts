@@ -121,12 +121,12 @@ const OFFICE_GUIDE: Guide = {
 
 const PROJECTS_GUIDE: Guide = {
   id: 'projects',
-  version: 1,
+  version: 2,
   label: 'Projects tour',
   steps: [
     { anchor: 'projects', title: 'Your projects', body: 'Group related work into projects — each gathers its tasks, a structured plan, and a knowledge base.', placement: 'bottom' },
     { anchor: 'projects-new', title: 'Start one', body: 'Spin up a project from scratch or from a template. From a goal, midnite can even draft the whole task breakdown.', placement: 'left' },
-    { anchor: 'project-detail', title: 'The cockpit', body: 'Open a project for its cockpit — **Details, Plan, Tasks, Roadmap** and phase docs, all in one place.', placement: 'bottom' },
+    { anchor: 'project-detail', title: 'The cockpit', body: 'Open a project for its cockpit — **Details, Docs, Tasks, Roadmap** and phase docs, all in one place.', placement: 'bottom' },
     { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
   ],
 };

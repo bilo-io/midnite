@@ -94,7 +94,7 @@ describe('guide step registry', () => {
       memory: 1,
       dashboard: 1,
       office: 1,
-      projects: 1,
+      projects: 2,
       digests: 1,
       search: 1,
       settings: 1,
