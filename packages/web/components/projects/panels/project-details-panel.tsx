@@ -7,6 +7,7 @@ import { MAX_TAG_LENGTH, type Memory, type Project, type Repo } from '@midnite/s
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
+import { ProjectRepoStatus } from '@/components/projects/project-repo-status';
 import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
 import { enhanceProjectDescription, getRepos, updateProject } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -217,6 +218,7 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
         <p className="text-[11px] text-muted-foreground">
           Where this project&apos;s agent sessions spawn. Leave blank to use the default.
         </p>
+        <ProjectRepoStatus projectId={project.id} workDir={project.workDir} />
       </div>
 
       {/* Start / build commands */}

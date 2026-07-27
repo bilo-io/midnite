@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getCouncil, listCouncilRuns } from '@/lib/api';
+import { getCouncil, getProjects, listCouncilRuns } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { ResourceNotFound } from '@/components/resource-not-found';
 import { CouncilDetailView } from '../[id]/council-detail-view';
@@ -13,8 +13,11 @@ function Detail() {
   const { data, loading, error } = useApiData(
     async () => {
       const council = await getCouncil(id);
-      const runs = await listCouncilRuns(id).catch(() => []);
-      return { council, runs };
+      const [runs, projects] = await Promise.all([
+        listCouncilRuns(id).catch(() => []),
+        getProjects().catch(() => []),
+      ]);
+      return { council, runs, projects };
     },
     [id],
   );
@@ -23,7 +26,9 @@ function Detail() {
     return <ResourceNotFound feature="councils" singular="council" />;
   }
   if (!data?.council) return null;
-  return <CouncilDetailView initial={data.council} initialRuns={data.runs} />;
+  return (
+    <CouncilDetailView initial={data.council} initialRuns={data.runs} projects={data.projects} />
+  );
 }
 
 export default function CouncilViewPage() {

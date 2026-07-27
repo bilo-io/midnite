@@ -33,6 +33,7 @@ import {
   type Project,
   type ProjectResponse,
   type ProjectsPage,
+  type RepoStatusResponse,
 } from '@midnite/shared';
 import { ProjectsService } from './projects.service';
 
@@ -154,6 +155,18 @@ export class ProjectsController {
   @Post(':id/build')
   build(@Param('id') id: string): InstallTerminalResponse {
     return this.service.buildProject(id);
+  }
+
+  // Local git status for the project's workDir (Phase: repo status & init — no
+  // remote/clone support). Thin — all fs/child_process work lives in the service.
+  @Get(':id/repo-status')
+  repoStatus(@Param('id') id: string): Promise<RepoStatusResponse> {
+    return this.service.getRepoStatus(id);
+  }
+
+  @Post(':id/repo-init')
+  initRepo(@Param('id') id: string): Promise<RepoStatusResponse> {
+    return this.service.initRepo(id);
   }
 
   @Get(':id/export')

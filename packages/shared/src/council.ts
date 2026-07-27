@@ -227,6 +227,9 @@ export const CouncilRunSchema = z.object({
   /** The format this run was (last) synthesized in — the active entry. */
   format: CouncilFormatSchema,
   status: CouncilRunStatusSchema,
+  /** Project this run is linked to, if any — a plain intra-domain id reference
+   *  (not validated as a real FK), mirroring Task.projectId. */
+  projectId: z.string().optional(),
   /** Snapshot of the council's synthesizer when the run (last) synthesized. */
   synthProvider: AgentCliSchema.optional(),
   /** Attach id for the synthesizer CLI's terminal while status is 'synthesizing'. */
@@ -297,6 +300,13 @@ export const RetryCouncilSynthesisRequestSchema = z.object({
   format: CouncilFormatSchema.optional(),
 });
 export type RetryCouncilSynthesisRequest = z.infer<typeof RetryCouncilSynthesisRequestSchema>;
+
+// Reassign (or clear, via null) a council run's project. Mirrors
+// UpdateTaskProjectRequestSchema.
+export const UpdateCouncilRunProjectRequestSchema = z.object({
+  projectId: z.string().nullable(),
+});
+export type UpdateCouncilRunProjectRequest = z.infer<typeof UpdateCouncilRunProjectRequestSchema>;
 
 // --- Response envelopes (mirror ProjectResponse) ---
 

@@ -134,6 +134,8 @@ import {
   ProjectsPageSchema,
   RepoResponseSchema,
   ReposPageSchema,
+  RepoStatusResponseSchema,
+  type RepoStatusResponse,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -163,6 +165,12 @@ import {
   type RoadmapView,
   type CreateMilestoneRequest,
   type UpdateMilestoneRequest,
+  ProjectDocResponseSchema,
+  ProjectDocsResponseSchema,
+  GenerateProjectDocResponseSchema,
+  type ProjectDoc,
+  type CreateProjectDocRequest,
+  type UpdateProjectDocRequest,
   TaskSchema,
   TasksPageSchema,
   ReorderTasksResponseSchema,
@@ -689,6 +697,60 @@ export async function assignTaskMilestone(taskId: string, milestoneId: string | 
     { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ milestoneId }) },
     TaskSchema,
   );
+}
+
+// ── Project docs ─────────────────────────────────────────────────────────────
+// Planning documents, moved off browser localStorage (`ProjectPlanPanel`) onto
+// the gateway so they persist and can be filled in server-side via Claude.
+
+export async function getProjectDocs(projectId: string): Promise<ProjectDoc[]> {
+  const res = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/docs`,
+    undefined,
+    ProjectDocsResponseSchema,
+  );
+  return res.items;
+}
+
+export async function createProjectDoc(projectId: string, body: CreateProjectDocRequest): Promise<ProjectDoc> {
+  const res = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/docs`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ProjectDocResponseSchema,
+  );
+  return res.doc;
+}
+
+export async function updateProjectDoc(
+  projectId: string,
+  docId: string,
+  patch: UpdateProjectDocRequest,
+): Promise<ProjectDoc> {
+  const res = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/docs/${encodeURIComponent(docId)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(patch) },
+    ProjectDocResponseSchema,
+  );
+  return res.doc;
+}
+
+export async function deleteProjectDoc(projectId: string, docId: string): Promise<void> {
+  await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/docs/${encodeURIComponent(docId)}`,
+    { method: 'DELETE' },
+    z.object({ ok: z.literal(true) }),
+  );
+}
+
+/** Fill in a doc's content via Claude — returns the updated doc so the client
+ *  can replace its local copy in one shot. */
+export async function generateProjectDoc(projectId: string, docId: string): Promise<ProjectDoc> {
+  const res = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/docs/${encodeURIComponent(docId)}/generate`,
+    { method: 'POST' },
+    GenerateProjectDocResponseSchema,
+  );
+  return res.doc;
 }
 
 // ── Outbound webhooks (Phase 44) ────────────────────────────────────────────────
@@ -1619,6 +1681,23 @@ export async function draftProjectBreakdown(id: string): Promise<BreakdownPrevie
   );
 }
 
+// Local git status for a project's workDir (no remote/clone support).
+export async function getRepoStatus(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-status`,
+    undefined,
+    RepoStatusResponseSchema,
+  );
+}
+
+export async function initRepo(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-init`,
+    { method: 'POST' },
+    RepoStatusResponseSchema,
+  );
+}
+
 /** Turn a confirmed/edited breakdown into the project's dependency-wired board.
  *  Phase 58 F — pass `milestoneId` to assign every created task to that milestone. */
 export async function createTasksFromBreakdown(
@@ -2135,6 +2214,30 @@ export async function retryCouncilSynthesis(
     CouncilRunResponseSchema,
   );
   return run;
+}
+
+// Reassign (or clear, via null) a council run's project. Mirrors updateTaskProject.
+export async function updateCouncilRunProject(
+  councilId: string,
+  runId: string,
+  projectId: string | null,
+): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/project`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ projectId }) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+/** All council runs linked to a project, across every council. */
+export async function getCouncilRunsByProject(projectId: string): Promise<CouncilRun[]> {
+  const { runs } = await fetchJson(
+    `/councils/runs?projectId=${encodeURIComponent(projectId)}`,
+    undefined,
+    CouncilRunsResponseSchema,
+  );
+  return runs;
 }
 
 /**

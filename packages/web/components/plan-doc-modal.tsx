@@ -1,28 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, Copy, Save, Trash2, X } from 'lucide-react';
+import { Check, Copy, Loader2, Save, Sparkles, Trash2, X } from 'lucide-react';
+import type { ProjectDoc } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor } from '@/components/markdown-editor';
 import { ProjectTag } from '@/components/project-tag';
-import type { PlanDoc } from '@/app/(main)/projects/planning';
+
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : 'Something went wrong';
+}
 
 type Props = {
-  doc: PlanDoc;
-  onSave: (patch: Partial<PlanDoc>) => void;
+  doc: ProjectDoc;
+  onSave: (patch: { name?: string; content?: string }) => Promise<void>;
   onDelete: () => void;
   onClose: () => void;
+  /** Fill in the doc's content via Claude; resolves with the updated doc. */
+  onGenerate: () => Promise<ProjectDoc>;
 };
 
 /**
  * Opens a planning document for reading and editing. It's a project-scoped copy
  * of a template, so changes here never touch the source template — they're
- * saved back to the project's own document set.
+ * saved back to the project's own document set (persisted by the gateway).
  */
-export function PlanDocModal({ doc, onSave, onDelete, onClose }: Props) {
+export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Props) {
   const [content, setContent] = useState(doc.content);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -34,10 +43,31 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose }: Props) {
 
   const dirty = content !== doc.content;
 
-  const save = () => {
-    onSave({ content });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave({ content });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const generate = async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const updated = await onGenerate();
+      setContent(updated.content);
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const copy = async () => {
@@ -82,7 +112,9 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose }: Props) {
             />
           </div>
 
-          <footer className="flex items-center justify-between gap-2 border-t border-border/60 px-5 py-3.5">
+          {error ? <p className="px-5 pb-2 text-sm text-destructive">{error}</p> : null}
+
+          <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3.5">
             <Button
               type="button"
               variant="ghost"
@@ -94,13 +126,34 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose }: Props) {
               Delete
             </Button>
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void generate()}
+                disabled={generating || saving}
+              >
+                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {generating ? 'Generating…' : 'Generate'}
+              </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => void copy()}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {copied ? 'Copied' : 'Copy markdown'}
               </Button>
-              <Button type="button" size="sm" onClick={save} disabled={!dirty && !saved}>
-                {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-                {saved ? 'Saved' : 'Save'}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void save()}
+                disabled={saving || generating || (!dirty && !saved)}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : saved ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {saving ? 'Saving…' : saved ? 'Saved' : 'Save'}
               </Button>
             </div>
           </footer>

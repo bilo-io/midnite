@@ -4,11 +4,11 @@ import { StatusSchema, TaskSchema, pagedSchema } from './task.js';
 
 export const MAX_TAG_LENGTH = 12;
 
-const HexColorSchema = z
+export const HexColorSchema = z
   .string()
   .refine((v) => isHexColor(v), { message: 'must be a hex color like #7c3aed' });
 
-const TagSchema = z
+export const TagSchema = z
   .string()
   .trim()
   .min(1, 'tag is required')
@@ -99,6 +99,20 @@ export const DraftPlanResponseSchema = z.object({
   planUpdatedAt: z.string(),
 });
 
+/**
+ * Local git status for a project's `workDir` (no remote/clone support — scope is
+ * deliberately narrow). `exists`/`isRepo` are always present; the rest describe a
+ * usable repo. `error` carries a git-command failure (e.g. detached HEAD, corrupt
+ * repo) without failing the whole response.
+ */
+export const RepoStatusResponseSchema = z.object({
+  exists: z.boolean(),
+  isRepo: z.boolean(),
+  branch: z.string().optional(),
+  dirty: z.boolean().optional(),
+  error: z.string().optional(),
+});
+
 export const UpdatePlanRequestSchema = z.object({
   plan: z.string().max(50000),
 });
@@ -161,6 +175,7 @@ export type UpdateProjectRequest = z.infer<typeof UpdateProjectRequestSchema>;
 export type EnhanceDescriptionRequest = z.infer<typeof EnhanceDescriptionRequestSchema>;
 export type EnhanceDescriptionResponse = z.infer<typeof EnhanceDescriptionResponseSchema>;
 export type DraftPlanResponse = z.infer<typeof DraftPlanResponseSchema>;
+export type RepoStatusResponse = z.infer<typeof RepoStatusResponseSchema>;
 export type UpdatePlanRequest = z.infer<typeof UpdatePlanRequestSchema>;
 export type CreatePlanTasksRequest = z.infer<typeof CreatePlanTasksRequestSchema>;
 export type CreatePlanTasksResponse = z.infer<typeof CreatePlanTasksResponseSchema>;

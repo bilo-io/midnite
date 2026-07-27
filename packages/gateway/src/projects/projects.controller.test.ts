@@ -117,6 +117,33 @@ describe('ProjectsController — export', () => {
   });
 });
 
+describe('ProjectsController — repo status & init (local git status only)', () => {
+  it('delegates repo-status to the service', async () => {
+    const getRepoStatus = vi.fn(async () => ({ exists: true, isRepo: false }));
+    const { controller, service } = build({ getRepoStatus });
+    const res = await controller.repoStatus('p1');
+    expect(res).toEqual({ exists: true, isRepo: false });
+    expect(service.getRepoStatus).toHaveBeenCalledWith('p1');
+  });
+
+  it('delegates repo-init to the service', async () => {
+    const initRepo = vi.fn(async () => ({ exists: true, isRepo: true, branch: 'main', dirty: false }));
+    const { controller, service } = build({ initRepo });
+    const res = await controller.initRepo('p1');
+    expect(res).toEqual({ exists: true, isRepo: true, branch: 'main', dirty: false });
+    expect(service.initRepo).toHaveBeenCalledWith('p1');
+  });
+
+  it('lets a BadRequestException from initRepo (unset/missing workDir) propagate', async () => {
+    const { controller } = build({
+      initRepo: vi.fn(async () => {
+        throw new BadRequestException('project has no work directory set');
+      }),
+    });
+    await expect(controller.initRepo('p1')).rejects.toThrow(BadRequestException);
+  });
+});
+
 describe('ProjectsController — create-from-breakdown (Phase 28 Theme B)', () => {
   const fakeTask = { id: 't1', title: 'A', status: 'todo', events: [] } as unknown as Project;
 

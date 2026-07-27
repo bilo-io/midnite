@@ -1,5 +1,9 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { describe, expect, it, vi } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Task, TaskStatusCounts } from '@midnite/shared';
 import type { ProjectInsert, ProjectRow } from '../db/schema';
 import type { BreakdownService } from '../agent/breakdown.service';
@@ -298,5 +302,103 @@ describe('ProjectsService', () => {
       );
       expect(() => service.previewProject('nope')).toThrow(NotFoundException);
     });
+  });
+});
+
+describe('ProjectsService.getRepoStatus / initRepo (local git status — no remote/clone)', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'midnite-repo-status-'));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  async function makeService(workDir: string | null) {
+    const repo = new InMemoryProjectsRepo();
+    const { service: tasks } = makeTasksStub();
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
+    const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
+    if (workDir !== null) repo.updateProject(project.id, { workDir });
+    return { service, project };
+  }
+
+  it('reports not-existing when the project has no workDir', async () => {
+    const { service, project } = await makeService(null);
+    expect(await service.getRepoStatus(project.id)).toEqual({ exists: false, isRepo: false });
+  });
+
+  it('reports not-existing when workDir points at a missing directory', async () => {
+    const { service, project } = await makeService(join(root, 'does-not-exist'));
+    expect(await service.getRepoStatus(project.id)).toEqual({ exists: false, isRepo: false });
+  });
+
+  it('reports exists-but-not-a-repo for a plain folder', async () => {
+    const { service, project } = await makeService(root);
+    expect(await service.getRepoStatus(project.id)).toEqual({ exists: true, isRepo: false });
+  });
+
+  it('reports the branch and a clean status for a committed repo', async () => {
+    execFileSync('git', ['init', '-b', 'main'], { cwd: root });
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    execFileSync('git', ['config', 'user.name', 'Test'], { cwd: root });
+    writeFileSync(join(root, 'a.txt'), 'hi');
+    execFileSync('git', ['add', '.'], { cwd: root });
+    execFileSync('git', ['commit', '-m', 'init'], { cwd: root });
+
+    const { service, project } = await makeService(root);
+    expect(await service.getRepoStatus(project.id)).toEqual({
+      exists: true,
+      isRepo: true,
+      branch: 'main',
+      dirty: false,
+    });
+  });
+
+  it('reports dirty when there are uncommitted changes', async () => {
+    execFileSync('git', ['init', '-b', 'main'], { cwd: root });
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    execFileSync('git', ['config', 'user.name', 'Test'], { cwd: root });
+    writeFileSync(join(root, 'a.txt'), 'hi');
+    execFileSync('git', ['add', '.'], { cwd: root });
+    execFileSync('git', ['commit', '-m', 'init'], { cwd: root });
+    writeFileSync(join(root, 'b.txt'), 'uncommitted');
+
+    const { service, project } = await makeService(root);
+    const status = await service.getRepoStatus(project.id);
+    expect(status.isRepo).toBe(true);
+    expect(status.dirty).toBe(true);
+  });
+
+  it('initRepo 400s when the project has no workDir', async () => {
+    const { service, project } = await makeService(null);
+    await expect(service.initRepo(project.id)).rejects.toThrow(BadRequestException);
+  });
+
+  it('initRepo 400s when workDir does not exist on disk', async () => {
+    const { service, project } = await makeService(join(root, 'nope'));
+    await expect(service.initRepo(project.id)).rejects.toThrow(BadRequestException);
+  });
+
+  it('initRepo creates a .git directory and returns the fresh status', async () => {
+    const { service, project } = await makeService(root);
+    const status = await service.initRepo(project.id);
+    expect(status.isRepo).toBe(true);
+    expect(status.exists).toBe(true);
+  });
+
+  it('initRepo is idempotent — an existing repo is returned unchanged', async () => {
+    execFileSync('git', ['init', '-b', 'main'], { cwd: root });
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    execFileSync('git', ['config', 'user.name', 'Test'], { cwd: root });
+    writeFileSync(join(root, 'a.txt'), 'hi');
+    execFileSync('git', ['add', '.'], { cwd: root });
+    execFileSync('git', ['commit', '-m', 'init'], { cwd: root });
+
+    const { service, project } = await makeService(root);
+    const status = await service.initRepo(project.id);
+    expect(status).toEqual({ exists: true, isRepo: true, branch: 'main', dirty: false });
   });
 });

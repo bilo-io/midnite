@@ -285,6 +285,31 @@ export const roadmapMilestones = sqliteTable(
 export type RoadmapMilestoneRow = typeof roadmapMilestones.$inferSelect;
 export type RoadmapMilestoneInsert = typeof roadmapMilestones.$inferInsert;
 
+// Project docs: planning documents (PRD/spec/design/etc.), moved off browser
+// localStorage so they can persist server-side and be filled in by Claude
+// (ProjectDocsService.generateDoc). templateId is nullable — a doc can start
+// from scratch. Plain intra-domain id reference to a project — no cross-domain FK.
+export const projectDocs = sqliteTable(
+  'project_docs',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    templateId: text('template_id'),
+    name: text('name').notNull(),
+    tag: text('tag').notNull(),
+    color: text('color').notNull(),
+    content: text('content').notNull().default(''),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    projectIdx: index('project_docs_project_idx').on(t.projectId),
+  }),
+);
+
+export type ProjectDocRow = typeof projectDocs.$inferSelect;
+export type ProjectDocInsert = typeof projectDocs.$inferInsert;
+
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
 // references a repo by its unique `name` (no cross-domain FK). Paths stored in
@@ -716,11 +741,15 @@ export const councilRuns = sqliteTable(
     // entry carries its own `anonymized` flag and (when anonymized) labelMap.
     syntheses: text('syntheses'),
     error: text('error'),
+    // Project this run is linked to (null = unassigned). Plain intra-domain id
+    // reference, no cross-domain FK — mirrors tasks.projectId.
+    projectId: text('project_id'),
     startedAt: text('started_at').notNull(),
     finishedAt: text('finished_at'),
   },
   (t) => ({
     councilIdx: index('council_runs_council_idx').on(t.councilId, t.startedAt),
+    projectIdx: index('council_runs_project_idx').on(t.projectId),
   }),
 );
 

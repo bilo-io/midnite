@@ -7,7 +7,11 @@ import {
   CouncilRunInProgressError,
   type CouncilRunnerService,
 } from './council-runner.service';
-import { CouncilDoesNotExistError, type CouncilsService } from './councils.service';
+import {
+  CouncilDoesNotExistError,
+  CouncilRunDoesNotExistError,
+  type CouncilsService,
+} from './councils.service';
 import type { CouncilsRepository } from './councils.repository';
 import { CouncilsController } from './councils.controller';
 
@@ -31,6 +35,8 @@ function build(overrides: {
     updateMember: vi.fn(() => fakeMember),
     deleteMember: vi.fn(),
     exportRunMarkdown: vi.fn(() => ({ filename: 'run.md', markdown: '# Run' })),
+    setRunProject: vi.fn(() => fakeRun),
+    listRunsByProject: vi.fn(() => [fakeRun]),
     ...overrides.service,
   } as unknown as CouncilsService;
   const runner = {
@@ -76,6 +82,19 @@ describe('CouncilsController — body/query validation (400)', () => {
     const reply = {} as FastifyReply;
     expect(() => controller.exportRun('c1', 'r1', reply, 'pdf')).toThrow(BadRequestException);
   });
+
+  it('rejects listing runs by project with no projectId query param', () => {
+    const { controller } = build();
+    expect(() => controller.listRunsByProject()).toThrow(BadRequestException);
+  });
+
+  it('rejects updating a run project with a non-nullable, non-string body', () => {
+    const { controller } = build();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately invalid body
+    expect(() => controller.updateRunProject('c1', 'r1', { projectId: 42 } as any)).toThrow(
+      BadRequestException,
+    );
+  });
 });
 
 describe('CouncilsController — valid input delegates to the services', () => {
@@ -108,6 +127,24 @@ describe('CouncilsController — valid input delegates to the services', () => {
     const { controller, service } = build();
     expect(controller.remove('c1')).toEqual({ ok: true });
     expect(service.deleteCouncil).toHaveBeenCalledWith('c1');
+  });
+
+  it('updates a run project with the parsed body', () => {
+    const { controller, service } = build();
+    expect(controller.updateRunProject('c1', 'r1', { projectId: 'p1' })).toEqual({ run: fakeRun });
+    expect(service.setRunProject).toHaveBeenCalledWith('r1', 'p1');
+  });
+
+  it('clears a run project when projectId is null', () => {
+    const { controller, service } = build();
+    controller.updateRunProject('c1', 'r1', { projectId: null });
+    expect(service.setRunProject).toHaveBeenCalledWith('r1', null);
+  });
+
+  it('lists runs by project from the query param', () => {
+    const { controller, service } = build();
+    expect(controller.listRunsByProject('p1')).toEqual({ runs: [fakeRun] });
+    expect(service.listRunsByProject).toHaveBeenCalledWith('p1');
   });
 });
 
@@ -150,5 +187,27 @@ describe('CouncilsController — domain errors map to HTTP status', () => {
       repo: { getRun: vi.fn(() => ({ ...fakeRun, councilId: 'other' })) },
     });
     expect(() => controller.getRun('c1', 'r1')).toThrow(NotFoundException);
+  });
+
+  it('404s PATCH run project when the run belongs to a different council', () => {
+    const { controller } = build({
+      repo: { getRun: vi.fn(() => ({ ...fakeRun, councilId: 'other' })) },
+    });
+    expect(() => controller.updateRunProject('c1', 'r1', { projectId: 'p1' })).toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('maps CouncilRunDoesNotExistError to 404 on PATCH run project', () => {
+    const { controller } = build({
+      service: {
+        setRunProject: vi.fn(() => {
+          throw new CouncilRunDoesNotExistError('r9');
+        }),
+      },
+    });
+    expect(() => controller.updateRunProject('c1', 'r1', { projectId: 'p1' })).toThrow(
+      NotFoundException,
+    );
   });
 });
