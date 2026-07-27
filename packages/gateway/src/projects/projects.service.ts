@@ -5,8 +5,11 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import { stat } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import {
   type Breakdown,
   type BreakdownPreviewResponse,
@@ -14,6 +17,7 @@ import {
   type EnhanceDescriptionRequest,
   type Project,
   type ProjectsPage,
+  type RepoStatusResponse,
   type Task,
   type TeamScope,
   type UpdateProjectRequest,
@@ -32,6 +36,8 @@ import {
   PROJECT_DESCRIPTION_SYSTEM_PROMPT,
   PROJECT_PLAN_SYSTEM_PROMPT,
 } from './projects.prompts';
+
+const execFileAsync = promisify(execFile);
 
 const RECORD_DESCRIPTION_SCHEMA = {
   type: 'object' as const,
@@ -99,6 +105,88 @@ export class ProjectsService {
    */
   workDirFor(projectId: string): string | undefined {
     return this.repo.getProject(projectId)?.workDir ?? undefined;
+  }
+
+  /**
+   * Local git status for a project's `workDir` (Phase: repo status & init — local
+   * only, no remote/clone support). Never throws on a git-command failure (e.g.
+   * detached HEAD, corrupt repo) — that's surfaced in `error` instead, since a
+   * status probe shouldn't 500 the project detail page.
+   */
+  async getRepoStatus(id: string): Promise<RepoStatusResponse> {
+    const project = this.getProject(id); // throws NotFound if unknown
+    if (!project.workDir) return { exists: false, isRepo: false };
+    const absoluteDir = expandTilde(project.workDir);
+
+    let dirExists = false;
+    try {
+      dirExists = (await stat(absoluteDir)).isDirectory();
+    } catch {
+      dirExists = false;
+    }
+    if (!dirExists) return { exists: false, isRepo: false };
+
+    return this.readRepoStatus(absoluteDir);
+  }
+
+  /**
+   * `git init` a project's `workDir` if it isn't already a repo — idempotent: an
+   * already-initialised repo just returns its current status unchanged. 400s if
+   * `workDir` is unset or the directory doesn't exist (nothing to init).
+   */
+  async initRepo(id: string): Promise<RepoStatusResponse> {
+    const project = this.getProject(id); // throws NotFound if unknown
+    if (!project.workDir) {
+      throw new BadRequestException('project has no work directory set');
+    }
+    const absoluteDir = expandTilde(project.workDir);
+
+    let dirExists = false;
+    try {
+      dirExists = (await stat(absoluteDir)).isDirectory();
+    } catch {
+      dirExists = false;
+    }
+    if (!dirExists) {
+      throw new BadRequestException(`work directory does not exist: ${project.workDir}`);
+    }
+
+    const current = await this.readRepoStatus(absoluteDir);
+    if (current.isRepo) return current;
+
+    await execFileAsync('git', ['init'], { cwd: absoluteDir });
+    return this.readRepoStatus(absoluteDir);
+  }
+
+  /** Assumes `absoluteDir` exists; probes `.git` + branch/dirty state. */
+  private async readRepoStatus(absoluteDir: string): Promise<RepoStatusResponse> {
+    let isRepo = false;
+    try {
+      await stat(join(absoluteDir, '.git'));
+      isRepo = true;
+    } catch {
+      isRepo = false;
+    }
+    if (!isRepo) return { exists: true, isRepo: false };
+
+    try {
+      const [{ stdout: branchOut }, { stdout: statusOut }] = await Promise.all([
+        execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: absoluteDir }),
+        execFileAsync('git', ['status', '--porcelain'], { cwd: absoluteDir }),
+      ]);
+      return {
+        exists: true,
+        isRepo: true,
+        branch: branchOut.trim(),
+        dirty: statusOut.trim().length > 0,
+      };
+    } catch (err) {
+      return {
+        exists: true,
+        isRepo: true,
+        error: err instanceof Error ? err.message : 'git command failed',
+      };
+    }
   }
 
   async createProject(req: CreateProjectRequest, userId?: string, teamId?: string | null): Promise<Project> {
