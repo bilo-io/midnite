@@ -8,7 +8,7 @@ import { BackLink } from '@/components/back-link';
 import { ConnectionStatus } from '@/components/connection-status';
 import { RailShell, RailHeaderToggle, Tabs, type TabOption } from '@midnite/ui';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
-import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
+import { ProjectDocsPanel } from '@/components/projects/panels/project-docs-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
 import { ProjectPhaseDocsPanel } from '@/components/projects/panels/project-phasedocs-panel';
 import { ProjectRoadmapPanel } from '@/components/projects/panels/project-roadmap-panel';
@@ -22,10 +22,10 @@ import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 
-type Tab = 'details' | 'plan' | 'tasks' | 'roadmap' | 'phasedocs';
+type Tab = 'details' | 'docs' | 'tasks' | 'roadmap' | 'phasedocs';
 const TAB_OPTIONS: TabOption<Tab>[] = [
   { value: 'details', label: 'Details' },
-  { value: 'plan', label: 'Plan' },
+  { value: 'docs', label: 'Docs' },
   { value: 'tasks', label: 'Tasks' },
   { value: 'roadmap', label: 'Roadmap' },
   { value: 'phasedocs', label: 'Phase docs' },
@@ -78,7 +78,7 @@ export function ProjectDetailContainer() {
 }
 
 /**
- * The project cockpit (Phase 55 A/C): a center tab region (Details/Plan/Tasks/
+ * The project cockpit (Phase 55 A/C): a center tab region (Details/Docs/Tasks/
  * Phase-Docs, driven by `?tab=`) flanked by two independently collapsible,
  * state-persisted rails — stats + actions (left), sources + activity (right).
  * On mobile the rails become header-toggled drawers and the center goes
@@ -102,7 +102,10 @@ export function ProjectDetailView({
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.project.rightOpen', true);
 
   const tabParam = searchParams.get('tab');
-  const tab: Tab = tabParam && TAB_VALUES.has(tabParam) ? (tabParam as Tab) : 'details';
+  // Back-compat: a bookmarked `?tab=plan` link (the tab's old name) should still
+  // land on the Docs panel rather than falling back to Details.
+  const tab: Tab =
+    tabParam === 'plan' ? 'docs' : tabParam && TAB_VALUES.has(tabParam) ? (tabParam as Tab) : 'details';
   const setTab = (next: Tab) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', next);
@@ -169,8 +172,8 @@ export function ProjectDetailView({
             <div className="rounded-lg border border-border/60 bg-card/40 p-4">
               {tab === 'details' ? (
                 <ProjectDetailsPanel project={project} memories={memories} onSaved={reload} />
-              ) : tab === 'plan' ? (
-                <ProjectPlanPanel project={project} />
+              ) : tab === 'docs' ? (
+                <ProjectDocsPanel project={project} />
               ) : tab === 'tasks' ? (
                 <ProjectTasksPanel tasks={tasks} onSelectTask={openTask} />
               ) : tab === 'roadmap' ? (
