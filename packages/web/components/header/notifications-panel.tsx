@@ -93,61 +93,60 @@ export function NotificationsPanel({
   return (
     <div
       aria-label="Notifications and approvals"
-      className={cn(
-        'flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl',
-        className,
-      )}
+      className={cn('rounded-xl accent-gradient-border accent-gradient-border--lit', className)}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
-        <div role="tablist" aria-label="Notifications and approvals" className="flex items-center gap-3">
-          <TabButton active={tab === 'notifications'} onClick={() => setTab('notifications')}>
-            Notifications
-            {unread > 0 ? <TabCount>{unread > 99 ? '99+' : unread}</TabCount> : null}
-          </TabButton>
-          <TabButton active={tab === 'approvals'} onClick={() => setTab('approvals')}>
-            Approvals
-            {approvalCount > 0 ? (
-              <TabCount amber>{approvalCount > 99 ? '99+' : approvalCount}</TabCount>
-            ) : null}
-          </TabButton>
+      <div className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl bg-popover shadow-2xl">
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+          <div role="tablist" aria-label="Notifications and approvals" className="flex items-center gap-3">
+            <TabButton active={tab === 'notifications'} onClick={() => setTab('notifications')}>
+              Notifications
+              {unread > 0 ? <TabCount>{unread > 99 ? '99+' : unread}</TabCount> : null}
+            </TabButton>
+            <TabButton active={tab === 'approvals'} onClick={() => setTab('approvals')}>
+              Approvals
+              {approvalCount > 0 ? (
+                <TabCount amber>{approvalCount > 99 ? '99+' : approvalCount}</TabCount>
+              ) : null}
+            </TabButton>
+          </div>
+          {/* Mark all read / Clear are notifications-only. */}
+          {tab === 'notifications' ? <NotificationFeedActions /> : null}
         </div>
-        {/* Mark all read / Clear are notifications-only. */}
-        {tab === 'notifications' ? <NotificationFeedActions /> : null}
-      </div>
 
-      {tab === 'notifications' ? (
-        <div role="tabpanel" aria-label="Notifications">
-          <NotificationFeedList onClose={onClose} />
-        </div>
-      ) : (
-        <div role="tabpanel" aria-label="Approvals" className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto p-3">
-            {approvalCount === 0 ? (
-              <div className="flex h-28 flex-col items-center justify-center gap-2 text-center">
-                <RefreshCw className="h-6 w-6 text-muted-foreground" aria-hidden />
-                <p className="text-sm text-muted-foreground">No pending approvals</p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {pending.map((a) => (
-                  <li key={a.id}>
-                    <PendingRow approval={a} onDecide={decide} onMakeRule={makeRule} />
-                  </li>
-                ))}
-              </ul>
-            )}
+        {tab === 'notifications' ? (
+          <div role="tabpanel" aria-label="Notifications">
+            <NotificationFeedList onClose={onClose} />
           </div>
-          <div className="border-t border-border/60 px-3 py-2">
-            <a
-              href="/settings/security"
-              onClick={onClose}
-              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            >
-              Manage autonomy mode &amp; rules →
-            </a>
+        ) : (
+          <div role="tabpanel" aria-label="Approvals" className="flex min-h-0 flex-1 flex-col">
+            <div className="flex-1 overflow-y-auto p-3">
+              {approvalCount === 0 ? (
+                <div className="flex h-28 flex-col items-center justify-center gap-2 text-center">
+                  <RefreshCw className="h-6 w-6 text-muted-foreground" aria-hidden />
+                  <p className="text-sm text-muted-foreground">No pending approvals</p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {pending.map((a) => (
+                    <li key={a.id}>
+                      <PendingRow approval={a} onDecide={decide} onMakeRule={makeRule} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="border-t border-border/60 px-3 py-2">
+              <a
+                href="/settings/security"
+                onClick={onClose}
+                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Manage autonomy mode &amp; rules →
+              </a>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

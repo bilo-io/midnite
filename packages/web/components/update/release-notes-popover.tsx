@@ -135,50 +135,52 @@ export function ReleaseNotesPopover({
               aria-label={`Release notes for v${version}`}
               tabIndex={-1}
               style={{ position: 'fixed', top: rect.top, left: rect.left, width: 340 }}
-              className="z-[70] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl focus:outline-none"
+              className="z-[70] rounded-xl accent-gradient-border accent-gradient-border--lit focus:outline-none"
             >
-              <div className="flex items-center gap-2 border-b border-border px-3.5 py-2.5">
-                <FileText aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm font-semibold">{`What's new in v${version}`}</span>
-              </div>
+              <div className="overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl">
+                <div className="flex items-center gap-2 border-b border-border px-3.5 py-2.5">
+                  <FileText aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="text-sm font-semibold">{`What's new in v${version}`}</span>
+                </div>
 
-              <div className="max-h-[min(60vh,22rem)] overflow-auto px-3.5 py-3">
-                {status === 'loading' ? (
-                  <p className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-                    <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
-                    Loading release notes…
-                  </p>
-                ) : status === 'ready' && notes ? (
-                  <MarkdownPreview content={notes} />
-                ) : (
-                  <p className="py-2 text-sm text-muted-foreground">
-                    Release notes aren&apos;t available right now — see the full changelog or the
-                    release page below.
-                  </p>
-                )}
-              </div>
+                <div className="max-h-[min(60vh,22rem)] overflow-auto px-3.5 py-3">
+                  {status === 'loading' ? (
+                    <p className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                      <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+                      Loading release notes…
+                    </p>
+                  ) : status === 'ready' && notes ? (
+                    <MarkdownPreview content={notes} />
+                  ) : (
+                    <p className="py-2 text-sm text-muted-foreground">
+                      Release notes aren&apos;t available right now — see the full changelog or the
+                      release page below.
+                    </p>
+                  )}
+                </div>
 
-              <div className="flex flex-col gap-1 border-t border-border p-1.5">
-                <a
-                  href={changelogUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <FileText aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
-                  Full changelog
-                  <ExternalLink aria-hidden className="ml-auto h-3 w-3 text-muted-foreground" />
-                </a>
-                <a
-                  href={releaseUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <ExternalLink aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
-                  Release page
-                  <ExternalLink aria-hidden className="ml-auto h-3 w-3 text-muted-foreground" />
-                </a>
+                <div className="flex flex-col gap-1 border-t border-border p-1.5">
+                  <a
+                    href={changelogUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <FileText aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
+                    Full changelog
+                    <ExternalLink aria-hidden className="ml-auto h-3 w-3 text-muted-foreground" />
+                  </a>
+                  <a
+                    href={releaseUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ExternalLink aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
+                    Release page
+                    <ExternalLink aria-hidden className="ml-auto h-3 w-3 text-muted-foreground" />
+                  </a>
+                </div>
               </div>
             </div>,
             document.body,
