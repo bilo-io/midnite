@@ -467,6 +467,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.7.4]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.4
 [0.7.3]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.3
 [0.7.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.2
 [0.7.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.1
