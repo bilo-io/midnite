@@ -134,6 +134,8 @@ import {
   ProjectsPageSchema,
   RepoResponseSchema,
   ReposPageSchema,
+  RepoStatusResponseSchema,
+  type RepoStatusResponse,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -1594,6 +1596,23 @@ export async function draftProjectBreakdown(id: string): Promise<BreakdownPrevie
     `/projects/${encodeURIComponent(id)}/plan/draft-breakdown`,
     { method: 'POST' },
     BreakdownPreviewResponseSchema,
+  );
+}
+
+// Local git status for a project's workDir (no remote/clone support).
+export async function getRepoStatus(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-status`,
+    undefined,
+    RepoStatusResponseSchema,
+  );
+}
+
+export async function initRepo(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-init`,
+    { method: 'POST' },
+    RepoStatusResponseSchema,
   );
 }
 
