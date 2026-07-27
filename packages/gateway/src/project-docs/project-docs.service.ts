@@ -1,4 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   getProjectDocTemplate,
@@ -128,22 +134,28 @@ export class ProjectDocsService {
       .filter(Boolean)
       .join('\n\n');
 
-    const { data } = await this.llm.generateStructured(
-      {
-        model: this.llm.getPlanModel(),
-        maxTokens: 4096,
-        system,
-        schema: RECORD_DOC_SCHEMA,
-        schemaName: 'record_doc',
-        schemaDescription: 'Record the complete markdown document.',
-        messages: [{ role: 'user', text: userText }],
-      },
-      'project',
-    );
+    let data: unknown;
+    try {
+      ({ data } = await this.llm.generateStructured(
+        {
+          model: this.llm.getPlanModel(),
+          maxTokens: 4096,
+          system,
+          schema: RECORD_DOC_SCHEMA,
+          schemaName: 'record_doc',
+          schemaDescription: 'Record the complete markdown document.',
+          messages: [{ role: 'user', text: userText }],
+        },
+        'project',
+      ));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new BadGatewayException(`AI document generation failed: ${message}`);
+    }
 
     const input = data as { markdown?: string } | undefined;
     const markdown = input?.markdown?.trim();
-    if (!markdown) throw new Error('doc generation did not return markdown');
+    if (!markdown) throw new BadGatewayException('AI document generation did not return markdown');
     return markdown;
   }
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException } from '@nestjs/common';
 
 import type { Project } from '@midnite/shared';
 import { ProjectDocsService } from './project-docs.service';
@@ -145,5 +145,28 @@ describe('ProjectDocsService.generateDoc', () => {
   it('404s an unknown id', async () => {
     const { svc } = makeService();
     await expect(svc.generateDoc('nope')).rejects.toThrow(/not found/);
+  });
+
+  it('translates an LLM provider error into a 502 with the underlying message', async () => {
+    const llm = makeLlm();
+    llm.generateStructured = vi.fn(async () => {
+      throw new Error('429 rate_limit_error');
+    });
+    const { svc } = makeService({ llm });
+    const doc = svc.createDoc('p1', {});
+    await expect(svc.generateDoc(doc.id)).rejects.toThrow(BadGatewayException);
+    await expect(svc.generateDoc(doc.id)).rejects.toThrow(/429 rate_limit_error/);
+  });
+
+  it('502s when the LLM returns no markdown', async () => {
+    const llm = makeLlm();
+    llm.generateStructured = vi.fn(async () => ({
+      data: {},
+      model: 'test-model',
+      usage: undefined,
+    }));
+    const { svc } = makeService({ llm });
+    const doc = svc.createDoc('p1', {});
+    await expect(svc.generateDoc(doc.id)).rejects.toThrow(BadGatewayException);
   });
 });
