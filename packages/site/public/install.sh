@@ -1,11 +1,14 @@
 #!/bin/sh
-# midnite installer — macOS (Apple Silicon)
+# midnite installer — macOS (Apple Silicon) and Linux (x86_64)
 #
 #   curl -fsSL https://midnite-app.vercel.app/install.sh | sh
 #
-# Downloads the latest release .zip with curl and installs it to /Applications.
-# Because curl (unlike a browser) never sets the com.apple.quarantine attribute,
-# the app opens normally on first launch — no Gatekeeper "unverified app" popup.
+# Windows: irm https://midnite-app.vercel.app/install.ps1 | iex
+#
+# macOS: downloads the latest release .zip with curl and installs it to
+# /Applications. Because curl (unlike a browser) never sets the
+# com.apple.quarantine attribute, the app opens normally on first launch — no
+# Gatekeeper "unverified app" popup.
 #
 # Robust by design: the app is staged and integrity-checked (Info.plist +
 # full-size Electron Framework) BEFORE it replaces the installed copy, then
@@ -13,6 +16,12 @@
 # one verifies. An interrupted download or copy can never leave a broken app in
 # /Applications — the exact failure that a plain `ditto` install can silently
 # produce (missing Frameworks → dyld "Library not loaded" crash on launch).
+#
+# Linux: downloads the latest release .AppImage, installs it to
+# ~/.local/bin/midnite.AppImage, and writes a small `midnite` launcher wrapper
+# alongside it (falls back to `--appimage-extract-and-run` when FUSE isn't
+# available — common on distros that dropped libfuse2 by default) plus a
+# best-effort .desktop entry so it shows up in app launchers.
 #
 # Options (environment variables):
 #   MIDNITE_VERSION=0.5.0   install a specific version instead of the latest
@@ -33,6 +42,12 @@ fail() {
   exit 1
 }
 
+OS="$(uname -s)"
+case "$OS" in
+  Darwin | Linux) : ;;
+  *) fail "this installer supports macOS and Linux only. Windows: irm https://midnite-app.vercel.app/install.ps1 | iex" ;;
+esac
+
 # Verify a .app bundle is structurally complete. $1 = bundle path.
 # Returns non-zero (logging what's missing) for a partial/truncated bundle.
 verify_bundle() {
@@ -47,12 +62,10 @@ verify_bundle() {
   return 0
 }
 
-# ── Preflight ────────────────────────────────────────────────────────────────
-[ "$(uname -s)" = "Darwin" ] || fail "this installer is macOS-only. Downloads for Windows/Linux: https://github.com/$REPO/releases/latest"
-[ "$(uname -m)" = "arm64" ] || fail "midnite ships Apple Silicon (arm64) builds only, and this Mac reports $(uname -m)."
+# ── Preflight (shared) ───────────────────────────────────────────────────────
 command -v curl >/dev/null 2>&1 || fail "curl is required."
 
-# ── Resolve version ──────────────────────────────────────────────────────────
+# ── Resolve version (shared) ─────────────────────────────────────────────────
 if [ -n "${MIDNITE_VERSION:-}" ]; then
   version="${MIDNITE_VERSION#v}"
 else
@@ -63,6 +76,76 @@ else
   version="${tag#v}"
   [ -n "$version" ] && [ "$version" != "latest" ] || fail "could not determine the latest version from $latest_url"
 fi
+
+if [ "$OS" = "Linux" ]; then
+  [ "$(uname -m)" = "x86_64" ] || fail "midnite ships x86_64 Linux builds only, and this machine reports $(uname -m)."
+
+  asset="midnite-${version}-x86_64.AppImage"
+  url="https://github.com/$REPO/releases/download/v${version}/${asset}"
+
+  bindir="$HOME/.local/bin"
+  mkdir -p "$bindir"
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+
+  say "Downloading midnite v${version} …"
+  curl -fL --progress-bar "$url" -o "$tmp/$asset" || fail "download failed: $url"
+  chmod +x "$tmp/$asset"
+
+  appimage="$bindir/midnite.AppImage"
+  # Quit a running copy first so the file can be replaced.
+  pkill -f "$appimage" >/dev/null 2>&1 || true
+  mv -f "$tmp/$asset" "$appimage"
+
+  # A thin wrapper (not the raw AppImage) is what we put on PATH as `midnite`,
+  # so a system without FUSE (common on distros that dropped libfuse2 by
+  # default) falls back to --appimage-extract-and-run instead of just failing.
+  wrapper="$bindir/midnite"
+  cat > "$wrapper" <<WRAPPER
+#!/bin/sh
+exec "$appimage" --no-sandbox "\$@" || exec "$appimage" --appimage-extract-and-run --no-sandbox "\$@"
+WRAPPER
+  chmod +x "$wrapper"
+
+  # Best-effort desktop-menu integration: extract the AppImage's own icon so the
+  # launcher entry doesn't need a separately-hosted asset.
+  apps_dir="$HOME/.local/share/applications"
+  icons_dir="$HOME/.local/share/icons"
+  mkdir -p "$apps_dir" "$icons_dir"
+  (
+    cd "$tmp" && "$appimage" --appimage-extract >/dev/null 2>&1
+  ) || true
+  if [ -f "$tmp/squashfs-root/.DirIcon" ]; then
+    cp "$tmp/squashfs-root/.DirIcon" "$icons_dir/midnite.png" 2>/dev/null || true
+  fi
+  cat > "$apps_dir/midnite.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=midnite
+Exec=$wrapper %U
+Icon=$icons_dir/midnite.png
+Terminal=false
+Categories=Development;
+DESKTOP
+
+  case ":$PATH:" in
+    *":$bindir:"*) ;;
+    *) say "Add $bindir to your PATH to run 'midnite' from a terminal (e.g. add 'export PATH=\"$bindir:\$PATH\"' to your shell profile)." ;;
+  esac
+
+  say ""
+  say "✓ midnite v${version} installed: $wrapper"
+  if [ -z "${MIDNITE_NO_OPEN:-}" ]; then
+    "$wrapper" >/dev/null 2>&1 &
+    disown 2>/dev/null || true
+  else
+    say "Launch it with: $wrapper"
+  fi
+  exit 0
+fi
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+[ "$(uname -m)" = "arm64" ] || fail "midnite ships Apple Silicon (arm64) builds only, and this Mac reports $(uname -m)."
 
 asset="midnite-${version}-arm64.zip"
 url="https://github.com/$REPO/releases/download/v${version}/${asset}"

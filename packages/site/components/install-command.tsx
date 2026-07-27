@@ -6,9 +6,10 @@ import { Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * The macOS install one-liner as a copyable terminal block: the command in a
- * horizontally-scrollable <code> with a copy button that confirms for a moment.
- * Used by the landing page's download section and the /download picker.
+ * A platform's install one-liner as a copyable terminal block: the command in
+ * a horizontally-scrollable <code> with a copy button that confirms for a
+ * moment. Used by the landing page's download section and the /download
+ * picker, for every platform (mac/Linux curl, Windows PowerShell).
  */
 export function InstallCommand({ command, className }: { command: string; className?: string }) {
   const [copied, setCopied] = useState(false);
