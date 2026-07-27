@@ -1,0 +1,13 @@
+{
+  "overview": {
+    "contextDocsHeading": "Context documents",
+    "contextDocsHint": "Pick which of this project's docs Claude should read while drafting the overview. Leave all unchecked to draft from the description and plan alone.",
+    "docsLoading": "Loading docs…",
+    "noDocsYet": "This project has no docs yet.",
+    "draftOverview": "Draft overview",
+    "drafting": "Drafting the overview…",
+    "draftFailed": "Overview drafting failed.",
+    "regenerate": "Regenerate",
+    "approve": "Approve"
+  }
+}

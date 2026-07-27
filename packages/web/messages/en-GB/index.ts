@@ -4,6 +4,7 @@ import auth from './auth.json';
 import board from './board.json';
 import common from './common.json';
 import nav from './nav.json';
+import plan from './plan.json';
 import settings from './settings.json';
 import task from './task.json';
 
@@ -12,6 +13,7 @@ export default {
   board,
   common,
   nav,
+  plan,
   settings,
   task,
 };

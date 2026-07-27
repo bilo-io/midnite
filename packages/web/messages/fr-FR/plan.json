@@ -1,0 +1,13 @@
+{
+  "overview": {
+    "contextDocsHeading": "Documents de contexte",
+    "contextDocsHint": "Choisissez les documents du projet que Claude doit lire pour rédiger l'aperçu. Ne cochez rien pour rédiger à partir de la description et du plan seuls.",
+    "docsLoading": "Chargement des documents…",
+    "noDocsYet": "Ce projet n'a pas encore de documents.",
+    "draftOverview": "Rédiger l'aperçu",
+    "drafting": "Rédaction de l'aperçu en cours…",
+    "draftFailed": "Échec de la rédaction de l'aperçu.",
+    "regenerate": "Régénérer",
+    "approve": "Approuver"
+  }
+}
