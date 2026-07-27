@@ -17,6 +17,7 @@ import {
   CreateFromBreakdownRequestSchema,
   CreatePlanTasksRequestSchema,
   CreateProjectRequestSchema,
+  DraftBreakdownRequestSchema,
   EnhanceDescriptionRequestSchema,
   REPORT_CONTENT_TYPE,
   ReportFormatSchema,
@@ -102,10 +103,14 @@ export class ProjectsController {
 
   // Structured breakdown (Phase 28 Theme A): generate a typed, dependency-aware
   // task list from the project's description + existing plan. Preview-only —
-  // the client edits and confirms before calling create-from-breakdown.
+  // the client edits and confirms before calling create-from-breakdown. `overview`
+  // (draft-plan Stage 1's approved output) is optional, so a bare/empty body is
+  // still valid — this route previously took no body at all.
   @Post(':id/plan/draft-breakdown')
-  draftBreakdown(@Param('id') id: string): Promise<BreakdownPreviewResponse> {
-    return this.service.draftBreakdown(id);
+  draftBreakdown(@Param('id') id: string, @Body() body: unknown): Promise<BreakdownPreviewResponse> {
+    const parsed = DraftBreakdownRequestSchema.safeParse(body ?? {});
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.draftBreakdown(id, parsed.data.overview);
   }
 
   @Patch(':id/plan')
