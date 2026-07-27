@@ -32,6 +32,10 @@ export const ProjectSchema = z.object({
   tag: TagSchema,
   color: HexColorSchema,
   workDir: z.string().optional(),
+  /** Command that runs the project's dev/preview server, in `workDir`. */
+  startCommand: z.string().optional(),
+  /** Command that builds the project, in `workDir`. */
+  buildCommand: z.string().optional(),
   plan: z.string().optional(),
   planUpdatedAt: z.string().optional(),
   archived: z.boolean().optional(),
@@ -60,6 +64,8 @@ export const CreateProjectRequestSchema = z.object({
   tag: TagSchema,
   color: HexColorSchema,
   workDir: WorkDirSchema.optional(),
+  startCommand: z.string().trim().max(2000).optional(),
+  buildCommand: z.string().trim().max(2000).optional(),
 });
 
 export const UpdateProjectRequestSchema = z.object({
@@ -69,6 +75,9 @@ export const UpdateProjectRequestSchema = z.object({
   color: HexColorSchema.optional(),
   // Empty string clears the configured directory.
   workDir: WorkDirSchema.optional(),
+  // Empty string clears the configured command.
+  startCommand: z.string().trim().max(2000).optional(),
+  buildCommand: z.string().trim().max(2000).optional(),
   archived: z.boolean().optional(),
   /** Phase 40 Theme G: toggle phase-doc sync-back for this project. */
   phaseDocSync: z.boolean().optional(),

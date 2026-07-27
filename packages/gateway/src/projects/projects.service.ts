@@ -4,14 +4,17 @@ import {
   Injectable,
   NotFoundException,
   Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import {
   type Breakdown,
   type BreakdownPreviewResponse,
   type CreateProjectRequest,
   type EnhanceDescriptionRequest,
+  type InstallTerminalResponse,
   type Project,
   type ProjectsPage,
   type Task,
@@ -26,6 +29,11 @@ import { MemoriesService } from '../memories/memories.service';
 import { projectToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
+// forwardRef: TerminalService injects ProjectsService (session cwd resolution),
+// so this is a genuine constructor cycle — see terminal.service.ts's matching
+// forwardRef on its ProjectsService injection.
+import { TerminalService } from '../terminal/terminal.service';
+import { buildRunInitCommand } from './lib/run-command';
 import { projectReportFilename, projectToMarkdown } from './lib/project-report';
 import { ProjectsRepository } from './projects.repository';
 import {
@@ -64,6 +72,7 @@ export class ProjectsService {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
+    @Inject(forwardRef(() => TerminalService)) private readonly terminal: TerminalService,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
     // Phase 50 D — audit project mutations. Optional so unit specs are unaffected.
@@ -101,6 +110,40 @@ export class ProjectsService {
     return this.repo.getProject(projectId)?.workDir ?? undefined;
   }
 
+  /**
+   * Preview/Launch action (project detail page): open a live ad-hoc terminal
+   * that `cd`s into the project's work directory and immediately runs its
+   * configured `startCommand`. 400s if either isn't set — the client hides/
+   * disables the action in that case, but the server is the source of truth.
+   */
+  previewProject(id: string): InstallTerminalResponse {
+    return this.runProjectCommand(id, 'startCommand', 'start');
+  }
+
+  /** Build action (project detail page): same shape as {@link previewProject},
+   *  running the project's configured `buildCommand` instead. */
+  buildProject(id: string): InstallTerminalResponse {
+    return this.runProjectCommand(id, 'buildCommand', 'build');
+  }
+
+  private runProjectCommand(
+    id: string,
+    field: 'startCommand' | 'buildCommand',
+    label: 'start' | 'build',
+  ): InstallTerminalResponse {
+    const project = this.getProject(id); // throws NotFound if unknown
+    if (!project.workDir?.trim()) {
+      throw new BadRequestException(`project ${id} has no work directory configured`);
+    }
+    const command = project[field]?.trim();
+    if (!command) {
+      throw new BadRequestException(`project ${id} has no ${label} command configured`);
+    }
+    const cwd = expandTilde(project.workDir, homedir());
+    const terminalId = this.terminal.createAdHocTerminal(buildRunInitCommand(cwd, command));
+    return { terminalId };
+  }
+
   async createProject(req: CreateProjectRequest, userId?: string, teamId?: string | null): Promise<Project> {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -111,6 +154,8 @@ export class ProjectsService {
       tag: req.tag,
       color: req.color,
       workDir: normalizeWorkDir(req.workDir),
+      startCommand: req.startCommand?.trim() || null,
+      buildCommand: req.buildCommand?.trim() || null,
       plan: null,
       planUpdatedAt: null,
       createdBy: userId ?? null,
@@ -140,6 +185,8 @@ export class ProjectsService {
       tag: string;
       color: string;
       workDir: string | null;
+      startCommand: string | null;
+      buildCommand: string | null;
       archivedAt: string | null;
       phaseDocSync: number | null;
       phaseDocSyncRepoId: string | null;
@@ -151,6 +198,9 @@ export class ProjectsService {
     if (req.color !== undefined) patch.color = req.color;
     // An empty string clears the directory; normalizeWorkDir maps it to null.
     if (req.workDir !== undefined) patch.workDir = normalizeWorkDir(req.workDir);
+    // Empty string clears the configured command (same convention as workDir).
+    if (req.startCommand !== undefined) patch.startCommand = req.startCommand.trim() || null;
+    if (req.buildCommand !== undefined) patch.buildCommand = req.buildCommand.trim() || null;
     // Archive is a soft flag: store the timestamp when set, clear it when unset.
     if (req.archived !== undefined) patch.archivedAt = req.archived ? now : null;
     // Phase 40 Theme G: sync toggle stored as 0/1; an empty repo string clears the target.

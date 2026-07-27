@@ -54,6 +54,27 @@ it('saves the edited fields and fires onSaved', async () => {
   expect(onSaved).toHaveBeenCalled();
 });
 
+it('prefills and saves the start/build commands', async () => {
+  render(
+    <ProjectDetailsPanel
+      project={{ ...PROJECT, startCommand: 'pnpm dev', buildCommand: 'pnpm build' }}
+      onSaved={vi.fn()}
+    />,
+  );
+  expect(screen.getByLabelText('Start command')).toHaveValue('pnpm dev');
+  expect(screen.getByLabelText('Build command')).toHaveValue('pnpm build');
+
+  fireEvent.change(screen.getByLabelText('Start command'), { target: { value: 'pnpm run dev' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  await waitFor(() =>
+    expect(updateProject).toHaveBeenCalledWith(
+      'project-1',
+      expect.objectContaining({ startCommand: 'pnpm run dev', buildCommand: 'pnpm build' }),
+    ),
+  );
+});
+
 it('links to the memory route and closes on navigate', () => {
   const onAfterNavigate = vi.fn();
   render(<ProjectDetailsPanel project={PROJECT} onSaved={vi.fn()} onAfterNavigate={onAfterNavigate} />);

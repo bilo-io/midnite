@@ -29,6 +29,7 @@ import {
   type CreatePlanTasksResponse,
   type DraftPlanResponse,
   type EnhanceDescriptionResponse,
+  type InstallTerminalResponse,
   type Project,
   type ProjectResponse,
   type ProjectsPage,
@@ -139,6 +140,20 @@ export class ProjectsController {
         parsed.data.milestoneId,
       ),
     };
+  }
+
+  // Preview/Launch action (project detail page): open a live ad-hoc terminal
+  // running the project's configured startCommand. No body — the command comes
+  // entirely from the already-persisted project config, never the client.
+  @Post(':id/preview')
+  preview(@Param('id') id: string): InstallTerminalResponse {
+    return this.service.previewProject(id);
+  }
+
+  // Build action: same shape as preview, running buildCommand instead.
+  @Post(':id/build')
+  build(@Param('id') id: string): InstallTerminalResponse {
+    return this.service.buildProject(id);
   }
 
   @Get(':id/export')

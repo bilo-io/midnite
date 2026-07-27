@@ -1,3 +1,4 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { Task, TaskStatusCounts } from '@midnite/shared';
 import type { ProjectInsert, ProjectRow } from '../db/schema';
@@ -5,6 +6,7 @@ import type { BreakdownService } from '../agent/breakdown.service';
 import type { LlmService } from '../agent/llm/llm.service';
 import type { MemoriesService } from '../memories/memories.service';
 import type { TasksService } from '../tasks/tasks.service';
+import type { TerminalService } from '../terminal/terminal.service';
 import { ProjectsRepository } from './projects.repository';
 import { ProjectsService } from './projects.service';
 
@@ -31,6 +33,8 @@ class InMemoryProjectsRepo extends ProjectsRepository {
       tag: row.tag,
       color: row.color,
       workDir: row.workDir ?? null,
+      startCommand: row.startCommand ?? null,
+      buildCommand: row.buildCommand ?? null,
       plan: row.plan ?? null,
       planUpdatedAt: row.planUpdatedAt ?? null,
       archivedAt: row.archivedAt ?? null,
@@ -82,6 +86,11 @@ class InMemoryProjectsRepo extends ProjectsRepository {
 
 const disabledLlm = { enabled: false } as unknown as LlmService;
 
+function makeTerminalStub() {
+  const createAdHocTerminal = vi.fn((initCommand: string) => `adhoc-${initCommand.length}`);
+  return { service: { createAdHocTerminal } as unknown as TerminalService, createAdHocTerminal };
+}
+
 function makeTasksStub() {
   const created: Array<{ projectId: string; title: string }> = [];
   const service = {
@@ -109,7 +118,14 @@ describe('ProjectsService', () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
 
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
+    const service = new ProjectsService(
+      repo,
+      disabledLlm,
+      tasks,
+      memoriesStub,
+      breakdownStub,
+      makeTerminalStub().service,
+    );
     const project = await service.createProject({
       name: 'Atlas',
       tag: 'atlas',
@@ -125,7 +141,14 @@ describe('ProjectsService', () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
 
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
+    const service = new ProjectsService(
+      repo,
+      disabledLlm,
+      tasks,
+      memoriesStub,
+      breakdownStub,
+      makeTerminalStub().service,
+    );
     const out = await service.enhanceDescription({ description: '  rough notes  ' });
     expect(out).toBe('rough notes');
   });
@@ -134,7 +157,14 @@ describe('ProjectsService', () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
 
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
+    const service = new ProjectsService(
+      repo,
+      disabledLlm,
+      tasks,
+      memoriesStub,
+      breakdownStub,
+      makeTerminalStub().service,
+    );
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const { plan } = await service.draftPlan(project.id);
@@ -146,7 +176,14 @@ describe('ProjectsService', () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks, created } = makeTasksStub();
 
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
+    const service = new ProjectsService(
+      repo,
+      disabledLlm,
+      tasks,
+      memoriesStub,
+      breakdownStub,
+      makeTerminalStub().service,
+    );
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const result = service.createTasksFromPlan(project.id, ['Do A', 'Do B']);
@@ -161,7 +198,16 @@ describe('ProjectsService', () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
     const audit = { record: vi.fn() } as unknown as import('../audit/audit.service').AuditService;
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub, undefined, audit);
+    const service = new ProjectsService(
+      repo,
+      disabledLlm,
+      tasks,
+      memoriesStub,
+      breakdownStub,
+      makeTerminalStub().service,
+      undefined,
+      audit,
+    );
 
     const project = await service.createProject({ name: 'Atlas', tag: 'atlas', color: '#7c3aed' }, 'user-1');
     service.updateProject(project.id, { name: 'Atlas 2' }, 'user-2');
@@ -173,5 +219,84 @@ describe('ProjectsService', () => {
     expect(calls[1].payload.before.name).toBe('Atlas');
     expect(calls[1].payload.after.name).toBe('Atlas 2');
     expect(calls[2].userId).toBe('user-3');
+  });
+
+  describe('previewProject / buildProject', () => {
+    async function makeProjectWithCommands(overrides: {
+      workDir?: string;
+      startCommand?: string;
+      buildCommand?: string;
+    }) {
+      const repo = new InMemoryProjectsRepo();
+      const { service: tasks } = makeTasksStub();
+      const { service: terminal, createAdHocTerminal } = makeTerminalStub();
+      const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub, terminal);
+      const project = await service.createProject({
+        name: 'Atlas',
+        tag: 'atlas',
+        color: '#7c3aed',
+        workDir: overrides.workDir,
+        startCommand: overrides.startCommand,
+        buildCommand: overrides.buildCommand,
+      });
+      return { service, project, createAdHocTerminal };
+    }
+
+    it('previewProject creates an ad-hoc terminal that cds into workDir and runs startCommand', async () => {
+      const { service, project, createAdHocTerminal } = await makeProjectWithCommands({
+        workDir: '/Users/bilo/dev/atlas',
+        startCommand: 'pnpm dev',
+      });
+
+      const result = service.previewProject(project.id);
+
+      expect(result).toEqual({ terminalId: expect.stringMatching(/^adhoc-/) });
+      expect(createAdHocTerminal).toHaveBeenCalledWith(
+        `cd '/Users/bilo/dev/atlas' && clear && pnpm dev\r`,
+      );
+    });
+
+    it('buildProject creates an ad-hoc terminal that cds into workDir and runs buildCommand', async () => {
+      const { service, project, createAdHocTerminal } = await makeProjectWithCommands({
+        workDir: '/Users/bilo/dev/atlas',
+        buildCommand: 'pnpm build',
+      });
+
+      const result = service.buildProject(project.id);
+
+      expect(result).toEqual({ terminalId: expect.stringMatching(/^adhoc-/) });
+      expect(createAdHocTerminal).toHaveBeenCalledWith(
+        `cd '/Users/bilo/dev/atlas' && clear && pnpm build\r`,
+      );
+    });
+
+    it('previewProject 400s when the project has no work directory configured', async () => {
+      const { service, project } = await makeProjectWithCommands({ startCommand: 'pnpm dev' });
+      expect(() => service.previewProject(project.id)).toThrow(BadRequestException);
+    });
+
+    it('previewProject 400s when the project has no startCommand configured', async () => {
+      const { service, project } = await makeProjectWithCommands({ workDir: '/Users/bilo/dev/atlas' });
+      expect(() => service.previewProject(project.id)).toThrow(BadRequestException);
+    });
+
+    it('buildProject 400s when the project has no buildCommand configured', async () => {
+      const { service, project } = await makeProjectWithCommands({ workDir: '/Users/bilo/dev/atlas' });
+      expect(() => service.buildProject(project.id)).toThrow(BadRequestException);
+    });
+
+    it('previewProject 404s for an unknown project', async () => {
+      const repo = new InMemoryProjectsRepo();
+      const { service: tasks } = makeTasksStub();
+      const service = new ProjectsService(
+        repo,
+        disabledLlm,
+        tasks,
+        memoriesStub,
+        breakdownStub,
+        makeTerminalStub().service,
+      );
+      expect(() => service.previewProject('nope')).toThrow(NotFoundException);
+    });
   });
 });

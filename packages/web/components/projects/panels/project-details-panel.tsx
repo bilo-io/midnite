@@ -40,6 +40,8 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
   const [tag, setTag] = useState(project.tag ?? '');
   const [color, setColor] = useState(project.color ?? DEFAULT_COLOR);
   const [workDir, setWorkDir] = useState(project.workDir ?? '');
+  const [startCommand, setStartCommand] = useState(project.startCommand ?? '');
+  const [buildCommand, setBuildCommand] = useState(project.buildCommand ?? '');
   const [phaseDocSync, setPhaseDocSync] = useState(project.phaseDocSync !== false);
   const [phaseDocSyncRepoId, setPhaseDocSyncRepoId] = useState(project.phaseDocSyncRepoId ?? '');
   const [repos, setRepos] = useState<Repo[]>([]);
@@ -56,6 +58,8 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
     setTag(project.tag ?? '');
     setColor(project.color ?? DEFAULT_COLOR);
     setWorkDir(project.workDir ?? '');
+    setStartCommand(project.startCommand ?? '');
+    setBuildCommand(project.buildCommand ?? '');
     setPhaseDocSync(project.phaseDocSync !== false);
     setPhaseDocSyncRepoId(project.phaseDocSyncRepoId ?? '');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key on identity, not every field
@@ -98,6 +102,8 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
         tag: tag.trim(),
         color,
         workDir: workDir.trim(),
+        startCommand: startCommand.trim(),
+        buildCommand: buildCommand.trim(),
         phaseDocSync,
         phaseDocSyncRepoId,
       });
@@ -210,6 +216,40 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
         </div>
         <p className="text-[11px] text-muted-foreground">
           Where this project&apos;s agent sessions spawn. Leave blank to use the default.
+        </p>
+      </div>
+
+      {/* Start / build commands */}
+      <div className="space-y-1.5">
+        <label htmlFor="project-start-command" className="text-xs font-medium text-muted-foreground">
+          Start command
+        </label>
+        <input
+          id="project-start-command"
+          className={cn(inputClass, 'font-mono text-xs')}
+          value={startCommand}
+          onChange={(e) => setStartCommand(e.target.value)}
+          placeholder="pnpm dev"
+          spellCheck={false}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Run by the <strong className="font-medium">Preview</strong> action, in the work directory above.
+        </p>
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor="project-build-command" className="text-xs font-medium text-muted-foreground">
+          Build command
+        </label>
+        <input
+          id="project-build-command"
+          className={cn(inputClass, 'font-mono text-xs')}
+          value={buildCommand}
+          onChange={(e) => setBuildCommand(e.target.value)}
+          placeholder="pnpm build"
+          spellCheck={false}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Run by the <strong className="font-medium">Build</strong> action, in the work directory above.
         </p>
       </div>
 

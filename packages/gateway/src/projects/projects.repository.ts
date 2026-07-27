@@ -139,6 +139,8 @@ export class ProjectsRepository {
       tag: row.tag,
       color: row.color,
       workDir: row.workDir ?? undefined,
+      startCommand: row.startCommand ?? undefined,
+      buildCommand: row.buildCommand ?? undefined,
       plan: row.plan ?? undefined,
       planUpdatedAt: row.planUpdatedAt ?? undefined,
       archived: row.archivedAt != null,

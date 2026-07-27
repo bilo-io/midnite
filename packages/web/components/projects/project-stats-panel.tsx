@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Archive, ArchiveRestore, Loader2, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Hammer, Loader2, Play, Trash2 } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ExportMenu } from '@/components/export-menu';
 import { ProjectProgressBar } from '@/components/project-progress';
+import { RunCommandModal } from '@/components/run-command-modal';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
 import { ALL_COLUMNS, statusLabel, statusHueVar } from '@/components/task-columns';
-import { deleteProject, exportProjectMarkdown, updateProject } from '@/lib/api';
+import { buildProject, deleteProject, exportProjectMarkdown, previewProject, updateProject } from '@/lib/api';
 
 type Props = {
   project: Project;
@@ -28,6 +29,7 @@ type Props = {
 export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props) {
   const confirm = useConfirm();
   const [busy, setBusy] = useState<'archive' | 'delete' | null>(null);
+  const [running, setRunning] = useState<'preview' | 'build' | null>(null);
 
   const done = tasks.filter((t) => t.status === 'done').length;
   const counts = ALL_COLUMNS.map((c) => ({ status: c.status as Status, count: tasks.filter((t) => t.status === c.status).length })).filter(
@@ -97,6 +99,30 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
       <div className="space-y-1.5 border-t border-border/60 pt-3">
         <span className="text-xs font-medium text-muted-foreground">Actions</span>
         <div className="flex flex-col gap-1.5">
+          {project.startCommand?.trim() ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setRunning('preview')}
+              className="justify-start gap-2"
+            >
+              <Play className="h-4 w-4" />
+              Preview
+            </Button>
+          ) : null}
+          {project.buildCommand?.trim() ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setRunning('build')}
+              className="justify-start gap-2"
+            >
+              <Hammer className="h-4 w-4" />
+              Build
+            </Button>
+          ) : null}
           <ExportMenu
             filename={`${(project.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}`}
             title={project.name}
@@ -132,6 +158,21 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
           </Button>
         </div>
       </div>
+
+      {running === 'preview' ? (
+        <RunCommandModal
+          title="Preview"
+          start={() => previewProject(project.id)}
+          onClose={() => setRunning(null)}
+        />
+      ) : null}
+      {running === 'build' ? (
+        <RunCommandModal
+          title="Build"
+          start={() => buildProject(project.id)}
+          onClose={() => setRunning(null)}
+        />
+      ) : null}
     </div>
   );
 }
