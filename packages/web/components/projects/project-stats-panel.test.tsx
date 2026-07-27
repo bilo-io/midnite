@@ -5,10 +5,27 @@ import type { Project, Task } from '@midnite/shared';
 const updateProject = vi.fn();
 const deleteProject = vi.fn();
 const exportProjectMarkdown = vi.fn();
+const previewProject = vi.fn();
+const buildProject = vi.fn();
 vi.mock('@/lib/api', () => ({
   updateProject: (...a: unknown[]) => updateProject(...a),
   deleteProject: (...a: unknown[]) => deleteProject(...a),
   exportProjectMarkdown: (...a: unknown[]) => exportProjectMarkdown(...a),
+  previewProject: (...a: unknown[]) => previewProject(...a),
+  buildProject: (...a: unknown[]) => buildProject(...a),
+}));
+
+// The modal mounts a live ad-hoc terminal over WS — out of scope for this unit
+// test, which only covers whether/when the Preview/Build buttons open it.
+vi.mock('@/components/run-command-modal', () => ({
+  RunCommandModal: ({ title, onClose }: { title: string; onClose: () => void }) => (
+    <div role="dialog" aria-label={title}>
+      {title}
+      <button type="button" onClick={onClose}>
+        Close
+      </button>
+    </div>
+  ),
 }));
 
 import { ProjectStatsPanel } from './project-stats-panel';
@@ -71,4 +88,29 @@ it('archives via updateProject({archived:true}) and re-hydrates', async () => {
 it('shows Unarchive for an archived project', () => {
   renderPanel({ project: { ...project, archived: true } });
   expect(screen.getByRole('button', { name: /Unarchive project/i })).toBeInTheDocument();
+});
+
+it('hides Preview/Build when neither command is configured', () => {
+  renderPanel();
+  expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Build' })).toBeNull();
+});
+
+it('shows Preview and opens its modal when startCommand is configured', () => {
+  renderPanel({ project: { ...project, startCommand: 'pnpm dev' } });
+  expect(screen.queryByRole('button', { name: 'Build' })).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  expect(screen.getByRole('dialog', { name: 'Preview' })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.queryByRole('dialog', { name: 'Preview' })).toBeNull();
+});
+
+it('shows Build and opens its modal when buildCommand is configured', () => {
+  renderPanel({ project: { ...project, buildCommand: 'pnpm build' } });
+  expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Build' }));
+  expect(screen.getByRole('dialog', { name: 'Build' })).toBeInTheDocument();
 });

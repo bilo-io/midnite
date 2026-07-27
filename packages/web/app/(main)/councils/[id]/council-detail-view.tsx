@@ -1,7 +1,14 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import type { AgentCli, Council, CouncilFormat, CouncilMember, CouncilRun } from '@midnite/shared';
+import type {
+  AgentCli,
+  Council,
+  CouncilFormat,
+  CouncilMember,
+  CouncilRun,
+  Project,
+} from '@midnite/shared';
 import { CouncilMembersPanel } from '@/components/council-participants-panel';
 import { CouncilRunTabs } from '@/components/council-run-tabs';
 import { CouncilRunThread } from '@/components/council-run-thread';
@@ -14,6 +21,7 @@ import {
   retryCouncilRunMember,
   skipCouncilRunMember,
   updateCouncil,
+  updateCouncilRunProject,
 } from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -22,9 +30,10 @@ import { useIsMobile } from '@/hooks/use-media-query';
 type Props = {
   initial: Council;
   initialRuns: CouncilRun[];
+  projects: Project[];
 };
 
-export function CouncilDetailView({ initial, initialRuns }: Props) {
+export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
   const [members, setMembers] = useState<CouncilMember[]>(initial.members);
   const [synthProvider, setSynthProvider] = useState<AgentCli>(initial.synthProvider);
   const [defaultFormat, setDefaultFormat] = useState<CouncilFormat>(initial.defaultFormat);
@@ -129,6 +138,23 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
     [retrySynthesis, refreshRuns],
   );
 
+  // Reassign (or clear) a run's project from the thread — optimistic, revert on
+  // failure. Mirrors TaskDetail's `reassign` for task.projectId.
+  const changeRunProject = useCallback(
+    (runId: string, projectId: string | null) => {
+      const prev = runs.find((r) => r.id === runId)?.projectId ?? null;
+      setRuns((current) =>
+        current.map((r) => (r.id === runId ? { ...r, projectId: projectId ?? undefined } : r)),
+      );
+      updateCouncilRunProject(initial.id, runId, projectId).catch(() => {
+        setRuns((current) =>
+          current.map((r) => (r.id === runId ? { ...r, projectId: prev ?? undefined } : r)),
+        );
+      });
+    },
+    [initial.id, runs],
+  );
+
   // The council as edited in this view — fed to the custom-prompt modal so it
   // shows the latest saved name + customPrompt without a refetch.
   const council = useMemo<Council>(
@@ -162,6 +188,8 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
             selectedId={run?.id ?? null}
             onSelect={select}
             open={threadOpen}
+            projects={projects}
+            onChangeProject={changeRunProject}
           />
 
           <div className="relative min-w-0 flex-1">

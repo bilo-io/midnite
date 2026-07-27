@@ -134,6 +134,8 @@ import {
   ProjectsPageSchema,
   RepoResponseSchema,
   ReposPageSchema,
+  RepoStatusResponseSchema,
+  type RepoStatusResponse,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -1355,6 +1357,28 @@ export async function deleteProject(id: string): Promise<void> {
   await fetchJson(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+/**
+ * Preview/Launch action (project detail page): open a live ad-hoc terminal that
+ * runs the project's configured `startCommand` in its work directory. The server
+ * builds the command from already-persisted config — no body to send.
+ */
+export async function previewProject(id: string): Promise<{ terminalId: string }> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/preview`,
+    { method: 'POST' },
+    InstallTerminalResponseSchema,
+  );
+}
+
+/** Build action: same shape as {@link previewProject}, running `buildCommand`. */
+export async function buildProject(id: string): Promise<{ terminalId: string }> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/build`,
+    { method: 'POST' },
+    InstallTerminalResponseSchema,
+  );
+}
+
 // --- Repos (the DB-backed repo registry) ---
 
 export async function getRepos(): Promise<Repo[]> {
@@ -1692,6 +1716,23 @@ export async function getProjectPlanOverviewRun(
     `/projects/${encodeURIComponent(projectId)}/plan/overview-runs/${encodeURIComponent(runId)}`,
     undefined,
     OverviewRunResponseSchema,
+  );
+}
+
+// Local git status for a project's workDir (no remote/clone support).
+export async function getRepoStatus(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-status`,
+    undefined,
+    RepoStatusResponseSchema,
+  );
+}
+
+export async function initRepo(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-init`,
+    { method: 'POST' },
+    RepoStatusResponseSchema,
   );
 }
 
@@ -2211,6 +2252,30 @@ export async function retryCouncilSynthesis(
     CouncilRunResponseSchema,
   );
   return run;
+}
+
+// Reassign (or clear, via null) a council run's project. Mirrors updateTaskProject.
+export async function updateCouncilRunProject(
+  councilId: string,
+  runId: string,
+  projectId: string | null,
+): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/project`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ projectId }) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+/** All council runs linked to a project, across every council. */
+export async function getCouncilRunsByProject(projectId: string): Promise<CouncilRun[]> {
+  const { runs } = await fetchJson(
+    `/councils/runs?projectId=${encodeURIComponent(projectId)}`,
+    undefined,
+    CouncilRunsResponseSchema,
+  );
+  return runs;
 }
 
 /**

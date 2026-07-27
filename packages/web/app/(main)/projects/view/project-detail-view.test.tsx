@@ -25,8 +25,8 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/components/projects/panels/project-details-panel', () => ({
   ProjectDetailsPanel: () => <div data-testid="details-panel" />,
 }));
-vi.mock('@/components/projects/panels/project-plan-panel', () => ({
-  ProjectPlanPanel: () => <div data-testid="plan-panel" />,
+vi.mock('@/components/projects/panels/project-docs-panel', () => ({
+  ProjectDocsPanel: () => <div data-testid="docs-panel" />,
 }));
 vi.mock('@/components/projects/panels/project-tasks-panel', () => ({
   ProjectTasksPanel: () => <div data-testid="tasks-panel" />,
@@ -62,7 +62,7 @@ describe('ProjectDetailView — shell', () => {
   it('renders the header, the four center tabs, and both rail regions', () => {
     render(<ProjectDetailView project={project} tasks={tasks} memories={memories} onChanged={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Acme app' })).toBeInTheDocument();
-    for (const label of ['Details', 'Plan', 'Tasks', 'Phase docs']) {
+    for (const label of ['Details', 'Docs', 'Tasks', 'Phase docs']) {
       expect(screen.getByRole('tab', { name: label })).toBeInTheDocument();
     }
     expect(screen.getByText('Stats & actions')).toBeInTheDocument();
@@ -80,8 +80,15 @@ describe('ProjectDetailView — shell', () => {
 
   it('writes ?tab= on tab change', () => {
     render(<ProjectDetailView project={project} tasks={tasks} memories={memories} onChanged={vi.fn()} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Plan' }));
-    expect(replace).toHaveBeenCalledWith(expect.stringContaining('tab=plan'));
+    fireEvent.click(screen.getByRole('tab', { name: 'Docs' }));
+    expect(replace).toHaveBeenCalledWith(expect.stringContaining('tab=docs'));
+  });
+
+  it('treats a bookmarked ?tab=plan (the old tab name) as the Docs panel', () => {
+    params = new URLSearchParams('tab=plan');
+    render(<ProjectDetailView project={project} tasks={tasks} memories={memories} onChanged={vi.fn()} />);
+    expect(screen.getByTestId('docs-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('details-panel')).toBeNull();
   });
 
   it('collapses and re-expands a rail via the content-layer toggle (persisted)', () => {

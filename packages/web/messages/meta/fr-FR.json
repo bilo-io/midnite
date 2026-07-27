@@ -149,6 +149,8 @@
     "common.saved",
     "common.saving",
     "common.selectedCount",
+    "common.startingLabel",
+    "common.startingTerminal",
     "common.switchToDarkTheme",
     "common.switchToLightTheme",
     "plan.overview.approve",

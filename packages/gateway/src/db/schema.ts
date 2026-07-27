@@ -231,6 +231,10 @@ export const projects = sqliteTable('projects', {
   color: text('color').notNull(),
   // Folder (in `~`-form) that this project's Claude Code sessions spawn in.
   workDir: text('work_dir'),
+  // Preview/Launch and Build actions (project detail page): commands run in
+  // `workDir` via an ad-hoc terminal. Null = not configured (action hidden/disabled).
+  startCommand: text('start_command'),
+  buildCommand: text('build_command'),
   plan: text('plan'),
   planUpdatedAt: text('plan_updated_at'),
   // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
@@ -763,11 +767,15 @@ export const councilRuns = sqliteTable(
     // entry carries its own `anonymized` flag and (when anonymized) labelMap.
     syntheses: text('syntheses'),
     error: text('error'),
+    // Project this run is linked to (null = unassigned). Plain intra-domain id
+    // reference, no cross-domain FK — mirrors tasks.projectId.
+    projectId: text('project_id'),
     startedAt: text('started_at').notNull(),
     finishedAt: text('finished_at'),
   },
   (t) => ({
     councilIdx: index('council_runs_council_idx').on(t.councilId, t.startedAt),
+    projectIdx: index('council_runs_project_idx').on(t.projectId),
   }),
 );
 

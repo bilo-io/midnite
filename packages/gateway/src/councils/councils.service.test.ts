@@ -3,6 +3,7 @@ import { COUNCIL_STARTER_MEMBERS } from '@midnite/shared';
 import {
   CouncilDoesNotExistError,
   CouncilMemberDoesNotExistError,
+  CouncilRunDoesNotExistError,
   CouncilsService,
 } from './councils.service';
 import { InMemoryCouncilsRepo } from './test-fixtures';
@@ -145,5 +146,66 @@ describe('CouncilsService', () => {
     expect(repo.members).toHaveLength(0);
     expect(repo.runs).toHaveLength(0);
     expect(repo.runMembers).toHaveLength(0);
+  });
+
+  describe('setRunProject / listRunsByProject', () => {
+    it('assigns and clears a run project without validating the project exists', () => {
+      const { service, repo } = makeService();
+      const council = service.createCouncil({ name: 'c' });
+      repo.insertRun({
+        id: 'r1',
+        councilId: council.id,
+        prompt: 't',
+        format: 'brainstorm',
+        status: 'completed',
+        startedAt: new Date().toISOString(),
+      });
+
+      const assigned = service.setRunProject('r1', 'some-unknown-project-id');
+      expect(assigned.projectId).toBe('some-unknown-project-id');
+
+      const cleared = service.setRunProject('r1', null);
+      expect(cleared.projectId).toBeUndefined();
+    });
+
+    it('throws CouncilRunDoesNotExistError for an unknown run', () => {
+      const { service } = makeService();
+      expect(() => service.setRunProject('missing', 'p1')).toThrow(CouncilRunDoesNotExistError);
+    });
+
+    it('lists runs across councils linked to a project, newest first', () => {
+      const { service, repo } = makeService();
+      const c1 = service.createCouncil({ name: 'c1' });
+      const c2 = service.createCouncil({ name: 'c2' });
+      repo.insertRun({
+        id: 'r1',
+        councilId: c1.id,
+        prompt: 'first',
+        format: 'brainstorm',
+        status: 'completed',
+        startedAt: '2026-01-01T00:00:00.000Z',
+      });
+      repo.insertRun({
+        id: 'r2',
+        councilId: c2.id,
+        prompt: 'second',
+        format: 'brainstorm',
+        status: 'completed',
+        startedAt: '2026-01-02T00:00:00.000Z',
+      });
+      repo.insertRun({
+        id: 'r3',
+        councilId: c1.id,
+        prompt: 'unlinked',
+        format: 'brainstorm',
+        status: 'completed',
+        startedAt: '2026-01-03T00:00:00.000Z',
+      });
+      service.setRunProject('r1', 'p1');
+      service.setRunProject('r2', 'p1');
+
+      const runs = service.listRunsByProject('p1');
+      expect(runs.map((r) => r.id)).toEqual(['r2', 'r1']);
+    });
   });
 });
