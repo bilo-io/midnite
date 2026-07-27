@@ -30,5 +30,7 @@
   "refresh": "Refresh",
   "hardReload": "Hard Reload",
   "allProjects": "All projects",
-  "filterByProject": "Filter by project"
+  "filterByProject": "Filter by project",
+  "startingTerminal": "Starting terminal…",
+  "startingLabel": "Starting {label}…"
 }

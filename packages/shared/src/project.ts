@@ -32,6 +32,10 @@ export const ProjectSchema = z.object({
   tag: TagSchema,
   color: HexColorSchema,
   workDir: z.string().optional(),
+  /** Command that runs the project's dev/preview server, in `workDir`. */
+  startCommand: z.string().optional(),
+  /** Command that builds the project, in `workDir`. */
+  buildCommand: z.string().optional(),
   plan: z.string().optional(),
   planUpdatedAt: z.string().optional(),
   archived: z.boolean().optional(),
@@ -60,6 +64,8 @@ export const CreateProjectRequestSchema = z.object({
   tag: TagSchema,
   color: HexColorSchema,
   workDir: WorkDirSchema.optional(),
+  startCommand: z.string().trim().max(2000).optional(),
+  buildCommand: z.string().trim().max(2000).optional(),
 });
 
 export const UpdateProjectRequestSchema = z.object({
@@ -69,6 +75,9 @@ export const UpdateProjectRequestSchema = z.object({
   color: HexColorSchema.optional(),
   // Empty string clears the configured directory.
   workDir: WorkDirSchema.optional(),
+  // Empty string clears the configured command.
+  startCommand: z.string().trim().max(2000).optional(),
+  buildCommand: z.string().trim().max(2000).optional(),
   archived: z.boolean().optional(),
   /** Phase 40 Theme G: toggle phase-doc sync-back for this project. */
   phaseDocSync: z.boolean().optional(),
@@ -88,6 +97,20 @@ export const EnhanceDescriptionResponseSchema = z.object({
 export const DraftPlanResponseSchema = z.object({
   plan: z.string(),
   planUpdatedAt: z.string(),
+});
+
+/**
+ * Local git status for a project's `workDir` (no remote/clone support — scope is
+ * deliberately narrow). `exists`/`isRepo` are always present; the rest describe a
+ * usable repo. `error` carries a git-command failure (e.g. detached HEAD, corrupt
+ * repo) without failing the whole response.
+ */
+export const RepoStatusResponseSchema = z.object({
+  exists: z.boolean(),
+  isRepo: z.boolean(),
+  branch: z.string().optional(),
+  dirty: z.boolean().optional(),
+  error: z.string().optional(),
 });
 
 export const UpdatePlanRequestSchema = z.object({
@@ -152,6 +175,7 @@ export type UpdateProjectRequest = z.infer<typeof UpdateProjectRequestSchema>;
 export type EnhanceDescriptionRequest = z.infer<typeof EnhanceDescriptionRequestSchema>;
 export type EnhanceDescriptionResponse = z.infer<typeof EnhanceDescriptionResponseSchema>;
 export type DraftPlanResponse = z.infer<typeof DraftPlanResponseSchema>;
+export type RepoStatusResponse = z.infer<typeof RepoStatusResponseSchema>;
 export type UpdatePlanRequest = z.infer<typeof UpdatePlanRequestSchema>;
 export type CreatePlanTasksRequest = z.infer<typeof CreatePlanTasksRequestSchema>;
 export type CreatePlanTasksResponse = z.infer<typeof CreatePlanTasksResponseSchema>;

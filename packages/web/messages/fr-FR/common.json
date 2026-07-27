@@ -30,5 +30,7 @@
   "refresh": "Actualiser",
   "hardReload": "Rechargement forcé",
   "allProjects": "Tous les projets",
-  "filterByProject": "Filtrer par projet"
+  "filterByProject": "Filtrer par projet",
+  "startingTerminal": "Démarrage du terminal…",
+  "startingLabel": "Démarrage de {label}…"
 }

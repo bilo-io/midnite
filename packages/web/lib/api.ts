@@ -134,6 +134,8 @@ import {
   ProjectsPageSchema,
   RepoResponseSchema,
   ReposPageSchema,
+  RepoStatusResponseSchema,
+  type RepoStatusResponse,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -1351,6 +1353,28 @@ export async function deleteProject(id: string): Promise<void> {
   await fetchJson(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+/**
+ * Preview/Launch action (project detail page): open a live ad-hoc terminal that
+ * runs the project's configured `startCommand` in its work directory. The server
+ * builds the command from already-persisted config — no body to send.
+ */
+export async function previewProject(id: string): Promise<{ terminalId: string }> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/preview`,
+    { method: 'POST' },
+    InstallTerminalResponseSchema,
+  );
+}
+
+/** Build action: same shape as {@link previewProject}, running `buildCommand`. */
+export async function buildProject(id: string): Promise<{ terminalId: string }> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/build`,
+    { method: 'POST' },
+    InstallTerminalResponseSchema,
+  );
+}
+
 // --- Repos (the DB-backed repo registry) ---
 
 export async function getRepos(): Promise<Repo[]> {
@@ -1654,6 +1678,23 @@ export async function draftProjectBreakdown(id: string): Promise<BreakdownPrevie
     `/projects/${encodeURIComponent(id)}/plan/draft-breakdown`,
     { method: 'POST' },
     BreakdownPreviewResponseSchema,
+  );
+}
+
+// Local git status for a project's workDir (no remote/clone support).
+export async function getRepoStatus(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-status`,
+    undefined,
+    RepoStatusResponseSchema,
+  );
+}
+
+export async function initRepo(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-init`,
+    { method: 'POST' },
+    RepoStatusResponseSchema,
   );
 }
 

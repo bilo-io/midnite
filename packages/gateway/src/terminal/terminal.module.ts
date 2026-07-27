@@ -20,7 +20,16 @@ import { TmuxSpawner } from './spawner/tmux-spawner';
 import { SPAWNER, type Spawner } from './spawner/spawner';
 
 @Module({
-  imports: [TasksModule, ProjectsModule, AgentsModule, ReposModule, forwardRef(() => ApprovalsModule), AuthModule],
+  imports: [
+    TasksModule,
+    // forwardRef: ProjectsModule now imports TerminalModule back (Preview/Build
+    // ad-hoc terminals), same cycle shape as the ApprovalsModule one below.
+    forwardRef(() => ProjectsModule),
+    AgentsModule,
+    ReposModule,
+    forwardRef(() => ApprovalsModule),
+    AuthModule,
+  ],
   controllers: [ApprovalController, SessionPromptController, TerminalController],
   providers: [
     TerminalService,

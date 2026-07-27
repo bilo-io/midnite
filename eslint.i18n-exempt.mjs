@@ -229,6 +229,7 @@ export const I18N_EXEMPT = [
   "packages/web/components/projects/phase-docs/PhaseDocsTab.tsx",
   "packages/web/components/projects/phase-docs/SeedTasksModal.tsx",
   "packages/web/components/projects/project-info-panel.tsx",
+  "packages/web/components/projects/project-repo-status.tsx",
   "packages/web/components/projects/project-stats-panel.tsx",
   "packages/web/components/prompt-composer.tsx",
   "packages/web/components/provider-icon.tsx",
