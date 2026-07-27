@@ -2115,6 +2115,30 @@ export async function retryCouncilSynthesis(
   return run;
 }
 
+// Reassign (or clear, via null) a council run's project. Mirrors updateTaskProject.
+export async function updateCouncilRunProject(
+  councilId: string,
+  runId: string,
+  projectId: string | null,
+): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/project`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ projectId }) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+/** All council runs linked to a project, across every council. */
+export async function getCouncilRunsByProject(projectId: string): Promise<CouncilRun[]> {
+  const { runs } = await fetchJson(
+    `/councils/runs?projectId=${encodeURIComponent(projectId)}`,
+    undefined,
+    CouncilRunsResponseSchema,
+  );
+  return runs;
+}
+
 /**
  * Fetch a council run's report as markdown (the export framework's `md` format).
  * Returns the raw text — the caller copies it, downloads it as a `.md` blob, or

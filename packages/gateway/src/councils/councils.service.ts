@@ -7,6 +7,7 @@ import {
   COUNCIL_SYNTH_PROVIDER_DEFAULT,
   type Council,
   type CouncilMember,
+  type CouncilRun,
   type CreateCouncilMemberRequest,
   type CreateCouncilRequest,
   type UpdateCouncilMemberRequest,
@@ -37,6 +38,20 @@ export class CouncilsService {
     const row = this.repo.getCouncil(id);
     if (!row) throw new CouncilDoesNotExistError(`council ${id} does not exist`);
     return this.repo.hydrateCouncil(row);
+  }
+
+  // Reassign a run to a project (or clear it with null). Not validated against
+  // projects here — same "plain intra-domain id reference" convention as
+  // TasksService.setProject; an unknown id simply renders no tag.
+  setRunProject(runId: string, projectId: string | null): CouncilRun {
+    const row = this.repo.setRunProject(runId, projectId);
+    if (!row) throw new CouncilRunDoesNotExistError(`run ${runId} does not exist`);
+    return this.repo.hydrateRun(row);
+  }
+
+  /** All runs linked to a project, across every council (Phase — council/project link). */
+  listRunsByProject(projectId: string): CouncilRun[] {
+    return this.repo.listRunsByProject(projectId).map((row) => this.repo.hydrateRun(row));
   }
 
   /**

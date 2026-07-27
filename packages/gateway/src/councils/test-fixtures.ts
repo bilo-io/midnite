@@ -144,6 +144,7 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
       synthesis: row.synthesis ?? null,
       syntheses: row.syntheses ?? null,
       error: row.error ?? null,
+      projectId: row.projectId ?? null,
       finishedAt: row.finishedAt ?? null,
     };
     this.runs.push(full);
@@ -155,6 +156,19 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
     if (!cur) return undefined;
     Object.assign(cur, patch);
     return cur;
+  }
+
+  override setRunProject(runId: string, projectId: string | null): CouncilRunRow | undefined {
+    const cur = this.getRun(runId);
+    if (!cur) return undefined;
+    cur.projectId = projectId;
+    return cur;
+  }
+
+  override listRunsByProject(projectId: string): CouncilRunRow[] {
+    return this.runs
+      .filter((r) => r.projectId === projectId)
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   }
 
   override listRunMembers(runId: string): CouncilRunMemberRow[] {
