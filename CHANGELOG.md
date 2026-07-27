@@ -16,8 +16,8 @@ _Nothing yet._
 
 ## [0.7.4] - 2026-07-26
 
-_Patch release — `gateway`, `shared`, `site`, `web` → 0.7.4; `docs` → 0.7.1.
-`admin`/`cli`/`desktop`/`shell`/`ui` are unaffected and stay put._
+_Patch release — `desktop`, `gateway`, `shared`, `site`, `web` → 0.7.4; `docs` → 0.7.1.
+`admin`/`cli`/`shell`/`ui` are unaffected and stay put._
 
 ### Added
 
