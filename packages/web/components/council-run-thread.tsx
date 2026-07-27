@@ -1,7 +1,8 @@
 'use client';
 
 import { Clock } from 'lucide-react';
-import type { CouncilRun, CouncilRunStatus } from '@midnite/shared';
+import type { CouncilRun, CouncilRunStatus, Project } from '@midnite/shared';
+import { ProjectSelect } from '@/components/project-select';
 import { cn } from '@/lib/utils';
 
 const STATUS_PILL: Record<CouncilRunStatus, { label: string; className: string }> = {
@@ -26,6 +27,8 @@ type Props = {
   selectedId: string | null;
   onSelect: (run: CouncilRun) => void;
   open: boolean;
+  projects: Project[];
+  onChangeProject: (runId: string, projectId: string | null) => void;
 };
 
 /**
@@ -38,7 +41,14 @@ type Props = {
  * center), not in the rail. The expanded content keeps a fixed width and is
  * clipped by the wrapper's `overflow-hidden`, so it slides rather than reflowing.
  */
-export function CouncilRunThread({ runs, selectedId, onSelect, open }: Props) {
+export function CouncilRunThread({
+  runs,
+  selectedId,
+  onSelect,
+  open,
+  projects,
+  onChangeProject,
+}: Props) {
   return (
     <aside
       aria-hidden={!open}
@@ -72,33 +82,48 @@ export function CouncilRunThread({ runs, selectedId, onSelect, open }: Props) {
             {runs.map((run) => {
               const pill = STATUS_PILL[run.status];
               return (
-                <button
+                <div
                   key={run.id}
-                  type="button"
-                  onClick={() => onSelect(run)}
-                  aria-pressed={selectedId === run.id}
                   className={cn(
-                    'flex flex-col gap-1 rounded-lg border p-2.5 text-left transition-colors',
+                    'flex flex-col gap-1.5 rounded-lg border p-2.5 transition-colors',
                     selectedId === run.id
                       ? 'border-foreground/20 bg-accent/60'
                       : 'border-border/60 bg-card/40 hover:border-foreground/20 hover:bg-accent/40',
                   )}
                 >
-                  <span className="line-clamp-2 text-sm leading-snug">{run.prompt}</span>
-                  <span className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn(
-                        'rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                        pill.className,
-                      )}
-                    >
-                      {pill.label}
+                  <button
+                    type="button"
+                    onClick={() => onSelect(run)}
+                    aria-pressed={selectedId === run.id}
+                    className="flex flex-col gap-1 text-left"
+                  >
+                    <span className="line-clamp-2 text-sm leading-snug">{run.prompt}</span>
+                    <span className="flex items-center justify-between gap-2">
+                      <span
+                        className={cn(
+                          'rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                          pill.className,
+                        )}
+                      >
+                        {pill.label}
+                      </span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {relativeTime(run.startedAt)}
+                      </span>
                     </span>
-                    <span className="text-[11px] tabular-nums text-muted-foreground">
-                      {relativeTime(run.startedAt)}
-                    </span>
-                  </span>
-                </button>
+                  </button>
+                  {projects.length > 0 ? (
+                    // Stop propagation so opening/picking in the dropdown never
+                    // also selects the run underneath it.
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ProjectSelect
+                        projects={projects}
+                        value={run.projectId ?? null}
+                        onChange={(next) => onChangeProject(run.id, next)}
+                      />
+                    </div>
+                  ) : null}
+                </div>
               );
             })}
           </div>

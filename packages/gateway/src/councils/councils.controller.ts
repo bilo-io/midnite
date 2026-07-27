@@ -23,6 +23,7 @@ import {
   StartCouncilRunRequestSchema,
   UpdateCouncilMemberRequestSchema,
   UpdateCouncilRequestSchema,
+  UpdateCouncilRunProjectRequestSchema,
   isServerRenderedReportFormat,
   type Council,
   type CouncilMemberResponse,
@@ -57,6 +58,20 @@ export class CouncilsController {
   @Get()
   list(): Council[] {
     return this.service.listCouncils();
+  }
+
+  /**
+   * All runs linked to a project, across every council — a sibling top-level
+   * route (not nested under a council id like `GET /:id/runs`). Declared here,
+   * ahead of `GET /:id`, so the literal `runs` segment is registered before the
+   * param route it would otherwise collide with; Fastify's router (find-my-way)
+   * also prioritises static segments over parametric ones regardless of
+   * declaration order, but keeping the literal route first stays readable.
+   */
+  @Get('runs')
+  listRunsByProject(@Query('projectId') projectId?: string): CouncilRunsResponse {
+    if (!projectId) throw new BadRequestException('projectId query param is required');
+    return { runs: this.service.listRunsByProject(projectId) };
   }
 
   @Post()
@@ -171,6 +186,23 @@ export class CouncilsController {
       throw new NotFoundException(`run ${runId} not found on council ${id}`);
     }
     return { run: this.repo.hydrateRun(row) };
+  }
+
+  @Patch(':id/runs/:runId/project')
+  updateRunProject(
+    @Param('id') id: string,
+    @Param('runId') runId: string,
+    @Body() body: unknown,
+  ): CouncilRunResponse {
+    const parsed = UpdateCouncilRunProjectRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const row = this.repo.getRun(runId);
+    if (!row || row.councilId !== id) {
+      throw new NotFoundException(`run ${runId} not found on council ${id}`);
+    }
+    return {
+      run: this.translate(() => this.service.setRunProject(runId, parsed.data.projectId)),
+    };
   }
 
   /**

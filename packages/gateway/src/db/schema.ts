@@ -737,11 +737,15 @@ export const councilRuns = sqliteTable(
     // entry carries its own `anonymized` flag and (when anonymized) labelMap.
     syntheses: text('syntheses'),
     error: text('error'),
+    // Project this run is linked to (null = unassigned). Plain intra-domain id
+    // reference, no cross-domain FK — mirrors tasks.projectId.
+    projectId: text('project_id'),
     startedAt: text('started_at').notNull(),
     finishedAt: text('finished_at'),
   },
   (t) => ({
     councilIdx: index('council_runs_council_idx').on(t.councilId, t.startedAt),
+    projectIdx: index('council_runs_project_idx').on(t.projectId),
   }),
 );
 

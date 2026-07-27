@@ -134,6 +134,8 @@ import {
   ProjectsPageSchema,
   RepoResponseSchema,
   ReposPageSchema,
+  RepoStatusResponseSchema,
+  type RepoStatusResponse,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -1657,6 +1659,23 @@ export async function draftProjectBreakdown(id: string): Promise<BreakdownPrevie
   );
 }
 
+// Local git status for a project's workDir (no remote/clone support).
+export async function getRepoStatus(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-status`,
+    undefined,
+    RepoStatusResponseSchema,
+  );
+}
+
+export async function initRepo(id: string): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/repo-init`,
+    { method: 'POST' },
+    RepoStatusResponseSchema,
+  );
+}
+
 /** Turn a confirmed/edited breakdown into the project's dependency-wired board.
  *  Phase 58 F — pass `milestoneId` to assign every created task to that milestone. */
 export async function createTasksFromBreakdown(
@@ -2173,6 +2192,30 @@ export async function retryCouncilSynthesis(
     CouncilRunResponseSchema,
   );
   return run;
+}
+
+// Reassign (or clear, via null) a council run's project. Mirrors updateTaskProject.
+export async function updateCouncilRunProject(
+  councilId: string,
+  runId: string,
+  projectId: string | null,
+): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/project`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ projectId }) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+/** All council runs linked to a project, across every council. */
+export async function getCouncilRunsByProject(projectId: string): Promise<CouncilRun[]> {
+  const { runs } = await fetchJson(
+    `/councils/runs?projectId=${encodeURIComponent(projectId)}`,
+    undefined,
+    CouncilRunsResponseSchema,
+  );
+  return runs;
 }
 
 /**
