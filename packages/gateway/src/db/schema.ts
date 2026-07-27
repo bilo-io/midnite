@@ -231,6 +231,10 @@ export const projects = sqliteTable('projects', {
   color: text('color').notNull(),
   // Folder (in `~`-form) that this project's Claude Code sessions spawn in.
   workDir: text('work_dir'),
+  // Preview/Launch and Build actions (project detail page): commands run in
+  // `workDir` via an ad-hoc terminal. Null = not configured (action hidden/disabled).
+  startCommand: text('start_command'),
+  buildCommand: text('build_command'),
   plan: text('plan'),
   planUpdatedAt: text('plan_updated_at'),
   // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.

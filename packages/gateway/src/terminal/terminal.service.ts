@@ -68,8 +68,10 @@ export function scrubSecretEnv(env: Record<string, string>): Record<string, stri
 // source of truth. Re-exported here for existing importers.
 export { gatewaySecretEnvNames, scrubGatewaySecrets };
 
-/** Single-quote a path for safe interpolation into a shell command line. */
-function shellQuote(path: string): string {
+/** Single-quote a path for safe interpolation into a shell command line. Exported
+ *  for reuse by other modules that build shell init strings (e.g. project
+ *  Preview/Build terminals). */
+export function shellQuote(path: string): string {
   return `'${path.replace(/'/g, `'\\''`)}'`;
 }
 
@@ -173,7 +175,9 @@ export class TerminalService implements OnModuleDestroy {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
-    @Inject(ProjectsService) private readonly projects: ProjectsService,
+    // forwardRef: ProjectsService now injects TerminalService back (Preview/Build
+    // ad-hoc terminals), making this a genuine constructor cycle.
+    @Inject(forwardRef(() => ProjectsService)) private readonly projects: ProjectsService,
     @Inject(ReposService) private readonly repos: ReposService,
     @Inject(AgentsService) private readonly agents: AgentsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
