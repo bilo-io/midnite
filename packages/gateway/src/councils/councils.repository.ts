@@ -164,6 +164,27 @@ export class CouncilsRepository {
     return this.db.update(councilRuns).set(patch).where(eq(councilRuns.id, id)).returning().get();
   }
 
+  // Reassign a run to a project (or clear it with null). Mirrors
+  // TasksRepository.setProject.
+  setRunProject(runId: string, projectId: string | null): CouncilRunRow | undefined {
+    return this.db
+      .update(councilRuns)
+      .set({ projectId })
+      .where(eq(councilRuns.id, runId))
+      .returning()
+      .get();
+  }
+
+  /** All runs linked to a project, across every council, newest first. */
+  listRunsByProject(projectId: string): CouncilRunRow[] {
+    return this.db
+      .select()
+      .from(councilRuns)
+      .where(eq(councilRuns.projectId, projectId))
+      .orderBy(desc(councilRuns.startedAt))
+      .all();
+  }
+
   listRunMembers(runId: string): CouncilRunMemberRow[] {
     return this.db
       .select()
@@ -265,6 +286,7 @@ export class CouncilsRepository {
       synthesis: row.synthesis ?? undefined,
       syntheses: this.parseSyntheses(row.syntheses),
       error: row.error ?? undefined,
+      projectId: row.projectId ?? undefined,
       members: this.listRunMembers(row.id).map((m) => this.hydrateRunMember(m)),
       startedAt: row.startedAt,
       finishedAt: row.finishedAt ?? undefined,
