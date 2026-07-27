@@ -32,6 +32,7 @@ import { PresenceModule } from './presence/presence.module';
 import { PortabilityModule } from './portability/portability.module';
 import { PlaygroundModule } from './playground/playground.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ProjectDocsModule } from './project-docs/project-docs.module';
 import { MilestonesModule } from './milestones/milestones.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
@@ -105,6 +106,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     PortabilityModule,
     PlaygroundModule,
     ProjectsModule,
+    ProjectDocsModule,
     MilestonesModule,
     ProvidersModule,
     ReposModule,

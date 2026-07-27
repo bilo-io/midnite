@@ -30,6 +30,7 @@ export * from './breakdown.js';
 export * from './metrics.js';
 export * from './system.js';
 export * from './project.js';
+export * from './project-doc.js';
 export * from './repo.js';
 export * from './memory.js';
 export * from './memory-artifact.js';
