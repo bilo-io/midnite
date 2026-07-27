@@ -102,6 +102,40 @@ export const CreatePlanTasksResponseSchema = z.object({
   tasks: z.array(TaskSchema),
 });
 
+/**
+ * Draft-plan Stage 1 (execution-plan overview, drafted live in a PTY — see
+ * `ProjectPlanRunnerService`). `docIds` are the project's docs (Phase — project
+ * docs are gateway-persisted) whose content is woven into the overview prompt;
+ * an empty array drafts from the project's name/description/plan alone.
+ */
+export const StartOverviewRunRequestSchema = z.object({
+  docIds: z.array(z.string()).default([]),
+});
+
+export const StartOverviewRunResponseSchema = z.object({
+  runId: z.string(),
+  terminalId: z.string(),
+});
+
+export const OverviewRunStatusSchema = z.enum(['running', 'done', 'error']);
+
+/** Polled while the overview PTY is live; terminal once `status` settles. */
+export const OverviewRunResponseSchema = z.object({
+  status: OverviewRunStatusSchema,
+  output: z.string().optional(),
+  error: z.string().optional(),
+});
+
+/**
+ * Request body for `POST /projects/:id/plan/draft-breakdown`. `overview` is the
+ * Stage 1 approved execution-plan overview, woven into the breakdown's context
+ * alongside the project's description/plan when present. Both fields optional —
+ * the route previously took no body at all.
+ */
+export const DraftBreakdownRequestSchema = z.object({
+  overview: z.string().optional(),
+});
+
 export const ProjectResponseSchema = z.object({ project: ProjectSchema });
 
 // The things a project needs to be considered "complete". `name`, `tag` and
@@ -156,3 +190,8 @@ export type UpdatePlanRequest = z.infer<typeof UpdatePlanRequestSchema>;
 export type CreatePlanTasksRequest = z.infer<typeof CreatePlanTasksRequestSchema>;
 export type CreatePlanTasksResponse = z.infer<typeof CreatePlanTasksResponseSchema>;
 export type ProjectResponse = z.infer<typeof ProjectResponseSchema>;
+export type StartOverviewRunRequest = z.infer<typeof StartOverviewRunRequestSchema>;
+export type StartOverviewRunResponse = z.infer<typeof StartOverviewRunResponseSchema>;
+export type OverviewRunStatus = z.infer<typeof OverviewRunStatusSchema>;
+export type OverviewRunResponse = z.infer<typeof OverviewRunResponseSchema>;
+export type DraftBreakdownRequest = z.infer<typeof DraftBreakdownRequestSchema>;
