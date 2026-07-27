@@ -4,11 +4,11 @@ import { StatusSchema, TaskSchema, pagedSchema } from './task.js';
 
 export const MAX_TAG_LENGTH = 12;
 
-const HexColorSchema = z
+export const HexColorSchema = z
   .string()
   .refine((v) => isHexColor(v), { message: 'must be a hex color like #7c3aed' });
 
-const TagSchema = z
+export const TagSchema = z
   .string()
   .trim()
   .min(1, 'tag is required')
