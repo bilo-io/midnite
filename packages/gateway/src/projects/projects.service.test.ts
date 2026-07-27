@@ -319,7 +319,14 @@ describe('ProjectsService.getRepoStatus / initRepo (local git status — no remo
   async function makeService(workDir: string | null) {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
+    const service = new ProjectsService(
+      repo,
+      disabledLlm,
+      tasks,
+      memoriesStub,
+      breakdownStub,
+      makeTerminalStub().service,
+    );
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
     if (workDir !== null) repo.updateProject(project.id, { workDir });
     return { service, project };
