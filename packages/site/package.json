@@ -1,6 +1,6 @@
 {
   "name": "@midnite/site",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "private": true,
   "description": "midnite marketing site — Next.js App Router landing page",
   "scripts": {

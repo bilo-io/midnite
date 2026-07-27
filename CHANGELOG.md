@@ -14,6 +14,38 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.8.0] - 2026-07-28
+
+_Minor release — every package moves in lockstep to 0.8.0._
+
+### Added
+
+- **Project docs** — a new **Docs tab** on the project detail page (replacing
+  Plan) that persists generated documents and drives Claude-based doc
+  generation, plus a **council-runs section** showing the doc-writing runs
+  themselves.
+- **Draft-plan overview stage** — a PTY-visible overview run that walks through
+  project docs before drafting a plan breakdown, weaving the approved overview
+  into the breakdown's context so the plan reflects what was actually agreed.
+- **Project repo status and init** — projects now surface their repo state and
+  can be initialised directly from the gateway.
+- **Preview/Launch and Build actions** on the project detail page.
+- **Council runs are now linked to a project**, with a project picker on each
+  run in the council thread so runs can be attributed and filtered accordingly.
+- **A global project filter** in the header, alongside a **reload button** and
+  general title-bar polish.
+- **The login/sidenav version pill is now a release-notes popover**, surfacing
+  what changed without leaving the app.
+- **Windows and Linux installs via a one-line shell command**, matching the
+  existing macOS install flow.
+
+### Changed
+
+- **Hermes replaces Aider** as an agent CLI option in the session-terminal and
+  Councils pickers.
+- **Header flyouts share a consistent gradient-glow treatment**, and the
+  dashboard's sticky filter bar now matches the blur used on other list pages.
+
 ## [0.7.4] - 2026-07-26
 
 _Patch release — `desktop`, `gateway`, `shared`, `site`, `web` → 0.7.4; `docs` → 0.7.1.
@@ -467,6 +499,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.8.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.8.0
 [0.7.4]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.4
 [0.7.3]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.3
 [0.7.2]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.2
