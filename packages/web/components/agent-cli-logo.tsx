@@ -31,24 +31,28 @@ export function AgentCliLogo({ cli, className }: { cli: AgentCli; className?: st
     );
   }
 
-  // Antigravity / Aider / OpenCode ship raster/SVG brand assets (in
-  // /public/agent-logos) rather than a single-path mark, so render them as
-  // images. Antigravity + OpenCode are square icons; Aider is a wordmark, so
-  // lock its height and let the width run natural.
+  if (cli === 'hermes') {
+    // Hermes ships no vector wordmark — its own favicon is just the caduceus
+    // glyph (⚕), so render that as `currentColor` text rather than pull in a
+    // raster asset (the project's only other brand asset is an illustrated
+    // portrait that doesn't read at badge size).
+    return (
+      <svg viewBox="0 0 24 24" className={cls} fill="currentColor" role="img" aria-hidden>
+        <text x="12" y="18" fontSize="20" textAnchor="middle">
+          ⚕
+        </text>
+      </svg>
+    );
+  }
+
+  // Antigravity / OpenCode ship raster/SVG brand assets (in /public/agent-logos)
+  // rather than a single-path mark, so render them as images. Both are square
+  // icons.
   const asset = IMG_LOGOS[cli];
-  return (
-    <img
-      src={asset.src}
-      alt=""
-      aria-hidden
-      className={cn(cls, 'object-contain')}
-      style={asset.shape === 'wordmark' ? { width: 'auto' } : undefined}
-    />
-  );
+  return <img src={asset.src} alt="" aria-hidden className={cn(cls, 'object-contain')} />;
 }
 
-const IMG_LOGOS: Record<'antigravity' | 'aider' | 'opencode', { src: string; shape: 'icon' | 'wordmark' }> = {
-  antigravity: { src: '/agent-logos/antigravity.svg', shape: 'icon' },
-  aider: { src: '/agent-logos/aider.svg', shape: 'wordmark' },
-  opencode: { src: '/agent-logos/opencode.png', shape: 'icon' },
+const IMG_LOGOS: Record<'antigravity' | 'opencode', { src: string }> = {
+  antigravity: { src: '/agent-logos/antigravity.svg' },
+  opencode: { src: '/agent-logos/opencode.png' },
 };

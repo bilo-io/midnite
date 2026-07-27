@@ -45,7 +45,7 @@ The four things you were unsure about, in one paragraph each:
 - **Antigravity & other models vs sessions.** A **session** is one agent CLI in one PTY
   doing one task. A **council** is a different thing: a standing panel of
   participants, each pinned to a `provider` (`claude` / `antigravity` / `codex` /
-  `opencode` / `aider`) and a fixed *perspective*. Submitting a topic spawns every
+  `opencode` / `hermes`) and a fixed *perspective*. Submitting a topic spawns every
   participant as a **one-shot CLI run in parallel** (`claude -p "…"`, `agy "…"`),
   then anonymizes their answers (shuffle → label A/B/C) and feeds them to a
   **verdict provider** (defaults to Antigravity) for synthesis. Non-Claude models are
@@ -427,7 +427,7 @@ historical runs.
 Through the **`AgentCli` abstraction only** (`shared/src/agents.ts`):
 
 ```
-AGENT_CLIS = ['claude', 'antigravity', 'codex', 'opencode', 'aider']
+AGENT_CLIS = ['claude', 'antigravity', 'codex', 'opencode', 'hermes']
 AGENT_CLI_COMMAND        = { claude:'claude', antigravity:'agy', … }
 AGENT_CLI_INSTALL_COMMAND= { antigravity:'curl -fsSL https://antigravity.google/cli/install.sh | bash', … }
 ```

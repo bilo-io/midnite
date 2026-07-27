@@ -17,7 +17,7 @@ type Story = StoryObj<typeof meta>;
 export const Claude: Story = { args: { cli: 'claude', className: 'h-8 w-8' } };
 export const Antigravity: Story = { args: { cli: 'antigravity', className: 'h-8 w-8' } };
 export const Codex: Story = { args: { cli: 'codex', className: 'h-8 w-8' } };
-export const Aider: Story = { args: { cli: 'aider', className: 'h-8 w-8' } };
+export const Hermes: Story = { args: { cli: 'hermes', className: 'h-8 w-8' } };
 export const OpenCode: Story = { args: { cli: 'opencode', className: 'h-8 w-8' } };
 
 export const AllAgents: Story = {

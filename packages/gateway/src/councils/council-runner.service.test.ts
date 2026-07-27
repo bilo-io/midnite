@@ -341,7 +341,7 @@ describe('CouncilRunnerService', () => {
     const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, [
       ...TWO_MEMBERS,
-      { id: 'm3', name: 'Broken', provider: 'aider', role: 'x' },
+      { id: 'm3', name: 'Broken', provider: 'hermes', role: 'x' },
     ]);
     terminal.failNextSpawn = true; // m1's spawn fails
     const run = runner.startRun('c1', 'topic');

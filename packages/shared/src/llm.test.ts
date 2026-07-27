@@ -26,13 +26,13 @@ describe('providerSupportsBaseUrl', () => {
 });
 
 describe('CLI_PROVIDER_MAP / API_PROVIDER_CLIS', () => {
-  it('maps claude → anthropic and leaves aider provider-less', () => {
+  it('maps claude → anthropic and leaves hermes provider-less', () => {
     expect(CLI_PROVIDER_MAP.claude).toBe('anthropic');
-    expect(CLI_PROVIDER_MAP.aider).toBeNull();
+    expect(CLI_PROVIDER_MAP.hermes).toBeNull();
   });
 
   it('excludes the provider-less CLIs from API_PROVIDER_CLIS', () => {
-    expect(API_PROVIDER_CLIS).not.toContain('aider');
+    expect(API_PROVIDER_CLIS).not.toContain('hermes');
     expect(API_PROVIDER_CLIS).toContain('claude');
   });
 });

@@ -4,9 +4,11 @@ import {
   AGENT_CLI_BY_KEY,
   AGENT_CLI_CATALOG,
   AGENT_CLI_COMMAND,
+  AGENT_CLI_DEFAULT,
   AGENT_CLI_INSTALL_COMMAND,
   AGENT_CLI_LABEL,
   AGENT_CLI_UNINSTALL_COMMAND,
+  coerceAgentCli,
 } from './agents.js';
 
 describe('agent CLI command maps', () => {
@@ -20,7 +22,7 @@ describe('agent CLI command maps', () => {
   });
 
   it('includes the newly-added CLIs', () => {
-    expect(AGENT_CLIS).toEqual(expect.arrayContaining(['aider', 'opencode']));
+    expect(AGENT_CLIS).toEqual(expect.arrayContaining(['hermes', 'opencode']));
   });
 });
 
@@ -52,11 +54,32 @@ describe('AGENT_CLI_CATALOG', () => {
   });
 
   it('prefers Homebrew for CLIs without a vendor-specific installer', () => {
-    // claude + antigravity + aider carry vendor-recommended installers; the rest default to brew.
+    // claude + antigravity + hermes carry vendor-recommended installers; the rest default to brew.
     expect(AGENT_CLI_INSTALL_COMMAND.codex).toContain('brew install');
     expect(AGENT_CLI_INSTALL_COMMAND.opencode).toContain('brew install');
     expect(AGENT_CLI_INSTALL_COMMAND.claude).toContain('claude.ai/install.sh');
     expect(AGENT_CLI_INSTALL_COMMAND.antigravity).toContain('antigravity.google/cli/install.sh');
-    expect(AGENT_CLI_INSTALL_COMMAND.aider).toContain('aider-install');
+    expect(AGENT_CLI_INSTALL_COMMAND.hermes).toContain(
+      'hermes-agent.nousresearch.com/install.sh',
+    );
+  });
+});
+
+describe('coerceAgentCli', () => {
+  it('passes a current CLI through unchanged', () => {
+    for (const cli of AGENT_CLIS) {
+      expect(coerceAgentCli(cli)).toBe(cli);
+    }
+  });
+
+  it('maps retired CLIs to their successor', () => {
+    expect(coerceAgentCli('gemini')).toBe('antigravity');
+    expect(coerceAgentCli('aider')).toBe('hermes');
+  });
+
+  it('falls back to the default for unknown or missing values', () => {
+    expect(coerceAgentCli('nonesuch')).toBe(AGENT_CLI_DEFAULT);
+    expect(coerceAgentCli(undefined)).toBe(AGENT_CLI_DEFAULT);
+    expect(coerceAgentCli(null)).toBe(AGENT_CLI_DEFAULT);
   });
 });

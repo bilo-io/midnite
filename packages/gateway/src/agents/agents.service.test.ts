@@ -208,7 +208,7 @@ describe('AgentsService', () => {
     service.getCliStatus = async (cli) => ({ cli, installed: true, version: '1.0.0' });
     const statuses = await service.getCliStatuses();
     expect(statuses.map((s) => s.cli).sort()).toEqual(
-      ['aider', 'antigravity', 'claude', 'codex', 'opencode'].sort(),
+      ['antigravity', 'claude', 'codex', 'hermes', 'opencode'].sort(),
     );
   });
 });
