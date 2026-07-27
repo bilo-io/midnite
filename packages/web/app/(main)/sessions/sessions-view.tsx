@@ -14,7 +14,6 @@ import { CountPill } from '@/components/count-pill';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
-import { ProjectMultiSelect } from '@/components/project-multi-select';
 import {
   SESSION_STATUS_HUE,
   SESSION_STATUS_LABEL,
@@ -28,6 +27,7 @@ import { WindowVirtualList } from '@/components/ui/window-virtual-list';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { archiveSession, deleteSession, unarchiveSession } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useProjectFilterStore } from '@/lib/project-filter-store';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -233,10 +233,8 @@ export function SessionsView({
     ),
   );
   const validProjects = new Set(projects.map((p) => p.id));
-  const rawProject = searchParams.get('project');
-  const activeProjects = new Set(
-    (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
-  );
+  const globalProjectSelection = useProjectFilterStore((s) => s.selected);
+  const activeProjects = new Set(globalProjectSelection.filter((p) => validProjects.has(p)));
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   // Archive is an orthogonal bucket: hide archived by default; the Archived toggle shows only archived.
   const archiveScoped = initial.filter((s) => (showArchived ? Boolean(s.archivedAt) : !s.archivedAt));
@@ -258,12 +256,6 @@ export function SessionsView({
     activeStatuses.size === 0
       ? projectFiltered
       : projectFiltered.filter((s) => activeStatuses.has(s.status));
-
-  const projectFilters: FilterOption[] = projects.map((p) => ({
-    value: p.id,
-    label: p.tag,
-    color: p.color,
-  }));
 
   // Table sections: one accordion per visible status, session rows beneath.
   const visibleStatuses =
@@ -314,7 +306,6 @@ export function SessionsView({
       <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={sessions.length} className="mr-1" />
-          {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
           <FilterPills options={SESSION_FILTERS} allLabel="All statuses" />
           <FilterPills
             options={[{ value: '1', label: 'Archived', hue: '215 14% 47%' }]}

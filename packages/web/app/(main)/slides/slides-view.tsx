@@ -10,8 +10,6 @@ import { CountPill } from '@/components/count-pill';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
-import type { FilterOption } from '@/components/filter-pills';
-import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { SearchBar } from '@/components/search-bar';
 import { SortSelect } from '@/components/sort-select';
 import { StickyToolbar } from '@/components/sticky-toolbar';
@@ -21,6 +19,7 @@ import { deleteDeck, duplicateDeck } from '@/lib/slides/store';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useDecks } from '@/lib/slides/use-decks';
 import { useLocalStorage } from '@/lib/use-local-storage';
+import { useProjectFilterStore } from '@/lib/project-filter-store';
 import { cn } from '@/lib/utils';
 
 type View = 'grid' | 'list';
@@ -47,30 +46,23 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
   const [view, setView] = useLocalStorage<View>('midnite.slides.view', 'grid');
   const [sort, setSort] = useLocalStorage<Sort>('midnite.slides.sort', 'recent');
 
-  // Search (`?q=`) and project filter (`?project=`) are URL-backed so the
-  // control-bar SearchBar and the ProjectMultiSelect are the source of truth —
-  // consistent with the other list pages.
+  // Search (`?q=`) is URL-backed so the control-bar SearchBar is the source of
+  // truth, consistent with the other list pages. The project filter is the
+  // global titlebar selection (Phase 81+) instead — shared across every
+  // project-aware view rather than this page's own `?project=` param.
   const searchParams = useSearchParams();
   const query = searchParams.get('q') ?? '';
 
   const projectsById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
 
-  const projectFilters: FilterOption[] = useMemo(
-    () => [
-      { value: UNASSIGNED, label: 'Unassigned', color: '#94a3b8' },
-      ...projects.map((p) => ({ value: p.id, label: p.tag, color: p.color })),
-    ],
-    [projects],
-  );
-
   const validProjects = useMemo(
     () => new Set([...projects.map((p) => p.id), UNASSIGNED]),
     [projects],
   );
-  const rawProject = searchParams.get('project');
+  const globalProjectSelection = useProjectFilterStore((s) => s.selected);
   const activeProjects = useMemo(
-    () => new Set((rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p))),
-    [rawProject, validProjects],
+    () => new Set(globalProjectSelection.filter((p) => validProjects.has(p))),
+    [globalProjectSelection, validProjects],
   );
 
   const filtered = useMemo(() => {
@@ -173,7 +165,6 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
     <div className="space-y-4">
       <StickyToolbar>
         <div className="flex flex-wrap items-center gap-2">
-          {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <SortSelect<Sort>
             options={SORT_OPTIONS}
             value={sort}

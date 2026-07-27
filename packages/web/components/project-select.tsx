@@ -10,7 +10,7 @@ type ProjectOption = Pick<Project, 'id' | 'name' | 'tag' | 'color'>;
 /**
  * A controlled single-select for a task's project, including a "No project"
  * option that clears it (value `null`). Built from app tokens so it tracks the
- * theme; mirrors ProjectMultiSelect's look but isn't URL-backed.
+ * theme; mirrors the global project filter's look but isn't URL-backed.
  */
 export function ProjectSelect({
   projects,

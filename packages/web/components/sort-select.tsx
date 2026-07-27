@@ -9,7 +9,7 @@ type Rect = { top: number; left: number };
 
 /**
  * A themed single-select dropdown in the filter-dropdown style (matching
- * `ProjectMultiSelect` / `FilterPills`): same trigger chrome, same portalled
+ * `FilterPills`): same trigger chrome, same portalled
  * listbox menu — but exactly one value is always selected, driven by local
  * state rather than the URL. Used for sort orders and similar exclusive picks
  * that sit next to the filter dropdowns in a controls row.

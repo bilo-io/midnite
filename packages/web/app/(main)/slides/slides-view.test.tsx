@@ -51,16 +51,16 @@ describe('SlidesView', () => {
     expect(screen.getByRole('button', { name: /list view/i })).toBeInTheDocument();
   });
 
-  it('shows a deck project tag and the project filter when projects exist', async () => {
+  it('shows a deck project tag when projects exist', async () => {
     createDeck({ markdown: '# Roadmap\n\n## Q1', title: 'Roadmap', projectId: 'p1' });
 
     renderView([project()]);
 
     expect(await screen.findByText('Roadmap')).toBeInTheDocument();
-    // The project tag chip renders the tag text.
+    // The project tag chip renders the tag text. The project filter itself is
+    // the global titlebar one (see global-project-filter.test.tsx), not
+    // rendered by this view anymore.
     expect(screen.getByText('ACME')).toBeInTheDocument();
-    // The react-select styled project filter is present.
-    expect(screen.getByRole('button', { name: /all projects/i })).toBeInTheDocument();
   });
 
   it('selecting a deck reveals the bulk action bar with Duplicate and Delete', async () => {

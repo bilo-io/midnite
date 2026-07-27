@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BrainCircuit, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
-import type { Memory, Project } from '@midnite/shared';
+import { type Memory, type Project, UNASSIGNED_PROJECT_ID } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
 import { useConfirm } from '@/components/confirm-dialog';
-import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { MemoryCard } from '@/components/memory-card';
 import { MemoriesTree } from '@/components/memories-tree';
 import { MemoryModal } from '@/components/memory-modal';
@@ -19,13 +18,15 @@ import { deleteMemory, updateMemory } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { memoryPageHref } from '@/lib/memory-route';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
+import { useProjectFilterStore } from '@/lib/project-filter-store';
 
 type View = 'list' | 'grid' | 'table';
 const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.memory.view';
 
-/** The scope pill for global memories — violet, to match the brain. */
-const GLOBAL_HUE = '262 83% 66%';
+// The create-modal deep link's own "no project" sentinel (`?create=global`) —
+// unrelated to filtering now that the scope filter is gone; kept only for
+// `project-details-panel.tsx`'s "create a memory" link semantics.
 const GLOBAL_SCOPE = 'global';
 
 export function MemoryView({ initial, projects }: { initial: Memory[]; projects: Project[] }) {
@@ -134,15 +135,6 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
 
   const projectById = new Map(projects.map((p) => [p.id, p]));
 
-  // Only offer pills for scopes that exist: Global plus projects that hold at
-  // least one memory (an all-projects list would crowd the row for nothing).
-  const scopeOptions: FilterOption[] = [
-    { value: GLOBAL_SCOPE, label: 'Global', hue: GLOBAL_HUE },
-    ...projects
-      .filter((p) => initial.some((m) => m.projectId === p.id))
-      .map((p) => ({ value: p.id, label: p.name, color: p.color })),
-  ];
-
   const searchParams = useSearchParams();
 
   // A `?create=<id>` deep link opens the create modal pre-scoped, then strips
@@ -158,12 +150,15 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   }, [createParam, searchParams, router]);
 
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
-  const scopeRaw = searchParams.get('scope');
-  const valid = new Set(scopeOptions.map((o) => o.value));
-  const scopes = new Set((scopeRaw ? scopeRaw.split(',') : []).filter((v) => valid.has(v)));
+  // Project filter is the global titlebar selection (Phase 81+) rather than
+  // this view's own scope dropdown — an empty selection (the default) shows
+  // every memory, global ones included, same as everywhere else it's used.
+  const validProjects = new Set([...projects.map((p) => p.id), UNASSIGNED_PROJECT_ID]);
+  const globalProjectSelection = useProjectFilterStore((s) => s.selected);
+  const activeProjects = new Set(globalProjectSelection.filter((p) => validProjects.has(p)));
 
   const filtered = initial.filter((m) => {
-    if (scopes.size > 0 && !scopes.has(m.projectId ?? GLOBAL_SCOPE)) return false;
+    if (activeProjects.size > 0 && !activeProjects.has(m.projectId ?? UNASSIGNED_PROJECT_ID)) return false;
     if (!q) return true;
     const projectName = m.projectId ? projectById.get(m.projectId)?.name ?? '' : 'global';
     return [m.title, m.content, projectName].some((f) => f.toLowerCase().includes(q));
@@ -179,7 +174,6 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
       <StickyToolbar className="reveal-controls">
         <div className="flex min-w-0 items-center gap-3">
           <CountPill count={filtered.length} />
-          <FilterPills options={scopeOptions} paramKey="scope" allLabel="All scopes" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <SearchBar placeholder="Search memories" />

@@ -22,6 +22,7 @@ import {
 } from '@/lib/task-dependencies';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { useProjectFilterStore } from '@/lib/project-filter-store';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,6 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ListView } from '@/components/list-view';
 import { NewTaskModal } from '@/components/new-task-modal';
-import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { ProjectProgressBar } from '@/components/project-progress';
 import { SearchBar } from '@/components/search-bar';
 import { TaskGraphView } from '@/components/task-graph/task-graph-view';
@@ -436,12 +436,12 @@ export function TasksView({
   const visibleColumns = showAllStatuses ? COLUMNS : COLUMNS.filter((c) => statusSet.has(c.status));
 
   // Project filter removes tasks not in the selected projects; the special
-  // UNASSIGNED value matches tasks with no project.
+  // UNASSIGNED value matches tasks with no project. Driven by the global
+  // titlebar filter (Phase 81+) rather than a per-view `?project=` param, so
+  // the same selection scopes tasks/sessions/slides alike.
   const validProjects = new Set([...projects.map((p) => p.id), UNASSIGNED]);
-  const rawProject = searchParams.get('project');
-  const activeProjects = new Set(
-    (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
-  );
+  const globalProjectSelection = useProjectFilterStore((s) => s.selected);
+  const activeProjects = new Set(globalProjectSelection.filter((p) => validProjects.has(p)));
   // A single explicit project selection scopes the graph view and surfaces its
   // completion in the toolbar; "no project" or "several projects" don't map to
   // one dependency-graph scope, so both leave it unscoped (shows everything).
@@ -476,11 +476,6 @@ export function TasksView({
         (t.kind ?? '').toLowerCase().includes(q) ||
         t.tags.some((tag) => tag.toLowerCase().includes(q)),
     );
-
-  const projectFilters: FilterOption[] = [
-    { value: UNASSIGNED, label: t('unassigned'), color: '#94a3b8' },
-    ...projects.map((p) => ({ value: p.id, label: p.tag, color: p.color })),
-  ];
 
   const statusFilters: FilterOption[] = COLUMNS.map((c) => ({
     value: c.status,
@@ -523,7 +518,6 @@ export function TasksView({
       <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={filteredTasks.length} className="mr-1" />
-          {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={statusFilters} paramKey="status" allLabel={t('toolbar.allStatuses')} />
           {tagFilters.length > 0 && (
             <FilterPills options={tagFilters} paramKey="tags" allLabel={t('toolbar.allTags')} />

@@ -86,7 +86,7 @@ export function TitleBar({ windowChrome, left, center, right, className }: Title
       data-window-focused={focused ? 'true' : 'false'}
       style={DRAG_STYLE}
       className={cn(
-        'fixed inset-x-0 top-0 z-[60] flex h-12 items-center gap-3 border-b border-border/60 bg-background pr-3 transition-[padding-left,opacity] duration-200',
+        'fixed inset-x-0 top-0 z-[60] flex h-12 items-center justify-between gap-3 border-b border-border/60 bg-background pr-3 transition-[padding-left,opacity] duration-200',
         // 5.25rem clears the traffic lights inset at { x: 16, y: 18 }.
         clearTrafficLights ? 'pl-[5.25rem]' : 'pl-3',
         !focused && 'opacity-60',
@@ -94,23 +94,27 @@ export function TitleBar({ windowChrome, left, center, right, className }: Title
       )}
     >
       {left ? (
-        <div style={NO_DRAG_STYLE} className="flex shrink-0 items-center gap-1">
+        <div style={NO_DRAG_STYLE} className="flex min-w-0 shrink-0 items-center gap-1">
           {left}
         </div>
       ) : null}
-      <div className="flex min-w-0 flex-1 items-center justify-center">
-        {center ? (
-          // The no-drag region must hug the visible search box. `w-full max-w-xl`
-          // stretched it ~36rem wide — far past the box — so the empty flanks
-          // became a no-drag dead zone that swallowed window-drag on the bar.
-          // Cap at 20rem so the draggable strip resumes right beside the box.
-          <div style={NO_DRAG_STYLE} className="flex w-full max-w-xs items-center justify-center">
-            {center}
-          </div>
-        ) : null}
-      </div>
+      {center ? (
+        // Centered on the FULL bar width (not the space left over between the
+        // left/right slots) via absolute positioning, so a growing right slot
+        // (e.g. the connection pill revealing its label) never shifts or
+        // shrinks this box — it used to, back when this was a `flex-1`
+        // spacer shared with `right`. Fixed width (not flex-1) per the same
+        // reasoning: a stable, narrower box reads as a search *trigger*, not a
+        // search field competing for the bar's width.
+        <div
+          style={NO_DRAG_STYLE}
+          className="absolute inset-y-0 left-1/2 flex w-[30%] min-w-[14rem] max-w-sm -translate-x-1/2 items-center justify-center"
+        >
+          {center}
+        </div>
+      ) : null}
       {right ? (
-        <div style={NO_DRAG_STYLE} className="flex shrink-0 items-center gap-1.5">
+        <div style={NO_DRAG_STYLE} className="flex min-w-0 shrink-0 items-center gap-1.5">
           {right}
         </div>
       ) : null}

@@ -24,5 +24,11 @@
   "errorTitle": "Something went wrong",
   "emptyTitle": "Nothing here yet",
   "saving": "Saving…",
-  "saved": "Saved"
+  "saved": "Saved",
+  "reload": "Reload",
+  "reloadHint": "Reload (right-click for more options)",
+  "refresh": "Refresh",
+  "hardReload": "Hard Reload",
+  "allProjects": "All projects",
+  "filterByProject": "Filter by project"
 }

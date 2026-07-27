@@ -37,7 +37,7 @@ const dotColor = (o: FilterOption) => (o.color ? o.color : o.hue ? `hsl(${o.hue}
 
 /**
  * A themed multi-select dropdown backed by the URL query string (default
- * `?status=`), matching the projects dropdown (`ProjectMultiSelect`): selected
+ * `?status=`), matching the global project filter's look: selected
  * values narrow the view, an empty selection means "all". The query param is the
  * source of truth, so filters are shareable and link-driven (e.g.
  * /tasks?status=backlog). Built from app tokens so it tracks the theme, and the

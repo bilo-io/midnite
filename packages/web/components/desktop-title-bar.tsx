@@ -10,6 +10,7 @@ import { TitleBar } from '@midnite/shell';
 import { cssRgbToHex } from '@/lib/css-color';
 import { FEATURES } from '@/lib/features';
 import { HeaderActions } from '@/components/header/header-actions';
+import { ReloadButton } from '@/components/header/reload-button';
 
 /**
  * The wired desktop title bar (Phase 81 Theme D) — web's contents for the
@@ -113,6 +114,7 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
           >
             <ArrowRight className="h-4 w-4" />
           </button>
+          <ReloadButton />
           <span className="ml-1 max-w-[12rem] truncate text-sm font-medium text-foreground/90">
             {title}
           </span>

@@ -24,5 +24,11 @@
   "errorTitle": "Une erreur est survenue",
   "emptyTitle": "Rien ici pour l’instant",
   "saving": "Enregistrement…",
-  "saved": "Enregistré"
+  "saved": "Enregistré",
+  "reload": "Recharger",
+  "reloadHint": "Recharger (clic droit pour plus d’options)",
+  "refresh": "Actualiser",
+  "hardReload": "Rechargement forcé",
+  "allProjects": "Tous les projets",
+  "filterByProject": "Filtrer par projet"
 }
