@@ -157,7 +157,7 @@ const CLI_BADGE_COLOR: Record<string, number> = {
   antigravity: 0x4285f4,  // Google blue
   codex: 0x10a37f,        // OpenAI green
   opencode: 0x10a37f,     // OpenAI green (opencode wraps codex)
-  aider: 0x7c3aed,        // Purple
+  hermes: 0x7c3aed,       // Purple
 };
 const CLI_BADGE_DEFAULT = 0x6b7280; // gray for unknown
 const CLI_BADGE_RADIUS = 4;

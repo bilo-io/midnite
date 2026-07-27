@@ -39,15 +39,16 @@ export const LLM_PROVIDER_API_KEY_URL: Record<LlmProvider, string> = {
   'openai-compatible': 'https://openrouter.ai/keys',
 };
 
-// Which provider an agent CLI's "API" tab configures. `aider` has no first-party
-// API (it proxies other providers); `antigravity` authenticates with a Google
-// account login rather than an API key, so both are CLI-only → no API tab.
+// Which provider an agent CLI's "API" tab configures. `hermes` has no single
+// first-party API (it fans out to dozens of providers, chosen with `hermes
+// model`); `antigravity` authenticates with a Google account login rather than
+// an API key, so both are CLI-only → no API tab.
 export const CLI_PROVIDER_MAP: Record<AgentCli, LlmProvider | null> = {
   claude: 'anthropic',
   antigravity: null,
   codex: 'openai',
   opencode: 'openai-compatible',
-  aider: null,
+  hermes: null,
 };
 
 // Convenience: the CLIs that have an associated API provider, in CLI order.

@@ -22,9 +22,9 @@ export function oneshotCommand(cli: AgentCli, prompt: string): { command: string
       return { command: 'codex', args: ['exec', prompt] };
     case 'opencode':
       return { command: 'opencode', args: ['run', prompt] };
-    case 'aider':
-      // Aider has no pure print mode; --message + auto-yes approximates one.
-      // --no-git because the cwd is not a meaningful repo for a debate.
-      return { command: 'aider', args: ['--message', prompt, '--yes-always', '--no-git'] };
+    case 'hermes':
+      // `hermes -z` is the documented scripted one-shot entry point: single
+      // prompt in, final response text out, nothing else on stdout/stderr.
+      return { command: 'hermes', args: ['-z', prompt] };
   }
 }

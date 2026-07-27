@@ -24,9 +24,10 @@ describe('oneshotCommand', () => {
     expect(oneshotCommand('opencode', 'topic').args[0]).toBe('run');
   });
 
-  it('runs aider non-interactively without git', () => {
-    const { args } = oneshotCommand('aider', 'topic');
-    expect(args).toContain('--yes-always');
-    expect(args).toContain('--no-git');
+  it('uses the -z scripted one-shot flag for hermes', () => {
+    expect(oneshotCommand('hermes', 'topic')).toEqual({
+      command: 'hermes',
+      args: ['-z', 'topic'],
+    });
   });
 });

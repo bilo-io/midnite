@@ -4,16 +4,34 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { InstallCommand } from '@/components/install-command';
-import { MAC_INSTALL_COMMAND } from '@/lib/downloads';
+import { PLATFORM_INSTALL_COMMAND, type Platform } from '@/lib/downloads';
+import { detectPlatform } from '@/lib/platform';
 
-// macOS installs via the curl one-liner (no Gatekeeper popup — see
-// lib/downloads.ts); we detect the OS only to nudge non-Mac visitors to the
-// /download page, which carries the Windows/Linux builds.
+const PLATFORM_INTRO: Record<Platform, string> = {
+  mac: 'One command on macOS — paste it into a terminal:',
+  windows: 'One command on Windows — paste it into PowerShell:',
+  linux: 'One command on Linux — paste it into a terminal:',
+};
+
+const PLATFORM_CAPTION: Record<Platform, string> = {
+  mac: 'Installs to /Applications with no Gatekeeper warnings, and links the midnite CLI. Re-run the same command any time to update.',
+  windows: 'Installs silently, no SmartScreen prompt. Re-run the same command any time to update.',
+  linux: 'Installs to ~/.local/bin with a desktop-menu entry. Re-run the same command any time to update.',
+};
+
+// Every platform installs via its own copyable one-liner (see lib/downloads.ts)
+// — detect the OS so the landing page shows the right one instead of always
+// defaulting to macOS.
 export function Download() {
-  const [isMac, setIsMac] = useState(true);
+  // null until mounted (SSR-safe) so the server-rendered markup always shows macOS.
+  const [detected, setDetected] = useState<Platform | null>(null);
   useEffect(() => {
-    setIsMac(/Mac/i.test(navigator.userAgent));
+    const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } })
+      .userAgentData;
+    setDetected(detectPlatform(navigator.userAgent, uaData?.platform));
   }, []);
+
+  const platform: Platform = detected ?? 'mac';
 
   return (
     <section id="download" className="container scroll-mt-20 py-24">
@@ -23,31 +41,23 @@ export function Download() {
         </h2>
         <p className="mt-4 text-muted-foreground">
           The gateway and the board, bundled into one desktop app that runs entirely on your
-          machine. One command on macOS — paste it into a terminal:
+          machine. {PLATFORM_INTRO[platform]}
         </p>
 
         <div className="mx-auto mt-8 max-w-xl">
-          <InstallCommand command={MAC_INSTALL_COMMAND} />
+          <InstallCommand command={PLATFORM_INSTALL_COMMAND[platform]} />
         </div>
 
         <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-muted-foreground">
-          Installs to /Applications with no Gatekeeper warnings, and links the{' '}
-          <code className="rounded bg-muted px-1 py-0.5">midnite</code> CLI. Re-run the same
-          command any time to update.
+          {PLATFORM_CAPTION[platform]}
         </p>
-
-        {!isMac && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Looks like you&apos;re not on macOS — grab the Windows or Linux build below.
-          </p>
-        )}
 
         <p className="mt-6">
           <Link
             href="/download"
             className="text-sm text-foreground underline-offset-4 hover:underline"
           >
-            All platforms (Windows &amp; Linux too) →
+            All platforms →
           </Link>
         </p>
       </div>

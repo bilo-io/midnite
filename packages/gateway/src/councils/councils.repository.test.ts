@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb, type TestDbHandle } from '../test/db';
 import { CouncilsRepository } from './councils.repository';
 
-// A council/member/run row written before `gemini` was retired from the
-// `AgentCli` enum (replaced by `antigravity`) still has the literal string
-// 'gemini' in its provider columns — the DB has no enum constraint of its own.
+// A council/member/run row written before a CLI was retired from the `AgentCli`
+// enum (`gemini` → `antigravity`, `aider` → `hermes`) still has the old literal
+// string in its provider columns — the DB has no enum constraint of its own.
 // Hydration must coerce it to a currently-valid AgentCli rather than pass it
 // through, or the shared zod schema rejects the whole council on the client
 // (this broke GET /councils in production after the antigravity swap).
@@ -88,6 +88,19 @@ describe('CouncilsRepository — legacy provider coercion', () => {
     const run = repo.hydrateRun(repo.getRun('r1')!);
     expect(run.synthProvider).toBe('antigravity');
     expect(run.members[0]!.provider).toBe('antigravity');
+  });
+
+  it('coerces a legacy aider synthProvider on a council to hermes', () => {
+    repo.insertCouncil({
+      id: 'c1',
+      name: 'Legacy council',
+      synthProvider: 'aider',
+      defaultFormat: 'brainstorm',
+      createdAt: now,
+      updatedAt: now,
+    });
+    const council = repo.hydrateCouncil(repo.getCouncil('c1')!);
+    expect(council.synthProvider).toBe('hermes');
   });
 
   it('falls back to the default CLI for an unrecognized provider value', () => {

@@ -19,7 +19,7 @@ export function parseVersion(stdout: string): string | undefined {
  * Probe whether a CLI binary is on PATH (and, best-effort, its version) through a
  * login shell — `-lc` so it sources the user's profile and sees the same PATH
  * (nvm/volta/homebrew/pip) the session terminal would. Existence is decided by
- * `command -v` rather than `--version`, since not every CLI (e.g. Aider,
+ * `command -v` rather than `--version`, since not every CLI (e.g. Hermes,
  * OpenCode) supports a version flag uniformly. Fail-soft: any error reports
  * `installed: false`.
  */

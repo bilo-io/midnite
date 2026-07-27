@@ -1,9 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import {
-  AGENT_CLI_DEFAULT,
-  AgentCliSchema,
-  type AgentCli,
+  coerceAgentCli,
   type Council,
   type CouncilFormat,
   type CouncilMember,
@@ -290,17 +288,4 @@ export class CouncilsRepository {
       finishedAt: row.finishedAt ?? undefined,
     };
   }
-}
-
-// A CLI can be renamed/replaced in the `AgentCli` enum (e.g. `gemini` →
-// `antigravity`) — rows written under the old name must keep loading rather
-// than fail the shared zod schema on the client. Map known-retired values to
-// their successor, then fall back to the configured default for anything else
-// unrecognised, so a stale/garbage value never breaks council listing.
-const RETIRED_AGENT_CLI_MAP: Partial<Record<string, AgentCli>> = { gemini: 'antigravity' };
-
-function coerceAgentCli(value: string): AgentCli {
-  const mapped = RETIRED_AGENT_CLI_MAP[value] ?? value;
-  const parsed = AgentCliSchema.safeParse(mapped);
-  return parsed.success ? parsed.data : AGENT_CLI_DEFAULT;
 }

@@ -1,71 +1,39 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download as DownloadIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { InstallCommand } from '@/components/install-command';
 import {
-  MAC_INSTALL_COMMAND,
+  DOWNLOAD_TARGETS,
+  PLATFORM_INSTALL_COMMAND,
   PLATFORM_LABELS,
   PLATFORM_ORDER,
   assetUrl,
-  platformAvailable,
-  targetsFor,
-  type DownloadTarget,
   type Platform,
 } from '@/lib/downloads';
 import { detectPlatform } from '@/lib/platform';
-import { RELEASES_URL } from '@/lib/site';
 
-function ComingSoon() {
-  return (
-    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-      Coming soon
-    </span>
-  );
-}
+/** Per-platform caption under the copyable command — why this beats a raw download. */
+const PLATFORM_CAPTION: Record<Platform, string> = {
+  mac: 'Paste into a terminal — installs to /Applications with no Gatekeeper warnings, and re-running it updates in place. Apple Silicon only.',
+  windows:
+    'Paste into PowerShell — installs silently with no SmartScreen prompt, and re-running it updates in place. x64 only.',
+  linux:
+    'Paste into a terminal — installs to ~/.local/bin with a desktop-menu entry, and re-running it updates in place. x86_64 only.',
+};
 
-function DownloadButton({ target, primary }: { target: DownloadTarget; primary?: boolean }) {
-  const text = `${target.label} (${target.ext})`;
-
-  if (!target.available || !target.assetName) {
-    return (
-      <Button size="lg" variant="outline" disabled aria-label={`${target.label} — coming soon`}>
-        <DownloadIcon className="h-4 w-4" />
-        {target.label}
-        <ComingSoon />
-      </Button>
-    );
-  }
-
-  const button = (
-    <Button size="lg" variant={primary ? 'default' : 'outline'}>
-      <DownloadIcon className="h-4 w-4" />
-      {text}
-    </Button>
-  );
-
-  return (
-    <a
-      href={assetUrl(target.assetName)}
-      target="_blank"
-      rel="noreferrer"
-      className={primary ? 'gradient-border rounded-md' : undefined}
-    >
-      {button}
-    </a>
-  );
-}
-
-/** The macOS entry: the curl one-liner instead of a direct (quarantined) download. */
-function MacInstall() {
+/**
+ * Every platform installs via its own copyable one-liner instead of a direct
+ * download link — mac/Linux avoid Gatekeeper quarantine / an unintegrated
+ * bare .AppImage, Windows avoids the SmartScreen warning an unsigned .exe
+ * triggers when downloaded through a browser. See lib/downloads.ts.
+ */
+function PlatformInstall({ platform }: { platform: Platform }) {
   return (
     <div className="text-left">
-      <InstallCommand command={MAC_INSTALL_COMMAND} />
+      <InstallCommand command={PLATFORM_INSTALL_COMMAND[platform]} />
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        Paste into a terminal — installs to /Applications with no Gatekeeper warnings, and
-        re-running it updates in place. Apple Silicon only.
+        {PLATFORM_CAPTION[platform]}
       </p>
     </div>
   );
@@ -82,12 +50,10 @@ export function DownloadPicker() {
   }, []);
 
   const featured: Platform = detected ?? 'mac';
-  const featuredTargets = targetsFor(featured);
-  const featuredAvailable = featured === 'mac' || platformAvailable(featured);
 
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Detected platform — featured action(s). */}
+      {/* Detected platform — featured action. */}
       <div
         data-testid="featured"
         data-platform={featured}
@@ -99,29 +65,9 @@ export function DownloadPicker() {
           </p>
           <p className="mt-1 text-lg font-semibold tracking-tight">{PLATFORM_LABELS[featured]}</p>
 
-          {featured === 'mac' ? (
-            <div className="mx-auto mt-6 max-w-xl">
-              <MacInstall />
-            </div>
-          ) : featuredAvailable ? (
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              {featuredTargets.map((t, i) => (
-                <DownloadButton key={t.label} target={t} primary={i === 0} />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-6">
-              <Button size="lg" variant="outline" disabled>
-                <DownloadIcon className="h-4 w-4" />
-                {PLATFORM_LABELS[featured]}
-                <ComingSoon />
-              </Button>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {PLATFORM_LABELS[featured]} builds aren&apos;t ready yet — install on macOS below,
-                or check back soon.
-              </p>
-            </div>
-          )}
+          <div className="mx-auto mt-6 max-w-xl">
+            <PlatformInstall platform={featured} />
+          </div>
         </div>
       </div>
 
@@ -132,45 +78,40 @@ export function DownloadPicker() {
         </h3>
         <ul className="mt-4 divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60 bg-card/30">
           {PLATFORM_ORDER.map((p) => (
-            <li
-              key={p}
-              data-platform={p}
-              className="flex flex-col gap-3 p-4 transition-colors hover:bg-card/60 sm:flex-row sm:items-center sm:justify-between"
-            >
+            <li key={p} data-platform={p} className="flex flex-col gap-2 p-4 transition-colors hover:bg-card/60">
               <span className="font-medium">{PLATFORM_LABELS[p]}</span>
-              {p === 'mac' ? (
-                <div className="min-w-0 sm:max-w-xl sm:flex-1 sm:pl-6">
-                  <InstallCommand command={MAC_INSTALL_COMMAND} />
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {targetsFor(p).map((t) => (
-                    <DownloadButton key={t.label} target={t} />
-                  ))}
-                </div>
-              )}
+              <InstallCommand command={PLATFORM_INSTALL_COMMAND[p]} />
             </li>
           ))}
         </ul>
       </div>
 
       <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed text-muted-foreground">
-        Prefer a manual macOS download? The .dmg is on the{' '}
-        <a
-          href={RELEASES_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="text-foreground underline-offset-4 hover:underline"
-        >
-          releases page
-        </a>
-        , but browser downloads are quarantined: after the blocked first launch, allow it under{' '}
-        <strong className="text-foreground">System Settings → Privacy &amp; Security → Open
-        Anyway</strong>, or run{' '}
+        Prefer a manual download? Raw installers are on the{' '}
+        {DOWNLOAD_TARGETS.map((t, i) => (
+          <span key={t.platform}>
+            {i > 0 && ' · '}
+            <a
+              href={assetUrl(t.assetName)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              {t.label} {t.ext}
+            </a>
+          </span>
+        ))}
+        . Browser downloads aren&apos;t blessed the same way the command above is, though: macOS
+        quarantines the .dmg (allow it under{' '}
+        <strong className="text-foreground">System Settings → Privacy &amp; Security → Open Anyway</strong>
+        , or run{' '}
         <code className="rounded bg-muted px-1 py-0.5">
           xattr -dr com.apple.quarantine /Applications/midnite.app
         </code>
-        . The install command above avoids all of that.
+        ); Windows SmartScreen may block the unsigned .exe (right-click → Properties → Unblock, or
+        run <code className="rounded bg-muted px-1 py-0.5">Unblock-File</code>); the Linux
+        .AppImage just needs <code className="rounded bg-muted px-1 py-0.5">chmod +x</code> before
+        you run it directly.
       </p>
     </div>
   );

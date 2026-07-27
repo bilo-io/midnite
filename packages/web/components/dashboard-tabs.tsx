@@ -121,8 +121,15 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
   return (
     // The standard sticky list-controls row — pins the tab strip (and the
     // trailing add-widget button) under the collapsed header / desktop title
-    // bar instead of letting it scroll away with the grid.
-    <StickyToolbar className="mb-3">
+    // bar instead of letting it scroll away with the grid. Unlike other
+    // StickyToolbar usages, the grid underneath renders much larger/bolder
+    // text than list-page rows (tile counts, clock/date/weather widgets all
+    // use text-4xl+ font-semibold) — the shared component's default 8px blur
+    // (verified identical CSS/computed-style to every other page) washes out
+    // small body text but leaves big bold glyphs as a legible shape, so this
+    // usage alone needs a stronger radius to read as obscured. Scoped here
+    // (not in sticky-toolbar.tsx) so other pages' look is untouched.
+    <StickyToolbar className="mb-3 backdrop-blur-2xl">
       {/* `min-w-0` lets this row shrink below its content width inside the
           `justify-between` toolbar so it scrolls horizontally instead of
           wrapping (or pushing the trailing add-widget button off-screen) once

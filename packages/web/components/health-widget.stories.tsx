@@ -15,7 +15,7 @@ const cliStatuses: FetchHandler = {
       { cli: 'antigravity', installed: false },
       { cli: 'codex', installed: false },
       { cli: 'opencode', installed: false },
-      { cli: 'aider', installed: true, version: '0.5.0' },
+      { cli: 'hermes', installed: true, version: '0.5.0' },
     ],
   },
 };

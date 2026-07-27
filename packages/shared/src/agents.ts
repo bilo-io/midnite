@@ -17,7 +17,7 @@ const HeartbeatIntervalSchema = z.number().int().min(HEARTBEAT_MIN_H).max(HEARTB
 
 // The CLI binary midnite launches inside a session terminal. A global preference
 // (not per-agent): which coding agent the user drives sessions with.
-export const AGENT_CLIS = ['claude', 'antigravity', 'codex', 'opencode', 'aider'] as const;
+export const AGENT_CLIS = ['claude', 'antigravity', 'codex', 'opencode', 'hermes'] as const;
 export const AgentCliSchema = z.enum(AGENT_CLIS);
 export type AgentCli = z.infer<typeof AgentCliSchema>;
 export const AGENT_CLI_DEFAULT: AgentCli = 'claude';
@@ -44,8 +44,8 @@ export type AgentCliCatalogEntry = {
    *  - `claude`      → Anthropic's native install script (auto-updates, no Node dep;
    *                    the Homebrew cask lags releases and disables built-in updates).
    *  - `antigravity` → Google's native install script (no Homebrew formula published).
-   *  - `aider`       → `aider-install`, which isolates Aider in its own Python env
-   *                    (the Homebrew formula lags upstream and can miss its model deps).
+   *  - `hermes`      → Nous Research's native install script, which provisions the
+   *                    CLI's own uv/Python env under `~/.hermes` (no Homebrew formula).
    */
   setupCommand: string;
   /** The uninstall command, paired with `setupCommand` (same tool that installed it). */
@@ -86,14 +86,38 @@ export const AGENT_CLI_CATALOG: readonly AgentCliCatalogEntry[] = [
     uninstallCommand: 'brew uninstall sst/tap/opencode',
   },
   {
-    key: 'aider',
-    name: 'Aider',
-    homepageUrl: 'https://aider.chat',
-    command: 'aider',
-    setupCommand: 'python -m pip install aider-install && aider-install',
-    uninstallCommand: 'python -m pip uninstall -y aider-chat aider-install',
+    key: 'hermes',
+    name: 'Hermes',
+    homepageUrl: 'https://hermes-agent.nousresearch.com/docs/',
+    command: 'hermes',
+    setupCommand: 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash',
+    // The CLI removes its own install (venv, symlinks, and — with --all — the
+    // ~/.hermes data dir); --yes skips its confirmation prompts.
+    uninstallCommand: 'hermes uninstall --all --yes',
   },
 ];
+
+/**
+ * CLIs that used to be in {@link AGENT_CLIS} and the entry that replaced them.
+ * Values live in the DB (the global CLI preference, council member providers),
+ * and the columns carry no enum constraint — so a row written under the old key
+ * must still hydrate. Read paths run it through {@link coerceAgentCli}.
+ */
+const RETIRED_AGENT_CLIS: Readonly<Record<string, AgentCli>> = {
+  gemini: 'antigravity',
+  aider: 'hermes',
+};
+
+/**
+ * Map a stored CLI key onto a currently-valid {@link AgentCli}: retired keys
+ * resolve to their successor, anything else unrecognised falls back to the
+ * default, so stale/garbage data never fails a zod parse on the client.
+ */
+export function coerceAgentCli(value: string | null | undefined): AgentCli {
+  const mapped = (value && RETIRED_AGENT_CLIS[value]) ?? value;
+  const parsed = AgentCliSchema.safeParse(mapped);
+  return parsed.success ? parsed.data : AGENT_CLI_DEFAULT;
+}
 
 /** The catalog keyed by `AgentCli` for O(1) lookup. */
 export const AGENT_CLI_BY_KEY: Record<AgentCli, AgentCliCatalogEntry> = Object.fromEntries(
