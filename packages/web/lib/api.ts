@@ -171,6 +171,10 @@ import {
   type ProjectDoc,
   type CreateProjectDocRequest,
   type UpdateProjectDocRequest,
+  StartOverviewRunResponseSchema,
+  OverviewRunResponseSchema,
+  type StartOverviewRunResponse,
+  type OverviewRunResponse,
   TaskSchema,
   TasksPageSchema,
   ReorderTasksResponseSchema,
@@ -1672,12 +1676,46 @@ export async function createTasksFromPlan(id: string, titles: string[]): Promise
 /**
  * Generate a structured, dependency-aware breakdown for a project (Phase 28 C).
  * Preview-only — the client edits/confirms before `createTasksFromBreakdown`.
+ * `overview` is the draft-plan Stage 1 approved execution-plan overview, woven
+ * in as extra context alongside the project's own description/plan.
  */
-export async function draftProjectBreakdown(id: string): Promise<BreakdownPreviewResponse> {
+export async function draftProjectBreakdown(
+  id: string,
+  overview?: string,
+): Promise<BreakdownPreviewResponse> {
   return fetchJson(
     `/projects/${encodeURIComponent(id)}/plan/draft-breakdown`,
-    { method: 'POST' },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ overview }) },
     BreakdownPreviewResponseSchema,
+  );
+}
+
+/**
+ * Draft-plan Stage 1: kick off a live-PTY execution-plan overview run, seeded
+ * from the project plus the content of `docIds` (empty = project alone).
+ * Returns immediately with the terminal id to mount `LiveTerminal` against —
+ * the run settles asynchronously; poll `getProjectPlanOverviewRun`.
+ */
+export async function startProjectPlanOverviewRun(
+  projectId: string,
+  docIds: string[],
+): Promise<StartOverviewRunResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/plan/overview-runs`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ docIds }) },
+    StartOverviewRunResponseSchema,
+  );
+}
+
+/** Poll an overview run's status/result until it settles ('done'/'error'). */
+export async function getProjectPlanOverviewRun(
+  projectId: string,
+  runId: string,
+): Promise<OverviewRunResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/plan/overview-runs/${encodeURIComponent(runId)}`,
+    undefined,
+    OverviewRunResponseSchema,
   );
 }
 

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { ProjectTag } from '@/components/project-tag';
 import { BreakdownEditor } from '@/components/breakdown-editor';
+import { PlanOverviewStep } from '@/components/plan-overview-step';
 import {
   createTasksFromBreakdown,
   createTasksFromPlan,
@@ -50,6 +51,9 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
   const [breakdownFallback, setBreakdownFallback] = useState(false);
   const [breakingDown, setBreakingDown] = useState(false);
   const [creatingBoard, setCreatingBoard] = useState(false);
+  // Draft-plan Stage 1: the approved execution-plan overview text, or null while
+  // still on the doc-selection/drafting step. Woven into the breakdown's context.
+  const [overviewApproved, setOverviewApproved] = useState<string | null>(null);
 
   const allItems = useMemo(() => sections.flatMap((s) => s.items), [sections]);
   const checkedCount = allItems.filter((i) => i.checked).length;
@@ -121,7 +125,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
     setError(null);
     setNotice(null);
     try {
-      const res = await draftProjectBreakdown(project.id);
+      const res = await draftProjectBreakdown(project.id, overviewApproved ?? undefined);
       setBreakdown(res.breakdown);
       setBreakdownFallback(res.isFallback);
     } catch (e) {
@@ -209,12 +213,12 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                   ) : null}
                   <BreakdownEditor breakdown={breakdown} onChange={setBreakdown} />
                 </div>
-              ) : (
+              ) : overviewApproved !== null ? (
                 <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-10 text-center">
                   <p className="text-sm text-muted-foreground">
                     Generate a structured, dependency-ordered breakdown from this
-                    project&apos;s description and plan. Review and edit it before creating
-                    the board.
+                    project&apos;s description/plan and the approved overview. Review and
+                    edit it before creating the board.
                   </p>
                   <Button
                     type="button"
@@ -228,7 +232,20 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                     )}
                     Generate breakdown
                   </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setOverviewApproved(null)}
+                  >
+                    Redo the overview
+                  </Button>
                 </div>
+              ) : (
+                <PlanOverviewStep
+                  projectId={project.id}
+                  onApprove={(overview) => setOverviewApproved(overview)}
+                />
               )
             ) : !hasPlan ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-10 text-center">

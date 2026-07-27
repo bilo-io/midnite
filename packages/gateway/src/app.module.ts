@@ -63,6 +63,7 @@ import { PhaseDocsModule } from './phase-docs/phase-docs.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { InboundModule } from './integrations/inbound/inbound.module';
+import { ProjectPlanRunsModule } from './project-plan-runs/project-plan-runs.module';
 
 @Module({
   imports: [
@@ -107,6 +108,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     PlaygroundModule,
     ProjectsModule,
     ProjectDocsModule,
+    ProjectPlanRunsModule,
     MilestonesModule,
     ProvidersModule,
     ReposModule,

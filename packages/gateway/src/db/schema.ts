@@ -310,6 +310,32 @@ export const projectDocs = sqliteTable(
 export type ProjectDocRow = typeof projectDocs.$inferSelect;
 export type ProjectDocInsert = typeof projectDocs.$inferInsert;
 
+// Draft-plan Stage 1: a one-shot CLI run, watchable live in a managed PTY (mirrors
+// councilRunMembers, minus the council-specific fields), that drafts a project's
+// high-level execution-plan overview from its description/plan + selected docs.
+// `terminalId` is the deterministic managed-run attach id (`project-plan-<id>`);
+// the PTY only exists while `status` is 'running'. Plain intra-domain id
+// reference to a project — no cross-domain FK.
+export const projectPlanRuns = sqliteTable(
+  'project_plan_runs',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    status: text('status').notNull(), // running | done | error
+    terminalId: text('terminal_id').notNull(),
+    output: text('output'),
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    projectIdx: index('project_plan_runs_project_idx').on(t.projectId, t.startedAt),
+  }),
+);
+
+export type ProjectPlanRunRow = typeof projectPlanRuns.$inferSelect;
+export type ProjectPlanRunInsert = typeof projectPlanRuns.$inferInsert;
+
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
 // references a repo by its unique `name` (no cross-domain FK). Paths stored in

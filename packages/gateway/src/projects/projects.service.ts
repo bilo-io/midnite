@@ -363,12 +363,16 @@ export class ProjectsService {
     return { plan: markdown, planUpdatedAt: now };
   }
 
-  async draftBreakdown(projectId: string): Promise<BreakdownPreviewResponse> {
+  // `overview` is the draft-plan Stage 1 approved execution-plan overview
+  // (drafted live in a PTY by ProjectPlanRunnerService) — woven in as extra
+  // context alongside the project's own description/plan when present.
+  async draftBreakdown(projectId: string, overview?: string): Promise<BreakdownPreviewResponse> {
     const project = this.getProject(projectId);
     const context = [
       `Project: ${project.name}`,
       project.description ? `Description: ${project.description}` : null,
       project.plan ? `Existing plan:\n${project.plan}` : null,
+      overview?.trim() ? `Approved execution-plan overview:\n${overview.trim()}` : null,
     ]
       .filter(Boolean)
       .join('\n\n');

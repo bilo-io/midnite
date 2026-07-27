@@ -15,6 +15,17 @@ vi.mock('@/lib/api', () => ({
   createTasksFromBreakdown: (...a: unknown[]) => createTasksFromBreakdown(...a),
 }));
 
+// Draft-plan Stage 1 (doc selection + live PTY overview) is exercised in its own
+// spec (plan-overview-step.test.tsx). Here it's a stub that fires `onApprove`
+// on click, so these tests can focus on Stage 2 (breakdown generation/confirm).
+vi.mock('@/components/plan-overview-step', () => ({
+  PlanOverviewStep: ({ onApprove }: { onApprove: (overview: string) => void }) => (
+    <button type="button" onClick={() => onApprove('MOCK OVERVIEW')}>
+      approve-overview-stub
+    </button>
+  ),
+}));
+
 import { PlanPanel } from './plan-panel';
 
 afterEach(cleanup);
@@ -49,11 +60,12 @@ describe('PlanPanel — breakdown tab', () => {
 
     render(<PlanPanel project={makeProject()} onClose={vi.fn()} onChanged={vi.fn()} />);
 
-    // Switch to the Breakdown tab and generate.
+    // Switch to the Breakdown tab: Stage 1 (doc-select + overview) gates Stage 2.
     fireEvent.click(screen.getByRole('tab', { name: /Breakdown/ }));
+    fireEvent.click(screen.getByRole('button', { name: /approve-overview-stub/ }));
     fireEvent.click(screen.getByRole('button', { name: /Generate breakdown/ }));
 
-    await waitFor(() => expect(draftProjectBreakdown).toHaveBeenCalledWith('p1'));
+    await waitFor(() => expect(draftProjectBreakdown).toHaveBeenCalledWith('p1', 'MOCK OVERVIEW'));
     await waitFor(() => expect(screen.getByDisplayValue('Build API')).toBeInTheDocument());
     expect(screen.getByDisplayValue('Build UI')).toBeInTheDocument();
 
@@ -73,6 +85,7 @@ describe('PlanPanel — breakdown tab', () => {
 
     render(<PlanPanel project={makeProject()} onClose={vi.fn()} onChanged={vi.fn()} />);
     fireEvent.click(screen.getByRole('tab', { name: /Breakdown/ }));
+    fireEvent.click(screen.getByRole('button', { name: /approve-overview-stub/ }));
     fireEvent.click(screen.getByRole('button', { name: /Generate breakdown/ }));
 
     await waitFor(() =>
