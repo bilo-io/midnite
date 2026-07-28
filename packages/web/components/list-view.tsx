@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Project, Status } from '@midnite/shared';
 import { useTranslations } from 'next-intl';
 import { OverflowMenu, type OverflowMenuItem } from '@/components/overflow-menu';
-import { projectPageHref } from '@/lib/project-route';
+import { ProjectNameLink } from '@/components/project-name-link';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { ProjectTaskGroups } from '@/components/project-task-groups';
@@ -56,17 +55,7 @@ export function ListView({
     ];
     return {
       id: g.key,
-      label: project ? (
-        <Link
-          href={projectPageHref(project.id)}
-          onClick={(e) => e.stopPropagation()}
-          className="hover:underline"
-        >
-          {g.name}
-        </Link>
-      ) : (
-        g.name
-      ),
+      label: <ProjectNameLink projectId={project?.id} name={g.name} />,
       color: g.color,
       leading: project ? (
         <span className="flex items-center gap-2">

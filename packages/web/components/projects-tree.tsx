@@ -3,6 +3,7 @@
 import { Folder, ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { OverflowMenu, type OverflowMenuItem } from '@/components/overflow-menu';
+import { ProjectNameLink } from '@/components/project-name-link';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { ProjectTaskGroups } from '@/components/project-task-groups';
@@ -78,7 +79,7 @@ export function ProjectsTree({
     const done = items.filter((task) => task.status === 'done').length;
     return {
       id: p.id,
-      label: p.name,
+      label: <ProjectNameLink projectId={p.id} name={p.name} />,
       prefix: onToggleSelect ? (
         <SelectableIcon
           Icon={Folder}

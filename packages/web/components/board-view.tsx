@@ -27,6 +27,7 @@ import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { useConfirm } from '@/components/confirm-dialog';
 import { OverflowMenu } from '@/components/overflow-menu';
+import { ProjectNameLink } from '@/components/project-name-link';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
@@ -576,7 +577,7 @@ function ProjectBoardsView({
 
   const sections: AccordionSection[] = groups.map((g) => ({
     id: g.key,
-    label: g.name,
+    label: <ProjectNameLink projectId={g.projectId} name={g.name} />,
     color: g.color,
     count: g.tasks.length,
     // The count pill carries the total; a gradient progress bar beside it tracks

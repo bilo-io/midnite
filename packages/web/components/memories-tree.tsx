@@ -2,6 +2,7 @@
 
 import { BrainCircuit } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
+import { ProjectNameLink } from '@/components/project-name-link';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { cn } from '@/lib/utils';
@@ -118,7 +119,7 @@ export function MemoriesTree({
     if (items.length === 0) continue;
     sections.push({
       id: p.id,
-      label: p.name,
+      label: <ProjectNameLink projectId={p.id} name={p.name} />,
       color: p.color,
       count: items.length,
       summary: plural(items.length),
