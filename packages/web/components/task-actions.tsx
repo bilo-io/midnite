@@ -81,6 +81,9 @@ export function useTaskActions({
       title: t('actions.markDoneTitle'),
       description: t('actions.markDoneDescription'),
       confirmLabel: t('actions.markDoneConfirm'),
+      // Completing a task is a success, not a destructive act (the red warning
+      // treatment read as "something is wrong").
+      tone: 'success',
     });
     if (!ok) return;
     setStatusBusy(true);

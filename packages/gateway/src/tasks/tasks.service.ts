@@ -1239,6 +1239,22 @@ export class TasksService implements OnModuleDestroy {
     return this.emit('task.updated', this.getTask(id));
   }
 
+  // Inline-edit a task's title and/or description. Re-broadcasts so the search
+  // index (title) and every open board/detail view stay current.
+  setDetails(id: string, details: { title?: string; description?: string }): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.setDetails(id, details, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.details.changed',
+      data: JSON.stringify(details),
+    });
+    return this.emit('task.updated', this.getTask(id));
+  }
+
   addLink(taskId: string, url: string, label?: string): Task {
     this.getTask(taskId); // 404s if the task is missing
     const now = new Date().toISOString();

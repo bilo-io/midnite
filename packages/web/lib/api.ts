@@ -1028,6 +1028,27 @@ export async function setTaskTags(taskId: string, tags: string[]): Promise<Task>
   );
 }
 
+/** Inline-edit a task's title and/or description. */
+export async function updateTaskDetails(
+  taskId: string,
+  details: { title?: string; description?: string },
+): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/details`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(details) },
+    TaskSchema,
+  );
+}
+
+/** Set a task's scheduling priority band (0 Low – 3 Urgent). */
+export async function setTaskPriority(taskId: string, priority: number): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/priority`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ priority }) },
+    TaskSchema,
+  );
+}
+
 export async function addTaskLink(taskId: string, url: string, label?: string): Promise<Task> {
   return fetchJson(
     `/tasks/${encodeURIComponent(taskId)}/links`,

@@ -37,6 +37,7 @@ import {
   ResolveTaskRequestSchema,
   TaskFailuresQuerySchema,
   ReorderTasksRequestSchema,
+  SetTaskDetailsRequestSchema,
   SetTaskPriorityRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
@@ -272,6 +273,17 @@ export class TasksController {
       throw new BadRequestException(parsed.error.message);
     }
     return this.service.setTags(id, parsed.data.tags);
+  }
+
+  /** Inline-edit a task's title and/or description (Phase 82 follow-up). */
+  @Patch(':id/details')
+  @RequiresRole('member')
+  updateDetails(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = SetTaskDetailsRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid details');
+    }
+    return this.service.setDetails(id, parsed.data);
   }
 
   @Patch(':id/priority')

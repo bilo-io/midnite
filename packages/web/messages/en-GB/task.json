@@ -8,6 +8,11 @@
   },
   "openPage": "Open page",
   "allTasks": "All tasks",
+  "title": {
+    "editAria": "Edit task title",
+    "editHint": "Click to edit",
+    "saveFailed": "Failed to update title"
+  },
   "waiting": {
     "banner": "Agent is waiting on you",
     "reply": "Reply",
@@ -19,6 +24,17 @@
     "addPlaceholder": "Add tag…",
     "addAria": "Add a tag",
     "remove": "Remove tag {tag}"
+  },
+  "description": {
+    "title": "Description",
+    "placeholder": "Add a description…",
+    "saveFailed": "Failed to update description"
+  },
+  "priority": {
+    "saveFailed": "Failed to update priority"
+  },
+  "status": {
+    "saveFailed": "Failed to update status"
   },
   "milestone": {
     "title": "Milestone",

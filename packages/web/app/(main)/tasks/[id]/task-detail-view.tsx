@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { Project, Task, TaskSummary } from '@midnite/shared';
+import { MAX_TASK_TITLE_LENGTH, type Project, type Status, type Task, type TaskSummary } from '@midnite/shared';
 import { RailShell, RailHeaderToggle } from '@midnite/ui';
 import { TaskDetail, Timeline, type TaskDetailTab } from '@/components/task-detail';
 import { PageHeader } from '@/components/page-header';
+import { PrioritySelect } from '@/components/priority-select';
+import { StatusSelect } from '@/components/status-select';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { ProjectSelect } from '@/components/project-select';
 import { RunTimeline } from '@/components/run-timeline';
@@ -14,7 +16,15 @@ import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
 import { ResourceNotFound } from '@/components/resource-not-found';
 import { BackLink } from '@/components/back-link';
 import { useToast } from '@/components/toast';
-import { getProjects, getTask, getTasks, updateTaskProject } from '@/lib/api';
+import {
+  getProjects,
+  getTask,
+  getTasks,
+  setTaskPriority,
+  updateTaskDetails,
+  updateTaskProject,
+  updateTaskStatus,
+} from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { useApiData } from '@/lib/use-api-data';
@@ -159,19 +169,126 @@ function TaskDetailPage({
     }
   };
 
+  // Inline-editable title/status/priority (Phase 82 follow-up) — mirrors the
+  // modal's header fields (`TaskDetail`'s own state), since the page owns its
+  // title/description row via `PageHeader` instead of `TaskDetail`'s `<header>`
+  // (suppressed here with `hideHeader`).
+  const [title, setTitle] = useState(task.title);
+  const [titleEditing, setTitleEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [priority, setPriority] = useState(task.priority);
+  const [status, setStatus] = useState(task.status);
+  const [statusSelectBusy, setStatusSelectBusy] = useState(false);
+
+  useEffect(() => {
+    if (titleEditing) titleInputRef.current?.select();
+  }, [titleEditing]);
+
+  const saveTitle = async (next: string) => {
+    const prev = title;
+    setTitle(next); // optimistic
+    try {
+      const updated = await updateTaskDetails(task.id, { title: next });
+      setTitle(updated.title);
+      invalidateData();
+    } catch (e) {
+      setTitle(prev);
+      setTitleDraft(prev);
+      toast.error(e instanceof Error ? e.message : t('title.saveFailed'));
+    }
+  };
+
+  const commitTitle = () => {
+    const next = titleDraft.trim();
+    setTitleEditing(false);
+    if (next && next !== title) void saveTitle(next);
+    else setTitleDraft(title);
+  };
+
+  const changePriority = async (next: number) => {
+    const prev = priority;
+    setPriority(next); // optimistic
+    try {
+      const updated = await setTaskPriority(task.id, next);
+      setPriority(updated.priority);
+      invalidateData();
+    } catch (e) {
+      setPriority(prev);
+      toast.error(e instanceof Error ? e.message : t('priority.saveFailed'));
+    }
+  };
+
+  const changeStatus = async (next: Status) => {
+    const prev = status;
+    setStatus(next); // optimistic
+    setStatusSelectBusy(true);
+    try {
+      const updated = await updateTaskStatus(task.id, next);
+      setStatus(updated.status);
+      invalidateData();
+    } catch (e) {
+      setStatus(prev);
+      toast.error(e instanceof Error ? e.message : t('status.saveFailed'));
+    } finally {
+      setStatusSelectBusy(false);
+    }
+  };
+
   const goToSession = () => router.push(`/sessions/view?id=${encodeURIComponent(task.id)}`);
   const kind = task.kind ?? 'unknown';
+  const displayTask: Task = { ...task, title, priority, status };
 
   return (
     <>
       <PageHeader
-        title={task.title}
+        title={title}
         icon="ListChecks"
+        titleNode={
+          titleEditing ? (
+            <input
+              ref={titleInputRef}
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitTitle();
+                if (e.key === 'Escape') {
+                  setTitleDraft(title);
+                  setTitleEditing(false);
+                }
+              }}
+              maxLength={MAX_TASK_TITLE_LENGTH}
+              aria-label={t('title.editAria')}
+              className="w-full min-w-0 rounded bg-transparent font-semibold tracking-tight outline-none ring-1 ring-ring"
+            />
+          ) : (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                setTitleDraft(title);
+                setTitleEditing(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setTitleDraft(title);
+                  setTitleEditing(true);
+                }
+              }}
+              title={t('title.editHint')}
+              className="cursor-text truncate rounded px-0.5 hover:bg-accent/40"
+            >
+              {title}
+            </span>
+          )
+        }
         description={
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{kindLabel(kind)}</span>
             <span aria-hidden>·</span>
-            <span>{statusLabel(task.status)}</span>
+            <span>{statusLabel(status)}</span>
             {task.repo ? (
               <>
                 <span aria-hidden>·</span>
@@ -190,6 +307,19 @@ function TaskDetailPage({
             <BackLink href="/tasks" label={t('allTasks')} />
           </div>
           <div className="flex items-center gap-2">
+            <StatusSelect
+              status={status}
+              onChange={(next) => void changeStatus(next)}
+              disabled={statusSelectBusy}
+              align="right"
+              variant="chip"
+            />
+            <PrioritySelect
+              priority={priority}
+              onChange={(next) => void changePriority(next)}
+              align="right"
+              variant="chip"
+            />
             {projects.length > 0 ? (
               <ProjectSelect
                 projects={projects}
@@ -199,7 +329,7 @@ function TaskDetailPage({
                 align="right"
               />
             ) : null}
-            <TaskActionButtons task={task} actions={actions} showSession onOpenSession={goToSession} />
+            <TaskActionButtons task={displayTask} actions={actions} showSession onOpenSession={goToSession} />
             {isMobile ? (
               <>
                 <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />

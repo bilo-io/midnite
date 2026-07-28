@@ -81,7 +81,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
           ? 'They’ll be hidden from your active memories — you can unarchive them any time.'
           : 'They’ll return to your active memories.',
         confirmLabel: verb,
-        destructive: false,
+        tone: 'neutral',
       });
       if (!ok) return;
       await Promise.all(ids.map((id) => updateMemory(id, { archived })));

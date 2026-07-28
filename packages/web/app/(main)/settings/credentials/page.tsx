@@ -61,7 +61,7 @@ export default function CredentialsPage() {
       title: t('credentials.delete.title'),
       description: t('credentials.delete.description', { name: cred.name }),
       confirmLabel: tc('delete'),
-      destructive: true,
+      tone: 'danger',
     });
     if (!ok) return;
     try {

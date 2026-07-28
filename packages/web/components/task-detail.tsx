@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowUpRight, Check, ExternalLink, GitCompare, Plus, RefreshCw, X } from 'lucide-react';
+import { ArrowUpRight, Check, ExternalLink, GitCompare, Loader2, Plus, RefreshCw, X } from 'lucide-react';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
@@ -15,6 +15,7 @@ import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
 import {
   ANSWER_EVENT_KIND,
+  MAX_TASK_TITLE_LENGTH,
   SOURCE_KIND_LABEL,
   isAnsweredQuestion,
   isTerminal,
@@ -31,8 +32,10 @@ import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { PrStatusChip } from '@/components/pr-status-chip';
+import { PrioritySelect } from '@/components/priority-select';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
+import { StatusSelect } from '@/components/status-select';
 import { TaskPicker } from '@/components/task-picker';
 import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -43,8 +46,11 @@ import {
   refreshPrStatus,
   removeTaskDependency,
   removeTaskLink,
+  setTaskPriority,
   setTaskTags,
+  updateTaskDetails,
   updateTaskProject,
+  updateTaskStatus,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
@@ -278,7 +284,6 @@ export function TaskDetail({
   const kindLabel = useKindLabel();
   const statusLabel = useStatusLabel();
   const kind = task.kind ?? 'unknown';
-  const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
 
   // In the modal the sections read "naked" — accordions lose their card frame and
@@ -324,6 +329,24 @@ export function TaskDetail({
   };
   const [depBusy, setDepBusy] = useState(false);
 
+  // Inline-editable header fields (Phase 82 follow-up): title, description,
+  // priority and status. Kept as local state (mirrors `tags`/`links`/`dependsOn`
+  // above) so an edit shows immediately without waiting on a full task refetch.
+  const [title, setTitle] = useState(task.title);
+  const [titleEditing, setTitleEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [description, setDescription] = useState(task.description ?? '');
+  const [savedDescription, setSavedDescription] = useState(task.description ?? '');
+  const [descriptionBusy, setDescriptionBusy] = useState(false);
+  const [priority, setPriority] = useState(task.priority);
+  const [status, setStatus] = useState(task.status);
+  const [statusSelectBusy, setStatusSelectBusy] = useState(false);
+
+  useEffect(() => {
+    if (titleEditing) titleInputRef.current?.select();
+  }, [titleEditing]);
+
   const tasksById = new Map(tasks.map((t) => [t.id, t] as const));
 
   // Lifecycle mutations (start / abandon / reopen / delete) + their shared busy /
@@ -331,6 +354,83 @@ export function TaskDetail({
   // this surface (the modal closes; the full page routes back to /tasks).
   const actions = useTaskActions({ task, tasksById, onActionComplete: onClose });
   const { statusError, setStatusError } = actions;
+
+  // A `Task` reflecting the locally-edited header fields — fed to the pieces that
+  // derive their look from the whole task (the header dot, the lifecycle action
+  // buttons) so a status/title edit is reflected instantly instead of waiting on
+  // the next board refetch.
+  const displayTask: Task = { ...task, title, description, priority, status };
+
+  const saveTitle = async (next: string) => {
+    const prev = title;
+    setTitle(next); // optimistic
+    setStatusError(null);
+    try {
+      const updated = await updateTaskDetails(task.id, { title: next });
+      setTitle(updated.title);
+      invalidateData();
+    } catch (e) {
+      setTitle(prev);
+      setTitleDraft(prev);
+      setStatusError(e instanceof Error ? e.message : t('title.saveFailed'));
+    }
+  };
+
+  const commitTitle = () => {
+    const next = titleDraft.trim();
+    setTitleEditing(false);
+    if (next && next !== title) void saveTitle(next);
+    else setTitleDraft(title);
+  };
+
+  const saveDescription = async () => {
+    if (description === savedDescription) return;
+    setDescriptionBusy(true);
+    setStatusError(null);
+    try {
+      const updated = await updateTaskDetails(task.id, { description });
+      const next = updated.description ?? '';
+      setDescription(next);
+      setSavedDescription(next);
+      invalidateData();
+    } catch (e) {
+      setDescription(savedDescription); // roll back to the last saved value
+      setStatusError(e instanceof Error ? e.message : t('description.saveFailed'));
+    } finally {
+      setDescriptionBusy(false);
+    }
+  };
+
+  const changePriority = async (next: number) => {
+    const prev = priority;
+    setPriority(next); // optimistic
+    setStatusError(null);
+    try {
+      const updated = await setTaskPriority(task.id, next);
+      setPriority(updated.priority);
+      invalidateData();
+    } catch (e) {
+      setPriority(prev);
+      setStatusError(e instanceof Error ? e.message : t('priority.saveFailed'));
+    }
+  };
+
+  const changeStatus = async (next: Status) => {
+    const prev = status;
+    setStatus(next); // optimistic
+    setStatusSelectBusy(true);
+    setStatusError(null);
+    try {
+      const updated = await updateTaskStatus(task.id, next);
+      setStatus(updated.status);
+      invalidateData();
+    } catch (e) {
+      setStatus(prev);
+      setStatusError(e instanceof Error ? e.message : t('status.saveFailed'));
+    } finally {
+      setStatusSelectBusy(false);
+    }
+  };
 
   // Open tasks that aren't this task and aren't already a blocker — candidates to add.
   const blockerCandidates = tasks.filter(
@@ -479,13 +579,50 @@ export function TaskDetail({
           aria-hidden
           className="h-2 w-2 shrink-0 rounded-full"
           style={{
-            background: `hsl(var(${statusHue}))`,
-            boxShadow: `0 0 8px -1px hsl(var(${statusHue}) / 0.7)`,
+            background: `hsl(var(${STATUS_HUE_VAR[status]}))`,
+            boxShadow: `0 0 8px -1px hsl(var(${STATUS_HUE_VAR[status]}) / 0.7)`,
           }}
         />
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-sm font-semibold leading-tight">{task.title}</h2>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          {titleEditing ? (
+            <input
+              ref={titleInputRef}
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitTitle();
+                if (e.key === 'Escape') {
+                  setTitleDraft(title);
+                  setTitleEditing(false);
+                }
+              }}
+              maxLength={MAX_TASK_TITLE_LENGTH}
+              aria-label={t('title.editAria')}
+              className="w-full rounded bg-transparent text-sm font-semibold leading-tight outline-none ring-1 ring-ring"
+            />
+          ) : (
+            <h2
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                setTitleDraft(title);
+                setTitleEditing(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setTitleDraft(title);
+                  setTitleEditing(true);
+                }
+              }}
+              title={t('title.editHint')}
+              className="-mx-1 -my-0.5 cursor-text truncate rounded px-1 py-0.5 text-sm font-semibold leading-tight hover:bg-accent/40"
+            >
+              {title}
+            </h2>
+          )}
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span
               className="inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
               style={{
@@ -495,7 +632,8 @@ export function TaskDetail({
             >
               {kindLabel(kind)}
             </span>
-            <span className="shrink-0">{statusLabel(task.status)}</span>
+            <StatusSelect status={status} onChange={(next) => void changeStatus(next)} disabled={statusSelectBusy} />
+            <PrioritySelect priority={priority} onChange={(next) => void changePriority(next)} />
             {isAnsweredQuestion(task) ? (
               <span className="inline-flex shrink-0 items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">
                 <Check aria-hidden className="h-3 w-3" />
@@ -526,7 +664,7 @@ export function TaskDetail({
                 />
               ) : null}
               <TaskActionButtons
-                task={task}
+                task={displayTask}
                 actions={actions}
                 showSession={!showSessionTab}
                 onOpenSession={goToSession}
@@ -576,7 +714,7 @@ export function TaskDetail({
                   align="right"
                 />
               ) : null}
-              <TaskActionButtons task={task} actions={actions} />
+              <TaskActionButtons task={displayTask} actions={actions} />
               {sessionActions}
               {!disableNavigation ? (
                 <HoverExpandButton
@@ -625,6 +763,27 @@ export function TaskDetail({
             <ReplyBox sessionId={task.sessionId} />
           </section>
         ) : null}
+
+        {/* Description: always visible + directly editable (no click-to-edit
+            gate), autosaving on blur — mirrors the tag input's autosave. */}
+        <section className={cn('p-3', contentFrame)}>
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {t('description.title')}
+            </h3>
+            {descriptionBusy ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" /> : null}
+          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={() => void saveDescription()}
+            placeholder={t('description.placeholder')}
+            rows={3}
+            maxLength={8000}
+            aria-label={t('description.title')}
+            className="w-full resize-y rounded-md border border-transparent bg-transparent px-1 py-1 text-sm leading-relaxed outline-none placeholder:text-muted-foreground/60 hover:border-border/60 focus:border-input focus:bg-background"
+          />
+        </section>
 
         {/* Tags + milestone: two short, always-relevant fields sharing one compact
             card (Phase 82) instead of two full-width headings stacked in a row. */}

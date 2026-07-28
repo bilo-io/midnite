@@ -281,7 +281,7 @@ function UnifiedBoard({
         title: t('confirm.reopenTitle'),
         description: t('confirm.reopenDescription'),
         confirmLabel: t('confirm.reopenConfirm'),
-        destructive: false,
+        tone: 'neutral',
       });
       if (!ok) return;
       await onReopen(id);
@@ -341,7 +341,7 @@ function UnifiedBoard({
               title: t('confirm.doneAgainTitle'),
               description: t('confirm.doneAgainDescription'),
               confirmLabel: t('confirm.doneAgainConfirm'),
-              destructive: false,
+              tone: 'success',
             });
             if (!ok) return;
           }
@@ -564,7 +564,7 @@ function ProjectBoardsView({
         title: t('confirm.reopenTitle'),
         description: t('confirm.reopenDescription'),
         confirmLabel: t('confirm.reopenConfirm'),
-        destructive: false,
+        tone: 'neutral',
       });
       if (!ok) return;
       await onReopen(id);

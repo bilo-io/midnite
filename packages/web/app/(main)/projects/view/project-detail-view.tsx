@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Plus } from 'lucide-react';
 import type { Memory, Project, TaskSummary } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { BackLink } from '@/components/back-link';
+import { Button } from '@/components/ui/button';
 import { ConnectionStatus } from '@/components/connection-status';
 import { RailShell, RailHeaderToggle, Tabs, type TabOption } from '@midnite/ui';
+import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
 import { ProjectDocsPanel } from '@/components/projects/panels/project-docs-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
@@ -95,9 +99,11 @@ export function ProjectDetailView({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const tBoard = useTranslations('board');
   const isMobile = useIsMobile();
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.project.leftOpen', true);
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.project.rightOpen', true);
+  const [showNewTask, setShowNewTask] = useState(false);
 
   const tabParam = searchParams.get('tab');
   // Back-compat: a bookmarked `?tab=plan` link (the tab's old name) should still
@@ -173,7 +179,15 @@ export function ProjectDetailView({
               ) : tab === 'docs' ? (
                 <ProjectDocsPanel project={project} />
               ) : tab === 'tasks' ? (
-                <ProjectTasksPanel tasks={tasks} onSelectTask={openTask} />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-end">
+                    <Button type="button" size="sm" onClick={() => setShowNewTask(true)} className="h-8 gap-1.5">
+                      <Plus className="h-3.5 w-3.5" />
+                      {tBoard('toolbar.newTask')}
+                    </Button>
+                  </div>
+                  <ProjectTasksPanel tasks={tasks} onSelectTask={openTask} />
+                </div>
               ) : (
                 <ProjectRoadmapPanel project={project} onSelectTask={openTask} />
               )}
@@ -181,7 +195,20 @@ export function ProjectDetailView({
           </div>
         </RailShell>
       </div>
+
+      {showNewTask ? (
+        <NewTaskModal
+          projects={[]}
+          repos={[]}
+          tasks={tasks}
+          defaultProjectId={project.id}
+          onCreated={() => {
+            setShowNewTask(false);
+            reload();
+          }}
+          onClose={() => setShowNewTask(false)}
+        />
+      ) : null}
     </>
   );
 }
-

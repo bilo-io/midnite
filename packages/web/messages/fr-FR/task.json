@@ -8,6 +8,11 @@
   },
   "openPage": "Ouvrir la page",
   "allTasks": "Toutes les tâches",
+  "title": {
+    "editAria": "Modifier le titre de la tâche",
+    "editHint": "Cliquer pour modifier",
+    "saveFailed": "Échec de la mise à jour du titre"
+  },
   "waiting": {
     "banner": "L'agent attend votre réponse",
     "reply": "Répondre",
@@ -19,6 +24,17 @@
     "addPlaceholder": "Ajouter un tag…",
     "addAria": "Ajouter un tag",
     "remove": "Retirer le tag {tag}"
+  },
+  "description": {
+    "title": "Description",
+    "placeholder": "Ajouter une description…",
+    "saveFailed": "Échec de la mise à jour de la description"
+  },
+  "priority": {
+    "saveFailed": "Échec de la mise à jour de la priorité"
+  },
+  "status": {
+    "saveFailed": "Échec de la mise à jour du statut"
   },
   "milestone": {
     "title": "Jalon",

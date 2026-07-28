@@ -183,7 +183,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
         title: 'Delete milestone?',
         description: 'Its tasks are moved back to the backlog — they are not deleted.',
         confirmLabel: 'Delete',
-        destructive: true,
+        tone: 'danger',
       });
       if (!ok) return;
       try {

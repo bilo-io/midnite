@@ -374,6 +374,23 @@ export const SetTaskPriorityRequestSchema = z.object({
   priority: z.number().int().min(0).max(3),
 });
 
+/** Max length for a task's title — mirrors the AI classifier's cap (`ClassifiedTaskSchema`). */
+export const MAX_TASK_TITLE_LENGTH = 120;
+
+/**
+ * Body for `PATCH /tasks/:id/details` — inline-edit a task's title and/or
+ * description (Phase 82 follow-up). Both optional so a client can patch either
+ * field alone; at least one must be present.
+ */
+export const SetTaskDetailsRequestSchema = z
+  .object({
+    title: z.string().trim().min(1).max(MAX_TASK_TITLE_LENGTH).optional(),
+    description: z.string().max(8000).optional(),
+  })
+  .refine((v) => v.title !== undefined || v.description !== undefined, {
+    message: 'at least one of title or description is required',
+  });
+
 /** Max task ids accepted in one reorder — a sane bound on a single column. */
 export const MAX_REORDER_TASKS = 500;
 
@@ -413,6 +430,7 @@ export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSc
 export type SetTaskTagsRequest = z.infer<typeof SetTaskTagsRequestSchema>;
 export type ReorderTasksRequest = z.infer<typeof ReorderTasksRequestSchema>;
 export type SetTaskPriorityRequest = z.infer<typeof SetTaskPriorityRequestSchema>;
+export type SetTaskDetailsRequest = z.infer<typeof SetTaskDetailsRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;
 

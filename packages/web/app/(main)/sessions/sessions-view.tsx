@@ -98,7 +98,7 @@ export function SessionsView({
           title: 'Archive this session?',
           description: 'It moves out of the active board. You can unarchive it again later.',
           confirmLabel: 'Archive',
-          destructive: false,
+          tone: 'neutral',
         });
         if (!ok) return;
       }

@@ -357,6 +357,20 @@ export class TasksRepository {
       .get();
   }
 
+  // Inline-edit a task's title and/or description; only the given fields change.
+  setDetails(
+    id: string,
+    details: { title?: string; description?: string },
+    updatedAt: string,
+  ): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ ...details, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   // Set a task's manual board position (its 0-based index within a column). The
   // service reindexes a whole column inside one transaction on a drag-reorder.
   setPosition(id: string, position: number, updatedAt: string, db: DbOrTx = this.db): void {
