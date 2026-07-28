@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
-import type { Memory, Project, Task, TaskSummary } from '@midnite/shared';
+import type { Memory, Project, Repo, Task, TaskSummary } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
 import { useConfirm } from '@/components/confirm-dialog';
+import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
 import { ProjectsTree } from '@/components/projects-tree';
@@ -19,6 +20,7 @@ import { WorkItemModal } from '@/components/work-item-modal';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateModal } from '@/components/template-modal';
 import { TemplatesTable } from '@/components/templates-table';
+import { useToast } from '@/components/toast';
 import { deleteProject, getTask, updateProject } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { projectPageHref } from '@/lib/project-route';
@@ -40,16 +42,22 @@ const TABS: readonly { value: Tab; label: string }[] = [
 export function ProjectsView({
   initial,
   tasks,
+  repos = [],
   memories = [],
 }: {
   initial: Project[];
   tasks: TaskSummary[];
+  repos?: Repo[];
   memories?: Memory[];
 }) {
+  const toast = useToast();
   const [view, setView] = useState<View>('grid');
   const [tab, setTab] = useState<Tab>('projects');
   const [creating, setCreating] = useState(false);
   const [planProject, setPlanProject] = useState<Project | null>(null);
+  // The "Add task" project-menu item (Tasks list + Projects tree) opens this,
+  // seeded with the project it was opened from (undefined for Unassigned).
+  const [newTask, setNewTask] = useState<{ projectId?: string } | null>(null);
   // The task list is now a lean TaskSummary[] (Phase 57 C), so the detail modal —
   // which needs the full Task (events/prompt) — fetches it by id when opened.
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -186,6 +194,20 @@ export function ProjectsView({
     refresh();
   }, [selectedIds, confirm, clearSelection, refresh]);
 
+  const deleteOneProject = useCallback(
+    async (project: Project) => {
+      const ok = await confirm({
+        title: `Delete “${project.name}”?`,
+        description: 'Its tasks are kept but become unassigned. This cannot be undone.',
+        confirmLabel: 'Delete',
+      });
+      if (!ok) return;
+      await deleteProject(project.id);
+      refresh();
+    },
+    [confirm, refresh],
+  );
+
   const bulkActions = useMemo<BulkAction[]>(() => {
     const actions: BulkAction[] = [];
     const toArchive = selectedProjects.filter((p) => !p.archived).map((p) => p.id);
@@ -230,6 +252,15 @@ export function ProjectsView({
   useEffect(() => {
     if (openId) router.replace(projectPageHref(openId));
   }, [openId, router]);
+
+  // Deep-link `/projects?new=1` (the titlebar filter's "New project" button)
+  // opens the create modal, then strips the param so a reload doesn't reopen it.
+  const openNew = searchParams.get('new');
+  useEffect(() => {
+    if (!openNew) return;
+    setCreating(true);
+    router.replace('/projects');
+  }, [openNew, router]);
   const filtered = q
     ? initial.filter((p) =>
         [p.name, p.tag, p.description ?? ''].some((f) => f.toLowerCase().includes(q)),
@@ -381,6 +412,8 @@ export function ProjectsView({
             tasks={tasks}
             onEdit={openProject}
             onPlan={setPlanProject}
+            onDelete={(p) => void deleteOneProject(p)}
+            onAddTask={(projectId) => setNewTask({ projectId })}
             onSelectTask={(t) => setSelectedTaskId(t.id)}
             isSelected={isSelected}
             onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
@@ -442,6 +475,24 @@ export function ProjectsView({
           projects={initial}
           tasks={tasks}
           onClose={() => setSelectedTaskId(null)}
+        />
+      ) : null}
+
+      {newTask ? (
+        <NewTaskModal
+          projects={initial}
+          repos={repos}
+          tasks={tasks}
+          defaultProjectId={newTask.projectId}
+          onCreated={() => {
+            toast.success('Task created');
+            invalidateData();
+          }}
+          onBulkCreated={({ counts }) => {
+            if (counts.created > 0) toast.success(`${counts.created} tasks created`);
+            invalidateData();
+          }}
+          onClose={() => setNewTask(null)}
         />
       ) : null}
 

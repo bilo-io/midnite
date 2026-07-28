@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 export const BULK_COLORS = {
   archive: '#f59e0b', // amber/orange — archive & unarchive
   delete: '#ef4444', // red — destructive
+  success: 'hsl(var(--success))', // green — completion (mark as done)
   neutral: '#94a3b8',
 } as const;
 

@@ -57,7 +57,8 @@
     "reopen": "Rouvrir",
     "reopenTask": "Rouvrir la tâche",
     "moveTo": "Déplacer vers…",
-    "moveToColumn": "Déplacer vers une colonne"
+    "moveToColumn": "Déplacer vers une colonne",
+    "taskOptions": "Options de la tâche"
   },
   "confirm": {
     "reopenTitle": "Rouvrir cette tâche ?",
@@ -80,6 +81,7 @@
     "abandon": "Abandonner",
     "restore": "Restaurer",
     "delete": "Supprimer",
+    "markDone": "Marquer comme terminée",
     "moveTo": "Déplacer vers"
   },
   "toolbar": {

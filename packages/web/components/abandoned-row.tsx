@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { TaskSummary } from '@midnite/shared';
+import { OverflowMenu } from '@/components/overflow-menu';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
 import { TaskRow } from '@/components/task-row';
+import { useTaskMenuItems } from '@/components/task-actions';
 
 /**
  * Collapsible "Abandoned" section shown beneath each Tasks view. Its body mirrors
@@ -47,28 +49,14 @@ export function AbandonedRow({
         layout === 'board' ? (
           <div className="grid max-h-[40vh] grid-cols-1 gap-2 overflow-y-auto p-3 pt-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {tasks.map((task) => (
-              <div key={task.id} className="group relative">
-                <TaskCard
-                  task={task}
-                  project={projectFor(task)}
-                  onSelect={onSelect ? () => onSelect(task) : undefined}
-                  blockedBy={blockedCounts?.get(task.id)}
-                />
-                {onReopen ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onReopen(task.id);
-                    }}
-                    aria-label={t('card.reopenTask')}
-                    title={t('card.reopen')}
-                    className="absolute right-2 top-2 rounded-md border border-border bg-background/90 p-1 text-muted-foreground opacity-0 backdrop-blur transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </button>
-                ) : null}
-              </div>
+              <AbandonedCard
+                key={task.id}
+                task={task}
+                project={projectFor(task)}
+                onSelect={onSelect}
+                onReopen={onReopen}
+                blockedBy={blockedCounts?.get(task.id)}
+              />
             ))}
           </div>
         ) : (
@@ -86,5 +74,55 @@ export function AbandonedRow({
         )
       ) : null}
     </section>
+  );
+}
+
+/** One board-layout card, split out so its ellipsis menu can call the
+ *  per-task {@link useTaskMenuItems} hook (illegal inside the parent's `.map`). */
+function AbandonedCard({
+  task,
+  project,
+  onSelect,
+  onReopen,
+  blockedBy,
+}: {
+  task: TaskSummary;
+  project?: ProjectTagInfo;
+  onSelect?: (task: TaskSummary) => void;
+  onReopen?: (id: string) => void;
+  blockedBy?: number;
+}) {
+  const t = useTranslations('board');
+  const menuItems = useTaskMenuItems(task, { onEdit: onSelect ? () => onSelect(task) : undefined });
+  return (
+    <div className="group relative">
+      <TaskCard
+        task={task}
+        project={project}
+        onSelect={onSelect ? () => onSelect(task) : undefined}
+        blockedBy={blockedBy}
+      />
+      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 backdrop-blur transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        {onReopen ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReopen(task.id);
+            }}
+            aria-label={t('card.reopenTask')}
+            title={t('card.reopen')}
+            className="rounded-md border border-border bg-background/90 p-1 text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="h-3 w-3" />
+          </button>
+        ) : null}
+        {menuItems.length > 0 ? (
+          <span className="rounded-md border border-border bg-background/90">
+            <OverflowMenu items={menuItems} ariaLabel={t('card.taskOptions')} />
+          </span>
+        ) : null}
+      </div>
+    </div>
   );
 }

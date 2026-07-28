@@ -57,7 +57,8 @@
     "reopen": "Reopen",
     "reopenTask": "Reopen task",
     "moveTo": "Move to…",
-    "moveToColumn": "Move to column"
+    "moveToColumn": "Move to column",
+    "taskOptions": "Task options"
   },
   "confirm": {
     "reopenTitle": "Reopen this task?",
@@ -80,6 +81,7 @@
     "abandon": "Abandon",
     "restore": "Restore",
     "delete": "Delete",
+    "markDone": "Mark as done",
     "moveTo": "Move to"
   },
   "toolbar": {

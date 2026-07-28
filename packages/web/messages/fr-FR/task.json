@@ -127,6 +127,7 @@
   },
   "actions": {
     "start": "Démarrer",
+    "edit": "Modifier",
     "reopen": "Rouvrir",
     "session": "Session",
     "markDone": "Marquer comme terminée",

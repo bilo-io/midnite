@@ -1,9 +1,11 @@
 import { Square } from 'lucide-react';
 import type { TaskSummary } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
+import { OverflowMenu } from '@/components/overflow-menu';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import type { ProjectTagInfo } from '@/components/task-card';
+import { useTaskMenuItems } from '@/components/task-actions';
 import { statusHueVar } from '@/components/task-columns';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
@@ -45,6 +47,10 @@ export function TaskRow({
   const kind = task.kind ?? 'unknown';
   const interactive = Boolean(onSelect);
   const selectable = Boolean(onToggleSelect);
+  // Edit ⇒ the same "open the detail" affordance the row's own click already
+  // uses; the ellipsis just gives it a discoverable, keyboard/tap-friendly home
+  // next to the other lifecycle actions (mark done / abandon / delete).
+  const menuItems = useTaskMenuItems(task, { onEdit: onSelect });
 
   // Kind badge: a fit-content coloured pill inside a fixed-width leading cell.
   // The cell (`sm:w-24`) reserves a uniform column so the title after it aligns
@@ -95,63 +101,43 @@ export function TaskRow({
     </>
   );
 
-  // Base row: flex-col (two-line card) on mobile, single-line row on sm+.
   // Executing (an agent is actively running it) — the signature rotating,
   // pulsating gradient frame, shared across every task view. Waiting (parked
   // for input/approval) gets a gentler, orange-toned cousin.
   const isRunning = task.status === 'wip';
   const isWaiting = task.status === 'waiting';
-  const rowBase = cn(
-    'flex w-full flex-col gap-1 border-b border-border/40 px-3 py-2.5 text-left last:border-b-0',
-    'sm:flex-row sm:items-center sm:gap-3 sm:py-2',
+  const style = { ['--kind-hue' as string]: `var(${KIND_HUE_VARS[kind]})` };
+
+  // The outer wrapper is always a flex-row (never itself a <button>) so the
+  // optional SelectableIcon and the ellipsis menu can sit as its siblings —
+  // both are their own <button>, and a <button> can't nest another one. The
+  // inner element carries the two-line-on-mobile/single-line-on-sm+ layout and
+  // is the one that becomes a <button> when the row is clickable.
+  const outerClass = cn(
+    'flex w-full flex-row items-start gap-2 border-b border-border/40 px-3 py-2.5 last:border-b-0',
+    'sm:items-center sm:gap-3 sm:py-2',
     (interactive || selectable) && 'hover:bg-accent/40',
     selected && 'bg-accent/30',
     isRunning && 'task-running',
     isWaiting && 'task-waiting',
   );
-  const style = { ['--kind-hue' as string]: `var(${KIND_HUE_VARS[kind]})` };
+  const innerClass = cn('flex min-w-0 flex-1 flex-col gap-1 text-left', 'sm:flex-row sm:items-center sm:gap-3');
 
-  // Selectable rows can't be a single <button> (the SelectableIcon is itself a
-  // button) — split into a select cell plus a clickable body. The outer wrapper
-  // stays flex-row always so the icon anchors left; the inner button carries the
-  // two-line layout so it still collapses to a card on mobile.
-  if (selectable) {
-    const outerClass = cn(
-      'flex w-full flex-row items-start gap-3 border-b border-border/40 px-3 py-2.5 last:border-b-0',
-      'sm:items-center sm:py-2',
-      (interactive || selectable) && 'hover:bg-accent/40',
-      selected && 'bg-accent/30',
-      isRunning && 'task-running',
-      isWaiting && 'task-waiting',
-    );
-    const innerClass = cn(
-      'flex min-w-0 flex-1 flex-col gap-1 text-left',
-      'sm:flex-row sm:items-center sm:gap-3',
-    );
-    return (
-      <div style={style} className={outerClass}>
-        <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
-        {interactive ? (
-          <button type="button" onClick={onSelect} className={innerClass}>
-            {body}
-          </button>
-        ) : (
-          <div className={innerClass}>{body}</div>
-        )}
-      </div>
-    );
-  }
-
-  if (interactive) {
-    return (
-      <button type="button" onClick={onSelect} style={style} className={rowBase}>
-        {body}
-      </button>
-    );
-  }
   return (
-    <div style={style} className={rowBase}>
-      {body}
+    <div style={style} className={outerClass}>
+      {selectable ? (
+        <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
+      ) : null}
+      {interactive ? (
+        <button type="button" onClick={onSelect} className={innerClass}>
+          {body}
+        </button>
+      ) : (
+        <div className={innerClass}>{body}</div>
+      )}
+      {menuItems.length > 0 ? (
+        <OverflowMenu items={menuItems} ariaLabel={`${task.title} options`} className="shrink-0" />
+      ) : null}
     </div>
   );
 }

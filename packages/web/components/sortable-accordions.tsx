@@ -22,6 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical } from 'lucide-react';
 import { Collapse } from '@/components/ui/collapse';
 import { useTranslations } from 'next-intl';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 
 export type AccordionSection = {
@@ -188,6 +189,7 @@ function Section({
   variant?: AccordionVariant;
 }) {
   const t = useTranslations('common');
+  const isMobile = useIsMobile();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
   const dot = section.color ?? `hsl(${section.hue ?? '215 14% 52%'})`;
@@ -244,14 +246,13 @@ function Section({
           <h2 className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {section.label}
           </h2>
-          <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-            {section.count}
+          <span className="shrink-0 whitespace-nowrap rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+            {/* Full wording ("N tasks") on desktop, expanded or collapsed; the bare
+                number only on mobile, where header space is tight. */}
+            {!isMobile && section.summary ? section.summary : section.count}
           </span>
           {section.progress && section.progress.total > 0 ? (
             <ProgressBar done={section.progress.done} total={section.progress.total} />
-          ) : null}
-          {collapsed && section.summary ? (
-            <span className="ml-1 truncate text-[11px] text-muted-foreground">{section.summary}</span>
           ) : null}
         </button>
         {section.actions ? (
@@ -276,24 +277,27 @@ function Section({
 }
 
 /** A thin completion bar filled in the active primary/accent gradient — `done`
- *  of `total`. Sits beside the count pill; purely presentational (the header
- *  button owns the interaction). */
+ *  of `total` — with its percentage spelled out beside it. Sits next to the
+ *  count pill; purely presentational (the header button owns the interaction). */
 function ProgressBar({ done, total }: { done: number; total: number }) {
   const pct = Math.round((Math.min(done, total) / total) * 100);
   return (
-    <span
-      role="progressbar"
-      aria-valuenow={done}
-      aria-valuemin={0}
-      aria-valuemax={total}
-      aria-label={`${done} of ${total} done`}
-      title={`${done} of ${total} done`}
-      className="ml-1 h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-muted/50"
-    >
+    <span className="ml-1 flex shrink-0 items-center gap-1">
       <span
-        className="block h-full rounded-full transition-[width] duration-500"
-        style={{ width: `${pct}%`, backgroundImage: 'var(--accent-gradient, var(--brand-gradient))' }}
-      />
+        role="progressbar"
+        aria-valuenow={done}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label={`${done} of ${total} done`}
+        title={`${done} of ${total} done`}
+        className="h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-muted/50"
+      >
+        <span
+          className="block h-full rounded-full transition-[width] duration-500"
+          style={{ width: `${pct}%`, backgroundImage: 'var(--accent-gradient, var(--brand-gradient))' }}
+        />
+      </span>
+      <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-muted-foreground">{pct}%</span>
     </span>
   );
 }

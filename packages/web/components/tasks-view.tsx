@@ -12,8 +12,9 @@ import {
   type Task,
   type TaskSummary,
 } from '@midnite/shared';
-import { deleteTask, getTask, reopenTask, reorderTasks, updateTaskStatus } from '@/lib/api';
+import { deleteProject, deleteTask, getTask, reopenTask, reorderTasks, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { projectPageHref } from '@/lib/project-route';
 import { moveTask, spawnsSession } from '@/lib/task-transitions';
 import { TASK_MODAL_PARAM, TASK_MODAL_LEGACY_PARAM } from '@/lib/task-route';
 import {
@@ -395,8 +396,37 @@ export function TasksView({
     invalidateData();
   }, [selectedIds, confirm, clearSelection, toast, t]);
 
+  // Project group header menu (list view): edit navigates to the project's
+  // detail page; delete keeps the project's tasks (they become unassigned).
+  const editProject = useCallback((project: Project) => router.push(projectPageHref(project.id)), [router]);
+  const deleteProjectFromList = useCallback(
+    async (project: Project) => {
+      const ok = await confirm({
+        title: `Delete “${project.name}”?`,
+        description: 'Its tasks are kept but become unassigned. This cannot be undone.',
+        confirmLabel: 'Delete',
+      });
+      if (!ok) return;
+      await deleteProject(project.id);
+      invalidateData();
+    },
+    [confirm],
+  );
+
   const bulkActions = useMemo<BulkAction[]>(() => {
     const actions: BulkAction[] = [];
+    // `done` is a legal edge from todo/wip/waiting only (backlog has none —
+    // ALLOWED_TRANSITIONS in @midnite/shared/task.ts); done/abandoned are terminal.
+    const doneable = selectedTasks
+      .filter((x) => x.status === 'todo' || x.status === 'wip' || x.status === 'waiting')
+      .map((x) => x.id);
+    if (doneable.length)
+      actions.push({
+        key: 'markDone',
+        label: t('bulk.markDone'),
+        color: BULK_COLORS.success,
+        onClick: () => applyStatus(doneable, 'done'),
+      });
     const nonAbandoned = selectedTasks.filter((x) => x.status !== 'abandoned').map((x) => x.id);
     const abandoned = selectedTasks.filter((x) => x.status === 'abandoned').map((x) => x.id);
     if (nonAbandoned.length)
@@ -594,7 +624,13 @@ export function TasksView({
 
       <div className="reveal-content flex min-h-0 flex-1 flex-col">
         {view === 'list' ? (
-          <ListView {...viewProps} projects={projects} />
+          <ListView
+            {...viewProps}
+            projects={projects}
+            onEditProject={editProject}
+            onDeleteProject={(p) => void deleteProjectFromList(p)}
+            onAddTask={(projectId) => setNewTask({ projectId })}
+          />
         ) : view === 'graph' ? (
           <TaskGraphView
             tasks={filteredTasks}

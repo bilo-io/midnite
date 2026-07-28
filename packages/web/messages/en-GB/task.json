@@ -127,6 +127,7 @@
   },
   "actions": {
     "start": "Start",
+    "edit": "Edit",
     "reopen": "Reopen",
     "session": "Session",
     "markDone": "Mark as done",

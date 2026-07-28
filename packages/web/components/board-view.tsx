@@ -26,11 +26,13 @@ import { createPortal } from 'react-dom';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { useConfirm } from '@/components/confirm-dialog';
+import { OverflowMenu } from '@/components/overflow-menu';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { TapToMoveMenu } from '@/components/tap-to-move-menu';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
+import { useTaskMenuItems } from '@/components/task-actions';
 import {
   type ColumnDef,
   type TaskViewProps,
@@ -975,6 +977,7 @@ function DraggableCard({
   useEffect(() => {
     if (focused) rootRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [focused]);
+  const menuItems = useTaskMenuItems(task, { onEdit: onSelect });
 
   return (
     <div
@@ -1010,6 +1013,18 @@ function DraggableCard({
         </span>
       ) : null}
       <TaskCard task={task} project={project} onSelect={onSelect} blockedBy={blockedBy} />
+      {menuItems.length > 0 ? (
+        // Sibling of the card (not nested in its button), same as the select
+        // checkbox above — stop pointer-down so the drag sensor doesn't claim
+        // the click, and reveal only on hover/focus so it doesn't compete with
+        // the card's own badges for attention at rest.
+        <span
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute right-2 top-2 z-10 rounded-md bg-background/90 opacity-0 backdrop-blur transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+        >
+          <OverflowMenu items={menuItems} ariaLabel={t('card.taskOptions')} />
+        </span>
+      ) : null}
       {moveColumns && onMoveTo ? (
         // Touch fallback supersedes the hover-only Start/Stop (a phone has no
         // hover); moving to wip/todo via the menu runs the same spawn/restatus.

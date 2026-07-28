@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Ban, Check, Play, RotateCcw, SquareTerminal, Trash2 } from 'lucide-react';
+import { Ban, Check, Pencil, Play, RotateCcw, SquareTerminal, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Task, TaskSummary } from '@midnite/shared';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ExportMenu } from '@/components/export-menu';
 import { useConfirm } from '@/components/confirm-dialog';
+import type { OverflowMenuItem } from '@/components/overflow-menu';
 import { deleteTask, exportTask, reopenTask, startTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { unmetBlockerCount } from '@/lib/task-dependencies';
@@ -35,7 +36,12 @@ export function useTaskActions({
   tasksById,
   onActionComplete,
 }: {
-  task: Task;
+  // `TaskSummary` (not `Task`) — the hook only ever touches `id`, and a full
+  // `Task` is structurally assignable to `TaskSummary` (see the Phase 57 C note
+  // in `@midnite/shared/task.ts`), so this widens to cover lean row/card callers
+  // (Phase 82+ row menus) without narrowing what the existing full-`Task`
+  // callers (the work-item modal, the full task page) can pass.
+  task: TaskSummary;
   /** The board list keyed by id — feeds the manual-start blocker confirm. Omit
    *  (or pass empty) where the list isn't loaded; the blocker check is skipped. */
   tasksById?: Map<string, TaskSummary>;
@@ -156,6 +162,63 @@ export function useTaskActions({
   };
 
   return { start, markDone, abandon, reopen, remove, statusBusy, statusError, setStatusError };
+}
+
+/**
+ * The ellipsis-menu items for a task row/card (Phase 82+): edit (delegates to
+ * the caller's `onEdit`, usually the same handler as the row's own click),
+ * mark done, reopen, abandon, delete — gated exactly like {@link
+ * TaskActionButtons}'s icon row. Self-contained: drives its own confirms and
+ * mutations via {@link useTaskActions}, so a row/card need only pass its task.
+ */
+export function useTaskMenuItems(
+  task: TaskSummary,
+  options?: { onEdit?: () => void; onActionComplete?: () => void },
+): OverflowMenuItem[] {
+  const t = useTranslations('task');
+  const confirm = useConfirm();
+  const { markDone, abandon, reopen, remove } = useTaskActions({
+    task,
+    onActionComplete: options?.onActionComplete,
+  });
+  const canReopen = task.status === 'done' || task.status === 'abandoned';
+  // `done` is a legal edge from todo/wip/waiting only (backlog has none).
+  const canMarkDone = task.status === 'todo' || task.status === 'wip' || task.status === 'waiting';
+
+  const confirmRemove = async () => {
+    const ok = await confirm({
+      title: t('actions.deleteTitle'),
+      description: t('actions.deleteDescription'),
+      confirmLabel: t('actions.deleteConfirm'),
+    });
+    if (ok) void remove();
+  };
+
+  const items: OverflowMenuItem[] = [];
+  if (options?.onEdit) {
+    items.push({ key: 'edit', label: t('actions.edit'), icon: Pencil, onClick: options.onEdit });
+  }
+  if (canMarkDone) {
+    items.push({ key: 'markDone', label: t('actions.markDone'), icon: Check, onClick: () => void markDone() });
+  }
+  if (canReopen) {
+    items.push({ key: 'reopen', label: t('actions.reopen'), icon: RotateCcw, onClick: () => void reopen() });
+  }
+  if (task.status !== 'abandoned') {
+    items.push({ key: 'abandon', label: t('actions.abandon'), icon: Ban, onClick: () => void abandon() });
+  }
+  // Delete only once archived — the gateway rejects it otherwise (abandoning
+  // auto-archives, so the item appears right after Abandon).
+  if (task.archivedAt) {
+    items.push({
+      key: 'delete',
+      label: t('actions.delete'),
+      icon: Trash2,
+      destructive: true,
+      onClick: () => void confirmRemove(),
+    });
+  }
+  return items;
 }
 
 /** Slugged base name for the export download / print title. */
