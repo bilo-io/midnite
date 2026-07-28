@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { mergePath, parseShellPathOutput, resolveLoginShellPath } from './shell-path';
+import {
+  mergePath,
+  parseShellPathOutput,
+  resolveLoginShellPath,
+  RESOLVE_TIMEOUT_MS,
+} from './shell-path';
 
 const wrap = (path: string): string => `__MIDNITE_PATH_START__${path}__MIDNITE_PATH_END__`;
 
@@ -48,13 +53,28 @@ describe('mergePath', () => {
 describe('resolveLoginShellPath', () => {
   // Runs the real login shell — an integration check that the probe survives an
   // actual profile (banners, nvm hooks) and yields a usable PATH on this host.
+  //
+  // Given a generous timeout, NOT the 5s boot ceiling: spawning a login+interactive
+  // shell can take many seconds when the whole moon graph runs in parallel (seen at
+  // 5872ms locally), and a timeout here would fail the build over machine load
+  // rather than a defect. The boot bound is asserted separately below.
   it('resolves a non-empty PATH containing the standard system dirs', () => {
-    const resolved = resolveLoginShellPath();
+    const resolved = resolveLoginShellPath(60_000);
     if (process.platform === 'win32') {
       expect(resolved).toBeNull();
       return;
     }
     expect(resolved).toBeTruthy();
     expect(resolved).toContain('/usr/bin');
+  }, 90_000);
+
+  it('keeps a boot-safe default ceiling', () => {
+    expect(RESOLVE_TIMEOUT_MS).toBeLessThanOrEqual(5000);
+  });
+
+  it('fails soft when the shell outruns the timeout (boot must never hang)', () => {
+    if (process.platform === 'win32') return;
+    // 1ms can't outlive a shell spawn, so this exercises the timeout path itself.
+    expect(resolveLoginShellPath(1)).toBeNull();
   });
 });
