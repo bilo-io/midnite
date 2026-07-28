@@ -69,11 +69,11 @@ describe('CommandPalette', () => {
     pressCmdK();
 
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
-    // Each result row is a listbox `option` (Phase 60 I combobox pattern): 11
+    // Each result row is a listbox `option` (Phase 60 I combobox pattern): 10
     // toggleable features + 3 always-on destinations (Agents, Profile,
     // Settings). The header `?` keyboard-shortcuts control stays a plain button.
-    // (Was 12 features until Digests was folded into the /ops Digest tab.)
-    expect(screen.getAllByRole('option')).toHaveLength(14);
+    // (Was 11 features until Projects was hidden from the nav — see features.ts.)
+    expect(screen.getAllByRole('option')).toHaveLength(13);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     // Empty query never hits the network.
     expect(searchAll).not.toHaveBeenCalled();

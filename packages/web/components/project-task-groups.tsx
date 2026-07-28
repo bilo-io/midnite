@@ -1,7 +1,8 @@
 'use client';
 
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { TaskSummary } from '@midnite/shared';
+import type { Status, TaskSummary } from '@midnite/shared';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { TaskRow } from '@/components/task-row';
 import { ALL_COLUMNS, groupByStatus } from '@/components/task-columns';
@@ -26,6 +27,8 @@ export function ProjectTaskGroups({
   isSelected,
   onToggleSelect,
   blockedCounts,
+  projectId,
+  onAddTask,
 }: {
   tasks: TaskSummary[];
   storageKey: string;
@@ -33,6 +36,11 @@ export function ProjectTaskGroups({
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
   blockedCounts?: Map<string, number>;
+  /** The project these tasks belong to (undefined for the Unassigned group) —
+   *  forwarded to `onAddTask` so the new-task form is seeded with it. */
+  projectId?: string;
+  /** Open the new-task form seeded with this status group's project + status. */
+  onAddTask?: (projectId: string | undefined, status?: Status) => void;
 }) {
   const t = useTranslations('board');
   const grouped = groupByStatus(tasks);
@@ -45,6 +53,19 @@ export function ProjectTaskGroups({
       hue: `var(${col.hueVar})`,
       count: items.length,
       summary: plural(items.length, 'task'),
+      actions: onAddTask ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddTask(projectId, col.status);
+          }}
+          aria-label={t('addTask', { column: t(`columns.${col.status}`) })}
+          className="rounded p-1.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      ) : undefined,
       body: (
         <WindowVirtualList
           items={items}

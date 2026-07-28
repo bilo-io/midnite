@@ -629,7 +629,7 @@ export function TasksView({
             projects={projects}
             onEditProject={editProject}
             onDeleteProject={(p) => void deleteProjectFromList(p)}
-            onAddTask={(projectId) => setNewTask({ projectId })}
+            onAddTask={(projectId, status) => setNewTask({ projectId, status })}
           />
         ) : view === 'graph' ? (
           <TaskGraphView

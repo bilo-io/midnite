@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -224,11 +224,20 @@ function Section({
           <GripVertical className="h-4 w-4" />
         </button>
         {section.prefix ?? null}
-        <button
-          type="button"
+        {/* A `<div role="button">`, not a real `<button>`, because `label` can carry
+            a nested link (e.g. a project name linking to its detail page) — a real
+            `<button>` can't legally contain interactive content. */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onToggle}
+          onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            onToggle();
+          }}
           aria-expanded={!collapsed}
-          className="flex flex-1 items-center gap-2 rounded py-1 pr-1 text-left"
+          className="flex flex-1 cursor-pointer items-center gap-2 rounded py-1 pr-1 text-left"
         >
           <ChevronDown
             className={cn(
@@ -236,7 +245,7 @@ function Section({
               collapsed && '-rotate-90',
             )}
           />
-          {section.leading ?? (
+          {section.leading ? null : (
             <span
               aria-hidden
               className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -254,7 +263,10 @@ function Section({
           {section.progress && section.progress.total > 0 ? (
             <ProgressBar done={section.progress.done} total={section.progress.total} />
           ) : null}
-        </button>
+        </div>
+        {/* The project tag sits at the far right, just before the actions menu,
+            rather than inline with the title — it reads as metadata, not the name. */}
+        {section.leading ? <span className="flex shrink-0 items-center">{section.leading}</span> : null}
         {section.actions ? (
           <div className="flex shrink-0 items-center gap-0.5 pr-1">{section.actions}</div>
         ) : null}
@@ -290,7 +302,7 @@ function ProgressBar({ done, total }: { done: number; total: number }) {
         aria-valuemax={total}
         aria-label={`${done} of ${total} done`}
         title={`${done} of ${total} done`}
-        className="h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-muted/50"
+        className="h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-muted"
       >
         <span
           className="block h-full rounded-full transition-[width] duration-500"

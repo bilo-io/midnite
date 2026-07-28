@@ -1,7 +1,7 @@
 'use client';
 
 import { Folder, ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
-import type { Project, TaskSummary } from '@midnite/shared';
+import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { OverflowMenu, type OverflowMenuItem } from '@/components/overflow-menu';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
@@ -32,8 +32,8 @@ export function ProjectsTree({
   onEdit?: (project: Project) => void;
   onPlan?: (project: Project) => void;
   onDelete?: (project: Project) => void;
-  /** Open the new-task form seeded with this project (undefined for Unassigned). */
-  onAddTask?: (projectId: string | undefined) => void;
+  /** Open the new-task form seeded with this project (undefined for Unassigned) and, optionally, a status. */
+  onAddTask?: (projectId: string | undefined, status?: Status) => void;
   onSelectTask?: (task: TaskSummary) => void;
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
@@ -50,13 +50,15 @@ export function ProjectsTree({
     }
   }
 
-  const taskGroups = (items: TaskSummary[], storageKey: string) => (
+  const taskGroups = (items: TaskSummary[], storageKey: string, projectId: string | undefined) => (
     <ProjectTaskGroups
       tasks={items}
       storageKey={storageKey}
       onSelect={onSelectTask}
       isSelected={isSelected}
       onToggleSelect={onToggleSelect}
+      projectId={projectId}
+      onAddTask={onAddTask}
     />
   );
 
@@ -94,7 +96,7 @@ export function ProjectsTree({
       summary: `${items.length} task${items.length === 1 ? '' : 's'}`,
       progress: { done, total: items.length },
       actions: <OverflowMenu ariaLabel={`${p.name} options`} items={buildProjectMenuItems(p)} />,
-      body: taskGroups(items, `midnite.projects.tree.status.${p.id}`),
+      body: taskGroups(items, `midnite.projects.tree.status.${p.id}`, p.id),
     };
   });
 
@@ -113,7 +115,7 @@ export function ProjectsTree({
         unassignedMenuItems.length > 0 ? (
           <OverflowMenu ariaLabel="Unassigned options" items={unassignedMenuItems} />
         ) : undefined,
-      body: taskGroups(unassigned, 'midnite.projects.tree.status.__unassigned__'),
+      body: taskGroups(unassigned, 'midnite.projects.tree.status.__unassigned__', undefined),
     });
   }
 

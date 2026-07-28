@@ -150,6 +150,8 @@
     "providerUnconfigured": "<b>{name}</b> is set as your AI provider but has no API key, so AI features (task triage, plan drafting, the heartbeat) will be skipped. Add a key under its <b>API</b> tab below, or switch the active provider.",
     "theActiveProvider": "The active provider",
     "primaryAgent": "Primary Agent",
+    "showAdvanced": "Show advanced",
+    "hideAdvanced": "Hide advanced",
     "name": "Name",
     "orchestratorPlaceholder": "Orchestrator",
     "descriptionPrompt": "Description / prompt",

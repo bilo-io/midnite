@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
-import type { Memory, Project, Repo, Task, TaskSummary } from '@midnite/shared';
+import type { Memory, Project, Repo, Status, Task, TaskSummary } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
@@ -57,7 +57,7 @@ export function ProjectsView({
   const [planProject, setPlanProject] = useState<Project | null>(null);
   // The "Add task" project-menu item (Tasks list + Projects tree) opens this,
   // seeded with the project it was opened from (undefined for Unassigned).
-  const [newTask, setNewTask] = useState<{ projectId?: string } | null>(null);
+  const [newTask, setNewTask] = useState<{ projectId?: string; status?: Status } | null>(null);
   // The task list is now a lean TaskSummary[] (Phase 57 C), so the detail modal —
   // which needs the full Task (events/prompt) — fetches it by id when opened.
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -413,7 +413,7 @@ export function ProjectsView({
             onEdit={openProject}
             onPlan={setPlanProject}
             onDelete={(p) => void deleteOneProject(p)}
-            onAddTask={(projectId) => setNewTask({ projectId })}
+            onAddTask={(projectId, status) => setNewTask({ projectId, status })}
             onSelectTask={(t) => setSelectedTaskId(t.id)}
             isSelected={isSelected}
             onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
@@ -484,6 +484,7 @@ export function ProjectsView({
           repos={repos}
           tasks={tasks}
           defaultProjectId={newTask.projectId}
+          defaultStatus={newTask.status}
           onCreated={() => {
             toast.success('Task created');
             invalidateData();
