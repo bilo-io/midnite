@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { Notification } from '@midnite/shared';
 
 // next/navigation's useRouter throws outside the App Router runtime, so stub it.
@@ -134,14 +134,38 @@ describe('NotificationCenter', () => {
     expect(markRead).not.toHaveBeenCalled();
   });
 
-  it('routes to a notification and marks it read on click', () => {
+  // Since 8eeb59f6 a row click expands the body and marks it read; deep-linking is
+  // an explicit "Open" action revealed inside the expanded row.
+  it('expands a notification and marks it read on click, without navigating', () => {
     render(<NotificationCenter />);
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
-    fireEvent.click(screen.getByText('Agent needs your input'));
+    const row = screen.getByText('Agent needs your input').closest('button');
+    fireEvent.click(row!);
+    expect(markRead).toHaveBeenCalledWith(['a']);
+    expect(row).toHaveAttribute('aria-expanded', 'true');
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('routes via the expanded row’s Open action, then closes the dropdown', () => {
+    render(<NotificationCenter />);
+    fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
+    fireEvent.click(screen.getByText('Agent needs your input').closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     expect(markRead).toHaveBeenCalledWith(['a']);
     expect(push).toHaveBeenCalledWith('/tasks?task=a');
     // The dropdown closes after navigating.
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('collapses an expanded row via the chevron', () => {
+    render(<NotificationCenter />);
+    fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
+    // Scope to one row — every row carries its own chevron.
+    const row = within(screen.getByText('Agent needs your input').closest('li')!);
+    fireEvent.click(row.getByRole('button', { name: 'Expand notification' }));
+    fireEvent.click(row.getByRole('button', { name: 'Collapse notification' }));
+    expect(row.getByRole('button', { name: 'Expand notification' })).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('shows the empty state when the feed is empty', () => {

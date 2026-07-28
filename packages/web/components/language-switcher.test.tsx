@@ -4,12 +4,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { LanguageSwitcher } from './language-switcher';
 
 describe('LanguageSwitcher (Phase 79 C)', () => {
-  it('expanded: shows the current language with the locale code right-aligned, and an accessible trigger', () => {
+  // The expanded trigger shows the flag + the locale *code* only (00efc1be); the
+  // native label ("Deutsch") lives on the option rows and in the accessible name,
+  // not on the trigger itself.
+  it('expanded: shows the current locale code, with the language in the accessible name', () => {
     render(<LanguageSwitcher expanded locale="de-DE" onSelect={() => {}} />);
     const trigger = screen.getByRole('button', { name: /Language: German/i });
     expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
-    expect(within(trigger).getByText('Deutsch')).toBeInTheDocument();
     expect(within(trigger).getByText('de-DE')).toBeInTheDocument();
+    expect(within(trigger).queryByText('Deutsch')).not.toBeInTheDocument();
   });
 
   it('collapsed: shows the label only as a tooltip (icon-only rail)', () => {

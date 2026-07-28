@@ -118,6 +118,13 @@ export const AccentValueSchema = z.preprocess(
   ]),
 );
 export type AccentValue = z.infer<typeof AccentValueSchema>;
+/**
+ * The gradient arm of {@link AccentValue}. Named so a value that is *always* a
+ * gradient can say so: annotating one with the whole union loses that, and
+ * spreading it (`{ ...BRAND_ACCENT, animate: false }`) then fails excess-property
+ * checking against the solid arm, which has no `animate`.
+ */
+export type AccentGradient = Extract<AccentValue, { kind: 'gradient' }>;
 
 /**
  * The default accent: the signature brand gradient — a Dusk-like linear sweep
@@ -125,7 +132,7 @@ export type AccentValue = z.infer<typeof AccentValueSchema>;
  * in the applier/CSS). New installs get this; existing users keep whatever solid
  * swatch they saved (coerced from the legacy string).
  */
-export const BRAND_ACCENT: AccentValue = {
+export const BRAND_ACCENT: AccentGradient = {
   kind: 'gradient',
   preset: 'brand',
   type: 'linear',
