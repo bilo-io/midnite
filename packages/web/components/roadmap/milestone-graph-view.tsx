@@ -4,6 +4,7 @@ import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
+  applyEdgeChanges,
   Background,
   Controls,
   ReactFlow,
@@ -12,6 +13,7 @@ import {
   type Node,
   type NodeTypes,
   type OnConnect,
+  type OnEdgesChange,
   type OnEdgesDelete,
 } from '@xyflow/react';
 import type { RoadmapView, TaskSummary } from '@midnite/shared';
@@ -151,9 +153,23 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
     [view, toast],
   );
 
-  const { nodes: laidOutNodes, edges } = useMemo(
+  const { nodes: laidOutNodes, edges: layoutEdges } = useMemo(
     () => layoutMilestoneGraph(milestones, expandedIds),
     [milestones, expandedIds],
+  );
+
+  // React Flow's `edges` prop is "controlled": selecting an edge (a prerequisite
+  // for deleting it with Backspace/Delete) only sticks if `onEdgesChange` applies
+  // the change back onto the array we pass in — without it, clicks never mark an
+  // edge selected, so `onEdgesDelete` never has anything to fire on. Mirror the
+  // derived layout into local state and let `applyEdgeChanges` own selection;
+  // resetting on every layout change is fine since the dependency edges are the
+  // real source of truth (selection is disposable UI state).
+  const [edges, setEdges] = useState<Edge[]>(layoutEdges);
+  useEffect(() => setEdges(layoutEdges), [layoutEdges]);
+  const onEdgesChange = useCallback<OnEdgesChange>(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [],
   );
 
   const allTasksById = useMemo(() => {
@@ -199,6 +215,7 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
         edges={edges}
         nodeTypes={nodeTypes}
         onConnect={onConnect}
+        onEdgesChange={onEdgesChange}
         onEdgesDelete={onEdgesDelete}
         nodesDraggable={false}
         nodesConnectable
