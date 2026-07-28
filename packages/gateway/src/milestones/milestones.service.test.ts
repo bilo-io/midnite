@@ -90,6 +90,10 @@ function makeTasks(tasks: Record<string, { projectId?: string; status?: string; 
         .map(([id, t]) => ({ id, projectId, status: t.status ?? 'todo', milestoneId: t.milestoneId } as TaskSummary));
       return { items, total: items.length };
     }),
+    listIdsForMilestone: vi.fn((milestoneId: string): string[] =>
+      [...store.entries()].filter(([, t]) => t.milestoneId === milestoneId).map(([id]) => id),
+    ),
+    reorderWithinMilestone: vi.fn(),
   };
 }
 
@@ -205,6 +209,32 @@ describe('MilestonesService.assignTask', () => {
   });
 });
 
+describe('MilestonesService.reorderTasks', () => {
+  it('delegates to tasks.reorderWithinMilestone when ids match the current set', () => {
+    const tasks = makeTasks({ t1: { projectId: 'p1' }, t2: { projectId: 'p1' } });
+    const { svc } = makeService({ tasks });
+    const m = svc.create('p1', { name: 'M' });
+    tasks.store.set('t1', { projectId: 'p1', milestoneId: m.id });
+    tasks.store.set('t2', { projectId: 'p1', milestoneId: m.id });
+    svc.reorderTasks(m.id, ['t2', 't1']);
+    expect(tasks.reorderWithinMilestone).toHaveBeenCalledWith(m.id, ['t2', 't1']);
+  });
+
+  it('rejects a list that is not exactly the milestone current task set', () => {
+    const tasks = makeTasks({ t1: { projectId: 'p1' } });
+    const { svc } = makeService({ tasks });
+    const m = svc.create('p1', { name: 'M' });
+    tasks.store.set('t1', { projectId: 'p1', milestoneId: m.id });
+    expect(() => svc.reorderTasks(m.id, ['t1', 'ghost'])).toThrow(/every task currently in this milestone/);
+    expect(tasks.reorderWithinMilestone).not.toHaveBeenCalled();
+  });
+
+  it('404s an unknown milestone', () => {
+    const { svc } = makeService();
+    expect(() => svc.reorderTasks('ghost', ['t1'])).toThrow(/not found/);
+  });
+});
+
 describe('MilestonesService.getRoadmap', () => {
   it('computes per-milestone progress and buckets unassigned tasks into the backlog', () => {
     const { svc, tasks } = (() => {
@@ -222,5 +252,21 @@ describe('MilestonesService.getRoadmap', () => {
     expect(roadmap.milestones[0]?.done).toBe(1);
     expect(roadmap.milestones[0]?.tasks).toHaveLength(2);
     expect(roadmap.backlog.map((t) => t.id)).toEqual(['loose']);
+  });
+
+  it('orders a milestone bucket by milestonePosition', () => {
+    const t = makeTasks({});
+    const { svc, tasks } = { ...makeService({ tasks: t }), tasks: t };
+    const m = svc.create('p1', { name: 'M' });
+    tasks.listTaskSummaries.mockReturnValueOnce({
+      items: [
+        { id: 'c', projectId: 'p1', status: 'todo', milestoneId: m.id, milestonePosition: 2 },
+        { id: 'a', projectId: 'p1', status: 'todo', milestoneId: m.id, milestonePosition: 0 },
+        { id: 'b', projectId: 'p1', status: 'todo', milestoneId: m.id, milestonePosition: 1 },
+      ] as TaskSummary[],
+      total: 3,
+    });
+    const roadmap = svc.getRoadmap('p1');
+    expect(roadmap.milestones[0]?.tasks.map((task) => task.id)).toEqual(['a', 'b', 'c']);
   });
 });

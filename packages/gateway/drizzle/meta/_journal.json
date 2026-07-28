@@ -666,6 +666,13 @@
       "when": 1785100000000,
       "tag": "0094_drop_phase_doc_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "6",
+      "when": 1785200000000,
+      "tag": "0095_task_milestone_position",
+      "breakpoints": true
     }
   ]
 }

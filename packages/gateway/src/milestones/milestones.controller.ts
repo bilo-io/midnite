@@ -12,6 +12,7 @@ import {
 import {
   AssignMilestoneRequestSchema,
   CreateMilestoneRequestSchema,
+  ReorderMilestoneTasksRequestSchema,
   ReorderMilestonesRequestSchema,
   UpdateMilestoneRequestSchema,
   type Milestone,
@@ -88,6 +89,19 @@ export class MilestonesController {
   @RequiresRole('member')
   remove(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): { ok: true } {
     this.service.delete(id, toScope(user));
+    return { ok: true };
+  }
+
+  @Post('milestones/:id/tasks/reorder')
+  @RequiresRole('member')
+  reorderTasks(
+    @Param('id') milestoneId: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): { ok: true } {
+    const parsed = ReorderMilestoneTasksRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    this.service.reorderTasks(milestoneId, parsed.data.ids, toScope(user));
     return { ok: true };
   }
 

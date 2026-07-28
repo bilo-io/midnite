@@ -244,6 +244,9 @@ export const TaskSummarySchema = z.object({
   waitReason: WaitReasonSchema.nullable().optional(),
   /** Blocker ids (Phase 27) — kept so the board derives its "blocked by N" chip. */
   dependsOn: z.array(z.string()).optional(),
+  /** Manual display order within the task's milestone lane (roadmap board only) —
+   *  display-only, like the board's own `position`; absent for backlog tasks. */
+  milestonePosition: z.number().int().nonnegative().optional(),
   /** First image attachment only (the card thumbnail); other attachments dropped. */
   attachments: z.array(TaskAttachmentSchema).optional(),
   /** Up to the six links the card renders as source icons. */
@@ -405,6 +408,18 @@ export const ReorderTasksRequestSchema = z.object({
 });
 
 export const ReorderTasksResponseSchema = z.object({ ok: z.literal(true) });
+
+/**
+ * Body for `POST /milestones/:id/tasks/reorder` — the task ids currently
+ * assigned to that milestone, in their new top-to-bottom lane order. Mirrors
+ * `ReorderTasksRequestSchema` but scoped to one milestone's `milestonePosition`
+ * rather than a board column's `position`; the ids must be exactly the
+ * milestone's current task set (validated service-side).
+ */
+export const ReorderMilestoneTasksRequestSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(MAX_REORDER_TASKS),
+});
+export type ReorderMilestoneTasksRequest = z.infer<typeof ReorderMilestoneTasksRequestSchema>;
 
 export const CreateTaskResponseSchema = z.object({
   task: TaskSchema,

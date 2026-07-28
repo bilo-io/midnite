@@ -1223,6 +1223,28 @@ export class TasksService implements OnModuleDestroy {
     });
   }
 
+  /** The task ids currently assigned to one milestone — used by
+   *  `MilestonesService.reorderTasks` to validate a reorder request names
+   *  exactly that milestone's current task set. */
+  listIdsForMilestone(milestoneId: string): string[] {
+    return this.repo.idsByMilestone(milestoneId);
+  }
+
+  /**
+   * Persist the manual order within one milestone's roadmap lane: reindex each
+   * task's `milestonePosition` to its 0-based slot in `ids`, atomically. Mirrors
+   * `reorderTasks`'s board-column reorder — no `task.updated` broadcast, since
+   * the acting client reorders optimistically then any other client picks up
+   * the new order on its next roadmap fetch. The caller (`MilestonesService`)
+   * has already validated `ids` is exactly the milestone's current task set.
+   */
+  reorderWithinMilestone(milestoneId: string, ids: string[]): void {
+    const now = new Date().toISOString();
+    this.repo.transaction((tx) => {
+      ids.forEach((id, index) => this.repo.setMilestonePosition(id, milestoneId, index, now, tx));
+    });
+  }
+
   // Replace a task's tag set (normalised: trimmed, de-duped, length/count-capped).
   setTags(id: string, tags: string[]): Task {
     const now = new Date().toISOString();

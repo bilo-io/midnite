@@ -11,6 +11,7 @@ function makeService() {
     update: vi.fn(() => ({ id: 'm1' })),
     delete: vi.fn(),
     reorder: vi.fn(() => []),
+    reorderTasks: vi.fn(),
     assignTask: vi.fn(() => ({ id: 't1' })),
   };
 }
@@ -58,6 +59,15 @@ describe('MilestonesController', () => {
   it('reorder forwards the ordered id list', () => {
     ctrl.reorder('p1', { milestoneIds: ['b', 'a'] }, user);
     expect(service.reorder).toHaveBeenCalledWith('p1', ['b', 'a'], scope);
+  });
+
+  it('reorderTasks 400s when ids is missing', () => {
+    expect(() => ctrl.reorderTasks('m1', {}, user)).toThrow(BadRequestException);
+  });
+
+  it('reorderTasks forwards the milestone id + ordered task ids', () => {
+    expect(ctrl.reorderTasks('m1', { ids: ['t2', 't1'] }, user)).toEqual({ ok: true });
+    expect(service.reorderTasks).toHaveBeenCalledWith('m1', ['t2', 't1'], scope);
   });
 
   it('assign 400s when milestoneId is absent', () => {

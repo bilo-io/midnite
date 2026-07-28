@@ -698,6 +698,17 @@ export async function assignTaskMilestone(taskId: string, milestoneId: string | 
   );
 }
 
+/** Persist the manual vertical order of one milestone's roadmap-board lane —
+ *  `ids` must be exactly the milestone's current task ids, top-to-bottom. The
+ *  lane reorders optimistically and calls this to persist. */
+export async function reorderMilestoneTasks(milestoneId: string, ids: string[]): Promise<void> {
+  await fetchJson(
+    `/milestones/${encodeURIComponent(milestoneId)}/tasks/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ ids }) },
+    z.object({ ok: z.literal(true) }),
+  );
+}
+
 // ── Project docs ─────────────────────────────────────────────────────────────
 // Planning documents, moved off browser localStorage (`ProjectPlanPanel`) onto
 // the gateway so they persist and can be filled in server-side via Claude.
