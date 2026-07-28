@@ -10,6 +10,7 @@ import { app, ipcMain, type BrowserWindow } from 'electron';
 // never at module load.
 import { autoUpdater } from 'electron-updater';
 
+import { feedChannelFor } from '../updates/feed-channel';
 import { fetchBelowFloor, type UpdateChannel } from '../updates/floor';
 import { isManualInstallCodesign } from '../updates/install-mode';
 import {
@@ -126,11 +127,18 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
   });
 
   // Theme H: point the electron-updater feed + the floor fetch at the chosen
-  // channel, then re-check + refresh the floor. `autoUpdater.channel` selects the
-  // `latest`/`beta` feed; the floor comes from the channel's version.json.
+  // channel, then re-check + refresh the floor. The floor comes from the channel's
+  // version.json; the *feed* channel is a different namespace from ours, so it goes
+  // through `feedChannelFor` — assigning our `'stable'` straight to
+  // `autoUpdater.channel` made it fetch a `stable-mac.yml` that no release carries,
+  // and the resulting 404 silently hid the banner on every packaged build.
   ipcMain.on(UPDATE_CHANNEL_CHANNEL, (_e, next: UpdateChannel) => {
     channel = next === 'beta' ? 'beta' : 'stable';
-    autoUpdater.channel = channel;
+    const feed = feedChannelFor(channel);
+    autoUpdater.channel = feed.channel;
+    autoUpdater.allowPrerelease = feed.allowPrerelease;
+    // Assigned after `channel` on purpose: its setter force-sets allowDowngrade.
+    autoUpdater.allowDowngrade = feed.allowDowngrade;
     refreshFloor();
     void autoUpdater.checkForUpdates().catch(() => {});
   });

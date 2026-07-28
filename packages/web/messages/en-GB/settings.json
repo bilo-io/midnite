@@ -738,7 +738,11 @@
       "releaseChannel": "Release channel",
       "channelStable": "Stable",
       "channelBeta": "Beta",
-      "channelDescription": "<strong>Stable</strong> tracks tagged releases. <strong>Beta</strong> opts into pre-release builds to test the newest features early — expect rough edges. The update banner and the desktop auto-updater both follow this choice."
+      "channelDescription": "<strong>Stable</strong> tracks tagged releases. <strong>Beta</strong> opts into pre-release builds to test the newest features early — expect rough edges. The update banner and the desktop auto-updater both follow this choice.",
+      "status": "Update status",
+      "statusUpToDate": "This build is up to date.",
+      "statusAvailable": "Version {version} is available.",
+      "statusFailed": "The last update check failed: {error}"
     }
   },
   "team": {
