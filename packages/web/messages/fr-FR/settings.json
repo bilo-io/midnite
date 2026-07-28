@@ -14,6 +14,7 @@
   "items": {
     "appearance": "Apparence",
     "system": "Système",
+    "features": "Fonctionnalités",
     "agents": "Agents",
     "apiTokens": "Jetons d’API",
     "data": "Données",
@@ -433,6 +434,11 @@
       "intervalAria": "Intervalle d’enregistrement automatique"
     }
   },
+  "features": {
+    "title": "Fonctionnalités",
+    "description": "Activez ou désactivez des sections de l'application. Les fonctionnalités désactivées sont masquées de la barre latérale ; si vous en ouvrez une directement, il vous sera demandé de la réactiver ici. Ces groupes reflètent les sections de la barre latérale.",
+    "enableAria": "Activer {feature}"
+  },
   "integrations": {
     "title": "Intégrations",
     "description": "Webhooks sortants — transmettez les événements de tâches à Slack, Discord ou tout autre destinataire.",
@@ -702,11 +708,6 @@
       "runHint": "La commande {action} est saisie ci-dessous — appuyez sur <kbd>Entrée</kbd> pour l'exécuter. Fermez à tout moment.",
       "terminalLabel": "Terminal {verb} {label}",
       "preparing": "Préparation de {action}…"
-    },
-    "features": {
-      "title": "Fonctionnalités",
-      "description": "Activez ou désactivez des sections de l'application. Les fonctionnalités désactivées sont masquées de la barre latérale ; si vous en ouvrez une directement, il vous sera demandé de la réactiver ici. Ces groupes reflètent les sections de la barre latérale.",
-      "enableAria": "Activer {feature}"
     },
     "notifications": {
       "title": "Notifications",

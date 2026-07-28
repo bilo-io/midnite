@@ -32,7 +32,7 @@ export function FeatureGate() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        router.push('/settings/system');
+        router.push('/settings/features');
       }
     };
     document.addEventListener('keydown', onKey, true);
@@ -53,7 +53,7 @@ export function FeatureGate() {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-background/40 backdrop-blur-md"
-        onClick={() => router.push('/settings/system')}
+        onClick={() => router.push('/settings/features')}
         aria-hidden
       />
       <div
@@ -77,7 +77,7 @@ export function FeatureGate() {
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/settings/system')}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/settings/features')}>
             Open settings
           </Button>
           <Button type="button" variant="default" size="sm" onClick={enableFeature}>

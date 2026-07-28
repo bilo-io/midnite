@@ -77,7 +77,7 @@ test('collapsed rail shows a chevron toggle per section', async ({ page }) => {
 
 test('settings feature chooser mirrors the sidebar categories', async ({ page }) => {
   await setup(page, 'expanded');
-  await page.goto('/settings/system');
+  await page.goto('/settings/features');
 
   for (const label of SECTIONS) {
     await expect(page.getByRole('heading', { level: 3, name: label })).toBeVisible();

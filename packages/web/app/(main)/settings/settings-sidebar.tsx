@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Blocks,
   Bot,
   ChevronDown,
   Database,
@@ -35,6 +36,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/settings', key: 'appearance', Icon: Palette },
       { href: '/settings/system', key: 'system', Icon: SlidersHorizontal },
+      { href: '/settings/features', key: 'features', Icon: Blocks },
       { href: '/settings/editor', key: 'editor', Icon: FileEdit },
     ],
   },

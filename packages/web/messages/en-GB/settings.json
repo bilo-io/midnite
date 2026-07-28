@@ -14,6 +14,7 @@
   "items": {
     "appearance": "Appearance",
     "system": "System",
+    "features": "Features",
     "agents": "Agents",
     "apiTokens": "API Tokens",
     "data": "Data",
@@ -433,6 +434,11 @@
       "intervalAria": "Autosave interval"
     }
   },
+  "features": {
+    "title": "Features",
+    "description": "Turn sections of the app on or off. Disabled features are hidden from the sidebar; if you open one directly you'll be prompted to re-enable it here. These groups mirror the sidebar's sections.",
+    "enableAria": "Enable {feature}"
+  },
   "integrations": {
     "title": "Integrations",
     "description": "Outbound webhooks — push task events to Slack, Discord, or any receiver.",
@@ -702,11 +708,6 @@
       "runHint": "The {action} command is typed below — press <kbd>Enter</kbd> to run it. Close anytime.",
       "terminalLabel": "{verb} {label} terminal",
       "preparing": "Preparing {action}…"
-    },
-    "features": {
-      "title": "Features",
-      "description": "Turn sections of the app on or off. Disabled features are hidden from the sidebar; if you open one directly you'll be prompted to re-enable it here. These groups mirror the sidebar's sections.",
-      "enableAria": "Enable {feature}"
     },
     "notifications": {
       "title": "Notifications",
