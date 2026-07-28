@@ -113,6 +113,10 @@ async function boot(): Promise<void> {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
+      // DevTools only in local/dev builds. In the packaged production app this
+      // disables them entirely — the Cmd+Opt+I / right-click → Inspect shortcuts
+      // become no-ops and `openDevTools()` can't force them open.
+      devTools: !app.isPackaged,
       // Read by the preload: the gateway URL is exposed as
       // window.__NEXT_PUBLIC_GATEWAY_URL, the frameless flag feeds the
       // windowChrome bridge (single-sourced from the window options above).
