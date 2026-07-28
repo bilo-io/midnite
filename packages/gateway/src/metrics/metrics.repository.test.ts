@@ -160,11 +160,18 @@ describe('MetricsRepository', () => {
 
   describe('outcomeCounts', () => {
     it('counts each outcome independently', () => {
-      for (const outcome of ['done', 'done', 'abandoned', 'failed', 'cancelled'] as const) {
-        const id = `r-${outcome}-${Math.random()}`;
-        repo.insertStart(run(id.slice(-3)));
-        repo.recordEnd(id.slice(-3), '', 1_000, outcome);
-      }
+      // Index-suffixed, not random: this used to build a unique id from
+      // `Math.random()` and then keep only `slice(-3)` of it, throwing the
+      // uniqueness away — ~1000 possible values over 5 rows is a ~1% chance of
+      // `UNIQUE constraint failed: agent_run_stats.id` on any given CI run. The
+      // suffix must stay a single digit either way, because `run()` derives
+      // `startedAt` from the id's last character.
+      const outcomes = ['done', 'done', 'abandoned', 'failed', 'cancelled'] as const;
+      outcomes.forEach((outcome, i) => {
+        const id = `r-${outcome}-${i}`;
+        repo.insertStart(run(id));
+        repo.recordEnd(id, '', 1_000, outcome);
+      });
       const counts = repo.outcomeCounts('2026-06-01T00:00:00.000Z', '2026-06-01T23:59:59.999Z');
       expect(counts.done).toBe(2);
       expect(counts.abandoned).toBe(1);
