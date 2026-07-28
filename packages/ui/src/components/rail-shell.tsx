@@ -45,6 +45,7 @@ export function RailShell({
   centerActions,
   className,
   stickyRails = false,
+  hideFloatingToggles = false,
 }: {
   left?: RailConfig;
   right?: RailConfig;
@@ -67,6 +68,14 @@ export function RailShell({
    * above the shell need a larger offset than this provides).
    */
   stickyRails?: boolean;
+  /**
+   * Skip rendering the shell's own floating corner toggles (and the headroom
+   * reserved for them) — for a page that places its own `<RailFloatingToggle
+   * inline>` pair itself (e.g. framing a tab strip between them) instead of the
+   * default floating-corner placement. Off by default; every other consumer is
+   * unaffected.
+   */
+  hideFloatingToggles?: boolean;
 }) {
   const hasRail = Boolean(left || right);
   return (
@@ -76,10 +85,10 @@ export function RailShell({
       <div className="relative min-w-0 flex-1">
         {/* Toggles float in the content layer and glide with the rail as its
             width animates. Desktop-only — mobile toggles live in the header. */}
-        {!isMobile && left ? (
+        {!isMobile && !hideFloatingToggles && left ? (
           <RailFloatingToggle side="left" open={left.open} title={left.title} onToggle={left.onToggle} />
         ) : null}
-        {!isMobile && right ? (
+        {!isMobile && !hideFloatingToggles && right ? (
           <RailFloatingToggle side="right" open={right.open} title={right.title} onToggle={right.onToggle} />
         ) : null}
         {!isMobile && centerActions ? (
@@ -95,7 +104,7 @@ export function RailShell({
 
         {/* Reserve headroom on desktop so the floating toggles never overlap the
             center content. */}
-        <div className={cn(hasRail && 'lg:pt-11')}>{children}</div>
+        <div className={cn(hasRail && !hideFloatingToggles && 'lg:pt-11')}>{children}</div>
       </div>
 
       {right ? <Rail side="right" isMobile={isMobile} sticky={stickyRails} {...right} /> : null}
@@ -173,11 +182,16 @@ export function RailFloatingToggle({
   open,
   title,
   onToggle,
+  inline = false,
 }: {
   side: 'left' | 'right';
   open: boolean;
   title: string;
   onToggle: () => void;
+  /** Lay out via the parent flex row instead of floating over a corner — for a
+   *  page that frames its own content (e.g. a tab strip) between a left/right
+   *  toggle pair rather than adopting the default floating-corner placement. */
+  inline?: boolean;
 }) {
   const Icon: LucideIcon =
     side === 'left'
@@ -196,8 +210,8 @@ export function RailFloatingToggle({
       aria-pressed={open}
       title={label}
       className={cn(
-        'absolute top-2 z-20 hidden h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-foreground motion-reduce:transition-none lg:flex',
-        side === 'left' ? 'left-2' : 'right-2',
+        'z-20 hidden h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-foreground motion-reduce:transition-none lg:flex',
+        inline ? undefined : cn('absolute top-2', side === 'left' ? 'left-2' : 'right-2'),
       )}
     >
       <Icon className="h-4 w-4" />
