@@ -16,14 +16,7 @@ import { cn } from '@/lib/utils';
  * focused or holding an active query, so an active filter is never silently
  * hidden by a blur.
  */
-export function SearchBar({
-  placeholder = 'Search…',
-  clearLabel = 'Clear search',
-}: {
-  placeholder?: string;
-  /** aria-label for the clear (×) button — pass a translated string from the caller. */
-  clearLabel?: string;
-}) {
+export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -96,7 +89,7 @@ export function SearchBar({
             setValue('');
             inputRef.current?.focus();
           }}
-          aria-label={clearLabel}
+          aria-label="Clear search"
           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />

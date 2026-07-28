@@ -3,8 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { LoaderCircle } from 'lucide-react';
+import {
+  BrainCircuit,
+  CirclePile,
+  Folder,
+  ListChecks,
+  LoaderCircle,
+  Milestone,
+  Newspaper,
+  StickyNote,
+  Workflow,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   EMPTY_SEARCH_RESPONSE,
   MAX_SEARCH_LIMIT,
@@ -16,7 +26,18 @@ import {
 import { searchAll } from '@/lib/api';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { renderSnippet } from '@/lib/highlight';
-import { searchTypeMeta } from '@/lib/search-type-meta';
+
+/** How each domain renders: group heading + a row icon (mirrors the palette). */
+const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
+  task: { label: 'Tasks', Icon: ListChecks },
+  project: { label: 'Projects', Icon: Folder },
+  memory: { label: 'Memory', Icon: BrainCircuit },
+  note: { label: 'Notes', Icon: StickyNote },
+  council: { label: 'Councils', Icon: CirclePile },
+  workflow: { label: 'Workflows', Icon: Workflow },
+  milestone: { label: 'Milestones', Icon: Milestone },
+  digest: { label: 'Digests', Icon: Newspaper },
+};
 
 type FetchStatus = 'idle' | 'loading' | 'done' | 'error';
 
@@ -32,11 +53,9 @@ export function SearchResults() {
   const q = (params.get('q') ?? '').trim();
   const typeParam = params.get('type') ?? '';
   const activeTypes = new Set(
-    typeParam.split(',').filter((v): v is SearchType => (SEARCH_TYPES as readonly string[]).includes(v)),
+    typeParam.split(',').filter((t): t is SearchType => (SEARCH_TYPES as readonly string[]).includes(t)),
   );
 
-  const t = useTranslations('search');
-  const TYPE_META = searchTypeMeta(t);
   const [response, setResponse] = useState<SearchResponse>(EMPTY_SEARCH_RESPONSE);
   const [status, setStatus] = useState<FetchStatus>('idle');
   const abortRef = useRef<AbortController | null>(null);
@@ -71,7 +90,9 @@ export function SearchResults() {
   if (q.length < MIN_SEARCH_QUERY_LENGTH) {
     return (
       <p className="px-1 py-10 text-center text-sm text-muted-foreground">
-        {q.length === 0 ? t('results.emptyPrompt') : t('typeAtLeast', { count: MIN_SEARCH_QUERY_LENGTH })}
+        {q.length === 0
+          ? 'Search across tasks, projects, memory, notes, councils & workflows.'
+          : `Type at least ${MIN_SEARCH_QUERY_LENGTH} characters to search.`}
       </p>
     );
   }
@@ -79,19 +100,19 @@ export function SearchResults() {
   if (status === 'loading') {
     return (
       <p className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> {t('results.searching')}
+        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> Searching…
       </p>
     );
   }
 
   if (status === 'error') {
-    return <p className="py-10 text-center text-sm text-destructive">{t('results.failed')}</p>;
+    return <p className="py-10 text-center text-sm text-destructive">Search failed — try again.</p>;
   }
 
   if (response.total === 0) {
     return (
       <p className="px-1 py-10 text-center text-sm text-muted-foreground">
-        {t('results.noResultsFor', { query: q })}
+        No results for “{q}”.
       </p>
     );
   }
@@ -106,20 +127,18 @@ export function SearchResults() {
   })).filter((s) => s.hits.length > 0);
 
   // Only types that actually matched become filter pills, labelled with counts.
-  const pillOptions: FilterOption[] = SEARCH_TYPES.filter((type) => (response.byType[type] ?? 0) > 0).map(
-    (type) => ({ value: type, label: `${TYPE_META[type].label} (${response.byType[type]})` }),
+  const pillOptions: FilterOption[] = SEARCH_TYPES.filter((t) => (response.byType[t] ?? 0) > 0).map(
+    (t) => ({ value: t, label: `${TYPE_META[t].label} (${response.byType[t]})` }),
   );
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="text-sm text-muted-foreground">
-          {t('results.resultCountFor', { count: response.total })}{' '}
+          {response.total} result{response.total === 1 ? '' : 's'} for{' '}
           <span className="font-medium text-foreground">“{q}”</span>
         </span>
-        {pillOptions.length > 1 && (
-          <FilterPills options={pillOptions} paramKey="type" allLabel={t('results.allTypes')} />
-        )}
+        {pillOptions.length > 1 && <FilterPills options={pillOptions} paramKey="type" allLabel="All types" />}
       </div>
 
       {sections.map((section) => {

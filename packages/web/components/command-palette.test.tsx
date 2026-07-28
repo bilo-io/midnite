@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SearchResponse, SearchResult } from '@midnite/shared';
-import { renderWithIntl as render } from '../vitest.render-intl';
 
 // next/navigation's useRouter throws outside the App Router runtime, so stub it.
 const push = vi.fn();
@@ -222,15 +221,5 @@ describe('CommandPalette', () => {
     // The surrounding text is rendered as plain text, not parsed as markup.
     const row = mark.closest('button')!;
     expect(row).toHaveTextContent('an auth token');
-  });
-
-  // Phase 82 Theme D — renders under fr-FR (dialog label + input placeholder).
-  it('renders in fr-FR', () => {
-    render(<CommandPalette />, { locale: 'fr-FR' });
-    pressCmdK();
-    expect(screen.getByRole('dialog', { name: 'Palette de commandes' })).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Accéder, rechercher ou exécuter une commande…'),
-    ).toBeInTheDocument();
   });
 });

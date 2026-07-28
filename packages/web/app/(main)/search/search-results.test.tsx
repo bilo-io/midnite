@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { SearchResponse, SearchResult } from '@midnite/shared';
-import { renderWithIntl as render } from '../../../vitest.render-intl';
 
 // The page reads ?q= / ?type= from the URL; drive them via a mutable value.
 let searchParamsValue = new URLSearchParams();
@@ -93,14 +92,5 @@ describe('SearchResults', () => {
     searchAll.mockResolvedValue(response([]));
     render(<SearchResults />);
     await waitFor(() => expect(screen.getByText(/No results for/i)).toBeTruthy());
-  });
-
-  // Phase 82 Theme D — renders under fr-FR (empty prompt + result count).
-  it('renders in fr-FR', async () => {
-    searchParamsValue = new URLSearchParams('q=oauth');
-    searchAll.mockResolvedValue(response([result({ type: 'task', id: 't1', title: 'Fix OAuth login' })]));
-    render(<SearchResults />, { locale: 'fr-FR' });
-    await waitFor(() => expect(screen.getByText(/résultat pour/i)).toBeTruthy());
-    expect(screen.getByRole('heading', { name: /Tâches/ })).toBeTruthy();
   });
 });

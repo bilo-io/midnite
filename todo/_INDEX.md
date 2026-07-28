@@ -28,8 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
-| [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 15/40 | `████░░░░░░` | 38% | — | D E F |
+| [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 14/40 | `███░░░░░░░` | 35% | D | E F |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 27/34 | `████████░░` | 79% | — | — |
@@ -136,19 +135,12 @@ Every phase's lettered themes with a status icon + one-liner, so you can gauge s
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
-### [Phase 83 — Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md)
-*Makes the login allowlist (today boot-time immutable file config) a runtime-editable store — a DB table layered under the file entries (`file ∪ db`, config entries as a read-only floor), operator-gated CRUD endpoints, and an admin "Access" page — so who's allowed in can change without a redeploy. The `operators` list itself stays file-only/deploy-time (out of scope).*
-- ◻ **A** — Mutable allowlist store + config reconciliation (`allowlist_entries` table, effective = file ∪ db, `AllowlistService.isAllowed()` behind `UsersService`, no-op on an empty table)
-- ◻ **B** — Operator-gated endpoints + shared contracts (`AllowlistEntry` schema, `GET/POST /admin/allowlist`, `DELETE /admin/allowlist/:id` — db entries only, audited)
-- ◻ **C** — Admin "Access" management page (list + add + delete-with-confirm, config entries shown read-only)
-- ◻ **D** — Tests & docs
-
 ### [Phase 82 — Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md)
 *The blanket on top of Phase 79's stack: every user-facing string in `web` + `shell` + desktop chrome goes through the i18n gate, en-GB + fr-FR authored together in every PR (fr parity CI-enforced). Out: admin pages, Phaser canvas text, de/es authoring.*
 - ✅ **A** — Gate flip & catalog machinery (ESLint allowlist → generated `I18N_EXEMPT` exception list, default-on; catalogs split to `messages/<locale>/<namespace>.json` + generated barrels; progress meter) — runs first (PR #530)
 - ✅ **B** — Board & tasks (cards, task detail, dialogs, bulk bar, toasts; new `task` namespace, exempt 406→384) (PR #533)
 - ✅ **C** — Auth & Settings sweep (register/forgot/invite; every settings subpage; shared error/empty states) (PR #535)
-- ◻ **D** — Feature areas, per-slice (assistant/council, workflows, memory, projects, pr-review, ✅ search+palette PR #572, dashboard, guide, roadmap/slides/safety, residue → exempt list to zero)
+- ◻ **D** — Feature areas, per-slice (assistant/council, workflows, memory, projects, pr-review, search+palette, dashboard, guide, roadmap/slides/safety, residue → exempt list to zero)
 - ◻ **E** — Chrome, desktop & office DOM (header, update banners, lock screen labels, title-bar residue, office React UI; `ui` default-label propify audit)
 - ◻ **F** — Close-out (absorb Phase 79's verification, full fr-FR walkthrough + screenshots, exception list at zero)
 
