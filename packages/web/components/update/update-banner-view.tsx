@@ -134,6 +134,10 @@ export function UpdateBannerView({
       className={cn(
         'grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out',
         'motion-reduce:transition-none',
+        // Above page content in the stacking order: <PageHeader forceCollapsed>
+        // (tasks graph view) is `z-30` and pulls itself up by `--titlebar-h`, so an
+        // auto-z banner would be painted over by the header it sits above in flow.
+        'relative z-40',
       )}
       style={{ gridTemplateRows: visible ? '1fr' : '0fr' }}
     >

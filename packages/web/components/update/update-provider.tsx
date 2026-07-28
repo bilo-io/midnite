@@ -54,6 +54,13 @@ export type UpdateContextValue = {
   /** The desktop update failed — the banner can offer a retry. */
   errored: boolean;
   /**
+   * The desktop updater's last error message, or null. The banner stays fail-soft
+   * for a failure with no known version (an offline check must not nag), which is
+   * exactly how a misconfigured feed once hid itself for entire releases — so
+   * Settings → System → Updates reads this to always show the real reason.
+   */
+  error: string | null;
+  /**
    * Unsigned/ad-hoc macOS desktop build: updates can't install in place, so the
    * banner offers the curl installer command instead of download→restart.
    */
@@ -187,6 +194,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       desktopPhase,
       downloadPercent: desktop?.phase === 'downloading' ? desktop.percent : null,
       errored: desktop?.phase === 'error',
+      error: desktop?.phase === 'error' ? desktop.error ?? 'Update check failed' : null,
       manualInstall: isDesktop ? desktop?.manualInstall ?? false : false,
       dismiss: () => setDismissed(true),
       applyUpdate,

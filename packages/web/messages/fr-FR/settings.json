@@ -738,7 +738,11 @@
       "releaseChannel": "Canal de publication",
       "channelStable": "Stable",
       "channelBeta": "Bêta",
-      "channelDescription": "<strong>Stable</strong> suit les versions publiées. <strong>Bêta</strong> permet d'accéder aux versions préliminaires pour tester les nouvelles fonctionnalités en avance — attendez-vous à quelques imperfections. La bannière de mise à jour et le programme de mise à jour automatique du bureau suivent tous deux ce choix."
+      "channelDescription": "<strong>Stable</strong> suit les versions publiées. <strong>Bêta</strong> permet d'accéder aux versions préliminaires pour tester les nouvelles fonctionnalités en avance — attendez-vous à quelques imperfections. La bannière de mise à jour et le programme de mise à jour automatique du bureau suivent tous deux ce choix.",
+      "status": "État des mises à jour",
+      "statusUpToDate": "Cette version est à jour.",
+      "statusAvailable": "La version {version} est disponible.",
+      "statusFailed": "La dernière vérification a échoué : {error}"
     }
   },
   "team": {

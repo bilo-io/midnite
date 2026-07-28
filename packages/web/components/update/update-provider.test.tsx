@@ -38,6 +38,7 @@ function Probe() {
       data-phase={u.desktopPhase ?? 'none'}
       data-latest={u.latest ?? 'none'}
       data-percent={u.downloadPercent ?? 'none'}
+      data-error={u.error ?? 'none'}
       onClick={u.applyUpdate}
     >
       probe
@@ -158,6 +159,37 @@ describe('UpdateProvider — desktop (electron-updater) branch', () => {
     );
     h.emit({ phase: 'error', version: null, percent: null, error: 'feed unreachable' });
     expect(screen.getByRole('button', { name: 'probe' })).toHaveAttribute('data-available', 'false');
+  });
+
+  it('still exposes the error message a hidden banner swallows, for Settings', () => {
+    // The fail-soft rule above is exactly how a broken feed (a channel-file 404)
+    // hid itself for entire releases — the reason must remain readable somewhere.
+    const h = installBridge();
+    render(
+      <UpdateProvider>
+        <Probe />
+      </UpdateProvider>,
+    );
+    h.emit({
+      phase: 'error',
+      version: null,
+      percent: null,
+      error: 'Cannot find stable-mac.yml in the latest release artifacts',
+    });
+    const btn = screen.getByRole('button', { name: 'probe' });
+    expect(btn).toHaveAttribute('data-available', 'false');
+    expect(btn.getAttribute('data-error')).toContain('stable-mac.yml');
+  });
+
+  it('reports no error while healthy', () => {
+    const h = installBridge();
+    render(
+      <UpdateProvider>
+        <Probe />
+      </UpdateProvider>,
+    );
+    h.emit({ phase: 'available', version: '0.2.0', percent: null, error: null });
+    expect(screen.getByRole('button', { name: 'probe' })).toHaveAttribute('data-error', 'none');
   });
 
   it('re-checks (retries) on applyUpdate after an error', () => {

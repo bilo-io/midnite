@@ -5,8 +5,10 @@ import { useTranslations } from 'next-intl';
 import { UPDATE_CHANNELS, type UpdateChannel } from '@midnite/shared';
 
 import { Accordion } from '@/components/ui/accordion';
+import { useUpdate } from '@/components/update/update-provider';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { useLocalStorage } from '@/lib/use-local-storage';
+import { cn } from '@/lib/utils';
 
 const inputClass =
   'h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
@@ -23,6 +25,7 @@ export function UpdatesAccordion() {
   const t = useTranslations('settings');
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const channel = settings.updateChannel ?? DEFAULT_SETTINGS.updateChannel;
+  const { isDesktop, available, latest, error } = useUpdate();
 
   const onChange = (value: UpdateChannel) =>
     setSettings((prev) => ({ ...prev, updateChannel: value }));
@@ -59,6 +62,23 @@ export function UpdatesAccordion() {
             ))}
           </select>
         </div>
+
+        {/* Desktop updater status. The banner deliberately stays hidden when a check
+            fails with no known version (an offline app must not nag) — which is how a
+            feed misconfiguration once went unnoticed release after release, so the
+            real reason always surfaces here. */}
+        {isDesktop && (
+          <div className="space-y-1 border-t border-border/60 pt-4">
+            <p className="text-sm font-medium">{t('system.updates.status')}</p>
+            <p className={cn('text-xs', error ? 'text-destructive' : 'text-muted-foreground')}>
+              {error
+                ? t('system.updates.statusFailed', { error })
+                : available && latest
+                  ? t('system.updates.statusAvailable', { version: latest })
+                  : t('system.updates.statusUpToDate')}
+            </p>
+          </div>
+        )}
       </div>
     </Accordion>
   );
