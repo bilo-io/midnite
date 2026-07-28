@@ -46,6 +46,11 @@ export const tasks = sqliteTable(
     // Phase 58 D — project milestone this task is assigned to (at most one). Null
     // = unassigned (roadmap backlog). Plain intra-domain id ref, no cross-domain FK.
     milestoneId: text('milestone_id'),
+    // Manual display order within the task's milestone lane (roadmap board only —
+    // a separate axis from `position`, the main board's per-status order).
+    // Reindexed 0..N on a milestone-lane drag-reorder; default 0 leaves untouched
+    // milestones on whatever order `listTaskSummaries` already returns.
+    milestonePosition: integer('milestone_position').notNull().default(0),
     prUrl: text('pr_url'),
     // User labels as a JSON array of strings (null/absent = none). App-layer
     // validated; no join table — tags are a small free-form set per task.
@@ -69,6 +74,8 @@ export const tasks = sqliteTable(
     statusPositionIdx: index('tasks_status_position_idx').on(t.status, t.position),
     // Phase 58 D — roadmap groups tasks by milestone; index the lookup.
     milestoneIdx: index('tasks_milestone_idx').on(t.milestoneId),
+    // Backs the roadmap's within-lane task ordering.
+    milestonePositionIdx: index('tasks_milestone_position_idx').on(t.milestoneId, t.milestonePosition),
     // Both teamScopeFilter OR-arms are already indexed (migration 0048); declared
     // here to reconcile the schema with the DB (Phase 57 D) — no new migration.
     createdByIdx: index('tasks_created_by_idx').on(t.createdBy),

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RoadmapView, TaskSummary } from '@midnite/shared';
-import { moveTaskLocal } from './roadmap-board';
+import { BACKLOG_LANE_ID } from './roadmap-lane';
+import { moveTaskLocal, reorderTaskLocal } from './roadmap-board';
 
 function task(id: string, status: TaskSummary['status'] = 'todo', milestoneId?: string): TaskSummary {
   return { id, title: id, status, priority: 1, retryCount: 0, tags: [], milestoneId };
@@ -49,5 +50,35 @@ describe('moveTaskLocal', () => {
 
   it('returns null when the task is unknown', () => {
     expect(moveTaskLocal(view(), 'zzz', 'm1')).toBeNull();
+  });
+
+  it('inserts before beforeTaskId instead of appending, when dropped on a card', () => {
+    const next = moveTaskLocal(view(), 'c', 'm1', 'b')!;
+    const m1 = next.milestones.find((m) => m.id === 'm1')!;
+    expect(m1.tasks.map((t) => t.id)).toEqual(['a', 'c', 'b']);
+  });
+});
+
+describe('reorderTaskLocal', () => {
+  it('reorders a milestone lane and returns the new top-to-bottom id order', () => {
+    const result = reorderTaskLocal(view(), 'm1', 'b', 'a')!;
+    expect(result.orderedIds).toEqual(['b', 'a']);
+    expect(result.view.milestones.find((m) => m.id === 'm1')!.tasks.map((t) => t.id)).toEqual(['b', 'a']);
+  });
+
+  it('reorders the backlog lane locally (no persistence concern at this layer)', () => {
+    const withTwo: RoadmapView = { ...view(), backlog: [task('c'), task('d')] };
+    const result = reorderTaskLocal(withTwo, BACKLOG_LANE_ID, 'd', 'c')!;
+    expect(result.orderedIds).toEqual(['d', 'c']);
+    expect(result.view.backlog.map((t) => t.id)).toEqual(['d', 'c']);
+  });
+
+  it('returns null for a no-op (dropped on itself)', () => {
+    expect(reorderTaskLocal(view(), 'm1', 'a', 'a')).toBeNull();
+  });
+
+  it('returns null when either task is not in that lane', () => {
+    expect(reorderTaskLocal(view(), 'm1', 'a', 'zzz')).toBeNull();
+    expect(reorderTaskLocal(view(), 'm2', 'a', 'b')).toBeNull(); // 'a'/'b' are in m1, not m2
   });
 });

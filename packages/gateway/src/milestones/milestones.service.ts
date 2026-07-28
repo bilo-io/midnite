@@ -55,7 +55,9 @@ export class MilestonesService {
   /**
    * The project roadmap: milestones (ordered, with computed progress + their task
    * summaries) plus an unassigned backlog lane. Task summaries are the lean board
-   * DTO — one query for the whole project, then bucketed by `milestoneId`.
+   * DTO — one query for the whole project, then bucketed by `milestoneId`. Each
+   * bucket is sorted by the task's `milestonePosition` (the lane's manual
+   * drag-order), tie-broken by id for a stable order before any reorder has run.
    */
   getRoadmap(projectId: string, scope?: TeamScope): RoadmapView {
     this.projects.getProject(projectId, scope); // 404 if missing / out of scope
@@ -72,6 +74,9 @@ export class MilestonesService {
       } else {
         backlog.push(t);
       }
+    }
+    for (const list of byMilestone.values()) {
+      list.sort((a, b) => (a.milestonePosition ?? 0) - (b.milestonePosition ?? 0) || a.id.localeCompare(b.id));
     }
 
     return {
@@ -167,6 +172,20 @@ export class MilestonesService {
       throw new BadRequestException('task and milestone must belong to the same project');
     }
     return this.tasks.setMilestone(taskId, milestoneId, scope);
+  }
+
+  /**
+   * Persist the manual vertical order of one milestone's roadmap-board tasks.
+   * The full ordered id list must name every task currently assigned to that
+   * milestone exactly once (mirrors `reorder`'s full-list contract for lanes).
+   */
+  reorderTasks(milestoneId: string, orderedIds: string[], scope?: TeamScope): void {
+    this.getRow(milestoneId, scope); // 404 if missing / out of scope
+    const current = this.tasks.listIdsForMilestone(milestoneId);
+    if (!sameIdSet(current, orderedIds)) {
+      throw new BadRequestException('reorder must list every task currently in this milestone exactly once');
+    }
+    this.tasks.reorderWithinMilestone(milestoneId, orderedIds);
   }
 
   // --- helpers ---

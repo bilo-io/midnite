@@ -91,6 +91,7 @@ class InMemoryRepo extends TasksRepository {
       sessionId: row.sessionId ?? null,
       projectId: row.projectId ?? null,
       milestoneId: row.milestoneId ?? null,
+      milestonePosition: row.milestonePosition ?? 0,
       prUrl: row.prUrl ?? null,
       tags: row.tags ?? null,
       aiReview: row.aiReview ?? null,

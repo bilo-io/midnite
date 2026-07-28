@@ -94,6 +94,34 @@ describe('TasksRepository', () => {
     });
   });
 
+  describe('manual milestone-lane position (roadmap board reorder)', () => {
+    it('idsByMilestone returns only the tasks currently assigned to that milestone', () => {
+      insert('a', { milestoneId: 'm1' });
+      insert('b', { milestoneId: 'm1' });
+      insert('c', { milestoneId: 'm2' });
+      insert('d', {});
+      expect(repo.idsByMilestone('m1').sort()).toEqual(['a', 'b']);
+      expect(repo.idsByMilestone('m2')).toEqual(['c']);
+    });
+
+    it('setMilestonePosition reindexes a lane and is scoped to that milestone', () => {
+      insert('a', { milestoneId: 'm1' });
+      insert('b', { milestoneId: 'm1' });
+      const now = '2026-06-05T00:00:00.000Z';
+      repo.setMilestonePosition('b', 'm1', 0, now);
+      repo.setMilestonePosition('a', 'm1', 1, now);
+      expect(repo.getTask('a')!.milestonePosition).toBe(1);
+      expect(repo.getTask('b')!.milestonePosition).toBe(0);
+    });
+
+    it('a stray milestone id is ignored (no cross-lane write)', () => {
+      insert('a', { milestoneId: 'm1' });
+      const now = '2026-06-05T00:00:00.000Z';
+      repo.setMilestonePosition('a', 'wrong-milestone', 5, now);
+      expect(repo.getTask('a')!.milestonePosition).toBe(0);
+    });
+  });
+
   it('incrementRetry bumps the counter by one', () => {
     insert('t1', {});
     repo.incrementRetry('t1', '2026-06-02T00:00:00.000Z', null);

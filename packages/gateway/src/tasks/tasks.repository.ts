@@ -339,6 +339,17 @@ export class TasksRepository {
     return rows.map((r) => r.id);
   }
 
+  // The task ids currently assigned to one milestone — used to validate a
+  // milestone-lane reorder request names exactly that set.
+  idsByMilestone(milestoneId: string): string[] {
+    return this.db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(eq(tasks.milestoneId, milestoneId))
+      .all()
+      .map((r) => r.id);
+  }
+
   setTags(id: string, tags: string[], updatedAt: string, db: DbOrTx = this.db): TaskRow | undefined {
     return db
       .update(tasks)
@@ -375,6 +386,23 @@ export class TasksRepository {
   // service reindexes a whole column inside one transaction on a drag-reorder.
   setPosition(id: string, position: number, updatedAt: string, db: DbOrTx = this.db): void {
     db.update(tasks).set({ position, updatedAt }).where(eq(tasks.id, id)).run();
+  }
+
+  // Set a task's manual order within its milestone lane (roadmap board only — a
+  // separate axis from `position`). Scoped to `milestoneId` so a stray/foreign id
+  // can't be reordered in. The service reindexes a whole lane inside one
+  // transaction on a drag-reorder.
+  setMilestonePosition(
+    id: string,
+    milestoneId: string,
+    milestonePosition: number,
+    updatedAt: string,
+    db: DbOrTx = this.db,
+  ): void {
+    db.update(tasks)
+      .set({ milestonePosition, updatedAt })
+      .where(and(eq(tasks.id, id), eq(tasks.milestoneId, milestoneId)))
+      .run();
   }
 
   setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
@@ -829,6 +857,7 @@ export class TasksRepository {
         projectId: row.projectId ?? undefined,
         milestoneId: row.milestoneId ?? undefined,
         milestoneName: row.milestoneId ? milestoneNames.get(row.milestoneId) : undefined,
+        milestonePosition: row.milestoneId ? row.milestonePosition : undefined,
         tags: parseTags(row.tags),
         prUrl: row.prUrl ?? undefined,
         prStatus: this.toPrStatus(prByTask.get(row.id)),

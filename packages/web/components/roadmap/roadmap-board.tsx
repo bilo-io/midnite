@@ -21,6 +21,7 @@ import {
   createMilestone,
   deleteMilestone,
   getRoadmap,
+  reorderMilestoneTasks,
   reorderMilestones,
   updateMilestone,
 } from '@/lib/api';
@@ -129,13 +130,16 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
         return;
       }
 
-      // Task assignment: dropped over a lane droppable.
-      if (active.data.current?.type === 'task' && over.data.current?.type === 'lane-drop') {
-        const taskId = active.data.current.taskId as string;
+      if (active.data.current?.type !== 'task') return;
+      const taskId = active.data.current.taskId as string;
+      const sourceLaneId = active.data.current.laneId as string;
+
+      // Dropped over a lane's empty-area droppable — assign to the end of that lane.
+      if (over.data.current?.type === 'lane-drop') {
         const laneId = over.data.current.laneId as string;
         const targetMilestoneId = laneId === BACKLOG_LANE_ID ? null : laneId;
         const moved = moveTaskLocal(view, taskId, targetMilestoneId);
-        if (!moved) return; // no-op (same lane)
+        if (!moved) return; // no-op (already in that lane)
         const prev = view;
         setView(moved);
         try {
@@ -143,6 +147,49 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
         } catch (err) {
           setView(prev);
           toast.error(err instanceof Error ? err.message : 'Failed to assign task');
+        }
+        return;
+      }
+
+      // Dropped over another task card — either a cross-lane assign (insert at
+      // that position) or a same-lane reorder.
+      if (over.data.current?.type === 'task') {
+        const targetTaskId = over.data.current.taskId as string;
+        const targetLaneId = over.data.current.laneId as string;
+        if (taskId === targetTaskId) return;
+
+        if (targetLaneId !== sourceLaneId) {
+          const targetMilestoneId = targetLaneId === BACKLOG_LANE_ID ? null : targetLaneId;
+          const moved = moveTaskLocal(view, taskId, targetMilestoneId, targetTaskId);
+          if (!moved) return;
+          const prev = view;
+          setView(moved);
+          try {
+            await assignTaskMilestone(taskId, targetMilestoneId);
+          } catch (err) {
+            setView(prev);
+            toast.error(err instanceof Error ? err.message : 'Failed to assign task');
+          }
+          return;
+        }
+
+        // Same-lane reorder. The backlog has no milestone id to scope a stored
+        // order by, so it reorders locally (cosmetic — a refetch reverts it) and
+        // never calls the API.
+        const reordered = reorderTaskLocal(view, sourceLaneId, taskId, targetTaskId);
+        if (!reordered) return;
+        const { view: nextView, orderedIds } = reordered;
+        if (sourceLaneId === BACKLOG_LANE_ID) {
+          setView(nextView);
+          return;
+        }
+        const prev = view;
+        setView(nextView);
+        try {
+          await reorderMilestoneTasks(sourceLaneId, orderedIds);
+        } catch (err) {
+          setView(prev);
+          toast.error(err instanceof Error ? err.message : 'Failed to reorder tasks');
         }
       }
     },
@@ -303,9 +350,16 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
 /**
  * Move a task to a target milestone (`null` = backlog) in a fresh RoadmapView,
  * recomputing each affected lane's done/total. Returns `null` if the task is
- * already in the target lane (no-op).
+ * already in the target lane (no-op). `beforeTaskId`, when given, inserts the
+ * moved task just before that task in the target lane instead of appending to
+ * the end (dropping directly on another card rather than the lane's empty area).
  */
-export function moveTaskLocal(view: RoadmapView, taskId: string, target: string | null): RoadmapView | null {
+export function moveTaskLocal(
+  view: RoadmapView,
+  taskId: string,
+  target: string | null,
+  beforeTaskId?: string,
+): RoadmapView | null {
   const currentMilestone = view.milestones.find((m) => m.tasks.some((t) => t.id === taskId));
   const currentLaneId = currentMilestone?.id ?? null;
   if (currentLaneId === target) return null;
@@ -322,14 +376,50 @@ export function moveTaskLocal(view: RoadmapView, taskId: string, target: string 
     done: tasks.filter((t) => t.status === 'done').length,
     total: tasks.length,
   });
+  const inserted = (tasks: TaskSummary[]) => {
+    const index = beforeTaskId ? tasks.findIndex((t) => t.id === beforeTaskId) : -1;
+    if (index === -1) return [...tasks, moved];
+    return [...tasks.slice(0, index), moved, ...tasks.slice(index)];
+  };
 
   const milestones = view.milestones.map((m) => {
     if (m.id === currentLaneId) return { ...m, ...withCounts(stripped(m.tasks)) };
-    if (m.id === target) return { ...m, ...withCounts([...m.tasks, moved]) };
+    if (m.id === target) return { ...m, ...withCounts(inserted(m.tasks)) };
     return m;
   });
-  const backlog =
-    target === null ? [...stripped(view.backlog), moved] : stripped(view.backlog);
+  const backlog = target === null ? inserted(stripped(view.backlog)) : stripped(view.backlog);
 
   return { ...view, milestones, backlog };
+}
+
+/**
+ * Reorder one lane's tasks in a fresh RoadmapView by moving `taskId` to just
+ * before `beforeTaskId`. Returns `null` if either id isn't in that lane or the
+ * move is a no-op. Alongside the updated view, returns the lane's new
+ * top-to-bottom task id order for the caller to persist.
+ */
+export function reorderTaskLocal(
+  view: RoadmapView,
+  laneId: string,
+  taskId: string,
+  beforeTaskId: string,
+): { view: RoadmapView; orderedIds: string[] } | null {
+  const currentTasks =
+    laneId === BACKLOG_LANE_ID ? view.backlog : view.milestones.find((m) => m.id === laneId)?.tasks;
+  if (!currentTasks) return null;
+
+  const from = currentTasks.findIndex((t) => t.id === taskId);
+  const to = currentTasks.findIndex((t) => t.id === beforeTaskId);
+  if (from === -1 || to === -1 || from === to) return null;
+
+  const reordered = arrayMove(currentTasks, from, to);
+  const orderedIds = reordered.map((t) => t.id);
+  const nextView =
+    laneId === BACKLOG_LANE_ID
+      ? { ...view, backlog: reordered }
+      : {
+          ...view,
+          milestones: view.milestones.map((m) => (m.id === laneId ? { ...m, tasks: reordered } : m)),
+        };
+  return { view: nextView, orderedIds };
 }

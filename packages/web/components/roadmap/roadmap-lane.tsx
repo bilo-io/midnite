@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { useSortable } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, MoreVertical, Pencil, Sparkles, Trash2, Workflow } from 'lucide-react';
 import type { TaskSummary } from '@midnite/shared';
@@ -62,6 +62,7 @@ export function RoadmapLane({
     id: `drop:${lane.id}`,
     data: { type: 'lane-drop', laneId: lane.id },
   });
+  const taskSortableIds = lane.tasks.map((t) => `task:${t.id}`);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -204,9 +205,17 @@ export function RoadmapLane({
           isOver && 'bg-accent/40 ring-1 ring-inset ring-ring',
         )}
       >
-        {lane.tasks.map((task) => (
-          <RoadmapCard key={task.id} task={task} project={project} onSelect={() => onSelectTask(task)} />
-        ))}
+        <SortableContext items={taskSortableIds} strategy={verticalListSortingStrategy}>
+          {lane.tasks.map((task) => (
+            <RoadmapCard
+              key={task.id}
+              task={task}
+              laneId={lane.id}
+              project={project}
+              onSelect={() => onSelectTask(task)}
+            />
+          ))}
+        </SortableContext>
         {lane.tasks.length === 0 ? (
           <p className="m-auto text-center text-xs text-muted-foreground">
             {isBacklog ? 'No unassigned tasks' : 'Drag tasks here'}
@@ -217,27 +226,40 @@ export function RoadmapLane({
   );
 }
 
-/** A draggable task card inside a lane (drag to another lane to reassign). */
+/**
+ * A sortable task card inside a lane — drag to another lane to reassign it, or
+ * drag up/down within the same lane to reorder it (persisted for a milestone
+ * lane; the backlog lane accepts the gesture but doesn't persist an order,
+ * since it has no milestone id to scope one by).
+ */
 function RoadmapCard({
   task,
+  laneId,
   project,
   onSelect,
 }: {
   task: TaskSummary;
+  laneId: string;
   project?: ProjectTagInfo;
   onSelect: () => void;
 }) {
-  // Draggable data shape (`type: 'task'`) is matched by the board's onDragEnd.
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  // Sortable data shape (`type: 'task'`) is matched by the board's onDragEnd,
+  // which reads `laneId` to tell a cross-lane move from a same-lane reorder.
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `task:${task.id}`,
-    data: { type: 'task', taskId: task.id },
+    data: { type: 'task', taskId: task.id, laneId },
   });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
   return (
     <div
       ref={setNodeRef}
+      style={style}
       {...attributes}
       {...listeners}
-      className={cn('cursor-grab active:cursor-grabbing', isDragging && 'opacity-40')}
+      className={cn('cursor-grab touch-none active:cursor-grabbing', isDragging && 'opacity-40')}
     >
       <TaskCard task={task} project={project} onSelect={onSelect} />
     </div>
