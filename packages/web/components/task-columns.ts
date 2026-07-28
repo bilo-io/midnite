@@ -1,4 +1,4 @@
-import type { Status, TaskSummary } from '@midnite/shared';
+import type { Project, Status, TaskSummary } from '@midnite/shared';
 import type { ProjectTagInfo } from '@/components/task-card';
 
 export type ColumnDef = { status: Status; label: string; hueVar: string };
@@ -47,6 +47,46 @@ export function distinctProjectCount(tasks: TaskSummary[]): number {
   const ids = new Set<string>();
   for (const t of tasks) if (t.projectId) ids.add(t.projectId);
   return ids.size;
+}
+
+export type ProjectGroup = {
+  key: string;
+  /** The real project id (undefined for the synthetic "Unassigned" group). */
+  projectId?: string;
+  name: string;
+  tag?: string;
+  color?: string;
+  tasks: TaskSummary[];
+};
+
+/** Partition tasks into per-project groups (in the project list's order), with an
+ *  "Unassigned" group last. Only groups that actually hold tasks are returned. */
+export function groupTasksByProject(
+  tasks: TaskSummary[],
+  projects: Project[],
+  unassignedLabel: string,
+): ProjectGroup[] {
+  const byId = new Map<string, TaskSummary[]>();
+  const unassigned: TaskSummary[] = [];
+  for (const t of tasks) {
+    if (t.projectId) {
+      const list = byId.get(t.projectId) ?? [];
+      list.push(t);
+      byId.set(t.projectId, list);
+    } else {
+      unassigned.push(t);
+    }
+  }
+  const groups: ProjectGroup[] = [];
+  for (const p of projects) {
+    const list = byId.get(p.id);
+    if (list && list.length > 0)
+      groups.push({ key: p.id, projectId: p.id, name: p.name, tag: p.tag, color: p.color, tasks: list });
+  }
+  if (unassigned.length > 0) {
+    groups.push({ key: '__unassigned__', name: unassignedLabel, color: '#94a3b8', tasks: unassigned });
+  }
+  return groups;
 }
 
 /** The primary status columns shown on the board and as table sections, in order. */

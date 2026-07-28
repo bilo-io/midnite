@@ -594,7 +594,7 @@ export function TasksView({
 
       <div className="reveal-content flex min-h-0 flex-1 flex-col">
         {view === 'list' ? (
-          <ListView {...viewProps} />
+          <ListView {...viewProps} projects={projects} />
         ) : view === 'graph' ? (
           <TaskGraphView
             tasks={filteredTasks}

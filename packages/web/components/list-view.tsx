@@ -1,73 +1,80 @@
 'use client';
 
+import type { Project, TaskSummary } from '@midnite/shared';
 import { useTranslations } from 'next-intl';
-import { AbandonedRow } from '@/components/abandoned-row';
-import { CollapsibleStatusGroups, type StatusGroup } from '@/components/collapsible-status-groups';
+import { ProjectStatusBadge } from '@/components/project-status-badge';
+import { ProjectTag } from '@/components/project-tag';
+import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { TaskRow } from '@/components/task-row';
-import { type TaskViewProps, groupByStatus } from '@/components/task-columns';
+import { type TaskViewProps, groupTasksByProject } from '@/components/task-columns';
+import { WindowVirtualList } from '@/components/ui/window-virtual-list';
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
 
 /**
  * List layout for the Tasks page: tasks grouped under reorderable, collapsible
- * per-status accordion headings (mirroring the Sessions list view). Presentational
- * — filtering, the project lookup and the detail modal are owned by TasksView.
+ * per-project accordion headings — mirroring the Projects tree ("table" view).
+ * Presentational — filtering, the project lookup and the detail modal are owned
+ * by TasksView.
  */
 export function ListView({
   tasks,
-  columns,
-  projectsById,
+  projects,
   onSelect,
-  showAbandoned,
   isSelected,
   onToggleSelect,
   blockedCounts,
-}: TaskViewProps) {
+}: TaskViewProps & { projects: Project[] }) {
   const t = useTranslations('board');
-  const grouped = groupByStatus(tasks);
+  const groups = groupTasksByProject(tasks, projects, t('unassigned'));
+  const projectById = new Map(projects.map((p) => [p.id, p] as const));
 
-  const groups: StatusGroup[] = columns.map((col) => {
-    const items = grouped.get(col.status) ?? [];
+  const taskBody = (items: TaskSummary[]) =>
+    items.length === 0 ? (
+      <p className="px-3 py-3 text-xs text-muted-foreground">{t('nothingHere')}</p>
+    ) : (
+      <WindowVirtualList
+        items={items}
+        rowKey={(task) => task.id}
+        renderRow={(task) => (
+          <TaskRow
+            task={task}
+            showStatus
+            onSelect={() => onSelect(task)}
+            selected={isSelected?.(task.id) ?? false}
+            onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(task.id, sk) : undefined}
+            blockedBy={blockedCounts?.get(task.id)}
+          />
+        )}
+      />
+    );
+
+  const sections: AccordionSection[] = groups.map((g) => {
+    const project = g.projectId ? projectById.get(g.projectId) : undefined;
     return {
-      id: col.status,
-      label: t(`columns.${col.status}`),
-      hue: `var(${col.hueVar})`,
-      count: items.length,
-      body:
-        items.length === 0 ? (
-          <p className="px-1 text-xs text-muted-foreground">{t('nothingHere')}</p>
-        ) : (
-          <div className="overflow-hidden rounded-lg border surface-glass">
-            {items.map((t) => (
-              <TaskRow
-                key={t.id}
-                task={t}
-                project={t.projectId ? projectsById.get(t.projectId) : undefined}
-                onSelect={() => onSelect(t)}
-                selected={isSelected?.(t.id) ?? false}
-                onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
-                blockedBy={blockedCounts?.get(t.id)}
-              />
-            ))}
-          </div>
-        ),
+      id: g.key,
+      label: g.name,
+      color: g.color,
+      leading: project ? (
+        <span className="flex items-center gap-2">
+          <ProjectTag tag={project.tag} color={project.color} />
+          <ProjectStatusBadge project={project} />
+        </span>
+      ) : undefined,
+      count: g.tasks.length,
+      summary: plural(g.tasks.length, 'task'),
+      body: taskBody(g.tasks),
     };
   });
 
   return (
-    // No inner scroll region — the document is the page's one scroll area, so
-    // the sticky toolbar pins while the groups scroll under it.
     <div className="min-h-0 flex-1 pb-1">
-      <CollapsibleStatusGroups groups={groups} storageKey="midnite.tasks.listGroups" />
-
-      {showAbandoned && (
-        <div className="mt-2">
-          <AbandonedRow
-            tasks={grouped.get('abandoned') ?? []}
-            onSelect={onSelect}
-            projectsById={projectsById}
-            layout="list"
-            blockedCounts={blockedCounts}
-          />
-        </div>
+      {groups.length === 0 ? (
+        <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('nothingHere')}</p>
+      ) : (
+        <SortableAccordions sections={sections} storageKey="midnite.tasks.listGroups" variant="split" />
       )}
     </div>
   );
