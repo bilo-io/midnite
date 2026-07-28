@@ -8,7 +8,6 @@ import type { Memory, Project, TaskSummary } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { BackLink } from '@/components/back-link';
 import { Button } from '@/components/ui/button';
-import { ConnectionStatus } from '@/components/connection-status';
 import { RailShell, RailFloatingToggle, RailHeaderToggle, Tabs, type TabOption } from '@midnite/ui';
 import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
@@ -130,15 +129,12 @@ export function ProjectDetailView({
         icon="Folder"
         description={project.tag ? `#${project.tag}` : undefined}
         actions={
-          <div className="flex items-center gap-2">
-            <ConnectionStatus variant="compact" />
-            {isMobile ? (
-              <>
-                <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
-                <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
-              </>
-            ) : null}
-          </div>
+          isMobile ? (
+            <div className="flex items-center gap-2">
+              <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
+              <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
+            </div>
+          ) : undefined
         }
       />
 

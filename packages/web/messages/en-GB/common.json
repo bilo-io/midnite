@@ -31,6 +31,9 @@
   "hardReload": "Hard Reload",
   "allProjects": "All projects",
   "filterByProject": "Filter by project",
+  "searchProjects": "Search projects…",
+  "noProjectsMatch": "No projects match",
+  "newProject": "New project",
   "startingTerminal": "Starting terminal…",
   "startingLabel": "Starting {label}…"
 }

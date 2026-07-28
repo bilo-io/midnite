@@ -1,14 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Plus, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { UNASSIGNED_PROJECT_ID } from '@midnite/shared';
 import { getProjects } from '@/lib/api';
 import { useProjectFilterStore } from '@/lib/project-filter-store';
 import { ProjectTag } from '@/components/project-tag';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type Rect = { top: number; left: number };
@@ -24,6 +26,7 @@ type Rect = { top: number; left: number };
 export function GlobalProjectFilter({ className }: { className?: string }) {
   const t = useTranslations('common');
   const tBoard = useTranslations('board');
+  const router = useRouter();
   const { data } = useQuery({ queryKey: ['global-project-filter', 'projects'], queryFn: () => getProjects() });
   const projects = data ?? [];
   const selected = useProjectFilterStore((s) => s.selected);
@@ -31,13 +34,32 @@ export function GlobalProjectFilter({ className }: { className?: string }) {
   const clear = useProjectFilterStore((s) => s.clear);
 
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const [rect, setRect] = useState<Rect | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const unassignedOption = { id: UNASSIGNED_PROJECT_ID, tag: tBoard('unassigned'), color: '#94a3b8' };
-  const options = [unassignedOption, ...projects];
+
+  // "Unassigned" is pinned above the real projects, which are sorted A→Z by tag.
+  const sortedProjects = useMemo(
+    () => [...projects].sort((a, b) => a.tag.localeCompare(b.tag)),
+    [projects],
+  );
+  const options = useMemo(() => [unassignedOption, ...sortedProjects], [unassignedOption, sortedProjects]);
   const activeOptions = options.filter((o) => selected.includes(o.id));
+
+  // Free-text search over the pinned/real options (matches tag or name); the
+  // "All projects" reset row is always shown so the no-filter default is one
+  // click away regardless of the query.
+  const q = query.trim().toLowerCase();
+  const visibleOptions = q
+    ? options.filter((o) => {
+        const name = (o as { name?: string }).name ?? '';
+        return o.tag.toLowerCase().includes(q) || name.toLowerCase().includes(q);
+      })
+    : options;
 
   const place = useCallback(() => {
     const el = triggerRef.current;
@@ -46,9 +68,19 @@ export function GlobalProjectFilter({ className }: { className?: string }) {
     setRect({ top: r.bottom + 4, left: r.left });
   }, []);
 
+  const createNewProject = useCallback(() => {
+    setOpen(false);
+    router.push('/projects?new=1');
+  }, [router]);
+
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      setQuery('');
+      return undefined;
+    }
     place();
+    // Focus the search box once the menu is mounted.
+    const focusTimer = requestAnimationFrame(() => searchRef.current?.focus());
     const onDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
@@ -62,6 +94,7 @@ export function GlobalProjectFilter({ className }: { className?: string }) {
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
+      cancelAnimationFrame(focusTimer);
       window.removeEventListener('scroll', place, true);
       window.removeEventListener('resize', place);
       document.removeEventListener('mousedown', onDown);
@@ -115,45 +148,75 @@ export function GlobalProjectFilter({ className }: { className?: string }) {
         ? createPortal(
             <div
               ref={menuRef}
-              role="listbox"
-              aria-multiselectable
               style={{ position: 'fixed', top: rect.top, left: rect.left }}
-              className="z-[70] max-h-72 w-56 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg"
+              className="z-[70] flex max-h-80 w-56 flex-col overflow-hidden rounded-md border border-border bg-card shadow-lg"
             >
-              <button
-                type="button"
-                role="option"
-                aria-selected={activeOptions.length === 0}
-                onClick={clear}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              >
-                <span className="flex h-3.5 w-3.5 items-center justify-center">
-                  {activeOptions.length === 0 ? <Check className="h-3.5 w-3.5" /> : null}
-                </span>
-                {t('allProjects')}
-              </button>
-              {options.map((o) => {
-                const on = selected.includes(o.id);
-                return (
-                  <button
-                    key={o.id}
-                    type="button"
-                    role="option"
-                    aria-selected={on}
-                    onClick={() => toggle(o.id)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-accent/60',
-                      on ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    <span className="flex h-3.5 w-3.5 items-center justify-center">
-                      {on ? <Check className="h-3.5 w-3.5" /> : null}
-                    </span>
-                    <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: o.color }} />
-                    <span className="truncate">{o.tag}</span>
-                  </button>
-                );
-              })}
+              <div className="flex items-center gap-2 border-b border-border/60 px-2.5 py-1.5">
+                <Search aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('searchProjects')}
+                  aria-label={t('searchProjects')}
+                  className="min-w-0 flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              </div>
+
+              <div role="listbox" aria-multiselectable className="min-h-0 flex-1 overflow-auto p-1">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={activeOptions.length === 0}
+                  onClick={clear}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                >
+                  <span className="flex h-3.5 w-3.5 items-center justify-center">
+                    {activeOptions.length === 0 ? <Check className="h-3.5 w-3.5" /> : null}
+                  </span>
+                  {t('allProjects')}
+                </button>
+                {visibleOptions.map((o) => {
+                  const on = selected.includes(o.id);
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      role="option"
+                      aria-selected={on}
+                      onClick={() => toggle(o.id)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-accent/60',
+                        on ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <span className="flex h-3.5 w-3.5 items-center justify-center">
+                        {on ? <Check className="h-3.5 w-3.5" /> : null}
+                      </span>
+                      <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: o.color }} />
+                      <span className="truncate">{o.tag}</span>
+                    </button>
+                  );
+                })}
+                {q && visibleOptions.length === 0 ? (
+                  <p className="px-2 py-3 text-center text-xs text-muted-foreground">
+                    {t('noProjectsMatch')}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="shrink-0 border-t border-border/60 p-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="w-full justify-center"
+                  onClick={createNewProject}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('newProject')}
+                </Button>
+              </div>
             </div>,
             document.body,
           )

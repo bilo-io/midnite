@@ -7,6 +7,9 @@ import type { Project } from '@midnite/shared';
 const getProjects = vi.fn();
 vi.mock('@/lib/api', () => ({ getProjects: () => getProjects() }));
 
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+
 import { GlobalProjectFilter } from './global-project-filter';
 import { useProjectFilterStore } from '@/lib/project-filter-store';
 
@@ -32,6 +35,7 @@ function renderFilter() {
 afterEach(cleanup);
 beforeEach(() => {
   getProjects.mockReset();
+  push.mockReset();
   useProjectFilterStore.setState({ selected: [] });
 });
 
@@ -80,5 +84,38 @@ describe('GlobalProjectFilter', () => {
     fireEvent.click(screen.getByRole('option', { name: /all projects/i }));
 
     expect(useProjectFilterStore.getState().selected).toEqual([]);
+  });
+
+  it('sorts real projects A→Z with Unassigned pinned above them', async () => {
+    getProjects.mockResolvedValue([project({ id: 'p2', tag: 'ZEBRA' }), project({ tag: 'ALPHA' })]);
+    renderFilter();
+    fireEvent.click(await screen.findByRole('button', { name: /filter by project/i }));
+    const tags = screen.getAllByRole('option').map((o) => o.textContent);
+    // "All projects" (reset) first, then pinned Unassigned, then A→Z.
+    expect(tags[0]).toMatch(/all projects/i);
+    expect(tags[1]).toMatch(/unassigned/i);
+    expect(tags[2]).toBe('ALPHA');
+    expect(tags[3]).toBe('ZEBRA');
+  });
+
+  it('filters the list by the search box', async () => {
+    getProjects.mockResolvedValue([project({ tag: 'ALPHA' }), project({ id: 'p2', tag: 'ZEBRA' })]);
+    renderFilter();
+    fireEvent.click(await screen.findByRole('button', { name: /filter by project/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /search projects/i }), {
+      target: { value: 'zeb' },
+    });
+    expect(screen.queryByRole('option', { name: 'ALPHA' })).toBeNull();
+    expect(screen.getByRole('option', { name: 'ZEBRA' })).toBeInTheDocument();
+    // The "All projects" reset row stays available regardless of the query.
+    expect(screen.getByRole('option', { name: /all projects/i })).toBeInTheDocument();
+  });
+
+  it('"New project" routes to the projects page create flow', async () => {
+    getProjects.mockResolvedValue([project()]);
+    renderFilter();
+    fireEvent.click(await screen.findByRole('button', { name: /filter by project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /new project/i }));
+    expect(push).toHaveBeenCalledWith('/projects?new=1');
   });
 });
