@@ -150,6 +150,8 @@
     "providerUnconfigured": "<b>{name}</b> est défini comme votre fournisseur d'IA mais n'a aucune clé API, donc les fonctionnalités d'IA (tri des tâches, rédaction de plans, le battement de cœur) seront ignorées. Ajoutez une clé sous son onglet <b>API</b> ci-dessous, ou changez de fournisseur actif.",
     "theActiveProvider": "Le fournisseur actif",
     "primaryAgent": "Agent principal",
+    "showAdvanced": "Afficher les options avancées",
+    "hideAdvanced": "Masquer les options avancées",
     "name": "Nom",
     "orchestratorPlaceholder": "Orchestrateur",
     "descriptionPrompt": "Description / invite",

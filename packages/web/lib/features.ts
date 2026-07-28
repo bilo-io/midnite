@@ -15,7 +15,6 @@ import {
   BrainCircuit,
   Building2,
   CirclePile,
-  Folder,
   Images,
   LayoutDashboard,
   ListChecks,
@@ -77,14 +76,18 @@ export const FEATURES: Feature[] = [
     Icon: LayoutDashboard,
   },
   // ── App ──────────────────────────────────────────────────────────────────
-  {
-    key: 'projects',
-    href: '/projects',
-    label: 'Projects',
-    description: 'Organise work into projects and browse the project tree.',
-    Icon: Folder,
-    category: 'app',
-  },
+  // 'projects' is intentionally commented out (not deleted): the project detail
+  // page stays reachable via task project chips / the global project filter, but
+  // the standalone /projects surface is hidden from the nav and settings toggle
+  // until it's needed again.
+  // {
+  //   key: 'projects',
+  //   href: '/projects',
+  //   label: 'Projects',
+  //   description: 'Organise work into projects and browse the project tree.',
+  //   Icon: Folder,
+  //   category: 'app',
+  // },
   {
     key: 'tasks',
     href: '/tasks',

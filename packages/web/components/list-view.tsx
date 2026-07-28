@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import type { Project } from '@midnite/shared';
+import type { Project, Status } from '@midnite/shared';
 import { useTranslations } from 'next-intl';
 import { OverflowMenu, type OverflowMenuItem } from '@/components/overflow-menu';
+import { projectPageHref } from '@/lib/project-route';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { ProjectTaskGroups } from '@/components/project-task-groups';
@@ -33,8 +35,8 @@ export function ListView({
   onEditProject?: (project: Project) => void;
   /** Delete a project from the group header's menu (its tasks become unassigned). */
   onDeleteProject?: (project: Project) => void;
-  /** Open the new-task form seeded with this project (undefined for Unassigned). */
-  onAddTask?: (projectId: string | undefined) => void;
+  /** Open the new-task form seeded with this project (undefined for Unassigned) and, optionally, a status. */
+  onAddTask?: (projectId: string | undefined, status?: Status) => void;
 }) {
   const t = useTranslations('board');
   const groups = groupTasksByProject(tasks, projects, t('unassigned'));
@@ -54,7 +56,17 @@ export function ListView({
     ];
     return {
       id: g.key,
-      label: g.name,
+      label: project ? (
+        <Link
+          href={projectPageHref(project.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="hover:underline"
+        >
+          {g.name}
+        </Link>
+      ) : (
+        g.name
+      ),
       color: g.color,
       leading: project ? (
         <span className="flex items-center gap-2">
@@ -74,6 +86,8 @@ export function ListView({
           isSelected={isSelected}
           onToggleSelect={onToggleSelect}
           blockedCounts={blockedCounts}
+          projectId={g.projectId}
+          onAddTask={onAddTask}
         />
       ),
     };

@@ -100,6 +100,7 @@ export function AgentsView() {
   const [cliAction, setCliAction] = useState<{ cli: AgentCli; action: CliTerminalAction } | null>(
     null,
   );
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const confirm = useConfirm();
 
   // Agent pool size is a client-only preference (localStorage), not part of the
@@ -349,82 +350,96 @@ export function AgentsView() {
             onSetProvider={(p) => void activateProvider(p)}
           />
 
-          <Field label={t('agents.name')} htmlFor="primary-name">
-            <Input
-              id="primary-name"
-              value={primary.name}
-              onChange={(e) => editPrimary({ name: e.target.value })}
-              placeholder={t('agents.orchestratorPlaceholder')}
-            />
-          </Field>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((o) => !o)}
+            aria-expanded={showAdvanced}
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', !showAdvanced && '-rotate-90')} />
+            {showAdvanced ? t('agents.hideAdvanced') : t('agents.showAdvanced')}
+          </button>
 
-          <MarkdownField
-            label={t('agents.descriptionPrompt')}
-            hint={t('agents.primaryDescriptionHint')}
-            value={primary.description}
-            onChange={(v) => editPrimary({ description: v })}
-            placeholder={t('agents.primaryDescriptionPlaceholder')}
-          />
+          <Collapse open={showAdvanced}>
+            <div className="space-y-5">
+              <Field label={t('agents.name')} htmlFor="primary-name">
+                <Input
+                  id="primary-name"
+                  value={primary.name}
+                  onChange={(e) => editPrimary({ name: e.target.value })}
+                  placeholder={t('agents.orchestratorPlaceholder')}
+                />
+              </Field>
 
-          <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
-            <div className="flex items-start justify-between gap-6">
-              <div className="space-y-1">
-                <p className="flex items-center gap-2 text-sm font-medium">
-                  <Activity className="h-3.5 w-3.5" />
-                  {t('agents.heartbeat')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {t('agents.heartbeatHint')}
-                </p>
-              </div>
-              <Switch
-                checked={primary.heartbeatEnabled}
-                onCheckedChange={(on) => editPrimary({ heartbeatEnabled: on })}
-                aria-label={t('agents.enableHeartbeat')}
-              />
-            </div>
-
-            <div className="flex items-start justify-between gap-6">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t('agents.interval')}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('agents.intervalHint')}
-                </p>
-              </div>
-              <select
-                value={primary.heartbeatIntervalH}
-                onChange={(e) => editHeartbeatInterval(Number(e.target.value))}
-                aria-label={t('agents.heartbeatInterval')}
-                className="h-9 shrink-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {HEARTBEAT_PRESETS.some((p) => p.hours === primary.heartbeatIntervalH) ? null : (
-                  <option value={primary.heartbeatIntervalH}>
-                    {formatHeartbeatInterval(primary.heartbeatIntervalH)}
-                  </option>
-                )}
-                {HEARTBEAT_PRESETS.map((p) => (
-                  <option key={p.hours} value={p.hours}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div
-              className={cn(
-                'transition-opacity',
-                primary.heartbeatEnabled ? 'opacity-100' : 'pointer-events-none opacity-50',
-              )}
-            >
               <MarkdownField
-                label={t('agents.heartbeatPrompt')}
-                value={primary.heartbeatPrompt}
-                onChange={(v) => editPrimary({ heartbeatPrompt: v })}
-                placeholder={t('agents.heartbeatPromptPlaceholder')}
-                minHeight={100}
+                label={t('agents.descriptionPrompt')}
+                hint={t('agents.primaryDescriptionHint')}
+                value={primary.description}
+                onChange={(v) => editPrimary({ description: v })}
+                placeholder={t('agents.primaryDescriptionPlaceholder')}
               />
+
+              <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="space-y-1">
+                    <p className="flex items-center gap-2 text-sm font-medium">
+                      <Activity className="h-3.5 w-3.5" />
+                      {t('agents.heartbeat')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('agents.heartbeatHint')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={primary.heartbeatEnabled}
+                    onCheckedChange={(on) => editPrimary({ heartbeatEnabled: on })}
+                    aria-label={t('agents.enableHeartbeat')}
+                  />
+                </div>
+
+                <div className="flex items-start justify-between gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{t('agents.interval')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('agents.intervalHint')}
+                    </p>
+                  </div>
+                  <select
+                    value={primary.heartbeatIntervalH}
+                    onChange={(e) => editHeartbeatInterval(Number(e.target.value))}
+                    aria-label={t('agents.heartbeatInterval')}
+                    className="h-9 shrink-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {HEARTBEAT_PRESETS.some((p) => p.hours === primary.heartbeatIntervalH) ? null : (
+                      <option value={primary.heartbeatIntervalH}>
+                        {formatHeartbeatInterval(primary.heartbeatIntervalH)}
+                      </option>
+                    )}
+                    {HEARTBEAT_PRESETS.map((p) => (
+                      <option key={p.hours} value={p.hours}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div
+                  className={cn(
+                    'transition-opacity',
+                    primary.heartbeatEnabled ? 'opacity-100' : 'pointer-events-none opacity-50',
+                  )}
+                >
+                  <MarkdownField
+                    label={t('agents.heartbeatPrompt')}
+                    value={primary.heartbeatPrompt}
+                    onChange={(v) => editPrimary({ heartbeatPrompt: v })}
+                    placeholder={t('agents.heartbeatPromptPlaceholder')}
+                    minHeight={100}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          </Collapse>
         </div>
       </Accordion>
 
