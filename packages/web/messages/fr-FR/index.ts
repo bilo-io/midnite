@@ -5,6 +5,7 @@ import board from './board.json';
 import common from './common.json';
 import nav from './nav.json';
 import plan from './plan.json';
+import search from './search.json';
 import settings from './settings.json';
 import task from './task.json';
 
@@ -14,6 +15,7 @@ export default {
   common,
   nav,
   plan,
+  search,
   settings,
   task,
 };

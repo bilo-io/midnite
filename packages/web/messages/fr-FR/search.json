@@ -1,0 +1,75 @@
+{
+  "typeAtLeast": "Saisissez au moins {count, plural, one {# caractère} other {# caractères}} pour rechercher.",
+  "typeMeta": {
+    "task": "Tâches",
+    "project": "Projets",
+    "memory": "Mémoire",
+    "note": "Notes",
+    "council": "Conseils",
+    "workflow": "Flux de travail",
+    "milestone": "Jalons",
+    "digest": "Résumés"
+  },
+  "palette": {
+    "ariaLabel": "Palette de commandes",
+    "placeholder": "Accéder, rechercher ou exécuter une commande…",
+    "chatPlaceholder": "Dites au tableau quoi faire…",
+    "inputAriaLabel": "Rechercher des commandes et du contenu",
+    "chatInputAriaLabel": "Discuter avec le tableau",
+    "searchingAriaLabel": "Recherche en cours",
+    "shortcutsButtonTitle": "Raccourcis clavier (?)",
+    "resultsAriaLabel": "Résultats",
+    "noMatches": "Aucun résultat.",
+    "seeAllIn": "+{count} {label} de plus — tout voir dans Recherche",
+    "sections": {
+      "recent": "Récent",
+      "commands": "Commandes",
+      "navigation": "Navigation"
+    },
+    "always": {
+      "agents": "Agents",
+      "personalization": "Personnalisation",
+      "settings": "Paramètres"
+    }
+  },
+  "page": {
+    "title": "Recherche",
+    "description": "Recherche plein texte parmi les tâches, projets, mémoires, notes, conseils et flux de travail.",
+    "placeholder": "Rechercher partout",
+    "clearAriaLabel": "Effacer la recherche"
+  },
+  "results": {
+    "emptyPrompt": "Recherchez parmi les tâches, projets, mémoires, notes, conseils et flux de travail.",
+    "searching": "Recherche en cours…",
+    "failed": "Échec de la recherche — réessayez.",
+    "noResultsFor": "Aucun résultat pour « {query} ».",
+    "resultCountFor": "{count, plural, one {# résultat} other {# résultats}} pour",
+    "allTypes": "Tous les types"
+  },
+  "shortcuts": {
+    "ariaLabel": "Raccourcis clavier",
+    "title": "Raccourcis clavier",
+    "then": "puis",
+    "closeHint": "Appuyez sur Échap pour fermer",
+    "groups": {
+      "general": "Général",
+      "navigation": "Navigation",
+      "board": "Tableau"
+    },
+    "items": {
+      "openPalette": "Ouvrir la palette de commandes",
+      "shortcutsHelp": "Raccourcis clavier",
+      "newTask": "Nouvelle tâche (hors d'un champ de saisie)",
+      "closeModal": "Fermer la fenêtre / le panneau",
+      "goHome": "Aller à l'accueil",
+      "goBoard": "Aller au tableau",
+      "goOffice": "Aller au bureau",
+      "goSettings": "Aller aux paramètres",
+      "moveFocusCards": "Déplacer le focus entre les cartes",
+      "moveFocusColumns": "Déplacer le focus entre les colonnes",
+      "openCard": "Ouvrir la carte sélectionnée",
+      "markDone": "Marquer la carte sélectionnée comme terminée",
+      "abandonCard": "Abandonner la carte sélectionnée"
+    }
+  }
+}
