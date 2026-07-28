@@ -2,6 +2,7 @@
 
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Background,
   Controls,
@@ -48,6 +49,7 @@ type Props = {
  * commit every edit immediately everywhere else in this module.
  */
 export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
+  const t = useTranslations('board');
   const toast = useToast();
   useTaskEvents();
 
@@ -181,14 +183,12 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
   );
 
   if (!view) {
-    return <p className="p-8 text-center text-sm text-muted-foreground">Loading roadmap…</p>;
+    return <p className="p-8 text-center text-sm text-muted-foreground">{t('roadmapGraph.loading')}</p>;
   }
 
   if (milestones.length === 0) {
     return (
-      <p className="p-8 text-center text-sm text-muted-foreground">
-        No milestones yet — add one on the board to see it here.
-      </p>
+      <p className="p-8 text-center text-sm text-muted-foreground">{t('roadmapGraph.noMilestones')}</p>
     );
   }
 

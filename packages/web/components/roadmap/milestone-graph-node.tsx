@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { X } from 'lucide-react';
 import { statusHueVar } from '@/components/task-columns';
@@ -34,6 +35,7 @@ type NodeData = MilestoneGraphNodeData & MilestoneGraphNodeCallbacks;
  * the "blocked by" edge — deleting a selected edge (Delete/Backspace) removes it.
  */
 export function MilestoneGraphNode({ data }: NodeProps) {
+  const t = useTranslations('board');
   const node = data as unknown as NodeData;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(node.name);
@@ -143,7 +145,7 @@ export function MilestoneGraphNode({ data }: NodeProps) {
             );
           })}
           {node.tasks.length === 0 ? (
-            <p className="py-1 text-center text-[11px] text-muted-foreground">No tasks yet</p>
+            <p className="py-1 text-center text-[11px] text-muted-foreground">{t('roadmapGraph.noTasks')}</p>
           ) : null}
           <input
             value={adding}
