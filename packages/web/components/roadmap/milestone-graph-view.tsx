@@ -43,12 +43,12 @@ type Props = {
 
 /**
  * The editable milestone dependency graph — `dagre`-laid-out nodes (one per
- * milestone) whose edges are the "blocked by" relation. Unlike the read-only
- * task graph, nodes are connectable (drag between two nodes to add/rewire a
- * dependency) and expand in place to show + edit a milestone's tasks. Mutations
- * are per-gesture optimistic with rollback (the roadmap-board convention),
- * not the workflow editor's debounced-autosave model — milestones already
- * commit every edit immediately everywhere else in this module.
+ * milestone) whose edges are the "blocked by" relation, mirroring the task
+ * graph's editable gesture. Nodes are connectable (drag between two nodes to
+ * add/rewire a dependency) and expand in place to show + edit a milestone's
+ * tasks. Mutations are per-gesture optimistic with rollback (the roadmap-board
+ * convention), not the workflow editor's debounced-autosave model — milestones
+ * already commit every edit immediately everywhere else in this module.
  */
 export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
   const t = useTranslations('board');

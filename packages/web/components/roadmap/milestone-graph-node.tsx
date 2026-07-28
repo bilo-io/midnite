@@ -27,12 +27,12 @@ export type MilestoneGraphNodeCallbacks = {
 type NodeData = MilestoneGraphNodeData & MilestoneGraphNodeCallbacks;
 
 /**
- * One milestone in the dependency graph — editable, unlike the read-only task
- * graph. Collapsed: name (click to rename) + progress. Clicking the card body
- * (not the rename input, not a task row) expands it to show its tasks, each
- * removable, plus a quick "add task" input. Connect handles are real (not the
- * task graph's invisible read-only ones) so dragging between two nodes edits
- * the "blocked by" edge — deleting a selected edge (Delete/Backspace) removes it.
+ * One milestone in the dependency graph. Collapsed: name (click to rename) +
+ * progress. Clicking the card body (not the rename input, not a task row)
+ * expands it to show its tasks, each removable, plus a quick "add task" input.
+ * Connect handles are real (mirroring the task graph's) so dragging between two
+ * nodes edits the "blocked by" edge — deleting a selected edge (Delete/Backspace)
+ * removes it.
  */
 export function MilestoneGraphNode({ data }: NodeProps) {
   const t = useTranslations('board');

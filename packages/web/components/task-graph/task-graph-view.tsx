@@ -5,19 +5,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import {
+  applyEdgeChanges,
   Background,
   Controls,
   MiniMap,
   ReactFlow,
   getNodesBounds,
   getViewportForBounds,
+  type Connection,
+  type Edge,
   type Node,
   type NodeMouseHandler,
   type NodeTypes,
+  type OnConnect,
+  type OnEdgesChange,
+  type OnEdgesDelete,
   type ReactFlowInstance,
 } from '@xyflow/react';
-import type { Project, Status, Task, TaskSummary } from '@midnite/shared';
-import { getTask, getTaskGraph } from '@/lib/api';
+import type { Project, Status, Task, TaskGraph, TaskSummary } from '@midnite/shared';
+import { addTaskDependency, getTask, getTaskGraph, removeTaskDependency } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useTaskEvents } from '@/hooks/use-task-events';
 import { useIsMobile } from '@/hooks/use-media-query';
@@ -31,11 +37,12 @@ import { StyledSelect } from '@/components/ui/styled-select';
 import { ProjectProgressBar } from '@/components/project-progress';
 import { WorkItemModal } from '@/components/work-item-modal';
 import { TaskGraphNode } from '@/components/task-graph/task-graph-node';
+import { useToast } from '@/components/toast';
 
 const PROJECT_PARAM = 'projectId';
 const MILESTONE_PARAM = 'milestoneId';
 
-// One custom node type; read-only so no connect/drag handlers.
+// One custom node type; connectable (see the header doc comment below).
 const nodeTypes: NodeTypes = { task: TaskGraphNode };
 
 // The floor `fitView`/zoom-out clamps to. A large, mostly-disconnected board is
@@ -77,10 +84,14 @@ type Props = {
 };
 
 /**
- * Phase 58 B — the dependency DAG. Reuses `@xyflow/react` in read-only mode over
- * the server-authoritative `GET /tasks/graph` (Phase 58 A) with a `dagre`
- * left-to-right auto-layout. Live via the shared reliable task channel; clicking
- * a node opens the existing `?task=` modal without leaving the graph.
+ * Phase 58 B — the dependency DAG over the server-authoritative `GET /tasks/graph`
+ * (Phase 58 A) with a `dagre` left-to-right auto-layout. Nodes are connectable —
+ * drag between two tasks to add a blocker, or select an edge and press
+ * Delete/Backspace to remove one — mirroring the milestone graph's editable
+ * gesture and the task detail modal's "Blocked by" picker. Mutations are
+ * per-gesture optimistic with rollback, then reconciled by the live task
+ * channel. Live via the shared reliable task channel; clicking a node opens the
+ * existing `?task=` modal without leaving the graph.
  */
 export function TaskGraphView({
   tasks,
@@ -94,6 +105,7 @@ export function TaskGraphView({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
+  const toast = useToast();
 
   // Keep the board channel live so the graph tracks status/edge changes (Phase 56).
   useTaskEvents();
@@ -112,10 +124,50 @@ export function TaskGraphView({
   // Phase 58 F — an optional milestone scope (deep-linked from a roadmap lane);
   // not exposed by the embedded Tasks-page graph, which has no milestone filter.
   const milestoneId = embedded ? '' : (searchParams.get(MILESTONE_PARAM) ?? '');
-  const { data: graph, loading } = useApiData(
+  const { data: fetched, loading } = useApiData(
     (signal) =>
       getTaskGraph(scopeProjectIds.length ? scopeProjectIds : undefined, milestoneId || undefined, signal),
     [scopeKey, milestoneId],
+  );
+  // Mirrored into local state (the roadmap-board/milestone-graph convention) so
+  // connect/delete gestures can apply instantly and roll back on error, rather
+  // than waiting on the live channel's refetch round-trip.
+  const [graph, setGraph] = useState<TaskGraph | null>(null);
+  useEffect(() => {
+    if (fetched) setGraph(fetched);
+  }, [fetched]);
+
+  const onConnect = useCallback<OnConnect>(
+    async (connection: Connection) => {
+      const { source, target } = connection;
+      if (!graph || !source || !target) return;
+      // Edge runs blocker (source, upstream) → dependent (target): connecting
+      // node A to node B means "B depends on A" (B is blocked by A).
+      const prev = graph;
+      setGraph((g) => (g ? addTaskDependencyLocal(g, target, source) : g));
+      try {
+        await addTaskDependency(target, source);
+      } catch (err) {
+        setGraph(prev);
+        toast.error(err instanceof Error ? err.message : 'Failed to add dependency');
+      }
+    },
+    [graph, toast],
+  );
+
+  const onEdgesDelete = useCallback<OnEdgesDelete>(
+    async (deleted: Edge[]) => {
+      if (!graph) return;
+      const prev = graph;
+      setGraph((g) => (g ? removeTaskDependenciesLocal(g, deleted) : g));
+      try {
+        await Promise.all(deleted.map((e) => removeTaskDependency(e.target, e.source)));
+      } catch (err) {
+        setGraph(prev);
+        toast.error(err instanceof Error ? err.message : 'Failed to remove dependency');
+      }
+    },
+    [graph, toast],
   );
 
   const projectOptions = useMemo(
@@ -156,7 +208,7 @@ export function TaskGraphView({
   // A stable primitive key for the memo below — an array prop would otherwise
   // churn identity every render and defeat the memo (harmless, just wasteful).
   const statusKey = statusFilter?.join(',') ?? '';
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges: layoutEdges } = useMemo(() => {
     if (!graph) return { nodes: [], edges: [] };
     // Status filter narrows the node set *before* layout; `layoutTaskGraph`
     // already drops any edge whose endpoint isn't in `graph.nodes` (the
@@ -168,6 +220,18 @@ export function TaskGraphView({
       : graph;
     return layoutTaskGraph(scoped);
   }, [graph, statusKey]);
+
+  // React Flow's `edges` prop is "controlled": selecting an edge (a prerequisite
+  // for deleting it with Backspace/Delete) only sticks if `onEdgesChange` applies
+  // the change back onto the array we pass in — see the milestone graph's
+  // identical fix. Mirror the derived layout into local state and let
+  // `applyEdgeChanges` own selection.
+  const [edges, setEdges] = useState<Edge[]>(layoutEdges);
+  useEffect(() => setEdges(layoutEdges), [layoutEdges]);
+  const onEdgesChange = useCallback<OnEdgesChange>(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [],
+  );
 
   // Open the shared task modal in place (Phase 42 `?task=` param) — stays on the
   // graph. Skipped when a host page (the Tasks page's graph view mode) already
@@ -298,11 +362,14 @@ export function TaskGraphView({
             edges={edges}
             nodeTypes={nodeTypes}
             onNodeClick={onNodeClick}
+            onConnect={onConnect}
+            onEdgesChange={onEdgesChange}
+            onEdgesDelete={onEdgesDelete}
             // Top-align the initial viewport (see `placeViewport`) rather than the
             // default centred `fitView`, so the graph uses the top of the canvas.
             onInit={placeViewport}
             nodesDraggable={false}
-            nodesConnectable={false}
+            nodesConnectable
             elementsSelectable
             proOptions={{ hideAttribution: true }}
             minZoom={MIN_ZOOM}
@@ -324,4 +391,21 @@ export function TaskGraphView({
       ) : null}
     </div>
   );
+}
+
+/** Add a "blocked by" edge (`taskId` depends on `dependsOnId`) in a fresh
+ *  TaskGraph. A no-op if the edge already exists. */
+export function addTaskDependencyLocal(graph: TaskGraph, taskId: string, dependsOnId: string): TaskGraph {
+  if (graph.edges.some((e) => e.from === taskId && e.to === dependsOnId)) return graph;
+  return { ...graph, edges: [...graph.edges, { from: taskId, to: dependsOnId }] };
+}
+
+/** Remove every given edge (React Flow's `{source, target}` shape, target = the
+ *  dependent task, source = the blocker) from a fresh TaskGraph. */
+export function removeTaskDependenciesLocal(
+  graph: TaskGraph,
+  removed: Array<{ source: string; target: string }>,
+): TaskGraph {
+  const toRemove = new Set(removed.map((e) => `${e.target}->${e.source}`));
+  return { ...graph, edges: graph.edges.filter((e) => !toRemove.has(`${e.from}->${e.to}`)) };
 }

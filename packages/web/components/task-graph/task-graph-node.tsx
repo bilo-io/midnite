@@ -14,10 +14,10 @@ const PRIORITY_LABEL: Record<number, { label: string; className: string }> = {
 /**
  * Phase 58 B — one task in the dependency DAG. Colour comes from the shared
  * status hue vars (so it reads the same as the board); ready/blocked + priority
- * are chips. Read-only: connect handles are hidden (`isConnectable={false}` is
- * set by the layout), but React Flow still needs source/target handles present
- * for edges to attach — we render them invisibly. Left→right layout, so the
- * target handle (incoming from a blocker) is on the left, source on the right.
+ * are chips. Connect handles are real (drag between two nodes to add/rewire a
+ * blocker, mirroring the milestone graph) — a selected edge is deleted with
+ * Delete/Backspace. Left→right layout, so the target handle (incoming from a
+ * blocker) is on the left, source on the right.
  */
 export function TaskGraphNode({ data, selected }: NodeProps) {
   const node = data as TaskGraphNodeData;
@@ -29,7 +29,11 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        'flex flex-col justify-between overflow-hidden rounded-lg border task-surface px-3 py-2 text-left shadow-sm transition-shadow hover:shadow-md',
+        // No full-bleed child needs corner-clipping here (unlike the milestone
+        // node's header bar), and `overflow-hidden` would clip the connect
+        // handles — which sit right at this box's edge — enough to make their
+        // hit area nearly unreachable.
+        'flex flex-col justify-between rounded-lg border task-surface px-3 py-2 text-left shadow-sm transition-shadow hover:shadow-md',
         node.foreign && 'border-dashed opacity-70',
         // Blocked (unmet blockers) reads dimmed, mirroring the board's blocked card.
         blocked && 'opacity-60',
@@ -51,7 +55,7 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
         borderLeftWidth: 4,
       }}
     >
-      <Handle type="target" position={Position.Left} className="!opacity-0" isConnectable={false} />
+      <Handle type="target" position={Position.Left} onClick={(e) => e.stopPropagation()} />
       <p className="line-clamp-2 text-xs font-medium leading-snug text-foreground">{node.title}</p>
       <div className="flex items-center gap-1">
         <span
@@ -90,7 +94,7 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
           <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', priority.className)}>{priority.label}</span>
         ) : null}
       </div>
-      <Handle type="source" position={Position.Right} className="!opacity-0" isConnectable={false} />
+      <Handle type="source" position={Position.Right} onClick={(e) => e.stopPropagation()} />
     </div>
   );
 }
