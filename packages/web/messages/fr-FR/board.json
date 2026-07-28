@@ -143,5 +143,10 @@
     "reorderFailed": "Échec de la réorganisation des tâches",
     "reopenFailed": "Échec de la réouverture de la tâche",
     "deleteFailed": "Échec de la suppression des tâches"
+  },
+  "roadmapGraph": {
+    "loading": "Chargement de la feuille de route…",
+    "noMilestones": "Pas encore de jalons — ajoutez-en un sur le tableau pour le voir ici.",
+    "noTasks": "Pas encore de tâches"
   }
 }

@@ -11,8 +11,8 @@ function view(): RoadmapView {
   return {
     projectId: 'p1',
     milestones: [
-      { id: 'm1', projectId: 'p1', name: 'M1', position: 0, createdAt: '', updatedAt: '', done: 1, total: 2, tasks: [task('a', 'done', 'm1'), task('b', 'todo', 'm1')] },
-      { id: 'm2', projectId: 'p1', name: 'M2', position: 1, createdAt: '', updatedAt: '', done: 0, total: 0, tasks: [] },
+      { id: 'm1', projectId: 'p1', name: 'M1', position: 0, dependsOn: [], createdAt: '', updatedAt: '', done: 1, total: 2, tasks: [task('a', 'done', 'm1'), task('b', 'todo', 'm1')] },
+      { id: 'm2', projectId: 'p1', name: 'M2', position: 1, dependsOn: [], createdAt: '', updatedAt: '', done: 0, total: 0, tasks: [] },
     ],
     backlog: [task('c', 'todo')],
   };

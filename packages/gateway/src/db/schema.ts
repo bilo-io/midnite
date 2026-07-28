@@ -288,6 +288,24 @@ export const roadmapMilestones = sqliteTable(
 export type RoadmapMilestoneRow = typeof roadmapMilestones.$inferSelect;
 export type RoadmapMilestoneInsert = typeof roadmapMilestones.$inferInsert;
 
+// Blocker edges for the milestone dependency graph: `milestone_id` depends on
+// `depends_on_milestone_id` (its blocker) — exact structural mirror of
+// `taskDependencies`. Composite PK prevents a duplicate edge; the extra index
+// on `depends_on_milestone_id` makes "who depends on me" cheap. Plain
+// intra-domain id reference — no cross-domain FK (CLAUDE.md).
+export const milestoneDependencies = sqliteTable(
+  'milestone_dependencies',
+  {
+    milestoneId: text('milestone_id').notNull(),
+    dependsOnMilestoneId: text('depends_on_milestone_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.milestoneId, t.dependsOnMilestoneId] }),
+    dependsOnIdx: index('milestone_dependencies_depends_on_idx').on(t.dependsOnMilestoneId),
+  }),
+);
+
 // Project docs: planning documents (PRD/spec/design/etc.), moved off browser
 // localStorage so they can persist server-side and be filled in by Claude
 // (ProjectDocsService.generateDoc). templateId is nullable — a doc can start

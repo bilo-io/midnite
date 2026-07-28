@@ -143,5 +143,10 @@
     "reorderFailed": "Failed to reorder tasks",
     "reopenFailed": "Failed to reopen task",
     "deleteFailed": "Failed to delete tasks"
+  },
+  "roadmapGraph": {
+    "loading": "Loading roadmap…",
+    "noMilestones": "No milestones yet — add one on the board to see it here.",
+    "noTasks": "No tasks yet"
   }
 }

@@ -13,6 +13,8 @@ function makeService() {
     reorder: vi.fn(() => []),
     reorderTasks: vi.fn(),
     assignTask: vi.fn(() => ({ id: 't1' })),
+    addDependency: vi.fn(() => ({ id: 'm1', dependsOn: ['m2'] })),
+    removeDependency: vi.fn(() => ({ id: 'm1', dependsOn: [] })),
   };
 }
 
@@ -82,5 +84,22 @@ describe('MilestonesController', () => {
   it('remove returns ok and forwards scope', () => {
     expect(ctrl.remove('m1', user)).toEqual({ ok: true });
     expect(service.delete).toHaveBeenCalledWith('m1', scope);
+  });
+
+  it('addDependency 400s when dependsOnId is missing', () => {
+    expect(() => ctrl.addDependency('m1', {}, user)).toThrow(BadRequestException);
+    expect(service.addDependency).not.toHaveBeenCalled();
+  });
+
+  it('addDependency forwards the ids + scope and wraps the result', () => {
+    expect(ctrl.addDependency('m1', { dependsOnId: 'm2' }, user)).toEqual({
+      milestone: { id: 'm1', dependsOn: ['m2'] },
+    });
+    expect(service.addDependency).toHaveBeenCalledWith('m1', 'm2', scope);
+  });
+
+  it('removeDependency forwards the ids + scope and wraps the result', () => {
+    expect(ctrl.removeDependency('m1', 'm2', user)).toEqual({ milestone: { id: 'm1', dependsOn: [] } });
+    expect(service.removeDependency).toHaveBeenCalledWith('m1', 'm2', scope);
   });
 });

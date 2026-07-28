@@ -20,6 +20,14 @@ export const MilestoneSchema = z.object({
   position: z.number().int().nonnegative(),
   /** Optional target date (ISO). Purely informational in v1 — no date-scheduling. */
   targetDate: z.string().optional(),
+  /**
+   * Ids of milestones this one depends on ("blocked by") — computed from
+   * `milestone_dependencies` edges, never stored directly, mirroring how
+   * `Task.dependsOn` is derived from `task_dependencies`. Also doubles as the
+   * milestone-graph's manually edited "sequence": connecting/disconnecting two
+   * nodes in the graph *is* editing this list.
+   */
+  dependsOn: z.array(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
   createdBy: z.string().optional(),
@@ -54,6 +62,16 @@ export const AssignMilestoneRequestSchema = z.object({
   milestoneId: z.string().nullable(),
 });
 export type AssignMilestoneRequest = z.infer<typeof AssignMilestoneRequestSchema>;
+
+/** A project's milestone count is always small — a generous but bounded cap on
+ *  blockers per milestone (mirrors `MAX_TASK_DEPENDENCIES`, just smaller). */
+export const MAX_MILESTONE_DEPENDENCIES = 20;
+
+/** Body for `POST /milestones/:id/dependencies` — add one "blocked by" edge. */
+export const AddMilestoneDependencyRequestSchema = z.object({
+  dependsOnId: z.string().min(1),
+});
+export type AddMilestoneDependencyRequest = z.infer<typeof AddMilestoneDependencyRequestSchema>;
 
 export const MilestoneResponseSchema = z.object({ milestone: MilestoneSchema });
 export type MilestoneResponse = z.infer<typeof MilestoneResponseSchema>;
