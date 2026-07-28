@@ -14,7 +14,8 @@ describe('groupNavSections', () => {
 
     const byKey = Object.fromEntries(sections.map((s) => [s.key, keysOf(s.features)]));
     expect(byKey['app']).toEqual(['tasks', 'slides', 'workflows']);
-    expect(byKey['agents']).toEqual(['memory', 'sessions', 'councils', 'media']);
+    // 'media' is commented out in FEATURES (hidden from nav + settings), like 'projects'.
+    expect(byKey['agents']).toEqual(['memory', 'sessions', 'councils']);
     expect(byKey['overview']).toEqual(['office', 'ops']);
   });
 

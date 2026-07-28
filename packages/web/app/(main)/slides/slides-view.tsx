@@ -10,12 +10,16 @@ import { CountPill } from '@/components/count-pill';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
+import { ProjectTag } from '@/components/project-tag';
 import { SearchBar } from '@/components/search-bar';
 import { SortSelect } from '@/components/sort-select';
+import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { useToast } from '@/components/toast';
 import { DeckCard, DeckRow } from '@/components/slides/deck-card';
-import { deleteDeck, duplicateDeck } from '@/lib/slides/store';
+import { projectPageHref } from '@/lib/project-route';
+import { deleteDeck, duplicateDeck, type DeckSummary } from '@/lib/slides/store';
+import { groupDecksByProject } from '@/lib/slides/group-by-project';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useDecks } from '@/lib/slides/use-decks';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -212,18 +216,13 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
           No decks match the current filters.
         </div>
       ) : view === 'list' ? (
-        <div className="flex flex-col gap-2">
-          {filtered.map((deck) => (
-            <DeckRow
-              key={deck.slug}
-              deck={deck}
-              project={deck.projectId ? projectsById.get(deck.projectId) : undefined}
-              onChanged={refresh}
-              selected={isSelected(deck.slug)}
-              onToggleSelect={(sk) => toggleSelect(deck.slug, sk, orderedSlugs)}
-            />
-          ))}
-        </div>
+        <ProjectGroupedDecks
+          decks={filtered}
+          projects={projects}
+          onChanged={refresh}
+          isSelected={isSelected}
+          onToggleSelect={(slug, shiftKey) => toggleSelect(slug, shiftKey, orderedSlugs)}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((deck) => (
@@ -238,6 +237,62 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * List-view body: decks grouped under reorderable, collapsible per-project
+ * accordions — mirroring the Tasks list view. Each row skips its own project
+ * tag (the group header already carries it) since every deck in a section
+ * belongs to the same project.
+ */
+function ProjectGroupedDecks({
+  decks,
+  projects,
+  onChanged,
+  isSelected,
+  onToggleSelect,
+}: {
+  decks: DeckSummary[];
+  projects: Project[];
+  onChanged: () => void;
+  isSelected: (slug: string) => boolean;
+  onToggleSelect: (slug: string, shiftKey: boolean) => void;
+}) {
+  const groups = groupDecksByProject(decks, projects, 'Unassigned');
+
+  const sections: AccordionSection[] = groups.map((g) => ({
+    id: g.key,
+    label: g.projectId ? (
+      <Link href={projectPageHref(g.projectId)} onClick={(e) => e.stopPropagation()} className="hover:underline">
+        {g.name}
+      </Link>
+    ) : (
+      g.name
+    ),
+    color: g.color,
+    leading: g.projectId && g.tag ? <ProjectTag tag={g.tag} color={g.color ?? '#94a3b8'} /> : undefined,
+    count: g.decks.length,
+    summary: `${g.decks.length} deck${g.decks.length === 1 ? '' : 's'}`,
+    body: (
+      <div className="flex flex-col gap-2 p-2">
+        {g.decks.map((deck) => (
+          <DeckRow
+            key={deck.slug}
+            deck={deck}
+            onChanged={onChanged}
+            selected={isSelected(deck.slug)}
+            onToggleSelect={(sk) => onToggleSelect(deck.slug, sk)}
+          />
+        ))}
+      </div>
+    ),
+  }));
+
+  return (
+    <div className="min-h-0 flex-1 pb-1">
+      <SortableAccordions sections={sections} storageKey="midnite.slides.listGroups" variant="split" />
     </div>
   );
 }

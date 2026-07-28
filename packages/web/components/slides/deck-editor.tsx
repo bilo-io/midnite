@@ -6,7 +6,7 @@ import { Upload } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MarkdownEditor } from '@/components/markdown-editor';
+import { DeckSourceEditor } from '@/components/slides/deck-source-editor';
 import { ProjectSelect } from '@/components/project-select';
 import { useToast } from '@/components/toast';
 import { createDeck, updateDeck } from '@/lib/slides/store';
@@ -98,26 +98,26 @@ export function DeckEditor({ initial, projects = [] }: Props) {
         hidden
       />
 
-      <MarkdownEditor
-        value={md}
-        onChange={setMd}
-        defaultMode="edit"
-        minHeight={360}
-        ariaLabel="Deck markdown source"
-        label={
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">Markdown</span>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              Upload .md
-            </button>
-          </div>
-        }
-      />
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">Markdown</span>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Upload .md
+          </button>
+        </div>
+        <DeckSourceEditor
+          value={md}
+          onChange={setMd}
+          minHeight={360}
+          ariaLabel="Deck markdown source"
+          emptyPreviewMessage="Nothing to preview yet."
+        />
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">

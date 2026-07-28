@@ -6,7 +6,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, Power, Settings } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { AppFrame, useIdleTimer, type NavLinkComponent } from '@midnite/shell';
+import {
+  AppFrame,
+  isActivePath,
+  TitleBarDragStrip,
+  TITLE_BAR_HEIGHT,
+  useIdleTimer,
+  type NavLinkComponent,
+} from '@midnite/shell';
 import { PasscodeSetupDialog } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
@@ -69,6 +76,25 @@ export function AppShellClient({ children }: { children: ReactNode }) {
     setWindowChrome(getWindowChromeBridge());
   }, []);
   const frameless = windowChrome?.frameless === true;
+
+  // The deck presenter is a full-viewport overlay with its own exit (X) control,
+  // so the desktop title bar (search pill, history arrows, avatar) is dead
+  // chrome there — hidden like on the lock screen / auth pages, in favour of a
+  // bare `TitleBarDragStrip` so the frameless window stays draggable. `--titlebar-h`
+  // is kept published at the same height regardless, so the deck's own exit/
+  // fullscreen controls (offset by that var) don't end up under the drag strip.
+  //
+  // Matched with `isActivePath`, not `===`: the web app builds with
+  // `trailingSlash: true`, so `usePathname()` yields `/slides/present/` and an
+  // exact compare silently never fires.
+  const presenting = isActivePath(pathname, '/slides/present');
+  useEffect(() => {
+    if (!frameless || !presenting) return undefined;
+    document.documentElement.style.setProperty('--titlebar-h', TITLE_BAR_HEIGHT);
+    return () => {
+      document.documentElement.style.setProperty('--titlebar-h', '0px');
+    };
+  }, [frameless, presenting]);
 
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
   // The active locale (pref → browser → default, resolved by the shell provider).
@@ -209,6 +235,12 @@ export function AppShellClient({ children }: { children: ReactNode }) {
     </>
   );
 
+  const titleBarSlot = !frameless ? undefined : presenting ? (
+    <TitleBarDragStrip windowChrome={windowChrome} />
+  ) : (
+    <DesktopTitleBar windowChrome={windowChrome} />
+  );
+
   return (
     <>
       <AppFrame
@@ -222,7 +254,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         settings={{ href: '/settings', label: tNav('footer.settings'), icon: <Settings aria-hidden /> }}
         mobileSheet={<NotificationCenter expanded />}
         mobileUnread={unread}
-        titleBar={frameless ? <DesktopTitleBar windowChrome={windowChrome} /> : undefined}
+        titleBar={titleBarSlot}
       >
         {children}
       </AppFrame>

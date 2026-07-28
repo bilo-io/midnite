@@ -15,7 +15,7 @@ import {
   BrainCircuit,
   Building2,
   CirclePile,
-  Images,
+  // Images, // ← restore alongside the commented-out 'media' feature below
   LayoutDashboard,
   ListChecks,
   Presentation,
@@ -137,14 +137,18 @@ export const FEATURES: Feature[] = [
     Icon: CirclePile,
     category: 'agents',
   },
-  {
-    key: 'media',
-    href: '/media',
-    label: 'Media',
-    description: 'Your generated images and media library.',
-    Icon: Images,
-    category: 'agents',
-  },
+  // 'media' is intentionally commented out (not deleted), like 'projects' above:
+  // `/media` stays reachable by URL (with `featureForPath` returning null, the
+  // FeatureGate leaves it ungated), but the standalone surface is hidden from the
+  // nav and the settings toggle until it's needed again.
+  // {
+  //   key: 'media',
+  //   href: '/media',
+  //   label: 'Media',
+  //   description: 'Your generated images and media library.',
+  //   Icon: Images,
+  //   category: 'agents',
+  // },
   // ── Overview ─────────────────────────────────────────────────────────────
   {
     key: 'office',
