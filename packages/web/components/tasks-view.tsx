@@ -94,7 +94,7 @@ const BOARD_STYLE_STORAGE_KEY = 'midnite.tasks.boardStyle';
 
 // View toggle, matching the Projects/Sessions control — list / board / graph,
 // persisted to localStorage. "board" is the kanban (where the others have
-// grid); "graph" is the read-only dependency DAG (Phase 58 B), rendered
+// grid); "graph" is the editable dependency DAG (Phase 58 B), rendered
 // in-page instead of the separate `/tasks/graph` route.
 export type TaskView = 'list' | 'board' | 'graph';
 const VIEWS: readonly TaskView[] = ['list', 'board', 'graph'];

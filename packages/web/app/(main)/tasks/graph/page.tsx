@@ -21,7 +21,7 @@ function TaskGraphContainer() {
       <PageHeader
         title="Dependency graph"
         icon="Workflow"
-        description="What blocks what — tasks laid out left-to-right by completion order. Read-only; edit dependencies from a task."
+        description="What blocks what — tasks laid out left-to-right by completion order. Drag between two tasks to add a blocker, or select an edge and press Delete to remove one."
       />
       <div className="min-h-0 flex-1">
         <TaskGraphView tasks={tasks} projects={projects} />

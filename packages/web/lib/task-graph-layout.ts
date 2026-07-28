@@ -55,7 +55,7 @@ export function layoutTaskGraph(graph: TaskGraph): LayoutedGraph {
       position: { x: pos.x - GRAPH_NODE_WIDTH / 2, y: pos.y - GRAPH_NODE_HEIGHT / 2 },
       data: { ...node },
       draggable: false,
-      connectable: false,
+      connectable: true,
     };
   });
 

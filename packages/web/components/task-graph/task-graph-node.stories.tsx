@@ -12,8 +12,9 @@ function node(data: TaskGraphNodeData): Node<TaskGraphNodeData> {
   return { id: data.id, type: 'task', position: { x: 40, y: 40 }, data };
 }
 
-// Render the custom node inside a minimal read-only ReactFlow so the Handle
-// context is present, exactly as the graph view mounts it.
+// Render the custom node inside a minimal, non-interactive ReactFlow so the
+// Handle context is present, without wiring up the real view's connect/delete
+// gestures (irrelevant for previewing one node in isolation).
 function Canvas({ data }: { data: TaskGraphNodeData }) {
   return (
     <div style={{ width: 340, height: 180 }}>
