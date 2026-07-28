@@ -10,7 +10,6 @@ import { RailShell, RailHeaderToggle, Tabs, type TabOption } from '@midnite/ui';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
 import { ProjectDocsPanel } from '@/components/projects/panels/project-docs-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
-import { ProjectPhaseDocsPanel } from '@/components/projects/panels/project-phasedocs-panel';
 import { ProjectRoadmapPanel } from '@/components/projects/panels/project-roadmap-panel';
 import { ProjectStatsPanel } from '@/components/projects/project-stats-panel';
 import { ProjectInfoPanel } from '@/components/projects/project-info-panel';
@@ -22,13 +21,12 @@ import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 
-type Tab = 'details' | 'docs' | 'tasks' | 'roadmap' | 'phasedocs';
+type Tab = 'details' | 'docs' | 'tasks' | 'roadmap';
 const TAB_OPTIONS: TabOption<Tab>[] = [
   { value: 'details', label: 'Details' },
   { value: 'docs', label: 'Docs' },
   { value: 'tasks', label: 'Tasks' },
   { value: 'roadmap', label: 'Roadmap' },
-  { value: 'phasedocs', label: 'Phase docs' },
 ];
 const TAB_VALUES = new Set<string>(TAB_OPTIONS.map((t) => t.value));
 
@@ -79,7 +77,7 @@ export function ProjectDetailContainer() {
 
 /**
  * The project cockpit (Phase 55 A/C): a center tab region (Details/Docs/Tasks/
- * Phase-Docs, driven by `?tab=`) flanked by two independently collapsible,
+ * Roadmap, driven by `?tab=`) flanked by two independently collapsible,
  * state-persisted rails — stats + actions (left), sources + activity (right).
  * On mobile the rails become header-toggled drawers and the center goes
  * full-width. The center panels are the same ones the modal renders.
@@ -176,10 +174,8 @@ export function ProjectDetailView({
                 <ProjectDocsPanel project={project} />
               ) : tab === 'tasks' ? (
                 <ProjectTasksPanel tasks={tasks} onSelectTask={openTask} />
-              ) : tab === 'roadmap' ? (
-                <ProjectRoadmapPanel project={project} onSelectTask={openTask} />
               ) : (
-                <ProjectPhaseDocsPanel projectId={project.id} />
+                <ProjectRoadmapPanel project={project} onSelectTask={openTask} />
               )}
             </div>
           </div>

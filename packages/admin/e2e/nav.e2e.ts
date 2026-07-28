@@ -200,7 +200,9 @@ const FAKE_PROJECTS = {
 
 const FAKE_PROJECT_DETAIL = {
   ...FAKE_PROJECTS.items[0],
-  phaseDocSyncRepoId: 'repo_0000000000000001',
+  // A detail-only description (absent from the list row above) proves the
+  // drawer actually fetched `/projects/:id` rather than reusing the list row.
+  description: 'The flagship initiative — full detail record.',
 };
 
 const STABLE_MANIFEST = {
@@ -338,8 +340,8 @@ test('Projects lists stubbed projects and drills into one', async ({ page }) => 
   const drawer = page.getByRole('dialog', { name: /Details for Aurora/ });
   await expect(drawer).toBeVisible();
   await expect(drawer.getByText('Tasks by status')).toBeVisible();
-  // The phaseDocSyncRepoId only present on the detail response confirms the drill-in fetch.
-  await expect(drawer.getByText('repo_0000000000000001')).toBeVisible();
+  // This description only exists on the detail response, confirming the drill-in fetch.
+  await expect(drawer.getByText('The flagship initiative — full detail record.')).toBeVisible();
 });
 
 test('Versions renders the running build, channels, and changelog', async ({ page }) => {

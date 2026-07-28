@@ -241,10 +241,6 @@ export const projects = sqliteTable('projects', {
   archivedAt: text('archived_at'),
   createdBy: text('created_by'),
   teamId: text('team_id'),
-  /** Phase 40 Theme G: phase-doc sync-back toggle (0=off, 1/null=on). */
-  phaseDocSync: integer('phase_doc_sync'),
-  /** Phase 40 Theme G: repo (registry id) whose phase docs receive sync-back ticks. */
-  phaseDocSyncRepoId: text('phase_doc_sync_repo_id'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 }, (t) => ({

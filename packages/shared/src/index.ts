@@ -73,7 +73,6 @@ export * from './team.js';
 export * from './audit.js';
 export * from './admin.js';
 export * from './service-token.js';
-export * from './phase-doc.js';
 export * from './i18n.js';
 export * from './preferences.js';
 export * from './webhook.js';
