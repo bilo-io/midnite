@@ -57,7 +57,7 @@ The 457-file bulk. Each bullet is an independently landable slice (own namespace
 - [ ] **Memory workspace** ([`components/memory/`](../packages/web/components/memory)) → `memory`.
 - [ ] **Projects** ([`components/projects/`](../packages/web/components/projects) + detail page) → `projects`.
 - [ ] **PR review / diff** ([`components/pr-review/`](../packages/web/components/pr-review)) → `prReview`.
-- [ ] **Search + command palette** (global search UI, palette actions/labels) → `search`.
+- [x] **Search + command palette** (global search UI, palette actions/labels) → `search` (55 keys); shared `searchTypeMeta()` de-dupes the palette/results type→icon/label map; fixed a pre-existing gap where the palette's FEATURES-derived nav labels ignored locale; fr-FR + fr RTL smoke tests (PR #572).
 - [ ] **Dashboard widgets** (clock/date/calendar/digest/finances/market + widget chrome) → `dashboard`.
 - [ ] **Guide / onboarding** ([`components/guide/`](../packages/web/components/guide)) → `guide`.
 - [ ] **Roadmap, task-graph, slides, safety** (smaller clusters, one slice) → `roadmap` / `slides` / `safety`.
