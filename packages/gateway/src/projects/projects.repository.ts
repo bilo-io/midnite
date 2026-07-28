@@ -148,9 +148,6 @@ export class ProjectsRepository {
       updatedAt: row.updatedAt,
       taskCount,
       taskStatusCounts: counts,
-      // null = unset (defaults on); 0 = off, 1 = on.
-      phaseDocSync: row.phaseDocSync == null ? undefined : row.phaseDocSync === 1,
-      phaseDocSyncRepoId: row.phaseDocSyncRepoId ?? undefined,
     };
   }
 }

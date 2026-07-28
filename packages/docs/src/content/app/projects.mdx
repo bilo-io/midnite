@@ -13,9 +13,9 @@ import projectsLight from '../assets/projects-light.png';
 ## What it is
 
 A **project** groups related work under one roof: a name, a description, an
-optional repo, and everything that hangs off it — tasks, milestones, phase docs,
-and attached sources. The Projects screen is a browsable tree of every project in
-your workspace.
+optional repo, and everything that hangs off it — tasks, milestones, and attached
+sources. The Projects screen is a browsable tree of every project in your
+workspace.
 
 ## Purpose
 
@@ -29,7 +29,7 @@ tasks should share.
 
 In short, a project is the bridge between an idea and a queue of scheduled work:
 
-- **Plan** a goal as a description, roadmap, and phase docs.
+- **Plan** a goal as a description and roadmap.
 - **Expand** it with AI into milestones and a task breakdown.
 - **Materialise** it as [tasks](/app/tasks) the board runs.
 
@@ -49,7 +49,7 @@ a terse blurb into a fuller brief before you save.
 ## Listing & viewing
 
 The main screen renders the **project tree**. Selecting a project opens its detail
-view (`/projects/view`), where its plan, milestones, phase docs, and tasks live.
+view (`/projects/view`), where its plan, milestones, and tasks live.
 
 | Action | How | Behind the scenes |
 | --- | --- | --- |
@@ -86,13 +86,3 @@ milestone so the roadmap shows progress.
 | Edit / delete a milestone | Milestone menu | `updateMilestone` / `deleteMilestone` |
 | Reorder milestones | Drag on the roadmap | `reorderMilestones` |
 | Assign a task to a milestone | From the task, pick a milestone | `assignTaskMilestone` |
-
-## Phase docs
-
-A project can hold **phase docs** — Markdown checklists for a slice of work — and
-seed tasks directly from them.
-
-| Action | How | Behind the scenes |
-| --- | --- | --- |
-| Create / edit / delete a phase doc | Phase-docs panel | `createPhaseDoc` / `updatePhaseDoc` / `deletePhaseDoc` |
-| Seed tasks from a phase doc | **Seed tasks** on the doc | phase-doc seed endpoint |

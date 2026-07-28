@@ -12,9 +12,9 @@ import { formatDate, formatInt } from '@/lib/format';
 
 /**
  * A per-project drill-in (Phase 73 Theme F). Opens `GET /projects/:id` for the
- * full record — completion, per-status task counts, the configured work dir and
- * phase-doc sync repo — rendered as a right-side slide-over portal over the table.
- * Seeded with the list row so identity shows instantly while the detail loads.
+ * full record — completion, per-status task counts, and the configured work dir
+ * — rendered as a right-side slide-over portal over the table. Seeded with the
+ * list row so identity shows instantly while the detail loads.
  */
 export function ProjectDrawer({ project, onClose }: { project: Project; onClose: () => void }) {
   useEffect(() => {
@@ -102,10 +102,6 @@ export function ProjectDrawer({ project, onClose }: { project: Project; onClose:
           <div>
             <dt className="text-xs uppercase tracking-wide text-muted-foreground">Work dir</dt>
             <dd className="truncate font-mono text-xs text-foreground">{p.workDir || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Phase-doc sync repo</dt>
-            <dd className="truncate font-mono text-xs text-foreground">{p.phaseDocSyncRepoId || '—'}</dd>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

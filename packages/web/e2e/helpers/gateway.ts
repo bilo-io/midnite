@@ -161,7 +161,7 @@ export async function seedMemory(title: string, content = ''): Promise<SeededMem
   return { id: memory.id, title: memory.title };
 }
 
-/** Register a repo with a GitHub `owner/repo` slug (so it qualifies as a phase-doc sync target). */
+/** Register a repo with a GitHub `owner/repo` slug. */
 export async function seedRepo(name: string, ownerRepo: string): Promise<{ id: string; name: string }> {
   const res = await fetch(`${GATEWAY_ORIGIN}/repos`, {
     method: 'POST',

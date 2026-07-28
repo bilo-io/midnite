@@ -128,8 +128,6 @@ import {
   PostMemoryChatResponseSchema,
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
-  PhaseDocResponseSchema,
-  PhaseDocsResponseSchema,
   ProjectSchema,
   ProjectsPageSchema,
   RepoResponseSchema,
@@ -233,9 +231,6 @@ import {
   type UpdateProviderCredentialRequest,
   type Project,
   type ProjectsPage,
-  type PhaseDoc,
-  type CreatePhaseDocRequest,
-  type UpdatePhaseDocRequest,
   type Repo,
   type ReposPage,
   type CreateRepoRequest,
@@ -416,8 +411,8 @@ export function gatewayWsUrl(): string {
 
 /**
  * A failed gateway request. Carries the HTTP `status` so callers can branch on it
- * (e.g. a 409 phase-doc conflict → "reload and retry"); `message` is the
- * human-readable gateway error, unchanged from the previous plain-`Error` throw.
+ * (e.g. a 409 conflict → "reload and retry"); `message` is the human-readable
+ * gateway error, unchanged from the previous plain-`Error` throw.
  */
 export class ApiError extends Error {
   constructor(
@@ -1412,75 +1407,6 @@ export async function deleteRepo(id: string): Promise<void> {
   await fetchJson(`/repos/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-// --- Phase docs (GitHub-backed `.midnite/phases/*.md`, scoped to a project) ---
-// The GitHub target is the explicitly-picked `repoId`, not stored on the project.
-
-function phaseDocsPath(projectId: string, repoId: string, filename?: string): string {
-  const base = `/projects/${encodeURIComponent(projectId)}/phase-docs`;
-  const file = filename ? `/${encodeURIComponent(filename)}` : '';
-  return `${base}${file}?repoId=${encodeURIComponent(repoId)}`;
-}
-
-export async function listPhaseDocs(projectId: string, repoId: string): Promise<PhaseDoc[]> {
-  const { docs } = await fetchJson(
-    phaseDocsPath(projectId, repoId),
-    undefined,
-    PhaseDocsResponseSchema,
-  );
-  return docs;
-}
-
-export async function getPhaseDoc(
-  projectId: string,
-  repoId: string,
-  filename: string,
-): Promise<PhaseDoc> {
-  const { doc } = await fetchJson(
-    phaseDocsPath(projectId, repoId, filename),
-    undefined,
-    PhaseDocResponseSchema,
-  );
-  return doc;
-}
-
-export async function createPhaseDoc(
-  projectId: string,
-  repoId: string,
-  body: CreatePhaseDocRequest,
-): Promise<PhaseDoc> {
-  const { doc } = await fetchJson(
-    phaseDocsPath(projectId, repoId),
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    PhaseDocResponseSchema,
-  );
-  return doc;
-}
-
-export async function updatePhaseDoc(
-  projectId: string,
-  repoId: string,
-  filename: string,
-  body: UpdatePhaseDocRequest,
-): Promise<PhaseDoc> {
-  const { doc } = await fetchJson(
-    phaseDocsPath(projectId, repoId, filename),
-    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    PhaseDocResponseSchema,
-  );
-  return doc;
-}
-
-export async function deletePhaseDoc(
-  projectId: string,
-  repoId: string,
-  filename: string,
-  sha: string,
-): Promise<void> {
-  await fetchJson(`${phaseDocsPath(projectId, repoId, filename)}&sha=${encodeURIComponent(sha)}`, {
-    method: 'DELETE',
-  });
-}
-
 // --- Memories (markdown knowledge entries, global or project-scoped) ---
 
 export async function getMemories(): Promise<Memory[]> {
@@ -1766,35 +1692,6 @@ export async function draftBreakdownFromGoal(
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ goal, projectId }) },
     BreakdownPreviewResponseSchema,
   );
-}
-
-/**
- * Preview the tasks a phase doc would seed (Phase 42 Theme D). Parses the `.md`
- * into a dependency-aware breakdown with anchors — creates nothing.
- */
-export async function previewPhaseDocSeed(
-  projectId: string,
-  repoId: string,
-  filename: string,
-): Promise<BreakdownPreviewResponse> {
-  const path =
-    `/projects/${encodeURIComponent(projectId)}/phase-docs/${encodeURIComponent(filename)}/seed` +
-    `?repoId=${encodeURIComponent(repoId)}`;
-  return fetchJson(path, { method: 'POST' }, BreakdownPreviewResponseSchema);
-}
-
-/** Create the confirmed seed breakdown as project-linked, anchor-tagged tasks. */
-export async function seedPhaseDocTasks(
-  projectId: string,
-  filename: string,
-  breakdown: Breakdown,
-): Promise<Task[]> {
-  const { tasks } = await fetchJson(
-    `/projects/${encodeURIComponent(projectId)}/phase-docs/${encodeURIComponent(filename)}/seed-tasks`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ breakdown }) },
-    CreateFromBreakdownResponseSchema,
-  );
-  return tasks;
 }
 
 export async function exportProjectMarkdown(id: string): Promise<string> {

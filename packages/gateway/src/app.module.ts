@@ -59,7 +59,6 @@ import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
 import { WsModule } from './ws/ws.module';
 import { ServiceTokensModule } from './service-tokens/service-tokens.module';
-import { PhaseDocsModule } from './phase-docs/phase-docs.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { InboundModule } from './integrations/inbound/inbound.module';
@@ -128,7 +127,6 @@ import { ProjectPlanRunsModule } from './project-plan-runs/project-plan-runs.mod
     AuditModule,
     AdminModule,
     ServiceTokensModule,
-    PhaseDocsModule,
     PreferencesModule,
     WebhooksModule,
     InboundModule,

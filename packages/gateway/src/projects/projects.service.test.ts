@@ -44,8 +44,6 @@ class InMemoryProjectsRepo extends ProjectsRepository {
       archivedAt: row.archivedAt ?? null,
       createdBy: row.createdBy ?? null,
       teamId: row.teamId ?? null,
-      phaseDocSync: row.phaseDocSync ?? null,
-      phaseDocSyncRepoId: row.phaseDocSyncRepoId ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

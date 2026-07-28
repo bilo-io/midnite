@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Brain, ChevronRight, FolderOpen, Loader2, Sparkles, X } from 'lucide-react';
-import { MAX_TAG_LENGTH, type Memory, type Project, type Repo } from '@midnite/shared';
+import { MAX_TAG_LENGTH, type Memory, type Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
 import { ProjectRepoStatus } from '@/components/projects/project-repo-status';
 import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
-import { enhanceProjectDescription, getRepos, updateProject } from '@/lib/api';
+import { enhanceProjectDescription, updateProject } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 const inputClass =
@@ -43,9 +43,6 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
   const [workDir, setWorkDir] = useState(project.workDir ?? '');
   const [startCommand, setStartCommand] = useState(project.startCommand ?? '');
   const [buildCommand, setBuildCommand] = useState(project.buildCommand ?? '');
-  const [phaseDocSync, setPhaseDocSync] = useState(project.phaseDocSync !== false);
-  const [phaseDocSyncRepoId, setPhaseDocSyncRepoId] = useState(project.phaseDocSyncRepoId ?? '');
-  const [repos, setRepos] = useState<Repo[]>([]);
   const [picking, setPicking] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -61,16 +58,8 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
     setWorkDir(project.workDir ?? '');
     setStartCommand(project.startCommand ?? '');
     setBuildCommand(project.buildCommand ?? '');
-    setPhaseDocSync(project.phaseDocSync !== false);
-    setPhaseDocSyncRepoId(project.phaseDocSyncRepoId ?? '');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key on identity, not every field
   }, [project.id]);
-
-  useEffect(() => {
-    getRepos()
-      .then(setRepos)
-      .catch(() => setRepos([]));
-  }, []);
 
   const projectMemories = memories.filter((m) => m.projectId === project.id);
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
@@ -105,8 +94,6 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
         workDir: workDir.trim(),
         startCommand: startCommand.trim(),
         buildCommand: buildCommand.trim(),
-        phaseDocSync,
-        phaseDocSyncRepoId,
       });
       onSaved();
     } catch (e) {
@@ -280,40 +267,6 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
         </button>
         <p className="text-[11px] text-muted-foreground">
           Knowledge entries scoped to this project, injected into agent prompts.
-        </p>
-      </div>
-
-      {/* Phase-doc sync */}
-      <div className="space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Phase doc sync</span>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={phaseDocSync}
-            onChange={(e) => setPhaseDocSync(e.target.checked)}
-            className="h-4 w-4 rounded border-input"
-          />
-          <span>Tick phase-doc checkboxes as seeded tasks complete</span>
-        </label>
-        <select
-          aria-label="Phase doc sync repo"
-          className={inputClass}
-          value={phaseDocSyncRepoId}
-          disabled={!phaseDocSync}
-          onChange={(e) => setPhaseDocSyncRepoId(e.target.value)}
-        >
-          <option value="">Select a repo…</option>
-          {repos
-            .filter((r) => r.ownerRepo)
-            .map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} ({r.ownerRepo})
-              </option>
-            ))}
-        </select>
-        <p className="text-[11px] text-muted-foreground">
-          When a seeded task reaches <em>Done</em>, its checkbox is ticked in this repo&apos;s{' '}
-          <code>.midnite/phases/*.md</code> (and un-ticked if reopened).
         </p>
       </div>
 

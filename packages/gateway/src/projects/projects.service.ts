@@ -276,8 +276,6 @@ export class ProjectsService {
       startCommand: string | null;
       buildCommand: string | null;
       archivedAt: string | null;
-      phaseDocSync: number | null;
-      phaseDocSyncRepoId: string | null;
       updatedAt: string;
     }> = { updatedAt: now };
     if (req.name !== undefined) patch.name = req.name;
@@ -291,10 +289,6 @@ export class ProjectsService {
     if (req.buildCommand !== undefined) patch.buildCommand = req.buildCommand.trim() || null;
     // Archive is a soft flag: store the timestamp when set, clear it when unset.
     if (req.archived !== undefined) patch.archivedAt = req.archived ? now : null;
-    // Phase 40 Theme G: sync toggle stored as 0/1; an empty repo string clears the target.
-    if (req.phaseDocSync !== undefined) patch.phaseDocSync = req.phaseDocSync ? 1 : 0;
-    if (req.phaseDocSyncRepoId !== undefined)
-      patch.phaseDocSyncRepoId = req.phaseDocSyncRepoId.trim() || null;
     this.repo.updateProject(id, patch);
     const project = this.getProject(id);
     this.searchIndex?.upsert(projectToIndexDoc(project));

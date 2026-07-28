@@ -31,7 +31,7 @@ test.describe('Project detail page', () => {
 
     await expect(page.getByRole('heading', { name: project.name })).toBeVisible();
     // Center tabs.
-    for (const label of ['Details', 'Plan', 'Tasks', 'Phase docs']) {
+    for (const label of ['Details', 'Plan', 'Tasks']) {
       await expect(page.getByRole('tab', { name: label })).toBeVisible();
     }
     // Both rails.

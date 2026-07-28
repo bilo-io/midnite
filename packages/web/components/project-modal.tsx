@@ -22,7 +22,6 @@ import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
-import { ProjectPhaseDocsPanel } from '@/components/projects/panels/project-phasedocs-panel';
 import { TEMPLATES, type Template } from '@/app/(main)/projects/templates';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
@@ -49,10 +48,7 @@ type Props = {
   onSaved: () => void;
 };
 
-type Tab = 'details' | 'plan' | 'tasks' | 'phasedocs';
-
-/** Tab keys aren't all single words — map the ones that need a custom label. */
-const TAB_LABELS: Partial<Record<Tab, string>> = { phasedocs: 'Phase docs' };
+type Tab = 'details' | 'plan' | 'tasks';
 
 /**
  * Create or edit a project. Edit mode delegates each tab to a self-contained
@@ -98,7 +94,7 @@ export function ProjectModal({
 
   const taskCount = tasks?.length ?? 0;
   // Planning and Tasks only make sense for an existing project.
-  const tabs: Tab[] = isEdit ? ['details', 'plan', 'tasks', 'phasedocs'] : ['details'];
+  const tabs: Tab[] = isEdit ? ['details', 'plan', 'tasks'] : ['details'];
   const tabCounts: Partial<Record<Tab, number>> = { tasks: taskCount };
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
@@ -202,7 +198,7 @@ export function ProjectModal({
                     tab === t ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {TAB_LABELS[t] ?? t}
+                  {t}
                   {count ? (
                     <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
                       {count}
@@ -349,13 +345,6 @@ export function ProjectModal({
             {isEdit ? (
               <div role="tabpanel" className={cn(tab === 'tasks' ? '' : 'hidden')}>
                 <ProjectTasksPanel tasks={tasks ?? []} onSelectTask={onSelectTask} />
-              </div>
-            ) : null}
-
-            {/* Phase docs (edit only) */}
-            {isEdit && current ? (
-              <div role="tabpanel" className={cn(tab === 'phasedocs' ? '' : 'hidden')}>
-                <ProjectPhaseDocsPanel projectId={current.id} />
               </div>
             ) : null}
 

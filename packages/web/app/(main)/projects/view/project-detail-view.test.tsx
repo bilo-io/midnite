@@ -31,9 +31,6 @@ vi.mock('@/components/projects/panels/project-docs-panel', () => ({
 vi.mock('@/components/projects/panels/project-tasks-panel', () => ({
   ProjectTasksPanel: () => <div data-testid="tasks-panel" />,
 }));
-vi.mock('@/components/projects/panels/project-phasedocs-panel', () => ({
-  ProjectPhaseDocsPanel: () => <div data-testid="phasedocs-panel" />,
-}));
 vi.mock('@/components/projects/project-stats-panel', () => ({
   ProjectStatsPanel: () => <div data-testid="stats-panel" />,
 }));
@@ -62,7 +59,7 @@ describe('ProjectDetailView — shell', () => {
   it('renders the header, the four center tabs, and both rail regions', () => {
     render(<ProjectDetailView project={project} tasks={tasks} memories={memories} onChanged={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Acme app' })).toBeInTheDocument();
-    for (const label of ['Details', 'Docs', 'Tasks', 'Phase docs']) {
+    for (const label of ['Details', 'Docs', 'Tasks', 'Roadmap']) {
       expect(screen.getByRole('tab', { name: label })).toBeInTheDocument();
     }
     expect(screen.getByText('Stats & actions')).toBeInTheDocument();

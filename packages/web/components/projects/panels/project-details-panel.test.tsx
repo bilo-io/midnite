@@ -2,11 +2,9 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Project } from '@midnite/shared';
 
-const getRepos = vi.fn();
 const updateProject = vi.fn();
 const enhanceProjectDescription = vi.fn();
 vi.mock('@/lib/api', () => ({
-  getRepos: (...a: unknown[]) => getRepos(...a),
   updateProject: (...a: unknown[]) => updateProject(...a),
   enhanceProjectDescription: (...a: unknown[]) => enhanceProjectDescription(...a),
 }));
@@ -19,7 +17,6 @@ import { ProjectDetailsPanel } from './project-details-panel';
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
-  getRepos.mockResolvedValue([]);
   updateProject.mockResolvedValue(undefined);
 });
 
