@@ -32,6 +32,11 @@
       ]
     }
   },
+  // NB: the two `.next*/types/**` entries below are written here by `next build`
+  // itself — deleting them doesn't stick, the next build puts them back. Both are
+  // neutralised by `exclude` instead (see the `.next` / `.next-server` entries),
+  // which `next build` leaves alone. `exclude` filters `include`, so listing a
+  // distDir there wins.
   "include": [
     "**/*.ts",
     "**/*.tsx",
@@ -44,6 +49,18 @@
   "exclude": [
     "node_modules",
     ".next",
+    // Keeps Next's generated route types out of `web:typecheck`. They are outputs
+    // of `web:build` / `web:build-server`, which `moon ci` runs CONCURRENTLY with
+    // typecheck: tsc expands the glob, a parallel `next build` rewrites the distDir,
+    // and tsc dies with TS6053 on ~55 files that existed moments earlier. `.next`
+    // was already excluded — which is why every observed failure named `.next-server`,
+    // the one distDir that wasn't. `moon ci --force` on `main` reproduced it every
+    // time; excluding it is green across three full runs.
+    // No coverage is lost: `next build` type-checks its own generated route types
+    // (no `typescript.ignoreBuildErrors` in next.config.mjs), so both builds still
+    // validate them, and `web:typecheck`'s moon `inputs` never listed either distDir
+    // anyway — this realigns tsconfig with that task contract.
+    ".next-server",
     "out",
     "storybook-static",
     // Build-tool config; importing vitest/config + the React plugin drags in

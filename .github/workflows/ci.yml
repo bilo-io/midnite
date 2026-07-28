@@ -12,10 +12,14 @@ jobs:
 
   ci:
     needs: changes
-    # Skip the whole runner when no package is affected (e.g. a docs/*.md-only
+    # PRs: skip the whole runner when no package is affected (e.g. a docs/*.md-only
     # or todo/ change). `ci-gate` below reports green for the skip so the PR
     # stays mergeable.
-    if: needs.changes.outputs.code == 'true'
+    #
+    # Pushes to `main` ALWAYS boot, whatever detection says, and always run the
+    # full suite (see the two run steps below). `main` is the branch every release
+    # is cut from — it must never be able to sit red behind a green badge.
+    if: github.event_name != 'pull_request' || needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,8 +32,24 @@ jobs:
       - name: Install Playwright chromium (Storybook stories run as browser tests in web:test)
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: moon ci (typecheck + test + build + lint)
-        run: moon ci
+      # PRs stay affected-scoped for speed, but with `--include-relations`:
+      # without it moon decides affectedness from changed files against each
+      # TASK's own `inputs` globs, so a change confined to `packages/shared`
+      # never reaches `web:test` (inputs: app/components/hooks) and web's suite
+      # is skipped even though web consumes shared. That is exactly how a shared
+      # schema change (fc66e096) left `accent-builder.test.tsx` failing on `main`
+      # unnoticed. `--include-relations` walks the project graph instead, so a
+      # dependency's change pulls in its dependents' tasks.
+      - name: moon ci (affected + dependents — pull request)
+        if: github.event_name == 'pull_request'
+        run: moon ci --include-relations
+
+      # `main`: the full suite, no affected filtering and no cache reuse. `--force`
+      # is what makes this a genuine verification rather than a re-report — a cached
+      # PASS from a prior run can otherwise stand in for a task that would now fail.
+      - name: moon ci (full suite — push to main)
+        if: github.event_name != 'pull_request'
+        run: moon ci --force
 
   # Phase 78 Theme C — the single required status check. Always runs and
   # aggregates: passes when `ci` succeeded OR was skipped (nothing affected),

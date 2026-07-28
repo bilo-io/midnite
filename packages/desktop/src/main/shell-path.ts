@@ -17,8 +17,15 @@ import { spawnSync } from 'node:child_process';
 const MARKER_START = '__MIDNITE_PATH_START__';
 const MARKER_END = '__MIDNITE_PATH_END__';
 
-/** How long to wait for the login shell before shipping without the fix. */
-const RESOLVE_TIMEOUT_MS = 5000;
+/**
+ * How long to wait for the login shell before shipping without the fix. Bounds
+ * boot, so it stays tight — but it's a *parameter* of
+ * {@link resolveLoginShellPath} rather than a hard constant, because the
+ * integration spec runs the real shell on a machine that may be under heavy
+ * parallel load (the whole moon graph at once), where a 5s ceiling is a coin
+ * flip and a failure says nothing about the code.
+ */
+export const RESOLVE_TIMEOUT_MS = 5000;
 
 /** Extract the PATH between the markers (last occurrence wins, in case a
  *  profile echoes the command line). Pure/exported for testing. */
@@ -49,8 +56,11 @@ export function mergePath(current: string | undefined, resolved: string): string
  * pyenv), which a plain `-lc` login shell never sources; the markers keep
  * interactive profile noise (banners, prompts) out of the parse, and the
  * timeout bounds an rc file that hangs.
+ *
+ * `timeoutMs` defaults to the boot-safe {@link RESOLVE_TIMEOUT_MS}; only the
+ * integration spec overrides it, to buy headroom on a loaded machine.
  */
-export function resolveLoginShellPath(): string | null {
+export function resolveLoginShellPath(timeoutMs: number = RESOLVE_TIMEOUT_MS): string | null {
   if (process.platform === 'win32') return null;
   const shell =
     process.env['SHELL'] ?? (process.platform === 'darwin' ? '/bin/zsh' : '/bin/bash');
@@ -59,7 +69,7 @@ export function resolveLoginShellPath(): string | null {
   const probe = `printf '%s' "${MARKER_START}\${PATH}${MARKER_END}"`;
   const res = spawnSync(shell, ['-lic', probe], {
     encoding: 'utf-8',
-    timeout: RESOLVE_TIMEOUT_MS,
+    timeout: timeoutMs,
   });
   if (res.error || res.status !== 0) return null;
   return parseShellPathOutput(res.stdout ?? '');

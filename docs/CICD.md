@@ -9,7 +9,7 @@
 
 | Surface | Trigger | Gated by |
 |---------|---------|----------|
-| **GitHub Actions — `ci` (`moon ci`)** | push to `main`, every PR | runs only when a package is affected (`changes.outputs.code`) |
+| **GitHub Actions — `ci` (`moon ci`)** | push to `main`, every PR | **PR:** only when a package is affected (`changes.outputs.code`); **`main`:** always, and always the full suite |
 | **GitHub Actions — `e2e` + visual** | push to `main`, every PR | runs only when `web`/`ui`/`shared`/`shell` affected (`webVisual`) |
 | **GitHub Actions — `coverage`** | push to `main`, every PR | `webVisual` or `gateway` affected |
 | **GitHub Actions — `gallery` + Storybook preview** | PR + `main` | `webVisual` affected |
@@ -40,6 +40,41 @@ same git-diff mechanism every other app uses, not a GitHub Actions job.
 Because moon knows the dep graph (`shared → web`, `ui → shell → web`), a change
 to `shared` correctly marks `web` affected — no hand-maintained globs to drift.
 
+### Two layers of affectedness (and the gap between them)
+
+The `changes` job decides **whether the `ci` runner boots**. Once booted, `moon ci`
+does its *own*, finer selection: which **tasks** to run. Those are different
+mechanisms, and by default the second is narrower than the dep graph — it matches
+changed files against each task's own `inputs` globs. Verify it yourself:
+
+```bash
+printf '\n// probe\n' >> packages/shared/src/preferences.ts
+
+# shared:build, shared:lint, shared:test, shared:typecheck — and nothing else
+moon query tasks --affected
+
+# …plus web:*, gateway:*, cli:*, shell:*, admin:*
+moon query tasks --affected --dependents deep
+```
+
+A change confined to `packages/shared` therefore runs **only `shared`'s** tasks —
+no consumer's tests — even though the `changes` job correctly reports `web`
+affected. Edit a zod schema and nothing that depends on it is exercised.
+
+Two guards close that gap:
+
+- **PRs** run `moon ci --include-relations`, which walks the project graph instead
+  of only changed files, so a dependency's change pulls in its dependents' tasks.
+- **Pushes to `main`** run `moon ci --force`: the full suite, no affected filtering
+  and no cache reuse. `main` is what every release is cut from, so it is verified
+  end to end rather than incrementally. `--force` matters as much as the full scope —
+  a cached PASS from an earlier run would otherwise stand in for a task that would
+  now fail.
+
+This is not hypothetical: `main` sat red for days behind a green badge because a
+release merge only touched `package.json`/`CHANGELOG.md` files, so the push ran 13
+tasks and `web:typecheck`/`web:test` weren't among them.
+
 **Vercel can't run moon** (it isn't in Vercel's build image), so each app's
 `vercel.json` points its *Ignored Build Step* at
 [`scripts/vercel-ignore.mjs`](../scripts/vercel-ignore.mjs), a thin `git diff`
@@ -60,7 +95,8 @@ A GitHub *required* status check that never runs leaves a PR stuck "Expected —
 waiting for status." So the required check is **not** `ci` — it's **`ci-gate`**,
 an always-run aggregation job in [`ci.yml`](../.github/workflows/ci.yml) that:
 
-- **passes** when `ci` succeeded **or** was skipped (nothing affected), and
+- **passes** when `ci` succeeded **or** was skipped (nothing affected — PRs only;
+  `ci` never skips on a `main` push), and
 - **fails** on a real `ci` failure/cancel, or if affected-detection didn't succeed.
 
 So a docs-only PR skips `moon ci`, `ci-gate` goes green, and the PR is mergeable.
