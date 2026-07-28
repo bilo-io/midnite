@@ -45,11 +45,14 @@ export class MilestonesService {
 
   listByProject(projectId: string, scope?: TeamScope): Milestone[] {
     this.projects.getProject(projectId, scope); // 404 if missing / out of scope
-    return this.repo.listByProject(projectId, scope).map((r) => this.hydrate(r));
+    const rows = this.repo.listByProject(projectId, scope);
+    const depsByMilestone = this.repo.dependenciesByMilestoneIds(rows.map((r) => r.id));
+    return rows.map((r) => this.hydrate(r, depsByMilestone.get(r.id) ?? []));
   }
 
   getMilestone(id: string, scope?: TeamScope): Milestone {
-    return this.hydrate(this.getRow(id, scope));
+    const row = this.getRow(id, scope);
+    return this.hydrate(row, this.repo.dependenciesOf(id));
   }
 
   /**
@@ -62,6 +65,7 @@ export class MilestonesService {
   getRoadmap(projectId: string, scope?: TeamScope): RoadmapView {
     this.projects.getProject(projectId, scope); // 404 if missing / out of scope
     const milestones = this.repo.listByProject(projectId, scope);
+    const depsByMilestone = this.repo.dependenciesByMilestoneIds(milestones.map((r) => r.id));
     const { items: tasks } = this.tasks.listTaskSummaries(undefined, projectId, scope);
 
     const byMilestone = new Map<string, TaskSummary[]>();
@@ -84,7 +88,7 @@ export class MilestonesService {
       milestones: milestones.map((row) => {
         const mTasks = byMilestone.get(row.id) ?? [];
         return {
-          ...this.hydrate(row),
+          ...this.hydrate(row, depsByMilestone.get(row.id) ?? []),
           done: mTasks.filter((t) => t.status === 'done').length,
           total: mTasks.length,
           tasks: mTasks,
@@ -111,7 +115,8 @@ export class MilestonesService {
       createdBy: scope?.userId ?? null,
       teamId: scope?.teamId ?? null,
     });
-    const milestone = this.hydrate(row);
+    // A brand-new milestone has no dependents/blockers yet.
+    const milestone = this.hydrate(row, []);
     this.searchIndex?.upsert(milestoneToIndexDoc(milestone));
     this.audit?.record({ entityType: 'milestone', entityId: milestone.id, userId: scope?.userId, action: 'milestone.created' });
     return milestone;
@@ -126,7 +131,7 @@ export class MilestonesService {
 
     const row = this.repo.update(id, patch);
     if (!row) throw new NotFoundException(`milestone ${id} not found`);
-    const milestone = this.hydrate(row);
+    const milestone = this.hydrate(row, this.repo.dependenciesOf(id));
     this.searchIndex?.upsert(milestoneToIndexDoc(milestone));
     this.audit?.record({ entityType: 'milestone', entityId: id, userId: scope?.userId, action: 'milestone.updated' });
     return milestone;
@@ -135,6 +140,8 @@ export class MilestonesService {
   /**
    * Delete a milestone; its tasks are **unassigned** (milestoneId → null), not
    * deleted (Decision §2). The task re-broadcast lets boards drop the assignment.
+   * Its dependency edges (both as a dependent and as a blocker) are cleared by
+   * the repository in the same transaction as the row delete.
    */
   delete(id: string, scope?: TeamScope): void {
     this.getRow(id, scope); // 404 if missing / out of scope
@@ -188,6 +195,36 @@ export class MilestonesService {
     this.tasks.reorderWithinMilestone(milestoneId, orderedIds);
   }
 
+  /**
+   * Add a "blocked by" edge: `milestoneId` depends on `dependsOnId`. Both must
+   * exist and share a project (the milestone graph is always project-scoped —
+   * unlike tasks, there's no cross-project "foreign" milestone concept). This
+   * is also how the graph view's edges are edited: connecting two nodes calls
+   * this, disconnecting calls `removeDependency`.
+   */
+  addDependency(milestoneId: string, dependsOnId: string, scope?: TeamScope): Milestone {
+    if (milestoneId === dependsOnId) {
+      throw new BadRequestException('a milestone cannot depend on itself');
+    }
+    const milestone = this.getRow(milestoneId, scope); // 404 if missing / out of scope
+    const blocker = this.getRow(dependsOnId, scope); // 404 if missing / out of scope
+    if (milestone.projectId !== blocker.projectId) {
+      throw new BadRequestException('milestones must belong to the same project');
+    }
+    if (this.wouldCreateCycle(milestoneId, dependsOnId)) {
+      throw new BadRequestException(`depending on ${dependsOnId} would create a dependency cycle`);
+    }
+    this.repo.addDependency(milestoneId, dependsOnId, new Date().toISOString());
+    return this.getMilestone(milestoneId, scope);
+  }
+
+  /** Remove a "blocked by" edge; idempotent (a missing edge is a no-op). */
+  removeDependency(milestoneId: string, dependsOnId: string, scope?: TeamScope): Milestone {
+    this.getRow(milestoneId, scope); // 404 if missing / out of scope
+    this.repo.removeDependency(milestoneId, dependsOnId);
+    return this.getMilestone(milestoneId, scope);
+  }
+
   // --- helpers ---
 
   private getRow(id: string, scope?: TeamScope): RoadmapMilestoneRow {
@@ -196,7 +233,7 @@ export class MilestonesService {
     return row;
   }
 
-  private hydrate(row: RoadmapMilestoneRow): Milestone {
+  private hydrate(row: RoadmapMilestoneRow, dependsOn: string[]): Milestone {
     return {
       id: row.id,
       projectId: row.projectId,
@@ -204,11 +241,30 @@ export class MilestonesService {
       description: row.description ?? undefined,
       position: row.position,
       targetDate: row.targetDate ?? undefined,
+      dependsOn,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       createdBy: row.createdBy ?? undefined,
       teamId: row.teamId ?? undefined,
     };
+  }
+
+  /**
+   * Would adding `milestoneId → dependsOnId` create a cycle? Iterative DFS from
+   * `dependsOnId` over blocker edges looking for `milestoneId` — same algorithm
+   * as `TasksService.wouldCreateCycle`, scoped to milestone edges.
+   */
+  private wouldCreateCycle(milestoneId: string, dependsOnId: string): boolean {
+    const seen = new Set<string>();
+    const stack = [dependsOnId];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      if (current === milestoneId) return true;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      stack.push(...this.repo.dependenciesOf(current));
+    }
+    return false;
   }
 }
 

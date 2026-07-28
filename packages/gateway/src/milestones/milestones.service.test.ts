@@ -7,8 +7,11 @@ import type { RoadmapMilestoneInsert, RoadmapMilestoneRow } from '../db/schema';
 // In-memory fake mirroring MilestonesRepository's surface.
 function makeRepo() {
   const rows = new Map<string, RoadmapMilestoneRow>();
+  // milestoneId -> set of ids it depends on (its blockers).
+  const edges = new Map<string, Set<string>>();
   return {
     rows,
+    edges,
     insert: vi.fn((row: RoadmapMilestoneInsert) => {
       const full = {
         description: null,
@@ -45,6 +48,23 @@ function makeRepo() {
         const cur = rows.get(id);
         if (cur && cur.projectId === projectId) rows.set(id, { ...cur, position });
       });
+    }),
+    addDependency: vi.fn((milestoneId: string, dependsOnId: string) => {
+      const set = edges.get(milestoneId) ?? new Set<string>();
+      set.add(dependsOnId);
+      edges.set(milestoneId, set);
+    }),
+    removeDependency: vi.fn((milestoneId: string, dependsOnId: string) => {
+      edges.get(milestoneId)?.delete(dependsOnId);
+    }),
+    dependenciesOf: vi.fn((milestoneId: string): string[] => [...(edges.get(milestoneId) ?? [])]),
+    dependenciesByMilestoneIds: vi.fn((ids: string[]): Map<string, string[]> => {
+      const map = new Map<string, string[]>();
+      for (const id of ids) {
+        const deps = edges.get(id);
+        if (deps && deps.size > 0) map.set(id, [...deps]);
+      }
+      return map;
     }),
   };
 }
@@ -232,6 +252,65 @@ describe('MilestonesService.reorderTasks', () => {
   it('404s an unknown milestone', () => {
     const { svc } = makeService();
     expect(() => svc.reorderTasks('ghost', ['t1'])).toThrow(/not found/);
+  });
+});
+
+describe('MilestonesService.addDependency / removeDependency', () => {
+  it('adds a "blocked by" edge, reflected in dependsOn', () => {
+    const { svc } = makeService();
+    const a = svc.create('p1', { name: 'A' });
+    const b = svc.create('p1', { name: 'B' });
+    const updated = svc.addDependency(b.id, a.id);
+    expect(updated.dependsOn).toEqual([a.id]);
+  });
+
+  it('rejects a self-reference', () => {
+    const { svc } = makeService();
+    const a = svc.create('p1', { name: 'A' });
+    expect(() => svc.addDependency(a.id, a.id)).toThrow(/cannot depend on itself/);
+  });
+
+  it('rejects a cross-project pair', () => {
+    const projects = makeProjects(['p1', 'p2']);
+    const { svc } = makeService({ projects });
+    const a = svc.create('p1', { name: 'A' });
+    const b = svc.create('p2', { name: 'B' });
+    expect(() => svc.addDependency(b.id, a.id)).toThrow(/same project/);
+  });
+
+  it('rejects a direct cycle (A depends on B, then B depends on A)', () => {
+    const { svc } = makeService();
+    const a = svc.create('p1', { name: 'A' });
+    const b = svc.create('p1', { name: 'B' });
+    svc.addDependency(b.id, a.id); // B depends on A
+    expect(() => svc.addDependency(a.id, b.id)).toThrow(/cycle/);
+  });
+
+  it('rejects a transitive cycle (A -> B -> C, then C -> A)', () => {
+    const { svc } = makeService();
+    const a = svc.create('p1', { name: 'A' });
+    const b = svc.create('p1', { name: 'B' });
+    const c = svc.create('p1', { name: 'C' });
+    svc.addDependency(a.id, b.id); // A depends on B
+    svc.addDependency(b.id, c.id); // B depends on C
+    expect(() => svc.addDependency(c.id, a.id)).toThrow(/cycle/);
+  });
+
+  it('404s an unknown milestone on either side', () => {
+    const { svc } = makeService();
+    const a = svc.create('p1', { name: 'A' });
+    expect(() => svc.addDependency(a.id, 'ghost')).toThrow(/not found/);
+    expect(() => svc.addDependency('ghost', a.id)).toThrow(/not found/);
+  });
+
+  it('removeDependency is idempotent and 404s an unknown milestone', () => {
+    const { svc } = makeService();
+    const a = svc.create('p1', { name: 'A' });
+    const b = svc.create('p1', { name: 'B' });
+    svc.addDependency(b.id, a.id);
+    expect(svc.removeDependency(b.id, a.id).dependsOn).toEqual([]);
+    expect(svc.removeDependency(b.id, a.id).dependsOn).toEqual([]); // no-op, doesn't throw
+    expect(() => svc.removeDependency('ghost', a.id)).toThrow(/not found/);
   });
 });
 

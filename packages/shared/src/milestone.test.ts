@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AddMilestoneDependencyRequestSchema,
   CreateMilestoneRequestSchema,
   MilestoneSchema,
   ReorderMilestonesRequestSchema,
@@ -12,6 +13,7 @@ const base = {
   projectId: 'p1',
   name: 'Alpha',
   position: 0,
+  dependsOn: [] as string[],
   createdAt: '2026-07-01T00:00:00.000Z',
   updatedAt: '2026-07-01T00:00:00.000Z',
 };
@@ -31,6 +33,19 @@ describe('MilestoneSchema', () => {
   it('requires a non-negative integer position', () => {
     expect(MilestoneSchema.safeParse({ ...base, position: -1 }).success).toBe(false);
     expect(MilestoneSchema.safeParse({ ...base, position: 1.5 }).success).toBe(false);
+  });
+
+  it('requires dependsOn (a computed field, always present)', () => {
+    expect(MilestoneSchema.safeParse({ ...base, dependsOn: undefined }).success).toBe(false);
+    expect(MilestoneSchema.parse({ ...base, dependsOn: ['m2', 'm3'] }).dependsOn).toEqual(['m2', 'm3']);
+  });
+});
+
+describe('AddMilestoneDependencyRequestSchema', () => {
+  it('requires a non-empty dependsOnId', () => {
+    expect(AddMilestoneDependencyRequestSchema.parse({ dependsOnId: 'm2' }).dependsOnId).toBe('m2');
+    expect(AddMilestoneDependencyRequestSchema.safeParse({ dependsOnId: '' }).success).toBe(false);
+    expect(AddMilestoneDependencyRequestSchema.safeParse({}).success).toBe(false);
   });
 });
 

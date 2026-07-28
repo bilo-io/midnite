@@ -709,6 +709,28 @@ export async function reorderMilestoneTasks(milestoneId: string, ids: string[]):
   );
 }
 
+/** Add a "blocked by" edge to the milestone dependency graph — `milestoneId`
+ *  depends on `dependsOnId`. Rejects (400) on a self-reference, cross-project
+ *  pair, or a cycle; the gateway's message is surfaced to the caller verbatim. */
+export async function addMilestoneDependency(milestoneId: string, dependsOnId: string): Promise<Milestone> {
+  const res = await fetchJson(
+    `/milestones/${encodeURIComponent(milestoneId)}/dependencies`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ dependsOnId }) },
+    MilestoneResponseSchema,
+  );
+  return res.milestone;
+}
+
+/** Remove a "blocked by" edge; idempotent (a missing edge is a no-op). */
+export async function removeMilestoneDependency(milestoneId: string, dependsOnId: string): Promise<Milestone> {
+  const res = await fetchJson(
+    `/milestones/${encodeURIComponent(milestoneId)}/dependencies/${encodeURIComponent(dependsOnId)}`,
+    { method: 'DELETE' },
+    MilestoneResponseSchema,
+  );
+  return res.milestone;
+}
+
 // ── Project docs ─────────────────────────────────────────────────────────────
 // Planning documents, moved off browser localStorage (`ProjectPlanPanel`) onto
 // the gateway so they persist and can be filled in server-side via Claude.

@@ -10,6 +10,7 @@ import {
   Post,
 } from '@nestjs/common';
 import {
+  AddMilestoneDependencyRequestSchema,
   AssignMilestoneRequestSchema,
   CreateMilestoneRequestSchema,
   ReorderMilestoneTasksRequestSchema,
@@ -115,5 +116,30 @@ export class MilestonesController {
     const parsed = AssignMilestoneRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return this.service.assignTask(taskId, parsed.data.milestoneId, toScope(user));
+  }
+
+  // Add a "blocked by" edge — the milestone graph's editable connect gesture. A
+  // self-reference / cross-project pair / unknown milestone / cycle all 400
+  // (the service's `BadRequestException`); a missing :id milestone 404s.
+  @Post('milestones/:id/dependencies')
+  @RequiresRole('member')
+  addDependency(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): MilestoneResponse {
+    const parsed = AddMilestoneDependencyRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { milestone: this.service.addDependency(id, parsed.data.dependsOnId, toScope(user)) };
+  }
+
+  @Delete('milestones/:id/dependencies/:dependsOnId')
+  @RequiresRole('member')
+  removeDependency(
+    @Param('id') id: string,
+    @Param('dependsOnId') dependsOnId: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): MilestoneResponse {
+    return { milestone: this.service.removeDependency(id, dependsOnId, toScope(user)) };
   }
 }

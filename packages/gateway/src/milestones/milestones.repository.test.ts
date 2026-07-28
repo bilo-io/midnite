@@ -68,3 +68,47 @@ describe('MilestonesRepository (migration smoke + CRUD)', () => {
     expect(repo.getById('m1')).toBeUndefined();
   });
 });
+
+describe('MilestonesRepository dependency edges (blocked-by graph)', () => {
+  it('addDependency + dependenciesOf round-trip, and is idempotent on a duplicate pair', () => {
+    repo.insert(row('m1'));
+    repo.insert(row('m2'));
+    repo.addDependency('m2', 'm1', '2026-07-02T00:00:00.000Z');
+    repo.addDependency('m2', 'm1', '2026-07-02T00:00:00.000Z'); // duplicate, no-op
+    expect(repo.dependenciesOf('m2')).toEqual(['m1']);
+    expect(repo.dependenciesOf('m1')).toEqual([]);
+  });
+
+  it('removeDependency is idempotent', () => {
+    repo.insert(row('m1'));
+    repo.insert(row('m2'));
+    repo.addDependency('m2', 'm1', '2026-07-02T00:00:00.000Z');
+    repo.removeDependency('m2', 'm1');
+    repo.removeDependency('m2', 'm1'); // no-op
+    expect(repo.dependenciesOf('m2')).toEqual([]);
+  });
+
+  it('dependenciesByMilestoneIds bulk-loads, keyed by milestoneId, omitting ids with no edges', () => {
+    repo.insert(row('m1'));
+    repo.insert(row('m2'));
+    repo.insert(row('m3'));
+    repo.addDependency('m2', 'm1', '2026-07-02T00:00:00.000Z');
+    repo.addDependency('m3', 'm1', '2026-07-02T00:00:00.000Z');
+    repo.addDependency('m3', 'm2', '2026-07-02T00:00:00.000Z');
+    const map = repo.dependenciesByMilestoneIds(['m1', 'm2', 'm3']);
+    expect(map.get('m1')).toBeUndefined();
+    expect(map.get('m2')).toEqual(['m1']);
+    expect(map.get('m3')?.sort()).toEqual(['m1', 'm2']);
+  });
+
+  it('delete clears edges in both directions', () => {
+    repo.insert(row('m1'));
+    repo.insert(row('m2'));
+    repo.insert(row('m3'));
+    repo.addDependency('m2', 'm1', '2026-07-02T00:00:00.000Z'); // m2 depends on m1
+    repo.addDependency('m1', 'm3', '2026-07-02T00:00:00.000Z'); // m1 depends on m3
+    repo.delete('m1');
+    expect(repo.dependenciesOf('m2')).toEqual([]); // m1 as a blocker of m2 is gone
+    expect(repo.dependenciesByMilestoneIds(['m1']).get('m1')).toBeUndefined(); // m1's own edges gone too
+  });
+});
