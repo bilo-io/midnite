@@ -126,6 +126,56 @@ export const WORDMARK_CASE_OPTIONS: readonly { value: WordmarkCase; label: strin
   { value: 'upper', label: 'MIDNITE' },
 ];
 
+// The wordmark's size is the third live-configurable trial dimension (Settings →
+// Appearance → Logo). Sizes walk the tailwind `text-*` ladder, preserving each
+// font's optical step nudge relative to the default. Only the wordmark is
+// resized — callers that pin their own `text-*` via className still win
+// (tailwind-merge keeps the caller's size).
+export type WordmarkSize = 'xs' | 's' | 'm' | 'lg' | 'xl';
+
+export const WORDMARK_SIZE_STORAGE_KEY = 'midnite.wordmark-size';
+export const DEFAULT_WORDMARK_SIZE: WordmarkSize = 'm';
+
+// Ordered for the settings toggle, smallest to largest.
+export const WORDMARK_SIZE_OPTIONS: readonly { value: WordmarkSize; label: string }[] = [
+  { value: 'xs', label: 'XS' },
+  { value: 's', label: 'S' },
+  { value: 'm', label: 'M' },
+  { value: 'lg', label: 'LG' },
+  { value: 'xl', label: 'XL' },
+];
+
+// The tailwind text-size ladder the size setting walks. Spelled out as literals
+// so the Tailwind scanner generates every step.
+const WORDMARK_SIZE_LADDER = [
+  'text-xs',
+  'text-sm',
+  'text-base',
+  'text-lg',
+  'text-xl',
+  'text-2xl',
+  'text-3xl',
+  'text-4xl',
+] as const;
+
+// Ladder index of each size before the per-font nudge — 'm' is the pre-size
+// default (text-xl).
+const WORDMARK_SIZE_INDEX: Record<WordmarkSize, number> = { xs: 2, s: 3, m: 4, lg: 5, xl: 6 };
+
+// Tailwind class for a stored size + font, clamped to the ladder. The per-font
+// step offsets carry the old hard-coded optical nudges across every size:
+// Cannet Agency reads huge at a given point size (three steps down), while
+// SignPainter and Quantum Sector render small (one step up). Unknown/stale
+// stored sizes fall back to the default, mirroring `wordmarkFontVar`.
+export function wordmarkSizeClass(size: string, fontKey: string): string {
+  const base =
+    WORDMARK_SIZE_INDEX[size as WordmarkSize] ?? WORDMARK_SIZE_INDEX[DEFAULT_WORDMARK_SIZE];
+  const offset =
+    fontKey === 'cannet' ? -3 : fontKey === 'signpainter' || fontKey === 'quantum-sector' ? 1 : 0;
+  const clamped = Math.min(Math.max(base + offset, 0), WORDMARK_SIZE_LADDER.length - 1);
+  return WORDMARK_SIZE_LADDER[clamped]!;
+}
+
 // Transform a wordmark string to the chosen casing. Always normalises from the
 // raw text so a stale/unknown stored value falls through to lowercase.
 export function applyWordmarkCase(text: string, wordmarkCase: string): string {

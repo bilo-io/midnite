@@ -78,12 +78,16 @@ import {
 } from '@midnite/shell';
 import {
   DEFAULT_WORDMARK_CASE,
+  DEFAULT_WORDMARK_SIZE,
   WORDMARK_CASE_OPTIONS,
   WORDMARK_CASE_STORAGE_KEY,
   WORDMARK_FONTS,
   WORDMARK_FONT_STORAGE_KEY,
   WORDMARK_LOGO_FONT,
+  WORDMARK_SIZE_OPTIONS,
+  WORDMARK_SIZE_STORAGE_KEY,
   type WordmarkCase,
+  type WordmarkSize,
 } from '@/lib/wordmark-fonts';
 import { cn } from '@/lib/utils';
 
@@ -504,6 +508,10 @@ function LogoCard() {
     WORDMARK_CASE_STORAGE_KEY,
     DEFAULT_WORDMARK_CASE,
   );
+  const [wordmarkSize, setWordmarkSize] = useLocalStorage<WordmarkSize>(
+    WORDMARK_SIZE_STORAGE_KEY,
+    DEFAULT_WORDMARK_SIZE,
+  );
   const [showIcon, setShowIcon] = useState(true);
 
   return (
@@ -518,6 +526,16 @@ function LogoCard() {
             value={wordmarkCase}
             onChange={setWordmarkCase}
             options={WORDMARK_CASE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            hydrated={hydrated}
+          />
+        </SettingRow>
+
+        <SettingRow title={t('appearance.size')} description={t('appearance.sizeDescription')}>
+          <Segmented
+            ariaLabel={t('appearance.wordmarkSize')}
+            value={wordmarkSize}
+            onChange={setWordmarkSize}
+            options={WORDMARK_SIZE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
             hydrated={hydrated}
           />
         </SettingRow>
