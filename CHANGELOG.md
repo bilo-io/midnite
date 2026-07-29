@@ -14,6 +14,51 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.9.0] - 2026-07-29
+
+_Minor release — every package moves in lockstep to 0.9.0._
+
+### Added
+
+- **Editable dependency graphs** — both the task dependency graph and the
+  milestone roadmap graph now support connect-to-add and Delete/Backspace-to-
+  remove gestures for edges, plus a new **board/graph toggle** on the roadmap
+  view.
+- **Drag tasks vertically within a milestone lane** to reorder them on the
+  roadmap.
+- **Project accordions redesigned**: per-status task grouping, ellipsis
+  menus, progress bars, an advanced-fields toggle, per-status add-task, and
+  project names in accordion titles now link to the project detail page.
+- **Inline task editing** — title/description edit in place, quick-select for
+  priority/status, and consistent confirm-dialog tones.
+- **Search and quick-create** added to the global project filter.
+- Settings **Features toggles moved to their own page**.
+- The **project detail tabs are now framed between the rail toggle buttons**.
+
+### Changed
+
+- The tasks **list view now groups by project** instead of status, mirroring
+  the Projects page's tree/table view.
+
+### Fixed
+
+- **Desktop auto-update now points at the feed the app actually publishes
+  to** — the updater had been checking a channel file no build ever produced,
+  so the update banner silently never appeared. Settings → System → Updates
+  now also surfaces the updater's real status, including errors the banner
+  itself stays quiet about.
+- **DevTools are now disabled in packaged production builds** (previously
+  reachable via shortcuts).
+- The **milestone graph's hardcoded UI strings are now translated**, and its
+  edges are deletable via Backspace/Delete, mirroring the task dependency
+  graph fix above.
+
+### Removed
+
+- **Project Docs** — the Docs tab, doc generation, and GitHub-backed doc
+  editor introduced in 0.8.0 have been removed entirely, along with their
+  gateway endpoints and DB columns.
+
 ## [0.8.0] - 2026-07-28
 
 _Minor release — every package moves in lockstep to 0.8.0._
@@ -499,6 +544,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.9.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.0
 [0.8.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.8.0
 [0.7.4]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.4
 [0.7.3]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.3
