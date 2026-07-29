@@ -34,7 +34,15 @@ export type WordmarkFontKey =
   | 'bettani-sellia'
   | 'amsterdam'
   | 'brotherland-signature'
-  | 'heart-rommatte';
+  | 'heart-rommatte'
+  | 'pinyon-script'
+  | 'imperial-script'
+  | 'kapakana'
+  | 'italianno'
+  | 'parisienne'
+  | 'arizonia'
+  | 'meddon'
+  | 'tangerine';
 
 export type WordmarkFont = {
   key: WordmarkFontKey;
@@ -81,6 +89,16 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
   { key: 'amsterdam', label: 'Amsterdam', cssVar: '--font-amsterdam', scale: 0.75 },
   { key: 'brotherland-signature', label: 'Brotherland Signature', cssVar: '--font-brotherland-signature', scale: 0.75 },
   { key: 'heart-rommatte', label: 'Heart Rommatte', cssVar: '--font-heart-rommatte', scale: 0.75 },
+  // Google Fonts (OFL) script faces — same starting optical nudge as the
+  // FontSpace batch; tune per-font in the picker if one sets off-size.
+  { key: 'pinyon-script', label: 'Pinyon Script', cssVar: '--font-pinyon-script', scale: 0.75 },
+  { key: 'imperial-script', label: 'Imperial Script', cssVar: '--font-imperial-script', scale: 0.75 },
+  { key: 'kapakana', label: 'Kapakana', cssVar: '--font-kapakana', scale: 0.75 },
+  { key: 'italianno', label: 'Italianno', cssVar: '--font-italianno', scale: 0.75 },
+  { key: 'parisienne', label: 'Parisienne', cssVar: '--font-parisienne', scale: 0.75 },
+  { key: 'arizonia', label: 'Arizonia', cssVar: '--font-arizonia', scale: 0.75 },
+  { key: 'meddon', label: 'Meddon', cssVar: '--font-meddon', scale: 0.75 },
+  { key: 'tangerine', label: 'Tangerine', cssVar: '--font-tangerine', scale: 0.75 },
 ];
 
 export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font';

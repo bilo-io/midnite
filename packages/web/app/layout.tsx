@@ -50,6 +50,15 @@ const bettaniSellia = localFont({ src: './fonts/bettani-sellia.otf', variable: '
 const amsterdam = localFont({ src: './fonts/amsterdam.ttf', variable: '--font-amsterdam', display: 'swap' });
 const brotherlandSignature = localFont({ src: './fonts/brotherland-signature.otf', variable: '--font-brotherland-signature', display: 'swap' });
 const heartRommatte = localFont({ src: './fonts/heart-rommatte.otf', variable: '--font-heart-rommatte', display: 'swap' });
+// Google Fonts (OFL) script faces, vendored as TTFs like the rest.
+const pinyonScript = localFont({ src: './fonts/pinyon-script.ttf', variable: '--font-pinyon-script', display: 'swap' });
+const imperialScript = localFont({ src: './fonts/imperial-script.ttf', variable: '--font-imperial-script', display: 'swap' });
+const kapakana = localFont({ src: './fonts/kapakana.ttf', variable: '--font-kapakana', display: 'swap' });
+const italianno = localFont({ src: './fonts/italianno.ttf', variable: '--font-italianno', display: 'swap' });
+const parisienne = localFont({ src: './fonts/parisienne.ttf', variable: '--font-parisienne', display: 'swap' });
+const arizonia = localFont({ src: './fonts/arizonia.ttf', variable: '--font-arizonia', display: 'swap' });
+const meddon = localFont({ src: './fonts/meddon.ttf', variable: '--font-meddon', display: 'swap' });
+const tangerine = localFont({ src: './fonts/tangerine.ttf', variable: '--font-tangerine', display: 'swap' });
 
 const fontVariables = [
   cyberwar,
@@ -83,6 +92,14 @@ const fontVariables = [
   amsterdam,
   brotherlandSignature,
   heartRommatte,
+  pinyonScript,
+  imperialScript,
+  kapakana,
+  italianno,
+  parisienne,
+  arizonia,
+  meddon,
+  tangerine,
 ]
   .map((f) => f.variable)
   .join(' ');
