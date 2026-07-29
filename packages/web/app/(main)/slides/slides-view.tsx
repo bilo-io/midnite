@@ -276,7 +276,7 @@ function ProjectGroupedDecks({
     count: g.decks.length,
     summary: `${g.decks.length} deck${g.decks.length === 1 ? '' : 's'}`,
     body: (
-      <div className="flex flex-col gap-2 p-2">
+      <div className="flex flex-col gap-2 pt-1">
         {g.decks.map((deck) => (
           <DeckRow
             key={deck.slug}
@@ -292,7 +292,7 @@ function ProjectGroupedDecks({
 
   return (
     <div className="min-h-0 flex-1 pb-1">
-      <SortableAccordions sections={sections} storageKey="midnite.slides.listGroups" variant="split" />
+      <SortableAccordions sections={sections} storageKey="midnite.slides.listGroups" variant="bare" />
     </div>
   );
 }
