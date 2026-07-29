@@ -14,6 +14,19 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.9.1] - 2026-07-29
+
+_Patch release — `web` and `desktop` move to 0.9.1; every other package stays at
+0.9.0._
+
+### Fixed
+
+- **Slides accordions are no longer boxed** — each per-project section on the
+  Slides list had its deck rows enclosed in their own bordered card while the
+  section header floated above it. The rows now float alongside the header, flush
+  with it, so the whole accordion reads as one unframed group. Accordions
+  elsewhere in the app are unchanged.
+
 ## [0.9.0] - 2026-07-29
 
 _Minor release — every package moves in lockstep to 0.9.0._
@@ -544,6 +557,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.9.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.1
 [0.9.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.0
 [0.8.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.8.0
 [0.7.4]: https://github.com/bilo-io/midnite-app/releases/tag/v0.7.4
