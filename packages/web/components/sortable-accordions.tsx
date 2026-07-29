@@ -64,7 +64,8 @@ export type AccordionSection = {
  * - `card` (default): one bordered glass card wraps the header + body together,
  *   split by a divider — the classic accordion.
  * - `bare`: no chrome at all — just a naked header row over the body, so the
- *   content floats freely (matches the Sessions list). Used by the per-project board.
+ *   content floats freely (matches the Sessions list). Used by the per-project board
+ *   and the Slides list.
  * - `split`: a naked header floating above the body, with the body enclosed in its
  *   own bordered glass card — the header reads light while the rows stay contained.
  */
