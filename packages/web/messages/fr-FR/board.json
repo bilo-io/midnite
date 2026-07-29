@@ -2,6 +2,7 @@
   "title": "Tableau des tâches",
   "nothingHere": "Rien ici",
   "addTask": "Ajouter une tâche à {column}",
+  "dragTask": "Faire glisser {title} vers un autre statut",
   "collapseColumn": "Réduire la colonne {column}",
   "expandColumn": "Développer la colonne {column}",
   "columns": {

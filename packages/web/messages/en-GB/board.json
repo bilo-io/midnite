@@ -2,6 +2,7 @@
   "title": "Task board",
   "nothingHere": "Nothing here",
   "addTask": "Add task to {column}",
+  "dragTask": "Drag {title} to another status",
   "collapseColumn": "Collapse {column} column",
   "expandColumn": "Expand {column} column",
   "columns": {

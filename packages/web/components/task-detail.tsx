@@ -50,12 +50,12 @@ import {
   setTaskTags,
   updateTaskDetails,
   updateTaskProject,
-  updateTaskStatus,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { dependentsOf } from '@/lib/task-dependencies';
 import { taskModalHref } from '@/lib/task-route';
+import { moveTask } from '@/lib/task-transitions';
 import { cn } from '@/lib/utils';
 import { useTaskPaletteCommands } from '@/hooks/use-task-palette-commands';
 
@@ -415,14 +415,16 @@ export function TaskDetail({
     }
   };
 
+  // Routed through `moveTask`, not `updateTaskStatus`: the dropdown offers `wip`,
+  // and entering it has to spawn an agent session (start) while leaving it has to
+  // stop one — `moveTask` owns that decision, same as the board's drag.
   const changeStatus = async (next: Status) => {
     const prev = status;
     setStatus(next); // optimistic
     setStatusSelectBusy(true);
     setStatusError(null);
     try {
-      const updated = await updateTaskStatus(task.id, next);
-      setStatus(updated.status);
+      await moveTask(prev, next, task.id);
       invalidateData();
     } catch (e) {
       setStatus(prev);
