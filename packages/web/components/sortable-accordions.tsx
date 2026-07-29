@@ -1,6 +1,6 @@
 'use client';
 
-import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -193,6 +193,11 @@ function Section({
   const isMobile = useIsMobile();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
+  // Generated, not derived from `section.id`: ids come from callers (project uuids,
+  // `__unassigned__`, statuses) and two accordion lists can be on one page.
+  const uid = useId();
+  const headingId = `${uid}-title`;
+  const bodyId = `${uid}-body`;
   const dot = section.color ?? `hsl(${section.hue ?? '215 14% 52%'})`;
   const glow = section.color
     ? `0 0 8px -1px color-mix(in srgb, ${section.color} 70%, transparent)`
@@ -225,27 +230,32 @@ function Section({
           <GripVertical className="h-4 w-4" />
         </button>
         {section.prefix ?? null}
-        {/* A `<div role="button">`, not a real `<button>`, because `label` can carry
-            a nested link (e.g. a project name linking to its detail page) — a real
-            `<button>` can't legally contain interactive content. */}
-        <div
-          role="button"
-          tabIndex={0}
+        {/* The disclosure control is a real `<button>` holding *only* the chevron.
+            It can't wrap the heading: `label` may carry a link (a project name
+            linking to its detail page), and a widget must never contain focusable
+            content (axe `nested-interactive`) — which is exactly what the old
+            `<div role="button">` around the whole header did. `aria-labelledby`
+            borrows the heading for its name, so it still announces as
+            "‹section title›, button, expanded". */}
+        <button
+          type="button"
           onClick={onToggle}
-          onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
-            onToggle();
-          }}
           aria-expanded={!collapsed}
+          aria-controls={bodyId}
+          aria-labelledby={headingId}
+          className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+        >
+          <ChevronDown className={cn('h-4 w-4 transition-transform', collapsed && '-rotate-90')} />
+        </button>
+        {/* The rest of the header stays click-to-toggle for convenience, but it is a
+            plain surface — no role, no tab stop — so the heading's link and the
+            trailing actions are never nested inside a control. Keyboard and screen
+            reader users toggle via the button above; `ProjectNameLink` and friends
+            stop propagation so following a link doesn't also collapse the section. */}
+        <div
+          onClick={onToggle}
           className="flex flex-1 cursor-pointer items-center gap-2 rounded py-1 pr-1 text-left"
         >
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
-              collapsed && '-rotate-90',
-            )}
-          />
           {section.leading ? null : (
             <span
               aria-hidden
@@ -253,7 +263,10 @@ function Section({
               style={{ background: dot, boxShadow: glow }}
             />
           )}
-          <h2 className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <h2
+            id={headingId}
+            className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground"
+          >
             {section.label}
           </h2>
           <span className="shrink-0 whitespace-nowrap rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
@@ -272,7 +285,7 @@ function Section({
           <div className="flex shrink-0 items-center gap-0.5 pr-1">{section.actions}</div>
         ) : null}
       </div>
-      <Collapse open={!collapsed}>
+      <Collapse open={!collapsed} id={bodyId}>
         <div
           className={cn(
             // `card`: a divider under the shared card's header.
