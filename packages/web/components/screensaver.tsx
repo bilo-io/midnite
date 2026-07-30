@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import { useTranslations } from 'next-intl';
 import type { SessionStatus } from '@midnite/shared';
 import { LockScreen, TitleBarDragStrip } from '@midnite/shell';
 import { AreaChart, LegendDot } from '@midnite/ui';
@@ -8,6 +9,7 @@ import { getSessions } from '@/lib/api';
 import { getWindowChromeBridge } from '@/lib/desktop-bridge';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useDynamicBackground } from '@/lib/use-dynamic-background';
+import { usePasscodeDialogLabels } from '@/hooks/use-passcode-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   CYCLE_MAX_S,
@@ -355,6 +357,8 @@ export function Screensaver({
   /** Opened deliberately via the lock button (vs. the idle timer). */
   locked?: boolean;
 }) {
+  const tNav = useTranslations('nav');
+  const passcodeLabels = usePasscodeDialogLabels();
   const [index, setIndex] = useState(() => Math.floor(Math.random() * ACTIVE_WORDS.length));
   const [typed, setTyped] = useState('');
   const [counts, setCounts] = useState<Counts | null>(null);
@@ -464,7 +468,15 @@ export function Screensaver({
       onUnlock={onClose}
       onDismiss={onClose}
       animateBackground={dynamicBg}
-      label={requireCode ? 'Locked screensaver' : 'Screensaver'}
+      labels={{
+        locked: tNav('lockScreen.locked'),
+        screensaver: tNav('lockScreen.screensaver'),
+        unlockHint: tNav('lockScreen.unlockHint'),
+        wakeHint: tNav('lockScreen.wakeHint'),
+        passcodeDialogLabel: passcodeLabels.unlockLabel,
+        passcodeCloseLabel: passcodeLabels.closeLabel,
+        passcode: passcodeLabels.labels,
+      }}
       corners={
         <>
           {/* Frameless desktop window (Phase 81): the lock overlay covers the

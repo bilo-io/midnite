@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { MessageCircle } from 'lucide-react';
 import { PRESENCE_CHAT_MAX_LENGTH } from '@midnite/shared';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import { useOfficeStore } from '@/lib/office-store';
  * is sent ephemerally via the `chat` action — never persisted.
  */
 export function PresenceChatInput({ chat }: { chat: (text: string) => void }) {
+  const t = useTranslations('office');
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,8 +62,8 @@ export function PresenceChatInput({ chat }: { chat: (text: string) => void }) {
     <div className="flex items-center gap-1.5">
       <button
         type="button"
-        aria-label="Chat"
-        title="Say something (T)"
+        aria-label={t('presence.chat')}
+        title={t('presence.chatTitle')}
         aria-pressed={open}
         onClick={() => (open ? closeInput() : openInput())}
         className={cn(
@@ -79,8 +81,8 @@ export function PresenceChatInput({ chat }: { chat: (text: string) => void }) {
           type="text"
           value={value}
           maxLength={PRESENCE_CHAT_MAX_LENGTH}
-          placeholder="Say something…"
-          aria-label="Chat message"
+          placeholder={t('presence.chatPlaceholder')}
+          aria-label={t('presence.chatMessage')}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

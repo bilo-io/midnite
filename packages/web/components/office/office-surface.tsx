@@ -2,6 +2,7 @@
 
 import { Box, Building2, type LucideIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 
 import { Office3DView } from '@/components/office3d/office-3d-view';
@@ -15,9 +16,9 @@ import {
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { cn } from '@/lib/utils';
 
-const VIEWS: { value: OfficeViewMode; label: string; Icon: LucideIcon }[] = [
-  { value: '2d', label: '2D', Icon: Building2 },
-  { value: '3d', label: '3D', Icon: Box },
+const VIEWS: { value: OfficeViewMode; labelKey: 'surface.view2d' | 'surface.view3d'; Icon: LucideIcon }[] = [
+  { value: '2d', labelKey: 'surface.view2d', Icon: Building2 },
+  { value: '3d', labelKey: 'surface.view3d', Icon: Box },
 ];
 
 function isOfficeView(v: string | null): v is OfficeViewMode {
@@ -33,6 +34,7 @@ function isOfficeView(v: string | null): v is OfficeViewMode {
  * dispose) and only one engine bundle loads — both are `dynamic(ssr:false)`.
  */
 export function OfficeSurface() {
+  const t = useTranslations('office');
   const router = useRouter();
   const params = useSearchParams();
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
@@ -62,11 +64,11 @@ export function OfficeSurface() {
       <div className="sticky top-12 z-20 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div
           role="tablist"
-          aria-label="Office view"
+          aria-label={t('surface.viewLabel')}
           data-tour="office-view-toggle"
           className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
         >
-          {VIEWS.map(({ value, label, Icon }) => {
+          {VIEWS.map(({ value, labelKey, Icon }) => {
           const selected = active === value;
           return (
             <button
@@ -81,7 +83,7 @@ export function OfficeSurface() {
               )}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {t(labelKey)}
             </button>
           );
         })}

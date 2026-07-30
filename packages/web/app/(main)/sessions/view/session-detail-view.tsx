@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ListChecks } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
@@ -105,6 +106,7 @@ export function SessionDetailView({
   project: Project | null;
   onTaskChanged?: () => void;
 }) {
+  const tCommon = useTranslations('common');
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.session.leftOpen', true);
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.session.rightOpen', true);
   const isMobile = useIsMobile();
@@ -143,8 +145,18 @@ export function SessionDetailView({
             {/* On mobile the rails are drawers toggled from here. */}
             {isMobile ? (
               <>
-                <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
-                <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
+                <RailHeaderToggle
+                  side="left"
+                  open={leftOpen}
+                  onClick={() => setLeftOpen(!leftOpen)}
+                  label={tCommon('ui.rail.toggleLeftPanel')}
+                />
+                <RailHeaderToggle
+                  side="right"
+                  open={rightOpen}
+                  onClick={() => setRightOpen(!rightOpen)}
+                  label={tCommon('ui.rail.toggleRightPanel')}
+                />
               </>
             ) : null}
           </div>
@@ -157,12 +169,16 @@ export function SessionDetailView({
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: <SessionLeftPanel session={session} task={task} project={project} />,
+            collapseLabel: tCommon('ui.rail.collapse', { title: 'Approvals & context' }),
+            expandLabel: tCommon('ui.rail.expand', { title: 'Approvals & context' }),
           }}
           right={{
             title: 'Session info',
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <SessionInfoPanel session={session} />,
+            collapseLabel: tCommon('ui.rail.collapse', { title: 'Session info' }),
+            expandLabel: tCommon('ui.rail.expand', { title: 'Session info' }),
           }}
         >
           {/* Center — the terminal: live WS terminal or ended transcript. */}

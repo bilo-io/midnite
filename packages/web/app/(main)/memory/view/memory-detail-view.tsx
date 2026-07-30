@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Brain, Pencil } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
@@ -72,6 +73,7 @@ export function MemoryDetailView({
   onChanged: () => void;
 }) {
   const router = useRouter();
+  const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
   const [memory, setMemory] = useState(initial);
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.memory.leftOpen', true);
@@ -123,8 +125,18 @@ export function MemoryDetailView({
           <div className="flex items-center gap-2">
             {isMobile ? (
               <>
-                <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
-                <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
+                <RailHeaderToggle
+                  side="left"
+                  open={leftOpen}
+                  onClick={() => setLeftOpen(!leftOpen)}
+                  label={tCommon('ui.rail.toggleLeftPanel')}
+                />
+                <RailHeaderToggle
+                  side="right"
+                  open={rightOpen}
+                  onClick={() => setRightOpen(!rightOpen)}
+                  label={tCommon('ui.rail.toggleRightPanel')}
+                />
                 {metadataButton}
               </>
             ) : null}
@@ -145,12 +157,16 @@ export function MemoryDetailView({
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: <MemorySourcesPanel memory={memory} onChange={applyUpdate} />,
+            collapseLabel: tCommon('ui.rail.collapse', { title: 'Sources' }),
+            expandLabel: tCommon('ui.rail.expand', { title: 'Sources' }),
           }}
           right={{
             title: 'Studio',
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <MemoryStudioRail memoryId={memory.id} />,
+            collapseLabel: tCommon('ui.rail.collapse', { title: 'Studio' }),
+            expandLabel: tCommon('ui.rail.expand', { title: 'Studio' }),
           }}
         >
           {/* Center — the chat thread with the knowledge base. */}

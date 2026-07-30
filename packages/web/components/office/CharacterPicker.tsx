@@ -1,18 +1,18 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useOfficeStore } from '@/lib/office-store';
 import { PLAYER_TINTS } from '@/lib/office/customisation';
 
 /** Robot variant accent colours — matches ROBOT_VARIANTS in textures.ts. */
 const ROBOT_ACCENTS = ['#34d399', '#f472b6', '#38bdf8', '#fb923c', '#a78bfa', '#2dd4bf'];
-/** Robot variant display names. */
-const ROBOT_NAMES = ['Rod', 'Twin', 'Bulb', 'Dish', 'Sensor', 'Fins'];
 
 const TINT_CSS = PLAYER_TINTS.map((t) => (t === null ? null : `#${t.toString(16).padStart(6, '0')}`));
-const TINT_LABELS = ['Natural', 'Blue', 'Green', 'Pink', 'Amber', 'Violet', 'Red'];
 
 export function CharacterPicker({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('office');
+  const tCommon = useTranslations('common');
   const playerVariant = useOfficeStore((s) => s.playerVariant);
   const setPlayerVariant = useOfficeStore((s) => s.setPlayerVariant);
   const playerTint = useOfficeStore((s) => s.playerTint);
@@ -32,14 +32,14 @@ export function CharacterPicker({ onClose }: { onClose: () => void }) {
     >
       <div className="pointer-events-auto w-80 rounded-xl border border-border bg-card/95 shadow-2xl backdrop-blur">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold">Choose your avatar</h2>
+          <h2 className="text-sm font-semibold">{t('character.title')}</h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Close"
+            aria-label={tCommon('close')}
           >
-            ✕
+            {'✕'}
           </button>
         </div>
 
@@ -62,7 +62,7 @@ export function CharacterPicker({ onClose }: { onClose: () => void }) {
             >
               👤
             </span>
-            Human
+            {t('character.human')}
           </button>
 
           {/* Robot variants 0–5 */}
@@ -84,7 +84,7 @@ export function CharacterPicker({ onClose }: { onClose: () => void }) {
               >
                 🤖
               </span>
-              {ROBOT_NAMES[i]}
+              {t(`character.robots.${i}`)}
             </button>
           ))}
         </div>
@@ -92,15 +92,15 @@ export function CharacterPicker({ onClose }: { onClose: () => void }) {
         {/* Tint palette */}
         <div className="border-t border-border px-4 py-3">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Colour tint
+            {t('character.tintTitle')}
           </p>
           <div className="flex flex-wrap gap-2">
             {TINT_CSS.map((css, i) => (
               <button
                 key={i}
                 type="button"
-                title={TINT_LABELS[i]}
-                aria-label={TINT_LABELS[i]}
+                title={t(`character.tints.${i}`)}
+                aria-label={t(`character.tints.${i}`)}
                 onClick={() => setPlayerTint(PLAYER_TINTS[i] ?? null)}
                 className={cn(
                   'h-6 w-6 rounded-full border-2 transition-all hover:scale-110',

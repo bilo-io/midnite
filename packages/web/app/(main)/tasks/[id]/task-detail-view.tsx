@@ -134,6 +134,7 @@ function TaskDetailPage({
   onClose: () => void;
 }) {
   const t = useTranslations('task');
+  const tCommon = useTranslations('common');
   const kindLabel = useKindLabel();
   const statusLabel = useStatusLabel();
   const router = useRouter();
@@ -333,8 +334,18 @@ function TaskDetailPage({
             <TaskActionButtons task={displayTask} actions={actions} showSession onOpenSession={goToSession} />
             {isMobile ? (
               <>
-                <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
-                <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
+                <RailHeaderToggle
+                  side="left"
+                  open={leftOpen}
+                  onClick={() => setLeftOpen(!leftOpen)}
+                  label={tCommon('ui.rail.toggleLeftPanel')}
+                />
+                <RailHeaderToggle
+                  side="right"
+                  open={rightOpen}
+                  onClick={() => setRightOpen(!rightOpen)}
+                  label={tCommon('ui.rail.toggleRightPanel')}
+                />
               </>
             ) : null}
           </div>
@@ -347,12 +358,16 @@ function TaskDetailPage({
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: <RunTimeline taskId={task.id} />,
+            collapseLabel: tCommon('ui.rail.collapse', { title: t('runs.title') }),
+            expandLabel: tCommon('ui.rail.expand', { title: t('runs.title') }),
           }}
           right={{
             title: t('activity.title'),
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <Timeline events={task.events} />,
+            collapseLabel: tCommon('ui.rail.collapse', { title: t('activity.title') }),
+            expandLabel: tCommon('ui.rail.expand', { title: t('activity.title') }),
           }}
         >
           {/* Center — the task body + its Details / Review / Retro tabs. Chromeless:

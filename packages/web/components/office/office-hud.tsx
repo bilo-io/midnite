@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import type { SessionSummary } from '@midnite/shared';
 import { WorkItemModal } from '@/components/work-item-modal';
@@ -20,6 +21,7 @@ import { RetroGamesMenu } from './retro-games-menu';
  * office store, which the live-data hook and the Phaser scene drive.
  */
 export function OfficeHud() {
+  const t = useTranslations('office');
   const agents = useOfficeStore((s) => s.agents);
   const nearbyId = useOfficeStore((s) => s.nearbyId);
   const nearBoard = useOfficeStore((s) => s.nearBoard);
@@ -55,10 +57,14 @@ export function OfficeHud() {
   const panelOpen = active !== null || boardOpen || libraryOpen || playstationOpen || deskPickerOpen;
   const inCorner = currentScene === 'corner';
 
+  // Rich-text renderers shared by the HUD copy: <k>…</k> → keycap, <b>…</b> → bold.
+  const k = (chunks: React.ReactNode) => <Key>{chunks}</Key>;
+  const b = (chunks: React.ReactNode) => <span className="font-semibold">{chunks}</span>;
+
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
       <div className="absolute left-3 top-3 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
-        <Key>WASD</Key> / arrows to move · <Key>E</Key> to interact
+        {t.rich('hud.controls', { k })}
       </div>
 
       <div className="absolute right-3 top-3 flex items-center gap-2">
@@ -69,7 +75,7 @@ export function OfficeHud() {
               onClick={openCharacterPicker}
               className="pointer-events-auto rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
             >
-              👤 Avatar
+              {t('hud.avatar')}
             </button>
             <button
               type="button"
@@ -80,7 +86,7 @@ export function OfficeHud() {
               className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
             >
               <ArrowLeft className="h-3 w-3" />
-              Back to Office
+              {t('hud.backToOffice')}
             </button>
           </>
         ) : (
@@ -93,18 +99,18 @@ export function OfficeHud() {
                   openDesk(firstAttention.id);
                 }}
                 className="pointer-events-auto animate-pulse rounded-md border border-orange-500/60 bg-orange-500/20 px-2.5 py-1.5 text-[11px] font-medium text-orange-600 backdrop-blur transition-colors hover:bg-orange-500/30 dark:text-orange-400"
-                aria-label={`${attentionCount} agent${attentionCount === 1 ? '' : 's'} need${attentionCount === 1 ? 's' : ''} you — click to open`}
+                aria-label={t('hud.attentionAria', { count: attentionCount })}
               >
-                🙋 {attentionCount} agent{attentionCount === 1 ? '' : 's'} need{attentionCount === 1 ? 's' : ''} you
+                {t('hud.attention', { count: attentionCount })}
               </button>
             ) : null}
             {onBreak ? (
               <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 backdrop-blur dark:text-amber-400">
-                ☕ On a break
+                {t('hud.onBreak')}
               </span>
             ) : null}
             <span className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
-              {agents.length} agent{agents.length === 1 ? '' : 's'} online
+              {t('hud.online', { count: agents.length })}
             </span>
           </>
         )}
@@ -112,42 +118,25 @@ export function OfficeHud() {
 
       {panelOpen ? null : inCorner ? (
         nearDoor ? (
-          <Prompt>
-            Press <Key>E</Key> to return to the <span className="font-semibold">Main Office</span>
-          </Prompt>
+          <Prompt>{t.rich('hud.prompts.mainOffice', { k, b })}</Prompt>
         ) : (
-          <Prompt>
-            Press <Key>E</Key> near the desk to <span className="font-semibold">customise</span>
-          </Prompt>
+          <Prompt>{t.rich('hud.prompts.customiseDesk', { k, b })}</Prompt>
         )
       ) : nearBoard ? (
-        <Prompt>
-          Press <Key>E</Key> to open the <span className="font-semibold">Board Room</span>
-        </Prompt>
+        <Prompt>{t.rich('hud.prompts.board', { k, b })}</Prompt>
       ) : nearKitchen ? (
-        <Prompt>
-          Press <Key>E</Key> to{' '}
-          <span className="font-semibold">{onBreak ? 'get back to work' : 'take a coffee break'}</span>
-        </Prompt>
+        <Prompt>{t.rich(onBreak ? 'hud.prompts.kitchenBack' : 'hud.prompts.kitchenBreak', { k, b })}</Prompt>
       ) : nearLibrary ? (
-        <Prompt>
-          Press <Key>E</Key> to browse the <span className="font-semibold">Library</span>
-        </Prompt>
+        <Prompt>{t.rich('hud.prompts.library', { k, b })}</Prompt>
       ) : nearPlaystation ? (
-        <Prompt>
-          Press <Key>E</Key> to open the <span className="font-semibold">Game Library</span>
-        </Prompt>
+        <Prompt>{t.rich('hud.prompts.games', { k, b })}</Prompt>
       ) : nearDoor ? (
-        <Prompt>
-          Press <Key>E</Key> to enter the <span className="font-semibold">Corner Office</span>
-        </Prompt>
+        <Prompt>{t.rich('hud.prompts.corner', { k, b })}</Prompt>
       ) : nearby ? (
-        <Prompt>
-          Press <Key>E</Key> to open <span className="font-semibold">{nearby.name}</span>'s session
-        </Prompt>
+        <Prompt>{t.rich('hud.prompts.agent', { k, b, name: nearby.name })}</Prompt>
       ) : agents.length === 0 && !inCorner ? (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border/60 bg-card/80 px-4 py-2 text-sm text-muted-foreground backdrop-blur">
-          No active agents — start a task to fill the office.
+          {t('hud.empty')}
         </div>
       ) : null}
 
@@ -193,14 +182,15 @@ function Key({ children }: { children: React.ReactNode }) {
  * `overflow-hidden` can't clip it.
  */
 function InteractionPanel({ agent, onClose }: { agent: OfficeAgent; onClose: () => void }) {
+  const t = useTranslations('office');
   const confirm = useConfirm();
 
   const onArchiveToggle = async (session: SessionSummary) => {
     if (!session.archivedAt) {
       const ok = await confirm({
-        title: 'Archive this session?',
-        description: 'It moves out of the active board. You can unarchive it again later.',
-        confirmLabel: 'Archive',
+        title: t('hud.archiveConfirm.title'),
+        description: t('hud.archiveConfirm.description'),
+        confirmLabel: t('hud.archiveConfirm.confirm'),
         tone: 'neutral',
       });
       if (!ok) return;

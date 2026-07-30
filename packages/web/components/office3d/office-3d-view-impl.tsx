@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { useTheme } from '@/app/theme/theme-context';
 import { OfficeHud } from '@/components/office/office-hud';
@@ -28,6 +29,7 @@ import { Office3DCanvas } from './office-3d-canvas';
  * a 2D↔3D tab switch.
  */
 export function Office3DViewImpl() {
+  const t = useTranslations('office');
   const { error } = useOfficeAgents();
   useGatewayErrorToast(error);
   const { resolved } = useTheme();
@@ -59,9 +61,9 @@ export function Office3DViewImpl() {
       {!locked && (
         <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-6">
           <div className="rounded-lg border border-border bg-background/85 px-4 py-2 text-sm text-foreground shadow-lg backdrop-blur">
-            Click to look around · <span className="font-mono font-semibold">WASD</span> to move ·{' '}
-            <span className="font-mono font-semibold">E</span> to interact ·{' '}
-            <span className="font-mono font-semibold">Esc</span> to release
+            {t.rich('threeD.controls', {
+              k: (chunks) => <span className="font-mono font-semibold">{chunks}</span>,
+            })}
           </div>
         </div>
       )}

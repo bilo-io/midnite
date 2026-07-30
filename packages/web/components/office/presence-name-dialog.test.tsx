@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { PresenceNameDialog } from './presence-name-dialog';
 
 afterEach(cleanup);
@@ -34,5 +35,15 @@ describe('PresenceNameDialog', () => {
     render(<PresenceNameDialog open defaultName="Explorer 42" onSubmit={() => {}} onSkip={onSkip} />);
     fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
     expect(onSkip).toHaveBeenCalledOnce();
+  });
+
+  it('renders the French copy under fr-FR (Phase 82 E)', () => {
+    render(
+      <PresenceNameDialog open defaultName="Explorer 42" onSubmit={() => {}} onSkip={() => {}} />,
+      { locale: 'fr-FR' },
+    );
+    expect(screen.getByRole('heading', { name: 'Rejoindre le bureau' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rejoindre' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Nom affiché')).toBeInTheDocument();
   });
 });

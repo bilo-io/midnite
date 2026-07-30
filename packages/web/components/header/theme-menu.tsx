@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Clock, Laptop, Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
 import { cn } from '@/lib/utils';
@@ -8,11 +9,12 @@ import { cn } from '@/lib/utils';
 import { HeaderIconButton } from './header-icon-button';
 import { useHeaderDropdown } from './use-header-dropdown';
 
-const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
-  { value: 'light', label: 'Light', Icon: Sun },
-  { value: 'dark', label: 'Dark', Icon: Moon },
-  { value: 'system', label: 'System', Icon: Laptop },
-  { value: 'time', label: 'Time', Icon: Clock },
+// Labels resolve from `nav.header.themeOptions.<value>` at render time.
+const OPTIONS: { value: ThemePreference; Icon: typeof Sun }[] = [
+  { value: 'light', Icon: Sun },
+  { value: 'dark', Icon: Moon },
+  { value: 'system', Icon: Laptop },
+  { value: 'time', Icon: Clock },
 ];
 
 /**
@@ -23,24 +25,26 @@ const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
  * shared grow-in animation.
  */
 export function ThemeMenu() {
+  const t = useTranslations('nav');
   const { preference, resolved, setPreference } = useTheme();
   const { open, toggle, setOpen, rootRef } = useHeaderDropdown();
   const TriggerIcon = resolved === 'dark' ? Moon : Sun;
 
   return (
     <div ref={rootRef} className="group relative">
-      <HeaderIconButton label="Theme" open={open} onClick={toggle}>
+      <HeaderIconButton label={t('header.theme')} open={open} onClick={toggle}>
         <TriggerIcon className="h-[1.05rem] w-[1.05rem]" />
       </HeaderIconButton>
       {open ? (
         <div
           role="menu"
-          aria-label="Theme"
+          aria-label={t('header.theme')}
           className="absolute right-0 top-full z-50 mt-2 w-44 origin-top-right animate-panel-in"
         >
           <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
             <div className="overflow-hidden rounded-xl bg-popover p-1 shadow-2xl">
-              {OPTIONS.map(({ value, label, Icon }) => {
+              {OPTIONS.map(({ value, Icon }) => {
+                const label = t(`header.themeOptions.${value}`);
                 const active = preference === value;
                 return (
                   <button

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, screen } from '@testing-library/react';
 
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { UpdateState, UpdatesBridge } from '@/lib/desktop-bridge';
 
 import { UpdateProvider, useUpdate } from './update-provider';

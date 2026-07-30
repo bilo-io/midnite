@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
@@ -51,6 +52,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
   const mediaType = mode === 'edit' ? initial.type : initialType;
   const TypeIcon = TYPE_ICON[mediaType];
 
+  const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
   const [propertiesOpen, setPropertiesOpen] = useLocalStorage('midnite.media.properties', true);
   const [promptOpen, setPromptOpen] = useLocalStorage('midnite.media.prompt', true);
@@ -133,8 +135,18 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
         actions={
           isMobile ? (
             <div className="flex items-center gap-2">
-              <RailHeaderToggle side="left" open={propertiesOpen} onClick={() => setPropertiesOpen(!propertiesOpen)} />
-              <RailHeaderToggle side="right" open={promptOpen} onClick={() => setPromptOpen(!promptOpen)} />
+              <RailHeaderToggle
+                side="left"
+                open={propertiesOpen}
+                onClick={() => setPropertiesOpen(!propertiesOpen)}
+                label={tCommon('ui.rail.toggleLeftPanel')}
+              />
+              <RailHeaderToggle
+                side="right"
+                open={promptOpen}
+                onClick={() => setPromptOpen(!promptOpen)}
+                label={tCommon('ui.rail.toggleRightPanel')}
+              />
             </div>
           ) : undefined
         }
@@ -278,12 +290,16 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                 open={propertiesOpen}
                 title="Properties"
                 onToggle={() => setPropertiesOpen(!propertiesOpen)}
+                collapseLabel={tCommon('ui.rail.collapse', { title: 'Properties' })}
+                expandLabel={tCommon('ui.rail.expand', { title: 'Properties' })}
               />
               <RailFloatingToggle
                 side="right"
                 open={promptOpen}
                 title="Prompt / Generate"
                 onToggle={() => setPromptOpen(!promptOpen)}
+                collapseLabel={tCommon('ui.rail.collapse', { title: 'Prompt / Generate' })}
+                expandLabel={tCommon('ui.rail.expand', { title: 'Prompt / Generate' })}
               />
             </>
           )}

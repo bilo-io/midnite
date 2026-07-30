@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import type { VersionManifest } from '@midnite/shared';
 
@@ -82,6 +83,7 @@ const UpdateContext = createContext<UpdateContextValue | null>(null);
  * flag (reset on route change) either way.
  */
 export function UpdateProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations('common');
   const pathname = usePathname();
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const channel = settings.updateChannel ?? DEFAULT_SETTINGS.updateChannel;
@@ -177,8 +179,8 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore write failure; worst case the toast repeats on a later mount
     }
-    toast.success(`Version ${poll.latest} is available`);
-  }, [available, poll.latest, toast]);
+    toast.success(t('update.versionAvailableToast', { version: poll.latest as string }));
+  }, [available, poll.latest, toast, t]);
 
   const value = useMemo<UpdateContextValue>(
     () => ({
@@ -194,7 +196,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       desktopPhase,
       downloadPercent: desktop?.phase === 'downloading' ? desktop.percent : null,
       errored: desktop?.phase === 'error',
-      error: desktop?.phase === 'error' ? desktop.error ?? 'Update check failed' : null,
+      error: desktop?.phase === 'error' ? desktop.error ?? t('update.checkFailed') : null,
       manualInstall: isDesktop ? desktop?.manualInstall ?? false : false,
       dismiss: () => setDismissed(true),
       applyUpdate,
@@ -209,6 +211,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       desktopPhase,
       desktop,
       applyUpdate,
+      t,
     ],
   );
 

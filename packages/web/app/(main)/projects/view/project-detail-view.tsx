@@ -99,6 +99,7 @@ export function ProjectDetailView({
   const router = useRouter();
   const searchParams = useSearchParams();
   const tBoard = useTranslations('board');
+  const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.project.leftOpen', true);
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.project.rightOpen', true);
@@ -131,8 +132,18 @@ export function ProjectDetailView({
         actions={
           isMobile ? (
             <div className="flex items-center gap-2">
-              <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
-              <RailHeaderToggle side="right" open={rightOpen} onClick={() => setRightOpen(!rightOpen)} />
+              <RailHeaderToggle
+                side="left"
+                open={leftOpen}
+                onClick={() => setLeftOpen(!leftOpen)}
+                label={tCommon('ui.rail.toggleLeftPanel')}
+              />
+              <RailHeaderToggle
+                side="right"
+                open={rightOpen}
+                onClick={() => setRightOpen(!rightOpen)}
+                label={tCommon('ui.rail.toggleRightPanel')}
+              />
             </div>
           ) : undefined
         }
@@ -176,6 +187,8 @@ export function ProjectDetailView({
                   open={leftOpen}
                   title="Stats & actions"
                   onToggle={() => setLeftOpen(!leftOpen)}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Stats & actions' })}
+                  expandLabel={tCommon('ui.rail.expand', { title: 'Stats & actions' })}
                 />
               ) : null}
               <div className="min-w-0 flex-1">
@@ -188,6 +201,8 @@ export function ProjectDetailView({
                   open={rightOpen}
                   title="Knowledge & activity"
                   onToggle={() => setRightOpen(!rightOpen)}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Knowledge & activity' })}
+                  expandLabel={tCommon('ui.rail.expand', { title: 'Knowledge & activity' })}
                 />
               ) : null}
             </div>

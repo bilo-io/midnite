@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
 import { useNotifications } from '@/components/notifications-provider';
@@ -17,13 +18,14 @@ import { useHeaderDropdown } from './use-header-dropdown';
  * the approvals tab count stays live whether or not the panel is open.
  */
 export function NotificationsMenu() {
+  const t = useTranslations('nav');
   const { unread } = useNotifications();
   const { pending, decide } = useApprovalsSocket();
   const { open, toggle, setOpen, rootRef } = useHeaderDropdown();
 
   return (
     <div ref={rootRef} className="group relative">
-      <HeaderIconButton label="Notifications" open={open} onClick={toggle} count={unread}>
+      <HeaderIconButton label={t('header.notifications')} open={open} onClick={toggle} count={unread}>
         <Bell className="h-[1.05rem] w-[1.05rem]" />
       </HeaderIconButton>
       {open ? (

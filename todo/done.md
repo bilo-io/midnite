@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-30 — feat: Phase 82 Theme E — chrome, desktop & office DOM i18n 🟢
+
+PR #583. The frame around the app plus the office's React layer, built as three parallel subagent slices (chrome+shell / office / ui-audit) merged centrally — the whole of Theme E in one PR.
+
+- [x] **Header & update chrome** — 10 files (header menus/panels, update banner/popover/provider) → `nav.header.*` (22 keys) + `common.update.*` (23 keys, ICU download-percent/version toast); banner headline/action defaults now catalog-resolved.
+- [x] **Shell stays catalog-free** — `LockScreen`, `AppMobileNav`, `AppFrame`, `TitleBar` gained typed injected-label props with English defaults (non-breaking; admin/docs unaffected, consumer typechecks clean); web passes `t()` values incl. the passcode-dialog pass-through and mobile theme-toggle labels.
+- [x] **Office DOM** — new `office` namespace (105 keys en+fr) across 16 files (2D HUD/panels/pickers/presence + 3D canvas overlays; drei `<Html>` prompts resolved outside the r3f reconciler and passed as props). Phaser/canvas-texture text stays English — README gap note extended.
+- [x] **`packages/ui` default-label audit** — 6 primitives propified non-breaking (passcode pad, theme toggle, rail shell, radial gauge, context ring, styled select) + `common.ui.*` values at 20+ web call sites; full audit table in the PR; byte-unit suffixes (KB/Ko) flagged follow-up.
+- [x] **fr-FR + tests** — 189 new fr keys (hand-authored, `needsReview`); key-audit tests `i18n-chrome-keys.test.ts` (38) + `i18n-office-keys.test.ts` (74); fr RTL renders (banner, user menu, lock screen, presence dialog); exempt list **293 → 247**.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green; `i18n-validate`/`i18n-exempt`/`i18n-barrels` in sync.
+
 ## 2026-07-30 — feat: Phase 82 Theme D — roadmap/task-graph/slides/safety i18n slice 🟢
 
 PR #582. Fourth Theme D slice, four clusters at once (~160 new fr keys), built by 3 parallel subagents on disjoint file sets merged centrally.

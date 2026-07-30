@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 type HeaderIconButtonProps = {
@@ -27,6 +28,7 @@ export const HeaderIconButton = forwardRef<HTMLButtonElement, HeaderIconButtonPr
     { label, open, onClick, count = 0, badgeClassName, ariaHaspopup = 'menu', children },
     ref,
   ) {
+    const t = useTranslations('nav');
     const badge = count > 99 ? '99+' : String(count);
     return (
       <>
@@ -34,7 +36,7 @@ export const HeaderIconButton = forwardRef<HTMLButtonElement, HeaderIconButtonPr
           ref={ref}
           type="button"
           onClick={onClick}
-          aria-label={count > 0 ? `${label}, ${count}` : label}
+          aria-label={count > 0 ? t('header.labelWithCount', { label, count }) : label}
           aria-haspopup={ariaHaspopup}
           aria-expanded={open}
           className={cn(

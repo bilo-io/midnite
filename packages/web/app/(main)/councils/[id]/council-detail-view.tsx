@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type {
   AgentCli,
   Council,
@@ -42,6 +43,7 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
   const [runs, setRuns] = useState<CouncilRun[]>(initialRuns);
   const [threadOpen, setThreadOpen] = useLocalStorage<boolean>('midnite.councils.thread', true);
   const [panelOpen, setPanelOpen] = useLocalStorage<boolean>('midnite.councils.panel', true);
+  const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
 
   const refreshRuns = useCallback(() => {
@@ -172,8 +174,18 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
         actions={
           isMobile ? (
             <div className="flex items-center gap-2">
-              <RailHeaderToggle side="left" open={threadOpen} onClick={() => setThreadOpen(!threadOpen)} />
-              <RailHeaderToggle side="right" open={panelOpen} onClick={() => setPanelOpen(!panelOpen)} />
+              <RailHeaderToggle
+                side="left"
+                open={threadOpen}
+                onClick={() => setThreadOpen(!threadOpen)}
+                label={tCommon('ui.rail.toggleLeftPanel')}
+              />
+              <RailHeaderToggle
+                side="right"
+                open={panelOpen}
+                onClick={() => setPanelOpen(!panelOpen)}
+                label={tCommon('ui.rail.toggleRightPanel')}
+              />
             </div>
           ) : undefined
         }
@@ -202,12 +214,16 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
                   open={threadOpen}
                   title="Thread"
                   onToggle={() => setThreadOpen(!threadOpen)}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Thread' })}
+                  expandLabel={tCommon('ui.rail.expand', { title: 'Thread' })}
                 />
                 <RailFloatingToggle
                   side="right"
                   open={panelOpen}
                   title="Members"
                   onToggle={() => setPanelOpen(!panelOpen)}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Members' })}
+                  expandLabel={tCommon('ui.rail.expand', { title: 'Members' })}
                 />
               </>
             ) : null}

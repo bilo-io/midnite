@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { WindowChromeBridge } from '@midnite/shared';
-import { LocaleProvider } from '@midnite/shell';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderWithIntl } from '../vitest.render-intl';
 
 const back = vi.fn();
 const forward = vi.fn();
@@ -32,14 +33,7 @@ function fakeBridge(overrides: Partial<WindowChromeBridge> = {}): WindowChromeBr
 }
 
 const renderBar = (bridge: WindowChromeBridge | null) =>
-  render(
-    <LocaleProvider
-      catalogs={{ 'en-GB': { nav: { features: { dashboard: 'Dashboard' } } } }}
-      initialLocale="en-GB"
-    >
-      <DesktopTitleBar windowChrome={bridge} />
-    </LocaleProvider>,
-  );
+  renderWithIntl(<DesktopTitleBar windowChrome={bridge} />);
 
 describe('DesktopTitleBar', () => {
   beforeEach(() => {

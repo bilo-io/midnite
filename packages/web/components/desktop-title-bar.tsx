@@ -94,13 +94,14 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
   return (
     <TitleBar
       windowChrome={windowChrome}
+      label={tNav('titleBar.label')}
       left={
         <>
           <button
             type="button"
             onClick={() => router.back()}
             disabled={!canGoBack}
-            aria-label="Back"
+            aria-label={tNav('titleBar.back')}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -109,7 +110,7 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
             type="button"
             onClick={() => router.forward()}
             disabled={!canGoForward}
-            aria-label="Forward"
+            aria-label={tNav('titleBar.forward')}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             <ArrowRight className="h-4 w-4" />
@@ -124,13 +125,13 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
         <button
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('midnite:open-palette'))}
-          aria-label="Search"
+          aria-label={tNav('titleBar.search')}
           className="flex h-7 w-full max-w-md items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground"
         >
           <Search aria-hidden className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 flex-1 truncate text-left">Search midnite…</span>
+          <span className="min-w-0 flex-1 truncate text-left">{tNav('titleBar.searchPlaceholder')}</span>
           <kbd className="shrink-0 rounded border border-border/60 bg-background px-1 font-mono text-[10px] leading-4 text-muted-foreground">
-            ⌘K
+            {'⌘K'}
           </kbd>
         </button>
       }

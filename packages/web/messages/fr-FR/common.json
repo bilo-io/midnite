@@ -35,5 +35,64 @@
   "noProjectsMatch": "Aucun projet correspondant",
   "newProject": "Nouveau projet",
   "startingTerminal": "Démarrage du terminal…",
-  "startingLabel": "Démarrage de {label}…"
+  "startingLabel": "Démarrage de {label}…",
+  "update": {
+    "action": "Mettre à jour",
+    "newVersionAvailable": "Une nouvelle version est disponible",
+    "updateRequired": "Mise à jour requise pour continuer à utiliser midnite",
+    "latestVersionFallback": "la dernière version",
+    "unsupported": "cette version n’est plus prise en charge, veuillez mettre à jour pour continuer",
+    "downloadingHeadline": "Téléchargement de la mise à jour…",
+    "downloadingPercent": "Téléchargement {percent} %",
+    "downloadingAction": "Téléchargement…",
+    "readyHeadline": "Une mise à jour est prête à être installée",
+    "restartToInstall": "Redémarrer pour installer",
+    "failedHeadline": "Échec de la mise à jour",
+    "checkFailed": "Échec de la vérification des mises à jour",
+    "dismiss": "Ignorer l’avis de mise à jour",
+    "downloadProgress": "Téléchargement de la mise à jour",
+    "copyInstallCommand": "Copier la commande d’installation",
+    "copied": "Copié !",
+    "versionAvailableToast": "La version {version} est disponible",
+    "whatsNew": "Nouveautés de la v{version}",
+    "releaseNotesLabel": "Notes de version de la v{version}",
+    "loadingNotes": "Chargement des notes de version…",
+    "notesUnavailable": "Les notes de version ne sont pas disponibles pour le moment — consultez le journal des modifications complet ou la page de la version ci-dessous.",
+    "fullChangelog": "Journal des modifications complet",
+    "releasePage": "Page de la version"
+  },
+  "ui": {
+    "passcode": {
+      "unlockTitle": "Saisissez le code d’accès",
+      "setTitle": "Définir un code d’accès",
+      "confirmTitle": "Confirmez le code d’accès",
+      "unlockSubtitle": "Saisissez votre code d’accès pour déverrouiller.",
+      "chooseSubtitle": "Choisissez un code d’accès à {length} chiffres.",
+      "confirmSubtitle": "Saisissez-le à nouveau pour confirmer.",
+      "incorrect": "Code d’accès incorrect.",
+      "mismatch": "Les codes ne correspondent pas. Réessayez.",
+      "digitAria": "Chiffre {index} du code d’accès",
+      "setupDialogLabel": "Définir le code de l’écran de veille",
+      "unlockDialogLabel": "Saisissez le code pour déverrouiller"
+    },
+    "rail": {
+      "collapse": "Réduire {title}",
+      "expand": "Développer {title}",
+      "toggleLeftPanel": "Afficher ou masquer le panneau de gauche",
+      "toggleRightPanel": "Afficher ou masquer le panneau de droite"
+    },
+    "gauge": {
+      "pctUsed": "{pct} % utilisés",
+      "ofTotal": "sur {total}",
+      "free": "{free} libres"
+    },
+    "contextRing": {
+      "aria": "Fenêtre de contexte utilisée à {pct} %",
+      "tooltip": "Fenêtre de contexte · {pct} % · ~{tokens} / {limit} jetons"
+    },
+    "modelSelect": {
+      "useCustom": "Utiliser « {input} »",
+      "noOptions": "Aucune option"
+    }
+  }
 }

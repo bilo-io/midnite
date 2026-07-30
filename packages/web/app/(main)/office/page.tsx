@@ -1,20 +1,18 @@
 'use client';
 
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { PageHeader } from '@/components/page-header';
 import { DesktopOnly } from '@/components/desktop-only';
 import { OfficeSurface } from '@/components/office/office-surface';
 
 export default function OfficePage() {
+  const t = useTranslations('office');
   return (
     <>
-      <PageHeader
-        title="Office"
-        icon="Building2"
-        description="Walk the floor and see what your agents are up to — step up to a desk to call or message."
-      />
-      <DesktopOnly label="The office">
+      <PageHeader title={t('page.title')} icon="Building2" description={t('page.description')} />
+      <DesktopOnly label={t('page.desktopLabel')}>
         <div className="reveal-staged container space-y-6 pb-8 pt-2" data-tour="office">
           {/* OfficeSurface reads `?view=` via useSearchParams — needs a Suspense boundary. */}
           <Suspense fallback={null}>

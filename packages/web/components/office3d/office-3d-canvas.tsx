@@ -2,6 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { useOfficeStore } from '@/lib/office-store';
 import type { OfficePalette } from '@/lib/office/theme';
@@ -38,6 +39,26 @@ export function Office3DCanvas({
   onLockChange?: (locked: boolean) => void;
   providedHour?: number;
 }) {
+  // Translated proximity-prompt labels for the sub-scenes. Resolved HERE (in the
+  // DOM tree) and passed down as props: the r3f reconciler does not bridge React
+  // context into the <Canvas> tree, so `useTranslations` can't be called inside it.
+  const t = useTranslations('office');
+  const arcadePrompts = useMemo(
+    () => ({
+      exit: t('threeD.prompts.backToOffice'),
+      breakout: t('threeD.prompts.playBreakout'),
+      stub: t('threeD.prompts.browseGames'),
+    }),
+    [t],
+  );
+  const cornerPrompts = useMemo(
+    () => ({
+      exit: t('threeD.prompts.backToOffice'),
+      desk: t('threeD.prompts.customiseDesk'),
+    }),
+    [t],
+  );
+
   const world = useMemo(() => buildWorld(), []);
   const lighting = useMemo(
     () => lightingForHour(providedHour ?? new Date().getHours()),
@@ -71,9 +92,9 @@ export function Office3DCanvas({
       }}
     >
       {scene === 'arcade' ? (
-        <ArcadeScene onLockChange={onLockChange} />
+        <ArcadeScene onLockChange={onLockChange} prompts={arcadePrompts} />
       ) : scene === 'corner' ? (
-        <CornerScene onLockChange={onLockChange} />
+        <CornerScene onLockChange={onLockChange} prompts={cornerPrompts} />
       ) : (
         <>
           <color attach="background" args={[palette.background]} />

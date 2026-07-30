@@ -71,7 +71,15 @@ function DeskItemProp({ id, position }: { id: string; position: [number, number,
   }
 }
 
-export function CornerScene({ onLockChange }: { onLockChange?: (locked: boolean) => void }) {
+export function CornerScene({
+  onLockChange,
+  prompts,
+}: {
+  onLockChange?: (locked: boolean) => void;
+  /** Translated proximity-prompt labels — resolved outside the r3f tree (no
+   *  next-intl context inside <Canvas>) and passed in by Office3DCanvas. */
+  prompts: { exit: string; desk: string };
+}) {
   const model = useMemo(() => buildCorner(), []);
   const deskItems = useOfficeStore((s) => s.deskItems);
   const setScene = useOfficeStore((s) => s.setCurrentScene);
@@ -117,10 +125,10 @@ export function CornerScene({ onLockChange }: { onLockChange?: (locked: boolean)
       const target = nearest(px, pz);
       // Mirror 2D: reuse nearDoor so the shared HUD reflects door proximity.
       useOfficeStore.getState().setNearDoor(target === 'exit');
-      const label = target === 'exit' ? 'E — back to the office' : target === 'desk' ? 'E — customise your desk' : null;
+      const label = target === null ? null : prompts[target];
       setPrompt((prev) => (prev === label ? prev : label));
     },
-    [nearest],
+    [nearest, prompts],
   );
 
   return (
