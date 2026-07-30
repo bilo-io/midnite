@@ -8,8 +8,7 @@ import type { Guide } from './steps';
 const guide = (id: string, version: number): Guide => ({
   id,
   version,
-  label: `${id} tour`,
-  steps: [{ anchor: 'x', title: 't', body: 'b' }],
+  steps: [{ anchor: 'x' }],
 });
 
 /** Seed the settings localStorage blob the hook reads through. */

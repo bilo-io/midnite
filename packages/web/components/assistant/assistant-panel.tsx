@@ -2,13 +2,14 @@
 
 import { forwardRef, type ComponentType } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, BookOpen, Bug, ChevronRight, Compass, MessageSquare, Sparkles, X } from 'lucide-react';
 
 import { GradientGlow } from '@midnite/ui';
 
 import type { ChatCommandState } from '@/hooks/use-chat-command';
 import { docsUrlForPathname } from '@/lib/docs-links';
-import { ALL_GUIDES, guideLaunchPath, resolveGuide, type Guide } from '@/lib/guide/steps';
+import { ALL_GUIDES, guideLabelKey, guideLaunchPath, resolveGuide, type Guide } from '@/lib/guide/steps';
 import { useGuide } from '@/lib/guide/use-guide';
 import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
@@ -115,6 +116,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
 
   // The current route's guide floats to the top of the index.
   const currentGuide = pathname ? resolveGuide(pathname) : null;
+  const tGuide = useTranslations('guide');
   const orderedGuides = [...ALL_GUIDES].sort((a, b) =>
     a.id === currentGuide?.id ? -1 : b.id === currentGuide?.id ? 1 : 0,
   );
@@ -249,7 +251,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
                   >
                     <Compass className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                     <span className="flex-1">
-                      <span className="block text-sm font-medium">{guide.label}</span>
+                      <span className="block text-sm font-medium">{tGuide(guideLabelKey(guide))}</span>
                       <span className="block text-xs text-muted-foreground">
                         {isCurrent
                           ? 'This page'

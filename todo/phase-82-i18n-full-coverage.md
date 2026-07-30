@@ -59,7 +59,7 @@ The 457-file bulk. Each bullet is an independently landable slice (own namespace
 - [ ] **PR review / diff** ([`components/pr-review/`](../packages/web/components/pr-review)) → `prReview`.
 - [x] **Search + command palette** (global search UI, palette actions/labels) → `search` (55 keys); shared `searchTypeMeta()` de-dupes the palette/results type→icon/label map; fixed a pre-existing gap where the palette's FEATURES-derived nav labels ignored locale; fr-FR + fr RTL smoke tests (PR #572).
 - [x] **Dashboard widgets** (clock/date/calendar/digest/finances/market + widget chrome) → `dashboard` (~170 keys): 13 files incl. the add-widget picker with the full localised catalogue (labels/descriptions/categories, localised before search-filtering); calendar weekdays now Intl-derived; aria/tooltips included; static key-audit + fr renders + fr Playwright shots (PR #580, 2026-07-30).
-- [ ] **Guide / onboarding** ([`components/guide/`](../packages/web/components/guide)) → `guide`.
+- [x] **Guide / onboarding** ([`components/guide/`](../packages/web/components/guide)) → `guide` (~76 keys): content moved out of `lib/guide/steps.ts` into the catalogs keyed by guide id + step anchor (`guideLabelKey`/`guideStepKey`), overlay chrome + ICU counter translated, assistant index labels resolve through the same keys; registry-driven audit test pins en+fr coverage per guide (PR #581, 2026-07-30).
 - [ ] **Roadmap, task-graph, slides, safety** (smaller clusters, one slice) → `roadmap` / `slides` / `safety`.
 - [ ] **Ideas / chat-to-board / remaining top-level components** — the residue after the named areas; drain `I18N_EXEMPT` to zero for `packages/web`.
 - [ ] **fr-FR keys + tests per slice** — same-PR French + a representative fr-FR RTL render per area.

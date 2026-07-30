@@ -1,0 +1,172 @@
+{
+  "board": {
+    "label": "Visite du tableau",
+    "steps": {
+      "board": {
+        "title": "Votre tableau",
+        "body": "Les tâches avancent de gauche à droite dans les colonnes. Faites glisser une carte pour changer son statut."
+      },
+      "board-column-todo": {
+        "title": "Travail prêt",
+        "body": "Le planificateur prend d’abord le haut de **À faire** — priorité, puis ancienneté. Les tâches bloquées attendent ici la fin de leurs blocages."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez ce guide (ou discutez avec votre tableau, ou interrogez l’agent) depuis ici quand vous le souhaitez."
+      }
+    }
+  },
+  "workflow": {
+    "label": "Visite de l’éditeur de workflows",
+    "steps": {
+      "workflow-canvas": {
+        "title": "Le canevas",
+        "body": "Construisez une automatisation en reliant des nœuds ici — un déclencheur, puis les étapes qu’il déploie."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Cette visite vit dans le menu de l’assistant — rouvrez-la depuis ici dès que vous avez besoin d’un rappel."
+      }
+    }
+  },
+  "sessions": {
+    "label": "Visite des sessions",
+    "steps": {
+      "sessions-list": {
+        "title": "Sessions en direct",
+        "body": "Chaque session d’agent s’affiche ici. Ouvrez-en une pour son cockpit — transcription, terminal et la tâche qu’elle pilote."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "memory": {
+    "label": "Visite de l’espace mémoire",
+    "steps": {
+      "memory-workspace": {
+        "title": "Base de connaissances",
+        "body": "Rassemblez des sources, discutez avec vos connaissances et générez des artefacts depuis un seul espace de travail."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "dashboard": {
+    "label": "Visite du tableau de bord",
+    "steps": {
+      "dashboard": {
+        "title": "Votre camp de base",
+        "body": "Le tableau de bord rassemble votre backlog, vos projets et l’activité récente — un instantané de toute la flotte d’un coup d’œil."
+      },
+      "dashboard-composer": {
+        "title": "Rédigez des tâches en vitesse",
+        "body": "Tapez une liste de fonctionnalités ici — **une tâche par ligne** — puis envoyez-la vers le Backlog ou À faire quand vous êtes prêt."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez n’importe quel guide depuis ici. Astuce : appuyez sur **⌘K** (Ctrl+K) n’importe où pour rechercher et lancer des commandes au clavier."
+      }
+    }
+  },
+  "office": {
+    "label": "Visite du bureau",
+    "steps": {
+      "office": {
+        "title": "L’étage du bureau",
+        "body": "Regardez vos agents travailler dans une scène en direct — approchez-vous d’un bureau pour appeler ou écrire à l’agent qui y travaille."
+      },
+      "office-view-toggle": {
+        "title": "2D ou 3D",
+        "body": "Basculez entre l’étage **2D** vu de dessus et une visite **3D** à la première personne. Votre choix est mémorisé."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "projects": {
+    "label": "Visite des projets",
+    "steps": {
+      "projects": {
+        "title": "Vos projets",
+        "body": "Regroupez les travaux liés en projets — chacun rassemble ses tâches, un plan structuré et une base de connaissances."
+      },
+      "projects-new": {
+        "title": "Lancez-en un",
+        "body": "Créez un projet de zéro ou depuis un modèle. À partir d’un objectif, midnite peut même rédiger toute la répartition des tâches."
+      },
+      "project-detail": {
+        "title": "Le cockpit",
+        "body": "Ouvrez un projet pour son cockpit — **Détails, Docs, Tâches, Feuille de route**, le tout au même endroit."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "digests": {
+    "label": "Visite des récaps",
+    "steps": {
+      "digests": {
+        "title": "Récaps de la flotte",
+        "body": "La synthèse périodique de ce que votre flotte a **livré, raté et signalé** — générée par le pipeline Fable."
+      },
+      "digests-content": {
+        "title": "Lisez l’histoire",
+        "body": "Choisissez un récap pour lire son résumé structuré, avec des liens profonds vers les tâches derrière chaque ligne."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "search": {
+    "label": "Visite de la recherche",
+    "steps": {
+      "search": {
+        "title": "Cherchez partout",
+        "body": "Une seule recherche plein texte à travers les tâches, projets, mémoire, notes, conseils et workflows."
+      },
+      "search-input": {
+        "title": "Essayez",
+        "body": "Tapez une requête ici pour chercher dans tous les types à la fois. **Cliquez sur le champ** pour continuer."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "settings": {
+    "label": "Visite des réglages",
+    "steps": {
+      "settings": {
+        "title": "Faites-le vôtre",
+        "body": "Réglez l’apparence de midnite, son verrouillage et l’exécution de vos agents — apparence, sécurité, intégrations et plus."
+      },
+      "settings-nav": {
+        "title": "Parcourez les catégories",
+        "body": "Passez d’une catégorie de réglages à l’autre ici. Apparence regroupe les thèmes, la densité et le comportement des guides produit."
+      },
+      "assistant": {
+        "title": "À rejouer quand vous voulez",
+        "body": "Rouvrez cette visite depuis le menu de l’assistant quand vous le souhaitez."
+      }
+    }
+  },
+  "chrome": {
+    "noGuide": "Pas encore de visite guidée pour cette page.",
+    "stepCount": "{current} sur {total}",
+    "skip": "Passer",
+    "back": "Retour",
+    "next": "Suivant",
+    "done": "Terminé"
+  }
+}

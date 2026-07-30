@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-30 — feat: Phase 82 Theme D — product guides i18n slice 🟢
+
+PR #581. Third Theme D slice: the 10 replayable product guides (Phase 66/67) read from a new `guide` namespace (~76 keys, en-GB + full hand fr-FR).
+
+- [x] **Content out of the registry** — `lib/guide/steps.ts` keeps structure only (anchors, placement, `advanceOn`, versions unchanged — no re-surface churn); labels + step titles/bodies live in the catalogs keyed by guide id + step anchor via `guideLabelKey`/`guideStepKey`. Markdown bodies stay markdown (MarkdownPreview renders them).
+- [x] **Overlay chrome** — Skip/Back/Next/Done, the ICU step counter ("1 sur 3") and the no-guide notice translate; 3 files leave `I18N_EXEMPT` (312 → 309).
+- [x] **Assistant index labels** — the all-guides index resolves labels through the same keys (one-line touch; assistant-panel otherwise untouched/exempt).
+- [x] **Tests** — registry-driven audit (`lib/i18n-guide-keys.test.ts`: every guide id × anchor must have en-GB **and** fr-FR copy, so a new guide can't ship without catalog entries); fr-FR overlay render; stories repointed at real guide ids; `guide-i18n-fr.shots.ts` Playwright preview; fab/overlay suites intl-wrapped.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green; validate/exempt/barrels in sync.
+
 ## 2026-07-30 — feat: Phase 82 Theme D — dashboard widgets i18n slice 🟢
 
 PR #580. Second Theme D slice: the dashboard's date/time, finance and market widgets plus the add-widget picker, reading from a new `dashboard` namespace (~170 keys, en-GB + full hand fr-FR). Also re-landed PR #572 (search + palette), which had been **accidentally reverted** by a stale-index race in the shared primary checkout — a "commit everything" session faithfully committed a pre-staged block that was byte-identical to the pre-merge tip and also silently dropped the Phase 83 `_INDEX.md` registration (both restored, PR #579).

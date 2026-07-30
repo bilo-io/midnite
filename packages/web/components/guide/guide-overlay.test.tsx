@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 import { GuideOverlay } from './guide-overlay';
 import { useGuide } from '@/lib/guide/use-guide';
 import type { Guide } from '@/lib/guide/steps';
 
+// Content now lives in the `guide` catalog (Phase 82 D) — the overlay resolves
+// titles/bodies by id + anchor, so this fixture reuses the real board guide's
+// first and last steps and the tests assert the real en-GB copy.
 const GUIDE: Guide = {
   id: 'board',
   version: 1,
-  label: 'Board tour',
-  steps: [
-    { anchor: 'board', title: 'Your board', body: 'Tasks flow left to right.' },
-    { anchor: 'assistant', title: 'Replay anytime', body: 'Reopen from here.' },
-  ],
+  steps: [{ anchor: 'board' }, { anchor: 'assistant' }],
 };
 
 // Render the anchor targets the overlay looks up by data-tour.
@@ -94,10 +94,9 @@ describe('GuideOverlay', () => {
   const INTERACTIVE: Guide = {
     id: 'board',
     version: 1,
-    label: 'Board tour',
     steps: [
-      { anchor: 'board', title: 'Click the board', body: 'Try it.', advanceOn: 'click' },
-      { anchor: 'assistant', title: 'Replay anytime', body: 'Reopen from here.' },
+      { anchor: 'board', advanceOn: 'click' },
+      { anchor: 'assistant' },
     ],
   };
 
@@ -109,7 +108,7 @@ describe('GuideOverlay', () => {
       </>,
     );
     act(() => useGuide.getState().start(INTERACTIVE));
-    expect(screen.getByText('Click the board')).toBeInTheDocument();
+    expect(screen.getByText('Your board')).toBeInTheDocument();
 
     // Clicking the real anchored element (through the spotlight hole) advances.
     act(() => {
@@ -149,5 +148,21 @@ describe('GuideOverlay', () => {
     expect(curtain).not.toBeNull();
     act(() => curtain!.click());
     expect(useGuide.getState().active).toBeNull();
+  });
+
+  it('renders the French copy under fr-FR (Phase 82 D)', () => {
+    render(
+      <>
+        {anchors()}
+        <GuideOverlay />
+      </>,
+      { locale: 'fr-FR' },
+    );
+    act(() => useGuide.getState().start(GUIDE));
+
+    expect(screen.getByText('Votre tableau')).toBeInTheDocument();
+    expect(screen.getByText('1 sur 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suivant' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Passer' })).toBeInTheDocument();
   });
 });
