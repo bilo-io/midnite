@@ -2,7 +2,7 @@
  * Replayable product guides (Phase 66 Theme F). Each route maps to an ordered
  * list of spotlight **steps**; a step points at an on-screen element via its
  * `data-tour` key (the anchor contract established by this theme) and shows a
- * title + body. The assistant panel's "Guide" entry starts the guide for the
+ * title + body (resolved from the `guide` i18n namespace by anchor — Phase 82 D). The assistant panel's "Guide" entry starts the guide for the
  * current route (resolved longest-prefix-first, mirroring the docs-link map), so
  * a sub-route inherits its section's guide (`/tasks/graph` → the board guide).
  *
@@ -15,10 +15,13 @@
 export type GuidePlacement = 'top' | 'bottom' | 'left' | 'right';
 
 export type GuideStep = {
-  /** The target element's `data-tour` value. */
+  /**
+   * The target element's `data-tour` value. Doubles as the step's content key:
+   * the card's title/body live in the `guide` catalog at
+   * `guide.<guideId>.steps.<anchor>.{title,body}` (Phase 82 D) — see
+   * {@link guideStepKey}.
+   */
   anchor: string;
-  title: string;
-  body: string;
   /** Preferred card side; the overlay flips it if it would overflow. Default 'bottom'. */
   placement?: GuidePlacement;
   /**
@@ -43,10 +46,25 @@ export type Guide = {
    * with no recorded version coerces to `1`.
    */
   version: number;
-  /** Human label shown in the guide header ("Board tour"). */
-  label: string;
   steps: GuideStep[];
 };
+
+/**
+ * i18n key (within the `guide` namespace) for a guide's human label — "Board
+ * tour" etc. live in the catalogs, not the registry (Phase 82 D).
+ */
+export function guideLabelKey(guide: Pick<Guide, 'id'>): string {
+  return `${guide.id}.label`;
+}
+
+/** i18n key (within the `guide` namespace) for a step's title or body. */
+export function guideStepKey(
+  guide: Pick<Guide, 'id'>,
+  step: Pick<GuideStep, 'anchor'>,
+  field: 'title' | 'body',
+): string {
+  return `${guide.id}.steps.${step.anchor}.${field}`;
+}
 
 /**
  * The assistant FAB carries `data-tour="assistant"` and is present on every app
@@ -57,41 +75,37 @@ export const ASSISTANT_ANCHOR = 'assistant';
 const BOARD_GUIDE: Guide = {
   id: 'board',
   version: 1,
-  label: 'Board tour',
   steps: [
-    { anchor: 'board', title: 'Your board', body: 'Tasks flow left → right through the columns. Drag a card to move it between statuses.', placement: 'bottom' },
-    { anchor: 'board-column-todo', title: 'Ready work', body: 'The scheduler picks up the top of **To do** first — priority, then age. Blocked tasks wait here until their blockers finish.', placement: 'right' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this guide (or chat to your board, or ask the agent) from here whenever you like.', placement: 'left' },
+    { anchor: 'board', placement: 'bottom' },
+    { anchor: 'board-column-todo', placement: 'right' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const WORKFLOW_GUIDE: Guide = {
   id: 'workflow',
   version: 1,
-  label: 'Workflow builder tour',
   steps: [
-    { anchor: 'workflow-canvas', title: 'The canvas', body: 'Build an automation by wiring nodes here — a trigger, then the steps it fans out into.', placement: 'bottom' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'This tour lives in the assistant menu — reopen it from here whenever you need a refresher.', placement: 'left' },
+    { anchor: 'workflow-canvas', placement: 'bottom' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const SESSIONS_GUIDE: Guide = {
   id: 'sessions',
   version: 1,
-  label: 'Sessions tour',
   steps: [
-    { anchor: 'sessions-list', title: 'Live sessions', body: 'Every agent session shows here. Open one for its cockpit — transcript, terminal, and the task it is driving.', placement: 'bottom' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'sessions-list', placement: 'bottom' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const MEMORY_GUIDE: Guide = {
   id: 'memory',
   version: 1,
-  label: 'Memory workspace tour',
   steps: [
-    { anchor: 'memory-workspace', title: 'Knowledge base', body: 'Gather sources, chat to your knowledge, and generate artifacts from a single workspace.', placement: 'bottom' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'memory-workspace', placement: 'bottom' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
@@ -100,67 +114,61 @@ const MEMORY_GUIDE: Guide = {
 const DASHBOARD_GUIDE: Guide = {
   id: 'dashboard',
   version: 1,
-  label: 'Dashboard tour',
   steps: [
-    { anchor: 'dashboard', title: 'Your home base', body: 'The dashboard rolls up your backlog, projects, and recent activity — a snapshot of the whole fleet at a glance.', placement: 'bottom' },
-    { anchor: 'dashboard-composer', title: 'Draft tasks fast', body: 'Type a feature list here — **one task per line** — then send it to the Backlog or To do when you\'re ready.', placement: 'top' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen any guide from here. Tip: press **⌘K** (Ctrl+K) anywhere to search and run commands from the keyboard.', placement: 'left' },
+    { anchor: 'dashboard', placement: 'bottom' },
+    { anchor: 'dashboard-composer', placement: 'top' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const OFFICE_GUIDE: Guide = {
   id: 'office',
   version: 1,
-  label: 'Office tour',
   steps: [
-    { anchor: 'office', title: 'The office floor', body: 'Watch your agents work in a live scene — walk up to a desk to call or message the agent working there.', placement: 'bottom' },
-    { anchor: 'office-view-toggle', title: '2D or 3D', body: 'Switch between the top-down **2D** floor and a first-person **3D** walkthrough. Your choice is remembered.', placement: 'bottom' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'office', placement: 'bottom' },
+    { anchor: 'office-view-toggle', placement: 'bottom' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const PROJECTS_GUIDE: Guide = {
   id: 'projects',
   version: 2,
-  label: 'Projects tour',
   steps: [
-    { anchor: 'projects', title: 'Your projects', body: 'Group related work into projects — each gathers its tasks, a structured plan, and a knowledge base.', placement: 'bottom' },
-    { anchor: 'projects-new', title: 'Start one', body: 'Spin up a project from scratch or from a template. From a goal, midnite can even draft the whole task breakdown.', placement: 'left' },
-    { anchor: 'project-detail', title: 'The cockpit', body: 'Open a project for its cockpit — **Details, Docs, Tasks, Roadmap**, all in one place.', placement: 'bottom' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'projects', placement: 'bottom' },
+    { anchor: 'projects-new', placement: 'left' },
+    { anchor: 'project-detail', placement: 'bottom' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const DIGESTS_GUIDE: Guide = {
   id: 'digests',
   version: 1,
-  label: 'Digests tour',
   steps: [
-    { anchor: 'digests', title: 'Fleet digests', body: 'The periodic roll-up of what your fleet **shipped, failed, and flagged** — generated by the Fable pipeline.', placement: 'bottom' },
-    { anchor: 'digests-content', title: 'Read the story', body: 'Pick a digest to read its structured summary, with deep links back to the tasks behind each line.', placement: 'top' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'digests', placement: 'bottom' },
+    { anchor: 'digests-content', placement: 'top' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const SEARCH_GUIDE: Guide = {
   id: 'search',
   version: 1,
-  label: 'Search tour',
   steps: [
-    { anchor: 'search', title: 'Search everything', body: 'One full-text search across tasks, projects, memory, notes, councils, and workflows.', placement: 'bottom' },
-    { anchor: 'search-input', title: 'Try it', body: 'Type a query here to search across every type at once. **Click the box** to continue.', placement: 'bottom', advanceOn: 'click' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'search', placement: 'bottom' },
+    { anchor: 'search-input', placement: 'bottom', advanceOn: 'click' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 
 const SETTINGS_GUIDE: Guide = {
   id: 'settings',
   version: 1,
-  label: 'Settings tour',
   steps: [
-    { anchor: 'settings', title: 'Make it yours', body: 'Tune how midnite looks, locks, and runs your agents — appearance, safety, integrations, and more.', placement: 'top' },
-    { anchor: 'settings-nav', title: 'Browse categories', body: 'Jump between settings categories here. Appearance is where themes, density, and product-guide behaviour live.', placement: 'right' },
-    { anchor: ASSISTANT_ANCHOR, title: 'Replay anytime', body: 'Reopen this tour from the assistant menu whenever you like.', placement: 'left' },
+    { anchor: 'settings', placement: 'top' },
+    { anchor: 'settings-nav', placement: 'right' },
+    { anchor: ASSISTANT_ANCHOR, placement: 'left' },
   ],
 };
 

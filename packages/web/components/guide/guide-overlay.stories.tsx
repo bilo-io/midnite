@@ -13,23 +13,21 @@ import { useGuide } from '@/lib/guide/use-guide';
  */
 function Harness() {
   useEffect(() => {
+    // Guide content lives in the `guide` catalog (Phase 82 D), keyed by id +
+    // anchor — so the harness borrows the real board guide's first/last steps.
     useGuide.getState().start({
-      id: 'demo',
+      id: 'board',
       version: 1,
-      label: 'Demo tour',
-      steps: [
-        { anchor: 'demo-board', title: 'Your board', body: 'Tasks flow **left → right** through the columns.' },
-        { anchor: 'demo-fab', title: 'Replay anytime', body: 'Reopen this from the assistant menu.' },
-      ],
+      steps: [{ anchor: 'board' }, { anchor: 'assistant' }],
     });
     return () => useGuide.getState().stop();
   }, []);
   return (
     <div style={{ position: 'relative', height: 300 }}>
-      <div data-tour="demo-board" style={{ margin: 40, padding: 24, border: '1px solid #8884', borderRadius: 8, width: 220 }}>
+      <div data-tour="board" style={{ margin: 40, padding: 24, border: '1px solid #8884', borderRadius: 8, width: 220 }}>
         Board
       </div>
-      <button data-tour="demo-fab" style={{ position: 'absolute', right: 16, bottom: 16 }}>
+      <button data-tour="assistant" style={{ position: 'absolute', right: 16, bottom: 16 }}>
         Assistant
       </button>
       <GuideOverlay />
@@ -62,26 +60,23 @@ export const Running: Story = {
  */
 function InteractiveHarness() {
   useEffect(() => {
+    // The real search guide's interactive step, resolved from the catalog.
     useGuide.getState().start({
-      id: 'demo-interactive',
+      id: 'search',
       version: 1,
-      label: 'Interactive demo',
-      steps: [
-        { anchor: 'demo-search', title: 'Click to search', body: 'Click the box to continue.', advanceOn: 'click' },
-        { anchor: 'demo-fab', title: 'Replay anytime', body: 'Reopen this from the assistant menu.' },
-      ],
+      steps: [{ anchor: 'search-input', advanceOn: 'click' }, { anchor: 'assistant' }],
     });
     return () => useGuide.getState().stop();
   }, []);
   return (
     <div style={{ position: 'relative', height: 300 }}>
       <input
-        data-tour="demo-search"
+        data-tour="search-input"
         aria-label="Search"
         placeholder="Search"
         style={{ margin: 40, padding: 8, border: '1px solid #8884', borderRadius: 8, width: 220 }}
       />
-      <button data-tour="demo-fab" style={{ position: 'absolute', right: 16, bottom: 16 }}>
+      <button data-tour="assistant" style={{ position: 'absolute', right: 16, bottom: 16 }}>
         Assistant
       </button>
       <GuideOverlay />
@@ -93,7 +88,7 @@ export const InteractiveAdvance: StoryObj<typeof meta> = {
   render: () => <InteractiveHarness />,
   play: async () => {
     const body = within(document.body);
-    await expect(await body.findByText('Click to search')).toBeInTheDocument();
+    await expect(await body.findByText('Try it')).toBeInTheDocument();
     // Clicking the real anchored element (through the click-through hole) advances.
     await userEvent.click(body.getByLabelText('Search'));
     await expect(await body.findByText('Replay anytime')).toBeInTheDocument();

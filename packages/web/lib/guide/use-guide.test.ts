@@ -6,10 +6,9 @@ import type { Guide } from './steps';
 const GUIDE: Guide = {
   id: 'board',
   version: 1,
-  label: 'Board tour',
   steps: [
-    { anchor: 'a', title: '1', body: '1' },
-    { anchor: 'b', title: '2', body: '2' },
+    { anchor: 'a' },
+    { anchor: 'b' },
   ],
 };
 

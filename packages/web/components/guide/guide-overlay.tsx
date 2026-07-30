@@ -2,9 +2,11 @@
 
 import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslations } from 'next-intl';
 
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
+import { guideStepKey } from '@/lib/guide/steps';
 import { useGuide } from '@/lib/guide/use-guide';
 import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
@@ -25,6 +27,7 @@ type Rect = { top: number; left: number; width: number; height: number };
  * marked seen as soon as it starts.
  */
 export function GuideOverlay() {
+  const t = useTranslations('guide');
   const { active, stepIndex, unavailable, next, prev, stop } = useGuide();
   const { markSeen } = useSeenGuides();
   const { animate } = useAnimationPrefs();
@@ -127,7 +130,7 @@ export function GuideOverlay() {
         role="status"
         className="fixed inset-x-0 bottom-24 z-[60] mx-auto w-fit max-w-[90vw] rounded-lg bg-card px-4 py-2 text-sm shadow-2xl ring-1 ring-border"
       >
-        No guided tour for this page yet.
+        {t('chrome.noGuide')}
       </div>,
       document.body,
     );
@@ -188,8 +191,8 @@ export function GuideOverlay() {
       <StepCard
         ref={cardRef}
         titleId={titleId}
-        title={step.title}
-        body={step.body}
+        title={t(guideStepKey(active, step, 'title'))}
+        body={t(guideStepKey(active, step, 'body'))}
         index={stepIndex}
         total={total}
         isLast={isLast}
@@ -252,6 +255,7 @@ const StepCard = forwardRef<HTMLDivElement, StepCardProps>(function StepCard(
   { titleId, title, body, index, total, isLast, hole, placement, onPrev, onNext, onStop },
   ref,
 ) {
+  const t = useTranslations('guide');
   // Position the card beside the hole; clamp into the viewport. With no hole
   // (anchor not yet measured, e.g. jsdom) fall back to a centered card.
   const style = cardPosition(hole, placement);
@@ -272,7 +276,7 @@ const StepCard = forwardRef<HTMLDivElement, StepCardProps>(function StepCard(
       </div>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs tabular-nums text-muted-foreground">
-          {index + 1} of {total}
+          {t('chrome.stepCount', { current: index + 1, total })}
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -280,7 +284,7 @@ const StepCard = forwardRef<HTMLDivElement, StepCardProps>(function StepCard(
             onClick={onStop}
             className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            Skip
+            {t('chrome.skip')}
           </button>
           {index > 0 && (
             <button
@@ -288,7 +292,7 @@ const StepCard = forwardRef<HTMLDivElement, StepCardProps>(function StepCard(
               onClick={onPrev}
               className="rounded-md border border-input px-2.5 py-1 text-xs font-medium hover:bg-accent/60"
             >
-              Back
+              {t('chrome.back')}
             </button>
           )}
           <button
@@ -296,7 +300,7 @@ const StepCard = forwardRef<HTMLDivElement, StepCardProps>(function StepCard(
             onClick={onNext}
             className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
           >
-            {isLast ? 'Done' : 'Next'}
+            {isLast ? t('chrome.done') : t('chrome.next')}
           </button>
         </div>
       </div>
