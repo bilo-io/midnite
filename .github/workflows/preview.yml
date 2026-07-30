@@ -56,6 +56,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # moon runs git to diff against the PR base; a shallow clone has no base
+          # to diff, so every `moon run` here died with "Process git failed: exit
+          # code 128" on PRs (it only passed on `main`, which needs no comparison).
+          # Matches ci.yml / affected.yml.
+          fetch-depth: 0
 
       - uses: ./.github/actions/setup
 
@@ -71,11 +77,18 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
         working-directory: packages/web
 
-      - name: Build upstream packages (shared, ui)
-        run: moon run shared:build ui:build
+      # web dependsOn shared + shell + ui, and the step below invokes Playwright
+      # directly, so nothing else will build them.
+      - name: Build upstream packages (web's deps)
+        run: moon run shared:build ui:build shell:build
 
+      # `web:screenshots` is `runInCI: false`, which also makes moon refuse to run
+      # it via `moon run` under CI ("No tasks found"). Invoke Playwright directly —
+      # same workaround the coverage job uses for vitest. Mirrors the `screenshots`
+      # task in packages/web/moon.yml.
       - name: Capture screenshots (pages + stories)
-        run: moon run web:screenshots
+        run: pnpm exec playwright test --project=screenshots --project=stories
+        working-directory: packages/web
         env:
           CI: 'true'
         continue-on-error: true
@@ -105,6 +118,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # As above: moon's git diff against the PR base needs history, else
+          # `moon run` exits 128 on every PR.
+          fetch-depth: 0
 
       - uses: ./.github/actions/setup
 

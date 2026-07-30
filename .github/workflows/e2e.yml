@@ -39,16 +39,27 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
         working-directory: packages/web
 
-      - name: Build upstream packages (shared, ui)
-        run: moon run shared:build ui:build
+      # web dependsOn shared + shell + ui, and the steps below invoke Playwright
+      # directly, so nothing else will build them (the moon tasks' `^:build` dep
+      # is what used to cover this).
+      - name: Build upstream packages (web's deps)
+        run: moon run shared:build ui:build shell:build
 
+      # `web:e2e` and `web:screenshots` are `runInCI: false` (kept out of the fast
+      # `moon ci` gate), which also makes moon refuse to run them via `moon run` in
+      # a CI environment — it reports "No tasks found" and exits 1, which is exactly
+      # what this job did on every run. Invoke Playwright directly to sidestep the
+      # filter, mirroring what the `coverage` job below already does for vitest.
+      # The commands mirror the `e2e` / `screenshots` tasks in packages/web/moon.yml.
       - name: Run e2e flow tests
-        run: moon run web:e2e
+        run: pnpm exec playwright test --project=chromium
+        working-directory: packages/web
         env:
           CI: 'true'
 
       - name: Run visual regression (screenshots + baseline diff)
-        run: moon run web:screenshots
+        run: pnpm exec playwright test --project=screenshots --project=stories
+        working-directory: packages/web
         env:
           CI: 'true'
 
