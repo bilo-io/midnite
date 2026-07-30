@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { LandingClock, LANDING_CLOCK_MODE_KEY } from './landing-clock';
 
 afterEach(cleanup);
