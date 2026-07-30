@@ -2,7 +2,12 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { NeuroCloudBackground, PasscodeUnlockDialog, cn } from '@midnite/ui';
+import {
+  NeuroCloudBackground,
+  PasscodeUnlockDialog,
+  cn,
+  type PasscodePadLabels,
+} from '@midnite/ui';
 
 /**
  * The reusable lock shell both `web`'s idle screensaver and `admin`'s login gate
@@ -17,6 +22,35 @@ import { NeuroCloudBackground, PasscodeUnlockDialog, cn } from '@midnite/ui';
  *   `PasscodeUnlockDialog` (from `@midnite/ui`) owns the keyboard; a correct code
  *   calls `onUnlock`.
  */
+/**
+ * Injected copy for the lock screen's own strings (Phase 82 E). Shell stays
+ * catalog-free — the host passes t()-derived values; every field falls back to
+ * the English default, so omitting the prop is non-breaking.
+ */
+export type LockScreenLabels = {
+  /** Dialog label while a passcode is required. */
+  locked?: string;
+  /** Dialog label for the plain screensaver (no passcode). */
+  screensaver?: string;
+  /** Bottom hint while a passcode is required. */
+  unlockHint?: string;
+  /** Bottom hint for the plain screensaver. */
+  wakeHint?: string;
+  /** Accessible name of the passcode unlock dialog (ui default when omitted). */
+  passcodeDialogLabel?: string;
+  /** Accessible name of the unlock dialog's close control (ui default when omitted). */
+  passcodeCloseLabel?: string;
+  /** Injected copy for the embedded passcode pad (ui defaults when omitted). */
+  passcode?: Partial<PasscodePadLabels>;
+};
+
+const DEFAULT_LABELS = {
+  locked: 'Locked screen',
+  screensaver: 'Screensaver',
+  unlockHint: 'press any key to unlock',
+  wakeHint: 'press any key to wake',
+} satisfies LockScreenLabels;
+
 export type LockScreenProps = {
   /** When true, a correct passcode is required to leave; else any gesture dismisses. */
   requireCode?: boolean;
@@ -32,8 +66,10 @@ export type LockScreenProps = {
   children?: ReactNode;
   /** Absolutely-positioned corner widgets (clock, telemetry) — host-provided. */
   corners?: ReactNode;
-  /** Accessible dialog label (default reflects the lock state). */
+  /** Accessible dialog label (default reflects the lock state via `labels`). */
   label?: string;
+  /** Injected copy (host-translated); fields default to the English strings. */
+  labels?: LockScreenLabels;
 };
 
 export function LockScreen({
@@ -45,7 +81,9 @@ export function LockScreen({
   children,
   corners,
   label,
+  labels,
 }: LockScreenProps) {
+  const copy = { ...DEFAULT_LABELS, ...labels };
   // The unlock prompt stays hidden until a wake gesture, so a locked screen reads
   // clean rather than nagging with an always-visible pad.
   const [unlocking, setUnlocking] = useState(false);
@@ -77,7 +115,7 @@ export function LockScreen({
   return createPortal(
     <div
       role="dialog"
-      aria-label={label ?? (requireCode ? 'Locked screen' : 'Screensaver')}
+      aria-label={label ?? (requireCode ? copy.locked : copy.screensaver)}
       onClick={dismissible ? onDismiss : !unlocking ? () => setUnlocking(true) : undefined}
       className={cn(
         'fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px]',
@@ -92,12 +130,15 @@ export function LockScreen({
       <div className="relative z-10 flex flex-col items-center">{children}</div>
 
       <p className="absolute bottom-2 z-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        {requireCode ? 'press any key to unlock' : 'press any key to wake'}
+        {requireCode ? copy.unlockHint : copy.wakeHint}
       </p>
 
       {requireCode && unlocking ? (
         <PasscodeUnlockDialog
           expected={passcode}
+          label={copy.passcodeDialogLabel}
+          closeLabel={copy.passcodeCloseLabel}
+          labels={copy.passcode}
           onUnlock={() => onUnlock?.()}
           onCancel={() => setUnlocking(false)}
         />

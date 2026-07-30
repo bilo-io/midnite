@@ -22,6 +22,7 @@ function PasscodeFields({
   invalid,
   disabled,
   autoFocus = true,
+  digitAriaLabel,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -29,6 +30,8 @@ function PasscodeFields({
   invalid?: boolean;
   disabled?: boolean;
   autoFocus?: boolean;
+  /** Accessible name of the 1-based i-th digit input. */
+  digitAriaLabel: (index: number) => string;
 }) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
   const slots = Array.from({ length: PASSCODE_LENGTH }, (_, i) => value[i] ?? '');
@@ -98,7 +101,7 @@ function PasscodeFields({
           maxLength={1}
           value={char}
           disabled={disabled}
-          aria-label={`Passcode digit ${i + 1}`}
+          aria-label={digitAriaLabel(i + 1)}
           onChange={handleChange}
           onKeyDown={(e) => handleKeyDown(e, i)}
           onPaste={handlePaste}
@@ -112,6 +115,47 @@ function PasscodeFields({
   );
 }
 
+/**
+ * Every user-facing string the passcode flow renders. All optional — the
+ * defaults are the current English copy, so existing consumers (docs, admin)
+ * keep working; app consumers pass translated values (Phase 82 Theme E).
+ */
+export type PasscodePadLabels = {
+  /** Heading in `unlock` mode. */
+  unlockTitle: string;
+  /** Heading for the first entry step in `set` mode. */
+  setTitle: string;
+  /** Heading for the confirm step in `set` mode. */
+  confirmTitle: string;
+  /** Subtitle in `unlock` mode. */
+  unlockSubtitle: string;
+  /** Subtitle for the first entry step (mention `PASSCODE_LENGTH` digits). */
+  chooseSubtitle: string;
+  /** Subtitle for the confirm step. */
+  confirmSubtitle: string;
+  /** Error shown when the unlock attempt doesn't match. */
+  incorrect: string;
+  /** Error shown when enter/confirm disagree in `set` mode. */
+  mismatch: string;
+  /** The optional Cancel control's text. */
+  cancel: string;
+  /** Accessible name of the 1-based i-th digit input. */
+  digitAriaLabel: (index: number) => string;
+};
+
+const DEFAULT_LABELS: PasscodePadLabels = {
+  unlockTitle: 'Enter passcode',
+  setTitle: 'Set a passcode',
+  confirmTitle: 'Confirm passcode',
+  unlockSubtitle: 'Enter your passcode to unlock.',
+  chooseSubtitle: `Choose a ${PASSCODE_LENGTH}-digit passcode.`,
+  confirmSubtitle: 'Enter it again to confirm.',
+  incorrect: 'Incorrect passcode.',
+  mismatch: "Those didn't match. Try again.",
+  cancel: 'Cancel',
+  digitAriaLabel: (index) => `Passcode digit ${index}`,
+};
+
 type PasscodePadProps = {
   /** `set` confirms a fresh passcode twice; `unlock` checks against `expected`. */
   mode: 'set' | 'unlock';
@@ -122,6 +166,8 @@ type PasscodePadProps = {
   /** When provided, a Cancel control is shown. */
   onCancel?: () => void;
   autoFocus?: boolean;
+  /** Copy overrides (defaults are the English strings). */
+  labels?: Partial<PasscodePadLabels>;
 };
 
 /**
@@ -129,7 +175,15 @@ type PasscodePadProps = {
  * resolves once the two match; in `unlock` mode it checks each attempt against
  * `expected`. Purely presentational chrome lives in the caller.
  */
-export function PasscodePad({ mode, expected, onSuccess, onCancel, autoFocus = true }: PasscodePadProps) {
+export function PasscodePad({
+  mode,
+  expected,
+  onSuccess,
+  onCancel,
+  autoFocus = true,
+  labels,
+}: PasscodePadProps) {
+  const copy: PasscodePadLabels = { ...DEFAULT_LABELS, ...labels };
   const [phase, setPhase] = useState<'enter' | 'confirm'>('enter');
   const [first, setFirst] = useState('');
   const [value, setValue] = useState('');
@@ -145,7 +199,7 @@ export function PasscodePad({ mode, expected, onSuccess, onCancel, autoFocus = t
   const handleComplete = (code: string) => {
     if (mode === 'unlock') {
       if (code === expected) onSuccess(code);
-      else reject('Incorrect passcode.');
+      else reject(copy.incorrect);
       return;
     }
     // mode === 'set'
@@ -161,18 +215,18 @@ export function PasscodePad({ mode, expected, onSuccess, onCancel, autoFocus = t
     } else {
       setFirst('');
       setPhase('enter');
-      reject("Those didn't match. Try again.");
+      reject(copy.mismatch);
     }
   };
 
   const title =
-    mode === 'unlock' ? 'Enter passcode' : phase === 'enter' ? 'Set a passcode' : 'Confirm passcode';
+    mode === 'unlock' ? copy.unlockTitle : phase === 'enter' ? copy.setTitle : copy.confirmTitle;
   const subtitle =
     mode === 'unlock'
-      ? 'Enter your passcode to unlock.'
+      ? copy.unlockSubtitle
       : phase === 'enter'
-        ? `Choose a ${PASSCODE_LENGTH}-digit passcode.`
-        : 'Enter it again to confirm.';
+        ? copy.chooseSubtitle
+        : copy.confirmSubtitle;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -200,6 +254,7 @@ export function PasscodePad({ mode, expected, onSuccess, onCancel, autoFocus = t
           onComplete={handleComplete}
           invalid={!!error}
           autoFocus={autoFocus}
+          digitAriaLabel={copy.digitAriaLabel}
         />
       </div>
 
@@ -215,7 +270,7 @@ export function PasscodePad({ mode, expected, onSuccess, onCancel, autoFocus = t
 
       {onCancel ? (
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
+          {copy.cancel}
         </Button>
       ) : null}
     </div>
@@ -228,10 +283,13 @@ export function PasscodePad({ mode, expected, onSuccess, onCancel, autoFocus = t
  */
 function PasscodeDialog({
   label,
+  closeLabel = 'Close',
   onCancel,
   children,
 }: {
   label: string;
+  /** Accessible name of the X control (default 'Close'). */
+  closeLabel?: string;
   onCancel: () => void;
   children: ReactNode;
 }) {
@@ -264,7 +322,7 @@ function PasscodeDialog({
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-end px-3 pt-3">
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onCancel}>
+            <Button type="button" variant="ghost" size="icon" aria-label={closeLabel} onClick={onCancel}>
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -282,13 +340,22 @@ function PasscodeDialog({
 export function PasscodeSetupDialog({
   onComplete,
   onCancel,
+  label = 'Set screensaver passcode',
+  closeLabel,
+  labels,
 }: {
   onComplete: (code: string) => void;
   onCancel: () => void;
+  /** Accessible name of the dialog (default 'Set screensaver passcode'). */
+  label?: string;
+  /** Accessible name of the X control (default 'Close'). */
+  closeLabel?: string;
+  /** Copy overrides for the embedded pad (defaults are the English strings). */
+  labels?: Partial<PasscodePadLabels>;
 }) {
   return (
-    <PasscodeDialog label="Set screensaver passcode" onCancel={onCancel}>
-      <PasscodePad mode="set" onSuccess={onComplete} />
+    <PasscodeDialog label={label} closeLabel={closeLabel} onCancel={onCancel}>
+      <PasscodePad mode="set" onSuccess={onComplete} labels={labels} />
     </PasscodeDialog>
   );
 }
@@ -302,14 +369,23 @@ export function PasscodeUnlockDialog({
   expected,
   onUnlock,
   onCancel,
+  label = 'Enter passcode to unlock',
+  closeLabel,
+  labels,
 }: {
   expected: string;
   onUnlock: () => void;
   onCancel: () => void;
+  /** Accessible name of the dialog (default 'Enter passcode to unlock'). */
+  label?: string;
+  /** Accessible name of the X control (default 'Close'). */
+  closeLabel?: string;
+  /** Copy overrides for the embedded pad (defaults are the English strings). */
+  labels?: Partial<PasscodePadLabels>;
 }) {
   return (
-    <PasscodeDialog label="Enter passcode to unlock" onCancel={onCancel}>
-      <PasscodePad mode="unlock" expected={expected} onSuccess={onUnlock} />
+    <PasscodeDialog label={label} closeLabel={closeLabel} onCancel={onCancel}>
+      <PasscodePad mode="unlock" expected={expected} onSuccess={onUnlock} labels={labels} />
     </PasscodeDialog>
   );
 }

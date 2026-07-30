@@ -6,7 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import type { NavMode } from '@midnite/shared';
 import { Collapse, cn } from '@midnite/ui';
 
-import { AppMobileNav } from './nav/mobile-nav';
+import { AppMobileNav, type AppMobileNavLabels } from './nav/mobile-nav';
 
 /**
  * The wired app shell both `web` and `admin` mount (Phase 73). It renders a
@@ -104,6 +104,14 @@ export type AppFrameProps = {
   titleBar?: ReactNode;
   /** Accessible label for the desktop rail landmark (default "Primary"). */
   navLabel?: string;
+  /**
+   * Accessible name for a collapsed section-toggle button, built from the
+   * section's label (shell is catalog-free — a Next host passes a t()-derived
+   * formatter). Defaults to the English `` `${label} section` ``.
+   */
+  sectionToggleLabel?: (sectionLabel: string) => string;
+  /** Injected copy for the mobile bottom-tab nav (host-translated); defaults to English. */
+  mobileLabels?: AppMobileNavLabels;
   className?: string;
   children: ReactNode;
 };
@@ -202,6 +210,8 @@ export function AppFrame({
   banner,
   titleBar,
   navLabel = 'Primary',
+  sectionToggleLabel = (sectionLabel) => `${sectionLabel} section`,
+  mobileLabels,
   className,
   children,
 }: AppFrameProps) {
@@ -353,7 +363,7 @@ export function AppFrame({
                     onClick={() => onToggleSection?.(sectionKey)}
                     aria-expanded={!collapsed}
                     aria-controls={bodyId}
-                    aria-label={`${label} section`}
+                    aria-label={sectionToggleLabel(label)}
                     className="group relative mt-1 flex h-5 w-9 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-accent/60 hover:text-foreground"
                   >
                     <ChevronDown
@@ -394,6 +404,7 @@ export function AppFrame({
         sheet={mobileSheet}
         unread={mobileUnread}
         onLock={onLock}
+        labels={mobileLabels}
       />
 
       <main

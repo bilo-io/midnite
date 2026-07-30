@@ -6,14 +6,51 @@ import { cn } from '../lib/cn';
 import { Button } from './button';
 import { useTheme, type ThemePreference } from '../theme/theme-context';
 
-const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
-  { value: 'light', label: 'Light', Icon: Sun },
-  { value: 'dark', label: 'Dark', Icon: Moon },
-  { value: 'system', label: 'System', Icon: Laptop },
-  { value: 'time', label: 'Time', Icon: Clock },
+/**
+ * Copy overrides for the toggle — all optional, defaulting to the current
+ * English strings so non-i18n consumers (docs, admin) are unaffected; app
+ * consumers pass translated values (Phase 82 Theme E).
+ */
+export type ThemeToggleLabels = {
+  /** Accessible name of the trigger (default 'Toggle theme'). */
+  toggle?: string;
+  /** Visible trigger text (expanded) / tooltip (collapsed) — default 'Theme'. */
+  theme?: string;
+  /** Menu option labels. */
+  light?: string;
+  dark?: string;
+  system?: string;
+  time?: string;
+};
+
+const ICONS: { value: ThemePreference; Icon: typeof Sun }[] = [
+  { value: 'light', Icon: Sun },
+  { value: 'dark', Icon: Moon },
+  { value: 'system', Icon: Laptop },
+  { value: 'time', Icon: Clock },
 ];
 
-export function ThemeToggle({ expanded }: { expanded?: boolean }) {
+const DEFAULT_OPTION_LABELS: Record<ThemePreference, string> = {
+  light: 'Light',
+  dark: 'Dark',
+  system: 'System',
+  time: 'Time',
+};
+
+export function ThemeToggle({
+  expanded,
+  labels,
+}: {
+  expanded?: boolean;
+  labels?: ThemeToggleLabels;
+}) {
+  const toggleLabel = labels?.toggle ?? 'Toggle theme';
+  const themeLabel = labels?.theme ?? 'Theme';
+  const options = ICONS.map(({ value, Icon }) => ({
+    value,
+    Icon,
+    label: labels?.[value] ?? DEFAULT_OPTION_LABELS[value],
+  }));
   const { preference, resolved, setPreference } = useTheme();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -41,21 +78,21 @@ export function ThemeToggle({ expanded }: { expanded?: boolean }) {
       {expanded ? (
         <button
           type="button"
-          aria-label="Toggle theme"
+          aria-label={toggleLabel}
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
           className="flex h-9 w-full items-center gap-3 rounded-md px-2.5 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
         >
           <TriggerIcon className="h-4 w-4 shrink-0" />
-          <span className="truncate text-sm">Theme</span>
+          <span className="truncate text-sm">{themeLabel}</span>
         </button>
       ) : (
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Toggle theme"
+          aria-label={toggleLabel}
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -68,7 +105,7 @@ export function ThemeToggle({ expanded }: { expanded?: boolean }) {
           role="tooltip"
           className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-100 group-hover:opacity-100"
         >
-          Theme
+          {themeLabel}
         </span>
       ) : null}
       {open ? (
@@ -81,7 +118,7 @@ export function ThemeToggle({ expanded }: { expanded?: boolean }) {
             expanded ? 'bottom-full left-0 mb-1 w-full' : 'bottom-0 left-full ml-2 min-w-[10rem]',
           )}
         >
-          {OPTIONS.map(({ value, label, Icon }) => {
+          {options.map(({ value, label, Icon }) => {
             const active = preference === value;
             return (
               <button

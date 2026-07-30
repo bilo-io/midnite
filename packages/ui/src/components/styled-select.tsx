@@ -107,6 +107,7 @@ export function StyledSelect<T extends string>({
   isSearchable = false,
   className,
   'aria-label': ariaLabel,
+  noOptionsLabel,
 }: {
   options: ReadonlyArray<SelectOption<T>>;
   value: T;
@@ -115,6 +116,8 @@ export function StyledSelect<T extends string>({
   isSearchable?: boolean;
   className?: string;
   'aria-label'?: string;
+  /** Empty-menu copy (default: react-select's built-in "No options"). */
+  noOptionsLabel?: string;
 }) {
   const opts: RSOption[] = options.map((o) => ({ value: o.value, label: o.label, icon: o.icon }));
   const selected = opts.find((o) => o.value === value) ?? null;
@@ -131,6 +134,7 @@ export function StyledSelect<T extends string>({
         isDisabled={disabled}
         isSearchable={isSearchable}
         aria-label={ariaLabel}
+        noOptionsMessage={noOptionsLabel ? () => noOptionsLabel : undefined}
         menuPortalTarget={PORTAL_TARGET}
         menuPosition="fixed"
         components={{ Option, SingleValue, DropdownIndicator }}
@@ -198,6 +202,8 @@ export function ModelComboSelect({
   placeholder,
   className,
   'aria-label': ariaLabel,
+  formatCreateLabel,
+  noOptionsLabel,
 }: {
   options: ReadonlyArray<ModelOpt | GroupBase<ModelOpt>>;
   value: string;
@@ -205,6 +211,10 @@ export function ModelComboSelect({
   placeholder?: string;
   className?: string;
   'aria-label'?: string;
+  /** Create-option row copy (default `Use “${input}”`). */
+  formatCreateLabel?: (input: string) => string;
+  /** Empty-menu copy (default: react-select's built-in "No options"). */
+  noOptionsLabel?: string;
 }) {
   const flat = flattenModelOptions(options);
   // Echo a custom (typed) id back as the selected value so it survives reopen.
@@ -223,7 +233,8 @@ export function ModelComboSelect({
         isClearable={false}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        formatCreateLabel={(input) => `Use “${input}”`}
+        formatCreateLabel={formatCreateLabel ?? ((input) => `Use “${input}”`)}
+        noOptionsMessage={noOptionsLabel ? () => noOptionsLabel : undefined}
         menuPortalTarget={PORTAL_TARGET}
         menuPosition="fixed"
         components={{ DropdownIndicator: ModelDropdownIndicator }}

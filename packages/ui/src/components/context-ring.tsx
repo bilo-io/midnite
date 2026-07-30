@@ -11,14 +11,27 @@ function formatTokens(n: number): string {
  * A small circular gauge of a session's context-window usage. Green/amber/red as
  * it fills; hover reveals the percentage and used/max token counts.
  */
+/**
+ * Copy overrides — optional, defaulting to the current English so non-i18n
+ * consumers are unaffected. Token figures arrive pre-formatted (e.g. "1.5k").
+ */
+export type ContextRingLabels = {
+  /** Accessible name (default `Context window ${pct}% used`). */
+  aria?: (pct: number) => string;
+  /** Hover tooltip (default `Context window · ${pct}% · ~${tokens} / ${limit} tokens`). */
+  tooltip?: (pct: number, tokens: string, limit: string) => string;
+};
+
 export function ContextRing({
   tokens,
   limit,
   className,
+  labels,
 }: {
   tokens: number;
   limit: number;
   className?: string;
+  labels?: ContextRingLabels;
 }) {
   const pct = limit > 0 ? Math.max(0, Math.min(1, tokens / limit)) : 0;
   const percentLabel = Math.round(pct * 100);
@@ -31,7 +44,9 @@ export function ContextRing({
   return (
     <span
       className={cn('group/ring relative inline-flex shrink-0', className)}
-      aria-label={`Context window ${percentLabel}% used`}
+      aria-label={
+        labels?.aria ? labels.aria(percentLabel) : `Context window ${percentLabel}% used`
+      }
     >
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
         <circle
@@ -57,7 +72,9 @@ export function ContextRing({
         role="tooltip"
         className="pointer-events-none absolute right-0 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-[11px] font-medium text-foreground opacity-0 shadow-md transition-opacity duration-100 group-hover/ring:opacity-100"
       >
-        Context window · {percentLabel}% · ~{formatTokens(tokens)} / {formatTokens(limit)} tokens
+        {labels?.tooltip
+          ? labels.tooltip(percentLabel, formatTokens(tokens), formatTokens(limit))
+          : `Context window · ${percentLabel}% · ~${formatTokens(tokens)} / ${formatTokens(limit)} tokens`}
       </span>
     </span>
   );
