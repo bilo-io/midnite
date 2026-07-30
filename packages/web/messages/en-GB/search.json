@@ -1,0 +1,75 @@
+{
+  "typeAtLeast": "Type at least {count, plural, one {# character} other {# characters}} to search.",
+  "typeMeta": {
+    "task": "Tasks",
+    "project": "Projects",
+    "memory": "Memory",
+    "note": "Notes",
+    "council": "Councils",
+    "workflow": "Workflows",
+    "milestone": "Milestones",
+    "digest": "Digests"
+  },
+  "palette": {
+    "ariaLabel": "Command palette",
+    "placeholder": "Jump to, search, or run a command…",
+    "chatPlaceholder": "Tell the board what to do…",
+    "inputAriaLabel": "Search commands and content",
+    "chatInputAriaLabel": "Chat with the board",
+    "searchingAriaLabel": "Searching",
+    "shortcutsButtonTitle": "Keyboard shortcuts (?)",
+    "resultsAriaLabel": "Results",
+    "noMatches": "No matches.",
+    "seeAllIn": "+{count} more {label} — see all in Search",
+    "sections": {
+      "recent": "Recent",
+      "commands": "Commands",
+      "navigation": "Navigation"
+    },
+    "always": {
+      "agents": "Agents",
+      "personalization": "Personalization",
+      "settings": "Settings"
+    }
+  },
+  "page": {
+    "title": "Search",
+    "description": "Full-text search across tasks, projects, memory, notes, councils & workflows.",
+    "placeholder": "Search everything",
+    "clearAriaLabel": "Clear search"
+  },
+  "results": {
+    "emptyPrompt": "Search across tasks, projects, memory, notes, councils & workflows.",
+    "searching": "Searching…",
+    "failed": "Search failed — try again.",
+    "noResultsFor": "No results for “{query}”.",
+    "resultCountFor": "{count, plural, one {# result} other {# results}} for",
+    "allTypes": "All types"
+  },
+  "shortcuts": {
+    "ariaLabel": "Keyboard shortcuts",
+    "title": "Keyboard shortcuts",
+    "then": "then",
+    "closeHint": "Press Esc to close",
+    "groups": {
+      "general": "General",
+      "navigation": "Navigation",
+      "board": "Board"
+    },
+    "items": {
+      "openPalette": "Open command palette",
+      "shortcutsHelp": "Keyboard shortcuts",
+      "newTask": "New task (when not in an input)",
+      "closeModal": "Close modal / drawer",
+      "goHome": "Go to Home",
+      "goBoard": "Go to Board",
+      "goOffice": "Go to Office",
+      "goSettings": "Go to Settings",
+      "moveFocusCards": "Move focus between cards",
+      "moveFocusColumns": "Move focus between columns",
+      "openCard": "Open focused card",
+      "markDone": "Mark focused card done",
+      "abandonCard": "Abandon focused card"
+    }
+  }
+}

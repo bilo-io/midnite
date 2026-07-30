@@ -2,23 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   Bot,
-  BrainCircuit,
-  CirclePile,
   Clock,
-  Folder,
-  ListChecks,
   LoaderCircle,
   MessageSquare,
-  Milestone,
-  Newspaper,
   Search,
   Settings,
   SlidersHorizontal,
-  StickyNote,
   Terminal,
-  Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -27,7 +20,6 @@ import {
   SEARCH_TYPES,
   type SearchResponse,
   type SearchResult,
-  type SearchType,
 } from '@midnite/shared';
 import { searchAll } from '@/lib/api';
 import { renderSnippet } from '@/lib/highlight';
@@ -35,6 +27,7 @@ import { FEATURES, isFeatureEnabled } from '@/lib/features';
 import { AppSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { usePaletteCommands, type PaletteCommand } from '@/lib/palette-commands';
+import { searchTypeMeta } from '@/lib/search-type-meta';
 import { taskModalHref } from '@/lib/task-route';
 import { KeyboardShortcutsHelp } from '@/components/keyboard-shortcuts-help';
 import { ChatBar } from '@/components/chat-bar';
@@ -74,24 +67,12 @@ function pushRecent(item: RecentItem) {
 
 type NavCommand = { href: string; label: string; hint?: string; Icon: LucideIcon };
 
-const ALWAYS_ON: NavCommand[] = [
-  { href: '/settings/agents', label: 'Agents', Icon: Bot },
-  { href: '/settings/personalization', label: 'Personalization', Icon: SlidersHorizontal },
-  { href: '/settings', label: 'Settings', Icon: Settings },
+/** Href + icon for the always-present settings shortcuts; labels come from `t()`. */
+const ALWAYS_ON: { href: string; Icon: LucideIcon }[] = [
+  { href: '/settings/agents', Icon: Bot },
+  { href: '/settings/personalization', Icon: SlidersHorizontal },
+  { href: '/settings', Icon: Settings },
 ];
-
-// ── Search result icons ───────────────────────────────────────────────────────
-
-const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
-  task: { label: 'Tasks', Icon: ListChecks },
-  project: { label: 'Projects', Icon: Folder },
-  memory: { label: 'Memory', Icon: BrainCircuit },
-  note: { label: 'Notes', Icon: StickyNote },
-  council: { label: 'Councils', Icon: CirclePile },
-  workflow: { label: 'Workflows', Icon: Workflow },
-  milestone: { label: 'Milestones', Icon: Milestone },
-  digest: { label: 'Digests', Icon: Newspaper },
-};
 
 const GROUP_CAP = 5;
 const SEARCH_LIMIT = 30;
@@ -122,6 +103,9 @@ type Section = {
  */
 export function CommandPalette() {
   const router = useRouter();
+  const t = useTranslations('search');
+  const tNav = useTranslations('nav');
+  const TYPE_META = useMemo(() => searchTypeMeta(t), [t]);
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const [open, setOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -148,12 +132,21 @@ export function CommandPalette() {
   const navCommands = useMemo<NavCommand[]>(() => {
     const pages = FEATURES.filter((f) => isFeatureEnabled(settings.features, f.key)).map((f) => ({
       href: f.href,
-      label: f.label,
+      label: tNav(`features.${f.key}`),
       hint: f.description,
       Icon: f.Icon,
     }));
-    return [...pages, ...ALWAYS_ON];
-  }, [settings.features]);
+    const alwaysOn = ALWAYS_ON.map((cmd) => ({
+      ...cmd,
+      label:
+        cmd.href === '/settings/agents'
+          ? t('palette.always.agents')
+          : cmd.href === '/settings/personalization'
+          ? t('palette.always.personalization')
+          : t('palette.always.settings'),
+    }));
+    return [...pages, ...alwaysOn];
+  }, [settings.features, t, tNav]);
 
   // Open on ⌘K / Ctrl+K, or on `midnite:open-palette` (the desktop title bar's
   // search pill, Phase 81); open help on `midnite:open-help`.
@@ -256,7 +249,7 @@ export function CommandPalette() {
     if (filteredRecent.length > 0) {
       out.push({
         key: 'recent',
-        label: 'Recent',
+        label: t('palette.sections.recent'),
         items: filteredRecent.map((item) => ({ kind: 'recent', route: item.route, item })),
         moreCount: 0,
       });
@@ -264,7 +257,7 @@ export function CommandPalette() {
     if (filteredPalette.length > 0) {
       out.push({
         key: 'commands',
-        label: 'Commands',
+        label: t('palette.sections.commands'),
         items: filteredPalette.map((cmd) => ({ kind: 'palette', cmd })),
         moreCount: 0,
       });
@@ -272,7 +265,7 @@ export function CommandPalette() {
     if (filteredNav.length > 0) {
       out.push({
         key: 'nav',
-        label: 'Navigation',
+        label: t('palette.sections.navigation'),
         items: filteredNav.map((cmd) => ({ kind: 'nav', route: cmd.href, cmd })),
         moreCount: 0,
       });
@@ -296,7 +289,7 @@ export function CommandPalette() {
       });
     }
     return out;
-  }, [filteredNav, filteredPalette, filteredRecent, results]);
+  }, [filteredNav, filteredPalette, filteredRecent, results, t, TYPE_META]);
 
   const flat = useMemo(() => sections.flatMap((s) => s.items), [sections]);
 
@@ -378,7 +371,7 @@ export function CommandPalette() {
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
-          aria-label="Command palette"
+          aria-label={t('palette.ariaLabel')}
         >
           {/* Inner surface keeps overflow-hidden so content clips to the rounded
               corners; the brand-gradient border + soft halo live on the outer
@@ -395,9 +388,9 @@ export function CommandPalette() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onInputKey}
-              placeholder={chatMode ? 'Tell the board what to do…' : 'Jump to, search, or run a command…'}
+              placeholder={chatMode ? t('palette.chatPlaceholder') : t('palette.placeholder')}
               className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-              aria-label={chatMode ? 'Chat with the board' : 'Search commands and content'}
+              aria-label={chatMode ? t('palette.chatInputAriaLabel') : t('palette.inputAriaLabel')}
               // Combobox pattern (Phase 60 I): focus stays in the input while the
               // arrow keys move the active option; SR announces it via
               // aria-activedescendant instead of moving DOM focus into the list.
@@ -412,13 +405,13 @@ export function CommandPalette() {
             {searching && (
               <LoaderCircle
                 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground"
-                aria-label="Searching"
+                aria-label={t('palette.searchingAriaLabel')}
               />
             )}
             <button
               type="button"
               onClick={() => { setOpen(false); setHelpOpen(true); }}
-              title="Keyboard shortcuts (?)"
+              title={t('palette.shortcutsButtonTitle')}
               className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground"
             >
               <kbd className="pointer-events-none inline-flex h-5 select-none items-center rounded border border-border bg-muted px-1.5 text-[10px] font-mono font-medium">
@@ -436,11 +429,11 @@ export function CommandPalette() {
             // invalid non-option child. The id stays either way so the input's
             // aria-controls always resolves (Phase 60 I).
             role={showNoMatches ? undefined : 'listbox'}
-            aria-label={showNoMatches ? undefined : 'Results'}
+            aria-label={showNoMatches ? undefined : t('palette.resultsAriaLabel')}
             className="max-h-[60vh] overflow-auto py-1"
           >
             {showNoMatches ? (
-              <li className="px-3 py-6 text-center text-sm text-muted-foreground">No matches.</li>
+              <li className="px-3 py-6 text-center text-sm text-muted-foreground">{t('palette.noMatches')}</li>
             ) : (
               sections.map((section) => (
                 <li key={section.key} role="presentation">
@@ -526,7 +519,10 @@ export function CommandPalette() {
                           }
                           className="w-full px-3 py-1.5 pl-10 text-left text-xs text-muted-foreground hover:text-foreground"
                         >
-                          +{section.moreCount} more {section.label.toLowerCase()} — see all in Search
+                          {t('palette.seeAllIn', {
+                            count: section.moreCount,
+                            label: section.label.toLowerCase(),
+                          })}
                         </button>
                       </li>
                     )}
@@ -536,7 +532,7 @@ export function CommandPalette() {
             )}
             {isShortQuery && (
               <li className="px-3 py-6 text-center text-sm text-muted-foreground">
-                Type at least {MIN_SEARCH_QUERY_LENGTH} characters to search.
+                {t('typeAtLeast', { count: MIN_SEARCH_QUERY_LENGTH })}
               </li>
             )}
           </ul>
