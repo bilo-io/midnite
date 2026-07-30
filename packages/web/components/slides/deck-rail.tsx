@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import type { Slide } from '@/lib/slides/markdown';
 
 // A windowed, animated dot track. When there are more than THRESHOLD dots we
@@ -51,6 +52,7 @@ type TrackProps = {
 };
 
 function DotTrack(p: TrackProps) {
+  const t = useTranslations('slides');
   const { orientation, count, active, size, gap } = p;
   const vertical = orientation === 'vertical';
   const windowSize = p.windowSize ?? WINDOW;
@@ -93,7 +95,7 @@ function DotTrack(p: TrackProps) {
           type="button"
           className="dchev"
           disabled={hiddenLeft === 0}
-          aria-label={`${hiddenLeft} more before`}
+          aria-label={t('rail.moreBefore', { count: hiddenLeft })}
           onClick={(e) => {
             e.stopPropagation();
             p.onPage(-1);
@@ -121,7 +123,7 @@ function DotTrack(p: TrackProps) {
           type="button"
           className="dchev"
           disabled={hiddenRight === 0}
-          aria-label={`${hiddenRight} more after`}
+          aria-label={t('rail.moreAfter', { count: hiddenRight })}
           onClick={(e) => {
             e.stopPropagation();
             p.onPage(1);
@@ -146,11 +148,12 @@ export function DeckRail({
   reveal: number;
   jump: (i: number, stepCount: number) => void;
 }) {
+  const t = useTranslations('slides');
   const steps = slides[index]?.steps.length ?? 0;
   const stepFocus = Math.max(0, reveal - 1);
 
   return (
-    <nav className="rail" aria-label="Slide navigation" onClick={(e) => e.stopPropagation()}>
+    <nav className="rail" aria-label={t('rail.navLabel')} onClick={(e) => e.stopPropagation()}>
       <DotTrack
         orientation="vertical"
         count={slides.length}
@@ -158,7 +161,7 @@ export function DeckRail({
         size={10}
         gap={16}
         dotClass={(i) => `sec${i === index ? ' active' : ''}${i < index ? ' seen' : ''}`}
-        label={(i) => `Slide ${i + 1}: ${slides[i]?.title ?? ''}`}
+        label={(i) => t('rail.slideLabel', { number: i + 1, title: slides[i]?.title ?? '' })}
         onSelect={(i) => jump(i, 0)}
         onPage={(dir) => jump(Math.max(0, Math.min(slides.length - 1, index + dir * WINDOW)), 0)}
         renderSide={(i) =>
@@ -173,7 +176,7 @@ export function DeckRail({
                 windowSize={7}
                 threshold={7}
                 dotClass={(j) => `sub${j < reveal ? ' filled' : ''}`}
-                label={(j) => `Slide ${index + 1}, step ${j + 1}`}
+                label={(j) => t('rail.stepLabel', { number: index + 1, step: j + 1 })}
                 onSelect={(j) => jump(index, j + 1)}
                 onPage={(dir) => jump(index, Math.max(0, Math.min(steps, reveal + dir * 7)))}
               />

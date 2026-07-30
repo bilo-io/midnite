@@ -13,13 +13,17 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/slides',
 }));
 
-function renderView(projects: Parameters<typeof SlidesView>[0]['projects'] = []) {
+function renderView(
+  projects: Parameters<typeof SlidesView>[0]['projects'] = [],
+  locale?: 'fr-FR',
+) {
   render(
     <ToastProvider>
       <ConfirmProvider>
         <SlidesView projects={projects} />
       </ConfirmProvider>
     </ToastProvider>,
+    locale ? { locale } : undefined,
   );
 }
 
@@ -85,5 +89,13 @@ describe('SlidesView', () => {
     renderView();
 
     expect(await screen.findByText(/no decks yet/i)).toBeInTheDocument();
+  });
+
+  it('renders the French copy under fr-FR (Phase 82 D)', () => {
+    createDeck({ markdown: '# Revue', title: 'Revue' });
+    renderView([], 'fr-FR');
+
+    expect(screen.getByRole('link', { name: 'Nouveau diaporama' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Rechercher des diaporamas')).toBeInTheDocument();
   });
 });

@@ -1,15 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, Sparkles, X } from 'lucide-react';
 import type { Breakdown } from '@midnite/shared';
 import { createTasksFromBreakdown, draftBreakdownFromGoal } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { BreakdownEditor } from '@/components/breakdown-editor';
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
 
 type Props = {
   projectId: string;
@@ -27,6 +24,9 @@ type Props = {
  * assigned to this milestone (`create-from-breakdown` with `milestoneId`).
  */
 export function MilestoneBreakdownModal({ projectId, milestoneId, milestoneName, onSeeded, onClose }: Props) {
+  const t = useTranslations('roadmap.breakdown');
+  const tCommon = useTranslations('common');
+  const errMsg = (e: unknown): string => (e instanceof Error ? e.message : t('genericError'));
   const [goal, setGoal] = useState('');
   const [breakdown, setBreakdown] = useState<Breakdown | null>(null);
   const [isFallback, setIsFallback] = useState(false);
@@ -81,14 +81,14 @@ export function MilestoneBreakdownModal({ projectId, milestoneId, milestoneName,
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Generate tasks for ${milestoneName}`}
+          aria-label={t('dialogAria', { name: milestoneName })}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">Generate tasks — {milestoneName}</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{t('title', { name: milestoneName })}</h2>
+            <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -97,14 +97,14 @@ export function MilestoneBreakdownModal({ projectId, milestoneId, milestoneName,
             {!breakdown ? (
               <div className="space-y-3">
                 <label htmlFor="milestone-goal" className="block text-sm text-muted-foreground">
-                  Describe what this milestone should accomplish — the planner drafts a dependency-aware task list you can edit before it lands.
+                  {t('goalLabel')}
                 </label>
                 <textarea
                   id="milestone-goal"
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   rows={4}
-                  placeholder="e.g. Ship the public API: auth, rate limiting, docs, and a client SDK"
+                  placeholder={t('goalPlaceholder')}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
                 {error ? (
@@ -117,7 +117,7 @@ export function MilestoneBreakdownModal({ projectId, milestoneId, milestoneName,
               <div className="space-y-3">
                 {isFallback ? (
                   <p className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                    Drafted without the planning model — edit freely before creating.
+                    {t('fallbackNotice')}
                   </p>
                 ) : null}
                 <BreakdownEditor breakdown={breakdown} onChange={setBreakdown} />
@@ -132,17 +132,17 @@ export function MilestoneBreakdownModal({ projectId, milestoneId, milestoneName,
 
           <footer className="flex items-center justify-end gap-2 border-t border-border/60 px-5 py-3">
             <Button type="button" variant="ghost" onClick={onClose}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             {!breakdown ? (
               <Button type="button" onClick={() => void draft()} disabled={drafting || !goal.trim()}>
                 {drafting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Draft tasks
+                {t('draftTasks')}
               </Button>
             ) : (
               <Button type="button" onClick={() => void confirm()} disabled={seeding || taskCount === 0}>
                 {seeding ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Create {taskCount} task{taskCount === 1 ? '' : 's'}
+                {t('createTasks', { count: taskCount })}
               </Button>
             )}
           </footer>

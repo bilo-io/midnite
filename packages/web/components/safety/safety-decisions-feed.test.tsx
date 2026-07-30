@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import type { ApprovalLogEntry } from '@midnite/shared';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const listApprovalLog = vi.fn();
 vi.mock('@/lib/api', () => ({ listApprovalLog: (...a: unknown[]) => listApprovalLog(...a) }));

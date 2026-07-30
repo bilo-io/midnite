@@ -150,6 +150,31 @@
   "roadmapGraph": {
     "loading": "Chargement de la feuille de route…",
     "noMilestones": "Pas encore de jalons — ajoutez-en un sur le tableau pour le voir ici.",
-    "noTasks": "Pas encore de tâches"
+    "noTasks": "Pas encore de tâches",
+    "renameAria": "Renommer {name}",
+    "removeTaskAria": "Retirer {task} de {name}",
+    "addTaskPlaceholder": "+ Ajouter une tâche…",
+    "addTaskAria": "Ajouter une tâche à {name}",
+    "toasts": {
+      "renameFailed": "Échec du renommage du jalon",
+      "removeTaskFailed": "Échec du retrait de la tâche",
+      "addTaskFailed": "Échec de l'ajout de la tâche"
+    }
+  },
+  "graph": {
+    "ready": "Prête",
+    "otherProject": "Autre projet",
+    "blockedBy": "Bloquée par {count}",
+    "filterByProject": "Filtrer le graphe par projet",
+    "summary": "{tasks, plural, one {# tâche} other {# tâches}} · {dependencies, plural, one {# dépendance} other {# dépendances}}",
+    "milestoneFilter": "Filtre par jalon",
+    "clearMilestoneFilter": "Effacer le filtre par jalon",
+    "truncated": "Affichage des {shown} premières tâches sur {total}. Choisissez un projet ci-dessus pour restreindre le graphe.",
+    "empty": "Pas encore de tâches à représenter.",
+    "emptyScoped": "Pas encore de tâches à représenter pour ce périmètre.",
+    "toasts": {
+      "addDependencyFailed": "Échec de l'ajout de la dépendance",
+      "removeDependencyFailed": "Échec de la suppression de la dépendance"
+    }
   }
 }

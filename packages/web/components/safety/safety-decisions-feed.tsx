@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { ApprovalLogEntry } from '@midnite/shared';
 import { listApprovalLog } from '@/lib/api';
 import { useGuardrailsListener } from '@/lib/task-events';
@@ -22,6 +23,7 @@ function resolutionClass(resolution: string): string {
  * emergency-stop / rule change reflects promptly without a poll.
  */
 export function SafetyDecisionsFeed({ limit = 20 }: { limit?: number }) {
+  const t = useTranslations('safety');
   const [entries, setEntries] = useState<ApprovalLogEntry[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -38,9 +40,9 @@ export function SafetyDecisionsFeed({ limit = 20 }: { limit?: number }) {
   // A guardrail change (pause/kill/mode/rule) may add decisions — refresh.
   useGuardrailsListener(useCallback(() => load(), [load]));
 
-  if (state === 'loading') return <p className="text-sm text-muted-foreground">Loading decisions…</p>;
-  if (state === 'error') return <p className="text-sm text-muted-foreground">Couldn’t load recent decisions.</p>;
-  if (entries.length === 0) return <p className="text-sm text-muted-foreground">No decisions recorded yet.</p>;
+  if (state === 'loading') return <p className="text-sm text-muted-foreground">{t('decisions.loading')}</p>;
+  if (state === 'error') return <p className="text-sm text-muted-foreground">{t('decisions.loadError')}</p>;
+  if (entries.length === 0) return <p className="text-sm text-muted-foreground">{t('decisions.empty')}</p>;
 
   return (
     <ul className="divide-y divide-border/60">

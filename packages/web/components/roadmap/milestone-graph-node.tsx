@@ -88,7 +88,7 @@ export function MilestoneGraphNode({ data }: NodeProps) {
                 setEditing(false);
               }
             }}
-            aria-label={`Rename ${node.name}`}
+            aria-label={t('roadmapGraph.renameAria', { name: node.name })}
             className="h-6 min-w-0 flex-1 rounded border border-border bg-background px-1.5 text-sm outline-none"
           />
         ) : (
@@ -132,7 +132,7 @@ export function MilestoneGraphNode({ data }: NodeProps) {
                 </button>
                 <button
                   type="button"
-                  aria-label={`Remove ${task.title} from ${node.name}`}
+                  aria-label={t('roadmapGraph.removeTaskAria', { task: task.title, name: node.name })}
                   className={cn(
                     'shrink-0 rounded p-0.5 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100',
                     'focus-visible:opacity-100',
@@ -155,8 +155,8 @@ export function MilestoneGraphNode({ data }: NodeProps) {
               if (e.key === 'Enter') commitAdd();
               if (e.key === 'Escape') setAdding('');
             }}
-            placeholder="+ Add task…"
-            aria-label={`Add task to ${node.name}`}
+            placeholder={t('roadmapGraph.addTaskPlaceholder')}
+            aria-label={t('roadmapGraph.addTaskAria', { name: node.name })}
             className="mt-0.5 w-full rounded border border-transparent bg-transparent px-1.5 py-1 text-xs text-muted-foreground outline-none focus:border-border focus:bg-background"
           />
         </div>

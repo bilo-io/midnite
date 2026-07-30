@@ -3,10 +3,12 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { getDeckBySlug, type DeckDetail } from '@/lib/slides/store';
 import { Deck } from '@/components/slides/deck';
 
 function Present() {
+  const t = useTranslations('slides');
   const params = useSearchParams();
   const slug = params.get('slug') ?? '';
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
@@ -24,8 +26,8 @@ function Present() {
   }, [slug]);
 
   useEffect(() => {
-    if (deck) document.title = `${deck.title} · Slides`;
-  }, [deck]);
+    if (deck) document.title = t('present.documentTitle', { title: deck.title });
+  }, [deck, t]);
 
   if (state === 'loading') return <div className="fixed inset-0 z-50 bg-background" />;
 
@@ -33,9 +35,9 @@ function Present() {
     return (
       <div className="fixed inset-0 z-50 grid place-items-center bg-background p-6 text-center text-sm text-muted-foreground">
         <div>
-          <p>Deck not found in this browser.</p>
+          <p>{t('notFound.message')}</p>
           <Link href="/slides" className="mt-2 inline-block underline">
-            Back to decks
+            {t('notFound.back')}
           </Link>
         </div>
       </div>

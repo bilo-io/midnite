@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,8 @@ type Props = {
 };
 
 export function DeckEditor({ initial, projects = [] }: Props) {
+  const t = useTranslations('slides');
+  const tc = useTranslations('common');
   const router = useRouter();
   const toast = useToast();
   const editing = !!initial;
@@ -65,7 +68,7 @@ export function DeckEditor({ initial, projects = [] }: Props) {
       router.push(`/slides/present?slug=${encodeURIComponent(slug)}`);
     } catch (err) {
       setPending(false);
-      toast.error(err instanceof Error ? err.message : 'Failed to save deck');
+      toast.error(err instanceof Error ? err.message : t('editor.saveFailed'));
     }
   }
 
@@ -75,8 +78,8 @@ export function DeckEditor({ initial, projects = [] }: Props) {
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Deck title (optional — defaults to the first # heading)"
-          aria-label="Deck title"
+          placeholder={t('editor.titlePlaceholder')}
+          aria-label={t('editor.titleLabel')}
           className="min-w-[200px] flex-1"
         />
         {projects.length > 0 && (
@@ -85,7 +88,7 @@ export function DeckEditor({ initial, projects = [] }: Props) {
             value={projectId}
             onChange={setProjectId}
             align="right"
-            placeholder="No project"
+            placeholder={t('editor.noProject')}
           />
         )}
       </div>
@@ -100,22 +103,22 @@ export function DeckEditor({ initial, projects = [] }: Props) {
 
       <div className="space-y-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">Markdown</span>
+          <span className="text-sm font-medium text-foreground">{t('editor.markdown')}</span>
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
             className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <Upload className="h-3.5 w-3.5" />
-            Upload .md
+            {t('editor.upload')}
           </button>
         </div>
         <DeckSourceEditor
           value={md}
           onChange={setMd}
           minHeight={360}
-          ariaLabel="Deck markdown source"
-          emptyPreviewMessage="Nothing to preview yet."
+          ariaLabel={t('editor.sourceLabel')}
+          emptyPreviewMessage={t('editor.emptyPreview')}
         />
       </div>
 
@@ -123,7 +126,7 @@ export function DeckEditor({ initial, projects = [] }: Props) {
         <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
           <span>
             <strong className="text-foreground">{parsed.slides.length}</strong>{' '}
-            {parsed.slides.length === 1 ? 'slide' : 'slides'}
+            {t('editor.slideWord', { count: parsed.slides.length })}
           </span>
           {parsed.slides.map((s, i) => (
             <span
@@ -137,11 +140,11 @@ export function DeckEditor({ initial, projects = [] }: Props) {
         <Button type="submit" size="sm" disabled={empty || pending}>
           {pending
             ? editing
-              ? 'Saving…'
-              : 'Creating…'
+              ? tc('saving')
+              : t('editor.creating')
             : editing
-              ? 'Save changes'
-              : 'Create deck'}
+              ? t('editor.saveChanges')
+              : t('editor.createDeck')}
         </Button>
       </div>
     </form>

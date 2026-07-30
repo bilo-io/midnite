@@ -14,6 +14,7 @@ import {
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import type { RoadmapView, TaskSummary } from '@midnite/shared';
 import {
@@ -49,6 +50,7 @@ type Props = {
  * with rollback on error; the reliable task channel (Phase 56) keeps it live.
  */
 export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
+  const t = useTranslations('roadmap.board');
   const toast = useToast();
   const confirm = useConfirm();
   const router = useRouter();
@@ -125,7 +127,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
           await reorderMilestones(projectId, nextOrder);
         } catch (err) {
           setView(prev);
-          toast.error(err instanceof Error ? err.message : 'Failed to reorder milestones');
+          toast.error(err instanceof Error ? err.message : t('toasts.reorderMilestonesFailed'));
         }
         return;
       }
@@ -146,7 +148,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
           await assignTaskMilestone(taskId, targetMilestoneId);
         } catch (err) {
           setView(prev);
-          toast.error(err instanceof Error ? err.message : 'Failed to assign task');
+          toast.error(err instanceof Error ? err.message : t('toasts.assignFailed'));
         }
         return;
       }
@@ -168,7 +170,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
             await assignTaskMilestone(taskId, targetMilestoneId);
           } catch (err) {
             setView(prev);
-            toast.error(err instanceof Error ? err.message : 'Failed to assign task');
+            toast.error(err instanceof Error ? err.message : t('toasts.assignFailed'));
           }
           return;
         }
@@ -189,11 +191,11 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
           await reorderMilestoneTasks(sourceLaneId, orderedIds);
         } catch (err) {
           setView(prev);
-          toast.error(err instanceof Error ? err.message : 'Failed to reorder tasks');
+          toast.error(err instanceof Error ? err.message : t('toasts.reorderTasksFailed'));
         }
       }
     },
-    [view, laneIds, projectId, toast],
+    [view, laneIds, projectId, toast, t],
   );
 
   const onAdd = useCallback(async () => {
@@ -208,9 +210,9 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
       await createMilestone(projectId, { name });
       invalidateData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create milestone');
+      toast.error(err instanceof Error ? err.message : t('toasts.createFailed'));
     }
-  }, [newName, projectId, toast]);
+  }, [newName, projectId, toast, t]);
 
   const onRename = useCallback(
     async (id: string, name: string) => {
@@ -218,18 +220,18 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
         await updateMilestone(id, { name });
         invalidateData();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to rename milestone');
+        toast.error(err instanceof Error ? err.message : t('toasts.renameFailed'));
       }
     },
-    [toast],
+    [toast, t],
   );
 
   const onDelete = useCallback(
     async (id: string) => {
       const ok = await confirm({
-        title: 'Delete milestone?',
-        description: 'Its tasks are moved back to the backlog — they are not deleted.',
-        confirmLabel: 'Delete',
+        title: t('confirmDelete.title'),
+        description: t('confirmDelete.description'),
+        confirmLabel: t('confirmDelete.confirm'),
         tone: 'danger',
       });
       if (!ok) return;
@@ -237,16 +239,16 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
         await deleteMilestone(id);
         invalidateData();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to delete milestone');
+        toast.error(err instanceof Error ? err.message : t('toasts.deleteFailed'));
       }
     },
-    [confirm, toast],
+    [confirm, toast, t],
   );
 
   if (!view) {
     return (
       <p className="p-8 text-center text-sm text-muted-foreground">
-        {loading ? 'Loading roadmap…' : 'No roadmap yet.'}
+        {loading ? t('loading') : t('empty')}
       </p>
     );
   }
@@ -275,7 +277,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
         <RoadmapLane
           lane={{
             id: BACKLOG_LANE_ID,
-            name: 'Backlog',
+            name: t('backlog'),
             done: view.backlog.filter((t) => t.status === 'done').length,
             total: view.backlog.length,
             tasks: view.backlog,
@@ -300,22 +302,20 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
                   setAdding(false);
                 }
               }}
-              placeholder="Milestone name…"
-              aria-label="New milestone name"
+              placeholder={t('milestoneNamePlaceholder')}
+              aria-label={t('newMilestoneNameAria')}
               className="h-9"
             />
           ) : (
             <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => setAdding(true)}>
-              <Plus className="h-4 w-4" /> Add milestone
+              <Plus className="h-4 w-4" /> {t('addMilestone')}
             </Button>
           )}
         </div>
       </div>
 
       {empty ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          No milestones yet — add one to group this project&apos;s tasks into a plan.
-        </p>
+        <p className="mt-4 text-sm text-muted-foreground">{t('noMilestones')}</p>
       ) : null}
 
       {typeof document !== 'undefined'
@@ -337,7 +337,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
           milestoneId={seeding.id}
           milestoneName={seeding.name}
           onSeeded={(count) => {
-            if (count > 0) toast.success(`Created ${count} task${count === 1 ? '' : 's'} in ${seeding.name}`);
+            if (count > 0) toast.success(t('seededToast', { count, name: seeding.name }));
             invalidateData();
           }}
           onClose={() => setSeeding(null)}

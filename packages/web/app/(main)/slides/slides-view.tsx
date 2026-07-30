@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, Plus, Presentation, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Project } from '@midnite/shared';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { CountPill } from '@/components/count-pill';
@@ -27,25 +28,20 @@ import { useProjectFilterStore } from '@/lib/project-filter-store';
 import { cn } from '@/lib/utils';
 
 type View = 'grid' | 'list';
-const VIEW_OPTIONS: Array<{ value: View; label: string; Icon: LucideIcon }> = [
-  { value: 'grid', label: 'Grid view', Icon: LayoutGrid },
-  { value: 'list', label: 'List view', Icon: List },
+const VIEW_OPTIONS: Array<{ value: View; Icon: LucideIcon }> = [
+  { value: 'grid', Icon: LayoutGrid },
+  { value: 'list', Icon: List },
 ];
 
 type Sort = 'recent' | 'oldest' | 'title' | 'title-desc' | 'updated' | 'count';
-const SORT_OPTIONS: ReadonlyArray<{ value: Sort; label: string }> = [
-  { value: 'recent', label: 'Most recent' },
-  { value: 'oldest', label: 'Oldest first' },
-  { value: 'title', label: 'Title A–Z' },
-  { value: 'title-desc', label: 'Title Z–A' },
-  { value: 'updated', label: 'Recently updated' },
-  { value: 'count', label: 'Most slides' },
-];
+const SORT_VALUES: readonly Sort[] = ['recent', 'oldest', 'title', 'title-desc', 'updated', 'count'];
 
 // Special project-filter value matching decks with no project assigned.
 const UNASSIGNED = 'none';
 
 export function SlidesView({ projects = [] }: { projects?: Project[] }) {
+  const t = useTranslations('slides');
+  const tc = useTranslations('common');
   const { decks, hydrated, refresh } = useDecks();
   const [view, setView] = useLocalStorage<View>('midnite.slides.view', 'grid');
   const [sort, setSort] = useLocalStorage<Sort>('midnite.slides.sort', 'recent');
@@ -119,29 +115,29 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
   const duplicateSelection = useCallback(() => {
     if (selectedIds.length === 0) return;
     selectedIds.forEach((slug) => duplicateDeck(slug));
-    toast.success(`${selectedIds.length} deck${selectedIds.length === 1 ? '' : 's'} duplicated`);
+    toast.success(t('list.bulk.duplicated', { count: selectedIds.length }));
     clearSelection();
     refresh();
-  }, [selectedIds, toast, clearSelection, refresh]);
+  }, [selectedIds, toast, clearSelection, refresh, t]);
 
   const deleteSelection = useCallback(async () => {
     const slugs = [...selectedIds];
     if (slugs.length === 0) return;
     const ok = await confirm({
-      title: `Delete ${slugs.length} deck${slugs.length === 1 ? '' : 's'}?`,
-      description: 'This permanently deletes the decks and all their slides. This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('list.bulk.deleteTitle', { count: slugs.length }),
+      description: t('list.bulk.deleteDescription'),
+      confirmLabel: tc('delete'),
     });
     if (!ok) return;
     slugs.forEach((slug) => deleteDeck(slug));
-    toast.success(`${slugs.length} deck${slugs.length === 1 ? '' : 's'} deleted`);
+    toast.success(t('list.bulk.deleted', { count: slugs.length }));
     clearSelection();
     refresh();
-  }, [selectedIds, confirm, toast, clearSelection, refresh]);
+  }, [selectedIds, confirm, toast, clearSelection, refresh, t, tc]);
 
   const bulkActions: BulkAction[] = [
-    { key: 'duplicate', label: 'Duplicate', color: BULK_COLORS.neutral, onClick: duplicateSelection },
-    { key: 'delete', label: 'Delete', color: BULK_COLORS.delete, onClick: () => void deleteSelection() },
+    { key: 'duplicate', label: t('list.bulk.duplicate'), color: BULK_COLORS.neutral, onClick: duplicateSelection },
+    { key: 'delete', label: tc('delete'), color: BULK_COLORS.delete, onClick: () => void deleteSelection() },
   ];
 
   // Avoid flashing the empty state before localStorage has been read.
@@ -151,12 +147,12 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
     return (
       <EmptyState
         Icon={Presentation}
-        title="No decks yet"
-        description="Create a deck by pasting Markdown — headings become slides and each point types itself in as you present."
+        title={t('list.empty.title')}
+        description={t('list.empty.description')}
         action={
           <Link href="/slides/new" className={cn(buttonVariants({ size: 'sm' }))}>
             <Plus className="h-4 w-4" />
-            New deck
+            {t('list.newDeck')}
           </Link>
         }
       />
@@ -170,23 +166,23 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
       <StickyToolbar>
         <div className="flex flex-wrap items-center gap-2">
           <SortSelect<Sort>
-            options={SORT_OPTIONS}
+            options={SORT_VALUES.map((value) => ({ value, label: t(`list.sort.${value}`) }))}
             value={sort}
             onChange={setSort}
-            aria-label="Sort decks"
+            aria-label={t('list.sortLabel')}
           />
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <SearchBar placeholder="Search decks" />
+          <SearchBar placeholder={t('list.searchPlaceholder')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-            {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+            {VIEW_OPTIONS.map(({ value, Icon }) => (
               <Button
                 key={value}
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={label}
+                aria-label={t(`list.view.${value}`)}
                 aria-pressed={view === value}
                 onClick={() => setView(value)}
                 className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
@@ -197,7 +193,7 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
           </div>
           <Link href="/slides/new" className={cn(buttonVariants({ size: 'sm' }))}>
             <Plus className="h-4 w-4" />
-            New deck
+            {t('list.newDeck')}
           </Link>
         </div>
       </StickyToolbar>
@@ -207,13 +203,13 @@ export function SlidesView({ projects = [] }: { projects?: Project[] }) {
       <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
         <CountPill count={decks.length} />
         {filtering && filtered.length !== decks.length ? (
-          <span>· {filtered.length} matching</span>
+          <span>· {t('list.matching', { count: filtered.length })}</span>
         ) : null}
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/60 bg-card/20 px-6 py-12 text-center text-sm text-muted-foreground">
-          No decks match the current filters.
+          {t('list.noMatches')}
         </div>
       ) : view === 'list' ? (
         <ProjectGroupedDecks
@@ -260,7 +256,8 @@ function ProjectGroupedDecks({
   isSelected: (slug: string) => boolean;
   onToggleSelect: (slug: string, shiftKey: boolean) => void;
 }) {
-  const groups = groupDecksByProject(decks, projects, 'Unassigned');
+  const t = useTranslations('slides');
+  const groups = groupDecksByProject(decks, projects, t('list.unassigned'));
 
   const sections: AccordionSection[] = groups.map((g) => ({
     id: g.key,
@@ -274,7 +271,7 @@ function ProjectGroupedDecks({
     color: g.color,
     leading: g.projectId && g.tag ? <ProjectTag tag={g.tag} color={g.color ?? '#94a3b8'} /> : undefined,
     count: g.decks.length,
-    summary: `${g.decks.length} deck${g.decks.length === 1 ? '' : 's'}`,
+    summary: t('list.groupSummary', { count: g.decks.length }),
     body: (
       <div className="flex flex-col gap-2 pt-1">
         {g.decks.map((deck) => (

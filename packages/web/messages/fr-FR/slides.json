@@ -1,0 +1,114 @@
+{
+  "list": {
+    "title": "Diapositives",
+    "description": "Collez du Markdown pour créer un diaporama, puis présentez-le avec des apparitions façon machine à écrire — stocké dans ce navigateur.",
+    "newDeck": "Nouveau diaporama",
+    "searchPlaceholder": "Rechercher des diaporamas",
+    "sortLabel": "Trier les diaporamas",
+    "view": {
+      "grid": "Vue grille",
+      "list": "Vue liste"
+    },
+    "sort": {
+      "recent": "Plus récents",
+      "oldest": "Plus anciens d’abord",
+      "title": "Titre A–Z",
+      "title-desc": "Titre Z–A",
+      "updated": "Modifiés récemment",
+      "count": "Plus de diapositives"
+    },
+    "matching": "{count} correspondants",
+    "noMatches": "Aucun diaporama ne correspond aux filtres actuels.",
+    "empty": {
+      "title": "Aucun diaporama pour l’instant",
+      "description": "Créez un diaporama en collant du Markdown — les titres deviennent des diapositives et chaque point s’affiche en se tapant à l’écran pendant la présentation."
+    },
+    "bulk": {
+      "duplicate": "Dupliquer",
+      "duplicated": "{count, plural, one {# diaporama dupliqué} other {# diaporamas dupliqués}}",
+      "deleted": "{count, plural, one {# diaporama supprimé} other {# diaporamas supprimés}}",
+      "deleteTitle": "{count, plural, one {Supprimer # diaporama ?} other {Supprimer # diaporamas ?}}",
+      "deleteDescription": "Cette action supprime définitivement les diaporamas et toutes leurs diapositives. Elle est irréversible."
+    },
+    "unassigned": "Sans projet",
+    "groupSummary": "{count, plural, one {# diaporama} other {# diaporamas}}"
+  },
+  "new": {
+    "title": "Nouveau diaporama",
+    "description": "Collez du Markdown — le premier # sert de couverture, chaque ## ouvre une diapositive et chaque point devient une apparition."
+  },
+  "edit": {
+    "title": "Modifier le diaporama",
+    "description": "Mettez à jour le Markdown — le lien du diaporama reste le même."
+  },
+  "notFound": {
+    "message": "Diaporama introuvable dans ce navigateur.",
+    "back": "Retour aux diaporamas"
+  },
+  "card": {
+    "slideCount": "{count, plural, one {# diapositive} other {# diapositives}}",
+    "present": "Présenter {title}",
+    "edit": "Modifier « {title} »",
+    "editTitle": "Modifier le diaporama",
+    "duplicate": "Dupliquer « {title} »",
+    "duplicateTitle": "Dupliquer le diaporama",
+    "copyLink": "Copier le lien vers « {title} »",
+    "copyLinkTitle": "Copier le lien du diaporama",
+    "linkCopied": "Lien copié",
+    "download": "Télécharger « {title} » en fichier HTML hors ligne",
+    "downloadTitle": "Télécharger une copie hors ligne (.html)",
+    "delete": "Supprimer « {title} »",
+    "deleteTitle": "Supprimer le diaporama",
+    "deleteConfirmTitle": "Supprimer « {title} » ?",
+    "deleteConfirmDescription": "Cette action supprime définitivement le diaporama et toutes ses diapositives. Elle est irréversible.",
+    "duplicated": "Diaporama dupliqué",
+    "deleted": "Diaporama supprimé"
+  },
+  "editor": {
+    "titlePlaceholder": "Titre du diaporama (facultatif — par défaut, le premier titre #)",
+    "titleLabel": "Titre du diaporama",
+    "noProject": "Aucun projet",
+    "markdown": "Markdown",
+    "upload": "Importer un .md",
+    "sourceLabel": "Source Markdown du diaporama",
+    "emptyPreview": "Rien à prévisualiser pour l’instant.",
+    "slideWord": "{count, plural, one {diapositive} other {diapositives}}",
+    "creating": "Création…",
+    "saveChanges": "Enregistrer les modifications",
+    "createDeck": "Créer le diaporama",
+    "saveFailed": "Échec de l’enregistrement du diaporama",
+    "resizePanels": "Redimensionner les panneaux de l’éditeur"
+  },
+  "rail": {
+    "navLabel": "Navigation des diapositives",
+    "slideLabel": "Diapositive {number} : {title}",
+    "stepLabel": "Diapositive {number}, étape {step}",
+    "moreBefore": "{count} de plus avant",
+    "moreAfter": "{count} de plus après"
+  },
+  "present": {
+    "documentTitle": "{title} · Diapositives",
+    "fullscreen": "Basculer le plein écran",
+    "fullscreenTitle": "Plein écran (F)",
+    "exit": "Quitter la présentation",
+    "exitTitle": "Quitter (Échap)",
+    "hint": "Appuyez sur <kbd>→</kbd> / <kbd>Espace</kbd> pour avancer · <kbd>←</kbd> pour revenir · <kbd>F</kbd> plein écran · <kbd>?</kbd> raccourcis",
+    "help": {
+      "title": "Raccourcis clavier",
+      "keys": {
+        "next": "→ / Espace / Entrée",
+        "prev": "← / Retour arrière",
+        "firstLast": "Début / Fin",
+        "fullscreen": "F",
+        "exit": "Échap",
+        "help": "?"
+      },
+      "next": "Étape ou diapositive suivante",
+      "prev": "Étape ou diapositive précédente",
+      "firstLast": "Première / dernière diapositive",
+      "fullscreen": "Basculer le plein écran",
+      "exit": "Retour à tous les diaporamas",
+      "help": "Afficher ou masquer cette aide"
+    }
+  }
+}

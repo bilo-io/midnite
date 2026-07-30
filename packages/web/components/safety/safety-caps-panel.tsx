@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { GuardrailCaps } from '@midnite/shared';
 import { getGuardrailCaps } from '@/lib/api';
 
-function money(v: number | null): string {
-  return v == null ? 'unset' : `$${v}`;
+function money(v: number | null, unset: string): string {
+  return v == null ? unset : `$${v}`;
 }
 
 /** A read-only key/value row; a null/"unset" value is dimmed. */
@@ -38,6 +39,7 @@ function Chips({ items, empty }: { items: string[]; empty: string }) {
  * editable through the API), so the panel shows what's in effect and says so.
  */
 export function SafetyCapsPanel() {
+  const t = useTranslations('safety');
   const [caps, setCaps] = useState<GuardrailCaps | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -55,50 +57,67 @@ export function SafetyCapsPanel() {
     };
   }, []);
 
-  if (state === 'loading') return <p className="text-sm text-muted-foreground">Loading caps…</p>;
+  if (state === 'loading') return <p className="text-sm text-muted-foreground">{t('caps.loading')}</p>;
   if (state === 'error' || !caps) {
-    return <p className="text-sm text-muted-foreground">Couldn’t load the configured caps.</p>;
+    return <p className="text-sm text-muted-foreground">{t('caps.loadError')}</p>;
   }
 
-  const rate = caps.maxSpawnsPerHour > 0 ? `${caps.maxSpawnsPerHour}/hour` : 'unlimited';
+  const unset = t('caps.unset');
+  const rate = caps.maxSpawnsPerHour > 0 ? t('caps.perHour', { count: caps.maxSpawnsPerHour }) : t('caps.unlimited');
 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Spend &amp; rate caps</h3>
+        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('caps.spendRateHeading')}</h3>
         <div className="mt-1 divide-y divide-border/60">
-          <Row label="Hard daily cap (blocks spawns)" value={money(caps.hardDailyCapUsd)} muted={caps.hardDailyCapUsd == null} />
-          <Row label="Hard monthly cap (blocks spawns)" value={money(caps.hardMonthlyCapUsd)} muted={caps.hardMonthlyCapUsd == null} />
-          <Row label="Soft daily budget (warn only)" value={money(caps.softDailyBudgetUsd)} muted={caps.softDailyBudgetUsd == null} />
-          <Row label="Soft monthly budget (warn only)" value={money(caps.softMonthlyBudgetUsd)} muted={caps.softMonthlyBudgetUsd == null} />
-          <Row label="Max spawns / hour" value={rate} muted={caps.maxSpawnsPerHour === 0} />
+          <Row label={t('caps.hardDailyCap')} value={money(caps.hardDailyCapUsd, unset)} muted={caps.hardDailyCapUsd == null} />
+          <Row
+            label={t('caps.hardMonthlyCap')}
+            value={money(caps.hardMonthlyCapUsd, unset)}
+            muted={caps.hardMonthlyCapUsd == null}
+          />
+          <Row
+            label={t('caps.softDailyBudget')}
+            value={money(caps.softDailyBudgetUsd, unset)}
+            muted={caps.softDailyBudgetUsd == null}
+          />
+          <Row
+            label={t('caps.softMonthlyBudget')}
+            value={money(caps.softMonthlyBudgetUsd, unset)}
+            muted={caps.softMonthlyBudgetUsd == null}
+          />
+          <Row label={t('caps.maxSpawnsPerHour')} value={rate} muted={caps.maxSpawnsPerHour === 0} />
         </div>
       </div>
 
       <div>
         <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          <ShieldAlert className="h-3.5 w-3.5" /> Blast-radius (destructive-action floor)
+          <ShieldAlert className="h-3.5 w-3.5" /> {t('blastRadius.heading')}
         </h3>
         <div className="mt-1 space-y-2">
           <Row
-            label="Enabled (guarded / autonomous)"
-            value={caps.blastRadiusEnabled ? 'on' : 'off'}
+            label={t('blastRadius.enabledLabel')}
+            value={caps.blastRadiusEnabled ? t('blastRadius.on') : t('blastRadius.off')}
             muted={!caps.blastRadiusEnabled}
           />
           <div>
-            <p className="py-1 text-sm text-muted-foreground">Protected branches</p>
-            <Chips items={caps.protectedBranches} empty="none" />
+            <p className="py-1 text-sm text-muted-foreground">{t('blastRadius.protectedBranches')}</p>
+            <Chips items={caps.protectedBranches} empty={t('blastRadius.none')} />
           </div>
           <div>
-            <p className="py-1 text-sm text-muted-foreground">Protected path globs</p>
-            <Chips items={caps.protectedPathGlobs} empty="none" />
+            <p className="py-1 text-sm text-muted-foreground">{t('blastRadius.protectedPathGlobs')}</p>
+            <Chips items={caps.protectedPathGlobs} empty={t('blastRadius.none')} />
           </div>
-          <Row label="Scrub gateway secrets from agent env" value={caps.scrubSpawnEnv ? 'on' : 'off'} muted={!caps.scrubSpawnEnv} />
+          <Row
+            label={t('blastRadius.scrubSpawnEnv')}
+            value={caps.scrubSpawnEnv ? t('blastRadius.on') : t('blastRadius.off')}
+            muted={!caps.scrubSpawnEnv}
+          />
         </div>
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Caps &amp; protected actions are configured in <code className="font-mono">midnite.json</code> and shown here read-only.
+        {t.rich('caps.footnote', { code: (chunks) => <code className="font-mono">{chunks}</code> })}
       </p>
     </div>
   );

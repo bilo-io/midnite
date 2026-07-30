@@ -150,6 +150,31 @@
   "roadmapGraph": {
     "loading": "Loading roadmap…",
     "noMilestones": "No milestones yet — add one on the board to see it here.",
-    "noTasks": "No tasks yet"
+    "noTasks": "No tasks yet",
+    "renameAria": "Rename {name}",
+    "removeTaskAria": "Remove {task} from {name}",
+    "addTaskPlaceholder": "+ Add task…",
+    "addTaskAria": "Add task to {name}",
+    "toasts": {
+      "renameFailed": "Failed to rename milestone",
+      "removeTaskFailed": "Failed to remove task",
+      "addTaskFailed": "Failed to add task"
+    }
+  },
+  "graph": {
+    "ready": "Ready",
+    "otherProject": "Other project",
+    "blockedBy": "Blocked by {count}",
+    "filterByProject": "Filter graph by project",
+    "summary": "{tasks, plural, one {# task} other {# tasks}} · {dependencies, plural, one {# dependency} other {# dependencies}}",
+    "milestoneFilter": "Milestone filter",
+    "clearMilestoneFilter": "Clear milestone filter",
+    "truncated": "Showing the first {shown} of {total} tasks. Pick a project above to narrow the graph.",
+    "empty": "No tasks to graph yet.",
+    "emptyScoped": "No tasks to graph for this scope yet.",
+    "toasts": {
+      "addDependencyFailed": "Failed to add dependency",
+      "removeDependencyFailed": "Failed to remove dependency"
+    }
   }
 }

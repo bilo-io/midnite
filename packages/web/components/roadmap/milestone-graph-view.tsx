@@ -81,10 +81,10 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
         await updateMilestone(id, { name });
       } catch (err) {
         setView(prev);
-        toast.error(err instanceof Error ? err.message : 'Failed to rename milestone');
+        toast.error(err instanceof Error ? err.message : t('roadmapGraph.toasts.renameFailed'));
       }
     },
-    [view, toast],
+    [view, toast, t],
   );
 
   const onUnassignTask = useCallback(
@@ -98,10 +98,10 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
         await assignTaskMilestone(taskId, null);
       } catch (err) {
         setView(prev);
-        toast.error(err instanceof Error ? err.message : 'Failed to remove task');
+        toast.error(err instanceof Error ? err.message : t('roadmapGraph.toasts.removeTaskFailed'));
       }
     },
-    [view, toast],
+    [view, toast, t],
   );
 
   const onAddTask = useCallback(
@@ -114,10 +114,10 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
         await assignTaskMilestone(task.id, milestoneId);
         invalidateData();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to add task');
+        toast.error(err instanceof Error ? err.message : t('roadmapGraph.toasts.addTaskFailed'));
       }
     },
-    [projectId, toast],
+    [projectId, toast, t],
   );
 
   const onConnect = useCallback<OnConnect>(
@@ -132,10 +132,10 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
         await addMilestoneDependency(target, source);
       } catch (err) {
         setView(prev);
-        toast.error(err instanceof Error ? err.message : 'Failed to add dependency');
+        toast.error(err instanceof Error ? err.message : t('graph.toasts.addDependencyFailed'));
       }
     },
-    [view, toast],
+    [view, toast, t],
   );
 
   const onEdgesDelete = useCallback<OnEdgesDelete>(
@@ -147,10 +147,10 @@ export function MilestoneGraphView({ projectId, onSelectTask }: Props) {
         await Promise.all(deleted.map((e) => removeMilestoneDependency(e.target, e.source)));
       } catch (err) {
         setView(prev);
-        toast.error(err instanceof Error ? err.message : 'Failed to remove dependency');
+        toast.error(err instanceof Error ? err.message : t('graph.toasts.removeDependencyFailed'));
       }
     },
-    [view, toast],
+    [view, toast, t],
   );
 
   const { nodes: laidOutNodes, edges: layoutEdges } = useMemo(

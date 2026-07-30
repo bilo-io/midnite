@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Maximize, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Slide } from '@/lib/slides/markdown';
 import { sliceHtml, visibleLen } from '@/lib/slides/html-type';
 import { copyCodeFromButton } from '@/lib/slides/code-blocks';
@@ -15,6 +16,8 @@ import './slides.css';
 const isBlockStep = (html: string) => /<pre|md-table-wrap/.test(html);
 
 export function Deck({ slides }: { slides: Slide[] }) {
+  const t = useTranslations('slides');
+  const tc = useTranslations('common');
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [reveal, setReveal] = useState(0);
@@ -313,10 +316,10 @@ export function Deck({ slides }: { slides: Slide[] }) {
           controls offset by --titlebar-h so the desktop title bar (fixed,
           z-[60]) never occludes them. */}
       <div className="fixed right-[clamp(1.2rem,2.4vw,2rem)] top-[calc(var(--titlebar-h,0px)_+_clamp(1.2rem,2.4vw,2rem))] z-30 flex items-center gap-1.5">
-        <button type="button" onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Fullscreen (F)" className={controlClass}>
+        <button type="button" onClick={toggleFullscreen} aria-label={t('present.fullscreen')} title={t('present.fullscreenTitle')} className={controlClass}>
           <Maximize className="h-4 w-4" />
         </button>
-        <button type="button" onClick={exit} aria-label="Exit presentation" title="Exit (Esc)" className={controlClass}>
+        <button type="button" onClick={exit} aria-label={t('present.exit')} title={t('present.exitTitle')} className={controlClass}>
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -349,8 +352,7 @@ export function Deck({ slides }: { slides: Slide[] }) {
       </main>
 
       <div className={`hint${hintGone ? ' gone' : ''}`}>
-        Press <kbd>&rarr;</kbd> / <kbd>Space</kbd> to advance &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> to go back
-        &nbsp;&middot;&nbsp; <kbd>F</kbd> fullscreen &nbsp;&middot;&nbsp; <kbd>?</kbd> shortcuts
+        {t.rich('present.hint', { kbd: (chunks) => <kbd>{chunks}</kbd> })}
       </div>
 
       <div className="deck-progress" aria-hidden="true">
@@ -363,7 +365,7 @@ export function Deck({ slides }: { slides: Slide[] }) {
           onClick={() => setShowHelp(false)}
           role="dialog"
           aria-modal="true"
-          aria-label="Keyboard shortcuts"
+          aria-label={t('present.help.title')}
         >
           <div
             className={cn(
@@ -371,27 +373,21 @@ export function Deck({ slides }: { slides: Slide[] }) {
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-4 text-lg font-semibold text-foreground">Keyboard shortcuts</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">{t('present.help.title')}</h2>
             <dl className="mb-5 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm">
-              <dt className="font-mono text-primary">&rarr; / Space / Enter</dt>
-              <dd className="text-muted-foreground">Next step or slide</dd>
-              <dt className="font-mono text-primary">&larr; / Backspace</dt>
-              <dd className="text-muted-foreground">Previous step or slide</dd>
-              <dt className="font-mono text-primary">Home / End</dt>
-              <dd className="text-muted-foreground">First / last slide</dd>
-              <dt className="font-mono text-primary">F</dt>
-              <dd className="text-muted-foreground">Toggle fullscreen</dd>
-              <dt className="font-mono text-primary">Esc</dt>
-              <dd className="text-muted-foreground">Back to all decks</dd>
-              <dt className="font-mono text-primary">?</dt>
-              <dd className="text-muted-foreground">Toggle this help</dd>
+              {(['next', 'prev', 'firstLast', 'fullscreen', 'exit', 'help'] as const).map((row) => (
+                <Fragment key={row}>
+                  <dt className="font-mono text-primary">{t(`present.help.keys.${row}`)}</dt>
+                  <dd className="text-muted-foreground">{t(`present.help.${row}`)}</dd>
+                </Fragment>
+              ))}
             </dl>
             <button
               type="button"
               onClick={() => setShowHelp(false)}
               className="rounded-lg border border-border/60 bg-card/40 px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent"
             >
-              Close
+              {tc('close')}
             </button>
           </div>
         </div>

@@ -1,0 +1,46 @@
+{
+  "board": {
+    "loading": "Loading roadmap…",
+    "empty": "No roadmap yet.",
+    "noMilestones": "No milestones yet — add one to group this project's tasks into a plan.",
+    "backlog": "Backlog",
+    "addMilestone": "Add milestone",
+    "milestoneNamePlaceholder": "Milestone name…",
+    "newMilestoneNameAria": "New milestone name",
+    "seededToast": "Created {count, plural, one {# task} other {# tasks}} in {name}",
+    "confirmDelete": {
+      "title": "Delete milestone?",
+      "description": "Its tasks are moved back to the backlog — they are not deleted.",
+      "confirm": "Delete"
+    },
+    "toasts": {
+      "reorderMilestonesFailed": "Failed to reorder milestones",
+      "assignFailed": "Failed to assign task",
+      "reorderTasksFailed": "Failed to reorder tasks",
+      "createFailed": "Failed to create milestone",
+      "renameFailed": "Failed to rename milestone",
+      "deleteFailed": "Failed to delete milestone"
+    }
+  },
+  "lane": {
+    "reorderAria": "Reorder {name}",
+    "renameAria": "Rename {name}",
+    "optionsAria": "{name} options",
+    "rename": "Rename",
+    "generateTasks": "Generate tasks…",
+    "viewInGraph": "View in graph",
+    "delete": "Delete",
+    "noUnassignedTasks": "No unassigned tasks",
+    "dragTasksHere": "Drag tasks here"
+  },
+  "breakdown": {
+    "dialogAria": "Generate tasks for {name}",
+    "title": "Generate tasks — {name}",
+    "goalLabel": "Describe what this milestone should accomplish — the planner drafts a dependency-aware task list you can edit before it lands.",
+    "goalPlaceholder": "e.g. Ship the public API: auth, rate limiting, docs, and a client SDK",
+    "fallbackNotice": "Drafted without the planning model — edit freely before creating.",
+    "draftTasks": "Draft tasks",
+    "createTasks": "Create {count, plural, one {# task} other {# tasks}}",
+    "genericError": "Something went wrong"
+  }
+}
