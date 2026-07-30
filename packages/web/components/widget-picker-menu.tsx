@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Plus, Search, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +51,7 @@ export function WidgetPickerMenu<TType extends string>({
   searchLabel,
   addedTitle,
 }: Props<TType>) {
+  const t = useTranslations('dashboard');
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -129,7 +131,7 @@ export function WidgetPickerMenu<TType extends string>({
                       type="text"
                       value={query}
                       onChange={(e) => onQueryChange(e.target.value)}
-                      placeholder="Search widgets…"
+                      placeholder={t('picker.searchPlaceholder')}
                       aria-label={searchLabel}
                       className="w-full rounded-md border border-border/60 bg-transparent py-1.5 pl-8 pr-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     />
@@ -139,7 +141,7 @@ export function WidgetPickerMenu<TType extends string>({
                 <div className="max-h-[min(60vh,28rem)] overflow-auto p-1">
                   {groups.length === 0 ? (
                     <p className="px-2.5 py-8 text-center text-sm text-muted-foreground">
-                      No widgets match “{query.trim()}”.
+                      {t('picker.noMatch', { query: query.trim() })}
                     </p>
                   ) : (
                     groups.map((group) => (

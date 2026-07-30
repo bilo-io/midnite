@@ -1,0 +1,287 @@
+{
+  "clockMode": {
+    "digital": "digital",
+    "analogue": "analogue"
+  },
+  "clock": {
+    "title": "Clock",
+    "analogueClock": "Analogue clock"
+  },
+  "date": {
+    "title": "Date"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "digest": {
+    "title": "Latest digest",
+    "refresh": "Refresh digest",
+    "error": "Couldn’t load digests.",
+    "loading": "Loading…",
+    "empty": "No digests yet — enable the daily-digest workflow to get a fleet roll-up.",
+    "shipped": "Shipped",
+    "failed": "Failed",
+    "attention": "Attn"
+  },
+  "timer": {
+    "title": "Focus timer",
+    "openSettings": "Timer settings",
+    "closeSettings": "Close settings",
+    "workMin": "Work (min)",
+    "breakMin": "Break (min)",
+    "phase": {
+      "work": "work",
+      "break": "break"
+    },
+    "start": "Start",
+    "pause": "Pause",
+    "reset": "Reset"
+  },
+  "worldClocks": {
+    "title": "World clocks",
+    "edit": "Edit timezones",
+    "doneEditing": "Done editing",
+    "empty": "No timezones — add one with the gear.",
+    "same": "same",
+    "reorder": "Reorder {label}",
+    "remove": "Remove {label}",
+    "labelPlaceholder": "Label (e.g. Berlin)",
+    "tzPlaceholder": "IANA zone (e.g. Europe/Berlin)",
+    "add": "Add timezone"
+  },
+  "finances": {
+    "title": "Finances",
+    "income": "Income",
+    "expenses": "Expenses",
+    "leftover": "Leftover",
+    "none": "None yet.",
+    "cardName": "Card name",
+    "cardNamePlaceholder": "e.g. Fixed costs",
+    "labelPlaceholder": "Label",
+    "showTotals": "Show totals only",
+    "showItems": "Show line items",
+    "edit": "Edit finances",
+    "doneEditing": "Done editing",
+    "itemName": "{group} item name",
+    "itemAmount": "{group} item amount",
+    "removeItem": "Remove {label}",
+    "addItem": "Add {group} item",
+    "add": "Add"
+  },
+  "market": {
+    "unconfiguredTitle": "Stock / Crypto",
+    "crypto": "Crypto",
+    "stocks": "Stocks",
+    "searchCoins": "Search coins…",
+    "searchStocks": "Search stocks…",
+    "stocksNote": "Stocks need a free Twelve Data API key on the gateway.",
+    "error": "Couldn’t load market data.",
+    "cancel": "Cancel",
+    "changeAsset": "Change asset",
+    "timeframeChart": "{timeframe} chart",
+    "ohlc": {
+      "open": "O",
+      "high": "H",
+      "low": "L",
+      "close": "C"
+    }
+  },
+  "watchlist": {
+    "title": "Watchlist",
+    "empty": "No assets yet — open settings to add some.",
+    "edit": "Edit watchlist",
+    "doneEditing": "Done editing",
+    "cardName": "Card name",
+    "cardNamePlaceholder": "e.g. My coins",
+    "atCap": "At the {max}-asset limit — remove one to add another.",
+    "addCoin": "Add a coin…",
+    "addStock": "Add a stock…",
+    "remove": "Remove {name}"
+  },
+  "picker": {
+    "add": "Add widget",
+    "search": "Search widgets",
+    "searchPlaceholder": "Search widgets…",
+    "noMatch": "No widgets match “{query}”.",
+    "added": "Already on this dashboard"
+  },
+  "categories": {
+    "tasks": "Tasks & projects",
+    "agents": "Agents",
+    "activity": "Activity",
+    "system": "System",
+    "datetime": "Date & time",
+    "finance": "Finance & markets",
+    "info": "News & weather",
+    "productivity": "Productivity"
+  },
+  "catalog": {
+    "tile-backlog": {
+      "label": "Backlog",
+      "description": "Count of parked or ambiguous tasks"
+    },
+    "tile-todo": {
+      "label": "Todo",
+      "description": "Count of queued, ready-to-start tasks"
+    },
+    "tile-inProgress": {
+      "label": "In progress",
+      "description": "Count of running or waiting tasks"
+    },
+    "tile-done": {
+      "label": "Done",
+      "description": "Count of completed tasks"
+    },
+    "quick-capture": {
+      "label": "Quick capture",
+      "description": "Add a task (or paste a list) without leaving the dashboard"
+    },
+    "projects": {
+      "label": "Project",
+      "description": "A card for a single project (defaults to most recently updated)"
+    },
+    "notes": {
+      "label": "Action items",
+      "description": "Quick action items with speech-to-text"
+    },
+    "routines": {
+      "label": "Routines",
+      "description": "Track your daily routines"
+    },
+    "news": {
+      "label": "Hacker News",
+      "description": "Top stories from Hacker News"
+    },
+    "weather": {
+      "label": "Weather",
+      "description": "Current conditions and today’s outlook"
+    },
+    "clock": {
+      "label": "Clock",
+      "description": "Digital or analogue clock"
+    },
+    "date": {
+      "label": "Date",
+      "description": "Today’s date"
+    },
+    "sessions": {
+      "label": "Live sessions",
+      "description": "Active agent sessions and their status"
+    },
+    "workflows": {
+      "label": "Workflows",
+      "description": "Workflow definitions and last-run status"
+    },
+    "memories": {
+      "label": "Recent memories",
+      "description": "Most recently updated agent memories"
+    },
+    "agents": {
+      "label": "Agent pool",
+      "description": "Primary agent, model and sub-agents"
+    },
+    "councils": {
+      "label": "Councils",
+      "description": "Your councils and their participants"
+    },
+    "repo-status": {
+      "label": "Per-repo status",
+      "description": "In-flight agents and queue depth per repo"
+    },
+    "activity": {
+      "label": "Activity feed",
+      "description": "Recent task status changes"
+    },
+    "who-in-office": {
+      "label": "Who's in the office",
+      "description": "Teammates currently in the multiplayer office"
+    },
+    "throughput": {
+      "label": "Throughput",
+      "description": "Tasks completed over the last two weeks"
+    },
+    "health": {
+      "label": "System health",
+      "description": "Gateway reachability and agent status"
+    },
+    "usage": {
+      "label": "LLM cost & usage",
+      "description": "Estimated spend by day, provider and feature"
+    },
+    "cost-by-repo": {
+      "label": "Cost by repo",
+      "description": "Agent-session spend per repo, measured vs. estimated"
+    },
+    "cycle-time": {
+      "label": "Cycle time",
+      "description": "Wait vs. work p50/p90 across completed tasks"
+    },
+    "fleet-trend": {
+      "label": "Fleet trend",
+      "description": "A gauge series (queue depth, slots, tick latency) over time"
+    },
+    "digest": {
+      "label": "Latest digest",
+      "description": "The most recent fleet digest — headline + shipped/failed/attention counts"
+    },
+    "shipped": {
+      "label": "Shipped",
+      "description": "Recently completed tasks with their PR links"
+    },
+    "system-monitor": {
+      "label": "System monitor",
+      "description": "Live CPU and memory usage"
+    },
+    "disk": {
+      "label": "Disk",
+      "description": "Real device storage — used vs free on the gateway’s disk"
+    },
+    "storage": {
+      "label": "App cache",
+      "description": "Browser storage this app has cached (per-origin quota)"
+    },
+    "world-clocks": {
+      "label": "World clocks",
+      "description": "Current time across multiple timezones"
+    },
+    "all-projects": {
+      "label": "All projects",
+      "description": "Every project with its task breakdown"
+    },
+    "quote": {
+      "label": "Quote",
+      "description": "A quote that changes daily"
+    },
+    "timer": {
+      "label": "Focus timer",
+      "description": "Pomodoro-style work / break countdown"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "description": "Mini month calendar"
+    },
+    "scratchpad": {
+      "label": "Scratchpad",
+      "description": "Freeform notepad saved on this device"
+    },
+    "links": {
+      "label": "Quick links",
+      "description": "Your own grid of bookmarks"
+    },
+    "finances": {
+      "label": "Finances",
+      "description": "Income vs expenses with the leftover — one card per budget"
+    },
+    "market-asset": {
+      "label": "Stock / Crypto",
+      "description": "Live price, OHLC and a historic area chart for one asset"
+    },
+    "market-watchlist": {
+      "label": "Watchlist",
+      "description": "A handful of stocks or coins with price and gain/loss"
+    }
+  }
+}

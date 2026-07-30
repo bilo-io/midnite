@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Newspaper, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { DigestListItem } from '@midnite/shared';
 
 import { getDigests } from '@/lib/api';
@@ -36,6 +37,7 @@ function Count({ label, value, tone }: { label: string; value: number; tone: 'go
  * Honest empty state when no digest has been produced yet.
  */
 export function DigestWidget() {
+  const t = useTranslations('dashboard');
   const { data, error, loading, refresh } = usePolling<DigestListItem[]>(() => getDigests(1), REFRESH_MS);
   const latest = data?.[0] ?? null;
   const { dateTime } = useLocaleFormat();
@@ -46,13 +48,13 @@ export function DigestWidget() {
 
   return (
     <WidgetCard
-      title="Latest digest"
+      title={t('digest.title')}
       icon={Newspaper}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh digest"
+          aria-label={t('digest.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -61,12 +63,12 @@ export function DigestWidget() {
       bodyClassName="flex flex-col p-4"
     >
       {error && !latest ? (
-        <p className="m-auto text-sm text-destructive">Couldn’t load digests.</p>
+        <p className="m-auto text-sm text-destructive">{t('digest.error')}</p>
       ) : !data && loading ? (
-        <p className="m-auto text-sm text-muted-foreground">Loading…</p>
+        <p className="m-auto text-sm text-muted-foreground">{t('digest.loading')}</p>
       ) : !latest ? (
         <p className="m-auto max-w-[28ch] text-center text-sm text-muted-foreground">
-          No digests yet — enable the daily-digest workflow to get a fleet roll-up.
+          {t('digest.empty')}
         </p>
       ) : (
         <Link
@@ -79,9 +81,9 @@ export function DigestWidget() {
           </div>
           <div className="flex items-end justify-between">
             <div className="flex gap-4">
-              <Count label="Shipped" value={latest.counts.shipped} tone="good" />
-              <Count label="Failed" value={latest.counts.failed} tone="bad" />
-              <Count label="Attn" value={latest.counts.needsAttention} tone="warn" />
+              <Count label={t('digest.shipped')} value={latest.counts.shipped} tone="good" />
+              <Count label={t('digest.failed')} value={latest.counts.failed} tone="bad" />
+              <Count label={t('digest.attention')} value={latest.counts.needsAttention} tone="warn" />
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
           </div>

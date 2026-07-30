@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, Settings2, Star, Trash2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   MARKET_WATCHLIST_MAX,
   type AssetKind,
@@ -28,13 +29,14 @@ type Props = {
 const assetKey = (a: MarketAsset) => `${a.kind}:${a.symbol}`;
 
 export function MarketWatchlistWidget({ config, onConfigChange }: Props) {
+  const t = useTranslations('dashboard');
   const [timeframe] = useGlobalTimeframe();
   const [editing, setEditing] = useState(false);
   const { title, assets } = config;
 
   return (
     <WidgetCard
-      title={title || 'Watchlist'}
+      title={title || t('watchlist.title')}
       icon={Star}
       actions={
         <>
@@ -42,7 +44,7 @@ export function MarketWatchlistWidget({ config, onConfigChange }: Props) {
           <button
             type="button"
             onClick={() => setEditing((e) => !e)}
-            aria-label={editing ? 'Done editing' : 'Edit watchlist'}
+            aria-label={editing ? t('watchlist.doneEditing') : t('watchlist.edit')}
             aria-pressed={editing}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
@@ -56,7 +58,7 @@ export function MarketWatchlistWidget({ config, onConfigChange }: Props) {
         <WatchlistEditor config={config} onConfigChange={onConfigChange} />
       ) : assets.length === 0 ? (
         <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-          No assets yet — open settings to add some.
+          {t('watchlist.empty')}
         </p>
       ) : (
         <ul className="divide-y divide-border/40">
@@ -105,6 +107,7 @@ function WatchRow({ asset, timeframe }: { asset: MarketAsset; timeframe: MarketT
 }
 
 function WatchlistEditor({ config, onConfigChange }: Props) {
+  const t = useTranslations('dashboard');
   const { title, assets } = config;
   const [kind, setKind] = useState<AssetKind>('crypto');
   const atCap = assets.length >= MARKET_WATCHLIST_MAX;
@@ -119,11 +122,11 @@ function WatchlistEditor({ config, onConfigChange }: Props) {
   return (
     <div className="space-y-3">
       <label className="block space-y-1">
-        <span className="text-xs font-medium text-muted-foreground">Card name</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('watchlist.cardName')}</span>
         <input
           value={title}
           onChange={(e) => onConfigChange({ ...config, title: e.target.value })}
-          placeholder="e.g. My coins"
+          placeholder={t('watchlist.cardNamePlaceholder')}
           className="w-full rounded-md border border-border/60 bg-transparent px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
@@ -137,7 +140,7 @@ function WatchlistEditor({ config, onConfigChange }: Props) {
               <button
                 type="button"
                 onClick={() => removeAsset(assetKey(a))}
-                aria-label={`Remove ${a.name}`}
+                aria-label={t('watchlist.remove', { name: a.name })}
                 className="rounded p-0.5 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="h-3 w-3" />
@@ -149,7 +152,7 @@ function WatchlistEditor({ config, onConfigChange }: Props) {
 
       {atCap ? (
         <p className="text-[11px] text-muted-foreground">
-          At the {MARKET_WATCHLIST_MAX}-asset limit — remove one to add another.
+          {t('watchlist.atCap', { max: MARKET_WATCHLIST_MAX })}
         </p>
       ) : (
         <div className="space-y-1.5">
@@ -165,7 +168,7 @@ function WatchlistEditor({ config, onConfigChange }: Props) {
                   kind === k ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {k === 'crypto' ? 'Crypto' : 'Stocks'}
+                {k === 'crypto' ? t('market.crypto') : t('market.stocks')}
               </button>
             ))}
           </div>
@@ -174,7 +177,7 @@ function WatchlistEditor({ config, onConfigChange }: Props) {
             <div className="min-w-0 flex-1">
               <AssetSearchSelect
                 kind={kind}
-                placeholder={kind === 'crypto' ? 'Add a coin…' : 'Add a stock…'}
+                placeholder={kind === 'crypto' ? t('watchlist.addCoin') : t('watchlist.addStock')}
                 onSelect={(r) => addAsset({ kind: r.kind, symbol: r.symbol, name: r.name })}
               />
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useDashboardTabs, widgetsKey } from '@/lib/dashboard-tabs';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -21,15 +22,25 @@ import { WidgetPickerMenu } from '@/components/widget-picker-menu';
  * grid live without any shared parent/context.
  */
 export function DashboardAddWidget() {
+  const t = useTranslations('dashboard');
   // Add to whichever dashboard tab is active.
   const { activeId } = useDashboardTabs();
   const [widgets, setWidgets] = useLocalStorage<WidgetInstance[]>(widgetsKey(activeId), DEFAULT_WIDGETS);
   const [query, setQuery] = useState('');
 
-  const groups = useMemo(
-    () => groupWidgetCatalog(widgetCatalog(widgets), query),
-    [widgets, query],
-  );
+  // Localise the registry's labels/descriptions BEFORE filtering, so search
+  // matches what the user actually reads; category headers localise after.
+  const groups = useMemo(() => {
+    const entries = widgetCatalog(widgets).map((entry) => ({
+      ...entry,
+      label: t(`catalog.${entry.type}.label`),
+      description: t(`catalog.${entry.type}.description`),
+    }));
+    return groupWidgetCatalog(entries, query).map((group) => ({
+      ...group,
+      label: t(`categories.${group.category}`),
+    }));
+  }, [widgets, query, t]);
 
   return (
     <WidgetPickerMenu
@@ -37,9 +48,9 @@ export function DashboardAddWidget() {
       query={query}
       onQueryChange={setQuery}
       onAdd={(type: WidgetInstance['type']) => setWidgets((prev) => [...prev, newInstance(type)])}
-      triggerLabel="Add widget"
-      searchLabel="Search widgets"
-      addedTitle="Already on this dashboard"
+      triggerLabel={t('picker.add')}
+      searchLabel={t('picker.search')}
+      addedTitle={t('picker.added')}
     />
   );
 }

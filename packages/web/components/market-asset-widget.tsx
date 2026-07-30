@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
 import { LineChart as LineChartIcon, Pencil, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { AssetKind, MarketHistoryResponse, MarketQuote } from '@midnite/shared';
 import { getMarketHistory, getMarketQuote } from '@/lib/api';
 import type { MarketAssetConfig } from '@/lib/dashboard-widgets';
@@ -44,6 +45,7 @@ export function fmtPct(pct: number): string {
 }
 
 export function MarketAssetWidget({ config, onConfigChange }: Props) {
+  const t = useTranslations('dashboard');
   const [timeframe] = useGlobalTimeframe();
   const [editing, setEditing] = useState(false);
   const configured = config.symbol !== '';
@@ -62,7 +64,7 @@ export function MarketAssetWidget({ config, onConfigChange }: Props) {
 
   return (
     <WidgetCard
-      title={configured ? config.name : 'Stock / Crypto'}
+      title={configured ? config.name : t('market.unconfiguredTitle')}
       icon={LineChartIcon}
       actions={
         configured ? (
@@ -71,7 +73,7 @@ export function MarketAssetWidget({ config, onConfigChange }: Props) {
             <button
               type="button"
               onClick={() => setEditing((e) => !e)}
-              aria-label={editing ? 'Cancel' : 'Change asset'}
+              aria-label={editing ? t('market.cancel') : t('market.changeAsset')}
               aria-pressed={editing}
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
@@ -93,7 +95,7 @@ export function MarketAssetWidget({ config, onConfigChange }: Props) {
         />
       ) : !quote ? (
         historyError ? (
-          <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load market data.</p>
+          <p className="px-4 py-6 text-center text-sm text-destructive">{t('market.error')}</p>
         ) : (
           <WidgetLoader />
         )
@@ -113,6 +115,7 @@ function AssetPicker({
   onKindChange: (kind: AssetKind) => void;
   onSelect: (asset: MarketAssetConfig) => void;
 }) {
+  const t = useTranslations('dashboard');
   return (
     <div className="flex flex-col gap-3 p-3">
       <div className="flex items-center rounded-md border border-border/60 p-0.5 text-xs">
@@ -127,18 +130,18 @@ function AssetPicker({
               kind === k ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {k === 'crypto' ? 'Crypto' : 'Stocks'}
+            {k === 'crypto' ? t('market.crypto') : t('market.stocks')}
           </button>
         ))}
       </div>
       <AssetSearchSelect
         kind={kind}
-        placeholder={kind === 'crypto' ? 'Search coins…' : 'Search stocks…'}
+        placeholder={kind === 'crypto' ? t('market.searchCoins') : t('market.searchStocks')}
         onSelect={(r) => onSelect({ kind: r.kind, symbol: r.symbol, name: r.name })}
       />
       {kind === 'stock' && (
         <p className="text-[11px] leading-snug text-muted-foreground">
-          Stocks need a free Twelve Data API key on the gateway.
+          {t('market.stocksNote')}
         </p>
       )}
     </div>
@@ -154,6 +157,7 @@ function AssetReadout({
   history: MarketHistoryResponse | null;
   timeframe: string;
 }) {
+  const t = useTranslations('dashboard');
   const up = quote.changePct >= 0;
 
   return (
@@ -175,10 +179,10 @@ function AssetReadout({
       <dl className="grid grid-cols-4 gap-x-2 text-center text-[11px]">
         {(
           [
-            ['O', quote.open],
-            ['H', quote.high],
-            ['L', quote.low],
-            ['C', quote.close],
+            [t('market.ohlc.open'), quote.open],
+            [t('market.ohlc.high'), quote.high],
+            [t('market.ohlc.low'), quote.low],
+            [t('market.ohlc.close'), quote.close],
           ] as const
         ).map(([label, value]) => (
           <div key={label}>
@@ -187,7 +191,7 @@ function AssetReadout({
           </div>
         ))}
       </dl>
-      <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">{timeframe} chart</p>
+      <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">{t('market.timeframeChart', { timeframe })}</p>
     </div>
   );
 }

@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
-
-const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
 function sameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 export function CalendarWidget() {
+  const t = useTranslations('dashboard');
   const { dateTime } = useLocaleFormat();
   const [today, setToday] = useState(() => new Date());
   // Months offset from the current month (0 = this month).
@@ -41,16 +41,22 @@ export function CalendarWidget() {
 
   const monthLabel = dateTime(view, { month: 'long', year: 'numeric' });
 
+  // Monday-start weekday header, named by the active locale (2024-01-01 was a Monday).
+  const weekdays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => dateTime(new Date(2024, 0, 1 + i), { weekday: 'short' })),
+    [dateTime],
+  );
+
   return (
     <WidgetCard
-      title="Calendar"
+      title={t('calendar.title')}
       icon={CalendarDays}
       actions={
         <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => setOffset((o) => o - 1)}
-            aria-label="Previous month"
+            aria-label={t('calendar.prevMonth')}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
@@ -60,12 +66,12 @@ export function CalendarWidget() {
             onClick={() => setOffset(0)}
             className="rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
-            Today
+            {t('calendar.today')}
           </button>
           <button
             type="button"
             onClick={() => setOffset((o) => o + 1)}
-            aria-label="Next month"
+            aria-label={t('calendar.nextMonth')}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <ChevronRight className="h-3.5 w-3.5" />
@@ -76,7 +82,7 @@ export function CalendarWidget() {
     >
       <p className="mb-2 text-center text-sm font-medium">{monthLabel}</p>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium text-muted-foreground">
-        {WEEKDAYS.map((d) => (
+        {weekdays.map((d) => (
           <span key={d}>{d}</span>
         ))}
       </div>

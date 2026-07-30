@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@/lib/utils';
 
 /**
@@ -8,6 +10,7 @@ import { cn } from '@/lib/utils';
  * landing-page corner clock so the hand geometry lives in exactly one place.
  */
 export function AnalogClockFace({ date, className }: { date: Date; className?: string }) {
+  const t = useTranslations('dashboard');
   const s = date.getSeconds();
   const m = date.getMinutes();
   const h = date.getHours() % 12;
@@ -21,7 +24,7 @@ export function AnalogClockFace({ date, className }: { date: Date; className?: s
       viewBox="0 0 100 100"
       className={cn('h-full w-auto', className)}
       role="img"
-      aria-label="Analogue clock"
+      aria-label={t('clock.analogueClock')}
     >
       <circle cx="50" cy="50" r="46" fill="none" stroke="hsl(var(--border))" strokeWidth="2" />
       {Array.from({ length: 12 }).map((_, i) => (

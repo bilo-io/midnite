@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useLocaleFormat } from '@/lib/use-locale-format';
 import { WidgetCard } from './widget-card';
 
 /** Today's date. Re-renders once at the next local midnight. */
 export function DateWidget() {
+  const t = useTranslations('dashboard');
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function DateWidget() {
   const year = now.getFullYear();
 
   return (
-    <WidgetCard title="Date" icon={Calendar} bodyClassName="flex flex-col items-center justify-center gap-1 p-4 text-center">
+    <WidgetCard title={t('date.title')} icon={Calendar} bodyClassName="flex flex-col items-center justify-center gap-1 p-4 text-center">
       <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{weekday}</span>
       <span className="text-5xl font-semibold tabular-nums leading-none">{day}</span>
       <span className="text-sm text-muted-foreground">

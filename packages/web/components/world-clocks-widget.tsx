@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Globe, Settings2, Trash2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ClockMode, WidgetConfig, WorldClockZone } from '@/lib/dashboard-widgets';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
@@ -108,7 +109,13 @@ export function offsetLabel(date: Date, tz: string): string {
   }
 }
 
+/** The rendered offset chip: numeric offsets pass through, the `same` sentinel is localised. */
+function offsetChip(label: string, t: (key: string) => string): string {
+  return label === 'same' ? t('worldClocks.same') : label;
+}
+
 export function WorldClocksWidget({ config, onConfigChange }: WorldClocksWidgetProps) {
+  const t = useTranslations('dashboard');
   const [now, setNow] = useState(() => new Date());
   const [editing, setEditing] = useState(false);
 
@@ -139,7 +146,7 @@ export function WorldClocksWidget({ config, onConfigChange }: WorldClocksWidgetP
 
   return (
     <WidgetCard
-      title="World clocks"
+      title={t('worldClocks.title')}
       icon={Globe}
       actions={
         <>
@@ -157,14 +164,14 @@ export function WorldClocksWidget({ config, onConfigChange }: WorldClocksWidgetP
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {m}
+                {t(`clockMode.${m}`)}
               </button>
             ))}
           </div>
           <button
             type="button"
             onClick={() => setEditing((e) => !e)}
-            aria-label={editing ? 'Done editing' : 'Edit timezones'}
+            aria-label={editing ? t('worldClocks.doneEditing') : t('worldClocks.edit')}
             aria-pressed={editing}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
@@ -177,7 +184,7 @@ export function WorldClocksWidget({ config, onConfigChange }: WorldClocksWidgetP
       {editing ? (
         <ZoneEditor zones={zones} onAdd={addZone} onRemove={removeZone} />
       ) : zones.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">No timezones — add one with the gear.</p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('worldClocks.empty')}</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={zones.map((_, i) => String(i))} strategy={verticalListSortingStrategy}>
@@ -205,6 +212,7 @@ function SortableZoneRow({
   now: Date;
   mode: ClockMode;
 }) {
+  const t = useTranslations('dashboard');
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
@@ -222,7 +230,7 @@ function SortableZoneRow({
         ref={setActivatorNodeRef}
         {...attributes}
         {...listeners}
-        aria-label={`Reorder ${zone.label}`}
+        aria-label={t('worldClocks.reorder', { label: zone.label })}
         className="shrink-0 cursor-grab touch-none text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
       >
         <GripVertical className="h-3.5 w-3.5" />
@@ -232,7 +240,7 @@ function SortableZoneRow({
           <ZoneAnalogue date={now} tz={zone.tz} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{zone.label}</span>
           <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-            {offsetLabel(now, zone.tz)}
+            {offsetChip(offsetLabel(now, zone.tz), t)}
           </span>
         </>
       ) : (
@@ -241,7 +249,7 @@ function SortableZoneRow({
           <span className="flex h-9 shrink-0 items-center gap-2">
             <span className="text-sm tabular-nums text-muted-foreground">{timeIn(now, zone.tz)}</span>
             <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-              {offsetLabel(now, zone.tz)}
+              {offsetChip(offsetLabel(now, zone.tz), t)}
             </span>
           </span>
         </>
@@ -252,13 +260,14 @@ function SortableZoneRow({
 
 /** A compact analog face showing the current time in `tz`. */
 function ZoneAnalogue({ date, tz }: { date: Date; tz: string }) {
+  const t = useTranslations('dashboard');
   const { h, m, s } = clockPartsInZone(date, tz);
   const secDeg = s * 6;
   const minDeg = m * 6 + s * 0.1;
   const hourDeg = (h % 12) * 30 + m * 0.5;
 
   return (
-    <svg viewBox="0 0 100 100" className="h-9 w-9 shrink-0" role="img" aria-label={`Analogue clock`}>
+    <svg viewBox="0 0 100 100" className="h-9 w-9 shrink-0" role="img" aria-label={t('clock.analogueClock')}>
       <circle cx="50" cy="50" r="46" fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
       {/* hour */}
       <line x1="50" y1="50" x2="50" y2="32" stroke="hsl(var(--foreground))" strokeWidth="5" strokeLinecap="round" transform={`rotate(${hourDeg} 50 50)`} />
@@ -280,6 +289,7 @@ function ZoneEditor({
   onAdd: (zone: WorldClockZone) => void;
   onRemove: (index: number) => void;
 }) {
+  const t = useTranslations('dashboard');
   const [label, setLabel] = useState('');
   const [tz, setTz] = useState('');
   const valid = label.trim() !== '' && isValidTz(tz.trim());
@@ -303,7 +313,7 @@ function ZoneEditor({
               <button
                 type="button"
                 onClick={() => onRemove(i)}
-                aria-label={`Remove ${z.label}`}
+                aria-label={t('worldClocks.remove', { label: z.label })}
                 className="rounded p-1 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="h-3 w-3" />
@@ -316,14 +326,14 @@ function ZoneEditor({
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="Label (e.g. Berlin)"
+          placeholder={t('worldClocks.labelPlaceholder')}
           className="rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <input
           value={tz}
           onChange={(e) => setTz(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          placeholder="IANA zone (e.g. Europe/Berlin)"
+          placeholder={t('worldClocks.tzPlaceholder')}
           className={cn(
             'rounded-md border bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
             tz.trim() !== '' && !isValidTz(tz.trim()) ? 'border-destructive/60' : 'border-border/60',
@@ -335,7 +345,7 @@ function ZoneEditor({
           disabled={!valid}
           className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
         >
-          Add timezone
+          {t('worldClocks.add')}
         </button>
       </div>
     </div>

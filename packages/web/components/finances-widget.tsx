@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { List, Settings2, Sigma, Trash2, Wallet, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { FinanceConfig, FinanceEntry } from '@/lib/dashboard-widgets';
 import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ type Fmt = (n: number) => string;
 const sum = (entries: FinanceEntry[]) => entries.reduce((t, e) => t + e.amount, 0);
 
 export function FinancesWidget({ config, onConfigChange }: FinancesWidgetProps) {
+  const t = useTranslations('dashboard');
   const [editing, setEditing] = useState(false);
   const { number } = useLocaleFormat();
   const fmt: Fmt = (n) => number(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -31,14 +33,14 @@ export function FinancesWidget({ config, onConfigChange }: FinancesWidgetProps) 
 
   return (
     <WidgetCard
-      title={title || 'Finances'}
+      title={title || t('finances.title')}
       icon={Wallet}
       actions={
         <>
           <button
             type="button"
             onClick={() => patch({ showDetail: !showDetail })}
-            aria-label={showDetail ? 'Show totals only' : 'Show line items'}
+            aria-label={showDetail ? t('finances.showTotals') : t('finances.showItems')}
             aria-pressed={!showDetail}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
@@ -47,7 +49,7 @@ export function FinancesWidget({ config, onConfigChange }: FinancesWidgetProps) 
           <button
             type="button"
             onClick={() => setEditing((e) => !e)}
-            aria-label={editing ? 'Done editing' : 'Edit finances'}
+            aria-label={editing ? t('finances.doneEditing') : t('finances.edit')}
             aria-pressed={editing}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
@@ -63,13 +65,13 @@ export function FinancesWidget({ config, onConfigChange }: FinancesWidgetProps) 
         <div className="flex flex-col gap-3">
           {showDetail ? (
             <>
-              <EntryGroup label="Income" entries={income} total={incomeTotal} fmt={fmt} />
-              <EntryGroup label="Expenses" entries={expenses} total={expenseTotal} fmt={fmt} />
+              <EntryGroup label={t('finances.income')} entries={income} total={incomeTotal} fmt={fmt} />
+              <EntryGroup label={t('finances.expenses')} entries={expenses} total={expenseTotal} fmt={fmt} />
             </>
           ) : (
             <div className="space-y-1.5 text-sm">
-              <TotalRow label="Income" value={incomeTotal} fmt={fmt} />
-              <TotalRow label="Expenses" value={expenseTotal} fmt={fmt} />
+              <TotalRow label={t('finances.income')} value={incomeTotal} fmt={fmt} />
+              <TotalRow label={t('finances.expenses')} value={expenseTotal} fmt={fmt} />
             </div>
           )}
           <LeftoverRow value={leftover} fmt={fmt} />
@@ -89,9 +91,10 @@ function TotalRow({ label, value, fmt }: { label: string; value: number; fmt: Fm
 }
 
 function LeftoverRow({ value, fmt }: { value: number; fmt: Fmt }) {
+  const t = useTranslations('dashboard');
   return (
     <div className="flex items-baseline justify-between border-t border-border/40 pt-2">
-      <span className="text-sm font-semibold">Leftover</span>
+      <span className="text-sm font-semibold">{t('finances.leftover')}</span>
       <span
         className={cn(
           'text-base font-semibold tabular-nums',
@@ -115,6 +118,7 @@ function EntryGroup({
   total: number;
   fmt: Fmt;
 }) {
+  const t = useTranslations('dashboard');
   return (
     <div className="space-y-1">
       <div className="flex items-baseline justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -122,7 +126,7 @@ function EntryGroup({
         <span className="tabular-nums">{fmt(total)}</span>
       </div>
       {entries.length === 0 ? (
-        <p className="text-xs text-muted-foreground">None yet.</p>
+        <p className="text-xs text-muted-foreground">{t('finances.none')}</p>
       ) : (
         <ul className="space-y-0.5 text-sm">
           {entries.map((e) => (
@@ -138,6 +142,7 @@ function EntryGroup({
 }
 
 function FinancesEditor({ config, onConfigChange }: FinancesWidgetProps) {
+  const t = useTranslations('dashboard');
   const { title, income, expenses } = config;
 
   const setEntries = (key: 'income' | 'expenses', entries: FinanceEntry[]) =>
@@ -159,24 +164,24 @@ function FinancesEditor({ config, onConfigChange }: FinancesWidgetProps) {
   return (
     <div className="space-y-3">
       <label className="block space-y-1">
-        <span className="text-xs font-medium text-muted-foreground">Card name</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('finances.cardName')}</span>
         <input
           value={title}
           onChange={(e) => onConfigChange({ ...config, title: e.target.value })}
-          placeholder="e.g. Fixed costs"
+          placeholder={t('finances.cardNamePlaceholder')}
           className="w-full rounded-md border border-border/60 bg-transparent px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
 
       <EntryEditor
-        label="Income"
+        label={t('finances.income')}
         entries={income}
         onAdd={(e) => addEntry('income', e)}
         onUpdate={(id, patch) => updateEntry('income', id, patch)}
         onRemove={(id) => removeEntry('income', id)}
       />
       <EntryEditor
-        label="Expenses"
+        label={t('finances.expenses')}
         entries={expenses}
         onAdd={(e) => addEntry('expenses', e)}
         onUpdate={(id, patch) => updateEntry('expenses', id, patch)}
@@ -199,6 +204,7 @@ function EntryEditor({
   onUpdate: (id: string, patch: Partial<FinanceEntry>) => void;
   onRemove: (id: string) => void;
 }) {
+  const t = useTranslations('dashboard');
   const [newLabel, setNewLabel] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const amount = Number(newAmount);
@@ -221,7 +227,7 @@ function EntryEditor({
               <input
                 value={e.label}
                 onChange={(ev) => onUpdate(e.id, { label: ev.target.value })}
-                aria-label={`${label} item name`}
+                aria-label={t('finances.itemName', { group: label })}
                 className="min-w-0 flex-1 rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <input
@@ -229,13 +235,13 @@ function EntryEditor({
                 inputMode="decimal"
                 value={e.amount}
                 onChange={(ev) => onUpdate(e.id, { amount: Number(ev.target.value) })}
-                aria-label={`${label} item amount`}
+                aria-label={t('finances.itemAmount', { group: label })}
                 className="w-24 rounded-md border border-border/60 bg-transparent px-2 py-1 text-right text-xs tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <button
                 type="button"
                 onClick={() => onRemove(e.id)}
-                aria-label={`Remove ${e.label}`}
+                aria-label={t('finances.removeItem', { label: e.label })}
                 className="rounded p-1 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="h-3 w-3" />
@@ -248,7 +254,7 @@ function EntryEditor({
         <input
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
-          placeholder="Label"
+          placeholder={t('finances.labelPlaceholder')}
           className="min-w-0 flex-1 rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <input
@@ -264,10 +270,10 @@ function EntryEditor({
           type="button"
           onClick={submit}
           disabled={!valid}
-          aria-label={`Add ${label.toLowerCase()} item`}
+          aria-label={t('finances.addItem', { group: label })}
           className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
         >
-          Add
+          {t('finances.add')}
         </button>
       </div>
     </div>
