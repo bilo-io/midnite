@@ -1,0 +1,46 @@
+{
+  "board": {
+    "loading": "Chargement de la feuille de route…",
+    "empty": "Pas encore de feuille de route.",
+    "noMilestones": "Pas encore de jalons — ajoutez-en un pour organiser les tâches de ce projet en un plan.",
+    "backlog": "En attente",
+    "addMilestone": "Ajouter un jalon",
+    "milestoneNamePlaceholder": "Nom du jalon…",
+    "newMilestoneNameAria": "Nom du nouveau jalon",
+    "seededToast": "{count, plural, one {# tâche créée} other {# tâches créées}} dans {name}",
+    "confirmDelete": {
+      "title": "Supprimer ce jalon ?",
+      "description": "Ses tâches sont renvoyées dans « En attente » — elles ne sont pas supprimées.",
+      "confirm": "Supprimer"
+    },
+    "toasts": {
+      "reorderMilestonesFailed": "Échec de la réorganisation des jalons",
+      "assignFailed": "Échec de l'affectation de la tâche",
+      "reorderTasksFailed": "Échec de la réorganisation des tâches",
+      "createFailed": "Échec de la création du jalon",
+      "renameFailed": "Échec du renommage du jalon",
+      "deleteFailed": "Échec de la suppression du jalon"
+    }
+  },
+  "lane": {
+    "reorderAria": "Réorganiser {name}",
+    "renameAria": "Renommer {name}",
+    "optionsAria": "Options de {name}",
+    "rename": "Renommer",
+    "generateTasks": "Générer des tâches…",
+    "viewInGraph": "Voir dans le graphe",
+    "delete": "Supprimer",
+    "noUnassignedTasks": "Aucune tâche non affectée",
+    "dragTasksHere": "Déposez des tâches ici"
+  },
+  "breakdown": {
+    "dialogAria": "Générer des tâches pour {name}",
+    "title": "Générer des tâches — {name}",
+    "goalLabel": "Décrivez ce que ce jalon doit accomplir — le planificateur rédige une liste de tâches tenant compte des dépendances, que vous pouvez modifier avant de la valider.",
+    "goalPlaceholder": "p. ex. Livrer l'API publique : auth, limitation de débit, docs et un SDK client",
+    "fallbackNotice": "Rédigé sans le modèle de planification — modifiez librement avant de créer.",
+    "draftTasks": "Rédiger les tâches",
+    "createTasks": "Créer {count, plural, one {# tâche} other {# tâches}}",
+    "genericError": "Une erreur est survenue"
+  }
+}

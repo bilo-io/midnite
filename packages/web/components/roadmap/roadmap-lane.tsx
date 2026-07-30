@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -53,6 +54,7 @@ export function RoadmapLane({
   onGenerate,
   onViewInGraph,
 }: Props) {
+  const t = useTranslations('roadmap.lane');
   const sortable = useSortable({
     id: lane.id,
     data: { type: 'lane' },
@@ -97,7 +99,7 @@ export function RoadmapLane({
         {!isBacklog ? (
           <button
             type="button"
-            aria-label={`Reorder ${lane.name}`}
+            aria-label={t('reorderAria', { name: lane.name })}
             className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
             {...sortable.attributes}
             {...sortable.listeners}
@@ -118,7 +120,7 @@ export function RoadmapLane({
                 setEditing(false);
               }
             }}
-            aria-label={`Rename ${lane.name}`}
+            aria-label={t('renameAria', { name: lane.name })}
             className="h-7 text-sm"
           />
         ) : (
@@ -131,7 +133,7 @@ export function RoadmapLane({
           <div className="relative shrink-0">
             <button
               type="button"
-              aria-label={`${lane.name} options`}
+              aria-label={t('optionsAria', { name: lane.name })}
               onClick={() => setMenuOpen((o) => !o)}
               className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
@@ -149,7 +151,7 @@ export function RoadmapLane({
                     }}
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
                   >
-                    <Pencil className="h-3.5 w-3.5" /> Rename
+                    <Pencil className="h-3.5 w-3.5" /> {t('rename')}
                   </button>
                   {onGenerate ? (
                     <button
@@ -160,7 +162,7 @@ export function RoadmapLane({
                       }}
                       className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
                     >
-                      <Sparkles className="h-3.5 w-3.5" /> Generate tasks…
+                      <Sparkles className="h-3.5 w-3.5" /> {t('generateTasks')}
                     </button>
                   ) : null}
                   {onViewInGraph ? (
@@ -172,7 +174,7 @@ export function RoadmapLane({
                       }}
                       className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
                     >
-                      <Workflow className="h-3.5 w-3.5" /> View in graph
+                      <Workflow className="h-3.5 w-3.5" /> {t('viewInGraph')}
                     </button>
                   ) : null}
                   <button
@@ -183,7 +185,7 @@ export function RoadmapLane({
                     }}
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10"
                   >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                    <Trash2 className="h-3.5 w-3.5" /> {t('delete')}
                   </button>
                 </div>
               </>
@@ -218,7 +220,7 @@ export function RoadmapLane({
         </SortableContext>
         {lane.tasks.length === 0 ? (
           <p className="m-auto text-center text-xs text-muted-foreground">
-            {isBacklog ? 'No unassigned tasks' : 'Drag tasks here'}
+            {isBacklog ? t('noUnassignedTasks') : t('dragTasksHere')}
           </p>
         ) : null}
       </div>

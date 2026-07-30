@@ -1,14 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { statusHueVar, statusLabel } from '@/components/task-columns';
+import { statusHueVar } from '@/components/task-columns';
+import { useStatusLabel } from '@/lib/i18n-labels';
 import { GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH, type TaskGraphNodeData } from '@/lib/task-graph-layout';
 import { cn } from '@/lib/utils';
 
-const PRIORITY_LABEL: Record<number, { label: string; className: string }> = {
-  0: { label: 'Low', className: 'bg-muted text-muted-foreground' },
-  2: { label: 'High', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
-  3: { label: 'Urgent', className: 'bg-destructive/15 text-destructive' },
+// Priority chip appearance; the label itself comes from `board.priority.*`.
+const PRIORITY_CHIP: Record<number, { key: 'low' | 'high' | 'urgent'; className: string }> = {
+  0: { key: 'low', className: 'bg-muted text-muted-foreground' },
+  2: { key: 'high', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  3: { key: 'urgent', className: 'bg-destructive/15 text-destructive' },
 };
 
 /**
@@ -20,9 +23,11 @@ const PRIORITY_LABEL: Record<number, { label: string; className: string }> = {
  * blocker) is on the left, source on the right.
  */
 export function TaskGraphNode({ data, selected }: NodeProps) {
+  const t = useTranslations('board');
+  const statusLabel = useStatusLabel();
   const node = data as TaskGraphNodeData;
   const hue = statusHueVar(node.status);
-  const priority = PRIORITY_LABEL[node.priority];
+  const priority = PRIORITY_CHIP[node.priority];
   const blocked = node.unmetBlockerCount > 0;
   const done = node.status === 'done';
 
@@ -68,7 +73,9 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
           {statusLabel(node.status)}
         </span>
         {node.foreign ? (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Other project</span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {t('graph.otherProject')}
+          </span>
         ) : node.ready ? (
           <span
             className="rounded px-1.5 py-0.5 text-[10px] font-medium"
@@ -77,7 +84,7 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
               color: `hsl(var(--status-done))`,
             }}
           >
-            Ready
+            {t('graph.ready')}
           </span>
         ) : blocked ? (
           <span
@@ -87,11 +94,13 @@ export function TaskGraphNode({ data, selected }: NodeProps) {
               color: `hsl(var(--status-waiting))`,
             }}
           >
-            Blocked by {node.unmetBlockerCount}
+            {t('graph.blockedBy', { count: node.unmetBlockerCount })}
           </span>
         ) : null}
         {priority ? (
-          <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', priority.className)}>{priority.label}</span>
+          <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', priority.className)}>
+            {t(`priority.${priority.key}`)}
+          </span>
         ) : null}
       </div>
       <Handle type="source" position={Position.Right} onClick={(e) => e.stopPropagation()} />

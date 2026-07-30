@@ -7,8 +7,11 @@ import dashboard from './dashboard.json';
 import guide from './guide.json';
 import nav from './nav.json';
 import plan from './plan.json';
+import roadmap from './roadmap.json';
+import safety from './safety.json';
 import search from './search.json';
 import settings from './settings.json';
+import slides from './slides.json';
 import task from './task.json';
 
 export default {
@@ -19,7 +22,10 @@ export default {
   guide,
   nav,
   plan,
+  roadmap,
+  safety,
   search,
   settings,
+  slides,
   task,
 };

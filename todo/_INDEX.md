@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
-| [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 17/40 | `████░░░░░░` | 43% | D E | F |
+| [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 18/40 | `█████░░░░░` | 45% | E | D F |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 27/34 | `████████░░` | 79% | — | — |
@@ -148,7 +148,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Gate flip & catalog machinery (ESLint allowlist → generated `I18N_EXEMPT` exception list, default-on; catalogs split to `messages/<locale>/<namespace>.json` + generated barrels; progress meter) — runs first (PR #530)
 - ✅ **B** — Board & tasks (cards, task detail, dialogs, bulk bar, toasts; new `task` namespace, exempt 406→384) (PR #533)
 - ✅ **C** — Auth & Settings sweep (register/forgot/invite; every settings subpage; shared error/empty states) (PR #535)
-- ◻ **D** — Feature areas, per-slice (assistant/council, workflows, memory, projects, pr-review, ✅ search+palette PR #572 (re-landed #579 after an accidental revert), ✅ dashboard widgets PR #580, ✅ guide PR #581, roadmap/slides/safety, residue → exempt list to zero)
+- ◻ **D** — Feature areas, per-slice (assistant/council, workflows, memory, projects, pr-review, ✅ search+palette PR #572 (re-landed #579 after an accidental revert), ✅ dashboard widgets PR #580, ✅ guide PR #581, ✅ roadmap/task-graph/slides/safety PR #582, residue → exempt list to zero)
 - ◻ **E** — Chrome, desktop & office DOM (header, update banners, lock screen labels, title-bar residue, office React UI; `ui` default-label propify audit)
 - ◻ **F** — Close-out (absorb Phase 79's verification, full fr-FR walkthrough + screenshots, exception list at zero)
 

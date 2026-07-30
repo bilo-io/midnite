@@ -1,0 +1,114 @@
+{
+  "list": {
+    "title": "Slides",
+    "description": "Paste Markdown to build a deck, then present it with typewriter reveals — stored in this browser.",
+    "newDeck": "New deck",
+    "searchPlaceholder": "Search decks",
+    "sortLabel": "Sort decks",
+    "view": {
+      "grid": "Grid view",
+      "list": "List view"
+    },
+    "sort": {
+      "recent": "Most recent",
+      "oldest": "Oldest first",
+      "title": "Title A–Z",
+      "title-desc": "Title Z–A",
+      "updated": "Recently updated",
+      "count": "Most slides"
+    },
+    "matching": "{count} matching",
+    "noMatches": "No decks match the current filters.",
+    "empty": {
+      "title": "No decks yet",
+      "description": "Create a deck by pasting Markdown — headings become slides and each point types itself in as you present."
+    },
+    "bulk": {
+      "duplicate": "Duplicate",
+      "duplicated": "{count, plural, one {# deck duplicated} other {# decks duplicated}}",
+      "deleted": "{count, plural, one {# deck deleted} other {# decks deleted}}",
+      "deleteTitle": "{count, plural, one {Delete # deck?} other {Delete # decks?}}",
+      "deleteDescription": "This permanently deletes the decks and all their slides. This cannot be undone."
+    },
+    "unassigned": "Unassigned",
+    "groupSummary": "{count, plural, one {# deck} other {# decks}}"
+  },
+  "new": {
+    "title": "New deck",
+    "description": "Paste Markdown — the first # is a cover, every ## starts a slide, and each point becomes a reveal."
+  },
+  "edit": {
+    "title": "Edit deck",
+    "description": "Update the Markdown — the deck’s link stays the same."
+  },
+  "notFound": {
+    "message": "Deck not found in this browser.",
+    "back": "Back to decks"
+  },
+  "card": {
+    "slideCount": "{count, plural, one {# slide} other {# slides}}",
+    "present": "Present {title}",
+    "edit": "Edit “{title}”",
+    "editTitle": "Edit deck",
+    "duplicate": "Duplicate “{title}”",
+    "duplicateTitle": "Duplicate deck",
+    "copyLink": "Copy link to “{title}”",
+    "copyLinkTitle": "Copy deck link",
+    "linkCopied": "Link copied",
+    "download": "Download “{title}” as an offline HTML file",
+    "downloadTitle": "Download offline copy (.html)",
+    "delete": "Delete “{title}”",
+    "deleteTitle": "Delete deck",
+    "deleteConfirmTitle": "Delete “{title}”?",
+    "deleteConfirmDescription": "This permanently deletes the deck and all its slides. This cannot be undone.",
+    "duplicated": "Deck duplicated",
+    "deleted": "Deck deleted"
+  },
+  "editor": {
+    "titlePlaceholder": "Deck title (optional — defaults to the first # heading)",
+    "titleLabel": "Deck title",
+    "noProject": "No project",
+    "markdown": "Markdown",
+    "upload": "Upload .md",
+    "sourceLabel": "Deck markdown source",
+    "emptyPreview": "Nothing to preview yet.",
+    "slideWord": "{count, plural, one {slide} other {slides}}",
+    "creating": "Creating…",
+    "saveChanges": "Save changes",
+    "createDeck": "Create deck",
+    "saveFailed": "Failed to save deck",
+    "resizePanels": "Resize editor panels"
+  },
+  "rail": {
+    "navLabel": "Slide navigation",
+    "slideLabel": "Slide {number}: {title}",
+    "stepLabel": "Slide {number}, step {step}",
+    "moreBefore": "{count} more before",
+    "moreAfter": "{count} more after"
+  },
+  "present": {
+    "documentTitle": "{title} · Slides",
+    "fullscreen": "Toggle fullscreen",
+    "fullscreenTitle": "Fullscreen (F)",
+    "exit": "Exit presentation",
+    "exitTitle": "Exit (Esc)",
+    "hint": "Press <kbd>→</kbd> / <kbd>Space</kbd> to advance · <kbd>←</kbd> to go back · <kbd>F</kbd> fullscreen · <kbd>?</kbd> shortcuts",
+    "help": {
+      "title": "Keyboard shortcuts",
+      "keys": {
+        "next": "→ / Space / Enter",
+        "prev": "← / Backspace",
+        "firstLast": "Home / End",
+        "fullscreen": "F",
+        "exit": "Esc",
+        "help": "?"
+      },
+      "next": "Next step or slide",
+      "prev": "Previous step or slide",
+      "firstLast": "First / last slide",
+      "fullscreen": "Toggle fullscreen",
+      "exit": "Back to all decks",
+      "help": "Toggle this help"
+    }
+  }
+}

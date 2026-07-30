@@ -1,0 +1,31 @@
+{
+  "caps": {
+    "loading": "Chargement des plafonds…",
+    "loadError": "Impossible de charger les plafonds configurés.",
+    "unset": "non défini",
+    "unlimited": "illimité",
+    "perHour": "{count}/heure",
+    "spendRateHeading": "Plafonds de dépenses et de fréquence",
+    "hardDailyCap": "Plafond journalier strict (bloque les lancements)",
+    "hardMonthlyCap": "Plafond mensuel strict (bloque les lancements)",
+    "softDailyBudget": "Budget journalier indicatif (avertissement uniquement)",
+    "softMonthlyBudget": "Budget mensuel indicatif (avertissement uniquement)",
+    "maxSpawnsPerHour": "Lancements max / heure",
+    "footnote": "Les plafonds et les actions protégées sont configurés dans <code>midnite.json</code> et affichés ici en lecture seule."
+  },
+  "blastRadius": {
+    "heading": "Rayon d’impact (plancher des actions destructrices)",
+    "enabledLabel": "Activé (modes surveillé / autonome)",
+    "on": "activé",
+    "off": "désactivé",
+    "protectedBranches": "Branches protégées",
+    "protectedPathGlobs": "Motifs de chemins protégés",
+    "none": "aucun",
+    "scrubSpawnEnv": "Purger les secrets de la passerelle de l’environnement des agents"
+  },
+  "decisions": {
+    "loading": "Chargement des décisions…",
+    "loadError": "Impossible de charger les décisions récentes.",
+    "empty": "Aucune décision enregistrée pour l’instant."
+  }
+}

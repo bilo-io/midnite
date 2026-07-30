@@ -1,0 +1,31 @@
+{
+  "caps": {
+    "loading": "Loading caps…",
+    "loadError": "Couldn’t load the configured caps.",
+    "unset": "unset",
+    "unlimited": "unlimited",
+    "perHour": "{count}/hour",
+    "spendRateHeading": "Spend & rate caps",
+    "hardDailyCap": "Hard daily cap (blocks spawns)",
+    "hardMonthlyCap": "Hard monthly cap (blocks spawns)",
+    "softDailyBudget": "Soft daily budget (warn only)",
+    "softMonthlyBudget": "Soft monthly budget (warn only)",
+    "maxSpawnsPerHour": "Max spawns / hour",
+    "footnote": "Caps & protected actions are configured in <code>midnite.json</code> and shown here read-only."
+  },
+  "blastRadius": {
+    "heading": "Blast-radius (destructive-action floor)",
+    "enabledLabel": "Enabled (guarded / autonomous)",
+    "on": "on",
+    "off": "off",
+    "protectedBranches": "Protected branches",
+    "protectedPathGlobs": "Protected path globs",
+    "none": "none",
+    "scrubSpawnEnv": "Scrub gateway secrets from agent env"
+  },
+  "decisions": {
+    "loading": "Loading decisions…",
+    "loadError": "Couldn’t load recent decisions.",
+    "empty": "No decisions recorded yet."
+  }
+}

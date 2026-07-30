@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import type { GuardrailCaps } from '@midnite/shared';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const getGuardrailCaps = vi.fn();
 vi.mock('@/lib/api', () => ({ getGuardrailCaps: () => getGuardrailCaps() }));
@@ -49,3 +50,13 @@ describe('SafetyCapsPanel', () => {
     await waitFor(() => expect(screen.getByText(/Couldn’t load the configured caps/)).toBeInTheDocument());
   });
 });
+
+it('renders the French copy under fr-FR (Phase 82 D)', async () => {
+  getGuardrailCaps.mockResolvedValue(caps);
+  render(<SafetyCapsPanel />, { locale: 'fr-FR' });
+
+  await waitFor(() => expect(screen.getByText('10/heure')).toBeInTheDocument());
+  expect(screen.getByText('Plafonds de dépenses et de fréquence')).toBeInTheDocument();
+  expect(screen.getAllByText('non défini').length).toBeGreaterThanOrEqual(2);
+});
+

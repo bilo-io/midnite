@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { SyntaxMarkdownTextarea } from '@/components/syntax-markdown-textarea';
 import { useIsMobile } from '@/hooks/use-media-query';
@@ -28,6 +29,7 @@ type Props = {
  * fit a phone, and there's no divider to drag there anyway.
  */
 export function DeckSourceEditor({ value, onChange, minHeight = 360, ariaLabel, emptyPreviewMessage }: Props) {
+  const t = useTranslations('slides');
   const isMobile = useIsMobile();
   const [splitPct, setSplitPct] = useLocalStorage('midnite.slides.editorSplitPct', 50);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,7 @@ export function DeckSourceEditor({ value, onChange, minHeight = 360, ariaLabel, 
       <div
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize editor panels"
+        aria-label={t('editor.resizePanels')}
         aria-valuenow={Math.round(splitPct)}
         aria-valuemin={MIN_PCT}
         aria-valuemax={MAX_PCT}

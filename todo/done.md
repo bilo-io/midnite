@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-30 — feat: Phase 82 Theme D — roadmap/task-graph/slides/safety i18n slice 🟢
+
+PR #582. Fourth Theme D slice, four clusters at once (~160 new fr keys), built by 3 parallel subagents on disjoint file sets merged centrally.
+
+- [x] **Roadmap** — board/lanes/breakdown modal + milestone-graph residuals → `roadmap` (34 keys); toasts + confirms + ICU plurals.
+- [x] **Task-graph** — /tasks/graph → `board.graph.*`/`board.roadmapGraph.*` (19 keys); status/priority chips reuse Theme B vocabulary via `lib/i18n-labels`.
+- [x] **Slides** — all 5 app pages + deck components (incl. presenter help-dialog key names via `t.rich`) → `slides` (84 keys); deck-source-editor minimal hunks (parallel WIP); user deck content untouched.
+- [x] **Safety** — caps panel + decisions feed → `safety` (23 keys); machine identifiers (resolutions, tool names) left as data.
+- [x] **Tests** — static audit across all 19 migrated sources (`i18n-roadmap-cluster-keys.test.ts`); fr renders (safety caps + slides view); `slides-i18n-fr.shots.ts`; 16 files leave `I18N_EXEMPT` (309 → 293).
+- [x] Gate: `:typecheck` + `:lint` + `:test` green; validate/exempt/barrels in sync.
+
 ## 2026-07-30 — feat: In progress in the status dropdown + drag rows between statuses 🟢
 
 PR #576. Two gaps in restatusing a task anywhere other than the board, both routed through `moveTask` so restatusing outside the board inherits the board's session semantics. (Alongside: PR #578 fixed the three chronically-failing CI jobs — `e2e` had never executed a test due to the `runInCI: false` + `CI=true` moon trap; the two visual jobs died on shallow checkouts.)

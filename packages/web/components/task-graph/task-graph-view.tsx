@@ -3,6 +3,7 @@
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import {
   applyEdgeChanges,
@@ -101,6 +102,8 @@ export function TaskGraphView({
   projectIds: scopeProjectIdsProp,
   statusFilter,
 }: Props) {
+  const t = useTranslations('board');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -149,10 +152,10 @@ export function TaskGraphView({
         await addTaskDependency(target, source);
       } catch (err) {
         setGraph(prev);
-        toast.error(err instanceof Error ? err.message : 'Failed to add dependency');
+        toast.error(err instanceof Error ? err.message : t('graph.toasts.addDependencyFailed'));
       }
     },
-    [graph, toast],
+    [graph, toast, t],
   );
 
   const onEdgesDelete = useCallback<OnEdgesDelete>(
@@ -164,18 +167,18 @@ export function TaskGraphView({
         await Promise.all(deleted.map((e) => removeTaskDependency(e.target, e.source)));
       } catch (err) {
         setGraph(prev);
-        toast.error(err instanceof Error ? err.message : 'Failed to remove dependency');
+        toast.error(err instanceof Error ? err.message : t('graph.toasts.removeDependencyFailed'));
       }
     },
-    [graph, toast],
+    [graph, toast, t],
   );
 
   const projectOptions = useMemo(
     () => [
-      { value: '', label: 'All projects' },
+      { value: '', label: tCommon('allProjects') },
       ...projects.map((p) => ({ value: p.id, label: p.name })),
     ],
-    [projects],
+    [projects, tCommon],
   );
 
   // Phase 58 C — when scoped to a project, show its completion (done/total tasks,
@@ -307,7 +310,7 @@ export function TaskGraphView({
       {!embedded && (
         <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-4 py-2">
           <StyledSelect
-            aria-label="Filter graph by project"
+            aria-label={t('graph.filterByProject')}
             options={projectOptions}
             value={singleProjectId}
             onChange={setProject}
@@ -315,8 +318,7 @@ export function TaskGraphView({
           />
           {graph ? (
             <span className="text-xs text-muted-foreground">
-              {graph.nodes.length} task{graph.nodes.length === 1 ? '' : 's'} · {edges.length} dependenc
-              {edges.length === 1 ? 'y' : 'ies'}
+              {t('graph.summary', { tasks: graph.nodes.length, dependencies: edges.length })}
             </span>
           ) : null}
           {milestoneId ? (
@@ -326,9 +328,9 @@ export function TaskGraphView({
               onClick={clearMilestone}
               className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-accent/40 px-2 py-0.5 text-xs text-foreground hover:bg-accent"
             >
-              Milestone filter
+              {t('graph.milestoneFilter')}
               <X className="h-3 w-3" aria-hidden />
-              <span className="sr-only">Clear milestone filter</span>
+              <span className="sr-only">{t('graph.clearMilestoneFilter')}</span>
             </button>
           ) : null}
           {selectedProject ? (
@@ -342,15 +344,14 @@ export function TaskGraphView({
           role="status"
           className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-300"
         >
-          Showing the first {graph.nodes.length} of {graph.totalCount} tasks. Pick a project above to
-          narrow the graph.
+          {t('graph.truncated', { shown: graph.nodes.length, total: graph.totalCount })}
         </div>
       ) : null}
 
       <div ref={flowWrapRef} className="relative min-h-0 flex-1">
         {empty ? (
           <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
-            No tasks to graph{scopeProjectIds.length ? ' for this scope' : ''} yet.
+            {scopeProjectIds.length ? t('graph.emptyScoped') : t('graph.empty')}
           </div>
         ) : (
           <ReactFlow

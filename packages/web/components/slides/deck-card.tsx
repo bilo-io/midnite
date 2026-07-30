@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Check, Copy, Download, Link2, Pencil, Presentation, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Project } from '@midnite/shared';
 import type { DeckSummary } from '@/lib/slides/store';
 import { getDeckBySlug, deleteDeck, duplicateDeck } from '@/lib/slides/store';
@@ -38,11 +39,12 @@ function Dots({ count }: { count: number }) {
 }
 
 const badge = (id: number) => String(id).padStart(2, '0');
-const plural = (n: number) => (n === 1 ? 'slide' : 'slides');
 const iconBtn =
   'relative z-[2] grid h-8 w-8 place-items-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border/60 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 function CardActions({ deck, onChanged }: { deck: DeckSummary; onChanged: () => void }) {
+  const t = useTranslations('slides');
+  const tc = useTranslations('common');
   const [linkCopied, setLinkCopied] = useState(false);
   const confirm = useConfirm();
   const toast = useToast();
@@ -83,20 +85,20 @@ function CardActions({ deck, onChanged }: { deck: DeckSummary; onChanged: () => 
   function duplicate(e: React.MouseEvent) {
     stop(e);
     duplicateDeck(deck.slug);
-    toast.success('Deck duplicated');
+    toast.success(t('card.duplicated'));
     onChanged();
   }
 
   async function remove(e: React.MouseEvent) {
     stop(e);
     const ok = await confirm({
-      title: `Delete “${deck.title}”?`,
-      description: 'This permanently deletes the deck and all its slides. This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('card.deleteConfirmTitle', { title: deck.title }),
+      description: t('card.deleteConfirmDescription'),
+      confirmLabel: tc('delete'),
     });
     if (!ok) return;
     deleteDeck(deck.slug);
-    toast.success('Deck deleted');
+    toast.success(t('card.deleted'));
     onChanged();
   }
 
@@ -105,33 +107,33 @@ function CardActions({ deck, onChanged }: { deck: DeckSummary; onChanged: () => 
       <Link
         href={`/slides/edit?slug=${encodeURIComponent(deck.slug)}`}
         className={iconBtn}
-        aria-label={`Edit “${deck.title}”`}
-        title="Edit deck"
+        aria-label={t('card.edit', { title: deck.title })}
+        title={t('card.editTitle')}
         onClick={(e) => e.stopPropagation()}
       >
         <Pencil className="h-4 w-4" />
       </Link>
-      <button type="button" className={iconBtn} onClick={duplicate} aria-label={`Duplicate “${deck.title}”`} title="Duplicate deck">
+      <button type="button" className={iconBtn} onClick={duplicate} aria-label={t('card.duplicate', { title: deck.title })} title={t('card.duplicateTitle')}>
         <Copy className="h-4 w-4" />
       </button>
       <button
         type="button"
         className={cn(iconBtn, linkCopied && 'text-primary')}
         onClick={copyLink}
-        aria-label={`Copy link to “${deck.title}”`}
-        title={linkCopied ? 'Link copied' : 'Copy deck link'}
+        aria-label={t('card.copyLink', { title: deck.title })}
+        title={linkCopied ? t('card.linkCopied') : t('card.copyLinkTitle')}
       >
         {linkCopied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
       </button>
-      <button type="button" className={iconBtn} onClick={download} aria-label={`Download “${deck.title}” as an offline HTML file`} title="Download offline copy (.html)">
+      <button type="button" className={iconBtn} onClick={download} aria-label={t('card.download', { title: deck.title })} title={t('card.downloadTitle')}>
         <Download className="h-4 w-4" />
       </button>
       <button
         type="button"
         className={cn(iconBtn, 'hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive')}
         onClick={remove}
-        aria-label={`Delete “${deck.title}”`}
-        title="Delete deck"
+        aria-label={t('card.delete', { title: deck.title })}
+        title={t('card.deleteTitle')}
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -150,6 +152,7 @@ export function DeckCard({
   project?: DeckProject;
   onChanged: () => void;
 } & Selectable) {
+  const t = useTranslations('slides');
   const href = `/slides/present?slug=${encodeURIComponent(deck.slug)}`;
   return (
     <div
@@ -158,7 +161,7 @@ export function DeckCard({
         selected && 'border-primary/50 bg-accent/30',
       )}
     >
-      <Link href={href} className="absolute inset-0 z-[1] rounded-xl" aria-label={`Present ${deck.title}`} />
+      <Link href={href} className="absolute inset-0 z-[1] rounded-xl" aria-label={t('card.present', { title: deck.title })} />
       <div className="flex items-start justify-between gap-2">
         <span className="flex items-center gap-2">
           {onToggleSelect ? (
@@ -176,7 +179,7 @@ export function DeckCard({
       <Dots count={deck.count} />
       <div className="flex items-center gap-2">
         <p className="text-xs tabular-nums text-muted-foreground">
-          {deck.count} {plural(deck.count)} · {relativeTime(deck.updated)}
+          {t('card.slideCount', { count: deck.count })} · {relativeTime(deck.updated)}
         </p>
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
       </div>
@@ -195,6 +198,7 @@ export function DeckRow({
   project?: DeckProject;
   onChanged: () => void;
 } & Selectable) {
+  const t = useTranslations('slides');
   const href = `/slides/present?slug=${encodeURIComponent(deck.slug)}`;
   return (
     <div
@@ -203,7 +207,7 @@ export function DeckRow({
         selected && 'border-primary/50 bg-accent/30',
       )}
     >
-      <Link href={href} className="absolute inset-0 z-[1] rounded-lg" aria-label={`Present ${deck.title}`} />
+      <Link href={href} className="absolute inset-0 z-[1] rounded-lg" aria-label={t('card.present', { title: deck.title })} />
       {onToggleSelect ? (
         <span className="relative z-[2] shrink-0">
           <SelectableIcon Icon={Presentation} selected={selected} onToggle={onToggleSelect} />
@@ -220,7 +224,7 @@ export function DeckRow({
         <Dots count={deck.count} />
       </span>
       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-        {deck.count} {plural(deck.count)}
+        {t('card.slideCount', { count: deck.count })}
       </span>
       <span className="hidden w-28 shrink-0 text-right text-xs tabular-nums text-muted-foreground md:block">
         {relativeTime(deck.updated)}
