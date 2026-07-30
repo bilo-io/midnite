@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-28 — feat: Phase 82 Theme D — search + command palette i18n slice 🟢
+
+PR #572. First of Theme D's independently-landable per-area slices: the ⌘K command palette, the `/search` page + results, and the keyboard-shortcuts help overlay it launches, all reading from a new `search` namespace (55 keys, en-GB + full hand fr-FR).
+
+- [x] **Command palette** — dialog/input aria-labels, placeholders, section labels (Recent/Commands/Navigation), "no matches"/"type at least N chars"/"+N more" ICU strings, the three always-on settings shortcuts → `search.palette.*`.
+- [x] **`/search` page + results** — page header, empty/loading/error/no-results states, ICU-plural result count, "All types" filter pill → `search.page.*` / `search.results.*`; `search-bar.tsx` stays locale-agnostic (prop-driven placeholder/clear-label) since 8+ other still-unmigrated areas share it.
+- [x] **Keyboard-shortcuts help** — `lib/keyboard-shortcuts.ts` swapped raw English labels + `'General'|'Navigation'|'Board'` group strings for stable `labelKey`/lowercase group ids the component now translates via `search.shortcuts.*`.
+- [x] **Dedup** — extracted `lib/search-type-meta.ts` so the palette and `/search` results page share one type→icon/label map instead of two hand-kept copies.
+- [x] **Fixed a real gap found during migration** — the palette's FEATURES-derived nav labels (Dashboard/Tasks/Workflows/…) ignored locale entirely; now reuses the already-migrated `nav` namespace's `features.<key>` keys (same ones the shell nav uses).
+- [x] **fr-FR + tests** — 55 keys same-PR; fr-FR RTL smoke test added for `CommandPalette`, `SearchResults`, and a new `keyboard-shortcuts-help.test.tsx`; `lib/palette-commands.tsx` dropped from `I18N_EXEMPT` (zero hardcoded strings, free housekeeping) — exempt count 331 → 325.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green (292/292 web files, 293/293 gateway files); `i18n-validate`/`i18n-exempt`/`i18n-barrels` all in sync.
+
 ## 2026-07-23 — feat: Phase 82 Theme C — auth & settings i18n sweep (en-GB + fr-FR) 🟢
 
 PR #535. Every auth page and settings subpage (~47 files) reads from the catalogs — the biggest single slice of Phase 82, built via 7 parallel subagents merged centrally.

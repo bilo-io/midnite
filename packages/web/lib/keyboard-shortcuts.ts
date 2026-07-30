@@ -2,25 +2,26 @@
 export type Shortcut = {
   /** Display representation of the key(s) — e.g. `['⌘', 'K']` or `['G', 'B']`. */
   keys: string[];
-  label: string;
-  group: 'General' | 'Navigation' | 'Board';
+  /** Key into the `search` namespace's `shortcuts.items.*` (Phase 82 Theme D). */
+  labelKey: string;
+  group: 'general' | 'navigation' | 'board';
 };
 
 export const SHORTCUTS: Shortcut[] = [
   // General
-  { keys: ['⌘K'], label: 'Open command palette', group: 'General' },
-  { keys: ['?'], label: 'Keyboard shortcuts', group: 'General' },
-  { keys: ['N'], label: 'New task (when not in an input)', group: 'General' },
-  { keys: ['Esc'], label: 'Close modal / drawer', group: 'General' },
+  { keys: ['⌘K'], labelKey: 'openPalette', group: 'general' },
+  { keys: ['?'], labelKey: 'shortcutsHelp', group: 'general' },
+  { keys: ['N'], labelKey: 'newTask', group: 'general' },
+  { keys: ['Esc'], labelKey: 'closeModal', group: 'general' },
   // Navigation
-  { keys: ['G', 'H'], label: 'Go to Home', group: 'Navigation' },
-  { keys: ['G', 'B'], label: 'Go to Board', group: 'Navigation' },
-  { keys: ['G', 'O'], label: 'Go to Office', group: 'Navigation' },
-  { keys: ['G', 'S'], label: 'Go to Settings', group: 'Navigation' },
+  { keys: ['G', 'H'], labelKey: 'goHome', group: 'navigation' },
+  { keys: ['G', 'B'], labelKey: 'goBoard', group: 'navigation' },
+  { keys: ['G', 'O'], labelKey: 'goOffice', group: 'navigation' },
+  { keys: ['G', 'S'], labelKey: 'goSettings', group: 'navigation' },
   // Board
-  { keys: ['↑', '↓'], label: 'Move focus between cards', group: 'Board' },
-  { keys: ['←', '→'], label: 'Move focus between columns', group: 'Board' },
-  { keys: ['Enter'], label: 'Open focused card', group: 'Board' },
-  { keys: ['D'], label: 'Mark focused card done', group: 'Board' },
-  { keys: ['A'], label: 'Abandon focused card', group: 'Board' },
+  { keys: ['↑', '↓'], labelKey: 'moveFocusCards', group: 'board' },
+  { keys: ['←', '→'], labelKey: 'moveFocusColumns', group: 'board' },
+  { keys: ['Enter'], labelKey: 'openCard', group: 'board' },
+  { keys: ['D'], labelKey: 'markDone', group: 'board' },
+  { keys: ['A'], labelKey: 'abandonCard', group: 'board' },
 ];
