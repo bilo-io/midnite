@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { LocaleProvider } from '@midnite/shell';
 import type { DigestListItem } from '@midnite/shared';
 import { withQueryClient } from '@/lib/test-query-wrapper';
+import { CATALOGS } from '@/i18n/messages';
 
 const getDigests = vi.fn();
 vi.mock('@/lib/api', () => ({ getDigests: (...args: unknown[]) => getDigests(...args) }));
@@ -19,7 +20,7 @@ import { DigestWidget } from './digest-widget';
 const renderWidget = () =>
   render(
     withQueryClient(
-      <LocaleProvider catalogs={{}} initialLocale="en-GB">
+      <LocaleProvider catalogs={CATALOGS} initialLocale="en-GB">
         <DigestWidget />
       </LocaleProvider>,
     ),

@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-30 — feat: Phase 82 Theme D — dashboard widgets i18n slice 🟢
+
+PR #580. Second Theme D slice: the dashboard's date/time, finance and market widgets plus the add-widget picker, reading from a new `dashboard` namespace (~170 keys, en-GB + full hand fr-FR). Also re-landed PR #572 (search + palette), which had been **accidentally reverted** by a stale-index race in the shared primary checkout — a "commit everything" session faithfully committed a pre-staged block that was byte-identical to the pre-merge tip and also silently dropped the Phase 83 `_INDEX.md` registration (both restored, PR #579).
+
+- [x] **13 files migrated** — clock (+ shared analog face), date, calendar, world clocks, focus timer, latest digest, finances, market asset, market watchlist, widget-card, widget-picker-menu, dashboard-add-widget → `dashboard.*`; exempt count 325 → 312.
+- [x] **Localised widget catalogue** — every widget's picker label/description (41 types) + the 8 category headers translate via `dashboard.catalog.*` / `dashboard.categories.*`, mapped **before** search-filtering so the query matches what the user reads; the registry itself stays data-only.
+- [x] **Intl over catalogs for locale-sensitive values** — calendar weekday headers now derive from the Phase 79 F `useLocaleFormat` seam (Monday-start, locale-named) instead of a hardcoded `Mo–Su` list; digest dates/finance amounts already on the seam.
+- [x] **aria-labels & tooltips included** — all user-visible aria/title strings in the touched widgets (ICU-parameterised where dynamic: reorder/remove/add-item).
+- [x] **fr-FR + tests** — ~170 keys same-PR (meta `needsReview`); static key audit `lib/i18n-dashboard-keys.test.ts` (every `t()` call + the enum/catalog families resolve in en-GB); fr renders for finances + calendar; `dashboard-i18n-fr.shots.ts` Playwright previews; landing-clock/digest/market/finances suites intl-wrapped.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green; `i18n-validate`/`i18n-exempt`/`i18n-barrels` in sync.
+
 ## 2026-07-28 — feat: Phase 82 Theme D — search + command palette i18n slice 🟢
 
 PR #572. First of Theme D's independently-landable per-area slices: the ⌘K command palette, the `/search` page + results, and the keyboard-shortcuts help overlay it launches, all reading from a new `search` namespace (55 keys, en-GB + full hand fr-FR).

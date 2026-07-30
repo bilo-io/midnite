@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, Settings2, Timer, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { WidgetConfig } from '@/lib/dashboard-widgets';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
@@ -24,6 +25,7 @@ function format(seconds: number): string {
 }
 
 export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
+  const t = useTranslations('dashboard');
   const { workMin, breakMin } = config;
   const [phase, setPhase] = useState<Phase>('work');
   const [secondsLeft, setSecondsLeft] = useState(workMin * 60);
@@ -74,13 +76,13 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
 
   return (
     <WidgetCard
-      title="Focus timer"
+      title={t('timer.title')}
       icon={Timer}
       actions={
         <button
           type="button"
           onClick={() => setEditing((e) => !e)}
-          aria-label={editing ? 'Close settings' : 'Timer settings'}
+          aria-label={editing ? t('timer.closeSettings') : t('timer.openSettings')}
           aria-pressed={editing}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
@@ -91,8 +93,8 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
     >
       {editing ? (
         <div className="flex w-full flex-col gap-2 text-xs">
-          <MinuteField label="Work (min)" value={workMin} onChange={(v) => setMinutes('workMin', v)} />
-          <MinuteField label="Break (min)" value={breakMin} onChange={(v) => setMinutes('breakMin', v)} />
+          <MinuteField label={t('timer.workMin')} value={workMin} onChange={(v) => setMinutes('workMin', v)} />
+          <MinuteField label={t('timer.breakMin')} value={breakMin} onChange={(v) => setMinutes('breakMin', v)} />
         </div>
       ) : (
         <>
@@ -102,7 +104,7 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
               phase === 'work' ? 'bg-primary/15 text-primary' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
             )}
           >
-            {phase}
+            {t(`timer.phase.${phase}`)}
           </span>
           <div className="relative flex items-center justify-center">
             <svg viewBox="0 0 120 120" className="h-28 w-28 -rotate-90" aria-hidden>
@@ -137,7 +139,7 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
             <button
               type="button"
               onClick={() => setRunning((r) => !r)}
-              aria-label={running ? 'Pause' : 'Start'}
+              aria-label={running ? t('timer.pause') : t('timer.start')}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
             >
               {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
@@ -145,7 +147,7 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
             <button
               type="button"
               onClick={reset}
-              aria-label="Reset"
+              aria-label={t('timer.reset')}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <RotateCcw className="h-3.5 w-3.5" />

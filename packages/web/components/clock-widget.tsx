@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ClockMode, WidgetConfig } from '@/lib/dashboard-widgets';
 import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ type ClockWidgetProps = {
 };
 
 export function ClockWidget({ config, onConfigChange }: ClockWidgetProps) {
+  const t = useTranslations('dashboard');
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function ClockWidget({ config, onConfigChange }: ClockWidgetProps) {
 
   return (
     <WidgetCard
-      title="Clock"
+      title={t('clock.title')}
       icon={Clock}
       actions={
         <div className="flex items-center rounded-md border border-border/60 p-0.5 text-[10px]">
@@ -40,7 +42,7 @@ export function ClockWidget({ config, onConfigChange }: ClockWidgetProps) {
               )}
               aria-pressed={config.mode === mode}
             >
-              {mode}
+              {t(`clockMode.${mode}`)}
             </button>
           ))}
         </div>

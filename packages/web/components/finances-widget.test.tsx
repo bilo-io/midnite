@@ -4,6 +4,7 @@ import type { Locale } from '@midnite/shared';
 import { describe, expect, it } from 'vitest';
 
 import type { FinanceConfig } from '@/lib/dashboard-widgets';
+import { CATALOGS } from '@/i18n/messages';
 import { FinancesWidget } from './finances-widget';
 
 const CONFIG: FinanceConfig = {
@@ -15,7 +16,7 @@ const CONFIG: FinanceConfig = {
 
 function renderAt(locale: Locale) {
   return render(
-    <LocaleProvider catalogs={{}} initialLocale={locale}>
+    <LocaleProvider catalogs={CATALOGS} initialLocale={locale}>
       <FinancesWidget config={CONFIG} onConfigChange={() => {}} />
     </LocaleProvider>,
   );
@@ -33,5 +34,12 @@ describe('FinancesWidget locale-aware formatting (Phase 79 F)', () => {
     renderAt('de-DE');
     expect(screen.getAllByText('1.234,50').length).toBeGreaterThan(0);
     expect(screen.getByText('1.034,50')).toBeInTheDocument();
+  });
+
+  it('renders the French copy under fr-FR (Phase 82 D)', () => {
+    renderAt('fr-FR');
+    expect(screen.getAllByText('Revenus').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Dépenses').length).toBeGreaterThan(0);
+    expect(screen.getByText('Reste')).toBeInTheDocument();
   });
 });

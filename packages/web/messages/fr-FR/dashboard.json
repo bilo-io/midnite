@@ -1,0 +1,287 @@
+{
+  "clockMode": {
+    "digital": "numérique",
+    "analogue": "analogique"
+  },
+  "clock": {
+    "title": "Horloge",
+    "analogueClock": "Horloge analogique"
+  },
+  "date": {
+    "title": "Date"
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "today": "Aujourd’hui",
+    "prevMonth": "Mois précédent",
+    "nextMonth": "Mois suivant"
+  },
+  "digest": {
+    "title": "Dernier récap",
+    "refresh": "Actualiser le récap",
+    "error": "Impossible de charger les récaps.",
+    "loading": "Chargement…",
+    "empty": "Aucun récap pour l’instant — activez le workflow de récap quotidien pour obtenir une synthèse de la flotte.",
+    "shipped": "Livré",
+    "failed": "Échecs",
+    "attention": "Attn"
+  },
+  "timer": {
+    "title": "Minuteur de concentration",
+    "openSettings": "Réglages du minuteur",
+    "closeSettings": "Fermer les réglages",
+    "workMin": "Travail (min)",
+    "breakMin": "Pause (min)",
+    "phase": {
+      "work": "travail",
+      "break": "pause"
+    },
+    "start": "Démarrer",
+    "pause": "Mettre en pause",
+    "reset": "Réinitialiser"
+  },
+  "worldClocks": {
+    "title": "Horloges mondiales",
+    "edit": "Modifier les fuseaux horaires",
+    "doneEditing": "Terminer la modification",
+    "empty": "Aucun fuseau horaire — ajoutez-en un avec l’engrenage.",
+    "same": "identique",
+    "reorder": "Réordonner {label}",
+    "remove": "Supprimer {label}",
+    "labelPlaceholder": "Libellé (ex. Berlin)",
+    "tzPlaceholder": "Fuseau IANA (ex. Europe/Berlin)",
+    "add": "Ajouter un fuseau horaire"
+  },
+  "finances": {
+    "title": "Finances",
+    "income": "Revenus",
+    "expenses": "Dépenses",
+    "leftover": "Reste",
+    "none": "Rien pour l’instant.",
+    "cardName": "Nom de la carte",
+    "cardNamePlaceholder": "ex. Frais fixes",
+    "labelPlaceholder": "Libellé",
+    "showTotals": "Afficher les totaux uniquement",
+    "showItems": "Afficher le détail",
+    "edit": "Modifier les finances",
+    "doneEditing": "Terminer la modification",
+    "itemName": "Nom de l’élément ({group})",
+    "itemAmount": "Montant de l’élément ({group})",
+    "removeItem": "Supprimer {label}",
+    "addItem": "Ajouter un élément ({group})",
+    "add": "Ajouter"
+  },
+  "market": {
+    "unconfiguredTitle": "Action / Crypto",
+    "crypto": "Crypto",
+    "stocks": "Actions",
+    "searchCoins": "Rechercher des cryptos…",
+    "searchStocks": "Rechercher des actions…",
+    "stocksNote": "Les actions nécessitent une clé API Twelve Data gratuite sur la passerelle.",
+    "error": "Impossible de charger les données de marché.",
+    "cancel": "Annuler",
+    "changeAsset": "Changer d’actif",
+    "timeframeChart": "graphique {timeframe}",
+    "ohlc": {
+      "open": "O",
+      "high": "H",
+      "low": "B",
+      "close": "C"
+    }
+  },
+  "watchlist": {
+    "title": "Liste de suivi",
+    "empty": "Aucun actif pour l’instant — ouvrez les réglages pour en ajouter.",
+    "edit": "Modifier la liste de suivi",
+    "doneEditing": "Terminer la modification",
+    "cardName": "Nom de la carte",
+    "cardNamePlaceholder": "ex. Mes cryptos",
+    "atCap": "Limite de {max} actifs atteinte — supprimez-en un pour en ajouter un autre.",
+    "addCoin": "Ajouter une crypto…",
+    "addStock": "Ajouter une action…",
+    "remove": "Supprimer {name}"
+  },
+  "picker": {
+    "add": "Ajouter un widget",
+    "search": "Rechercher des widgets",
+    "searchPlaceholder": "Rechercher des widgets…",
+    "noMatch": "Aucun widget ne correspond à « {query} ».",
+    "added": "Déjà sur ce tableau de bord"
+  },
+  "categories": {
+    "tasks": "Tâches et projets",
+    "agents": "Agents",
+    "activity": "Activité",
+    "system": "Système",
+    "datetime": "Date et heure",
+    "finance": "Finance et marchés",
+    "info": "Actualités et météo",
+    "productivity": "Productivité"
+  },
+  "catalog": {
+    "tile-backlog": {
+      "label": "Backlog",
+      "description": "Nombre de tâches en attente ou ambiguës"
+    },
+    "tile-todo": {
+      "label": "À faire",
+      "description": "Nombre de tâches en file, prêtes à démarrer"
+    },
+    "tile-inProgress": {
+      "label": "En cours",
+      "description": "Nombre de tâches en cours d’exécution ou en attente"
+    },
+    "tile-done": {
+      "label": "Terminé",
+      "description": "Nombre de tâches terminées"
+    },
+    "quick-capture": {
+      "label": "Saisie rapide",
+      "description": "Ajoutez une tâche (ou collez une liste) sans quitter le tableau de bord"
+    },
+    "projects": {
+      "label": "Projet",
+      "description": "Une carte pour un seul projet (par défaut, le plus récemment mis à jour)"
+    },
+    "notes": {
+      "label": "Actions à faire",
+      "description": "Actions rapides avec dictée vocale"
+    },
+    "routines": {
+      "label": "Routines",
+      "description": "Suivez vos routines quotidiennes"
+    },
+    "news": {
+      "label": "Hacker News",
+      "description": "Les meilleures histoires de Hacker News"
+    },
+    "weather": {
+      "label": "Météo",
+      "description": "Conditions actuelles et prévisions du jour"
+    },
+    "clock": {
+      "label": "Horloge",
+      "description": "Horloge numérique ou analogique"
+    },
+    "date": {
+      "label": "Date",
+      "description": "La date du jour"
+    },
+    "sessions": {
+      "label": "Sessions en direct",
+      "description": "Sessions d’agents actives et leur statut"
+    },
+    "workflows": {
+      "label": "Workflows",
+      "description": "Définitions des workflows et statut de la dernière exécution"
+    },
+    "memories": {
+      "label": "Mémoires récentes",
+      "description": "Mémoires d’agents mises à jour le plus récemment"
+    },
+    "agents": {
+      "label": "Pool d’agents",
+      "description": "Agent principal, modèle et sous-agents"
+    },
+    "councils": {
+      "label": "Conseils",
+      "description": "Vos conseils et leurs participants"
+    },
+    "repo-status": {
+      "label": "Statut par dépôt",
+      "description": "Agents en cours et profondeur de file par dépôt"
+    },
+    "activity": {
+      "label": "Fil d’activité",
+      "description": "Changements de statut récents des tâches"
+    },
+    "who-in-office": {
+      "label": "Qui est au bureau",
+      "description": "Coéquipiers actuellement dans le bureau multijoueur"
+    },
+    "throughput": {
+      "label": "Débit",
+      "description": "Tâches terminées au cours des deux dernières semaines"
+    },
+    "health": {
+      "label": "Santé du système",
+      "description": "Joignabilité de la passerelle et statut des agents"
+    },
+    "usage": {
+      "label": "Coût et usage LLM",
+      "description": "Dépenses estimées par jour, fournisseur et fonctionnalité"
+    },
+    "cost-by-repo": {
+      "label": "Coût par dépôt",
+      "description": "Dépenses des sessions d’agents par dépôt, mesurées vs estimées"
+    },
+    "cycle-time": {
+      "label": "Temps de cycle",
+      "description": "Attente vs travail p50/p90 sur les tâches terminées"
+    },
+    "fleet-trend": {
+      "label": "Tendance de la flotte",
+      "description": "Une série de jauges (profondeur de file, créneaux, latence de tick) dans le temps"
+    },
+    "digest": {
+      "label": "Dernier récap",
+      "description": "Le récap de flotte le plus récent — titre + livrés/échecs/à surveiller"
+    },
+    "shipped": {
+      "label": "Livré",
+      "description": "Tâches récemment terminées avec leurs liens PR"
+    },
+    "system-monitor": {
+      "label": "Moniteur système",
+      "description": "Utilisation CPU et mémoire en direct"
+    },
+    "disk": {
+      "label": "Disque",
+      "description": "Stockage réel de l’appareil — utilisé vs libre sur le disque de la passerelle"
+    },
+    "storage": {
+      "label": "Cache de l’app",
+      "description": "Stockage navigateur mis en cache par cette app (quota par origine)"
+    },
+    "world-clocks": {
+      "label": "Horloges mondiales",
+      "description": "Heure actuelle dans plusieurs fuseaux horaires"
+    },
+    "all-projects": {
+      "label": "Tous les projets",
+      "description": "Chaque projet avec sa répartition des tâches"
+    },
+    "quote": {
+      "label": "Citation",
+      "description": "Une citation qui change chaque jour"
+    },
+    "timer": {
+      "label": "Minuteur de concentration",
+      "description": "Compte à rebours travail / pause façon Pomodoro"
+    },
+    "calendar": {
+      "label": "Calendrier",
+      "description": "Mini calendrier mensuel"
+    },
+    "scratchpad": {
+      "label": "Bloc-notes",
+      "description": "Bloc-notes libre enregistré sur cet appareil"
+    },
+    "links": {
+      "label": "Liens rapides",
+      "description": "Votre propre grille de favoris"
+    },
+    "finances": {
+      "label": "Finances",
+      "description": "Revenus vs dépenses avec le reste — une carte par budget"
+    },
+    "market-asset": {
+      "label": "Action / Crypto",
+      "description": "Prix en direct, OHLC et graphique historique pour un actif"
+    },
+    "market-watchlist": {
+      "label": "Liste de suivi",
+      "description": "Quelques actions ou cryptos avec prix et gain/perte"
+    }
+  }
+}
