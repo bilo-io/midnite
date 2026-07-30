@@ -7,9 +7,12 @@ import {
   MouseSensor,
   TouchSensor,
   closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -75,11 +78,23 @@ export function SortableAccordions({
   sections,
   storageKey,
   variant = 'card',
+  onItemDrop,
 }: {
   sections: AccordionSection[];
   storageKey: string;
   /** Card-chrome treatment for each section — see {@link AccordionVariant}. */
   variant?: AccordionVariant;
+  /**
+   * Opt in to dropping *items* (not sections) onto a section — e.g. dragging a
+   * task row from one status group into another. Called with the dragged item's
+   * id and the section it landed on, when the drag's `active.id` isn't one of the
+   * section ids. The bodies' draggables register with this component's own
+   * `DndContext` (it's the innermost provider), so this hatch is the only way a
+   * consumer can hear about them. Supplying it also switches collision detection
+   * to pointer-first, since a row must land on the section under the cursor
+   * rather than the one whose centre happens to be nearest.
+   */
+  onItemDrop?: (itemId: string, sectionId: string) => void;
 }) {
   const orderKey = `${storageKey}.order`;
   const collapsedKey = `${storageKey}.collapsed`;
@@ -150,17 +165,45 @@ export function SortableAccordions({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // An item drag (a task row), as opposed to a section drag: its `active.id` isn't
+  // a section id. Tracked so each Section can light up as a drop target only while
+  // an *item* is in flight — a section being dragged over another section is a
+  // reorder, which already has its own affordance.
+  const [itemDragging, setItemDragging] = useState(false);
+
+  const onDragStart = (event: DragStartEvent) => {
+    setItemDragging(!byId.has(String(event.active.id)));
+  };
+
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setItemDragging(false);
+    const activeId = String(active.id);
+    // An item dropped on a section → hand it to the consumer; items are never
+    // part of `order`, so they must not fall through to the reorder path.
+    if (!byId.has(activeId)) {
+      const overId = over ? String(over.id) : null;
+      if (overId && byId.has(overId)) onItemDrop?.(activeId, overId);
+      return;
+    }
     if (!over || active.id === over.id) return;
-    const from = order.indexOf(String(active.id));
+    const from = order.indexOf(activeId);
     const to = order.indexOf(String(over.id));
     if (from === -1 || to === -1) return;
     persistOrder(arrayMove(order, from, to));
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      // Sections reorder by closest centre (a tall list of equal-height headers);
+      // an item dropped into a section has to honour the pointer, so prefer
+      // `pointerWithin` and fall back to centres when it's outside every section.
+      collisionDetection={onItemDrop ? pointerFirstCollision : closestCenter}
+      onDragStart={onDragStart}
+      onDragCancel={() => setItemDragging(false)}
+      onDragEnd={onDragEnd}
+    >
       <SortableContext items={ordered.map((s) => s.id)} strategy={verticalListSortingStrategy}>
         <div className={cn('flex flex-col', variant === 'card' ? 'gap-2' : 'gap-4')}>
           {ordered.map((section) => (
@@ -170,6 +213,7 @@ export function SortableAccordions({
               collapsed={collapsed.has(section.id)}
               onToggle={() => toggle(section.id)}
               variant={variant}
+              dropTarget={itemDragging}
             />
           ))}
         </div>
@@ -178,20 +222,31 @@ export function SortableAccordions({
   );
 }
 
+/** Pointer-first collision detection: what's under the cursor wins, falling back
+ *  to nearest-centre when the pointer is outside every droppable. */
+function pointerFirstCollision(args: Parameters<CollisionDetection>[0]): ReturnType<CollisionDetection> {
+  const within = pointerWithin(args);
+  return within.length > 0 ? within : closestCenter(args);
+}
+
 function Section({
   section,
   collapsed,
   onToggle,
   variant = 'card',
+  dropTarget = false,
 }: {
   section: AccordionSection;
   collapsed: boolean;
   onToggle: () => void;
   variant?: AccordionVariant;
+  /** An item (not a section) is mid-drag, so this section is a live drop target
+   *  and rings when the pointer is over it. */
+  dropTarget?: boolean;
 }) {
   const t = useTranslations('common');
   const isMobile = useIsMobile();
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging, isOver } =
     useSortable({ id: section.id });
   // Generated, not derived from `section.id`: ids come from callers (project uuids,
   // `__unassigned__`, statuses) and two accordion lists can be on one page.
@@ -216,6 +271,9 @@ function Section({
         headerNaked
           ? isDragging && 'z-10 opacity-90'
           : cn('overflow-hidden rounded-lg border surface-glass', isDragging && 'z-10 shadow-lg'),
+        // Ring the whole section while a dragged item hovers it, so the drop
+        // target reads even when the section is collapsed to just its header.
+        dropTarget && isOver && 'rounded-lg ring-2 ring-primary/60',
       )}
     >
       <div className={cn('flex items-center gap-2', headerNaked ? 'py-1' : 'px-2 py-2')}>

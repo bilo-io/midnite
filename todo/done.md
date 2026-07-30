@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-30 — feat: In progress in the status dropdown + drag rows between statuses 🟢
+
+PR #576. Two gaps in restatusing a task anywhere other than the board, both routed through `moveTask` so restatusing outside the board inherits the board's session semantics. (Alongside: PR #578 fixed the three chronically-failing CI jobs — `e2e` had never executed a test due to the `runInCI: false` + `CI=true` moon trap; the two visual jobs died on shallow checkouts.)
+
+- [x] **`wip` offered in `StatusSelect`** — the status dropdown (task/session modal header + full task page) now lists In progress wherever `ALLOWED_TRANSITIONS` permits; both callers route through `moveTask`, so picking it starts a session and picking Todo/Backlog from `wip`/`waiting` stops one (previously `updateTaskStatus` would restatus a running task without stopping its agent).
+- [x] **Rows draggable between statuses in list/table views** — drag from a dedicated grip (whole-row drag would race the row's open-click and nest interactives), reported via a new opt-in `onItemDrop` hatch on `SortableAccordions` with pointer-first collision detection; drops resolve through one `statusDropTarget` guard (no-op/illegal edges refused locally); empty status sections render in drag-enabled views so every status is a target.
+- [x] **14 new tests** — `statusDropTarget` legal/no-op/illegal/unknown, `StatusSelect` offering `wip` (still refusing non-edges, terminal statuses still static), `TableView` grip only when `onMove` is wired.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green.
+
 ## 2026-07-30 — feat: Phase 82 Theme D — product guides i18n slice 🟢
 
 PR #581. Third Theme D slice: the 10 replayable product guides (Phase 66/67) read from a new `guide` namespace (~76 keys, en-GB + full hand fr-FR).

@@ -23,10 +23,10 @@ import {
   setTaskPriority,
   updateTaskDetails,
   updateTaskProject,
-  updateTaskStatus,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
+import { moveTask } from '@/lib/task-transitions';
 import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
@@ -219,13 +219,14 @@ function TaskDetailPage({
     }
   };
 
+  // `moveTask`, not `updateTaskStatus` — the dropdown offers `wip`, so entering it
+  // must spawn an agent session and leaving it must stop one (see StatusSelect).
   const changeStatus = async (next: Status) => {
     const prev = status;
     setStatus(next); // optimistic
     setStatusSelectBusy(true);
     try {
-      const updated = await updateTaskStatus(task.id, next);
-      setStatus(updated.status);
+      await moveTask(prev, next, task.id);
       invalidateData();
     } catch (e) {
       setStatus(prev);

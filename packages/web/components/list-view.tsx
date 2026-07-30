@@ -15,13 +15,15 @@ import { type TaskViewProps, groupTasksByProject } from '@/components/task-colum
  * List layout for the Tasks page: tasks grouped under reorderable, collapsible
  * per-project accordion headings — mirroring the Projects tree ("table" view).
  * Each project's body further splits into naked, drag-reorderable sub-accordions
- * by status (`ProjectTaskGroups`). Presentational — filtering, the project
- * lookup and the detail modal are owned by TasksView.
+ * by status (`ProjectTaskGroups`), between which task rows can be dragged to
+ * restatus them. Presentational — filtering, the project lookup, the detail modal
+ * and the move itself are owned by TasksView.
  */
 export function ListView({
   tasks,
   projects,
   onSelect,
+  onMove,
   isSelected,
   onToggleSelect,
   blockedCounts,
@@ -77,6 +79,7 @@ export function ListView({
           blockedCounts={blockedCounts}
           projectId={g.projectId}
           onAddTask={onAddTask}
+          onMove={onMove}
         />
       ),
     };

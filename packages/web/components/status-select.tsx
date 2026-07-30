@@ -19,11 +19,14 @@ function StatusDot({ hueVar }: { hueVar: string }) {
 
 /**
  * A compact inline dropdown for a task's status. Offers the current status plus
- * its legal {@link ALLOWED_TRANSITIONS} targets, `wip` excluded — entering `wip`
- * spawns an agent session (`startTask`), not a plain status write, so that stays
- * on the dedicated Start action. A terminal status (`done`/`abandoned`) has no
- * legal targets, so it renders as a static label instead of a dropdown (mirrors
- * "reopen" being its own explicit action, not a status pick).
+ * every legal {@link ALLOWED_TRANSITIONS} target — **including `wip`**: picking
+ * "In progress" is a real affordance here, not just on the dedicated Start action.
+ * It does mean more than a status write (entering `wip` spawns an agent session,
+ * leaving it stops one), so callers must route the pick through `moveTask`, which
+ * owns that start/stop/update decision — never `updateTaskStatus` directly.
+ * A terminal status (`done`/`abandoned`) has no legal targets, so it renders as a
+ * static label instead of a dropdown (mirrors "reopen" being its own explicit
+ * action, not a status pick).
  */
 export function StatusSelect({
   status,
@@ -43,7 +46,7 @@ export function StatusSelect({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const statusLabel = useStatusLabel();
-  const options: Status[] = [status, ...ALLOWED_TRANSITIONS[status].filter((s) => s !== 'wip')];
+  const options: Status[] = [status, ...ALLOWED_TRANSITIONS[status]];
 
   useEffect(() => {
     if (!open) return;

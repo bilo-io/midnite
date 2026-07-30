@@ -9,7 +9,7 @@ vi.mock('@/lib/api', () => ({
   updateTaskStatus: (...a: unknown[]) => updateTaskStatus(...a),
 }));
 
-import { moveTask, spawnsSession, stopsSession } from './task-transitions';
+import { moveTask, spawnsSession, statusDropTarget, stopsSession } from './task-transitions';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -48,5 +48,31 @@ describe('moveTask routing', () => {
     expect(updateTaskStatus).toHaveBeenCalledWith('t3', 'done');
     expect(startTask).not.toHaveBeenCalled();
     expect(stopTask).not.toHaveBeenCalled();
+  });
+});
+
+describe('statusDropTarget', () => {
+  it('resolves a legal drop to the section it landed on', () => {
+    expect(statusDropTarget('todo', 'wip')).toBe('wip');
+    expect(statusDropTarget('backlog', 'todo')).toBe('todo');
+    expect(statusDropTarget('waiting', 'done')).toBe('done');
+  });
+
+  it('refuses a drop on the row’s own status (a no-op, not a move)', () => {
+    expect(statusDropTarget('todo', 'todo')).toBeNull();
+  });
+
+  it('refuses illegal edges out of a terminal status', () => {
+    expect(statusDropTarget('done', 'todo')).toBeNull();
+    expect(statusDropTarget('abandoned', 'wip')).toBeNull();
+  });
+
+  it('refuses a backlog → waiting drop the state machine has no edge for', () => {
+    expect(statusDropTarget('backlog', 'waiting')).toBeNull();
+  });
+
+  it('refuses an unknown row and a section that is not a status', () => {
+    expect(statusDropTarget(undefined, 'todo')).toBeNull();
+    expect(statusDropTarget('todo', '__unassigned__')).toBeNull();
   });
 });

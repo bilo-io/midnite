@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Square } from 'lucide-react';
 import type { TaskSummary } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
@@ -32,6 +33,7 @@ export function TaskRow({
   selected = false,
   onToggleSelect,
   blockedBy,
+  dragHandle,
 }: {
   task: TaskSummary;
   project?: ProjectTagInfo;
@@ -41,6 +43,10 @@ export function TaskRow({
   onToggleSelect?: (shiftKey: boolean) => void;
   /** Count of unmet blockers (Phase 27); shows a chip when > 0. */
   blockedBy?: number;
+  /** A drag grip rendered as the row's leading cell (see `DraggableTaskRow`).
+   *  A *sibling* of the row's clickable inner element, like the checkbox and the
+   *  ellipsis menu — never a wrapper, so the row never nests interactive controls. */
+  dragHandle?: ReactNode;
 }) {
   const kindLabel = useKindLabel();
   const statusLabel = useStatusLabel();
@@ -125,6 +131,7 @@ export function TaskRow({
 
   return (
     <div style={style} className={outerClass}>
+      {dragHandle}
       {selectable ? (
         <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
       ) : null}

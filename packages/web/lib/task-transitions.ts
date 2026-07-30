@@ -1,4 +1,4 @@
-import type { Status } from '@midnite/shared';
+import { StatusSchema, canTransition, type Status } from '@midnite/shared';
 
 import { startTask, stopTask, updateTaskStatus } from '@/lib/api';
 
@@ -25,4 +25,21 @@ export async function moveTask(from: Status, to: Status, taskId: string): Promis
   if (spawnsSession(from, to)) await startTask(taskId);
   else if (stopsSession(from, to)) await stopTask(taskId, to as 'todo' | 'backlog');
   else await updateTaskStatus(taskId, to);
+}
+
+/**
+ * Where a dragged task row should land when dropped on a status-keyed accordion
+ * section (the list and table views key their sections by status, so the section
+ * id *is* the candidate target). Returns the target status, or `null` when the
+ * drop is a no-op or illegal: an unknown row, a drop on its own section, a section
+ * id that isn't a status, or an edge {@link canTransition} rejects (e.g. anything
+ * out of terminal `done`/`abandoned`). Callers can therefore hand a raw drop
+ * straight here and act only on a non-null result — no round-trip to be refused.
+ */
+export function statusDropTarget(from: Status | undefined, sectionId: string): Status | null {
+  const parsed = StatusSchema.safeParse(sectionId);
+  if (!from || !parsed.success) return null;
+  const to = parsed.data;
+  if (from === to || !canTransition(from, to)) return null;
+  return to;
 }
