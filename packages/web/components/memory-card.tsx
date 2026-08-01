@@ -1,9 +1,11 @@
 'use client';
 
 import { BrainCircuit } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Memory, Project } from '@midnite/shared';
 import { MemoryScopeChip } from '@/components/memory/memory-scope';
 import { SelectableIcon } from '@/components/selectable-icon';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -16,11 +18,6 @@ type Props = {
   onToggleSelect?: (shiftKey: boolean) => void;
 };
 
-function updatedLabel(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString();
-}
-
 export function MemoryCard({
   memory,
   project,
@@ -29,6 +26,15 @@ export function MemoryCard({
   selected = false,
   onToggleSelect,
 }: Props) {
+  const t = useTranslations('memory');
+  const { dateTime } = useLocaleFormat();
+
+  // Locale-aware "last updated" date (Phase 82) — an unparseable timestamp renders nothing.
+  const updated = (() => {
+    const d = new Date(memory.updatedAt);
+    return Number.isNaN(d.getTime()) ? '' : dateTime(d);
+  })();
+
   // First non-heading content line as the excerpt, so a "# Title" doesn't repeat the card title.
   const excerpt =
     memory.content
@@ -42,7 +48,7 @@ export function MemoryCard({
 
   const archivedBadge = memory.archived ? (
     <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-      Archived
+      {t('list.card.archived')}
     </span>
   ) : null;
 
@@ -66,9 +72,7 @@ export function MemoryCard({
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{excerpt}</p>
           ) : null}
         </button>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-          {updatedLabel(memory.updatedAt)}
-        </span>
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{updated}</span>
       </div>
     );
   }
@@ -87,9 +91,7 @@ export function MemoryCard({
           <MemoryScopeChip project={project} />
           {archivedBadge}
         </div>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-          {updatedLabel(memory.updatedAt)}
-        </span>
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{updated}</span>
       </div>
       <button type="button" onClick={onOpen} className="flex flex-col gap-3 text-left">
         <span className="line-clamp-1 text-sm font-medium leading-snug">{memory.title}</span>

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, Mic, MicOff, Send, Sparkles } from 'lucide-react';
-import type { Memory, MemoryChatMessage } from '@midnite/shared';
+import { useLocale, useTranslations } from 'next-intl';
+import type { Locale, Memory, MemoryChatMessage } from '@midnite/shared';
 import { GradientGlow } from '@midnite/ui';
 import { getMemoryChat, getSetupStatus, postMemoryChat } from '@/lib/api';
 import { MarkdownPreview } from '@/components/markdown-preview';
@@ -30,6 +31,10 @@ import { cn } from '@/lib/utils';
  * floating over the scrolling content.
  */
 export function MemoryChatComposer({ memory }: { memory: Memory }) {
+  const t = useTranslations('memory');
+  // The answer is generated copy, so no catalog can translate it — the active
+  // locale rides on the request and the gateway prompts the model in it (Phase 82 D).
+  const locale = useLocale() as Locale;
   const [messages, setMessages] = useState<MemoryChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState<string | null>(null);
@@ -91,10 +96,10 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
     setError(null);
     setPending(question);
     try {
-      const { userMessage, assistantMessage } = await postMemoryChat(memory.id, question);
+      const { userMessage, assistantMessage } = await postMemoryChat(memory.id, question, locale);
       setMessages((prev) => [...prev, userMessage, assistantMessage]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to send');
+      setError(e instanceof Error ? e.message : t('chat.sendFailed'));
       setInput(question); // let the user retry without retyping
     } finally {
       setPending(null);
@@ -115,7 +120,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
           <div className="pointer-events-auto mx-auto w-full max-w-3xl">
             {disabled ? (
               <p className="rounded-xl border border-border/60 bg-card px-4 py-3 text-xs text-muted-foreground shadow-sm">
-                Add an AI provider in Settings to chat with this memory.
+                {t('chat.noProvider')}
               </p>
             ) : (
               <ComposerFullscreen full={full} onClose={close}>
@@ -125,7 +130,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                     <ComposerFullscreenToggle full={full} onToggle={toggle} />
                     <textarea
                       ref={ta.ref}
-                      aria-label="Ask this memory a question"
+                      aria-label={t('chat.inputLabel')}
                       className="w-full resize-none overflow-y-auto bg-transparent pr-8 text-sm placeholder:text-muted-foreground transition-[height] duration-300 ease-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
                       value={displayText}
                       disabled={pending !== null}
@@ -135,7 +140,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                       onKeyDown={(e) => {
                         if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void send();
                       }}
-                      placeholder="Ask this memory anything… · ⌘/Ctrl + ⏎"
+                      placeholder={t('chat.placeholder')}
                     />
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -144,7 +149,9 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            aria-label={speech.listening ? 'Stop dictation' : 'Dictate question'}
+                            aria-label={
+                              speech.listening ? t('chat.dictateStop') : t('chat.dictate')
+                            }
                             aria-pressed={speech.listening}
                             disabled={pending !== null}
                             onClick={speech.listening ? speech.stop : speech.start}
@@ -161,7 +168,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                       <Button
                         type="button"
                         size="sm"
-                        aria-label="Send"
+                        aria-label={t('chat.send')}
                         disabled={pending !== null || input.trim().length === 0}
                         onClick={() => void send()}
                       >
@@ -170,7 +177,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                         ) : (
                           <Send className="h-4 w-4" />
                         )}
-                        Send
+                        {t('chat.send')}
                       </Button>
                     </div>
                   </div>
@@ -192,11 +199,11 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
             the sticky rails + the council/project cockpit pattern. */}
         <div className="sticky top-12 z-20 -mx-1 flex items-center gap-1.5 border-b border-border/60 bg-background/95 px-1 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-[hsl(262_83%_66%)]" />
-          Chat with this memory
+          {t('chat.heading')}
         </div>
 
         {hasThread ? (
-          <div role="log" aria-label="Chat with this memory" className="flex flex-col gap-3">
+          <div role="log" aria-label={t('chat.heading')} className="flex flex-col gap-3">
             {messages.map((m) => (
               <ChatBubble key={m.id} message={m} memory={memory} />
             ))}
@@ -205,16 +212,14 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                 <UserBubble content={pending} />
                 <div className="flex items-center gap-2 self-start rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Thinking…
+                  {t('chat.thinking')}
                 </div>
               </>
             ) : null}
             <div ref={threadEndRef} />
           </div>
         ) : (
-          <p className="text-[11px] text-muted-foreground">
-            Ask a question about this memory and its sources — answers cite what they draw on.
-          </p>
+          <p className="text-[11px] text-muted-foreground">{t('chat.emptyHint')}</p>
         )}
       </div>
 
@@ -224,6 +229,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
 }
 
 function ChatBubble({ message, memory }: { message: MemoryChatMessage; memory: Memory }) {
+  const t = useTranslations('memory');
   if (message.role === 'user') return <UserBubble content={message.content} />;
   const cited = message.citations
     .map((id) => memory.sources.find((s) => s.id === id))
@@ -243,10 +249,10 @@ function ChatBubble({ message, memory }: { message: MemoryChatMessage; memory: M
       {cited.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border/40 pt-2">
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Sources
+            {t('chat.citations')}
           </span>
           {cited.map((s) => {
-            const label = s.title?.trim() || s.fileName?.trim() || s.url || 'Source';
+            const label = s.title?.trim() || s.fileName?.trim() || s.url || t('chat.sourceFallback');
             const chip = (
               <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px]">
                 <SourceIcon

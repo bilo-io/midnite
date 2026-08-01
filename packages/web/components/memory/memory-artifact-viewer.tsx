@@ -1,6 +1,7 @@
 'use client';
 
 import { Download, Info, Loader2, RefreshCw, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { isFileBackedFormat, type MemoryArtifact } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
@@ -25,6 +26,8 @@ export function MemoryArtifactViewer({
   onRegenerate: () => void;
   regenerating: boolean;
 }) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const fileBacked = isFileBackedFormat(artifact.format);
   const hasFile = fileBacked && !artifact.degraded && artifact.filePath !== null;
   const fileUrl = hasFile ? memoryArtifactFileUrl(artifact.memoryId, artifact.id) : null;
@@ -49,9 +52,7 @@ export function MemoryArtifactViewer({
   };
 
   const degradedHint =
-    artifact.format === 'audio'
-      ? 'No text-to-speech provider is configured, so this is the script only. Add an OpenAI key in Settings to generate spoken audio.'
-      : 'No ffmpeg/TTS provider is available, so this is the slide outline only. Configure Memory Studio video to compose a narrated MP4.';
+    artifact.format === 'audio' ? t('artifact.degradedAudio') : t('artifact.degradedVideo');
 
   return (
     <>
@@ -72,13 +73,19 @@ export function MemoryArtifactViewer({
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Regenerate
+              {t('artifact.regenerate')}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={download}>
               <Download className="h-4 w-4" />
-              Download
+              {t('artifact.download')}
             </Button>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -92,14 +99,14 @@ export function MemoryArtifactViewer({
             ) : null}
 
             {fileUrl && artifact.format === 'audio' ? (
-              <audio controls src={fileUrl} className="w-full" aria-label={`${artifact.title} audio`} />
+              <audio controls src={fileUrl} className="w-full" aria-label={t('artifact.audioLabel', { title: artifact.title })} />
             ) : null}
             {fileUrl && artifact.format === 'video' ? (
               <video
                 controls
                 src={fileUrl}
                 className="w-full rounded-lg border border-border/60 bg-black"
-                aria-label={`${artifact.title} video`}
+                aria-label={t('artifact.videoLabel', { title: artifact.title })}
               />
             ) : null}
 

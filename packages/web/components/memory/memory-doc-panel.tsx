@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, Save, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { type Memory, type Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,8 @@ export function MemoryDocPanel({
   onSaved: (memory: Memory) => void;
   onDeleted: () => void;
 }) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const confirm = useConfirm();
   const [title, setTitle] = useState(memory.title);
   const [scope, setScope] = useState<string>(scopeValue(memory.projectId));
@@ -42,7 +45,7 @@ export function MemoryDocPanel({
 
   const save = async () => {
     if (!title.trim()) {
-      setError('Give this memory a title.');
+      setError(t('doc.titleRequired'));
       return;
     }
     setError(null);
@@ -55,7 +58,7 @@ export function MemoryDocPanel({
       });
       onSaved(updated);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setError(e instanceof Error ? e.message : tCommon('errorTitle'));
     } finally {
       setBusy(false);
     }
@@ -63,9 +66,9 @@ export function MemoryDocPanel({
 
   const remove = async () => {
     const ok = await confirm({
-      title: 'Delete this memory?',
-      description: `“${memory.title}” will no longer be available to your agents.`,
-      confirmLabel: 'Delete',
+      title: t('doc.deleteTitle'),
+      description: t('doc.deleteDescription', { title: memory.title }),
+      confirmLabel: tCommon('delete'),
     });
     if (!ok) return;
     setError(null);
@@ -74,7 +77,7 @@ export function MemoryDocPanel({
       await deleteMemory(memory.id);
       onDeleted();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setError(e instanceof Error ? e.message : tCommon('errorTitle'));
       setBusy(false);
     }
   };
@@ -84,12 +87,12 @@ export function MemoryDocPanel({
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        aria-label="Memory title"
-        placeholder="Untitled memory"
+        aria-label={t('doc.titleLabel')}
+        placeholder={t('doc.titlePlaceholder')}
         className="h-9 text-sm font-semibold"
       />
       <label className="block space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Scope</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('doc.scopeLabel')}</span>
         <MemoryScopeSelect projects={projects} value={scope} onChange={setScope} />
       </label>
       <MarkdownEditor
@@ -97,8 +100,10 @@ export function MemoryDocPanel({
         onChange={setContent}
         minHeight={220}
         defaultMode={content ? 'preview' : 'edit'}
-        label={<span className="text-xs font-medium text-muted-foreground">Content</span>}
-        ariaLabel="Memory content"
+        label={
+          <span className="text-xs font-medium text-muted-foreground">{t('doc.contentLabel')}</span>
+        }
+        ariaLabel={t('doc.contentAriaLabel')}
       />
 
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
@@ -113,11 +118,11 @@ export function MemoryDocPanel({
           className="text-muted-foreground hover:text-destructive"
         >
           <Trash2 className="h-4 w-4" />
-          Delete
+          {tCommon('delete')}
         </Button>
         <Button type="button" size="sm" onClick={() => void save()} disabled={busy || !dirty}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save
+          {tCommon('save')}
         </Button>
       </div>
     </div>

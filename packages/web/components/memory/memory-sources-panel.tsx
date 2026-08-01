@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { MAX_SOURCES_PER_MEMORY, type Memory, type SourceKind } from '@midnite/shared';
 import { SourceListEditor, orderByIds, type EditableSource } from '@/components/source-list-editor';
 import { SourceKindMultiSelect } from '@/components/source-kind-multi-select';
@@ -36,6 +37,8 @@ export function MemorySourcesPanel({
   /** Called with the updated memory after any source mutation. */
   onChange: (memory: Memory) => void;
 }) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -97,22 +100,22 @@ export function MemorySourcesPanel({
     try {
       onChange(await reingestMemorySource(memory.id, id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not re-read that source');
+      setError(e instanceof Error ? e.message : t('sources.reingestError'));
     }
   };
 
   const remove = async (id: string) => {
     const ok = await confirm({
-      title: 'Remove this source?',
-      description: 'It will be detached from this memory.',
-      confirmLabel: 'Remove',
+      title: t('sources.removeTitle'),
+      description: t('sources.removeDescription'),
+      confirmLabel: tCommon('remove'),
     });
     if (!ok) return;
     setError(null);
     try {
       onChange(await removeMemorySource(memory.id, id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not remove that source');
+      setError(e instanceof Error ? e.message : t('sources.removeError'));
     }
   };
 
@@ -123,7 +126,7 @@ export function MemorySourcesPanel({
       onChange(await reorderMemorySources(memory.id, ids));
     } catch (e) {
       onChange(memory);
-      setError(e instanceof Error ? e.message : 'Could not reorder sources');
+      setError(e instanceof Error ? e.message : t('sources.reorderError'));
     }
   };
 
@@ -132,9 +135,9 @@ export function MemorySourcesPanel({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">Sources</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('sources.heading')}</span>
         <span className="text-[11px] tabular-nums text-muted-foreground">
-          {memory.sources.length}/{MAX_SOURCES_PER_MEMORY}
+          {t('sources.count', { count: memory.sources.length, max: MAX_SOURCES_PER_MEMORY })}
         </span>
       </div>
 
@@ -146,7 +149,7 @@ export function MemorySourcesPanel({
         onClick={() => setAddOpen(true)}
         disabled={remaining <= 0}
       >
-        <Plus className="h-4 w-4" /> Add sources
+        <Plus className="h-4 w-4" /> {t('sources.add')}
       </Button>
 
       {memory.sources.length > 0 ? (
@@ -156,8 +159,8 @@ export function MemorySourcesPanel({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search sources…"
-              aria-label="Search sources"
+              placeholder={t('sources.searchPlaceholder')}
+              aria-label={t('sources.searchLabel')}
               className="flex h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -168,7 +171,7 @@ export function MemorySourcesPanel({
       ) : null}
 
       {filtered.length === 0 && filterActive ? (
-        <p className="px-1 py-2 text-xs text-muted-foreground">No sources match your filter.</p>
+        <p className="px-1 py-2 text-xs text-muted-foreground">{t('sources.noMatch')}</p>
       ) : (
         <SourceListEditor
           sources={filtered}
@@ -186,7 +189,7 @@ export function MemorySourcesPanel({
       )}
       {filterActive ? (
         <p className={cn('px-1 text-[11px] text-muted-foreground')}>
-          Reordering is paused while filtering.
+          {t('sources.reorderPaused')}
         </p>
       ) : null}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}

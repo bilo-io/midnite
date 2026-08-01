@@ -1,5 +1,13 @@
 import { useTranslations } from 'next-intl';
-import type { Status, TaskHeldReason, TaskSummary, WaitReason } from '@midnite/shared';
+import type {
+  MemoryArtifactKind,
+  MemoryArtifactStatus,
+  SourceIngestState,
+  Status,
+  TaskHeldReason,
+  TaskSummary,
+  WaitReason,
+} from '@midnite/shared';
 
 /**
  * Translated label lookups for the task domain enums (Phase 82 Theme B).
@@ -34,4 +42,30 @@ export function useWaitReasonLabel(): (reason: WaitReason) => string {
 export function useHeldReasonLabel(): (reason: TaskHeldReason) => string {
   const t = useTranslations('board');
   return (reason) => t(`heldReasons.${reason}`);
+}
+
+/**
+ * The memory domain's enums (Phase 82 Theme D). `MEMORY_ARTIFACT_META` in
+ * `@midnite/shared` keeps its English `label` — shared stays i18n-agnostic for the
+ * CLI/gateway — so the web surfaces translate the *kind* here instead, and the
+ * Studio rail, the artifact viewer and the source detail modal all read one set of
+ * keys rather than keeping three copies of the wording. Keys live in `memory`.
+ */
+
+/** Artifact kind → row/menu label (`memory.kinds.*`). */
+export function useArtifactKindLabel(): (kind: MemoryArtifactKind) => string {
+  const t = useTranslations('memory');
+  return (kind) => t(`kinds.${kind}`);
+}
+
+/** Artifact generation status → chip label (`memory.artifactStatus.*`). */
+export function useArtifactStatusLabel(): (status: MemoryArtifactStatus) => string {
+  const t = useTranslations('memory');
+  return (status) => t(`artifactStatus.${status}`);
+}
+
+/** Source ingestion state → chip label (`memory.sourceState.*`). */
+export function useSourceIngestStateLabel(): (state: SourceIngestState) => string {
+  const t = useTranslations('memory');
+  return (state) => t(`sourceState.${state}`);
 }

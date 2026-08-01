@@ -2,21 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { ExternalLink, Loader2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { SOURCE_KIND_LABEL, type MemorySourceContent } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Tabs, type TabOption } from '@/components/ui/tabs';
 import { SourceIcon } from '@/components/source-icon';
 import type { EditableSource } from '@/components/source-list-editor';
 import { getMemorySourceContent } from '@/lib/api';
+import { useSourceIngestStateLabel } from '@/lib/i18n-labels';
 import { youtubeEmbedUrl } from '@/lib/youtube';
 import { cn } from '@/lib/utils';
 
 type DetailTab = 'source' | 'text';
-
-const TAB_OPTIONS: TabOption<DetailTab>[] = [
-  { value: 'source', label: 'Source' },
-  { value: 'text', label: 'Text' },
-];
 
 /**
  * The source detail view: tab 1 previews the source itself (YouTube embed,
@@ -32,8 +29,14 @@ export function SourceDetailModal({
   source: EditableSource;
   onClose: () => void;
 }) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const [tab, setTab] = useState<DetailTab>('source');
-  const label = source.title ?? source.fileName ?? source.url ?? 'Source';
+  const label = source.title ?? source.fileName ?? source.url ?? t('sourceDetail.fallbackLabel');
+  const tabOptions: TabOption<DetailTab>[] = [
+    { value: 'source', label: t('sourceDetail.tabSource') },
+    { value: 'text', label: t('sourceDetail.tabText') },
+  ];
 
   return (
     <>
@@ -58,16 +61,27 @@ export function SourceDetailModal({
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                Open original <ExternalLink className="h-3.5 w-3.5" />
+                {t('sourceDetail.openOriginal')} <ExternalLink className="h-3.5 w-3.5" />
               </a>
             ) : null}
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
 
           <div className="px-5 pt-3">
-            <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} ariaLabel="Source detail view" />
+            <Tabs
+              options={tabOptions}
+              value={tab}
+              onChange={setTab}
+              ariaLabel={t('sourceDetail.tabsLabel')}
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto p-5">
@@ -85,13 +99,15 @@ export function SourceDetailModal({
 
 /** Tab 1 — the source itself. */
 function SourcePreview({ source }: { source: EditableSource }) {
+  const t = useTranslations('memory');
+  const ingestStateLabel = useSourceIngestStateLabel();
   const embed = source.kind === 'youtube' ? youtubeEmbedUrl(source.url) : null;
 
   if (embed) {
     return (
       <div className="aspect-video w-full overflow-hidden rounded-lg border border-border/60 bg-black">
         <iframe
-          title="YouTube preview"
+          title={t('sourceDetail.youtubePreview')}
           src={embed}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -106,7 +122,7 @@ function SourcePreview({ source }: { source: EditableSource }) {
       <div className="space-y-2">
         <div className="h-[60vh] w-full overflow-hidden rounded-lg border border-border/60 bg-white">
           <iframe
-            title={source.title ?? 'Website preview'}
+            title={source.title ?? t('sourceDetail.websitePreview')}
             src={source.url}
             sandbox="allow-scripts allow-same-origin allow-popups"
             referrerPolicy="no-referrer"
@@ -114,16 +130,18 @@ function SourcePreview({ source }: { source: EditableSource }) {
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Some sites block embedding — if this stays blank,{' '}
-          <a
-            href={source.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-foreground"
-          >
-            open the original ↗
-          </a>
-          .
+          {t.rich('sourceDetail.embedBlocked', {
+            link: (chunks) => (
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-foreground"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
         </p>
       </div>
     );
@@ -133,22 +151,29 @@ function SourcePreview({ source }: { source: EditableSource }) {
   return (
     <div className="space-y-3">
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-muted-foreground">Type</dt>
+        <dt className="text-muted-foreground">{t('sourceDetail.typeLabel')}</dt>
         <dd>{SOURCE_KIND_LABEL[source.kind]}</dd>
         {source.fileName ? (
           <>
-            <dt className="text-muted-foreground">File</dt>
+            <dt className="text-muted-foreground">{t('sourceDetail.fileLabel')}</dt>
             <dd className="break-all">{source.fileName}</dd>
           </>
         ) : null}
+        {source.ingestState ? (
+          <>
+            <dt className="text-muted-foreground">{t('sourceDetail.statusLabel')}</dt>
+            <dd>{ingestStateLabel(source.ingestState)}</dd>
+          </>
+        ) : null}
       </dl>
-      <p className="text-xs text-muted-foreground">The extracted text is in the Text tab.</p>
+      <p className="text-xs text-muted-foreground">{t('sourceDetail.textTabHint')}</p>
     </div>
   );
 }
 
 /** Tab 2 — the scraped/extracted text. */
 function SourceText({ memoryId, sourceId }: { memoryId: string; sourceId: string }) {
+  const t = useTranslations('memory');
   const [content, setContent] = useState<MemorySourceContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +187,7 @@ function SourceText({ memoryId, sourceId }: { memoryId: string; sourceId: string
         if (!cancelled) setContent(c);
       })
       .catch((e: unknown) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load source text');
+        if (!cancelled) setError(e instanceof Error ? e.message : t('sourceDetail.loadError'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -170,12 +195,12 @@ function SourceText({ memoryId, sourceId }: { memoryId: string; sourceId: string
     return () => {
       cancelled = true;
     };
-  }, [memoryId, sourceId]);
+  }, [memoryId, sourceId, t]);
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading text…
+        <Loader2 className="h-4 w-4 animate-spin" /> {t('sourceDetail.loadingText')}
       </div>
     );
   }
@@ -187,19 +212,23 @@ function SourceText({ memoryId, sourceId }: { memoryId: string; sourceId: string
   if (content.ingestState === 'pending') {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Still reading this source…
+        <Loader2 className="h-4 w-4 animate-spin" /> {t('sourceDetail.stillReading')}
       </div>
     );
   }
   if (content.ingestState === 'failed') {
     return (
       <p className="text-sm text-destructive">
-        Failed to read this source{content.ingestError ? `: ${content.ingestError}` : ''}.
+        {content.ingestError
+          ? t('sourceDetail.readFailedWithError', { error: content.ingestError })
+          : t('sourceDetail.readFailed')}
       </p>
     );
   }
   if (!content.text || !content.text.trim()) {
-    return <p className="text-sm text-muted-foreground">No text extracted from this source.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">{t('sourceDetail.noText')}</p>
+    );
   }
 
   return (

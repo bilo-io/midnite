@@ -14,12 +14,10 @@ import {
   Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import {
-  MEMORY_ARTIFACT_META,
-  type MemoryArtifact,
-  type MemoryArtifactKind,
-} from '@midnite/shared';
+import { useLocale, useTranslations } from 'next-intl';
+import type { Locale, MemoryArtifact, MemoryArtifactKind } from '@midnite/shared';
 import { generateMemoryArtifact, getMemoryArtifacts } from '@/lib/api';
+import { useArtifactKindLabel, useArtifactStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 import { MemoryArtifactViewer } from './memory-artifact-viewer';
 
@@ -35,10 +33,11 @@ const KIND_ICONS: Record<MemoryArtifactKind, LucideIcon> = {
   'video-overview': Video,
 };
 // Grouped so the seven kinds read as an organised menu rather than a flat list.
-const GROUPS: { label: string; kinds: MemoryArtifactKind[] }[] = [
-  { label: 'Documents', kinds: ['brief', 'faq', 'study-guide', 'timeline'] },
-  { label: 'Visual', kinds: ['infographic'] },
-  { label: 'Audio & video', kinds: ['audio-overview', 'video-overview'] },
+// `key` indexes `memory.studio.groups.*` — the heading copy is translated at render.
+const GROUPS: { key: string; kinds: MemoryArtifactKind[] }[] = [
+  { key: 'documents', kinds: ['brief', 'faq', 'study-guide', 'timeline'] },
+  { key: 'visual', kinds: ['infographic'] },
+  { key: 'audioVideo', kinds: ['audio-overview', 'video-overview'] },
 ];
 
 /**
@@ -48,6 +47,10 @@ const GROUPS: { label: string; kinds: MemoryArtifactKind[] }[] = [
  * (Theme E) render a media player, or the script/outline when a provider is off.
  */
 export function MemoryStudioRail({ memoryId }: { memoryId: string }) {
+  const t = useTranslations('memory');
+  // An artifact's body is generated copy, not UI copy — the active locale rides on
+  // the generate request so the gateway prompts the model in it (Phase 82 D).
+  const locale = useLocale() as Locale;
   const [byKind, setByKind] = useState<Partial<Record<MemoryArtifactKind, MemoryArtifact>>>({});
   const [viewing, setViewing] = useState<MemoryArtifactKind | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -85,7 +88,7 @@ export function MemoryStudioRail({ memoryId }: { memoryId: string }) {
   }, [anyPending, refresh]);
 
   const generate = async (kind: MemoryArtifactKind) => {
-    const pending = await generateMemoryArtifact(memoryId, kind);
+    const pending = await generateMemoryArtifact(memoryId, kind, locale);
     setByKind((prev) => ({ ...prev, [kind]: pending }));
   };
 
@@ -93,14 +96,12 @@ export function MemoryStudioRail({ memoryId }: { memoryId: string }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Generate artifacts from this memory and its sources.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('studio.intro')}</p>
       <div className="space-y-3">
         {GROUPS.map((group) => (
-          <section key={group.label} className="space-y-1.5">
+          <section key={group.key} className="space-y-1.5">
             <h3 className="px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              {group.label}
+              {t(`studio.groups.${group.key}`)}
             </h3>
             <ul className="space-y-1.5">
               {group.kinds.map((kind) => (
@@ -146,7 +147,9 @@ function ArtifactRow({
   onGenerate: () => void;
   onView: () => void;
 }) {
-  const label = MEMORY_ARTIFACT_META[kind].label;
+  const t = useTranslations('memory');
+  const kindLabel = useArtifactKindLabel();
+  const label = kindLabel(kind);
   const status = artifact?.status;
   const pending = status === 'pending';
 
@@ -168,7 +171,11 @@ function ArtifactRow({
           onClick={status === 'ready' ? onView : onGenerate}
           disabled={pending}
           className="flex-1 truncate text-left transition-colors hover:text-foreground disabled:cursor-wait"
-          title={status === 'ready' ? `View ${label}` : `Generate ${label}`}
+          title={
+            status === 'ready'
+              ? t('studio.viewLabel', { label })
+              : t('studio.generateLabel', { label })
+          }
         >
           {label}
         </button>
@@ -179,7 +186,7 @@ function ArtifactRow({
       ) : null}
       {status === 'ready' && artifact?.degraded ? (
         <p className="mt-1 px-3 text-[11px] leading-snug text-muted-foreground">
-          {artifact.format === 'audio' ? 'Script only — no TTS provider' : 'Outline only — no video provider'}
+          {artifact.format === 'audio' ? t('studio.degradedAudio') : t('studio.degradedVideo')}
         </p>
       ) : null}
     </li>
@@ -197,11 +204,14 @@ function StatusChip({
   onGenerate: () => void;
   label: string;
 }) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
+  const statusLabel = useArtifactStatusLabel();
   if (pending) {
     return (
       <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        Generating
+        {statusLabel('pending')}
       </span>
     );
   }
@@ -209,7 +219,7 @@ function StatusChip({
     return (
       <span className="flex items-center gap-1 text-[11px] text-[hsl(142_71%_45%)]">
         <CheckCircle2 className="h-3.5 w-3.5" />
-        Ready
+        {statusLabel('ready')}
       </span>
     );
   }
@@ -218,11 +228,11 @@ function StatusChip({
       <button
         type="button"
         onClick={onGenerate}
-        aria-label={`Retry ${label}`}
+        aria-label={t('studio.retryLabel', { label })}
         className="flex items-center gap-1 text-[11px] text-destructive transition-colors hover:text-foreground"
       >
         <AlertTriangle className="h-3.5 w-3.5" />
-        Retry
+        {tCommon('retry')}
       </button>
     );
   }
@@ -230,11 +240,11 @@ function StatusChip({
     <button
       type="button"
       onClick={onGenerate}
-      aria-label={`Generate ${label}`}
+      aria-label={t('studio.generateLabel', { label })}
       className="flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
     >
       <Play className="h-3 w-3" />
-      Generate
+      {t('studio.generate')}
     </button>
   );
 }

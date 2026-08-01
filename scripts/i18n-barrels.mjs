@@ -26,10 +26,16 @@ export function localeDirs(messagesDir = MESSAGES_DIR) {
     .sort();
 }
 
-/** The namespace fragment names (sans `.json`) present for a locale, sorted. */
+/**
+ * The namespace fragment names (sans `.json`) present for a locale, sorted.
+ * `_`-prefixed files are **partials** — hand-off scratch used when a migration slice
+ * contributes keys to a namespace another slice owns. They are merged into their
+ * owning namespace by hand, never emitted as a namespace of their own (their names
+ * aren't valid identifiers, so a barrel including them wouldn't even parse).
+ */
 function namespaces(localeDir) {
   return readdirSync(localeDir)
-    .filter((f) => f.endsWith('.json'))
+    .filter((f) => f.endsWith('.json') && !f.startsWith('_'))
     .map((f) => f.replace(/\.json$/, ''))
     .sort();
 }

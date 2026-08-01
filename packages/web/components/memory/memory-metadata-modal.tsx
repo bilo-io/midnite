@@ -1,6 +1,7 @@
 'use client';
 
 import { BrainCircuit, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Memory, Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { MemoryDocPanel } from './memory-doc-panel';
@@ -24,6 +25,8 @@ export function MemoryMetadataModal({
   onDeleted: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   return (
     <>
       <div
@@ -35,14 +38,20 @@ export function MemoryMetadataModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Edit memory"
+          aria-label={t('metadata.title')}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <BrainCircuit className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
-            <h2 className="flex-1 text-sm font-semibold">Edit memory</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <h2 className="flex-1 text-sm font-semibold">{t('metadata.title')}</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
