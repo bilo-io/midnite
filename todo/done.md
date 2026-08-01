@@ -6,7 +6,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-08-01 — feat: Phase 80 Theme A — shared reading primitives in `@midnite/ui` 🟢
 
-PR #TBD. `docs` and the marketing site each rolled their own near-identical prose map and reading layout, because the `ui ◀ {docs, site}` boundary forbids cross-import and nothing shared lived in `ui`. This lands that shared face as a leaf, unblocking Themes B–D (docs + site-legal migration).
+PR #584. `docs` and the marketing site each rolled their own near-identical prose map and reading layout, because the `ui ◀ {docs, site}` boundary forbids cross-import and nothing shared lived in `ui`. This lands that shared face as a leaf, unblocking Themes B–D (docs + site-legal migration).
 
 - [x] **Four primitives in a new `packages/ui/src/components/reading/`** — `ReadingLayout` (sidebar + measured article + `xl` TOC rail), `Prose` (+ the raw `proseComponents` map), `TableOfContents` (scroll-spy), `ReadingLayoutProvider`/`useReadingLink` (injected `Link`). Exported from the package root; the leaf `boundary.test.ts` stays green — the new code imports nothing in-repo.
 - [x] **Element map ported verbatim from docs** so Theme B's visual-parity guardrail has nothing to absorb; site's `h4` folded in. One map now feeds both render paths (`MDXProvider` and `react-markdown`).

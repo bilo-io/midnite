@@ -48,7 +48,7 @@
   placeholders). [`components/footer.tsx`](../packages/site/components/footer.tsx) maps
   over `LEGAL_DOCS`, so it surfaces exactly the docs that exist.
 
-## Theme A — Shared reading primitives in `@midnite/ui` — **L** — ✅ DONE (PR #TBD, 2026-08-01)
+## Theme A — Shared reading primitives in `@midnite/ui` — **L** — ✅ DONE (PR #584, 2026-08-01)
 
 Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported from the package root; `boundary.test.ts` stays green — the primitives import nothing in-repo.
 
