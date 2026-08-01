@@ -7,6 +7,7 @@ import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { PasscodeSetupDialog } from '@midnite/ui';
+import { usePasscodeDialogLabels } from '@/hooks/use-passcode-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   CYCLE_DEFAULT_S,
@@ -38,6 +39,7 @@ function formatDuration(seconds: number): string {
 
 export function ScreenLockSection() {
   const t = useTranslations('settings');
+  const passcodeCopy = usePasscodeDialogLabels();
   const [settings, setSettings, hydrated] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -242,6 +244,9 @@ export function ScreenLockSection() {
 
       {setup ? (
         <PasscodeSetupDialog
+          label={passcodeCopy.setupLabel}
+          closeLabel={passcodeCopy.closeLabel}
+          labels={passcodeCopy.labels}
           onComplete={(code) => {
             setPasscode(code);
             if (setup === 'enable') setRequirePasscode(true);

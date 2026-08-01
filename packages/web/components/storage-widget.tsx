@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Database, RefreshCw } from 'lucide-react';
-import { RadialGauge } from '@midnite/ui';
+import { RadialGauge, type RadialGaugeLabels } from '@midnite/ui';
 import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
@@ -19,8 +20,16 @@ type State = Estimate | 'unsupported' | 'error' | null;
  * real hard-drive space. Titled "App cache" to keep the two distinct.
  */
 export function StorageWidget() {
+  const tCommon = useTranslations('common');
   const [state, setState] = useState<State>(null);
   const [loading, setLoading] = useState(false);
+
+  const gaugeLabels: RadialGaugeLabels = {
+    aria: (pct) => tCommon('ui.gauge.pctUsed', { pct }),
+    used: (pct) => tCommon('ui.gauge.pctUsed', { pct }),
+    of: (total) => tCommon('ui.gauge.ofTotal', { total }),
+    free: (free) => tCommon('ui.gauge.free', { free }),
+  };
 
   const refresh = useCallback(async () => {
     if (typeof navigator === 'undefined' || !navigator.storage?.estimate) {
@@ -67,7 +76,7 @@ export function StorageWidget() {
       ) : state === 'error' ? (
         <p className="px-2 text-center text-sm text-destructive">Couldn’t read cache usage.</p>
       ) : (
-        <RadialGauge usedBytes={state.usage} totalBytes={state.quota} />
+        <RadialGauge usedBytes={state.usage} totalBytes={state.quota} labels={gaugeLabels} />
       )}
     </WidgetCard>
   );

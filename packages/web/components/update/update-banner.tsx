@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { UpdateBannerView } from './update-banner-view';
 import { useUpdate } from './update-provider';
 
@@ -23,6 +25,7 @@ const MAC_INSTALL_COMMAND =
   'curl -fsSL https://midnite-app.vercel.app/install.sh | sh';
 
 export function UpdateBanner() {
+  const t = useTranslations('common');
   const {
     available,
     dismissed,
@@ -44,17 +47,20 @@ export function UpdateBanner() {
   let actionDisabled = false;
   switch (desktopPhase) {
     case 'downloading':
-      headline = 'Downloading update…';
-      actionLabel = downloadPercent !== null ? `Downloading ${downloadPercent}%` : 'Downloading…';
+      headline = t('update.downloadingHeadline');
+      actionLabel =
+        downloadPercent !== null
+          ? t('update.downloadingPercent', { percent: downloadPercent })
+          : t('update.downloadingAction');
       actionDisabled = true;
       break;
     case 'downloaded':
-      headline = 'An update is ready to install';
-      actionLabel = 'Restart to install';
+      headline = t('update.readyHeadline');
+      actionLabel = t('update.restartToInstall');
       break;
     case 'error':
-      headline = 'Update failed';
-      actionLabel = 'Retry';
+      headline = t('update.failedHeadline');
+      actionLabel = t('retry');
       break;
     default:
       break;

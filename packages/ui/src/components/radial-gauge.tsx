@@ -21,7 +21,31 @@ function formatBytes(bytes: number): string {
  * footer. Shared by the App-cache (browser quota) and Disk (host filesystem)
  * dashboard widgets so they read identically.
  */
-export function RadialGauge({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: number }) {
+/**
+ * Copy overrides for the gauge's rendered strings — all optional, defaulting
+ * to the current English so non-i18n consumers are unaffected. Formatted byte
+ * figures are passed in pre-formatted so callers only template the phrase.
+ */
+export type RadialGaugeLabels = {
+  /** SVG accessible name (default `${pct}% used`). */
+  aria?: (pct: number) => string;
+  /** Centre sub-line under the used figure (default `of ${total}`). */
+  of?: (total: string) => string;
+  /** Footer used phrase (default `${pct}% used`). */
+  used?: (pct: number) => string;
+  /** Footer free phrase (default `${free} free`). */
+  free?: (free: string) => string;
+};
+
+export function RadialGauge({
+  usedBytes,
+  totalBytes,
+  labels,
+}: {
+  usedBytes: number;
+  totalBytes: number;
+  labels?: RadialGaugeLabels;
+}) {
   const fraction = totalBytes > 0 ? Math.min(usedBytes / totalBytes, 1) : 0;
   const pct = Math.round(fraction * 100);
   const free = Math.max(totalBytes - usedBytes, 0);
@@ -35,7 +59,7 @@ export function RadialGauge({ usedBytes, totalBytes }: { usedBytes: number; tota
           height={SIZE}
           viewBox={`0 0 ${SIZE} ${SIZE}`}
           role="img"
-          aria-label={`${pct}% used`}
+          aria-label={labels?.aria ? labels.aria(pct) : `${pct}% used`}
         >
           <circle
             cx={CENTER}
@@ -61,14 +85,16 @@ export function RadialGauge({ usedBytes, totalBytes }: { usedBytes: number; tota
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-base font-semibold tabular-nums">{formatBytes(usedBytes)}</span>
           <span className="text-[11px] tabular-nums text-muted-foreground">
-            of {formatBytes(totalBytes)}
+            {labels?.of ? labels.of(formatBytes(totalBytes)) : `of ${formatBytes(totalBytes)}`}
           </span>
         </div>
       </div>
       <div className="text-center text-[11px] text-muted-foreground">
-        <span className="tabular-nums">{pct}% used</span>
+        <span className="tabular-nums">{labels?.used ? labels.used(pct) : `${pct}% used`}</span>
         <span aria-hidden> · </span>
-        <span className="tabular-nums">{formatBytes(free)} free</span>
+        <span className="tabular-nums">
+          {labels?.free ? labels.free(formatBytes(free)) : `${formatBytes(free)} free`}
+        </span>
       </div>
     </>
   );

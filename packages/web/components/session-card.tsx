@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowUpRight, BotMessageSquare } from 'lucide-react';
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
-import { ContextRing } from '@midnite/ui';
+import { ContextRing, type ContextRingLabels } from '@midnite/ui';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import type { ProjectTagInfo } from '@/components/task-card';
@@ -79,6 +80,15 @@ function OpenDetailLink({ sessionId }: { sessionId: string }) {
 }
 
 /** A session as a flat table row, used inside the Sessions table accordions. */
+/** Translated copy for the `@midnite/ui` ContextRing (defaults are English). */
+function useContextRingLabels(): ContextRingLabels {
+  const t = useTranslations('common');
+  return {
+    aria: (pct) => t('ui.contextRing.aria', { pct }),
+    tooltip: (pct, tokens, limit) => t('ui.contextRing.tooltip', { pct, tokens, limit }),
+  };
+}
+
 export function SessionRow({
   session,
   project,
@@ -90,6 +100,7 @@ export function SessionRow({
   project?: ProjectTagInfo;
   onClick: () => void;
 } & SelectProps) {
+  const ringLabels = useContextRingLabels();
   return (
     <div
       className={cn(
@@ -110,7 +121,7 @@ export function SessionRow({
           <ProjectTag tag={project.tag} color={project.color} className="shrink-0" />
         ) : null}
         {session.contextTokens != null && session.contextLimit != null ? (
-          <ContextRing tokens={session.contextTokens} limit={session.contextLimit} />
+          <ContextRing tokens={session.contextTokens} limit={session.contextLimit} labels={ringLabels} />
         ) : null}
         <span className="hidden shrink-0 truncate font-mono text-xs text-muted-foreground sm:inline">
           {session.projectDisplay}
@@ -131,6 +142,7 @@ type Props = {
 } & SelectProps;
 
 export function SessionCard({ session, layout, onClick, selected = false, onToggleSelect }: Props) {
+  const ringLabels = useContextRingLabels();
   if (layout === 'list') {
     return (
       <div
@@ -149,7 +161,7 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
             ) : null}
           </div>
           {session.contextTokens != null && session.contextLimit != null ? (
-            <ContextRing tokens={session.contextTokens} limit={session.contextLimit} />
+            <ContextRing tokens={session.contextTokens} limit={session.contextLimit} labels={ringLabels} />
           ) : null}
           <div className="hidden shrink-0 text-right text-xs text-muted-foreground sm:block">
             <p className="truncate font-mono">{session.projectDisplay}</p>
@@ -176,7 +188,7 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {session.contextTokens != null && session.contextLimit != null ? (
-            <ContextRing tokens={session.contextTokens} limit={session.contextLimit} />
+            <ContextRing tokens={session.contextTokens} limit={session.contextLimit} labels={ringLabels} />
           ) : null}
           <OpenDetailLink sessionId={session.id} />
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { PendingApproval } from '@midnite/shared';
 
 import { PendingRow } from '@/components/approvals-drawer';
@@ -86,22 +87,23 @@ export function NotificationsPanel({
   pending: PendingApproval[];
   decide: ApprovalsSocket['decide'];
 }) {
+  const t = useTranslations('nav');
   const { unread } = useNotifications();
   const [tab, setTab] = useState<PanelTab>('notifications');
   const approvalCount = pending.length;
 
   return (
-    <div aria-label="Notifications and approvals" className={className}>
+    <div aria-label={t('header.notificationsAndApprovals')} className={className}>
       <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
         <div className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl bg-popover shadow-2xl">
           <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
-            <div role="tablist" aria-label="Notifications and approvals" className="flex items-center gap-3">
+            <div role="tablist" aria-label={t('header.notificationsAndApprovals')} className="flex items-center gap-3">
               <TabButton active={tab === 'notifications'} onClick={() => setTab('notifications')}>
-                Notifications
+                {t('header.notifications')}
                 {unread > 0 ? <TabCount>{unread > 99 ? '99+' : unread}</TabCount> : null}
               </TabButton>
               <TabButton active={tab === 'approvals'} onClick={() => setTab('approvals')}>
-                Approvals
+                {t('header.approvals')}
                 {approvalCount > 0 ? (
                   <TabCount amber>{approvalCount > 99 ? '99+' : approvalCount}</TabCount>
                 ) : null}
@@ -112,16 +114,16 @@ export function NotificationsPanel({
           </div>
 
           {tab === 'notifications' ? (
-            <div role="tabpanel" aria-label="Notifications">
+            <div role="tabpanel" aria-label={t('header.notifications')}>
               <NotificationFeedList onClose={onClose} />
             </div>
           ) : (
-            <div role="tabpanel" aria-label="Approvals" className="flex min-h-0 flex-1 flex-col">
+            <div role="tabpanel" aria-label={t('header.approvals')} className="flex min-h-0 flex-1 flex-col">
               <div className="flex-1 overflow-y-auto p-3">
                 {approvalCount === 0 ? (
                   <div className="flex h-28 flex-col items-center justify-center gap-2 text-center">
                     <RefreshCw className="h-6 w-6 text-muted-foreground" aria-hidden />
-                    <p className="text-sm text-muted-foreground">No pending approvals</p>
+                    <p className="text-sm text-muted-foreground">{t('header.noPendingApprovals')}</p>
                   </div>
                 ) : (
                   <ul className="space-y-3">
@@ -139,7 +141,7 @@ export function NotificationsPanel({
                   onClick={onClose}
                   className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                 >
-                  Manage autonomy mode &amp; rules →
+                  {t('header.manageAutonomy')}
                 </a>
               </div>
             </div>

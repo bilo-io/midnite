@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { UpdateBannerView } from './update-banner-view';
 
 afterEach(cleanup);
@@ -95,6 +96,15 @@ describe('UpdateBannerView', () => {
   it('has no progress bar when downloadPercent is null', () => {
     render(<UpdateBannerView {...base} />);
     expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
+  it('renders French copy under fr-FR (Phase 82 E)', () => {
+    render(<UpdateBannerView {...base} />, { locale: 'fr-FR' });
+    expect(screen.getByText('Une nouvelle version est disponible')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mettre à jour' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Ignorer l’avis de mise à jour' }),
+    ).toBeInTheDocument();
   });
 
   // Manual-install mode (unsigned macOS desktop build): the update can't install

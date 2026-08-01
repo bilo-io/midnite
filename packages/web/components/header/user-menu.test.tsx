@@ -1,6 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Team, User } from '@midnite/shared';
+
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -51,5 +53,12 @@ describe('UserMenu', () => {
     expect(screen.getByText('ada@x.com')).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: /Sign out/i })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Log in/i })).toBeNull();
+  });
+
+  it('renders French copy under fr-FR (Phase 82 E)', () => {
+    render(<UserMenu />, { locale: 'fr-FR' });
+    fireEvent.click(screen.getByRole('button', { name: 'Menu du compte' }));
+    expect(screen.getByText('Non connecté')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Se connecter/ })).toHaveAttribute('href', '/login');
   });
 });

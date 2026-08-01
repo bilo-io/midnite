@@ -64,16 +64,16 @@ The 457-file bulk. Each bullet is an independently landable slice (own namespace
 - [ ] **Ideas / chat-to-board / remaining top-level components** — the residue after the named areas; drain `I18N_EXEMPT` to zero for `packages/web`.
 - [ ] **fr-FR keys + tests per slice** — same-PR French + a representative fr-FR RTL render per area.
 
-## Theme E — Chrome, desktop & office DOM — **M**
+## Theme E — Chrome, desktop & office DOM — **M** — ✅ DONE (PR #583, 2026-07-30)
 
 The frame around the app, plus the office's React layer.
 
-- [ ] **Header & shell residue** ([`components/header/`](../packages/web/components/header), any `packages/shell` strings not covered by Phase 79's `nav` pass) → `nav` / `common`.
-- [ ] **Update banners + lock screen** ([`components/update/`](../packages/web/components/update); the shell `<LockScreen>` strings via injected labels, keeping shell catalog-free) → `common`.
-- [ ] **Desktop title bar & window chrome residue** — remaining Phase 81 strings (menu labels, tray tooltips where web-rendered) → `nav`.
-- [ ] **Office DOM UI** ([`components/office/`](../packages/web/components/office) + [`office3d/`](../packages/web/components/office3d) React panels/menus/tooltips) → `office`. **Phaser canvas text stays English** — add a short "known gap" note in `messages/README.md`.
-- [ ] **`packages/ui` default-label audit** — grep the 38 primitives for hardcoded user-facing defaults; propify each (default moves to the web call site as a `t()` value); `ui` boundary test untouched.
-- [ ] **fr-FR keys + tests** — as above.
+- [x] **Header & shell residue** — header menus/panels → `nav.header.*` (22 keys); shell `AppFrame`/`AppMobileNav`/`TitleBar` gained injected label props (English defaults, non-breaking), web passes `nav.rail/mobile/titleBar` values.
+- [x] **Update banners + lock screen** — `components/update/` → `common.update.*` (23 keys, ICU download/toast); `LockScreenLabels` prop on the shell `<LockScreen>` (incl. passcode-dialog pass-through), shell stays catalog-free.
+- [x] **Desktop title bar & window chrome residue** — `desktop-title-bar.tsx` Back/Forward/Search + pill placeholder → `nav.titleBar.*`.
+- [x] **Office DOM UI** — new `office` namespace (105 keys en+fr): 16 files migrated across `office/` + `office3d/` (drei `<Html>` prompts resolved outside the r3f canvas and passed as props); Phaser canvas text stays English, README gap note extended to cover 3D canvas textures.
+- [x] **`packages/ui` default-label audit** — full audit table shipped; 6 primitives propified non-breaking (passcode pad, theme toggle, rail shell, radial gauge, context ring, styled select) with `common.ui.*` values at 20+ web call sites; byte-unit suffixes flagged as follow-up.
+- [x] **fr-FR keys + tests** — 189 new fr keys (hand-authored, `needsReview`); key-audit tests `i18n-chrome-keys.test.ts` + `i18n-office-keys.test.ts`; fr RTL renders (banner, menus, lock screen, presence dialog); exempt list 293 → 247.
 
 ## Theme F — Close-out & Phase 79 absorption — **S**
 

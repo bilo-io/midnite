@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Bot, Copy, Loader2, Trash2, X } from 'lucide-react';
 import {
   getNodeTypeDefinition,
@@ -257,6 +258,7 @@ function AiModelField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const tCommon = useTranslations('common');
   return (
     <ModelComboSelect
       options={aiModelOptions(provider)}
@@ -264,6 +266,8 @@ function AiModelField({
       onChange={onChange}
       placeholder="Select or type a model id"
       aria-label="Model"
+      formatCreateLabel={(input) => tCommon('ui.modelSelect.useCustom', { input })}
+      noOptionsLabel={tCommon('ui.modelSelect.noOptions')}
     />
   );
 }

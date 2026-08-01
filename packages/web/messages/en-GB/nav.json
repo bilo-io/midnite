@@ -22,5 +22,58 @@
     "lock": "Lock",
     "language": "Language",
     "changelog": "View changelog"
+  },
+  "header": {
+    "notifications": "Notifications",
+    "approvals": "Approvals",
+    "notificationsAndApprovals": "Notifications and approvals",
+    "noPendingApprovals": "No pending approvals",
+    "manageAutonomy": "Manage autonomy mode & rules →",
+    "labelWithCount": "{label}, {count}",
+    "theme": "Theme",
+    "toggleTheme": "Toggle theme",
+    "themeOptions": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "time": "Time"
+    },
+    "account": {
+      "menuLabel": "Account menu",
+      "menu": "Account",
+      "notSignedIn": "Not signed in",
+      "signInHint": "Sign in to sync your workspace.",
+      "logIn": "Log in",
+      "createAccount": "Create account",
+      "profile": "Profile",
+      "personalization": "Personalization",
+      "team": "Team",
+      "workspace": "Workspace",
+      "signOut": "Sign out"
+    }
+  },
+  "rail": {
+    "label": "Primary",
+    "sectionToggle": "{label} section",
+    "unlockNav": "Unlock navigation",
+    "keepNavExpanded": "Keep navigation expanded"
+  },
+  "mobile": {
+    "label": "Mobile navigation",
+    "menu": "Menu",
+    "closeMenu": "Close menu"
+  },
+  "titleBar": {
+    "label": "Window title bar",
+    "back": "Back",
+    "forward": "Forward",
+    "search": "Search",
+    "searchPlaceholder": "Search midnite…"
+  },
+  "lockScreen": {
+    "locked": "Locked screensaver",
+    "screensaver": "Screensaver",
+    "unlockHint": "press any key to unlock",
+    "wakeHint": "press any key to wake"
   }
 }

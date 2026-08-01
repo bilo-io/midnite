@@ -59,7 +59,9 @@ silently regress).
 
 > **Known gap:** Phaser canvas text in the office scenes is **not** localized and
 > stays English (a documented Phase 82 scope decision) — canvas strings are invisible
-> to the lint gate.
+> to the lint gate. The same applies to text drawn *inside* the 3D office's canvas
+> textures (e.g. the Breakout cabinet screen in `office3d/`) — only React-rendered
+> DOM overlays/panels (including drei `<Html>` plates) are localized.
 
 ## Tooling
 

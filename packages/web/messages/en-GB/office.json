@@ -1,0 +1,145 @@
+{
+  "page": {
+    "title": "Office",
+    "description": "Walk the floor and see what your agents are up to — step up to a desk to call or message.",
+    "desktopLabel": "The office"
+  },
+  "surface": {
+    "viewLabel": "Office view",
+    "view2d": "2D",
+    "view3d": "3D"
+  },
+  "hud": {
+    "controls": "<k>WASD</k> / arrows to move · <k>E</k> to interact",
+    "avatar": "👤 Avatar",
+    "backToOffice": "Back to Office",
+    "attention": "🙋 {count, plural, one {# agent needs you} other {# agents need you}}",
+    "attentionAria": "{count, plural, one {# agent needs you — click to open} other {# agents need you — click to open}}",
+    "onBreak": "☕ On a break",
+    "online": "{count, plural, one {# agent online} other {# agents online}}",
+    "empty": "No active agents — start a task to fill the office.",
+    "prompts": {
+      "mainOffice": "Press <k>E</k> to return to the <b>Main Office</b>",
+      "customiseDesk": "Press <k>E</k> near the desk to <b>customise</b>",
+      "board": "Press <k>E</k> to open the <b>Board Room</b>",
+      "kitchenBreak": "Press <k>E</k> to <b>take a coffee break</b>",
+      "kitchenBack": "Press <k>E</k> to <b>get back to work</b>",
+      "library": "Press <k>E</k> to browse the <b>Library</b>",
+      "games": "Press <k>E</k> to open the <b>Game Library</b>",
+      "corner": "Press <k>E</k> to enter the <b>Corner Office</b>",
+      "agent": "Press <k>E</k> to open <b>{name}</b>'s session"
+    },
+    "archiveConfirm": {
+      "title": "Archive this session?",
+      "description": "It moves out of the active board. You can unarchive it again later.",
+      "confirm": "Archive"
+    }
+  },
+  "boardroom": {
+    "label": "Board room",
+    "title": "Board Room",
+    "error": "Couldn’t load projects — {error}",
+    "empty": "No projects yet.",
+    "taskCount": "{count, plural, one {# task} other {# tasks}}"
+  },
+  "library": {
+    "title": "Library",
+    "searchPlaceholder": "Search by title or author…",
+    "searchAria": "Search books",
+    "all": "All",
+    "empty": "No books match your search."
+  },
+  "desk": {
+    "title": "Customise Desk",
+    "instructions": "Choose up to {max} items for your desk. Changes save automatically.",
+    "onDesk": "On desk"
+  },
+  "character": {
+    "title": "Choose your avatar",
+    "human": "Human",
+    "tintTitle": "Colour tint",
+    "robots": {
+      "0": "Rod",
+      "1": "Twin",
+      "2": "Bulb",
+      "3": "Dish",
+      "4": "Sensor",
+      "5": "Fins"
+    },
+    "tints": {
+      "0": "Natural",
+      "1": "Blue",
+      "2": "Green",
+      "3": "Pink",
+      "4": "Amber",
+      "5": "Violet",
+      "6": "Red"
+    }
+  },
+  "games": {
+    "label": "Retro Games",
+    "title": "Game Library",
+    "play": "PLAY",
+    "comingSoon": "Coming soon — the arcade is under construction.",
+    "back": "← Back to games",
+    "genres": {
+      "arcade": "Arcade",
+      "puzzle": "Puzzle",
+      "shooter": "Shooter",
+      "platform": "Platform",
+      "sports": "Sports",
+      "fighting": "Fighting"
+    },
+    "taglines": {
+      "pac-man": "Waka waka waka.",
+      "tetris": "Lines. Forever.",
+      "space-invaders": "They keep moving faster.",
+      "donkey-kong": "Jump over the barrels.",
+      "pong": "The one that started it all.",
+      "frogger": "Just cross the road.",
+      "galaga": "Let them capture you first.",
+      "street-fighter-2": "Hadouken."
+    }
+  },
+  "presence": {
+    "widgetTitle": "In the office",
+    "widgetEmpty": "Nobody's in yet — drop by the office →",
+    "roster": "In the office · {count}",
+    "you": "You",
+    "youGhost": "You (ghost)",
+    "walkTo": "Walk to {name}",
+    "chat": "Chat",
+    "chatTitle": "Say something (T)",
+    "chatPlaceholder": "Say something…",
+    "chatMessage": "Chat message",
+    "emote": "Emote",
+    "sendEmote": "Send {emoji}",
+    "ghostMode": "Ghost mode",
+    "ghostOn": "Ghost mode on — nobody sees you",
+    "ghostOff": "Ghost mode off",
+    "navPill": "{count} in the office",
+    "selfChatYou": "You:",
+    "nameDialog": {
+      "label": "Choose your office name",
+      "title": "Join the office",
+      "body": "What should teammates call you? This shows above your avatar.",
+      "nameLabel": "Display name",
+      "useDefault": "Use default",
+      "join": "Join"
+    }
+  },
+  "scenes": {
+    "office": "Office",
+    "corner": "Corner office",
+    "arcade": "Arcade"
+  },
+  "threeD": {
+    "controls": "Click to look around · <k>WASD</k> to move · <k>E</k> to interact · <k>Esc</k> to release",
+    "prompts": {
+      "backToOffice": "E — back to the office",
+      "playBreakout": "E — play Breakout",
+      "browseGames": "E — browse games",
+      "customiseDesk": "E — customise your desk"
+    }
+  }
+}

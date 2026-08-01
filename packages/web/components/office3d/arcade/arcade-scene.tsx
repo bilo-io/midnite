@@ -76,7 +76,15 @@ function ArcadeRoom({ model, stubs }: { model: ReturnType<typeof buildArcade>; s
   );
 }
 
-export function ArcadeScene({ onLockChange }: { onLockChange?: (locked: boolean) => void }) {
+export function ArcadeScene({
+  onLockChange,
+  prompts,
+}: {
+  onLockChange?: (locked: boolean) => void;
+  /** Translated proximity-prompt labels — resolved outside the r3f tree (no
+   *  next-intl context inside <Canvas>) and passed in by Office3DCanvas. */
+  prompts: { exit: string; breakout: string; stub: string };
+}) {
   const model = useMemo(() => buildArcade(), []);
   const breakout = useMemo(() => model.cabinets.find((c) => c.kind === 'breakout')!, [model]);
   const stubs = useMemo(() => model.cabinets.filter((c) => c.kind === 'stub'), [model]);
@@ -146,17 +154,10 @@ export function ArcadeScene({ onLockChange }: { onLockChange?: (locked: boolean)
   const onProximity = useCallback(
     (px: number, pz: number) => {
       const near = nearestTarget(px, pz);
-      const label =
-        near === 'exit'
-          ? 'E — back to the office'
-          : near === 'breakout'
-            ? 'E — play Breakout'
-            : near === 'stub'
-              ? 'E — browse games'
-              : null;
+      const label = near === null ? null : prompts[near];
       setPrompt((prev) => (prev === label ? prev : label));
     },
-    [nearestTarget],
+    [nearestTarget, prompts],
   );
 
   // While playing, dolly the camera onto the screen and hold it there.

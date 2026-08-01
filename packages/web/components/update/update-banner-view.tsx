@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowUpCircle, Check, Copy, RefreshCw, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 import { ReleaseNotesPopover } from './release-notes-popover';
@@ -15,9 +16,9 @@ export type UpdateBannerViewProps = {
   latest: string | null;
   /** Optional release-notes URL — turns the version into a link. */
   notesUrl?: string;
-  /** Override the default headline (desktop states: downloading / ready / failed). */
+  /** Override the default (catalog-resolved) headline (desktop states: downloading / ready / failed). */
   headline?: string;
-  /** Action button label (defaults to "Update"; e.g. "Restart to install", "Retry"). */
+  /** Action button label (defaults to the catalog's `common.update.action`; e.g. "Restart to install", "Retry"). */
   actionLabel?: string;
   /** Disable the action (e.g. mid-download). */
   actionDisabled?: boolean;
@@ -35,6 +36,7 @@ export type UpdateBannerViewProps = {
 
 /** The copy-command action: copies to the clipboard and confirms for a moment. */
 function CopyCommandButton({ command, className }: { command: string; className: string }) {
+  const t = useTranslations('common');
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
@@ -57,7 +59,7 @@ function CopyCommandButton({ command, className }: { command: string; className:
       </code>
       <button type="button" onClick={() => void copy()} className={className}>
         {copied ? <Check aria-hidden className="h-3.5 w-3.5" /> : <Copy aria-hidden className="h-3.5 w-3.5" />}
-        {copied ? 'Copied!' : 'Copy install command'}
+        {copied ? t('update.copied') : t('update.copyInstallCommand')}
       </button>
     </span>
   );
@@ -78,13 +80,14 @@ export function UpdateBannerView({
   latest,
   notesUrl,
   headline,
-  actionLabel = 'Update',
+  actionLabel,
   actionDisabled = false,
   downloadPercent = null,
   copyCommand,
   onUpdate,
   onDismiss,
 }: UpdateBannerViewProps) {
+  const t = useTranslations('common');
   const innerRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
 
@@ -122,10 +125,8 @@ export function UpdateBannerView({
     };
   }, [visible, height]);
 
-  const versionLabel = latest ? `v${latest}` : 'the latest version';
-  const defaultHeadline = belowFloor
-    ? 'Update required to keep using midnite'
-    : 'A new version is available';
+  const versionLabel = latest ? `v${latest}` : t('update.latestVersionFallback');
+  const defaultHeadline = belowFloor ? t('update.updateRequired') : t('update.newVersionAvailable');
   const showProgress = downloadPercent !== null;
 
   return (
@@ -168,7 +169,8 @@ export function UpdateBannerView({
                 )}
                 {belowFloor && (
                   <span className="opacity-80">
-                    {' — this version is no longer supported, please update to continue'}
+                    {' — '}
+                    {t('update.unsupported')}
                   </span>
                 )}
               </span>
@@ -196,7 +198,7 @@ export function UpdateBannerView({
                 )}
               >
                 <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-                {actionLabel}
+                {actionLabel ?? t('update.action')}
               </button>
             )}
 
@@ -204,7 +206,7 @@ export function UpdateBannerView({
               <button
                 type="button"
                 onClick={onDismiss}
-                aria-label="Dismiss update notice"
+                aria-label={t('update.dismiss')}
                 className={cn(
                   'inline-flex shrink-0 items-center justify-center rounded-md p-1',
                   'text-white/70 transition-colors hover:text-white',
@@ -221,7 +223,7 @@ export function UpdateBannerView({
             <div
               className="h-1 w-full bg-white/25"
               role="progressbar"
-              aria-label="Downloading update"
+              aria-label={t('update.downloadProgress')}
               aria-valuenow={downloadPercent ?? 0}
               aria-valuemin={0}
               aria-valuemax={100}

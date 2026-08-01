@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePresenceSummary } from '@/hooks/use-presence-summary';
@@ -12,10 +13,11 @@ import { usePresenceSummary } from '@/hooks/use-presence-summary';
  * nav-bar's collapsed/expanded button shape.
  */
 export function PresenceNavPill({ expanded }: { expanded: boolean }) {
+  const t = useTranslations('office');
   const { count } = usePresenceSummary();
   if (count <= 0) return null;
 
-  const label = `${count} in the office`;
+  const label = t('presence.navPill', { count });
   return (
     <Link
       href="/office"

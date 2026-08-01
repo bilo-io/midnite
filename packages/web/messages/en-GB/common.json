@@ -35,5 +35,64 @@
   "noProjectsMatch": "No projects match",
   "newProject": "New project",
   "startingTerminal": "Starting terminal…",
-  "startingLabel": "Starting {label}…"
+  "startingLabel": "Starting {label}…",
+  "update": {
+    "action": "Update",
+    "newVersionAvailable": "A new version is available",
+    "updateRequired": "Update required to keep using midnite",
+    "latestVersionFallback": "the latest version",
+    "unsupported": "this version is no longer supported, please update to continue",
+    "downloadingHeadline": "Downloading update…",
+    "downloadingPercent": "Downloading {percent}%",
+    "downloadingAction": "Downloading…",
+    "readyHeadline": "An update is ready to install",
+    "restartToInstall": "Restart to install",
+    "failedHeadline": "Update failed",
+    "checkFailed": "Update check failed",
+    "dismiss": "Dismiss update notice",
+    "downloadProgress": "Downloading update",
+    "copyInstallCommand": "Copy install command",
+    "copied": "Copied!",
+    "versionAvailableToast": "Version {version} is available",
+    "whatsNew": "What's new in v{version}",
+    "releaseNotesLabel": "Release notes for v{version}",
+    "loadingNotes": "Loading release notes…",
+    "notesUnavailable": "Release notes aren't available right now — see the full changelog or the release page below.",
+    "fullChangelog": "Full changelog",
+    "releasePage": "Release page"
+  },
+  "ui": {
+    "passcode": {
+      "unlockTitle": "Enter passcode",
+      "setTitle": "Set a passcode",
+      "confirmTitle": "Confirm passcode",
+      "unlockSubtitle": "Enter your passcode to unlock.",
+      "chooseSubtitle": "Choose a {length}-digit passcode.",
+      "confirmSubtitle": "Enter it again to confirm.",
+      "incorrect": "Incorrect passcode.",
+      "mismatch": "Those didn't match. Try again.",
+      "digitAria": "Passcode digit {index}",
+      "setupDialogLabel": "Set screensaver passcode",
+      "unlockDialogLabel": "Enter passcode to unlock"
+    },
+    "rail": {
+      "collapse": "Collapse {title}",
+      "expand": "Expand {title}",
+      "toggleLeftPanel": "Toggle left panel",
+      "toggleRightPanel": "Toggle right panel"
+    },
+    "gauge": {
+      "pctUsed": "{pct}% used",
+      "ofTotal": "of {total}",
+      "free": "{free} free"
+    },
+    "contextRing": {
+      "aria": "Context window {pct}% used",
+      "tooltip": "Context window · {pct}% · ~{tokens} / {limit} tokens"
+    },
+    "modelSelect": {
+      "useCustom": "Use “{input}”",
+      "noOptions": "No options"
+    }
+  }
 }

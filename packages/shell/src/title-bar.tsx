@@ -33,6 +33,11 @@ export type TitleBarProps = {
   center?: ReactNode;
   /** Right slot (the header-actions cluster) — rendered `no-drag`. */
   right?: ReactNode;
+  /**
+   * Accessible name for the bar's `<header>` landmark (shell is catalog-free —
+   * a host passes a t()-derived value). Defaults to the English string.
+   */
+  label?: string;
   className?: string;
 };
 
@@ -49,7 +54,14 @@ export const TITLE_BAR_HEIGHT = '3rem';
 const DRAG_STYLE = { WebkitAppRegion: 'drag' } as CSSProperties;
 const NO_DRAG_STYLE = { WebkitAppRegion: 'no-drag' } as CSSProperties;
 
-export function TitleBar({ windowChrome, left, center, right, className }: TitleBarProps) {
+export function TitleBar({
+  windowChrome,
+  left,
+  center,
+  right,
+  label = 'Window title bar',
+  className,
+}: TitleBarProps) {
   const frameless = windowChrome?.frameless === true;
   const [fullscreen, setFullscreen] = useState(false);
   const [focused, setFocused] = useState(true);
@@ -82,7 +94,7 @@ export function TitleBar({ windowChrome, left, center, right, className }: Title
 
   return (
     <header
-      aria-label="Window title bar"
+      aria-label={label}
       data-window-focused={focused ? 'true' : 'false'}
       style={DRAG_STYLE}
       className={cn(

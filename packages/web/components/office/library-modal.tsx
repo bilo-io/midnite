@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { BookOpen, ExternalLink, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ import { BOOKS, bookCategories, bookSearchUrl, filterBooks } from '@/lib/office/
  * (Phaser's keyboard is disabled while open, mirroring the board panel).
  */
 export function LibraryModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('office');
+  const tCommon = useTranslations('common');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
 
@@ -40,13 +43,13 @@ export function LibraryModal({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Library"
+        aria-label={t('library.title')}
         className="animate-dialog-in relative flex max-h-[88%] w-full max-w-md flex-col rounded-xl border border-border bg-card shadow-2xl"
       >
         <header className="flex items-center gap-2.5 border-b border-border/60 px-4 py-3">
           <BookOpen className="h-4 w-4 text-muted-foreground" />
-          <h2 className="flex-1 text-sm font-semibold">Library</h2>
-          <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+          <h2 className="flex-1 text-sm font-semibold">{t('library.title')}</h2>
+          <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </header>
@@ -59,13 +62,13 @@ export function LibraryModal({ onClose }: { onClose: () => void }) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by title or author…"
-              aria-label="Search books"
+              placeholder={t('library.searchPlaceholder')}
+              aria-label={t('library.searchAria')}
               className="pl-8"
             />
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <CategoryChip label="All" active={category === 'all'} onClick={() => setCategory('all')} />
+            <CategoryChip label={t('library.all')} active={category === 'all'} onClick={() => setCategory('all')} />
             {categories.map((c) => (
               <CategoryChip key={c} label={c} active={category === c} onClick={() => setCategory(c)} />
             ))}
@@ -74,7 +77,7 @@ export function LibraryModal({ onClose }: { onClose: () => void }) {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           {results.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No books match your search.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('library.empty')}</p>
           ) : (
             <ul className="space-y-1.5">
               {results.map((book) => (

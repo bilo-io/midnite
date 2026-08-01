@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { usePresenceStore } from '@/lib/presence-store';
 import { chatTtl } from '@/lib/presence-chat';
 
@@ -12,6 +13,7 @@ import { chatTtl } from '@/lib/presence-chat';
  * length-scaled TTL. Ephemeral — reads the store's `selfChat`, never persisted.
  */
 export function SelfChatHud() {
+  const t = useTranslations('office');
   const selfChat = usePresenceStore((s) => s.selfChat);
   const [visible, setVisible] = useState(false);
 
@@ -34,7 +36,7 @@ export function SelfChatHud() {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center">
       <div className="max-w-[70%] rounded-lg bg-[#e5e7eb] px-3 py-1.5 text-center text-sm font-medium text-[#0b0b12] shadow-lg">
-        <span className="mr-1 text-[#0b0b12]/60">You:</span>
+        <span className="mr-1 text-[#0b0b12]/60">{t('presence.selfChatYou')}</span>
         {selfChat.text}
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ export function PresenceNameDialog({
   onSubmit: (name: string) => void;
   onSkip: () => void;
 }) {
+  const t = useTranslations('office');
   const [value, setValue] = useState(defaultName);
 
   // Re-seed the field whenever the dialog (re)opens with a new default.
@@ -55,16 +57,14 @@ export function PresenceNameDialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Choose your office name"
+        aria-label={t('presence.nameDialog.label')}
         className="animate-dialog-in relative w-full max-w-xs rounded-xl border border-border bg-card p-5 shadow-2xl"
       >
         <div className="mb-3 flex items-center gap-2.5">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Join the office</h2>
+          <h2 className="text-sm font-semibold">{t('presence.nameDialog.title')}</h2>
         </div>
-        <p className="mb-3 text-xs text-muted-foreground">
-          What should teammates call you? This shows above your avatar.
-        </p>
+        <p className="mb-3 text-xs text-muted-foreground">{t('presence.nameDialog.body')}</p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -75,16 +75,16 @@ export function PresenceNameDialog({
             autoFocus
             value={value}
             maxLength={40}
-            aria-label="Display name"
+            aria-label={t('presence.nameDialog.nameLabel')}
             placeholder={defaultName}
             onChange={(e) => setValue(e.target.value)}
           />
           <div className="mt-4 flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={onSkip}>
-              Use default
+              {t('presence.nameDialog.useDefault')}
             </Button>
             <Button type="submit" size="sm">
-              Join
+              {t('presence.nameDialog.join')}
             </Button>
           </div>
         </form>

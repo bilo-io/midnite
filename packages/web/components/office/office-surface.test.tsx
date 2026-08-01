@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { screen, cleanup, fireEvent } from '@testing-library/react';
+
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, Presentation, X } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ import { boardroomProjects } from '@/lib/office/projects';
  * to the room (and, when a project is open, first returns to the project list).
  */
 export function BoardroomPanel({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('office');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const { data, error, loading } = useApiData(() =>
     Promise.all([getProjects(), getTasks(), getMemories()]),
@@ -54,13 +57,13 @@ export function BoardroomPanel({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Board room"
+        aria-label={t('boardroom.label')}
         className="animate-dialog-in relative flex max-h-[88%] w-full max-w-md flex-col rounded-xl border border-border bg-card shadow-2xl"
       >
         <header className="flex items-center gap-2.5 border-b border-border/60 px-4 py-3">
           <Presentation className="h-4 w-4 text-muted-foreground" />
-          <h2 className="flex-1 text-sm font-semibold">Board Room</h2>
-          <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+          <h2 className="flex-1 text-sm font-semibold">{t('boardroom.title')}</h2>
+          <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </header>
@@ -71,9 +74,9 @@ export function BoardroomPanel({ onClose }: { onClose: () => void }) {
               <Spinner />
             </div>
           ) : error ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Couldn’t load projects — {error}</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('boardroom.error', { error })}</p>
           ) : active.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No projects yet.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('boardroom.empty')}</p>
           ) : (
             <ul className="space-y-1.5">
               {active.map((project) => {
@@ -88,7 +91,7 @@ export function BoardroomPanel({ onClose }: { onClose: () => void }) {
                       <ProjectTag tag={project.tag} color={project.color} />
                       <span className="min-w-0 flex-1 truncate text-sm">{project.name}</span>
                       <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                        {count} task{count === 1 ? '' : 's'}
+                        {t('boardroom.taskCount', { count })}
                       </span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                     </button>

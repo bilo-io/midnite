@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { fetchReleaseNotes } from '@/lib/release-notes';
 import { ReleaseNotesPopover } from './release-notes-popover';
 

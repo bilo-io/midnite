@@ -6,6 +6,7 @@ import common from './common.json';
 import dashboard from './dashboard.json';
 import guide from './guide.json';
 import nav from './nav.json';
+import office from './office.json';
 import plan from './plan.json';
 import roadmap from './roadmap.json';
 import safety from './safety.json';
@@ -21,6 +22,7 @@ export default {
   dashboard,
   guide,
   nav,
+  office,
   plan,
   roadmap,
   safety,

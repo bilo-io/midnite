@@ -1,7 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { HardDrive } from 'lucide-react';
-import { RadialGauge } from '@midnite/ui';
+import { RadialGauge, type RadialGaugeLabels } from '@midnite/ui';
 import { useSystemStats } from '@/lib/use-system-stats';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
@@ -12,8 +13,16 @@ import { WidgetCard } from './widget-card';
  * — which shows the browser's per-origin quota — this is the actual hard drive.
  */
 export function DiskWidget() {
+  const tCommon = useTranslations('common');
   const { stats, loading, error } = useSystemStats();
   const disk = stats?.disks[0] ?? null;
+
+  const gaugeLabels: RadialGaugeLabels = {
+    aria: (pct) => tCommon('ui.gauge.pctUsed', { pct }),
+    used: (pct) => tCommon('ui.gauge.pctUsed', { pct }),
+    of: (total) => tCommon('ui.gauge.ofTotal', { total }),
+    free: (free) => tCommon('ui.gauge.free', { free }),
+  };
 
   return (
     <WidgetCard title="Disk" icon={HardDrive} bodyClassName="flex flex-col items-center justify-center gap-3 p-4">
@@ -25,7 +34,7 @@ export function DiskWidget() {
         </p>
       ) : (
         <>
-          <RadialGauge usedBytes={disk.usedBytes} totalBytes={disk.totalBytes} />
+          <RadialGauge usedBytes={disk.usedBytes} totalBytes={disk.totalBytes} labels={gaugeLabels} />
           <span className="max-w-full truncate font-mono text-[11px] text-muted-foreground" title={disk.path}>
             {disk.path}
           </span>

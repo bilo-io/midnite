@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,8 @@ import { useOfficeStore } from '@/lib/office-store';
  * is disabled while open.
  */
 export function DeskItemPicker({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('office');
+  const tCommon = useTranslations('common');
   const deskItems = useOfficeStore((s) => s.deskItems);
   const setDeskItems = useOfficeStore((s) => s.setDeskItems);
   const MAX = 3;
@@ -44,19 +47,19 @@ export function DeskItemPicker({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Customise Desk"
+        aria-label={t('desk.title')}
         className="animate-dialog-in relative flex max-h-[88%] w-full max-w-sm flex-col rounded-xl border border-border bg-card shadow-2xl"
       >
         <header className="flex items-center gap-2.5 border-b border-border/60 px-4 py-3">
           <Pencil className="h-4 w-4 text-muted-foreground" />
-          <h2 className="flex-1 text-sm font-semibold">Customise Desk</h2>
-          <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+          <h2 className="flex-1 text-sm font-semibold">{t('desk.title')}</h2>
+          <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </header>
 
         <p className="border-b border-border/60 px-4 py-2.5 text-[11px] text-muted-foreground">
-          Choose up to {MAX} items for your desk. Changes save automatically.
+          {t('desk.instructions', { max: MAX })}
         </p>
 
         <ul className="min-h-0 flex-1 overflow-y-auto px-4 py-3 space-y-1.5">
@@ -83,7 +86,7 @@ export function DeskItemPicker({ onClose }: { onClose: () => void }) {
                   <span className="flex-1 text-sm font-medium">{item.label}</span>
                   {selected && (
                     <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
-                      On desk
+                      {t('desk.onDesk')}
                     </span>
                   )}
                 </button>

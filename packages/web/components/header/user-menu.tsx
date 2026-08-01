@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, LogIn, LogOut, SlidersHorizontal, User, UserPlus, UserRound, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Avatar } from '@/components/avatar';
 import { useAuth } from '@/contexts/auth-context';
@@ -18,6 +19,7 @@ import { useHeaderDropdown } from './use-header-dropdown';
  * is always present so the header corner stays consistent.
  */
 export function UserMenu() {
+  const t = useTranslations('nav');
   const { user, teams, activeTeamId, setActiveTeam, logout } = useAuth();
   const router = useRouter();
   const { open, toggle, setOpen, rootRef } = useHeaderDropdown();
@@ -29,7 +31,7 @@ export function UserMenu() {
         <button
           type="button"
           onClick={toggle}
-          aria-label="Account menu"
+          aria-label={t('header.account.menuLabel')}
           aria-haspopup="menu"
           aria-expanded={open}
           className={cn(
@@ -45,14 +47,14 @@ export function UserMenu() {
         {open ? (
           <div
             role="menu"
-            aria-label="Account"
+            aria-label={t('header.account.menu')}
             className="absolute right-0 top-full z-50 mt-2 w-56 origin-top-right animate-panel-in"
           >
             <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
               <div className="overflow-hidden rounded-xl bg-popover py-1 shadow-2xl">
                 <div className="px-3 py-2.5">
-                  <p className="text-sm font-medium text-foreground">Not signed in</p>
-                  <p className="text-xs text-muted-foreground">Sign in to sync your workspace.</p>
+                  <p className="text-sm font-medium text-foreground">{t('header.account.notSignedIn')}</p>
+                  <p className="text-xs text-muted-foreground">{t('header.account.signInHint')}</p>
                 </div>
                 <div className="my-1 h-px bg-border/60" />
                 <Link
@@ -62,7 +64,7 @@ export function UserMenu() {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
                 >
                   <LogIn className="h-3.5 w-3.5 shrink-0" />
-                  Log in
+                  {t('header.account.logIn')}
                 </Link>
                 {registrationOpen ? (
                   <Link
@@ -72,7 +74,7 @@ export function UserMenu() {
                     className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
                   >
                     <UserPlus className="h-3.5 w-3.5 shrink-0" />
-                    Create account
+                    {t('header.account.createAccount')}
                   </Link>
                 ) : null}
               </div>
@@ -94,7 +96,7 @@ export function UserMenu() {
       <button
         type="button"
         onClick={toggle}
-        aria-label="Account menu"
+        aria-label={t('header.account.menuLabel')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
@@ -113,7 +115,7 @@ export function UserMenu() {
       {open ? (
         <div
           role="menu"
-          aria-label="Account"
+          aria-label={t('header.account.menu')}
           className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right animate-panel-in"
         >
           <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
@@ -140,7 +142,7 @@ export function UserMenu() {
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
               >
                 <User className="h-3.5 w-3.5 shrink-0" />
-                Profile
+                {t('header.account.profile')}
               </Link>
               <Link
                 href="/settings/personalization"
@@ -149,7 +151,7 @@ export function UserMenu() {
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-                Personalization
+                {t('header.account.personalization')}
               </Link>
               <Link
                 href="/settings/team"
@@ -158,14 +160,14 @@ export function UserMenu() {
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
               >
                 <Users className="h-3.5 w-3.5 shrink-0" />
-                Team
+                {t('header.account.team')}
               </Link>
 
               {teams.length > 0 ? (
                 <>
                   <div className="my-1 h-px bg-border/60" />
                   <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-                    Workspace
+                    {t('header.account.workspace')}
                   </p>
                   {teams.map((team) => {
                     const active = team.id === activeTeamId;
@@ -199,7 +201,7 @@ export function UserMenu() {
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground"
               >
                 <LogOut className="h-3.5 w-3.5 shrink-0" />
-                Sign out
+                {t('header.account.signOut')}
               </button>
             </div>
           </div>

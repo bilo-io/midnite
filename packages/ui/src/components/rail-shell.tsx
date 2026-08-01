@@ -33,6 +33,10 @@ export type RailConfig = {
   /** Desktop open width in px (default 288 = w-72). */
   width?: number;
   content: ReactNode;
+  /** Accessible name of the floating toggle while open (default `Collapse ${title}`). */
+  collapseLabel?: string;
+  /** Accessible name of the floating toggle while closed (default `Expand ${title}`). */
+  expandLabel?: string;
 };
 
 const DEFAULT_WIDTH = 288;
@@ -86,10 +90,24 @@ export function RailShell({
         {/* Toggles float in the content layer and glide with the rail as its
             width animates. Desktop-only — mobile toggles live in the header. */}
         {!isMobile && !hideFloatingToggles && left ? (
-          <RailFloatingToggle side="left" open={left.open} title={left.title} onToggle={left.onToggle} />
+          <RailFloatingToggle
+            side="left"
+            open={left.open}
+            title={left.title}
+            onToggle={left.onToggle}
+            collapseLabel={left.collapseLabel}
+            expandLabel={left.expandLabel}
+          />
         ) : null}
         {!isMobile && !hideFloatingToggles && right ? (
-          <RailFloatingToggle side="right" open={right.open} title={right.title} onToggle={right.onToggle} />
+          <RailFloatingToggle
+            side="right"
+            open={right.open}
+            title={right.title}
+            onToggle={right.onToggle}
+            collapseLabel={right.collapseLabel}
+            expandLabel={right.expandLabel}
+          />
         ) : null}
         {!isMobile && centerActions ? (
           <div
@@ -183,6 +201,8 @@ export function RailFloatingToggle({
   title,
   onToggle,
   inline = false,
+  collapseLabel,
+  expandLabel,
 }: {
   side: 'left' | 'right';
   open: boolean;
@@ -192,6 +212,10 @@ export function RailFloatingToggle({
    *  page that frames its own content (e.g. a tab strip) between a left/right
    *  toggle pair rather than adopting the default floating-corner placement. */
   inline?: boolean;
+  /** Accessible name while open (default `Collapse ${title}`). */
+  collapseLabel?: string;
+  /** Accessible name while closed (default `Expand ${title}`). */
+  expandLabel?: string;
 }) {
   const Icon: LucideIcon =
     side === 'left'
@@ -201,7 +225,7 @@ export function RailFloatingToggle({
       : open
         ? PanelRightClose
         : PanelRightOpen;
-  const label = `${open ? 'Collapse' : 'Expand'} ${title}`;
+  const label = open ? (collapseLabel ?? `Collapse ${title}`) : (expandLabel ?? `Expand ${title}`);
   return (
     <button
       type="button"
@@ -224,10 +248,13 @@ export function RailHeaderToggle({
   side,
   open,
   onClick,
+  label,
 }: {
   side: 'left' | 'right';
   open: boolean;
   onClick: () => void;
+  /** Accessible name (default `Toggle ${side} panel`). */
+  label?: string;
 }) {
   const Icon: LucideIcon =
     side === 'left'
@@ -241,7 +268,7 @@ export function RailHeaderToggle({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Toggle ${side} panel`}
+      aria-label={label ?? `Toggle ${side} panel`}
       className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:text-foreground"
     >
       <Icon className="h-4 w-4" />

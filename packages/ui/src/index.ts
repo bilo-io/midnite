@@ -15,7 +15,7 @@ export { Accordion } from './components/accordion';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Card, CardHeader, CardTitle, CardContent } from './components/card';
 export { Collapse } from './components/collapse';
-export { ContextRing } from './components/context-ring';
+export { ContextRing, type ContextRingLabels } from './components/context-ring';
 export { DynamicBackground, type BackgroundPattern } from './components/dynamic-background';
 export { DiscordIcon, GoogleIcon, LinearIcon, SlackIcon } from './components/brand-icons';
 export { GithubIcon } from './components/github-icon';
@@ -31,8 +31,9 @@ export {
   PasscodeSetupDialog,
   PasscodeUnlockDialog,
   PASSCODE_LENGTH,
+  type PasscodePadLabels,
 } from './components/passcode-pad';
-export { RadialGauge } from './components/radial-gauge';
+export { RadialGauge, type RadialGaugeLabels } from './components/radial-gauge';
 export { AreaChart, LegendDot, CHART_W, CHART_H } from './components/system-chart';
 export {
   RailShell,
@@ -44,5 +45,5 @@ export { Select, type SelectOption } from './components/select';
 export { StyledSelect, ModelComboSelect } from './components/styled-select';
 export { Switch } from './components/switch';
 export { Tabs, type TabOption } from './components/tabs';
-export { ThemeToggle } from './components/theme-toggle';
+export { ThemeToggle, type ThemeToggleLabels } from './components/theme-toggle';
 export { Textarea, type TextareaProps } from './components/textarea';

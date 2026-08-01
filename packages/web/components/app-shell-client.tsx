@@ -15,6 +15,7 @@ import {
   type NavLinkComponent,
 } from '@midnite/shell';
 import { PasscodeSetupDialog } from '@midnite/ui';
+import { usePasscodeDialogLabels } from '@/hooks/use-passcode-labels';
 import { cn } from '@/lib/utils';
 import { getCurrentVersion } from '@/lib/version';
 import { type Locale, type WindowChromeBridge } from '@midnite/shared';
@@ -100,6 +101,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   // The active locale (pref → browser → default, resolved by the shell provider).
   const locale = useLocale() as Locale;
   const tNav = useTranslations('nav');
+  const passcodeCopy = usePasscodeDialogLabels();
 
   // FEATURES → the shell's injected nav config (pinned home + collapsible sections),
   // with feature/category labels translated from the `nav` catalog (Phase 79 D).
@@ -171,7 +173,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
             onClick={() =>
               setSettings((prev) => ({ ...prev, navMode: navMode === 'expanded' ? 'auto' : 'expanded' }))
             }
-            aria-label={navMode === 'expanded' ? 'Unlock navigation' : 'Keep navigation expanded'}
+            aria-label={navMode === 'expanded' ? tNav('rail.unlockNav') : tNav('rail.keepNavExpanded')}
             aria-pressed={navMode === 'expanded'}
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
@@ -255,6 +257,22 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         mobileSheet={<NotificationCenter expanded />}
         mobileUnread={unread}
         titleBar={titleBarSlot}
+        navLabel={tNav('rail.label')}
+        sectionToggleLabel={(label) => tNav('rail.sectionToggle', { label })}
+        mobileLabels={{
+          navLabel: tNav('mobile.label'),
+          menu: tNav('mobile.menu'),
+          closeMenu: tNav('mobile.closeMenu'),
+          lock: tNav('footer.lock'),
+          themeToggle: {
+            toggle: tNav('header.toggleTheme'),
+            theme: tNav('header.theme'),
+            light: tNav('header.themeOptions.light'),
+            dark: tNav('header.themeOptions.dark'),
+            system: tNav('header.themeOptions.system'),
+            time: tNav('header.themeOptions.time'),
+          },
+        }}
       >
         {children}
       </AppFrame>
@@ -266,6 +284,9 @@ export function AppShellClient({ children }: { children: ReactNode }) {
 
       {settingUp ? (
         <PasscodeSetupDialog
+          label={passcodeCopy.setupLabel}
+          closeLabel={passcodeCopy.closeLabel}
+          labels={passcodeCopy.labels}
           onComplete={(code) => {
             setPasscode(code);
             setSettingUp(false);

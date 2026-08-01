@@ -22,5 +22,58 @@
     "lock": "Verrouiller",
     "language": "Langue",
     "changelog": "Voir le journal des modifications"
+  },
+  "header": {
+    "notifications": "Notifications",
+    "approvals": "Approbations",
+    "notificationsAndApprovals": "Notifications et approbations",
+    "noPendingApprovals": "Aucune approbation en attente",
+    "manageAutonomy": "Gérer le mode d’autonomie et les règles →",
+    "labelWithCount": "{label}, {count}",
+    "theme": "Thème",
+    "toggleTheme": "Changer de thème",
+    "themeOptions": {
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système",
+      "time": "Heure"
+    },
+    "account": {
+      "menuLabel": "Menu du compte",
+      "menu": "Compte",
+      "notSignedIn": "Non connecté",
+      "signInHint": "Connectez-vous pour synchroniser votre espace de travail.",
+      "logIn": "Se connecter",
+      "createAccount": "Créer un compte",
+      "profile": "Profil",
+      "personalization": "Personnalisation",
+      "team": "Équipe",
+      "workspace": "Espace de travail",
+      "signOut": "Se déconnecter"
+    }
+  },
+  "rail": {
+    "label": "Principale",
+    "sectionToggle": "Section {label}",
+    "unlockNav": "Déverrouiller la navigation",
+    "keepNavExpanded": "Garder la navigation dépliée"
+  },
+  "mobile": {
+    "label": "Navigation mobile",
+    "menu": "Menu",
+    "closeMenu": "Fermer le menu"
+  },
+  "titleBar": {
+    "label": "Barre de titre de la fenêtre",
+    "back": "Précédent",
+    "forward": "Suivant",
+    "search": "Rechercher",
+    "searchPlaceholder": "Rechercher dans midnite…"
+  },
+  "lockScreen": {
+    "locked": "Écran de veille verrouillé",
+    "screensaver": "Écran de veille",
+    "unlockHint": "appuyez sur une touche pour déverrouiller",
+    "wakeHint": "appuyez sur une touche pour réveiller"
   }
 }

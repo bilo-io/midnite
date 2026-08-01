@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ExternalLink, FileText, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { fetchReleaseNotes } from '@/lib/release-notes';
@@ -45,6 +46,7 @@ export function ReleaseNotesPopover({
   triggerClassName,
   title,
 }: ReleaseNotesPopoverProps) {
+  const t = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);
   const [notes, setNotes] = useState<string | null>(null);
@@ -132,7 +134,7 @@ export function ReleaseNotesPopover({
             <div
               ref={popRef}
               role="dialog"
-              aria-label={`Release notes for v${version}`}
+              aria-label={t('update.releaseNotesLabel', { version })}
               tabIndex={-1}
               style={{ position: 'fixed', top: rect.top, left: rect.left, width: 340 }}
               className="z-[70] rounded-xl accent-gradient-border accent-gradient-border--lit focus:outline-none"
@@ -140,22 +142,19 @@ export function ReleaseNotesPopover({
               <div className="overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl">
                 <div className="flex items-center gap-2 border-b border-border px-3.5 py-2.5">
                   <FileText aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-semibold">{`What's new in v${version}`}</span>
+                  <span className="text-sm font-semibold">{t('update.whatsNew', { version })}</span>
                 </div>
 
                 <div className="max-h-[min(60vh,22rem)] overflow-auto px-3.5 py-3">
                   {status === 'loading' ? (
                     <p className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
                       <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
-                      Loading release notes…
+                      {t('update.loadingNotes')}
                     </p>
                   ) : status === 'ready' && notes ? (
                     <MarkdownPreview content={notes} />
                   ) : (
-                    <p className="py-2 text-sm text-muted-foreground">
-                      Release notes aren&apos;t available right now — see the full changelog or the
-                      release page below.
-                    </p>
+                    <p className="py-2 text-sm text-muted-foreground">{t('update.notesUnavailable')}</p>
                   )}
                 </div>
 
@@ -167,7 +166,7 @@ export function ReleaseNotesPopover({
                     className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <FileText aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
-                    Full changelog
+                    {t('update.fullChangelog')}
                     <ExternalLink aria-hidden className="ml-auto h-3 w-3 text-muted-foreground" />
                   </a>
                   <a
@@ -177,7 +176,7 @@ export function ReleaseNotesPopover({
                     className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <ExternalLink aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
-                    Release page
+                    {t('update.releasePage')}
                     <ExternalLink aria-hidden className="ml-auto h-3 w-3 text-muted-foreground" />
                   </a>
                 </div>

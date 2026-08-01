@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Menu, Power, X } from 'lucide-react';
-import { ThemeToggle, cn } from '@midnite/ui';
+import { ThemeToggle, cn, type ThemeToggleLabels } from '@midnite/ui';
 
 import { isActivePath, type NavItem, type NavLinkComponent } from '../app-frame';
 
@@ -21,6 +21,31 @@ import { isActivePath, type NavItem, type NavLinkComponent } from '../app-frame'
 /** How many flattened nav items get a dedicated bottom tab before the rest spill into `More`. */
 const DEFAULT_MAX_TABS = 4;
 
+/**
+ * Injected copy for the mobile nav's own strings (Phase 82 E). Shell stays
+ * catalog-free — the host passes t()-derived values; every field falls back to
+ * the English default, so omitting the prop is non-breaking.
+ */
+export type AppMobileNavLabels = {
+  /** `aria-label` of the bottom-tab `<nav>` landmark. */
+  navLabel?: string;
+  /** The `More` trigger's label + the overflow sheet's dialog label. */
+  menu?: string;
+  /** `aria-label` of the sheet backdrop button. */
+  closeMenu?: string;
+  /** The `More`-sheet Lock button text. */
+  lock?: string;
+  /** Injected copy for the sheet's theme toggle (ui defaults when omitted). */
+  themeToggle?: ThemeToggleLabels;
+};
+
+const DEFAULT_LABELS = {
+  navLabel: 'Mobile navigation',
+  menu: 'Menu',
+  closeMenu: 'Close menu',
+  lock: 'Lock',
+} satisfies AppMobileNavLabels;
+
 export type AppMobileNavProps = {
   /** Flattened nav items in order (`pinned` then every section's items). */
   items: NavItem[];
@@ -38,6 +63,8 @@ export type AppMobileNavProps = {
   unread?: number;
   /** Locks the screen — the `More`-sheet Lock button (hidden when omitted). */
   onLock?: () => void;
+  /** Injected copy (host-translated); fields default to the English strings. */
+  labels?: AppMobileNavLabels;
 };
 
 const tabClass =
@@ -56,7 +83,9 @@ export function AppMobileNav({
   sheet,
   unread = 0,
   onLock,
+  labels,
 }: AppMobileNavProps) {
+  const copy = { ...DEFAULT_LABELS, ...labels };
   const [open, setOpen] = useState(false);
   const moreRef = useRef<HTMLButtonElement>(null);
 
@@ -91,7 +120,7 @@ export function AppMobileNav({
           leaves the tab bar visible. */}
       <button
         type="button"
-        aria-label="Close menu"
+        aria-label={copy.closeMenu}
         onClick={() => setOpen(false)}
         className={cn(
           'fixed inset-0 z-[39] bg-background/70 backdrop-blur-sm md:hidden',
@@ -106,7 +135,7 @@ export function AppMobileNav({
         id="mobile-nav-more"
         role="dialog"
         aria-modal="true"
-        aria-label="Menu"
+        aria-label={copy.menu}
         aria-hidden={!open}
         className={cn(
           'fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-50 max-h-[60dvh] overflow-y-auto rounded-t-2xl border-t border-border/60 bg-card p-3 shadow-2xl md:hidden',
@@ -139,7 +168,7 @@ export function AppMobileNav({
           </>
         ) : null}
         <div className="flex items-center justify-between gap-2">
-          <ThemeToggle expanded />
+          <ThemeToggle expanded labels={copy.themeToggle} />
           {onLock ? (
             <button
               type="button"
@@ -150,7 +179,7 @@ export function AppMobileNav({
               className="flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             >
               <Power className="h-4 w-4" />
-              Lock
+              {copy.lock}
             </button>
           ) : null}
         </div>
@@ -159,7 +188,7 @@ export function AppMobileNav({
       {/* Nav bar — 4rem tall with extra bottom padding so icons don't crowd the
           home indicator on iPhone. */}
       <nav
-        aria-label="Mobile navigation"
+        aria-label={copy.navLabel}
         className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border/60 bg-background/95 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
       >
         {tabs.map((item) => (
@@ -176,7 +205,7 @@ export function AppMobileNav({
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls="mobile-nav-more"
-          aria-label="Menu"
+          aria-label={copy.menu}
           className={cn(tabClass, overflowActive ? 'text-foreground' : 'text-muted-foreground')}
         >
           {overflowActive && !open ? <ActiveIndicator /> : null}
@@ -187,7 +216,7 @@ export function AppMobileNav({
               className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-destructive"
             />
           ) : null}
-          <span className="max-w-full truncate">Menu</span>
+          <span className="max-w-full truncate">{copy.menu}</span>
         </button>
       </nav>
     </>

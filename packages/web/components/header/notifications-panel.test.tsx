@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { PendingApproval } from '@midnite/shared';
+
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 // NotificationFeedList routes via next/navigation's useRouter — stub it.
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
