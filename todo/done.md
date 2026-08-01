@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-01 — feat: Phase 80 Theme A — shared reading primitives in `@midnite/ui` 🟢
+
+PR #TBD. `docs` and the marketing site each rolled their own near-identical prose map and reading layout, because the `ui ◀ {docs, site}` boundary forbids cross-import and nothing shared lived in `ui`. This lands that shared face as a leaf, unblocking Themes B–D (docs + site-legal migration).
+
+- [x] **Four primitives in a new `packages/ui/src/components/reading/`** — `ReadingLayout` (sidebar + measured article + `xl` TOC rail), `Prose` (+ the raw `proseComponents` map), `TableOfContents` (scroll-spy), `ReadingLayoutProvider`/`useReadingLink` (injected `Link`). Exported from the package root; the leaf `boundary.test.ts` stays green — the new code imports nothing in-repo.
+- [x] **Element map ported verbatim from docs** so Theme B's visual-parity guardrail has nothing to absorb; site's `h4` folded in. One map now feeds both render paths (`MDXProvider` and `react-markdown`).
+- [x] **Self-slugifying headings** — deep text extraction, so `## The \`cn()\` helper` slugs to `the-cn-helper` instead of dropping the code span; per-`Prose` collision dedupe (`overview`, `overview-1`); explicit `id` wins. Heading anchors now exist in every consumer with **no per-app `rehype-slug` config**, and the site's legal pages get deep-links they never had.
+- [x] **Kept server-renderable where it matters** — `ReadingLayout` is stateless and router-free (no `'use client'`), marking its article with `data-reading-article` so an unwired `TableOfContents` finds it. `Prose` does carry the directive: per-instance dedupe state is genuinely stateful, a deliberate deviation from the "only effectful components" split, called out in the PR.
+- [x] **48 tests** — `slugify.test.ts` (13, node) plus a new **jsdom `dom` vitest project** in `ui` for `prose.dom.test.tsx` (10) and `table-of-contents.dom.test.tsx` (10); `ui` totals 108 tests green including its 24 Storybook browser suites. Storybook stories for the primitives stay Theme E's scope.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green across the graph.
+
 ## 2026-07-30 — feat: Phase 82 Theme E — chrome, desktop & office DOM i18n 🟢
 
 PR #583. The frame around the app plus the office's React layer, built as three parallel subagent slices (chrome+shell / office / ui-audit) merged centrally — the whole of Theme E in one PR.

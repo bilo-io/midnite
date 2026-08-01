@@ -34,6 +34,26 @@ export {
   type PasscodePadLabels,
 } from './components/passcode-pad';
 export { RadialGauge, type RadialGaugeLabels } from './components/radial-gauge';
+// The shared reading face (Phase 80 A) — consumed by `docs` and the site's legal pages.
+export {
+  ReadingLayout,
+  ReadingLayoutProvider,
+  useReadingLink,
+  Prose,
+  proseComponents,
+  TableOfContents,
+  collectHeadings,
+  READING_ARTICLE_ATTR,
+  extractText,
+  slugify,
+  claimSlug,
+  type ReadingLayoutProps,
+  type ReadingLinkComponent,
+  type ReadingLinkProps,
+  type TableOfContentsProps,
+  type TocEntry,
+  type SlugRegistry,
+} from './components/reading';
 export { AreaChart, LegendDot, CHART_W, CHART_H } from './components/system-chart';
 export {
   RailShell,
