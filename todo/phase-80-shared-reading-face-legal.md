@@ -48,30 +48,16 @@
   placeholders). [`components/footer.tsx`](../packages/site/components/footer.tsx) maps
   over `LEGAL_DOCS`, so it surfaces exactly the docs that exist.
 
-## Theme A — Shared reading primitives in `@midnite/ui` — **L**
+## Theme A — Shared reading primitives in `@midnite/ui` — **L** — ✅ DONE (PR #584, 2026-08-01)
 
-- [ ] **`ReadingLayout`** — the framework-agnostic reading-column shell: a responsive grid
-      with a left `sidebar` slot, a center `max-w-3xl` article, and an optional right TOC
-      rail (rail hidden below `xl`, mirroring docs). Slots supplied via props/children; no
-      `next/*` or `react-router` import. Marked `'use client'` where it needs effects.
-- [ ] **`Prose`** — the single prose-typography map extracted from docs'
-      `mdx-components.tsx` + site's `markdown.tsx` (they're near-twins). Exports **both** a
-      `<Prose>` container (scopes typography + spacing) **and** the raw element-component
-      map so docs' `MDXProvider components={…}` and site's `react-markdown components={…}`
-      consume the *same* map. `h2/h3` **self-slugify** their text children into stable,
-      collision-deduped `id`s + `scroll-mt` — so heading ids exist in every app with **no
-      per-app `rehype-slug` build config** (Decision 1).
-- [ ] **`TableOfContents`** — the scroll-spy rail: scans the rendered article for
-      `h2[id]/h3[id]`, IntersectionObserver highlights the active section, click uses
-      `scrollIntoView` (router-agnostic — works under docs' hash-router and site alike;
-      Decision 3). Hidden when < 2 headings.
-- [ ] **`ReadingLayoutProvider`** (+ `useReadingLink`) — a small context that takes each
-      app's `Link` component so the primitives never import a router (Decision 4): site
-      passes `next/link`, docs passes react-router `NavLink`; `ui` imports neither. Default
-      falls back to a plain `<a>`.
-- [ ] Export all four from [`packages/ui/src/index.ts`](../packages/ui/src/index.ts);
-      confirm [`src/boundary.test.ts`](../packages/ui/src/boundary.test.ts) still passes
-      (leaf rule intact — the new code imports nothing in-repo).
+Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported from the package root; `boundary.test.ts` stays green — the primitives import nothing in-repo.
+
+- [x] **`ReadingLayout`** — the reading-column shell: optional left `sidebar`, measured `max-w-3xl` article, optional right TOC rail that appears at `xl`. Grid widths ported from docs. **Stateless and router-free, so it needs no `'use client'`** and renders on the server in the Next site; it marks its article with `data-reading-article` so an unwired `TableOfContents` can find it.
+- [x] **`Prose`** — the single prose element map, ported **verbatim** from docs' `mdx-components.tsx` (so Theme B's visual-parity check has nothing to absorb), plus site's `h4`. Exports both the `<Prose>` container (scopes typography, owns the slug registry) and the raw `proseComponents` map for `MDXProvider` / `react-markdown`. `h2`/`h3` **self-slugify** with deep text extraction (`## The \`cn()\` helper` → `the-cn-helper`) and per-`Prose` collision dedupe (`overview`, `overview-1`); an explicit `id` still wins.
+- [x] **`TableOfContents`** — scans `h2[id]/h3[id]` scoped to the article (explicit `containerRef`, else the layout's marked article), IntersectionObserver scroll-spy, `scrollIntoView` on click, hidden below 2 headings. Re-scans on a `scanKey` change **and** via a `MutationObserver`, so streamed-in or route-swapped content can't leave a stale rail.
+- [x] **`ReadingLayoutProvider`** (+ `useReadingLink`) — injected `Link` component, defaulting to a plain `<a>`; `ui` imports no router.
+- [x] All four exported from [`packages/ui/src/index.ts`](../packages/ui/src/index.ts); leaf `boundary.test.ts` green.
+- [x] **Tests (48 in `ui`, chosen scope: units now, stories in Theme E)** — `slugify.test.ts` (13, node env: deep extraction, accent/punctuation handling, dedupe, empty-slug fallback) + a new **jsdom `dom` vitest project** for `prose.dom.test.tsx` (10: slugging, dedupe, id stability across re-render, link injection/external/anchor) and `table-of-contents.dom.test.tsx` (10: heading scan, single-section suppression, active-section highlight, click-to-scroll, explicit-ref scoping, re-scan, observer wiring + teardown).
 
 ## Theme B — Migrate docs onto the primitive — **M**
 

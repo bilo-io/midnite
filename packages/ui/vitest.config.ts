@@ -23,6 +23,20 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['src/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['src/**/*.dom.{test,spec}.{ts,tsx}'],
+        },
+      },
+      {
+        // Phase 80 A — the reading primitives' DOM behaviour (heading scan,
+        // scroll-spy) needs a document but not a real browser, so it gets a jsdom
+        // project rather than a story. `*.dom.test.tsx` keeps it clearly separate
+        // from the node specs above, which must stay DOM-free.
+        plugins: [react()],
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['src/**/*.dom.{test,spec}.{ts,tsx}'],
+          setupFiles: [join(rootDir, 'vitest.setup.dom.ts')],
         },
       },
       {
