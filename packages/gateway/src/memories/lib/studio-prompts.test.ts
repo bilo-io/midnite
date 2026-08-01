@@ -14,6 +14,25 @@ describe('studioPromptFor', () => {
   it('the infographic prompt asks for a single SVG', () => {
     expect(studioPromptFor('infographic', 'c').system.toLowerCase()).toContain('svg');
   });
+
+  it('appends the output-language instruction for a non-English locale (Phase 82 D)', () => {
+    for (const kind of STUDIO_TEXT_KINDS) {
+      const localised = studioPromptFor(kind, 'MY_CORPUS', 'de-DE');
+      const base = studioPromptFor(kind, 'MY_CORPUS');
+      expect(localised.system).toContain('German (Deutsch)');
+      // The grounding + format rules survive, and the corpus/instruction are untouched.
+      expect(localised.system.startsWith(base.system)).toBe(true);
+      expect(localised.userText).toBe(base.userText);
+      expect(localised.maxTokens).toBe(base.maxTokens);
+    }
+  });
+
+  it('leaves the prompt untouched for en-GB / no locale', () => {
+    for (const kind of STUDIO_TEXT_KINDS) {
+      expect(studioPromptFor(kind, 'c', 'en-GB').system).toBe(studioPromptFor(kind, 'c').system);
+      expect(studioPromptFor(kind, 'c').system).not.toMatch(/Write your entire response in/);
+    }
+  });
 });
 
 describe('extractSvg', () => {

@@ -29,7 +29,20 @@ describe('MemoryChatController', () => {
   it('delegates a valid question to the service', async () => {
     const { controller, service } = make();
     const res = await controller.ask('m1', { message: 'why?' });
-    expect(service.ask).toHaveBeenCalledWith('m1', 'why?');
+    expect(service.ask).toHaveBeenCalledWith('m1', 'why?', undefined);
     expect(res.assistantMessage.content).toBe('a');
+  });
+
+  it('passes the requested output locale through (Phase 82 D)', async () => {
+    const { controller, service } = make();
+    await controller.ask('m1', { message: 'pourquoi ?', locale: 'fr-FR' });
+    expect(service.ask).toHaveBeenCalledWith('m1', 'pourquoi ?', 'fr-FR');
+  });
+
+  it('rejects an unsupported locale with 400', () => {
+    const { controller } = make();
+    expect(() => controller.ask('m1', { message: 'why?', locale: 'pt-BR' })).toThrow(
+      BadRequestException,
+    );
   });
 });

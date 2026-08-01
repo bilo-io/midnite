@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LocaleSchema } from './i18n.js';
 
 /**
  * Studio artifacts generated from a memory's corpus (its markdown + its ingested
@@ -85,6 +86,10 @@ export type MemoryArtifact = z.infer<typeof MemoryArtifactSchema>;
 
 export const GenerateMemoryArtifactRequestSchema = z.object({
   kind: MemoryArtifactKindSchema,
+  // The locale the generated artifact should be written in (Phase 82 D). Explicit
+  // on the request — the caller's active UI language — and honoured for every
+  // supported locale regardless of how complete that locale's UI catalog is.
+  locale: LocaleSchema.optional(),
 });
 export type GenerateMemoryArtifactRequest = z.infer<typeof GenerateMemoryArtifactRequestSchema>;
 
