@@ -6,7 +6,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-08-02 — feat: Phase 80 Theme B — docs on the shared reading primitive 🟢
 
-PR #TBD. The second half of Theme A's purpose: one source of truth only counts if **both** apps read on it. Docs' layout, prose map and TOC now come from `@midnite/ui`, completing the extraction the site's legal pages started in Theme C.
+PR #589. The second half of Theme A's purpose: one source of truth only counts if **both** apps read on it. Docs' layout, prose map and TOC now come from `@midnite/ui`, completing the extraction the site's legal pages started in Theme C.
 
 - [x] **Layout on `ReadingLayout` + shared `TableOfContents`** — docs' grouped sidebar, header, starfield and mobile drawer stay local. No metric overrides were needed: the primitive's grid *is* docs' old grid, lifted verbatim during the Theme A extraction.
 - [x] **One prose map, three render paths** — `mdx-components.tsx` is now a thin re-export of `proseComponents`; `markdown-page.tsx` keeps deriving its node-stripped variant from it, so MDX pages, imported product docs and the changelog all follow. `ReadingLayoutProvider` in `app.tsx` injects a react-router `Link`, so root-relative links keep working under the hash router without the typography knowing about routing.

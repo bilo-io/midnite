@@ -163,7 +163,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 80 — Shared reading face & complete legal set](phase-80-shared-reading-face-legal.md)
 *Extract the reading face (column shell + prose + scroll-spy TOC) into `@midnite/ui` as a framework-agnostic leaf, migrate **both** docs and site legal onto it, and complete the legal set (Terms + Cookies) with real, counsel-review-flagged prose.*
 - ✅ **A** — Shared reading primitives in `@midnite/ui` (`ReadingLayout` + `Prose` self-slugifying headings + `TableOfContents` scroll-spy + `ReadingLayoutProvider` injected Link; leaf rule intact; new jsdom `dom` test project, 48 tests) (PR #584)
-- ✅ **B** — Migrate docs onto the primitive (thin MDX adapter re-exporting `proseComponents`; local TOC deleted; `rehype-slug` kept so published anchors are unchanged; parity proven by a geometry probe, identical on both pages) (PR #TBD)
+- ✅ **B** — Migrate docs onto the primitive (thin MDX adapter re-exporting `proseComponents`; local TOC deleted; `rehype-slug` kept so published anchors are unchanged; parity proven by a geometry probe, identical on both pages) (PR #589)
 - ✅ **C** — Rebuild site legal on the primitive (gains the right-rail TOC + heading deep-links it never had; added `sidebarMobile` to the primitive; fixed the site's missing `../ui/src` tailwind glob) (PR #586)
 - ◻ **D** — Complete legal set + real prose (Terms of Use + Cookies added to `LEGAL_DOCS`; effective dates; footer surfaces all four)
 - ◻ **E** — Stories, tests & verification (Storybook browser tests for the three primitives; `ui`/`docs`/`site` boundaries green)
