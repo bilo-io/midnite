@@ -86,7 +86,13 @@ function fakeTasks(seed: Task[]) {
   return { service, startTask, requeue, retry, updateStatus, escalate, recordFailure, byId };
 }
 
-function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: boolean }) {
+function fakeTerminal(opts?: {
+  durable?: boolean;
+  live?: string[];
+  reattachOk?: boolean;
+  /** Overrides `agentRunHealth` — how the stall check sees the session. */
+  health?: () => { live: boolean; idleMs: number } | null;
+}) {
   let onExit: ((code: number, signal: number | null) => void) | undefined;
   const spawnAgentSession = vi.fn(
     (_id: string, _spec: { prompt: string }, hooks: { onExit: (c: number, s: number | null) => void }) => {
@@ -118,7 +124,7 @@ function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: 
     readOutput: () => '',
     // No live handle in these fakes → reconcileUnhealthy takes the explicit-release
     // path (onExit won't fire), so the slot frees synchronously.
-    agentRunHealth: () => null,
+    agentRunHealth: opts?.health ?? (() => null),
   } as unknown as TerminalService;
   return {
     terminal,
@@ -316,6 +322,105 @@ describe('AgentRunnerService', () => {
       // The kill's later exit sees a non-wip task (already todo) → no double action.
       fireExit(1);
       expect(retry).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps a still-productive run alive past the deadline instead of requeueing it', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = config(1); // runTimeoutMs 60000
+      const { service, retry, updateStatus, recordFailure } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      // Alive and emitting output well inside the window → not stalled.
+      const { terminal, killManagedRun } = fakeTerminal({
+        health: () => ({ live: true, idleMs: 5_000 }),
+      });
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(task('t1', 'x'));
+      // Five deadline windows — a run far longer than the old wall-clock ceiling.
+      await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(retry).not.toHaveBeenCalled();
+      expect(updateStatus).not.toHaveBeenCalledWith('t1', 'abandoned');
+      expect(killManagedRun).not.toHaveBeenCalled();
+      expect(service.getTask('t1').status).toBe('wip'); // still running, slot still held
+      expect(pool.freeSlotCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('never times out a task parked in waiting — it is blocked on a human, not stalled', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = config(1);
+      const { service, retry, recordFailure, byId } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      // Silent past the whole window: a session waiting on the user emits nothing.
+      const { terminal, killManagedRun } = fakeTerminal({
+        health: () => ({ live: true, idleMs: 10 * 60_000 }),
+      });
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(task('t1', 'x'));
+      byId.get('t1')!.status = 'waiting'; // the Stop hook parked it on the user
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(retry).not.toHaveBeenCalled();
+      expect(killManagedRun).not.toHaveBeenCalled();
+      expect(service.getTask('t1').status).toBe('waiting'); // still there for the reply
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('times out a wip run that has gone silent for the whole window', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = config(1);
+      const { service, retry, recordFailure } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal } = fakeTerminal({ health: () => ({ live: true, idleMs: 90_000 }) });
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(task('t1', 'x'));
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(recordFailure).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ class: 'timeout' }),
+      );
+      expect(retry).toHaveBeenCalledWith('t1', null);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('arms no stall deadline at all when runTimeoutMs is 0', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = parseConfig({
+        agent: { pool: 1, runTimeoutMs: 0, retryBackoffBaseMs: 0, escalateOnFailure: false },
+        terminal: {},
+        gateway: {},
+      });
+      const { service, retry, recordFailure } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      // Dead + silent: would be resolved instantly if any deadline were armed.
+      const { terminal } = fakeTerminal({ health: () => null });
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(task('t1', 'x'));
+      await vi.advanceTimersByTimeAsync(24 * 60 * 60_000); // a full day
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(retry).not.toHaveBeenCalled();
+      expect(service.getTask('t1').status).toBe('wip');
     } finally {
       vi.useRealTimers();
     }

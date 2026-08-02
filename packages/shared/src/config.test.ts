@@ -83,6 +83,16 @@ describe('agent pool config defaults', () => {
     expect(config.agent.pool).toBe(4);
   });
 
+  it('accepts runTimeoutMs: 0 to disable the stall deadline entirely', () => {
+    const config = parseConfig({
+      agent: { runTimeoutMs: 0 },
+      terminal: {},
+      knowledge: {},
+      gateway: {},
+    });
+    expect(config.agent.runTimeoutMs).toBe(0);
+  });
+
   it('honours explicit overrides', () => {
     const config = parseConfig({
       agent: { pool: 8, poolEnabled: true, waitingHoldsSlot: false, schedulerTickMs: 2000 },

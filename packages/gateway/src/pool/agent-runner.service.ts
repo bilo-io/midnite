@@ -544,22 +544,70 @@ export class AgentRunnerService implements OnModuleInit, OnModuleDestroy {
     return ms > 0 ? new Date(Date.now() + ms).toISOString() : null;
   }
 
+  /**
+   * Is this run actually stalled, or merely long-running? Called when the stall
+   * deadline fires, to decide between failing the run and giving it another
+   * window. Fail-open in both directions that matter: an unknown-but-live session
+   * is never killed, while a session we've lost track of is always resolved.
+   *
+   *  - task parked in `waiting` → **not** stalled. It's blocked on a human (a
+   *    `needs-input` reply or a needs-attention resolution) by design, and a
+   *    Claude session fires Stop at the end of every turn, so nearly every
+   *    interactive task sits here. Killing it is what used to bounce a task the
+   *    user was mid-conversation with back to `todo`.
+   *  - no handle registered → stalled. The session is gone but the slot is still
+   *    held; resolving it is the only way to free the run.
+   *  - backend says the process is dead → stalled (a missed onExit).
+   *  - alive, and it emitted output inside the window → not stalled; re-arm.
+   */
+  private isRunStalled(taskId: string, windowMs: number): boolean {
+    let task: Task | undefined;
+    try {
+      task = this.tasks.getTask(taskId);
+    } catch {
+      task = undefined;
+    }
+    if (task?.status === 'waiting') return false;
+    const health = this.terminal.agentRunHealth(taskId);
+    if (health === null || !health.live) return true;
+    return health.idleMs >= windowMs;
+  }
+
+  /** Arm (or re-arm) the stall deadline for a run. `runTimeoutMs = 0` disables it
+   *  entirely — the run then lives until the Stop hook, an explicit stop/cancel,
+   *  or shutdown. Always clears any existing timer first so re-arming can't leak. */
   private armTimeout(taskId: string): void {
-    const timer = setTimeout(() => this.onTimeout(taskId), this.config.agent.runTimeoutMs);
+    this.clearRunTimeout(taskId);
+    const ms = this.config.agent.runTimeoutMs;
+    if (ms <= 0) return;
+    const timer = setTimeout(() => this.onTimeout(taskId), ms);
     timer.unref?.();
     this.timers.set(taskId, timer);
   }
 
   /**
-   * The per-run timer fired. Record the `timeout` failure, then — because timeout
-   * is a retryable class (Phase 53 B) — retry-with-backoff or abandon via the
-   * shared decision path, and finally tear down the still-live session (its onExit
-   * no-ops since the status is already set). Replaces the old straight-to-abandon
-   * `cancel()`; explicit user cancel still uses {@link cancel}.
+   * The per-run timer fired. `runTimeoutMs` is a **stall** deadline, not a
+   * wall-clock ceiling (a long-but-productive run must not be killed mid-flight),
+   * so before failing anything we ask whether the run is actually stalled — see
+   * {@link isRunStalled}. A live run just re-arms for another window, which is
+   * what keeps a healthy session open indefinitely. Re-arming a *whole* window
+   * (rather than the remainder) means a genuinely hung run is caught somewhere
+   * between 1× and 2× `runTimeoutMs` — deliberately coarse, erring towards not
+   * killing a live session. `agent.watchdog.inactivityMs` is the precise probe.
+   *
+   * When it really is stalled: record the `timeout` failure, then — because
+   * timeout is a retryable class (Phase 53 B) — retry-with-backoff or abandon via
+   * the shared decision path, and finally tear down the still-live session (its
+   * onExit no-ops since the status is already set). Explicit user cancel still
+   * uses {@link cancel}.
    */
   private onTimeout(taskId: string): void {
     const ms = this.config.agent.runTimeoutMs;
-    this.logger.warn(`agent run ${taskId} exceeded ${ms}ms`);
+    if (!this.isRunStalled(taskId, ms)) {
+      this.armTimeout(taskId);
+      return;
+    }
+    this.logger.warn(`agent run ${taskId} stalled for ${ms}ms`);
     this.clearRunTimeout(taskId);
     let task: Task | undefined;
     try {
