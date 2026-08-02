@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-02 — feat: Phase 80 Theme C — site legal on the shared reading primitive 🟢
+
+PR #586. The legal pages rolled their own two-column layout and prose map, and had **no on-page navigation and no heading anchors at all**. They now read on `@midnite/ui`'s `ReadingLayout` + `Prose` — the same shell and element map docs uses — which is where the new right-rail TOC comes from.
+
+- [x] **Legal layout on `ReadingLayout`** — gains the right-rail table of contents; `bg-grid` backdrop and the local legal sidebar unchanged. The outer `container py-28` wrapper stays and the primitive's own max-width/padding are neutralised, so the pages keep their rhythm and nav clearance: visually a no-op apart from the rail.
+- [x] **Shared prose map in `markdown.tsx`** — hand-rolled element map deleted (react-markdown keeps gfm + `rehype-highlight`); `next/link` injected via `ReadingLayoutProvider`, so root-relative links route in-app and external ones still open off-site. **Heading ids now come from `Prose`**, giving legal docs in-page anchors and deep-links for the first time — no `rehype-slug` anywhere.
+- [x] **`ReadingLayout` gained `sidebarMobile`** (`'hidden' | 'inline'`) + `sidebarClassName`. It hid its sidebar below `md`, which is right for docs (hamburger drawer) but would have stranded a phone reader here, where the sidebar is the only route to the other documents.
+- [x] **Fixed a latent CSS gap** — the site's `tailwind.config` never scanned `../ui/src`, so the lib's own layout utilities (`md:grid`, the rail's `xl:block`) were never emitted and the reading columns silently collapsed to one stacked block. `site:build` and `:typecheck` were both green; **only a screenshot caught it**. `docs` already had this glob with a comment saying why.
+- [x] **Tests + verification** — 4 new site specs (self-slugged ids, duplicate-title dedupe, gfm tables, internal-vs-external links) plus 7 new `ui` dom specs for `ReadingLayout`; both legal routes still prerender static (`○`); desktop + mobile screenshots in the PR.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green across the graph (exit 0, no flakes).
+
 ## 2026-08-01 — feat: Phase 80 Theme A — shared reading primitives in `@midnite/ui` 🟢
 
 PR #584. `docs` and the marketing site each rolled their own near-identical prose map and reading layout, because the `ui ◀ {docs, site}` boundary forbids cross-import and nothing shared lived in `ui`. This lands that shared face as a leaf, unblocking Themes B–D (docs + site-legal migration).

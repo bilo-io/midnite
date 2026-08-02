@@ -1,90 +1,51 @@
 'use client';
 
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 
-import { cn } from '@/lib/utils';
+import { Prose, ReadingLayoutProvider, proseComponents, type ReadingLinkProps } from '@midnite/ui';
 
 /**
- * Renders a markdown string as styled, read-only content. Adapted from
- * packages/web/components/markdown-preview.tsx (the boundary forbids importing it);
- * tuned a little more generously here for full-page legal docs. GFM enabled for
- * tables / task lists / strikethrough. Fenced code with a language label is
- * highlighted by `rehype-highlight` (highlight.js), coloured by the `.hljs-*`
- * palette in app/globals.css. Elements are styled individually (no typography
- * plugin) so everything reads from theme tokens.
+ * Renders a markdown string as styled, read-only content.
+ *
+ * The element styling comes from `@midnite/ui`'s shared `proseComponents` map
+ * (Phase 80) — the same map the docs app feeds to MDX — so reading typography is
+ * defined once for the whole repo instead of being hand-rolled here and in docs.
+ * This component keeps the plugin wiring: GFM for tables / task lists /
+ * strikethrough, and `rehype-highlight` for fenced code, coloured by the `.hljs-*`
+ * palette in app/globals.css.
+ *
+ * `Prose` self-slugifies `h2`/`h3`, so legal docs now carry heading ids — that's
+ * what gives them in-page anchors and lets a `TableOfContents` scan them. Nothing
+ * here configures `rehype-slug`.
  */
+
+/** Adapts `next/link` to the shape the shared prose map expects. */
+function NextReadingLink({ href, className, children }: ReadingLinkProps) {
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export function Markdown({ content, className }: { content: string; className?: string }) {
   return (
-    <div className={cn('text-[15px] leading-relaxed text-foreground', className)}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
-        components={{
-          h1: ({ children }) => (
-            <h1 className="mb-3 mt-8 text-2xl font-semibold tracking-tight first:mt-0">
-              {children}
-            </h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="mb-2 mt-8 text-xl font-semibold tracking-tight first:mt-0">{children}</h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="mb-2 mt-6 text-base font-semibold first:mt-0">{children}</h3>
-          ),
-          h4: ({ children }) => <h4 className="mb-1.5 mt-4 text-sm font-semibold">{children}</h4>,
-          p: ({ children }) => <p className="my-3 leading-relaxed">{children}</p>,
-          ul: ({ children }) => <ul className="my-3 list-disc space-y-1.5 pl-6">{children}</ul>,
-          ol: ({ children }) => <ol className="my-3 list-decimal space-y-1.5 pl-6">{children}</ol>,
-          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-          a: ({ children, href }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-foreground underline underline-offset-2 hover:opacity-80"
-            >
-              {children}
-            </a>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="my-4 border-l-2 border-border pl-4 italic text-muted-foreground">
-              {children}
-            </blockquote>
-          ),
-          hr: () => <hr className="my-6 border-border/60" />,
-          table: ({ children }) => (
-            <div className="my-4 overflow-x-auto">
-              <table className="w-full border-collapse text-sm">{children}</table>
-            </div>
-          ),
-          th: ({ children }) => (
-            <th className="border border-border/60 bg-muted/40 px-3 py-2 text-left font-medium">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="border border-border/60 px-3 py-2 align-top">{children}</td>
-          ),
-          pre: ({ children }) => (
-            <pre className="my-4 overflow-x-auto rounded-md bg-muted/60 p-4 font-mono text-sm leading-relaxed">
-              {children}
-            </pre>
-          ),
-          code: ({ className: cls, children }) => {
-            const isBlock = /language-|hljs/.test(cls ?? '') || /\n/.test(String(children));
-            // Block code keeps highlight.js's `hljs language-*` classes so the
-            // token palette applies; the <pre> owns the background/scroll.
-            if (isBlock) return <code className={cn('font-mono', cls)}>{children}</code>;
-            return (
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]">{children}</code>
-            );
-          },
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+    // Root-relative links in legal copy route through next/link instead of
+    // full-page navigating; external ones still open in a new tab (the shared map
+    // decides which is which).
+    <ReadingLayoutProvider linkComponent={NextReadingLink}>
+      <Prose className={className}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
+          components={proseComponents}
+        >
+          {content}
+        </ReactMarkdown>
+      </Prose>
+    </ReadingLayoutProvider>
   );
 }

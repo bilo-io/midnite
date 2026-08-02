@@ -2,7 +2,20 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   darkMode: ['class'],
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
+  // Scans this app's source AND `@midnite/ui`'s, so every utility a shared
+  // primitive references is generated in the site's CSS. Before Phase 80 the site
+  // only used icon-shaped primitives and got away without it; the moment it mounted
+  // `ReadingLayout`, the lib's own grid/visibility utilities (`md:grid`,
+  // `xl:block`, …) existed nowhere in this app's source and so were never emitted —
+  // the reading columns silently collapsed to a single stacked flex column.
+  // Scanning the lib's source for CLASS NAMES is a CSS-generation concern, not a
+  // code import, so the boundary rules are unaffected (docs does the same).
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
+    '../ui/src/**/*.{ts,tsx}',
+  ],
   theme: {
     container: {
       center: true,

@@ -73,19 +73,14 @@ Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported
 - [ ] **Visual-parity check** (the risky bit): docs reading pages look/scroll/spy exactly
       as before — TOC highlight, mobile drawer, `max-w-3xl` measure, code blocks.
 
-## Theme C — Rebuild site legal on the primitive — **M**
+## Theme C — Rebuild site legal on the primitive — **M** — ✅ DONE (PR #586, 2026-08-02)
 
-- [ ] Rebuild [`site/app/legal/layout.tsx`](../packages/site/app/legal/layout.tsx) on
-      `ReadingLayout` — gaining the **right-rail TOC** it never had; keep the calm `bg-grid`
-      backdrop and the local [`legal-sidebar.tsx`](../packages/site/components/legal-sidebar.tsx).
-- [ ] Replace [`site/components/markdown.tsx`](../packages/site/components/markdown.tsx)'s
-      hand-rolled element map with the shared `Prose` map (react-markdown keeps gfm +
-      highlight); wrap `next/link` into `ReadingLayoutProvider`. Heading ids now come from
-      `Prose`, so legal pages get in-page anchors + deep-links.
-- [ ] Verify the two thin route wrappers
-      ([`privacy/page.tsx`](../packages/site/app/legal/privacy/page.tsx),
-      [`eula/page.tsx`](../packages/site/app/legal/eula/page.tsx)) still render unchanged
-      through the new path.
+- [x] [`site/app/legal/layout.tsx`](../packages/site/app/legal/layout.tsx) rebuilt on `ReadingLayout`, **gaining the right-rail TOC it never had**; the `bg-grid` backdrop and local [`legal-sidebar.tsx`](../packages/site/components/legal-sidebar.tsx) are unchanged. The outer `container py-28` wrapper stays and the primitive's own max-width/padding are neutralised, so the pages keep their rhythm and nav clearance — visually a no-op but for the rail.
+- [x] [`site/components/markdown.tsx`](../packages/site/components/markdown.tsx)'s hand-rolled element map replaced by the shared `proseComponents` (react-markdown keeps gfm + highlight); `next/link` wrapped into `ReadingLayoutProvider`, so root-relative links in legal copy route in-app while external ones still open off-site. **Heading ids now come from `Prose`** — legal pages have in-page anchors and deep-links for the first time.
+- [x] Both route wrappers ([`privacy`](../packages/site/app/legal/privacy/page.tsx), [`eula`](../packages/site/app/legal/eula/page.tsx)) render unchanged through the new path and still prerender static (`○`) in `site:build`.
+- [x] **`ReadingLayout` gained `sidebarMobile`** (`'hidden' | 'inline'`) + `sidebarClassName`. The primitive hid its sidebar below `md` — correct for docs, which has a hamburger drawer, but here the sidebar is the *only* route to the other documents, so hiding it would strand a phone reader.
+- [x] **Fixed a latent CSS gap**: the site's `tailwind.config` never scanned `../ui/src`, so the lib's own layout utilities (`md:grid`, the rail's `xl:block`) were never emitted and the columns collapsed to one stacked block. Build + typecheck were green — only a screenshot caught it. `docs` already carried this glob with a comment explaining why.
+- [x] **Tests** — 4 new site specs (self-slugged ids, duplicate-title dedupe, gfm tables through the shared map, internal-vs-external link routing) on top of the existing heading/highlight regression net; 7 new `ui` dom specs for `ReadingLayout` (article marker, both `sidebarMobile` modes, `sidebarClassName`, the `xl` TOC gate, class overrides).
 
 ## Theme D — Complete legal set + real prose — **M**
 

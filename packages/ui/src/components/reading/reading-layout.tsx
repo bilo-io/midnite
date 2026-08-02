@@ -6,12 +6,23 @@ import { READING_ARTICLE_ATTR } from './table-of-contents';
 export type ReadingLayoutProps = {
   /** Left column (each app's own nav — docs' grouped accordion, legal's flat list). */
   sidebar?: ReactNode;
+  /**
+   * What the sidebar does below `md`:
+   * - `'hidden'` (default) — the host surfaces its nav some other way (docs puts it
+   *   behind a hamburger drawer), so the column would only duplicate it.
+   * - `'inline'` — the sidebar stacks above the article and stays reachable. Use it
+   *   when the sidebar *is* the only navigation, as on the site's legal pages, where
+   *   hiding it would strand a phone reader on whichever doc they landed on.
+   */
+  sidebarMobile?: 'hidden' | 'inline';
   /** Right rail, typically a {@link TableOfContents}. Hidden below `xl`. */
   toc?: ReactNode;
   /** The article body — rendered markdown/MDX, usually wrapped in `Prose`. */
   children: ReactNode;
   /** Outer wrapper classes (the max-width + padding shell). */
   className?: string;
+  /** Sidebar column classes, e.g. to make it sticky. */
+  sidebarClassName?: string;
   /** Article classes, for a consumer that wants a different measure. */
   articleClassName?: string;
 };
@@ -27,9 +38,11 @@ export type ReadingLayoutProps = {
  */
 export function ReadingLayout({
   sidebar,
+  sidebarMobile = 'hidden',
   toc,
   children,
   className,
+  sidebarClassName,
   articleClassName,
 }: ReadingLayoutProps) {
   return (
@@ -42,7 +55,13 @@ export function ReadingLayout({
         className,
       )}
     >
-      {sidebar ? <div className="hidden md:block">{sidebar}</div> : null}
+      {sidebar ? (
+        <div
+          className={cn(sidebarMobile === 'hidden' && 'hidden md:block', sidebarClassName)}
+        >
+          {sidebar}
+        </div>
+      ) : null}
 
       <main className="min-w-0">
         <article {...{ [READING_ARTICLE_ATTR]: '' }} className={cn('max-w-3xl', articleClassName)}>
