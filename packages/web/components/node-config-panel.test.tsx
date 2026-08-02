@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WorkflowRunSchema, WorkflowSchema, type Workflow, type WorkflowRun } from '@midnite/shared';
+import {
+  WorkflowRunSchema,
+  WorkflowSchema,
+  type Locale,
+  type Workflow,
+  type WorkflowRun,
+} from '@midnite/shared';
 
 import { NodeConfigPanel } from './node-config-panel';
 import { ConfirmProvider } from './confirm-dialog';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
 
-function setup(selectId: string) {
+function setup(selectId: string, locale?: Locale) {
   const workflow: Workflow = WorkflowSchema.parse({
     id: 'wf-1',
     name: 'Test',
@@ -32,6 +39,7 @@ function setup(selectId: string) {
         </ConfirmProvider>
       </WorkflowStoreContext.Provider>
     </QueryClientProvider>,
+    locale ? { locale } : undefined,
   );
   return store;
 }
@@ -145,7 +153,7 @@ describe('NodeConfigPanel — expression editor', () => {
 
 // A workflow whose trigger is a schedule, with the matching trigger node selected,
 // so the panel renders the recurrence/cron ScheduleFields (Phase 45 B).
-function setupSchedule(cron = '0 9 * * *') {
+function setupSchedule(cron = '0 9 * * *', locale?: Locale) {
   const workflow: Workflow = WorkflowSchema.parse({
     id: 'wf-1',
     name: 'Test',
@@ -166,6 +174,7 @@ function setupSchedule(cron = '0 9 * * *') {
         </ConfirmProvider>
       </WorkflowStoreContext.Provider>
     </QueryClientProvider>,
+    locale ? { locale } : undefined,
   );
   return store;
 }
@@ -255,6 +264,36 @@ describe('NodeConfigPanel — task-event trigger', () => {
     fireEvent.change(screen.getByLabelText('Repo filter'), { target: { value: '' } });
     expect(store.getState().trigger).toMatchObject({ type: 'task-event' });
     expect((store.getState().trigger as { filter?: unknown }).filter).toBeUndefined();
+  });
+});
+
+// Phase 82 Theme D — the generic config form draws every field label/help/option
+// through the node-catalogue seam, and the panel's own chrome from `workflows.config`,
+// so a fr-FR render is translated end to end.
+describe('NodeConfigPanel — fr-FR', () => {
+  it('translates the field labels, help and panel chrome', () => {
+    setup('n1', 'fr-FR'); // n1 = http.request
+    // Field labels + help come from the catalogue keyed on the shared definition.
+    expect(screen.getByText('Méthode')).toBeInTheDocument();
+    expect(screen.getByText('En-têtes')).toBeInTheDocument();
+    expect(screen.getByText('Objet JSON associant nom d’en-tête → valeur.')).toBeInTheDocument();
+    // Select options too — the HTTP methods stay verbatim, but the credential
+    // picker's placeholder option is the panel's own chrome.
+    expect(screen.getByText('— sélectionner un identifiant —')).toBeInTheDocument();
+    // Panel chrome: header input, close button, ƒx toggle, footer action.
+    expect(screen.getByLabelText('Libellé du nœud')).toBeInTheDocument();
+    expect(screen.getByLabelText('Fermer')).toBeInTheDocument();
+    expect(screen.getByLabelText('Basculer le mode expression pour URL')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Supprimer le nœud' })).toBeInTheDocument();
+  });
+
+  it('translates the trigger tabs and schedule chrome', () => {
+    setupSchedule('0 9 * * *', 'fr-FR');
+    expect(screen.getByRole('button', { name: 'Événement de tâche' })).toBeInTheDocument();
+    expect(screen.getByText('Répétition')).toBeInTheDocument();
+    expect(screen.getByText('Expression cron')).toBeInTheDocument();
+    expect(screen.getByText('Prochaines exécutions')).toBeInTheDocument();
+    expect(screen.getByLabelText('Heure')).toBeInTheDocument();
   });
 });
 

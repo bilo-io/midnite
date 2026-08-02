@@ -16,6 +16,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { WorkflowTemplateSummary, WorkflowTemplateCategory, TemplateSlotsResponse } from '@midnite/shared';
 import { WORKFLOW_TEMPLATE_CATEGORIES } from '@midnite/shared';
 import { GithubIcon } from '@midnite/ui';
@@ -32,16 +33,18 @@ import { useApiData } from '@/lib/use-api-data';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { cn } from '@/lib/utils';
 
-const CATEGORY_META: Record<
+// Category → glyph. The visible label is looked up per-render from
+// `workflows.templates.categories.<category>` so it follows the active locale.
+const CATEGORY_ICONS: Record<
   WorkflowTemplateCategory,
-  { label: string; Icon: React.ComponentType<{ className?: string }> }
+  React.ComponentType<{ className?: string }>
 > = {
-  monitoring: { label: 'Monitoring', Icon: Zap },
-  notifications: { label: 'Notifications', Icon: Webhook },
-  scheduling: { label: 'Scheduling', Icon: Clock },
-  github: { label: 'GitHub', Icon: GithubIcon },
-  ai: { label: 'AI', Icon: Bot },
-  data: { label: 'Data', Icon: Database },
+  monitoring: Zap,
+  notifications: Webhook,
+  scheduling: Clock,
+  github: GithubIcon,
+  ai: Bot,
+  data: Database,
 };
 
 function CategoryIcon({
@@ -51,9 +54,8 @@ function CategoryIcon({
   category: WorkflowTemplateCategory;
   className?: string;
 }) {
-  const meta = CATEGORY_META[category];
-  if (!meta) return <Package className={className} />;
-  const { Icon } = meta;
+  const Icon = CATEGORY_ICONS[category];
+  if (!Icon) return <Package className={className} />;
   return <Icon className={className} />;
 }
 
@@ -64,7 +66,8 @@ function TemplateCard({
   template: WorkflowTemplateSummary;
   onInstall: (t: WorkflowTemplateSummary) => void;
 }) {
-  const category = CATEGORY_META[template.category];
+  const t = useTranslations('workflows');
+  const knownCategory = template.category in CATEGORY_ICONS;
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-4 backdrop-blur-sm transition-colors hover:border-foreground/20">
       <div className="flex items-start gap-3">
@@ -73,9 +76,9 @@ function TemplateCard({
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold">{template.name}</h3>
-          {category ? (
+          {knownCategory ? (
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {category.label}
+              {t(`templates.categories.${template.category}`)}
             </span>
           ) : null}
         </div>
@@ -100,12 +103,12 @@ function TemplateCard({
 
       {template.credentialSlots.length > 0 ? (
         <p className="text-[10px] text-muted-foreground">
-          Requires: {template.credentialSlots.map((s) => s.key).join(', ')}
+          {t('templates.requires', { slots: template.credentialSlots.map((s) => s.key).join(', ') })}
         </p>
       ) : null}
 
       <Button size="sm" className="mt-auto" onClick={() => onInstall(template)}>
-        Use template
+        {t('templates.use')}
       </Button>
     </div>
   );
@@ -120,6 +123,8 @@ function InstallModal({
   onClose: () => void;
   onInstalled: (workflowId: string) => void;
 }) {
+  const t = useTranslations('workflows');
+  const tc = useTranslations('common');
   const [slots, setSlots] = useState<TemplateSlotsResponse | null>(null);
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [credMap, setCredMap] = useState<Record<string, string>>({});
@@ -133,9 +138,9 @@ function InstallModal({
     getWorkflowTemplateSlots(template.id)
       .then(setSlots)
       .catch((e: unknown) =>
-        setSlotsError(e instanceof Error ? e.message : 'Failed to load slots'),
+        setSlotsError(e instanceof Error ? e.message : t('templates.install.slotsFailed')),
       );
-  }, [template.id]);
+  }, [template.id, t]);
 
   const install = async () => {
     setInstallError(null);
@@ -144,7 +149,7 @@ function InstallModal({
       const workflow = await installWorkflowTemplate(template.id, { credentialMap: credMap });
       onInstalled(workflow.id);
     } catch (e) {
-      setInstallError(e instanceof Error ? e.message : 'Install failed');
+      setInstallError(e instanceof Error ? e.message : t('templates.install.failed'));
     } finally {
       setInstalling(false);
     }
@@ -170,7 +175,7 @@ function InstallModal({
             type="button"
             onClick={onClose}
             className="rounded p-1 hover:bg-muted/60"
-            aria-label="Close"
+            aria-label={tc('close')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -180,15 +185,15 @@ function InstallModal({
           <p className="mb-3 text-xs text-destructive">{slotsError}</p>
         ) : !slots ? (
           <div className="flex items-center gap-2 py-4 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> {tc('loading')}
           </div>
         ) : slots.slots.length === 0 ? (
           <div className="mb-3 flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-xs text-success">
-            <CheckCircle className="h-3.5 w-3.5" /> No credentials required
+            <CheckCircle className="h-3.5 w-3.5" /> {t('templates.install.noneRequired')}
           </div>
         ) : (
           <div className="mb-4 space-y-3">
-            <p className="text-xs font-medium">Connect credentials</p>
+            <p className="text-xs font-medium">{t('templates.install.connectCredentials')}</p>
             {slots.slots.map((slot) => {
               const match = slot.satisfiedBy
                 ? creds.find((c) => c.id === slot.satisfiedBy)
@@ -207,12 +212,12 @@ function InstallModal({
                   ) : null}
                   {candidates.length === 0 ? (
                     <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
-                      No {slot.type} credentials found.{' '}
+                      {t('templates.install.noCredentialsOfType', { type: slot.type })}{' '}
                       <a
                         href="/workflows/credentials"
                         className="inline-flex items-center gap-0.5 underline"
                       >
-                        Add one <ExternalLink className="h-2.5 w-2.5" />
+                        {t('templates.install.addCredential')} <ExternalLink className="h-2.5 w-2.5" />
                       </a>
                     </p>
                   ) : (
@@ -223,7 +228,7 @@ function InstallModal({
                           setCredMap((prev) => ({ ...prev, [slot.key]: e.target.value }))
                         }
                         className="w-full appearance-none rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                        aria-label={`Credential for ${slot.key}`}
+                        aria-label={t('templates.install.credentialForSlot', { key: slot.key })}
                       >
                         {match && !candidates.find((c) => c.id === match.id) ? (
                           <option value={match.id}>{match.name}</option>
@@ -246,11 +251,11 @@ function InstallModal({
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={installing}>
-            Cancel
+            {tc('cancel')}
           </Button>
           <Button size="sm" onClick={() => void install()} disabled={installing || !slotsReady}>
             {installing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-            Install
+            {t('templates.install.submit')}
           </Button>
         </div>
       </div>
@@ -259,6 +264,7 @@ function InstallModal({
 }
 
 export default function WorkflowTemplatesPage() {
+  const t = useTranslations('workflows');
   const router = useRouter();
   const { data, error } = useApiData(() => listWorkflowTemplates({ published: true }));
   useGatewayErrorToast(error);
@@ -268,14 +274,14 @@ export default function WorkflowTemplatesPage() {
   const [category, setCategory] = useState<WorkflowTemplateCategory | 'all'>('all');
   const [installing, setInstalling] = useState<WorkflowTemplateSummary | null>(null);
 
-  const filtered = templates.filter((t) => {
-    if (category !== 'all' && t.category !== category) return false;
+  const filtered = templates.filter((tpl) => {
+    if (category !== 'all' && tpl.category !== category) return false;
     if (q) {
       const lower = q.toLowerCase();
       return (
-        t.name.toLowerCase().includes(lower) ||
-        (t.description ?? '').toLowerCase().includes(lower) ||
-        t.tags.some((tag) => tag.toLowerCase().includes(lower))
+        tpl.name.toLowerCase().includes(lower) ||
+        (tpl.description ?? '').toLowerCase().includes(lower) ||
+        tpl.tags.some((tag) => tag.toLowerCase().includes(lower))
       );
     }
     return true;
@@ -284,9 +290,9 @@ export default function WorkflowTemplatesPage() {
   return (
     <>
       <PageHeader
-        title="Workflow Templates"
+        title={t('templates.title')}
         icon="Workflow"
-        description="Browse ready-made workflow templates and install them in one click."
+        description={t('templates.description')}
       />
 
       <div className="reveal-staged container space-y-6 pb-8 pt-2">
@@ -296,7 +302,7 @@ export default function WorkflowTemplatesPage() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search templates…"
+              placeholder={t('templates.searchPlaceholder')}
               className="pl-8"
             />
           </div>
@@ -313,7 +319,7 @@ export default function WorkflowTemplatesPage() {
                 : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground',
             )}
           >
-            All
+            {t('templates.categories.all')}
           </button>
           {WORKFLOW_TEMPLATE_CATEGORIES.map((cat) => (
             <button
@@ -328,17 +334,17 @@ export default function WorkflowTemplatesPage() {
               )}
             >
               <CategoryIcon category={cat} className="h-3 w-3" />
-              {CATEGORY_META[cat]?.label ?? cat}
+              {t(`templates.categories.${cat}`)}
             </button>
           ))}
         </div>
 
         {templates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Loading templates…</p>
+          <p className="text-sm text-muted-foreground">{t('templates.loading')}</p>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-12">
             <BookOpen className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No templates match your filter.</p>
+            <p className="text-sm text-muted-foreground">{t('templates.noMatches')}</p>
             <Button
               variant="ghost"
               size="sm"
@@ -347,13 +353,13 @@ export default function WorkflowTemplatesPage() {
                 setCategory('all');
               }}
             >
-              Clear filters
+              {t('templates.clearFilters')}
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((t) => (
-              <TemplateCard key={t.id} template={t} onInstall={setInstalling} />
+            {filtered.map((tpl) => (
+              <TemplateCard key={tpl.id} template={tpl} onInstall={setInstalling} />
             ))}
           </div>
         )}

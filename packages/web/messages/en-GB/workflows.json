@@ -1,0 +1,691 @@
+{
+  "editor": {
+    "canvas": {
+      "loading": "Loading canvas…",
+      "a11y": {
+        "controls": "Canvas controls",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "fitView": "Fit view",
+        "toggleInteractive": "Toggle interactivity",
+        "minimap": "Workflow mini map",
+        "handle": "Connection handle",
+        "node": "Press enter or space to select a node. Press delete to remove it and escape to cancel.",
+        "nodeKeyboardDisabled": "Press enter or space to select a node. You can then use the arrow keys to move it. Press delete to remove it and escape to cancel.",
+        "edge": "Press enter or space to select a connection. You can then press delete to remove it or escape to cancel."
+      }
+    },
+    "panels": {
+      "showPalette": "Show node palette",
+      "hidePalette": "Hide node palette",
+      "showConfig": "Show config panel",
+      "hideConfig": "Hide config panel"
+    },
+    "controls": {
+      "enabledLabel": "Enabled",
+      "neverRun": "Never run",
+      "status": {
+        "queued": "Queued",
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "canceled": "Cancelled"
+      }
+    },
+    "header": {
+      "untitled": "Untitled workflow",
+      "descriptionPlaceholder": "Describe what this workflow does…",
+      "changeTrigger": "Change trigger",
+      "trigger": {
+        "webhook": "Runs on a webhook",
+        "taskEvent": "Runs on a task event",
+        "manual": "Runs on demand"
+      },
+      "editDetails": "Edit details",
+      "runHistory": "Run history",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "run": "Run",
+      "editHeading": "Edit workflow",
+      "nameLabel": "Name"
+    },
+    "saveAsTemplate": {
+      "title": "Save as template",
+      "nameLabel": "Template name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What does this template do?",
+      "categoryLabel": "Category",
+      "categories": {
+        "monitoring": "Monitoring",
+        "notifications": "Notifications",
+        "scheduling": "Scheduling",
+        "github": "GitHub",
+        "ai": "AI",
+        "data": "Data"
+      },
+      "tagsLabel": "Tags",
+      "tagsHint": "(comma-separated)",
+      "tagsPlaceholder": "e.g. slack, tasks, daily",
+      "publish": "Publish (visible to team)",
+      "submit": "Save template",
+      "failed": "Failed to save template"
+    },
+    "errors": {
+      "saveWorkflow": "Failed to save workflow"
+    },
+    "node": {
+      "noUrl": "No URL set",
+      "noPrompt": "No prompt set",
+      "inputFallback": "input",
+      "operators": {
+        "isTruthy": "is truthy",
+        "isFalsy": "is falsy",
+        "contains": "contains"
+      },
+      "status": {
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "failed": "Failed"
+      }
+    }
+  },
+  "list": {
+    "title": "Workflows",
+    "description": "Build automations that run on a schedule, a webhook, or on demand.",
+    "newWorkflow": "New workflow",
+    "templates": "Templates",
+    "searchPlaceholder": "Search workflows",
+    "view": {
+      "list": "List view",
+      "grid": "Grid view",
+      "table": "Table view"
+    },
+    "triggers": {
+      "manual": "Manual",
+      "schedule": "Schedule",
+      "webhook": "Webhook",
+      "task-event": "Task Event"
+    },
+    "noneForTrigger": "No {trigger} workflows",
+    "section": {
+      "empty": "Empty",
+      "count": "{count, plural, one {# workflow} other {# workflows}}",
+      "mostFrequentFirst": "{count} · most frequent first"
+    },
+    "archived": "Archived",
+    "nodeCount": "{count, plural, one {# node} other {# nodes}}",
+    "duplicateWorkflow": "Duplicate {name}",
+    "cronTooltip": "{frequency} — {schedule}",
+    "empty": {
+      "title": "No workflows yet",
+      "description": "Build an automation that runs on a webhook, a task event, or on demand."
+    },
+    "noMatches": "No workflows match “{query}”",
+    "bulk": {
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "deleteTitle": "{count, plural, one {Delete # workflow?} other {Delete # workflows?}}",
+      "deleteDescription": "This cannot be undone."
+    },
+    "widget": {
+      "title": "Workflows",
+      "refresh": "Refresh workflows",
+      "error": "Couldn’t load workflows.",
+      "empty": "No workflows yet.",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "create": {
+      "dialogLabel": "New workflow",
+      "startFrom": "Start from",
+      "blankTitle": "Blank workflow",
+      "blankDescription": "Start from an empty canvas with just a trigger.",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Daily standup summary",
+      "triggerLabel": "Trigger",
+      "triggerFromTemplate": "Trigger: <strong>{trigger}</strong> — set by the template, editable after creating.",
+      "triggerHints": {
+        "manual": "Run on demand",
+        "schedule": "Run on a cron",
+        "webhook": "Run on a request",
+        "task-event": "Run when a task finishes"
+      },
+      "submit": "Create workflow",
+      "submitFromTemplate": "Create from template",
+      "failed": "Failed to create workflow"
+    },
+    "editor": {
+      "desktopOnlyLabel": "The workflow editor",
+      "notFoundSingular": "workflow"
+    }
+  },
+  "templates": {
+    "title": "Workflow Templates",
+    "description": "Browse ready-made workflow templates and install them in one click.",
+    "searchPlaceholder": "Search templates…",
+    "categories": {
+      "all": "All",
+      "monitoring": "Monitoring",
+      "notifications": "Notifications",
+      "scheduling": "Scheduling",
+      "github": "GitHub",
+      "ai": "AI",
+      "data": "Data"
+    },
+    "requires": "Requires: {slots}",
+    "use": "Use template",
+    "loading": "Loading templates…",
+    "noMatches": "No templates match your filter.",
+    "clearFilters": "Clear filters",
+    "install": {
+      "slotsFailed": "Failed to load slots",
+      "failed": "Install failed",
+      "noneRequired": "No credentials required",
+      "connectCredentials": "Connect credentials",
+      "noCredentialsOfType": "No {type} credentials found.",
+      "addCredential": "Add one",
+      "credentialForSlot": "Credential for {key}",
+      "submit": "Install"
+    }
+  },
+  "nodes": {
+    "trigger_manual": {
+      "title": "Manual Trigger",
+      "description": "Run on demand with the Play button."
+    },
+    "trigger_schedule": {
+      "title": "Schedule",
+      "description": "Run automatically on a cron schedule."
+    },
+    "trigger_webhook": {
+      "title": "Webhook",
+      "description": "Run when an inbound HTTP request arrives."
+    },
+    "trigger_task-event": {
+      "title": "Task Event",
+      "description": "Run when a task finishes, is abandoned, or needs attention."
+    },
+    "http_request": {
+      "title": "HTTP Request",
+      "description": "Make an outbound HTTP call.",
+      "fields": {
+        "method": {
+          "label": "Method",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "URL",
+          "placeholder": "https://api.github.com/repos/owner/repo"
+        },
+        "headers": {
+          "label": "Headers",
+          "help": "JSON object of header name → value."
+        },
+        "body": {
+          "label": "Body",
+          "placeholder": "Raw request body"
+        },
+        "credentialId": {
+          "label": "Credential",
+          "help": "Optional: inject auth from a saved credential (bearer / basic / header)."
+        }
+      }
+    },
+    "ai_claude": {
+      "title": "AI",
+      "description": "Run an AI completion via the active provider, or pin one.",
+      "fields": {
+        "provider": {
+          "label": "Provider",
+          "help": "Leave on \"Active provider\" to follow the Agents-page selection.",
+          "options": {
+            "_empty": "Active provider",
+            "anthropic": "Anthropic",
+            "openai": "OpenAI",
+            "google": "Google Gemini",
+            "openai-compatible": "OpenAI-compatible"
+          }
+        },
+        "model": {
+          "label": "Model",
+          "placeholder": "sonnet4.6"
+        },
+        "system": {
+          "label": "System prompt"
+        },
+        "prompt": {
+          "label": "Prompt"
+        },
+        "maxTokens": {
+          "label": "Max tokens"
+        }
+      }
+    },
+    "task_create": {
+      "title": "Create task",
+      "description": "Create a midnite board task — e.g. enqueue a recurring task on a schedule.",
+      "fields": {
+        "prompt": {
+          "label": "Task prompt",
+          "placeholder": "What should the agent do?"
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Optional: a registered repo name."
+        },
+        "projectId": {
+          "label": "Project",
+          "help": "Optional: project id to file the task under."
+        },
+        "priority": {
+          "label": "Priority",
+          "help": "0–3 (higher runs first); defaults to Normal (1)."
+        }
+      }
+    },
+    "midnite_generate-retro": {
+      "title": "Generate Retro",
+      "description": "Attach an AI narrative to a completed task's retrospective.",
+      "fields": {
+        "taskId": {
+          "label": "Task ID",
+          "placeholder": "Leave blank to use the incoming task",
+          "help": "Optional: the task to summarise. Defaults to the upstream task (e.g. a task-event trigger)."
+        }
+      }
+    },
+    "midnite_list-completed-tasks": {
+      "title": "List Completed Tasks",
+      "description": "List tasks that finished or were abandoned in a trailing window.",
+      "fields": {
+        "sinceHours": {
+          "label": "Since (hours)",
+          "help": "How far back to look. Default 24."
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Optional: only this repo."
+        },
+        "projectId": {
+          "label": "Project",
+          "help": "Optional: only this project."
+        }
+      }
+    },
+    "midnite_build-digest": {
+      "title": "Build Digest",
+      "description": "Roll completed tasks up into a fleet digest (counts, sections, highlights).",
+      "fields": {
+        "sinceHours": {
+          "label": "Since (hours)",
+          "help": "Window length. Ignored when From/To are both set. Default 24."
+        },
+        "from": {
+          "label": "From (ISO)",
+          "help": "Optional explicit window start."
+        },
+        "to": {
+          "label": "To (ISO)",
+          "help": "Optional explicit window end."
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Optional: only this repo."
+        },
+        "projectId": {
+          "label": "Project",
+          "help": "Optional: only this project."
+        }
+      }
+    },
+    "midnite_notify": {
+      "title": "Notify",
+      "description": "Post an in-app notification (e.g. a digest is ready, a retro is notable).",
+      "fields": {
+        "kind": {
+          "label": "Kind",
+          "options": {
+            "digest_generated": "Digest generated",
+            "retro_notable": "Notable retro"
+          }
+        },
+        "severity": {
+          "label": "Severity",
+          "options": {
+            "info": "Info",
+            "warn": "Warning",
+            "urgent": "Urgent"
+          }
+        },
+        "title": {
+          "label": "Title"
+        },
+        "body": {
+          "label": "Body"
+        },
+        "entityId": {
+          "label": "Entity ID",
+          "help": "Optional: the task/digest id to link to."
+        },
+        "route": {
+          "label": "Route",
+          "help": "Optional: client route to open."
+        }
+      }
+    },
+    "logic_branch": {
+      "title": "Branch",
+      "description": "Split the flow into a true and a false path based on a condition.",
+      "ports": {
+        "true": "True",
+        "false": "False"
+      },
+      "fields": {
+        "left": {
+          "label": "Value (path)",
+          "placeholder": "body.ok",
+          "help": "Dot-path into the incoming data. Leave blank to test the whole input."
+        },
+        "operator": {
+          "label": "Condition",
+          "options": {
+            "isTruthy": "is truthy",
+            "isFalsy": "is falsy",
+            "equals": "= equals",
+            "notEquals": "≠ not equals",
+            "contains": "contains",
+            "gt": "> greater than",
+            "gte": "≥ greater or equal",
+            "lt": "< less than",
+            "lte": "≤ less or equal"
+          }
+        },
+        "right": {
+          "label": "Compare to",
+          "placeholder": "ok",
+          "help": "Compared against the value. Ignored for “is truthy/falsy”."
+        }
+      }
+    },
+    "logic_setData": {
+      "title": "Set Data",
+      "description": "Build a payload from fields, using '{{ }}' to pull from upstream nodes.",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "replace": "Replace — emit only the set fields",
+            "merge": "Merge — overlay the set fields onto the input"
+          }
+        },
+        "fields": {
+          "label": "Fields",
+          "help": "JSON object of key → value. Values may use '{{ }}' expressions."
+        }
+      }
+    },
+    "logic_merge": {
+      "title": "Merge",
+      "description": "Combine the outputs of multiple upstream branches into one payload.",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "shallowMerge": "Shallow merge objects",
+            "array": "Collect into an array",
+            "concat": "Concatenate arrays"
+          }
+        }
+      }
+    },
+    "data_filter": {
+      "title": "Filter Fields",
+      "description": "Pick or drop a set of top-level fields from the payload.",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "pick": "Pick — keep only these fields",
+            "omit": "Omit — drop these fields"
+          }
+        },
+        "fields": {
+          "label": "Fields",
+          "help": "JSON array of top-level field names."
+        }
+      }
+    },
+    "storage_set": {
+      "title": "Store Value",
+      "description": "Save a value under a key — readable later in this run or a future run.",
+      "fields": {
+        "key": {
+          "label": "Key",
+          "placeholder": "lastSeenId"
+        },
+        "value": {
+          "label": "Value",
+          "help": "The value to store. Use '{{ }}' to pull from upstream nodes."
+        }
+      }
+    },
+    "slack_message": {
+      "title": "Slack Message",
+      "description": "Post a message to a Slack channel.",
+      "fields": {
+        "credentialId": {
+          "label": "Slack credential"
+        },
+        "channel": {
+          "label": "Channel",
+          "placeholder": "#general or channel ID"
+        },
+        "text": {
+          "label": "Message text"
+        },
+        "blocks": {
+          "label": "Blocks (Block Kit)",
+          "help": "Optional Slack Block Kit array (usually an expression, e.g. '{{ $json.blocks }}'). Text is the fallback."
+        }
+      }
+    },
+    "email_send": {
+      "title": "Send Email",
+      "description": "Send an email via SMTP.",
+      "fields": {
+        "credentialId": {
+          "label": "SMTP credential"
+        },
+        "to": {
+          "label": "To",
+          "placeholder": "recipient@example.com"
+        },
+        "subject": {
+          "label": "Subject"
+        },
+        "text": {
+          "label": "Body (plain text)"
+        },
+        "html": {
+          "label": "Body (HTML)"
+        }
+      }
+    },
+    "storage_get": {
+      "title": "Read Value",
+      "description": "Read a stored value by key (from this or a previous run).",
+      "fields": {
+        "key": {
+          "label": "Key",
+          "placeholder": "lastSeenId"
+        },
+        "defaultValue": {
+          "label": "Default",
+          "help": "Returned when the key has never been set. Defaults to null."
+        }
+      }
+    },
+    "github_get-pr": {
+      "title": "Get PR",
+      "description": "Fetch pull-request metadata (title, state, author, labels, head/base) from GitHub.",
+      "fields": {
+        "credentialId": {
+          "label": "GitHub credential"
+        },
+        "prUrl": {
+          "label": "PR URL",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        }
+      }
+    },
+    "github_get-diff": {
+      "title": "Get PR Diff",
+      "description": "Fetch the unified diff for a pull request (truncated to maxTokens).",
+      "fields": {
+        "credentialId": {
+          "label": "GitHub credential"
+        },
+        "prUrl": {
+          "label": "PR URL",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "maxTokens": {
+          "label": "Max tokens",
+          "help": "Diff is truncated at this token estimate (1 token ≈ 4 chars). Default: 8000."
+        }
+      }
+    },
+    "github_post-review": {
+      "title": "Post PR Review",
+      "description": "Submit a review comment (or approval / request changes) on a GitHub pull request.",
+      "fields": {
+        "credentialId": {
+          "label": "GitHub credential"
+        },
+        "prUrl": {
+          "label": "PR URL",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "body": {
+          "label": "Review body"
+        },
+        "event": {
+          "label": "Event",
+          "options": {
+            "COMMENT": "Comment",
+            "APPROVE": "Approve",
+            "REQUEST_CHANGES": "Request changes"
+          }
+        }
+      }
+    }
+  },
+  "palette": {
+    "search": "Search nodes",
+    "hint": "Drag onto the canvas, or click to add.",
+    "empty": "No nodes match “{query}”.",
+    "categories": {
+      "action": "Actions",
+      "logic": "Logic",
+      "data": "Data",
+      "storage": "Storage"
+    }
+  },
+  "config": {
+    "empty": "Select a node to configure it.",
+    "noConfig": "This node has no configuration.",
+    "nodeLabel": "Node label",
+    "close": "Close",
+    "delete": {
+      "action": "Delete node",
+      "title": "Delete this node?",
+      "description": "“{label}” will be removed from the workflow.",
+      "confirm": "Delete node"
+    },
+    "json": {
+      "invalid": "Invalid JSON"
+    },
+    "credential": {
+      "none": "— select a credential —"
+    },
+    "fx": {
+      "toggle": "Toggle expression mode for {field}",
+      "useLiteral": "Use a literal value",
+      "useExpression": "Use an expression"
+    },
+    "ai": {
+      "modelPlaceholder": "Select or type a model id"
+    },
+    "trigger": {
+      "tabs": {
+        "manual": "Manual",
+        "schedule": "Schedule",
+        "webhook": "Webhook",
+        "task-event": "Task Event"
+      },
+      "manual": {
+        "hint": "Runs only when you press Run. The Run button works for any trigger type, so you can always test manually."
+      },
+      "schedule": {
+        "repeats": "Repeats",
+        "recurrence": "Recurrence",
+        "presets": {
+          "daily": "Every day",
+          "weekdays": "Weekdays (Mon–Fri)",
+          "weekly": "Weekly",
+          "monthly": "Monthly",
+          "custom": "Custom (cron)"
+        },
+        "day": "Day",
+        "dayOfWeek": "Day of week",
+        "days": {
+          "0": "Sunday",
+          "1": "Monday",
+          "2": "Tuesday",
+          "3": "Wednesday",
+          "4": "Thursday",
+          "5": "Friday",
+          "6": "Saturday"
+        },
+        "dayOfMonth": "Day of month",
+        "time": "Time",
+        "cron": "Cron expression",
+        "timezone": "Timezone",
+        "nextRuns": "Next runs",
+        "invalidCron": "Invalid cron — no upcoming runs."
+      },
+      "webhook": {
+        "hint": "Send a request to the workflow’s URL to trigger a run. The URL embeds a secret token, shown once when generated.",
+        "url": "Webhook URL",
+        "copyUrl": "Copy URL",
+        "copied": "Copied.",
+        "tokenExists": "A token already exists. Regenerate to reveal a fresh URL.",
+        "noUrlYet": "No URL generated yet.",
+        "regenerate": "Regenerate URL",
+        "generate": "Generate URL"
+      },
+      "taskEvent": {
+        "fireOn": "Fire on",
+        "events": {
+          "task_done": "Task done",
+          "task_abandoned": "Task abandoned",
+          "task_needs-attention": "Task needs attention"
+        },
+        "repoFilterLabel": "Repo filter (optional)",
+        "repoFilter": "Repo filter",
+        "projectFilterLabel": "Project filter (optional)",
+        "projectFilter": "Project filter",
+        "projectPlaceholder": "project id",
+        "priorityFilterLabel": "Priority filter (optional)",
+        "priorityFilter": "Priority filter",
+        "anyPriority": "Any priority"
+      }
+    }
+  }
+}

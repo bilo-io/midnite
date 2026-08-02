@@ -1,0 +1,691 @@
+{
+  "editor": {
+    "canvas": {
+      "loading": "Chargement du canevas…",
+      "a11y": {
+        "controls": "Commandes du canevas",
+        "zoomIn": "Zoom avant",
+        "zoomOut": "Zoom arrière",
+        "fitView": "Ajuster la vue",
+        "toggleInteractive": "Activer ou désactiver l’interactivité",
+        "minimap": "Mini-carte du workflow",
+        "handle": "Point de connexion",
+        "node": "Appuyez sur Entrée ou Espace pour sélectionner un nœud. Appuyez sur Suppr pour le supprimer et sur Échap pour annuler.",
+        "nodeKeyboardDisabled": "Appuyez sur Entrée ou Espace pour sélectionner un nœud. Vous pouvez ensuite le déplacer avec les touches fléchées. Appuyez sur Suppr pour le supprimer et sur Échap pour annuler.",
+        "edge": "Appuyez sur Entrée ou Espace pour sélectionner une connexion. Vous pouvez ensuite appuyer sur Suppr pour la supprimer ou sur Échap pour annuler."
+      }
+    },
+    "panels": {
+      "showPalette": "Afficher la palette de nœuds",
+      "hidePalette": "Masquer la palette de nœuds",
+      "showConfig": "Afficher le panneau de configuration",
+      "hideConfig": "Masquer le panneau de configuration"
+    },
+    "controls": {
+      "enabledLabel": "Activé",
+      "neverRun": "Jamais exécuté",
+      "status": {
+        "queued": "En file d’attente",
+        "running": "En cours",
+        "succeeded": "Réussi",
+        "failed": "Échoué",
+        "canceled": "Annulé"
+      }
+    },
+    "header": {
+      "untitled": "Workflow sans titre",
+      "descriptionPlaceholder": "Décrivez ce que fait ce workflow…",
+      "changeTrigger": "Modifier le déclencheur",
+      "trigger": {
+        "webhook": "S’exécute sur un webhook",
+        "taskEvent": "S’exécute sur un événement de tâche",
+        "manual": "S’exécute à la demande"
+      },
+      "editDetails": "Modifier les détails",
+      "runHistory": "Historique des exécutions",
+      "enabled": "Activé",
+      "disabled": "Désactivé",
+      "run": "Exécuter",
+      "editHeading": "Modifier le workflow",
+      "nameLabel": "Nom"
+    },
+    "saveAsTemplate": {
+      "title": "Enregistrer comme modèle",
+      "nameLabel": "Nom du modèle",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Que fait ce modèle ?",
+      "categoryLabel": "Catégorie",
+      "categories": {
+        "monitoring": "Supervision",
+        "notifications": "Notifications",
+        "scheduling": "Planification",
+        "github": "GitHub",
+        "ai": "IA",
+        "data": "Données"
+      },
+      "tagsLabel": "Étiquettes",
+      "tagsHint": "(séparées par des virgules)",
+      "tagsPlaceholder": "ex. slack, tâches, quotidien",
+      "publish": "Publier (visible par l’équipe)",
+      "submit": "Enregistrer le modèle",
+      "failed": "Échec de l’enregistrement du modèle"
+    },
+    "errors": {
+      "saveWorkflow": "Échec de l’enregistrement du workflow"
+    },
+    "node": {
+      "noUrl": "Aucune URL définie",
+      "noPrompt": "Aucun prompt défini",
+      "inputFallback": "entrée",
+      "operators": {
+        "isTruthy": "est vrai",
+        "isFalsy": "est faux",
+        "contains": "contient"
+      },
+      "status": {
+        "running": "En cours",
+        "succeeded": "Réussi",
+        "failed": "Échoué"
+      }
+    }
+  },
+  "list": {
+    "title": "Flux de travail",
+    "description": "Créez des automatisations qui s’exécutent selon un planning, un webhook ou à la demande.",
+    "newWorkflow": "Nouveau workflow",
+    "templates": "Modèles",
+    "searchPlaceholder": "Rechercher des workflows",
+    "view": {
+      "list": "Vue liste",
+      "grid": "Vue grille",
+      "table": "Vue tableau"
+    },
+    "triggers": {
+      "manual": "Manuel",
+      "schedule": "Planning",
+      "webhook": "Webhook",
+      "task-event": "Événement de tâche"
+    },
+    "noneForTrigger": "Aucun workflow {trigger}",
+    "section": {
+      "empty": "Vide",
+      "count": "{count, plural, one {# workflow} other {# workflows}}",
+      "mostFrequentFirst": "{count} · les plus fréquents d’abord"
+    },
+    "archived": "Archivé",
+    "nodeCount": "{count, plural, one {# nœud} other {# nœuds}}",
+    "duplicateWorkflow": "Dupliquer {name}",
+    "cronTooltip": "{frequency} — {schedule}",
+    "empty": {
+      "title": "Aucun workflow pour l’instant",
+      "description": "Créez une automatisation qui s’exécute sur un webhook, un événement de tâche ou à la demande."
+    },
+    "noMatches": "Aucun workflow ne correspond à « {query} »",
+    "bulk": {
+      "archive": "Archiver",
+      "unarchive": "Désarchiver",
+      "deleteTitle": "{count, plural, one {Supprimer # workflow ?} other {Supprimer # workflows ?}}",
+      "deleteDescription": "Cette action est irréversible."
+    },
+    "widget": {
+      "title": "Flux de travail",
+      "refresh": "Actualiser les workflows",
+      "error": "Impossible de charger les workflows.",
+      "empty": "Aucun workflow pour l’instant.",
+      "enabled": "Activé",
+      "disabled": "Désactivé"
+    },
+    "create": {
+      "dialogLabel": "Nouveau workflow",
+      "startFrom": "Partir de",
+      "blankTitle": "Workflow vierge",
+      "blankDescription": "Partez d’un canevas vide avec seulement un déclencheur.",
+      "nameLabel": "Nom",
+      "namePlaceholder": "ex. Synthèse du point quotidien",
+      "triggerLabel": "Déclencheur",
+      "triggerFromTemplate": "Déclencheur : <strong>{trigger}</strong> — défini par le modèle, modifiable après la création.",
+      "triggerHints": {
+        "manual": "Exécuter à la demande",
+        "schedule": "Exécuter selon un cron",
+        "webhook": "Exécuter sur une requête",
+        "task-event": "Exécuter à la fin d’une tâche"
+      },
+      "submit": "Créer le workflow",
+      "submitFromTemplate": "Créer depuis le modèle",
+      "failed": "Échec de la création du workflow"
+    },
+    "editor": {
+      "desktopOnlyLabel": "L’éditeur de workflows",
+      "notFoundSingular": "workflow"
+    }
+  },
+  "templates": {
+    "title": "Modèles de workflow",
+    "description": "Parcourez des modèles de workflow prêts à l’emploi et installez-les en un clic.",
+    "searchPlaceholder": "Rechercher des modèles…",
+    "categories": {
+      "all": "Tous",
+      "monitoring": "Supervision",
+      "notifications": "Notifications",
+      "scheduling": "Planification",
+      "github": "GitHub",
+      "ai": "IA",
+      "data": "Données"
+    },
+    "requires": "Requiert : {slots}",
+    "use": "Utiliser le modèle",
+    "loading": "Chargement des modèles…",
+    "noMatches": "Aucun modèle ne correspond à votre filtre.",
+    "clearFilters": "Réinitialiser les filtres",
+    "install": {
+      "slotsFailed": "Échec du chargement des emplacements",
+      "failed": "Échec de l’installation",
+      "noneRequired": "Aucun identifiant requis",
+      "connectCredentials": "Connecter les identifiants",
+      "noCredentialsOfType": "Aucun identifiant {type} trouvé.",
+      "addCredential": "En ajouter un",
+      "credentialForSlot": "Identifiant pour {key}",
+      "submit": "Installer"
+    }
+  },
+  "nodes": {
+    "trigger_manual": {
+      "title": "Déclencheur manuel",
+      "description": "Exécuter à la demande avec le bouton Lecture."
+    },
+    "trigger_schedule": {
+      "title": "Planification",
+      "description": "Exécuter automatiquement selon une planification cron."
+    },
+    "trigger_webhook": {
+      "title": "Webhook",
+      "description": "Exécuter à l’arrivée d’une requête HTTP entrante."
+    },
+    "trigger_task-event": {
+      "title": "Événement de tâche",
+      "description": "Exécuter lorsqu’une tâche se termine, est abandonnée ou requiert de l’attention."
+    },
+    "http_request": {
+      "title": "Requête HTTP",
+      "description": "Effectuer un appel HTTP sortant.",
+      "fields": {
+        "method": {
+          "label": "Méthode",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "URL",
+          "placeholder": "https://api.github.com/repos/owner/repo"
+        },
+        "headers": {
+          "label": "En-têtes",
+          "help": "Objet JSON associant nom d’en-tête → valeur."
+        },
+        "body": {
+          "label": "Corps",
+          "placeholder": "Corps de requête brut"
+        },
+        "credentialId": {
+          "label": "Identifiant",
+          "help": "Facultatif : injecter l’authentification depuis un identifiant enregistré (bearer / basic / en-tête)."
+        }
+      }
+    },
+    "ai_claude": {
+      "title": "IA",
+      "description": "Exécuter une complétion IA via le fournisseur actif, ou en épingler un.",
+      "fields": {
+        "provider": {
+          "label": "Fournisseur",
+          "help": "Laisser sur « Fournisseur actif » pour suivre la sélection de la page Agents.",
+          "options": {
+            "_empty": "Fournisseur actif",
+            "anthropic": "Anthropic",
+            "openai": "OpenAI",
+            "google": "Google Gemini",
+            "openai-compatible": "Compatible OpenAI"
+          }
+        },
+        "model": {
+          "label": "Modèle",
+          "placeholder": "sonnet4.6"
+        },
+        "system": {
+          "label": "Prompt système"
+        },
+        "prompt": {
+          "label": "Prompt"
+        },
+        "maxTokens": {
+          "label": "Tokens max"
+        }
+      }
+    },
+    "task_create": {
+      "title": "Créer une tâche",
+      "description": "Créer une tâche sur le tableau midnite — par ex. mettre en file une tâche récurrente selon une planification.",
+      "fields": {
+        "prompt": {
+          "label": "Prompt de la tâche",
+          "placeholder": "Que doit faire l’agent ?"
+        },
+        "repo": {
+          "label": "Dépôt",
+          "help": "Facultatif : le nom d’un dépôt enregistré."
+        },
+        "projectId": {
+          "label": "Projet",
+          "help": "Facultatif : l’id du projet sous lequel classer la tâche."
+        },
+        "priority": {
+          "label": "Priorité",
+          "help": "0–3 (la plus élevée passe d’abord) ; Normale (1) par défaut."
+        }
+      }
+    },
+    "midnite_generate-retro": {
+      "title": "Générer la rétro",
+      "description": "Joindre un récit IA à la rétrospective d’une tâche terminée.",
+      "fields": {
+        "taskId": {
+          "label": "ID de tâche",
+          "placeholder": "Laisser vide pour utiliser la tâche entrante",
+          "help": "Facultatif : la tâche à résumer. Par défaut, la tâche en amont (par ex. un déclencheur d’événement de tâche)."
+        }
+      }
+    },
+    "midnite_list-completed-tasks": {
+      "title": "Lister les tâches terminées",
+      "description": "Lister les tâches terminées ou abandonnées sur une fenêtre glissante.",
+      "fields": {
+        "sinceHours": {
+          "label": "Depuis (heures)",
+          "help": "Profondeur de recherche. 24 par défaut."
+        },
+        "repo": {
+          "label": "Dépôt",
+          "help": "Facultatif : uniquement ce dépôt."
+        },
+        "projectId": {
+          "label": "Projet",
+          "help": "Facultatif : uniquement ce projet."
+        }
+      }
+    },
+    "midnite_build-digest": {
+      "title": "Construire le résumé",
+      "description": "Agréger les tâches terminées en un résumé de flotte (compteurs, sections, faits marquants).",
+      "fields": {
+        "sinceHours": {
+          "label": "Depuis (heures)",
+          "help": "Longueur de la fenêtre. Ignorée si De et À sont tous deux renseignés. 24 par défaut."
+        },
+        "from": {
+          "label": "De (ISO)",
+          "help": "Début de fenêtre explicite (facultatif)."
+        },
+        "to": {
+          "label": "À (ISO)",
+          "help": "Fin de fenêtre explicite (facultatif)."
+        },
+        "repo": {
+          "label": "Dépôt",
+          "help": "Facultatif : uniquement ce dépôt."
+        },
+        "projectId": {
+          "label": "Projet",
+          "help": "Facultatif : uniquement ce projet."
+        }
+      }
+    },
+    "midnite_notify": {
+      "title": "Notifier",
+      "description": "Publier une notification dans l’application (par ex. un résumé est prêt, une rétro est notable).",
+      "fields": {
+        "kind": {
+          "label": "Type",
+          "options": {
+            "digest_generated": "Résumé généré",
+            "retro_notable": "Rétro notable"
+          }
+        },
+        "severity": {
+          "label": "Gravité",
+          "options": {
+            "info": "Info",
+            "warn": "Avertissement",
+            "urgent": "Urgent"
+          }
+        },
+        "title": {
+          "label": "Titre"
+        },
+        "body": {
+          "label": "Corps"
+        },
+        "entityId": {
+          "label": "ID d’entité",
+          "help": "Facultatif : l’id de la tâche ou du résumé à lier."
+        },
+        "route": {
+          "label": "Route",
+          "help": "Facultatif : la route client à ouvrir."
+        }
+      }
+    },
+    "logic_branch": {
+      "title": "Branchement",
+      "description": "Diviser le flux en un chemin vrai et un chemin faux selon une condition.",
+      "ports": {
+        "true": "Vrai",
+        "false": "Faux"
+      },
+      "fields": {
+        "left": {
+          "label": "Valeur (chemin)",
+          "placeholder": "body.ok",
+          "help": "Chemin pointé dans les données entrantes. Laisser vide pour tester l’entrée entière."
+        },
+        "operator": {
+          "label": "Condition",
+          "options": {
+            "isTruthy": "est vrai",
+            "isFalsy": "est faux",
+            "equals": "= égal à",
+            "notEquals": "≠ différent de",
+            "contains": "contient",
+            "gt": "> supérieur à",
+            "gte": "≥ supérieur ou égal",
+            "lt": "< inférieur à",
+            "lte": "≤ inférieur ou égal"
+          }
+        },
+        "right": {
+          "label": "Comparer à",
+          "placeholder": "ok",
+          "help": "Comparé à la valeur. Ignoré pour « est vrai/faux »."
+        }
+      }
+    },
+    "logic_setData": {
+      "title": "Définir les données",
+      "description": "Construire une charge utile à partir de champs, en utilisant '{{ }}' pour puiser dans les nœuds en amont.",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "replace": "Remplacer — n’émettre que les champs définis",
+            "merge": "Fusionner — superposer les champs définis sur l’entrée"
+          }
+        },
+        "fields": {
+          "label": "Champs",
+          "help": "Objet JSON associant clé → valeur. Les valeurs peuvent utiliser des expressions '{{ }}'."
+        }
+      }
+    },
+    "logic_merge": {
+      "title": "Fusionner",
+      "description": "Combiner les sorties de plusieurs branches en amont en une seule charge utile.",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "shallowMerge": "Fusion superficielle des objets",
+            "array": "Rassembler dans un tableau",
+            "concat": "Concaténer les tableaux"
+          }
+        }
+      }
+    },
+    "data_filter": {
+      "title": "Filtrer les champs",
+      "description": "Conserver ou retirer un ensemble de champs de premier niveau de la charge utile.",
+      "fields": {
+        "mode": {
+          "label": "Mode",
+          "options": {
+            "pick": "Conserver — ne garder que ces champs",
+            "omit": "Omettre — retirer ces champs"
+          }
+        },
+        "fields": {
+          "label": "Champs",
+          "help": "Tableau JSON de noms de champs de premier niveau."
+        }
+      }
+    },
+    "storage_set": {
+      "title": "Stocker une valeur",
+      "description": "Enregistrer une valeur sous une clé — relisible plus tard dans cette exécution ou dans une exécution future.",
+      "fields": {
+        "key": {
+          "label": "Clé",
+          "placeholder": "lastSeenId"
+        },
+        "value": {
+          "label": "Valeur",
+          "help": "La valeur à stocker. Utilisez '{{ }}' pour puiser dans les nœuds en amont."
+        }
+      }
+    },
+    "slack_message": {
+      "title": "Message Slack",
+      "description": "Publier un message dans un canal Slack.",
+      "fields": {
+        "credentialId": {
+          "label": "Identifiant Slack"
+        },
+        "channel": {
+          "label": "Canal",
+          "placeholder": "#general ou ID de canal"
+        },
+        "text": {
+          "label": "Texte du message"
+        },
+        "blocks": {
+          "label": "Blocs (Block Kit)",
+          "help": "Tableau Slack Block Kit facultatif (généralement une expression, par ex. '{{ $json.blocks }}'). Le texte sert de repli."
+        }
+      }
+    },
+    "email_send": {
+      "title": "Envoyer un e-mail",
+      "description": "Envoyer un e-mail via SMTP.",
+      "fields": {
+        "credentialId": {
+          "label": "Identifiant SMTP"
+        },
+        "to": {
+          "label": "À",
+          "placeholder": "destinataire@exemple.com"
+        },
+        "subject": {
+          "label": "Objet"
+        },
+        "text": {
+          "label": "Corps (texte brut)"
+        },
+        "html": {
+          "label": "Corps (HTML)"
+        }
+      }
+    },
+    "storage_get": {
+      "title": "Lire une valeur",
+      "description": "Lire une valeur stockée par sa clé (de cette exécution ou d’une précédente).",
+      "fields": {
+        "key": {
+          "label": "Clé",
+          "placeholder": "lastSeenId"
+        },
+        "defaultValue": {
+          "label": "Valeur par défaut",
+          "help": "Renvoyée lorsque la clé n’a jamais été définie. null par défaut."
+        }
+      }
+    },
+    "github_get-pr": {
+      "title": "Obtenir la PR",
+      "description": "Récupérer les métadonnées d’une pull request depuis GitHub (titre, état, auteur, étiquettes, head/base).",
+      "fields": {
+        "credentialId": {
+          "label": "Identifiant GitHub"
+        },
+        "prUrl": {
+          "label": "URL de la PR",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        }
+      }
+    },
+    "github_get-diff": {
+      "title": "Obtenir le diff de la PR",
+      "description": "Récupérer le diff unifié d’une pull request (tronqué à maxTokens).",
+      "fields": {
+        "credentialId": {
+          "label": "Identifiant GitHub"
+        },
+        "prUrl": {
+          "label": "URL de la PR",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "maxTokens": {
+          "label": "Tokens max",
+          "help": "Le diff est tronqué à cette estimation de tokens (1 token ≈ 4 caractères). Par défaut : 8000."
+        }
+      }
+    },
+    "github_post-review": {
+      "title": "Publier une revue de PR",
+      "description": "Soumettre un commentaire de revue (ou une approbation / une demande de modifications) sur une pull request GitHub.",
+      "fields": {
+        "credentialId": {
+          "label": "Identifiant GitHub"
+        },
+        "prUrl": {
+          "label": "URL de la PR",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "body": {
+          "label": "Corps de la revue"
+        },
+        "event": {
+          "label": "Événement",
+          "options": {
+            "COMMENT": "Commenter",
+            "APPROVE": "Approuver",
+            "REQUEST_CHANGES": "Demander des modifications"
+          }
+        }
+      }
+    }
+  },
+  "palette": {
+    "search": "Rechercher des nœuds",
+    "hint": "Faites glisser sur le canevas, ou cliquez pour ajouter.",
+    "empty": "Aucun nœud ne correspond à « {query} ».",
+    "categories": {
+      "action": "Actions",
+      "logic": "Logique",
+      "data": "Données",
+      "storage": "Stockage"
+    }
+  },
+  "config": {
+    "empty": "Sélectionnez un nœud pour le configurer.",
+    "noConfig": "Ce nœud n’a aucune configuration.",
+    "nodeLabel": "Libellé du nœud",
+    "close": "Fermer",
+    "delete": {
+      "action": "Supprimer le nœud",
+      "title": "Supprimer ce nœud ?",
+      "description": "« {label} » sera retiré du workflow.",
+      "confirm": "Supprimer le nœud"
+    },
+    "json": {
+      "invalid": "JSON invalide"
+    },
+    "credential": {
+      "none": "— sélectionner un identifiant —"
+    },
+    "fx": {
+      "toggle": "Basculer le mode expression pour {field}",
+      "useLiteral": "Utiliser une valeur littérale",
+      "useExpression": "Utiliser une expression"
+    },
+    "ai": {
+      "modelPlaceholder": "Sélectionnez ou saisissez un id de modèle"
+    },
+    "trigger": {
+      "tabs": {
+        "manual": "Manuel",
+        "schedule": "Planification",
+        "webhook": "Webhook",
+        "task-event": "Événement de tâche"
+      },
+      "manual": {
+        "hint": "Ne s’exécute que lorsque vous appuyez sur Exécuter. Le bouton Exécuter fonctionne pour tout type de déclencheur, vous pouvez donc toujours tester manuellement."
+      },
+      "schedule": {
+        "repeats": "Répétition",
+        "recurrence": "Récurrence",
+        "presets": {
+          "daily": "Chaque jour",
+          "weekdays": "Jours ouvrés (lun–ven)",
+          "weekly": "Chaque semaine",
+          "monthly": "Chaque mois",
+          "custom": "Personnalisé (cron)"
+        },
+        "day": "Jour",
+        "dayOfWeek": "Jour de la semaine",
+        "days": {
+          "0": "Dimanche",
+          "1": "Lundi",
+          "2": "Mardi",
+          "3": "Mercredi",
+          "4": "Jeudi",
+          "5": "Vendredi",
+          "6": "Samedi"
+        },
+        "dayOfMonth": "Jour du mois",
+        "time": "Heure",
+        "cron": "Expression cron",
+        "timezone": "Fuseau horaire",
+        "nextRuns": "Prochaines exécutions",
+        "invalidCron": "Cron invalide — aucune exécution à venir."
+      },
+      "webhook": {
+        "hint": "Envoyez une requête à l’URL du workflow pour déclencher une exécution. L’URL contient un jeton secret, affiché une seule fois à sa génération.",
+        "url": "URL du webhook",
+        "copyUrl": "Copier l’URL",
+        "copied": "Copié.",
+        "tokenExists": "Un jeton existe déjà. Régénérez pour révéler une nouvelle URL.",
+        "noUrlYet": "Aucune URL générée pour l’instant.",
+        "regenerate": "Régénérer l’URL",
+        "generate": "Générer l’URL"
+      },
+      "taskEvent": {
+        "fireOn": "Déclencher sur",
+        "events": {
+          "task_done": "Tâche terminée",
+          "task_abandoned": "Tâche abandonnée",
+          "task_needs-attention": "Tâche nécessitant une attention"
+        },
+        "repoFilterLabel": "Filtre de dépôt (facultatif)",
+        "repoFilter": "Filtre de dépôt",
+        "projectFilterLabel": "Filtre de projet (facultatif)",
+        "projectFilter": "Filtre de projet",
+        "projectPlaceholder": "id du projet",
+        "priorityFilterLabel": "Filtre de priorité (facultatif)",
+        "priorityFilter": "Filtre de priorité",
+        "anyPriority": "Toute priorité"
+      }
+    }
+  }
+}

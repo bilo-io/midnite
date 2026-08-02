@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { getWorkflow } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { DesktopOnly } from '@/components/desktop-only';
@@ -16,6 +17,7 @@ const WorkflowEditor = dynamic(
 // Static-export-friendly replacement for the old /workflows/[id] dynamic route:
 // the id comes from ?id= and the workflow is fetched client-side.
 function Editor() {
+  const t = useTranslations('workflows');
   const id = useSearchParams().get('id') ?? '';
   const { data: workflow, loading, error } = useApiData(() => getWorkflow(id), [id]);
 
@@ -25,15 +27,16 @@ function Editor() {
   // editor — and any unsaved canvas edits — over a transient blip. As long as a
   // workflow is in hand, keep rendering the editor.
   if (!id || (!workflow && (error || !loading))) {
-    return <ResourceNotFound feature="workflows" singular="workflow" />;
+    return <ResourceNotFound feature="workflows" singular={t('list.editor.notFoundSingular')} />;
   }
   if (!workflow) return null;
   return <WorkflowEditor workflow={workflow} />;
 }
 
 export default function WorkflowEditPage() {
+  const t = useTranslations('workflows');
   return (
-    <DesktopOnly label="The workflow editor">
+    <DesktopOnly label={t('list.editor.desktopOnlyLabel')}>
       <Suspense fallback={null}>
         <Editor />
       </Suspense>

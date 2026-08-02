@@ -2,15 +2,12 @@
 
 import Link from 'next/link';
 import { Copy, Workflow } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { WorkflowSummary } from '@midnite/shared';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { TriggerBadge } from '@/components/trigger-badge';
 import { LastRunStatus, WorkflowEnabledSwitch } from '@/components/workflow-controls';
 import { cn } from '@/lib/utils';
-
-function nodeLabel(count: number): string {
-  return `${count} node${count === 1 ? '' : 's'}`;
-}
 
 export function WorkflowCard({
   workflow,
@@ -25,13 +22,17 @@ export function WorkflowCard({
   onToggleSelect?: (shiftKey: boolean) => void;
   onDuplicate?: () => void;
 }) {
+  const t = useTranslations('workflows');
   const selectIcon = (
     <SelectableIcon Icon={Workflow} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
   );
 
+  const nodeLabel = t('list.nodeCount', { count: workflow.nodeCount });
+  const duplicateLabel = t('list.duplicateWorkflow', { name: workflow.name });
+
   const archivedBadge = workflow.archived ? (
     <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-      Archived
+      {t('list.archived')}
     </span>
   ) : null;
 
@@ -56,14 +57,14 @@ export function WorkflowCard({
         </Link>
         <TriggerBadge type={workflow.triggerType} className="hidden sm:inline-flex" />
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
-          {nodeLabel(workflow.nodeCount)}
+          {nodeLabel}
         </span>
         <LastRunStatus status={workflow.lastRunStatus} className="hidden md:inline-flex" />
         {onDuplicate ? (
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); onDuplicate(); }}
-            aria-label={`Duplicate ${workflow.name}`}
+            aria-label={duplicateLabel}
             className="hidden rounded p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground group-hover:inline-flex"
           >
             <Copy className="h-3.5 w-3.5" />
@@ -100,7 +101,7 @@ export function WorkflowCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <TriggerBadge type={workflow.triggerType} />
-          <span className="text-[11px] text-muted-foreground">{nodeLabel(workflow.nodeCount)}</span>
+          <span className="text-[11px] text-muted-foreground">{nodeLabel}</span>
         </div>
         <div className="flex items-center gap-1">
           <LastRunStatus status={workflow.lastRunStatus} />
@@ -108,7 +109,7 @@ export function WorkflowCard({
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); onDuplicate(); }}
-              aria-label={`Duplicate ${workflow.name}`}
+              aria-label={duplicateLabel}
               className="hidden rounded p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground group-hover:inline-flex"
             >
               <Copy className="h-3.5 w-3.5" />

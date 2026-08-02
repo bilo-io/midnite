@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const createWorkflow = vi.fn();
 const updateWorkflow = vi.fn();

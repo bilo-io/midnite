@@ -3,46 +3,79 @@
 import { Fragment } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Check, Loader2, X, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { getNodeTypeDefinition, type NodeRunStatus } from '@midnite/shared';
 import type { AppNode, WorkflowNodeData } from '@/lib/workflow-store';
 import { hueVarForCategory, iconFor } from '@/lib/workflow-node-catalog';
+import { useNodeLabels } from '@/lib/workflow-node-labels';
 import { LLM_PROVIDER_ICON_KEY, resolveAiNodeProvider } from '@/lib/ai-node';
 import { ProviderIcon } from '@/components/provider-icon';
 import { cn } from '@/lib/utils';
 
 function StatusIndicator({ status }: { status?: NodeRunStatus }) {
+  const t = useTranslations('workflows');
   if (status === 'running') {
-    return <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: 'hsl(var(--status-wip))' }} />;
+    return (
+      <Loader2
+        className="h-3.5 w-3.5 animate-spin"
+        style={{ color: 'hsl(var(--status-wip))' }}
+        aria-label={t('editor.node.status.running')}
+      />
+    );
   }
   if (status === 'succeeded') {
-    return <Check className="h-3.5 w-3.5" style={{ color: 'hsl(var(--status-done))' }} />;
+    return (
+      <Check
+        className="h-3.5 w-3.5"
+        style={{ color: 'hsl(var(--status-done))' }}
+        aria-label={t('editor.node.status.succeeded')}
+      />
+    );
   }
   if (status === 'failed') {
-    return <X className="h-3.5 w-3.5" style={{ color: 'hsl(var(--destructive))' }} />;
+    return (
+      <X
+        className="h-3.5 w-3.5"
+        style={{ color: 'hsl(var(--destructive))' }}
+        aria-label={t('editor.node.status.failed')}
+      />
+    );
   }
   return null;
 }
 
-function summarize(data: WorkflowNodeData): string {
+/**
+ * The node's one-line subtitle. The parameter *values* it splices in are user data
+ * (a URL, a prompt, an expression path) and are never translated; only the connective
+ * copy is. The generic fallback is the node type's description, which comes through
+ * the {@link useNodeLabels} catalogue seam so it matches the palette.
+ */
+function summarize(
+  data: WorkflowNodeData,
+  t: (key: string) => string,
+  fallbackDescription: string,
+): string {
   const p = data.params;
   if (data.kind === 'http.request') {
     const method = typeof p.method === 'string' ? p.method : 'GET';
-    const url = typeof p.url === 'string' && p.url ? p.url : 'No URL set';
+    const url = typeof p.url === 'string' && p.url ? p.url : t('editor.node.noUrl');
     return `${method} ${url}`;
   }
   if (data.kind === 'ai.claude') {
-    return typeof p.prompt === 'string' && p.prompt ? p.prompt : 'No prompt set';
+    return typeof p.prompt === 'string' && p.prompt ? p.prompt : t('editor.node.noPrompt');
   }
   if (data.kind === 'logic.branch') {
-    const left = typeof p.left === 'string' && p.left ? p.left : 'input';
+    const left = typeof p.left === 'string' && p.left ? p.left : t('editor.node.inputFallback');
     const op = typeof p.operator === 'string' ? p.operator : 'isTruthy';
     const right = typeof p.right === 'string' ? p.right : '';
+    // The comparison operators are maths symbols — universal, so they stay literal;
+    // only the word-shaped predicates are translated.
     const labels: Record<string, string> = {
-      isTruthy: 'is truthy',
-      isFalsy: 'is falsy',
+      isTruthy: t('editor.node.operators.isTruthy'),
+      isFalsy: t('editor.node.operators.isFalsy'),
       equals: '=',
       notEquals: '≠',
-      contains: 'contains',
+      contains: t('editor.node.operators.contains'),
       gt: '>',
       gte: '≥',
       lt: '<',
@@ -51,10 +84,12 @@ function summarize(data: WorkflowNodeData): string {
     const phrase = labels[op] ?? op;
     return op === 'isTruthy' || op === 'isFalsy' ? `${left} ${phrase}` : `${left} ${phrase} ${right}`.trim();
   }
-  return getNodeTypeDefinition(data.kind)?.description ?? '';
+  return fallbackDescription;
 }
 
 export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
+  const t = useTranslations('workflows');
+  const nodeLabels = useNodeLabels();
   const def = getNodeTypeDefinition(data.kind);
   const category = def?.category ?? 'action';
   const Icon: LucideIcon = iconFor(def?.icon);
@@ -112,7 +147,9 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
         <StatusIndicator status={data.status} />
       </div>
 
-      <div className="truncate px-3 py-2 text-[11px] text-muted-foreground">{summarize(data)}</div>
+      <div className="truncate px-3 py-2 text-[11px] text-muted-foreground">
+        {summarize(data, t, def ? nodeLabels.description(def) : '')}
+      </div>
 
       {data.status === 'failed' && data.error ? (
         // Surface the run failure (e.g. an ExpressionError) inline so a bad
@@ -137,7 +174,9 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
                 className="pointer-events-none absolute right-4 -translate-y-1/2 text-[9px] font-medium uppercase tracking-wide text-muted-foreground"
                 style={{ top: `${top}%` }}
               >
-                {port.label ?? port.name}
+                {/* Port labels are shared node-catalogue copy — resolved through the
+                    same seam as titles/descriptions, falling back to the port name. */}
+                {(def ? nodeLabels.portLabel(def, port) : undefined) ?? port.name}
               </span>
             ) : null}
             <Handle

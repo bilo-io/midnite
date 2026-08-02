@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { WorkflowSchema } from '@midnite/shared';
+import { fireEvent, screen } from '@testing-library/react';
+import { WorkflowSchema, type Locale } from '@midnite/shared';
 
 import { NodePalette } from './node-palette';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
 
 // A bare manual-trigger workflow with an empty canvas; defaults fill the rest.
@@ -17,12 +18,13 @@ function makeStore() {
   return createWorkflowStore(workflow);
 }
 
-function renderPalette() {
+function renderPalette(locale?: Locale) {
   const store = makeStore();
   render(
     <WorkflowStoreContext.Provider value={store}>
       <NodePalette />
     </WorkflowStoreContext.Provider>,
+    locale ? { locale } : undefined,
   );
   return store;
 }
@@ -83,5 +85,20 @@ describe('NodePalette', () => {
     const { nodes } = store.getState();
     expect(nodes).toHaveLength(1);
     expect(nodes[0]?.data.kind).toBe('data.filter');
+  });
+
+  // Phase 82 Theme D — the palette reads its category headings and its node copy
+  // through the catalogue seam, so a fr-FR render is fully translated (and the
+  // search filters the translated titles, not the shared English).
+  it('renders category headings and node titles in fr-FR', () => {
+    renderPalette('fr-FR');
+    expect(screen.getByText('Logique', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('Stockage', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Rechercher des nœuds' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Requête HTTP/ })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'stocker' } });
+    expect(screen.getByRole('button', { name: /Stocker une valeur/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Requête HTTP/ })).toBeNull();
   });
 });

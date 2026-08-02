@@ -12,6 +12,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Trigger, TriggerType } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { createWorkflow, updateWorkflow } from '@/lib/api';
@@ -21,19 +22,14 @@ import { cn } from '@/lib/utils';
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
-const TRIGGERS: Array<{ type: TriggerType; label: string; Icon: LucideIcon; hint: string }> = [
-  { type: 'manual', label: 'Manual', Icon: MousePointerClick, hint: 'Run on demand' },
-  { type: 'schedule', label: 'Schedule', Icon: Clock, hint: 'Run on a cron' },
-  { type: 'webhook', label: 'Webhook', Icon: Webhook, hint: 'Run on a request' },
-  { type: 'task-event', label: 'Task Event', Icon: CheckCircle2, hint: 'Run when a task finishes' },
+// Labels + hints are looked up per-render from `workflows.list.triggers.<type>` /
+// `workflows.list.create.triggerHints.<type>`, so only the type + icon live here.
+const TRIGGERS: Array<{ type: TriggerType; Icon: LucideIcon }> = [
+  { type: 'manual', Icon: MousePointerClick },
+  { type: 'schedule', Icon: Clock },
+  { type: 'webhook', Icon: Webhook },
+  { type: 'task-event', Icon: CheckCircle2 },
 ];
-
-const TRIGGER_LABEL: Record<TriggerType, string> = {
-  manual: 'Manual',
-  schedule: 'Schedule',
-  webhook: 'Webhook',
-  'task-event': 'Task Event',
-};
 
 function triggerFor(type: TriggerType): Trigger {
   if (type === 'schedule') return { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' };
@@ -43,6 +39,8 @@ function triggerFor(type: TriggerType): Trigger {
 }
 
 export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('workflows');
+  const tc = useTranslations('common');
   const router = useRouter();
   const [name, setName] = useState('');
   const [triggerType, setTriggerType] = useState<TriggerType>('manual');
@@ -85,7 +83,7 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
       }
       router.push(`/workflows/edit?id=${workflow.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create workflow');
+      setError(e instanceof Error ? e.message : t('list.create.failed'));
       setSaving(false);
     }
   };
@@ -101,20 +99,20 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="New workflow"
+          aria-label={t('list.create.dialogLabel')}
           className="pointer-events-auto flex max-h-[85vh] w-full max-w-md flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
-            <h2 className="text-sm font-semibold">New workflow</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <h2 className="text-sm font-semibold">{t('list.create.dialogLabel')}</h2>
+            <Button type="button" variant="ghost" size="icon" aria-label={tc('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>
 
           <div className="space-y-5 overflow-y-auto px-5 py-4">
             <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Start from</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('list.create.startFrom')}</span>
               <div className="grid gap-2">
                 <button
                   type="button"
@@ -127,9 +125,9 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
                       : 'border-border/60 hover:bg-accent/40',
                   )}
                 >
-                  <span className="block text-xs font-medium">Blank workflow</span>
+                  <span className="block text-xs font-medium">{t('list.create.blankTitle')}</span>
                   <span className="block text-[10px] text-muted-foreground">
-                    Start from an empty canvas with just a trigger.
+                    {t('list.create.blankDescription')}
                   </span>
                 </button>
 
@@ -158,7 +156,7 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
 
             <div className="space-y-1.5">
               <label htmlFor="workflow-name" className="text-xs font-medium text-muted-foreground">
-                Name
+                {t('list.create.nameLabel')}
               </label>
               <input
                 id="workflow-name"
@@ -168,21 +166,23 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void submit();
                 }}
-                placeholder="e.g. Daily standup summary"
+                placeholder={t('list.create.namePlaceholder')}
                 autoFocus
               />
             </div>
 
             {template ? (
               <p className="text-xs text-muted-foreground">
-                Trigger: <span className="font-medium text-foreground">{TRIGGER_LABEL[template.trigger.type]}</span>{' '}
-                — set by the template, editable after creating.
+                {t.rich('list.create.triggerFromTemplate', {
+                  trigger: t(`list.triggers.${template.trigger.type}`),
+                  strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+                })}
               </p>
             ) : (
               <div className="space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Trigger</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('list.create.triggerLabel')}</span>
                 <div className="grid grid-cols-3 gap-2">
-                  {TRIGGERS.map(({ type, label, Icon, hint }) => (
+                  {TRIGGERS.map(({ type, Icon }) => (
                     <button
                       key={type}
                       type="button"
@@ -195,8 +195,10 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
                       )}
                     >
                       <Icon className="h-4 w-4" />
-                      <span className="text-xs font-medium">{label}</span>
-                      <span className="text-[10px] text-muted-foreground">{hint}</span>
+                      <span className="text-xs font-medium">{t(`list.triggers.${type}`)}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {t(`list.create.triggerHints.${type}`)}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -208,11 +210,11 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
 
           <footer className="flex items-center justify-end gap-2 border-t border-border/60 px-5 py-3.5">
             <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              Cancel
+              {tc('cancel')}
             </Button>
             <Button type="button" size="sm" onClick={() => void submit()} disabled={!name.trim() || saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {template ? 'Create from template' : 'Create workflow'}
+              {template ? t('list.create.submitFromTemplate') : t('list.create.submit')}
             </Button>
           </footer>
         </div>
