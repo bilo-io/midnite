@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import type { MemoryChatMessage, PostMemoryChatResponse } from '@midnite/shared';
+import type { Locale, MemoryChatMessage, PostMemoryChatResponse } from '@midnite/shared';
+import { withOutputLanguage } from '../agent/llm/lib/output-language';
 import { LlmService } from '../agent/llm/llm.service';
 import { MemoriesService } from '../memories/memories.service';
 import { MemoryChatRepository } from './memory-chat.repository';
@@ -37,6 +38,10 @@ const SYSTEM_PROMPT = [
   'Answer in clear, concise markdown.',
 ].join(' ');
 
+// The three canned replies below are **gateway-emitted English strings**. Phase 82 D
+// localises the *generated* answer (the model is told which language to write in);
+// gateway-emitted copy is out of scope for the phase and stays English — a known,
+// documented gap rather than an oversight.
 /** The honest reply when a memory has no document text and no ingested sources. */
 const EMPTY_CORPUS_REPLY =
   "This memory has no content or ingested sources yet, so there's nothing for me to answer from. Add some notes or sources first.";
@@ -66,8 +71,12 @@ export class MemoryChatService {
    * answer is one structured plan-model call, usage-tagged `memory-chat`, and
    * **fail-soft**: an LLM-off / empty-corpus / call-failure case still persists a
    * clean assistant turn (never a silent drop, never a fabricated answer).
+   *
+   * `locale` is the caller's active UI language (Phase 82 D): when it isn't the
+   * default it adds an output-language instruction to the system prompt so the
+   * answer comes back in that language. The fail-soft canned replies stay English.
    */
-  async ask(memoryId: string, question: string): Promise<PostMemoryChatResponse> {
+  async ask(memoryId: string, question: string, locale?: Locale): Promise<PostMemoryChatResponse> {
     const corpus = this.memories.getGroundingCorpus(memoryId); // 404 if gone
     const userMs = Date.now();
     const userMessage = this.repo.insertMessage({
@@ -78,7 +87,7 @@ export class MemoryChatService {
       createdAt: new Date(userMs).toISOString(),
     });
 
-    const reply = await this.buildReply(corpus, question);
+    const reply = await this.buildReply(corpus, question, locale);
     const assistantMessage = this.repo.insertMessage({
       id: randomUUID(),
       memoryId,
@@ -96,6 +105,7 @@ export class MemoryChatService {
   private async buildReply(
     corpus: ReturnType<MemoriesService['getGroundingCorpus']>,
     question: string,
+    locale?: Locale,
   ): Promise<{ content: string; citations: string[]; error?: boolean }> {
     if (!corpus.content.trim() && corpus.sources.length === 0) {
       return { content: EMPTY_CORPUS_REPLY, citations: [] };
@@ -121,7 +131,7 @@ export class MemoryChatService {
         {
           model: this.llm.getPlanModel(),
           maxTokens: 1024,
-          system: SYSTEM_PROMPT,
+          system: withOutputLanguage(SYSTEM_PROMPT, locale),
           schema: ANSWER_SCHEMA,
           schemaName: 'memory_answer',
           schemaDescription: 'Record the grounded answer and the sources it cited.',

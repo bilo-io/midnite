@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SUPPORTED_LOCALE_CODES } from './i18n.js';
 import {
   GenerateMemoryArtifactRequestSchema,
   MEMORY_ARTIFACT_KINDS,
@@ -56,6 +57,24 @@ describe('memory-artifact schemas', () => {
 
   it('rejects an unknown kind', () => {
     expect(GenerateMemoryArtifactRequestSchema.safeParse({ kind: 'poster' }).success).toBe(false);
+  });
+
+  it('parses a generate request without a locale (optional)', () => {
+    expect(GenerateMemoryArtifactRequestSchema.parse({ kind: 'brief' }).locale).toBeUndefined();
+  });
+
+  it('accepts every supported locale — including the stub-catalog ones', () => {
+    for (const locale of SUPPORTED_LOCALE_CODES) {
+      expect(GenerateMemoryArtifactRequestSchema.parse({ kind: 'brief', locale }).locale).toBe(
+        locale,
+      );
+    }
+  });
+
+  it('rejects an unsupported language tag', () => {
+    expect(
+      GenerateMemoryArtifactRequestSchema.safeParse({ kind: 'brief', locale: 'pt-BR' }).success,
+    ).toBe(false);
   });
 
   it('parses a list response', () => {

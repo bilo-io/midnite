@@ -24,6 +24,6 @@ export class MemoryChatController {
   ask(@Param('id') id: string, @Body() body: unknown): Promise<PostMemoryChatResponse> {
     const parsed = PostMemoryChatRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.service.ask(id, parsed.data.message);
+    return this.service.ask(id, parsed.data.message, parsed.data.locale);
   }
 }

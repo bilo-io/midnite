@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LocaleSchema } from './i18n.js';
 import { SOURCE_KINDS } from './source.js';
 
 // Memories: markdown knowledge entries injected into agent prompts. Each memory
@@ -129,6 +130,12 @@ export const MemoryChatMessageSchema = z.object({
 
 export const PostMemoryChatRequestSchema = z.object({
   message: z.string().trim().min(1, 'message is required').max(MAX_MEMORY_CHAT_MESSAGE),
+  // The locale the answer should be written in (Phase 82 D). Explicit on the
+  // request — not an Accept-Language header, not a server-side prefs lookup — so
+  // the caller's *active* UI language is what the model is told to write in.
+  // Independent of catalog completeness: a locale whose UI catalog is still a stub
+  // is still honoured for generation (never clamped to en-GB).
+  locale: LocaleSchema.optional(),
 });
 
 /** Full ordered thread for a memory (oldest first). */

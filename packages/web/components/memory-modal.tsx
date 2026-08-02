@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Brain, Loader2, Plus, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { MAX_SOURCES_PER_MEMORY, detectSourceKind, type Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,8 @@ type Props = {
  * its workspace page (`/memory/view?id=`) — the modal is reserved for creation.
  */
 export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Props) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const [title, setTitle] = useState('');
   const [scope, setScope] = useState<string>(initialProjectId ?? GLOBAL);
   const [content, setContent] = useState('');
@@ -34,7 +37,7 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
 
   const save = async () => {
     if (!title.trim()) {
-      setError('Give this memory a title.');
+      setError(t('list.modal.titleRequired'));
       return;
     }
     setError(null);
@@ -44,7 +47,7 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
       onSaved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setError(e instanceof Error ? e.message : tCommon('errorTitle'));
       setBusy(false);
     }
   };
@@ -60,7 +63,7 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="New memory"
+          aria-label={t('list.newMemory')}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
@@ -69,18 +72,26 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              aria-label="Memory title"
-              placeholder="Untitled memory"
+              aria-label={t('list.modal.titleLabel')}
+              placeholder={t('list.modal.titlePlaceholder')}
               className="h-8 flex-1 border-transparent bg-transparent px-1.5 text-sm font-semibold hover:border-border/60 focus-visible:border-foreground/20"
             />
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Scope</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {t('list.modal.scope')}
+              </span>
               <MemoryScopeSelect projects={projects} value={scope} onChange={setScope} />
             </label>
             <MarkdownEditor
@@ -88,13 +99,19 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
               onChange={setContent}
               minHeight={140}
               defaultMode="edit"
-              label={<span className="text-xs font-medium text-muted-foreground">Content</span>}
-              ariaLabel="Memory content"
+              label={
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t('list.modal.content')}
+                </span>
+              }
+              ariaLabel={t('list.modal.contentLabel')}
             />
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Sources</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t('list.modal.sources')}
+                </span>
                 <span className="text-[11px] tabular-nums text-muted-foreground">
                   {staged.length}/{MAX_SOURCES_PER_MEMORY}
                 </span>
@@ -102,7 +119,7 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
               <SourceListEditor
                 sources={staged.map((url) => ({ id: url, url, kind: detectSourceKind(url) }))}
                 max={MAX_SOURCES_PER_MEMORY}
-                placeholder="Paste a doc, repo, or any reference link"
+                placeholder={t('list.modal.sourcePlaceholder')}
                 onAdd={(url) => {
                   if (!staged.includes(url)) setStaged((prev) => [...prev, url]);
                 }}
@@ -117,7 +134,7 @@ export function MemoryModal({ projects, initialProjectId, onClose, onSaved }: Pr
           <footer className="flex items-center justify-end gap-2 border-t border-border/60 px-5 py-3.5">
             <Button type="button" size="sm" onClick={() => void save()} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Create
+              {t('list.modal.create')}
             </Button>
           </footer>
         </div>

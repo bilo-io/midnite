@@ -54,7 +54,7 @@ The 457-file bulk. Each bullet is an independently landable slice (own namespace
 
 - [ ] **Council / assistant** ([`components/assistant/`](../packages/web/components/assistant) + council surfaces) → `assistant`.
 - [ ] **Workflows** (editor, runs, triggers, template marketplace surfaces) → `workflows`.
-- [ ] **Memory workspace** ([`components/memory/`](../packages/web/components/memory)) → `memory`.
+- [x] **Memory workspace** ([`components/memory/`](../packages/web/components/memory)) → `memory` (132 keys): all 15 files — the 9 workspace panels plus the `/memory` list page, card and modal; artifact-kind/status + source-state labels centralised as `lib/i18n-labels.ts` hooks. **Plus localised LLM output** (scope call): optional `locale` on the chat + artifact-generate schemas → `outputLanguageInstruction()` appends a language directive to the system prompt (chat, text/SVG studio, audio script, video deck); honoured for de/es too, independent of catalog completeness. Gateway-emitted canned replies stay English (documented gap). (PR #585, 2026-08-02).
 - [ ] **Projects** ([`components/projects/`](../packages/web/components/projects) + detail page) → `projects`.
 - [ ] **PR review / diff** ([`components/pr-review/`](../packages/web/components/pr-review)) → `prReview`.
 - [x] **Search + command palette** (global search UI, palette actions/labels) → `search` (55 keys); shared `searchTypeMeta()` de-dupes the palette/results type→icon/label map; fixed a pre-existing gap where the palette's FEATURES-derived nav labels ignored locale; fr-FR + fr RTL smoke tests (PR #572).

@@ -211,6 +211,7 @@ import {
   type CreateMemoryRequest,
   type HeartbeatRun,
   type LlmProvider,
+  type Locale,
   type Memory,
   type MemorySourceContent,
   type MemoryArtifact,
@@ -1576,10 +1577,13 @@ export async function getMemoryArtifacts(id: string): Promise<MemoryArtifact[]> 
 export async function generateMemoryArtifact(
   id: string,
   kind: MemoryArtifactKind,
+  // The active UI locale (Phase 82 D) — the gateway tells the model to write the
+  // artifact in this language. Omitted → English (the models' default).
+  locale?: Locale,
 ): Promise<MemoryArtifact> {
   const { artifact } = await fetchJson(
     `/memories/${encodeURIComponent(id)}/artifacts`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ kind }) },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ kind, locale }) },
     MemoryArtifactResponseSchema,
   );
   return artifact;
@@ -1601,11 +1605,19 @@ export async function getMemoryChat(id: string): Promise<MemoryChatMessage[]> {
   return messages;
 }
 
-/** Ask a question of the memory; returns the appended user + assistant turns. */
-export async function postMemoryChat(id: string, message: string): Promise<PostMemoryChatResponse> {
+/**
+ * Ask a question of the memory; returns the appended user + assistant turns.
+ * `locale` is the active UI locale (Phase 82 D) — the gateway tells the model to
+ * answer in that language. Omitted → English (the models' default).
+ */
+export async function postMemoryChat(
+  id: string,
+  message: string,
+  locale?: Locale,
+): Promise<PostMemoryChatResponse> {
   return fetchJson(
     `/memories/${encodeURIComponent(id)}/chat`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ message }) },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ message, locale }) },
     PostMemoryChatResponseSchema,
   );
 }

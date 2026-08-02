@@ -25,6 +25,8 @@ import { useIsMobile } from '@/hooks/use-media-query';
  * deep link resolves standalone.
  */
 export function MemoryDetailContainer() {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const id = useSearchParams().get('id') ?? '';
   const { data, loading, error, refresh } = useApiData(async () => {
     if (!id) return null;
@@ -32,14 +34,14 @@ export function MemoryDetailContainer() {
     return { memory, projects };
   }, [id]);
 
-  const back = <BackLink href="/memory" label="All memories" className="mb-4" />;
+  const back = <BackLink href="/memory" label={t('detail.backToList')} className="mb-4" />;
 
   if (!id || error || (!loading && !data)) {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
         <div className="rounded-xl border border-border bg-card px-5 py-12 text-center text-sm text-muted-foreground">
-          Memory not found.
+          {t('detail.notFound')}
         </div>
       </div>
     );
@@ -49,7 +51,7 @@ export function MemoryDetailContainer() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -73,6 +75,7 @@ export function MemoryDetailView({
   onChanged: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations('memory');
   const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
   const [memory, setMemory] = useState(initial);
@@ -85,11 +88,11 @@ export function MemoryDetailView({
 
   useEffect(() => {
     const previous = document.title;
-    document.title = `${memory.title} · midnite`;
+    document.title = t('detail.documentTitle', { title: memory.title });
     return () => {
       document.title = previous;
     };
-  }, [memory.title]);
+  }, [memory.title, t]);
 
   const project = memory.projectId ? projects.find((p) => p.id === memory.projectId) : undefined;
 
@@ -107,8 +110,8 @@ export function MemoryDetailView({
     <button
       type="button"
       onClick={() => setMetaOpen(true)}
-      aria-label="Edit memory metadata"
-      title="Edit memory"
+      aria-label={t('detail.editMetadata')}
+      title={t('detail.editMemory')}
       className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-foreground"
     >
       <Pencil className="h-4 w-4" />
@@ -152,21 +155,21 @@ export function MemoryDetailView({
           stickyRails
           centerActions={metadataButton}
           left={{
-            title: 'Sources',
+            title: t('detail.sources'),
             icon: <Brain className="h-4 w-4 text-[hsl(262_83%_66%)]" />,
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: <MemorySourcesPanel memory={memory} onChange={applyUpdate} />,
-            collapseLabel: tCommon('ui.rail.collapse', { title: 'Sources' }),
-            expandLabel: tCommon('ui.rail.expand', { title: 'Sources' }),
+            collapseLabel: tCommon('ui.rail.collapse', { title: t('detail.sources') }),
+            expandLabel: tCommon('ui.rail.expand', { title: t('detail.sources') }),
           }}
           right={{
-            title: 'Studio',
+            title: t('detail.studio'),
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <MemoryStudioRail memoryId={memory.id} />,
-            collapseLabel: tCommon('ui.rail.collapse', { title: 'Studio' }),
-            expandLabel: tCommon('ui.rail.expand', { title: 'Studio' }),
+            collapseLabel: tCommon('ui.rail.collapse', { title: t('detail.studio') }),
+            expandLabel: tCommon('ui.rail.expand', { title: t('detail.studio') }),
           }}
         >
           {/* Center — the chat thread with the knowledge base. */}

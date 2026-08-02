@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ClipboardType, Link2, Loader2, Plus, Upload, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -11,8 +12,8 @@ const UPLOAD_ACCEPT = '.pdf,.md,.markdown,.txt,application/pdf,text/markdown,tex
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 type Props = {
@@ -32,6 +33,8 @@ type Props = {
  * once a source lands so the panel's ingest poll takes over.
  */
 export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: Props) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const [url, setUrl] = useState('');
   const [pasted, setPasted] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -41,7 +44,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
 
   const run = async (fn: () => Promise<void>) => {
     if (atLimit) {
-      setError('This memory is at its source limit.');
+      setError(t('addSource.atLimit'));
       return;
     }
     setError(null);
@@ -50,7 +53,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
       await fn();
       onClose();
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, tCommon('errorTitle')));
       setBusy(false);
     }
   };
@@ -61,7 +64,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
     try {
       new URL(u);
     } catch {
-      setError('Enter a full URL, including https://');
+      setError(t('addSource.invalidUrl'));
       return;
     }
     void run(() => onAddUrl(u));
@@ -88,15 +91,23 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Add sources"
+          aria-label={t('addSource.title')}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <Plus className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
-            <span className="flex-1 text-sm font-semibold">Add sources</span>
-            <span className="text-[11px] tabular-nums text-muted-foreground">{remaining} left</span>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <span className="flex-1 text-sm font-semibold">{t('addSource.title')}</span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              {t('addSource.remaining', { count: remaining })}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -116,8 +127,8 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
                 (atLimit || busy) && 'pointer-events-none opacity-50',
               )}
             >
-              <p className="text-base font-medium">Drop your files here</p>
-              <p className="text-xs text-muted-foreground">PDF, Markdown, or plain text</p>
+              <p className="text-base font-medium">{t('addSource.dropTitle')}</p>
+              <p className="text-xs text-muted-foreground">{t('addSource.dropHint')}</p>
               <label
                 className={cn(
                   'inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent',
@@ -125,7 +136,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
                 )}
               >
                 <Upload className="h-4 w-4" />
-                Upload files
+                {t('addSource.upload')}
                 <input
                   type="file"
                   accept={UPLOAD_ACCEPT}
@@ -143,7 +154,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
             {/* Link paste. */}
             <label className="block space-y-1.5">
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <Link2 className="h-3.5 w-3.5" /> Paste a link
+                <Link2 className="h-3.5 w-3.5" /> {t('addSource.pasteLink')}
               </span>
               <div className="flex items-center gap-2">
                 <input
@@ -156,7 +167,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
                       addUrl();
                     }
                   }}
-                  placeholder="https://…  (GitHub, Notion, Google Docs, YouTube, any URL)"
+                  placeholder={t('addSource.linkPlaceholder')}
                   disabled={atLimit || busy}
                 />
                 <Button
@@ -165,7 +176,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
                   size="icon"
                   onClick={addUrl}
                   disabled={atLimit || busy || !url.trim()}
-                  aria-label="Add link"
+                  aria-label={t('addSource.addLink')}
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 </Button>
@@ -175,13 +186,13 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
             {/* Paste text. */}
             <label className="block space-y-1.5">
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <ClipboardType className="h-3.5 w-3.5" /> Paste text
+                <ClipboardType className="h-3.5 w-3.5" /> {t('addSource.pasteText')}
               </span>
               <textarea
                 className={cn(inputClass, 'h-24 resize-y py-2')}
                 value={pasted}
                 onChange={(e) => setPasted(e.target.value)}
-                placeholder="Paste notes or copied text — saved as a text source"
+                placeholder={t('addSource.textPlaceholder')}
                 disabled={atLimit || busy}
               />
               <div className="flex justify-end">
@@ -192,7 +203,7 @@ export function AddSourceModal({ onAddUrl, onUploadFile, remaining, onClose }: P
                   onClick={addPastedText}
                   disabled={atLimit || busy || !pasted.trim()}
                 >
-                  Add text
+                  {t('addSource.addText')}
                 </Button>
               </div>
             </label>

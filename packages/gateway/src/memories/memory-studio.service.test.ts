@@ -244,6 +244,55 @@ describe('MemoryStudioService', () => {
     expect(row.error).toMatch(/provider exploded/);
   });
 
+  // ── Phase 82 D: the request's locale reaches the LLM's system prompt ──
+  it('text artifacts carry the output-language instruction for a non-English locale', async () => {
+    const llm = makeLlm({ text: '# Kurzbericht' });
+    const svc = build(makeMemoriesRepo(fakeMemory()), artifacts, llm);
+    const { id } = svc.generate('m1', 'brief', 'de-DE');
+    await svc.runGeneration('m1', id, 'brief', 'de-DE');
+    expect(llm.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({ system: expect.stringContaining('German (Deutsch)') }),
+      'memory',
+    );
+  });
+
+  it('audio + video scripts carry the output-language instruction too', async () => {
+    const audioLlm = makeLlm({ structured: AUDIO_SCRIPT });
+    const audioSvc = build(makeMemoriesRepo(fakeMemory()), artifacts, audioLlm);
+    const audio = audioSvc.generate('m1', 'audio-overview', 'es-ES');
+    await audioSvc.runGeneration('m1', audio.id, 'audio-overview', 'es-ES');
+    expect(audioLlm.generateStructured).toHaveBeenCalledWith(
+      expect.objectContaining({ system: expect.stringContaining('Spanish (Español)') }),
+      'memory',
+    );
+
+    const videoLlm = makeLlm({ structured: VIDEO_DECK });
+    const videoSvc = build(makeMemoriesRepo(fakeMemory()), makeArtifactsRepo(), videoLlm);
+    const video = videoSvc.generate('m1', 'video-overview', 'fr-FR');
+    await videoSvc.runGeneration('m1', video.id, 'video-overview', 'fr-FR');
+    expect(videoLlm.generateStructured).toHaveBeenCalledWith(
+      expect.objectContaining({ system: expect.stringContaining('French (Français)') }),
+      'memory',
+    );
+  });
+
+  it('leaves the prompt untouched for en-GB / no locale', async () => {
+    const omitted = makeLlm({ text: '# Brief' });
+    const svcA = build(makeMemoriesRepo(fakeMemory()), artifacts, omitted);
+    const a = svcA.generate('m1', 'brief');
+    await svcA.runGeneration('m1', a.id, 'brief');
+
+    const english = makeLlm({ text: '# Brief' });
+    const svcB = build(makeMemoriesRepo(fakeMemory()), makeArtifactsRepo(), english);
+    const b = svcB.generate('m1', 'brief', 'en-GB');
+    await svcB.runGeneration('m1', b.id, 'brief', 'en-GB');
+
+    const systemOf = (llm: LlmService) =>
+      (vi.mocked(llm.generateText).mock.calls[0]![0] as { system: string }).system;
+    expect(systemOf(omitted)).toBe(systemOf(english));
+    expect(systemOf(omitted)).not.toMatch(/Write your entire response in/);
+  });
+
   it('deleteArtifact removes a row (404 when absent)', () => {
     const svc = build(makeMemoriesRepo(fakeMemory()), artifacts, makeLlm());
     const { id } = svc.generate('m1', 'brief');

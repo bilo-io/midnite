@@ -44,7 +44,7 @@ export class MemoryStudioController {
   generate(@Param('id') id: string, @Body() body: unknown): MemoryArtifactResponse {
     const parsed = GenerateMemoryArtifactRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { artifact: this.service.generate(id, parsed.data.kind) };
+    return { artifact: this.service.generate(id, parsed.data.kind, parsed.data.locale) };
   }
 
   @Get(':artifactId/file')

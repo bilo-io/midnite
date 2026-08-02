@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { Memory, Project } from '@midnite/shared';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -13,7 +14,11 @@ vi.mock('@/lib/api', () => ({
 }));
 
 // A confirm that always accepts, so the delete path runs without a dialog.
-vi.mock('@/components/confirm-dialog', () => ({ useConfirm: () => () => Promise.resolve(true) }));
+vi.mock('@/components/confirm-dialog', () => ({
+  useConfirm: () => () => Promise.resolve(true),
+  // The intl render helper wraps in ConfirmProvider, so the mock must still export it.
+  ConfirmProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 // Keep the markdown editor a plain textarea for deterministic assertions.
 vi.mock('@/components/markdown-editor', () => ({

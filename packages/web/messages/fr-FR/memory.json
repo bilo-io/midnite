@@ -1,0 +1,174 @@
+{
+  "kinds": {
+    "brief": "Note de synthèse",
+    "faq": "FAQ",
+    "study-guide": "Guide d’étude",
+    "timeline": "Chronologie",
+    "infographic": "Infographie",
+    "audio-overview": "Aperçu audio",
+    "video-overview": "Vidéo"
+  },
+  "artifactStatus": {
+    "pending": "Génération",
+    "ready": "Prêt",
+    "failed": "Échec"
+  },
+  "sourceState": {
+    "pending": "Lecture",
+    "ready": "Lu",
+    "failed": "Échec"
+  },
+  "list": {
+    "title": "Mémoire",
+    "description": "Les connaissances que vos agents emportent dans chaque session — globales ou limitées à un projet.",
+    "searchPlaceholder": "Rechercher des mémoires",
+    "newMemory": "Nouvelle mémoire",
+    "view": {
+      "list": "Vue liste",
+      "grid": "Vue grille",
+      "table": "Vue tableau"
+    },
+    "empty": {
+      "title": "Aucune mémoire pour l’instant",
+      "description": "Notez les conventions, le contexte et les décisions que vos agents ne doivent jamais oublier."
+    },
+    "noMatchesQuery": "Aucune mémoire ne correspond à « {query} »",
+    "noMatches": "Aucune mémoire ne correspond aux filtres actuels",
+    "bulk": {
+      "archive": "Archiver",
+      "unarchive": "Désarchiver",
+      "archiveTitle": "{count, plural, one {Archiver # mémoire ?} other {Archiver # mémoires ?}}",
+      "unarchiveTitle": "{count, plural, one {Désarchiver # mémoire ?} other {Désarchiver # mémoires ?}}",
+      "archiveDescription": "Elles seront masquées de vos mémoires actives — vous pourrez les désarchiver à tout moment.",
+      "unarchiveDescription": "Elles reviendront dans vos mémoires actives.",
+      "deleteTitle": "{count, plural, one {Supprimer # mémoire ?} other {Supprimer # mémoires ?}}",
+      "deleteDescription": "Cette action est irréversible."
+    },
+    "card": {
+      "archived": "Archivée"
+    },
+    "modal": {
+      "titleLabel": "Titre de la mémoire",
+      "titlePlaceholder": "Mémoire sans titre",
+      "titleRequired": "Donnez un titre à cette mémoire.",
+      "scope": "Portée",
+      "content": "Contenu",
+      "contentLabel": "Contenu de la mémoire",
+      "sources": "Sources",
+      "sourcePlaceholder": "Collez un document, un dépôt ou tout autre lien de référence",
+      "create": "Créer"
+    }
+  },
+  "detail": {
+    "documentTitle": "{title} · midnite",
+    "backToList": "Toutes les mémoires",
+    "notFound": "Mémoire introuvable.",
+    "editMetadata": "Modifier les métadonnées de la mémoire",
+    "editMemory": "Modifier la mémoire",
+    "sources": "Sources",
+    "studio": "Studio"
+  },
+  "sources": {
+    "heading": "Sources",
+    "count": "{count}/{max}",
+    "add": "Ajouter des sources",
+    "searchLabel": "Rechercher des sources",
+    "searchPlaceholder": "Rechercher des sources…",
+    "noMatch": "Aucune source ne correspond à votre filtre.",
+    "reorderPaused": "Le réordonnancement est suspendu pendant le filtrage.",
+    "removeTitle": "Retirer cette source ?",
+    "removeDescription": "Elle sera détachée de cette mémoire.",
+    "reingestError": "Impossible de relire cette source",
+    "removeError": "Impossible de retirer cette source",
+    "reorderError": "Impossible de réordonner les sources"
+  },
+  "studio": {
+    "intro": "Générez des documents à partir de cette mémoire et de ses sources.",
+    "groups": {
+      "documents": "Documents",
+      "visual": "Visuel",
+      "audioVideo": "Audio et vidéo"
+    },
+    "generate": "Générer",
+    "generateLabel": "Générer : {label}",
+    "viewLabel": "Afficher : {label}",
+    "retryLabel": "Réessayer : {label}",
+    "degradedAudio": "Script uniquement — aucun fournisseur de synthèse vocale",
+    "degradedVideo": "Plan uniquement — aucun fournisseur vidéo"
+  },
+  "chat": {
+    "heading": "Discuter avec cette mémoire",
+    "noProvider": "Ajoutez un fournisseur d’IA dans les Paramètres pour discuter avec cette mémoire.",
+    "inputLabel": "Poser une question à cette mémoire",
+    "placeholder": "Demandez ce que vous voulez à cette mémoire… · ⌘/Ctrl + ⏎",
+    "dictate": "Dicter la question",
+    "dictateStop": "Arrêter la dictée",
+    "send": "Envoyer",
+    "thinking": "Réflexion…",
+    "emptyHint": "Posez une question sur cette mémoire et ses sources — les réponses citent ce sur quoi elles s’appuient.",
+    "citations": "Sources",
+    "sourceFallback": "Source",
+    "sendFailed": "Échec de l’envoi"
+  },
+  "doc": {
+    "titleLabel": "Titre de la mémoire",
+    "titlePlaceholder": "Mémoire sans titre",
+    "scopeLabel": "Portée",
+    "contentLabel": "Contenu",
+    "contentAriaLabel": "Contenu de la mémoire",
+    "titleRequired": "Donnez un titre à cette mémoire.",
+    "deleteTitle": "Supprimer cette mémoire ?",
+    "deleteDescription": "« {title} » ne sera plus disponible pour vos agents."
+  },
+  "scope": {
+    "global": "Globale",
+    "globalOption": "Globale — tous les projets",
+    "selectLabel": "Portée de la mémoire"
+  },
+  "addSource": {
+    "title": "Ajouter des sources",
+    "remaining": "{count} restantes",
+    "dropTitle": "Déposez vos fichiers ici",
+    "dropHint": "PDF, Markdown ou texte brut",
+    "upload": "Importer des fichiers",
+    "pasteLink": "Coller un lien",
+    "linkPlaceholder": "https://…  (GitHub, Notion, Google Docs, YouTube, n’importe quelle URL)",
+    "addLink": "Ajouter le lien",
+    "pasteText": "Coller du texte",
+    "textPlaceholder": "Collez des notes ou du texte copié — enregistré comme source texte",
+    "addText": "Ajouter le texte",
+    "atLimit": "Cette mémoire a atteint sa limite de sources.",
+    "invalidUrl": "Saisissez une URL complète, avec https://"
+  },
+  "sourceDetail": {
+    "fallbackLabel": "Source",
+    "tabsLabel": "Vue détaillée de la source",
+    "tabSource": "Source",
+    "tabText": "Texte",
+    "openOriginal": "Ouvrir l’original",
+    "youtubePreview": "Aperçu YouTube",
+    "websitePreview": "Aperçu du site web",
+    "embedBlocked": "Certains sites bloquent l’intégration — si cette zone reste vide, <link>ouvrez l’original ↗</link>.",
+    "typeLabel": "Type",
+    "fileLabel": "Fichier",
+    "statusLabel": "État",
+    "textTabHint": "Le texte extrait se trouve dans l’onglet Texte.",
+    "loadingText": "Chargement du texte…",
+    "loadError": "Impossible de charger le texte de la source",
+    "stillReading": "Lecture de cette source en cours…",
+    "readFailed": "Échec de la lecture de cette source.",
+    "readFailedWithError": "Échec de la lecture de cette source : {error}.",
+    "noText": "Aucun texte extrait de cette source."
+  },
+  "artifact": {
+    "regenerate": "Regénérer",
+    "download": "Télécharger",
+    "audioLabel": "{title} audio",
+    "videoLabel": "{title} vidéo",
+    "degradedAudio": "Aucun fournisseur de synthèse vocale n’est configuré : ceci est donc le script uniquement. Ajoutez une clé OpenAI dans les Paramètres pour générer l’audio parlé.",
+    "degradedVideo": "Aucun fournisseur ffmpeg/synthèse vocale n’est disponible : ceci est donc le plan des diapositives uniquement. Configurez la vidéo de Memory Studio pour composer un MP4 narré."
+  },
+  "metadata": {
+    "title": "Modifier la mémoire"
+  }
+}

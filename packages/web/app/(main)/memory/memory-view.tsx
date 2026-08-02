@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BrainCircuit, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { type Memory, type Project, UNASSIGNED_PROJECT_ID } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
 import { StickyToolbar } from '@/components/sticky-toolbar';
@@ -31,6 +32,8 @@ const GLOBAL_SCOPE = 'global';
 
 export function MemoryView({ initial, projects }: { initial: Memory[]; projects: Project[] }) {
   const router = useRouter();
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
   // Scope to preselect when creating from a `?create=<id>` deep link (e.g. the
@@ -74,13 +77,14 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   const setArchivedFor = useCallback(
     async (ids: string[], archived: boolean) => {
       if (ids.length === 0) return;
-      const verb = archived ? 'Archive' : 'Unarchive';
       const ok = await confirm({
-        title: `${verb} ${ids.length} memor${ids.length === 1 ? 'y' : 'ies'}?`,
+        title: archived
+          ? t('list.bulk.archiveTitle', { count: ids.length })
+          : t('list.bulk.unarchiveTitle', { count: ids.length }),
         description: archived
-          ? 'They’ll be hidden from your active memories — you can unarchive them any time.'
-          : 'They’ll return to your active memories.',
-        confirmLabel: verb,
+          ? t('list.bulk.archiveDescription')
+          : t('list.bulk.unarchiveDescription'),
+        confirmLabel: archived ? t('list.bulk.archive') : t('list.bulk.unarchive'),
         tone: 'neutral',
       });
       if (!ok) return;
@@ -88,21 +92,21 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
       clearSelection();
       refresh();
     },
-    [confirm, clearSelection, refresh],
+    [confirm, clearSelection, refresh, t],
   );
 
   const deleteSelection = useCallback(async () => {
     if (selectedIds.length === 0) return;
     const ok = await confirm({
-      title: `Delete ${selectedIds.length} memor${selectedIds.length === 1 ? 'y' : 'ies'}?`,
-      description: 'This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('list.bulk.deleteTitle', { count: selectedIds.length }),
+      description: t('list.bulk.deleteDescription'),
+      confirmLabel: tCommon('delete'),
     });
     if (!ok) return;
     await Promise.all(selectedIds.map((id) => deleteMemory(id)));
     clearSelection();
     refresh();
-  }, [selectedIds, confirm, clearSelection, refresh]);
+  }, [selectedIds, confirm, clearSelection, refresh, t, tCommon]);
 
   const bulkActions = useMemo<BulkAction[]>(() => {
     const actions: BulkAction[] = [];
@@ -111,7 +115,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
     if (toArchive.length) {
       actions.push({
         key: 'archive',
-        label: 'Archive',
+        label: t('list.bulk.archive'),
         color: BULK_COLORS.archive,
         onClick: () => void setArchivedFor(toArchive, true),
       });
@@ -119,19 +123,19 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
     if (toUnarchive.length) {
       actions.push({
         key: 'unarchive',
-        label: 'Unarchive',
+        label: t('list.bulk.unarchive'),
         color: BULK_COLORS.archive,
         onClick: () => void setArchivedFor(toUnarchive, false),
       });
     }
     actions.push({
       key: 'delete',
-      label: 'Delete',
+      label: tCommon('delete'),
       color: BULK_COLORS.delete,
       onClick: () => void deleteSelection(),
     });
     return actions;
-  }, [selectedMemories, setArchivedFor, deleteSelection]);
+  }, [selectedMemories, setArchivedFor, deleteSelection, t, tCommon]);
 
   const projectById = new Map(projects.map((p) => [p.id, p]));
 
@@ -176,13 +180,13 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
           <CountPill count={filtered.length} />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <SearchBar placeholder="Search memories" />
+          <SearchBar placeholder={t('list.searchPlaceholder')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="List view"
+              aria-label={t('list.view.list')}
               aria-pressed={view === 'list'}
               onClick={() => onSetView('list')}
               className={view === 'list' ? 'h-7 w-7 bg-accent text-accent-foreground' : 'h-7 w-7'}
@@ -193,7 +197,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Grid view"
+              aria-label={t('list.view.grid')}
               aria-pressed={view === 'grid'}
               onClick={() => onSetView('grid')}
               className={view === 'grid' ? 'h-7 w-7 bg-accent text-accent-foreground' : 'h-7 w-7'}
@@ -204,7 +208,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Table view"
+              aria-label={t('list.view.table')}
               aria-pressed={view === 'table'}
               onClick={() => onSetView('table')}
               className={view === 'table' ? 'h-7 w-7 bg-accent text-accent-foreground' : 'h-7 w-7'}
@@ -214,7 +218,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
           </div>
           <Button type="button" size="sm" onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" />
-            New memory
+            {t('list.newMemory')}
           </Button>
         </div>
       </StickyToolbar>
@@ -225,15 +229,15 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
         {initial.length === 0 ? (
           <EmptyState
             Icon={BrainCircuit}
-            title="No memories yet"
-            description="Write down conventions, context and decisions your agents should never forget."
-            actionLabel="New memory"
+            title={t('list.empty.title')}
+            description={t('list.empty.description')}
+            actionLabel={t('list.newMemory')}
             onAction={() => setCreating(true)}
           />
         ) : filtered.length === 0 ? (
           <EmptyState
             Icon={BrainCircuit}
-            title={`No memories match${q ? ` “${q}”` : ' the current filters'}`}
+            title={q ? t('list.noMatchesQuery', { query: q }) : t('list.noMatches')}
           />
         ) : view === 'table' ? (
           <MemoriesTree

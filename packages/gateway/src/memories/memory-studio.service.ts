@@ -9,11 +9,13 @@ import {
   VIDEO_DECK_JSON_SCHEMA,
   VideoDeckSchema,
   type AudioScript,
+  type Locale,
   type MidniteConfig,
   type MemoryArtifact,
   type MemoryArtifactKind,
   type VideoDeck,
 } from '@midnite/shared';
+import { withOutputLanguage } from '../agent/llm/lib/output-language';
 import { LlmService } from '../agent/llm/llm.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { resolveMediaPath } from '../media/lib/resolve-media-path';
@@ -78,8 +80,11 @@ export class MemoryStudioService {
   /**
    * Start (or restart) generation of an artifact kind. Returns the `pending` row
    * immediately; the actual work runs in the background.
+   *
+   * `locale` (Phase 82 D) is the caller's active UI language — it rides along to
+   * the prompt builders so the generated artifact is written in that language.
    */
-  generate(memoryId: string, kind: MemoryArtifactKind): MemoryArtifact {
+  generate(memoryId: string, kind: MemoryArtifactKind, locale?: Locale): MemoryArtifact {
     this.assertMemory(memoryId);
     const meta = MEMORY_ARTIFACT_META[kind];
     const now = new Date().toISOString();
@@ -117,7 +122,7 @@ export class MemoryStudioService {
       });
     }
 
-    this.kickGeneration(memoryId, id, kind);
+    this.kickGeneration(memoryId, id, kind, locale);
     return this.artifacts.hydrate(this.artifacts.get(memoryId, id)!);
   }
 
@@ -139,8 +144,13 @@ export class MemoryStudioService {
   }
 
   /** Fire-and-forget wrapper so callers don't block on the generation round-trip. */
-  private kickGeneration(memoryId: string, id: string, kind: MemoryArtifactKind): void {
-    void this.runGeneration(memoryId, id, kind).catch((err) => {
+  private kickGeneration(
+    memoryId: string,
+    id: string,
+    kind: MemoryArtifactKind,
+    locale?: Locale,
+  ): void {
+    void this.runGeneration(memoryId, id, kind, locale).catch((err) => {
       this.logger.warn(`artifact ${id} generation crashed: ${String(err)}`);
     });
   }
@@ -150,7 +160,12 @@ export class MemoryStudioService {
    * the per-kind generator, and persist the result on the row. Never throws for a
    * "normal" failure — it records it on the row so the client can surface it.
    */
-  async runGeneration(memoryId: string, id: string, kind: MemoryArtifactKind): Promise<void> {
+  async runGeneration(
+    memoryId: string,
+    id: string,
+    kind: MemoryArtifactKind,
+    locale?: Locale,
+  ): Promise<void> {
     const memoryRow = this.memories.getMemory(memoryId);
     if (!memoryRow) return; // memory deleted mid-flight
     const memory = this.memories.hydrate(memoryRow);
@@ -168,10 +183,10 @@ export class MemoryStudioService {
     try {
       const outcome =
         kind === 'audio-overview'
-          ? await this.generateAudio(id, corpus)
+          ? await this.generateAudio(id, corpus, locale)
           : kind === 'video-overview'
-            ? await this.generateVideo(id, corpus)
-            : await this.generateTextArtifact(kind as StudioTextKind, corpus);
+            ? await this.generateVideo(id, corpus, locale)
+            : await this.generateTextArtifact(kind as StudioTextKind, corpus, locale);
 
       if (!outcome.content.trim()) {
         return this.fail(id, 'The model returned an empty artifact. Try regenerating.');
@@ -193,8 +208,12 @@ export class MemoryStudioService {
   }
 
   /** Text + infographic (Phase 65 D): one LLM call, inline markdown/SVG. */
-  private async generateTextArtifact(kind: StudioTextKind, corpus: string): Promise<GenOutcome> {
-    const { system, userText, maxTokens } = studioPromptFor(kind, corpus);
+  private async generateTextArtifact(
+    kind: StudioTextKind,
+    corpus: string,
+    locale?: Locale,
+  ): Promise<GenOutcome> {
+    const { system, userText, maxTokens } = studioPromptFor(kind, corpus, locale);
     const { text } = await this.llm.generateText(
       { model: this.llm.getActModel(), maxTokens, system, messages: [{ role: 'user', text: userText }] },
       'memory',
@@ -204,8 +223,8 @@ export class MemoryStudioService {
   }
 
   /** Audio overview: two-host script → TTS mp3, or the transcript when TTS is off. */
-  private async generateAudio(id: string, corpus: string): Promise<GenOutcome> {
-    const script = await this.generateStructuredScript(corpus);
+  private async generateAudio(id: string, corpus: string, locale?: Locale): Promise<GenOutcome> {
+    const script = await this.generateStructuredScript(corpus, locale);
     const transcript = renderAudioTranscript(script);
     const voices = this.tts.voices;
     const turns = script.segments.map((s) => ({
@@ -219,8 +238,8 @@ export class MemoryStudioService {
   }
 
   /** Video overview: deck → narration TTS → ffmpeg compose, or the outline when a provider is missing. */
-  private async generateVideo(id: string, corpus: string): Promise<GenOutcome> {
-    const deck = await this.generateStructuredDeck(corpus);
+  private async generateVideo(id: string, corpus: string, locale?: Locale): Promise<GenOutcome> {
+    const deck = await this.generateStructuredDeck(corpus, locale);
     const outline = renderVideoOutline(deck);
     const narration = await this.narrateDeck(deck);
     const composed = narration ? await this.video.compose(deck, narration) : null;
@@ -234,12 +253,12 @@ export class MemoryStudioService {
     };
   }
 
-  private async generateStructuredScript(corpus: string): Promise<AudioScript> {
+  private async generateStructuredScript(corpus: string, locale?: Locale): Promise<AudioScript> {
     const { data } = await this.llm.generateStructured(
       {
         model: this.llm.getActModel(),
         maxTokens: 2000,
-        system: AUDIO_SCRIPT_SYSTEM,
+        system: withOutputLanguage(AUDIO_SCRIPT_SYSTEM, locale),
         schema: AUDIO_SCRIPT_JSON_SCHEMA,
         schemaName: 'audio_overview',
         schemaDescription: 'A two-host podcast script grounded in the corpus.',
@@ -250,12 +269,12 @@ export class MemoryStudioService {
     return AudioScriptSchema.parse(data);
   }
 
-  private async generateStructuredDeck(corpus: string): Promise<VideoDeck> {
+  private async generateStructuredDeck(corpus: string, locale?: Locale): Promise<VideoDeck> {
     const { data } = await this.llm.generateStructured(
       {
         model: this.llm.getActModel(),
         maxTokens: 2400,
-        system: VIDEO_DECK_SYSTEM,
+        system: withOutputLanguage(VIDEO_DECK_SYSTEM, locale),
         schema: VIDEO_DECK_JSON_SCHEMA,
         schemaName: 'video_overview',
         schemaDescription: 'A narrated slideshow grounded in the corpus.',

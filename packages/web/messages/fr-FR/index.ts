@@ -5,6 +5,7 @@ import board from './board.json';
 import common from './common.json';
 import dashboard from './dashboard.json';
 import guide from './guide.json';
+import memory from './memory.json';
 import nav from './nav.json';
 import office from './office.json';
 import plan from './plan.json';
@@ -21,6 +22,7 @@ export default {
   common,
   dashboard,
   guide,
+  memory,
   nav,
   office,
   plan,

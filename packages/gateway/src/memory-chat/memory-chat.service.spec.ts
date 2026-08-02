@@ -102,6 +102,40 @@ describe('MemoryChatService.ask', () => {
   });
 });
 
+describe('MemoryChatService.ask — output locale (Phase 82 D)', () => {
+  it('adds the output-language instruction to the system prompt for a non-English locale', async () => {
+    const { service, generateStructured } = setup({});
+    await service.ask('m1', 'pourquoi ?', 'fr-FR');
+    const { system } = generateStructured.mock.calls[0]![0] as { system: string };
+    expect(system).toContain('French (Français)');
+    // The grounding rules survive the append.
+    expect(system).toContain('Use ONLY the provided context');
+  });
+
+  it('honours a locale whose UI catalog is only a stub (no clamping)', async () => {
+    for (const [locale, language] of [
+      ['de-DE', 'German (Deutsch)'],
+      ['es-ES', 'Spanish (Español)'],
+    ] as const) {
+      const { service, generateStructured } = setup({});
+      await service.ask('m1', 'q', locale);
+      expect((generateStructured.mock.calls[0]![0] as { system: string }).system).toContain(language);
+    }
+  });
+
+  it('leaves the system prompt untouched for en-GB and for no locale', async () => {
+    const omitted = setup({});
+    await omitted.service.ask('m1', 'q');
+    const english = setup({});
+    await english.service.ask('m1', 'q', 'en-GB');
+
+    const a = (omitted.generateStructured.mock.calls[0]![0] as { system: string }).system;
+    const b = (english.generateStructured.mock.calls[0]![0] as { system: string }).system;
+    expect(a).toBe(b);
+    expect(a).not.toMatch(/Write your entire response in/);
+  });
+});
+
 describe('MemoryChatService.getHistory', () => {
   it('validates the memory then returns its thread', () => {
     const { service, repo } = setup({});

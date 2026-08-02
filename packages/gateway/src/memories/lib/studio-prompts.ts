@@ -1,4 +1,5 @@
-import type { MemoryArtifactKind } from '@midnite/shared';
+import type { Locale, MemoryArtifactKind } from '@midnite/shared';
+import { withOutputLanguage } from '../../agent/llm/lib/output-language';
 
 /**
  * The kinds this module prompts for — the Phase 65 D text + infographic artifacts.
@@ -77,14 +78,22 @@ const STUDIO_PROMPTS: Record<StudioTextKind, StudioPrompt> = {
   },
 };
 
-/** Build the LLM request pieces for a Studio artifact kind over a stuffed corpus. */
+/**
+ * Build the LLM request pieces for a Studio artifact kind over a stuffed corpus.
+ *
+ * `locale` (Phase 82 D) is the caller's active UI language: it appends an
+ * output-language instruction to the **system** prompt, leaving the grounding +
+ * format rules and the per-kind instruction untouched — so the artifact is written
+ * in the user's language while still being corpus-bound and correctly shaped.
+ */
 export function studioPromptFor(
   kind: StudioTextKind,
   corpus: string,
+  locale?: Locale,
 ): { system: string; userText: string; maxTokens: number } {
   const p = STUDIO_PROMPTS[kind];
   return {
-    system: p.system,
+    system: withOutputLanguage(p.system, locale),
     userText: `${p.instruction}\n\n---\nCORPUS:\n${corpus}`,
     maxTokens: p.maxTokens,
   };

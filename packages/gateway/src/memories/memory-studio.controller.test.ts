@@ -43,7 +43,20 @@ describe('MemoryStudioController', () => {
   it('generates a known kind', () => {
     const { controller, service } = build();
     expect(controller.generate('m1', { kind: 'brief' })).toEqual({ artifact });
-    expect(service.generate).toHaveBeenCalledWith('m1', 'brief');
+    expect(service.generate).toHaveBeenCalledWith('m1', 'brief', undefined);
+  });
+
+  it('passes the requested output locale through (Phase 82 D)', () => {
+    const { controller, service } = build();
+    controller.generate('m1', { kind: 'brief', locale: 'de-DE' });
+    expect(service.generate).toHaveBeenCalledWith('m1', 'brief', 'de-DE');
+  });
+
+  it('rejects an unsupported locale (400)', () => {
+    const { controller } = build();
+    expect(() => controller.generate('m1', { kind: 'brief', locale: 'pt-BR' })).toThrow(
+      BadRequestException,
+    );
   });
 
   it('rejects an unknown kind (400)', () => {

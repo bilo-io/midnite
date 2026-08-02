@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { Memory, MemorySource } from '@midnite/shared';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -23,7 +24,11 @@ vi.mock('@/lib/api', () => ({
   uploadMemorySourceFile: (...a: unknown[]) => api.uploadMemorySourceFile(...a),
   getMemorySourceContent: (...a: unknown[]) => api.getMemorySourceContent(...a),
 }));
-vi.mock('@/components/confirm-dialog', () => ({ useConfirm: () => () => Promise.resolve(true) }));
+vi.mock('@/components/confirm-dialog', () => ({
+  useConfirm: () => () => Promise.resolve(true),
+  // The intl render helper wraps in ConfirmProvider, so the mock must still export it.
+  ConfirmProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 import { MemorySourcesPanel } from './memory-sources-panel';
 
@@ -185,5 +190,27 @@ describe('MemorySourcesPanel — detail modal', () => {
     fireEvent.click(within(dialog).getByRole('tab', { name: 'Text' }));
     expect(await within(dialog).findByText('scraped body text')).toBeInTheDocument();
     expect(api.getMemorySourceContent).toHaveBeenCalledWith('m1', 's0');
+  });
+});
+
+describe('MemorySourcesPanel — fr-FR', () => {
+  it('renders the panel chrome in French', () => {
+    render(
+      <MemorySourcesPanel
+        memory={memoryWith([{ url: 'https://alpha.co', title: 'Alpha' }])}
+        onChange={vi.fn()}
+      />,
+      { locale: 'fr-FR' },
+    );
+    expect(screen.getByRole('button', { name: /Ajouter des sources/ })).toBeInTheDocument();
+    expect(screen.getByLabelText('Rechercher des sources')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Rechercher des sources'), {
+      target: { value: 'zzz' },
+    });
+    expect(screen.getByText('Aucune source ne correspond à votre filtre.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Le réordonnancement est suspendu pendant le filtrage.'),
+    ).toBeInTheDocument();
   });
 });

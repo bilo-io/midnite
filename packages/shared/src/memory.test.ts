@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { SUPPORTED_LOCALE_CODES } from './i18n.js';
 import {
   CreateMemoryRequestSchema,
   MAX_MEMORY_TITLE,
   MAX_SOURCES_PER_MEMORY,
   MemorySchema,
   MemorySourceContentSchema,
+  PostMemoryChatRequestSchema,
   UpdateMemoryRequestSchema,
 } from './memory.js';
 
@@ -137,5 +139,24 @@ describe('MemorySourceContentSchema', () => {
       text: null,
     });
     expect(parsed.ingestError).toBe('fetch timed out');
+  });
+});
+
+describe('PostMemoryChatRequestSchema locale (Phase 82 D)', () => {
+  it('parses without a locale (the field is optional)', () => {
+    const parsed = PostMemoryChatRequestSchema.parse({ message: 'why?' });
+    expect(parsed.locale).toBeUndefined();
+  });
+
+  it('accepts every supported locale — including the stub-catalog ones', () => {
+    for (const locale of SUPPORTED_LOCALE_CODES) {
+      expect(PostMemoryChatRequestSchema.parse({ message: 'why?', locale }).locale).toBe(locale);
+    }
+  });
+
+  it('rejects an unsupported language tag', () => {
+    expect(PostMemoryChatRequestSchema.safeParse({ message: 'why?', locale: 'pt-BR' }).success).toBe(
+      false,
+    );
   });
 });

@@ -1,0 +1,174 @@
+{
+  "kinds": {
+    "brief": "Executive brief",
+    "faq": "FAQ",
+    "study-guide": "Study guide",
+    "timeline": "Timeline",
+    "infographic": "Infographic",
+    "audio-overview": "Audio overview",
+    "video-overview": "Video"
+  },
+  "artifactStatus": {
+    "pending": "Generating",
+    "ready": "Ready",
+    "failed": "Failed"
+  },
+  "sourceState": {
+    "pending": "Reading",
+    "ready": "Read",
+    "failed": "Failed"
+  },
+  "list": {
+    "title": "Memory",
+    "description": "Knowledge your agents carry into every session — global or scoped to a project.",
+    "searchPlaceholder": "Search memories",
+    "newMemory": "New memory",
+    "view": {
+      "list": "List view",
+      "grid": "Grid view",
+      "table": "Table view"
+    },
+    "empty": {
+      "title": "No memories yet",
+      "description": "Write down conventions, context and decisions your agents should never forget."
+    },
+    "noMatchesQuery": "No memories match “{query}”",
+    "noMatches": "No memories match the current filters",
+    "bulk": {
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "archiveTitle": "{count, plural, one {Archive # memory?} other {Archive # memories?}}",
+      "unarchiveTitle": "{count, plural, one {Unarchive # memory?} other {Unarchive # memories?}}",
+      "archiveDescription": "They’ll be hidden from your active memories — you can unarchive them any time.",
+      "unarchiveDescription": "They’ll return to your active memories.",
+      "deleteTitle": "{count, plural, one {Delete # memory?} other {Delete # memories?}}",
+      "deleteDescription": "This cannot be undone."
+    },
+    "card": {
+      "archived": "Archived"
+    },
+    "modal": {
+      "titleLabel": "Memory title",
+      "titlePlaceholder": "Untitled memory",
+      "titleRequired": "Give this memory a title.",
+      "scope": "Scope",
+      "content": "Content",
+      "contentLabel": "Memory content",
+      "sources": "Sources",
+      "sourcePlaceholder": "Paste a doc, repo, or any reference link",
+      "create": "Create"
+    }
+  },
+  "detail": {
+    "documentTitle": "{title} · midnite",
+    "backToList": "All memories",
+    "notFound": "Memory not found.",
+    "editMetadata": "Edit memory metadata",
+    "editMemory": "Edit memory",
+    "sources": "Sources",
+    "studio": "Studio"
+  },
+  "sources": {
+    "heading": "Sources",
+    "count": "{count}/{max}",
+    "add": "Add sources",
+    "searchLabel": "Search sources",
+    "searchPlaceholder": "Search sources…",
+    "noMatch": "No sources match your filter.",
+    "reorderPaused": "Reordering is paused while filtering.",
+    "removeTitle": "Remove this source?",
+    "removeDescription": "It will be detached from this memory.",
+    "reingestError": "Could not re-read that source",
+    "removeError": "Could not remove that source",
+    "reorderError": "Could not reorder sources"
+  },
+  "studio": {
+    "intro": "Generate artifacts from this memory and its sources.",
+    "groups": {
+      "documents": "Documents",
+      "visual": "Visual",
+      "audioVideo": "Audio & video"
+    },
+    "generate": "Generate",
+    "generateLabel": "Generate {label}",
+    "viewLabel": "View {label}",
+    "retryLabel": "Retry {label}",
+    "degradedAudio": "Script only — no TTS provider",
+    "degradedVideo": "Outline only — no video provider"
+  },
+  "chat": {
+    "heading": "Chat with this memory",
+    "noProvider": "Add an AI provider in Settings to chat with this memory.",
+    "inputLabel": "Ask this memory a question",
+    "placeholder": "Ask this memory anything… · ⌘/Ctrl + ⏎",
+    "dictate": "Dictate question",
+    "dictateStop": "Stop dictation",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "emptyHint": "Ask a question about this memory and its sources — answers cite what they draw on.",
+    "citations": "Sources",
+    "sourceFallback": "Source",
+    "sendFailed": "Failed to send"
+  },
+  "doc": {
+    "titleLabel": "Memory title",
+    "titlePlaceholder": "Untitled memory",
+    "scopeLabel": "Scope",
+    "contentLabel": "Content",
+    "contentAriaLabel": "Memory content",
+    "titleRequired": "Give this memory a title.",
+    "deleteTitle": "Delete this memory?",
+    "deleteDescription": "“{title}” will no longer be available to your agents."
+  },
+  "scope": {
+    "global": "Global",
+    "globalOption": "Global — every project",
+    "selectLabel": "Memory scope"
+  },
+  "addSource": {
+    "title": "Add sources",
+    "remaining": "{count} left",
+    "dropTitle": "Drop your files here",
+    "dropHint": "PDF, Markdown, or plain text",
+    "upload": "Upload files",
+    "pasteLink": "Paste a link",
+    "linkPlaceholder": "https://…  (GitHub, Notion, Google Docs, YouTube, any URL)",
+    "addLink": "Add link",
+    "pasteText": "Paste text",
+    "textPlaceholder": "Paste notes or copied text — saved as a text source",
+    "addText": "Add text",
+    "atLimit": "This memory is at its source limit.",
+    "invalidUrl": "Enter a full URL, including https://"
+  },
+  "sourceDetail": {
+    "fallbackLabel": "Source",
+    "tabsLabel": "Source detail view",
+    "tabSource": "Source",
+    "tabText": "Text",
+    "openOriginal": "Open original",
+    "youtubePreview": "YouTube preview",
+    "websitePreview": "Website preview",
+    "embedBlocked": "Some sites block embedding — if this stays blank, <link>open the original ↗</link>.",
+    "typeLabel": "Type",
+    "fileLabel": "File",
+    "statusLabel": "Status",
+    "textTabHint": "The extracted text is in the Text tab.",
+    "loadingText": "Loading text…",
+    "loadError": "Could not load source text",
+    "stillReading": "Still reading this source…",
+    "readFailed": "Failed to read this source.",
+    "readFailedWithError": "Failed to read this source: {error}.",
+    "noText": "No text extracted from this source."
+  },
+  "artifact": {
+    "regenerate": "Regenerate",
+    "download": "Download",
+    "audioLabel": "{title} audio",
+    "videoLabel": "{title} video",
+    "degradedAudio": "No text-to-speech provider is configured, so this is the script only. Add an OpenAI key in Settings to generate spoken audio.",
+    "degradedVideo": "No ffmpeg/TTS provider is available, so this is the slide outline only. Configure Memory Studio video to compose a narrated MP4."
+  },
+  "metadata": {
+    "title": "Edit memory"
+  }
+}

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { MemoryArtifact } from '@midnite/shared';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -68,8 +69,25 @@ describe('MemoryStudioRail', () => {
     await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
 
     fireEvent.click(screen.getByLabelText('Generate Executive brief'));
-    await waitFor(() => expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief'));
+    await waitFor(() =>
+      expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief', 'en-GB'),
+    );
     expect(await screen.findByText('Generating')).toBeInTheDocument();
+  });
+
+  // Phase 82 D — an artifact's body is generated copy, so the active locale has to
+  // reach the gateway. de-DE's UI catalog is only a stub (labels below fall back to
+  // en-GB), and it must still be sent unclamped.
+  it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
+    api.getMemoryArtifacts.mockResolvedValue([]);
+    api.generateMemoryArtifact.mockResolvedValue(artifact({ status: 'pending', content: '' }));
+    render(<MemoryStudioRail memoryId="m1" />, { locale: 'de-DE' });
+    await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByLabelText('Generate Executive brief'));
+    await waitFor(() =>
+      expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief', 'de-DE'),
+    );
   });
 
   it('surfaces a failed artifact error inline', async () => {

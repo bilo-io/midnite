@@ -1,6 +1,7 @@
 'use client';
 
 import { Brain } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Project } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
 import { Select, type SelectOption } from '@/components/ui/select';
@@ -11,11 +12,12 @@ import { Select, type SelectOption } from '@/components/ui/select';
  * workspace header so the two never drift.
  */
 export function MemoryScopeChip({ project }: { project?: Project }) {
+  const t = useTranslations('memory');
   if (project) return <ProjectTag tag={project.tag} color={project.color} />;
   return (
     <span className="inline-flex items-center gap-1 rounded bg-[hsl(262_83%_66%/0.15)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[hsl(262_83%_72%)]">
       <Brain className="h-3 w-3" />
-      Global
+      {t('scope.global')}
     </span>
   );
 }
@@ -34,11 +36,15 @@ export function scopeToProjectId(scope: string): string | null {
   return scope === GLOBAL ? null : scope;
 }
 
-export function buildScopeOptions(projects: Project[]): SelectOption<string>[] {
+/** The scope options. `globalLabel` is passed in so this stays a pure helper. */
+export function buildScopeOptions(
+  projects: Project[],
+  globalLabel: string,
+): SelectOption<string>[] {
   return [
     {
       value: GLOBAL,
-      label: 'Global — every project',
+      label: globalLabel,
       icon: <Brain className="h-4 w-4 text-[hsl(262_83%_66%)]" />,
     },
     ...projects.map((p) => ({
@@ -65,12 +71,13 @@ export function MemoryScopeSelect({
   value: string;
   onChange: (next: string) => void;
 }) {
+  const t = useTranslations('memory');
   return (
     <Select
-      options={buildScopeOptions(projects)}
+      options={buildScopeOptions(projects, t('scope.globalOption'))}
       value={value}
       onChange={onChange}
-      aria-label="Memory scope"
+      aria-label={t('scope.selectLabel')}
     />
   );
 }
