@@ -44,9 +44,16 @@ export const AgentConfigSchema = z.object({
   // resumed) flips immediately, so this is behaviour-preserving. 0 = OFF (no
   // coalescing, pre-Phase-69 immediate flip).
   resumeDebounceMs: z.number().int().nonnegative().default(1500),
-  // Hard ceiling per autonomous agent run; the session is cancelled on expiry
-  // and the task requeued. Mirrors councils.runTimeoutMs.
-  runTimeoutMs: z.number().int().positive().default(1800000),
+  // Stall deadline for an autonomous agent run — **not** a wall-clock ceiling.
+  // The timer is armed at spawn and re-armed whenever the run is demonstrably
+  // alive: the session is still emitting output, or the task is parked in
+  // `waiting` (blocked on a human by design). Only a session that is silent for
+  // this whole window while `wip` is treated as hung, cancelled and requeued. A
+  // long-but-productive run therefore stays open indefinitely; the run only ends
+  // on the Stop hook, an explicit stop/cancel, or the gateway shutting down.
+  // 0 = OFF (no stall deadline at all — a hung session then holds its slot until
+  // a human stops it, or the Phase 54 C watchdog's `inactivityMs` reclaims it).
+  runTimeoutMs: z.number().int().nonnegative().default(1800000),
   // How many times a task is auto-retried after an agent session exits
   // unexpectedly (crash) before it's abandoned. 0 = never retry crashes.
   maxRetries: z.number().int().nonnegative().default(3),

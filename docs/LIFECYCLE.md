@@ -58,7 +58,7 @@ excluded from the transition matrix (abandon archives as a side-effect above).
 | **PreToolUse hook** (approval-resume fallback) | [`ApprovalController.preToolUse`](../packages/gateway/src/terminal/approval.controller.ts) (Phase 69 B) | `resumeFromWaiting` → `waiting → wip` |
 | **Approval resolved** (modal answered / timeout) | [`ApprovalService.settle`](../packages/gateway/src/terminal/approval.service.ts) | `resumeFromWaiting` → `waiting → wip` |
 | PTY exits while live (crash) | `AgentRunnerService.onExit` → `resolveFailedRun` | `retry` \| `escalate` \| `updateStatus('abandoned')` — `wip → todo`/`waiting`/`abandoned` |
-| Run exceeds `runTimeoutMs` | `AgentRunnerService.onTimeout` → `resolveFailedRun` | same as onExit |
+| Run **stalls** for `runTimeoutMs` | `AgentRunnerService.onTimeout` → `resolveFailedRun` | same as onExit |
 | Watchdog finds a run unhealthy | `AgentRunnerService.reconcileUnhealthy` → `resolveFailedRun` (Phase 54 C) | same as onExit |
 | User "stop" (return to queue) | `AgentRunnerService.stop` | `requeue` → `wip → todo`/`backlog` |
 | User "cancel" (give up) | `AgentRunnerService.cancel` | `updateStatus('abandoned')` → `wip → abandoned` |
@@ -69,6 +69,27 @@ excluded from the transition matrix (abandon archives as a side-effect above).
 
 For agent sessions **`sessionId == taskId`**. Hook callbacks are authenticated by
 the per-session secret **header** (never the body) — see the controllers.
+
+**`runTimeoutMs` is a stall deadline, not a wall-clock ceiling.** It used to be
+the latter: the timer was armed once at spawn and, 30 minutes later, killed the
+run and requeued the task no matter how healthy it was. Because Claude fires Stop
+at the end of *every* turn, nearly every interactive task spends that half hour in
+`waiting` — so a task you were mid-conversation with was reliably yanked back to
+`todo`. `onTimeout` now asks `isRunStalled` first and only fails a run that is
+genuinely wedged; anything else re-arms for another window:
+
+| State when the deadline fires | Verdict |
+|---|---|
+| Task in `waiting` (needs-input / needs-attention) | **not stalled** — blocked on a human by design |
+| Session alive, emitted output inside the window | **not stalled** — demonstrably working |
+| Session alive but silent for the whole window while `wip` | stalled → `resolveFailedRun` |
+| Backend reports the process dead (missed `onExit`) | stalled → `resolveFailedRun` |
+| No handle registered (session gone, slot still held) | stalled → `resolveFailedRun` |
+
+A healthy run therefore stays open indefinitely and ends only on the Stop hook, an
+explicit stop/cancel, or gateway shutdown. `runTimeoutMs: 0` removes the deadline
+entirely — a hung session then holds its slot until a human stops it or the
+Phase 54 C watchdog's `agent.watchdog.inactivityMs` reclaims it.
 
 **Terminal-move reap.** A manual move to `done`/`abandoned` (or a delete) on a
 task still holding a pool slot goes through `updateStatus`/`deleteTask`, which
