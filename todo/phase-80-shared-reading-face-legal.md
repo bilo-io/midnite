@@ -73,7 +73,7 @@ Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported
 - [ ] **Visual-parity check** (the risky bit): docs reading pages look/scroll/spy exactly
       as before — TOC highlight, mobile drawer, `max-w-3xl` measure, code blocks.
 
-## Theme C — Rebuild site legal on the primitive — **M** — ✅ DONE (PR #TBD, 2026-08-02)
+## Theme C — Rebuild site legal on the primitive — **M** — ✅ DONE (PR #586, 2026-08-02)
 
 - [x] [`site/app/legal/layout.tsx`](../packages/site/app/legal/layout.tsx) rebuilt on `ReadingLayout`, **gaining the right-rail TOC it never had**; the `bg-grid` backdrop and local [`legal-sidebar.tsx`](../packages/site/components/legal-sidebar.tsx) are unchanged. The outer `container py-28` wrapper stays and the primitive's own max-width/padding are neutralised, so the pages keep their rhythm and nav clearance — visually a no-op but for the rail.
 - [x] [`site/components/markdown.tsx`](../packages/site/components/markdown.tsx)'s hand-rolled element map replaced by the shared `proseComponents` (react-markdown keeps gfm + highlight); `next/link` wrapped into `ReadingLayoutProvider`, so root-relative links in legal copy route in-app while external ones still open off-site. **Heading ids now come from `Prose`** — legal pages have in-page anchors and deep-links for the first time.

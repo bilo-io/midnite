@@ -6,7 +6,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-08-02 — feat: Phase 80 Theme C — site legal on the shared reading primitive 🟢
 
-PR #TBD. The legal pages rolled their own two-column layout and prose map, and had **no on-page navigation and no heading anchors at all**. They now read on `@midnite/ui`'s `ReadingLayout` + `Prose` — the same shell and element map docs uses — which is where the new right-rail TOC comes from.
+PR #586. The legal pages rolled their own two-column layout and prose map, and had **no on-page navigation and no heading anchors at all**. They now read on `@midnite/ui`'s `ReadingLayout` + `Prose` — the same shell and element map docs uses — which is where the new right-rail TOC comes from.
 
 - [x] **Legal layout on `ReadingLayout`** — gains the right-rail table of contents; `bg-grid` backdrop and the local legal sidebar unchanged. The outer `container py-28` wrapper stays and the primitive's own max-width/padding are neutralised, so the pages keep their rhythm and nav clearance: visually a no-op apart from the rail.
 - [x] **Shared prose map in `markdown.tsx`** — hand-rolled element map deleted (react-markdown keeps gfm + `rehype-highlight`); `next/link` injected via `ReadingLayoutProvider`, so root-relative links route in-app and external ones still open off-site. **Heading ids now come from `Prose`**, giving legal docs in-page anchors and deep-links for the first time — no `rehype-slug` anywhere.
