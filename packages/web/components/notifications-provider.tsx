@@ -121,10 +121,12 @@ export function useNotifications(): NotificationsApi {
 // --- Provider --------------------------------------------------------------
 
 /**
- * Map a notification severity onto the (success/error) toast variants the toast
- * API exposes today. `urgent`/`warn` use the destructive (error) styling; `info`
- * uses the affirmative one. `urgent` also gets a long-lived toast — the closest
- * approximation to "sticky" the current toast API allows (it has no sticky flag).
+ * Map a notification severity onto a toast variant, one-for-one with the
+ * notification center's per-severity accent: `urgent` → destructive, `warn` →
+ * amber, `info` → affirmative. The optional `body` rides along as the toast's
+ * second line so the toast carries the same title + body the feed row shows.
+ * `urgent` also gets a long-lived toast — the closest approximation to "sticky"
+ * the current toast API allows (it has no sticky flag).
  */
 export const URGENT_TOAST_MS = 60_000;
 
@@ -132,13 +134,15 @@ export function toastForSeverity(
   toast: ReturnType<typeof useToast>,
   severity: NotificationSeverity,
   message: string,
+  body?: string | null,
 ): void {
+  const description = body ?? undefined;
   if (severity === 'urgent') {
-    toast.error(message, { duration: URGENT_TOAST_MS });
+    toast.error(message, { duration: URGENT_TOAST_MS, description });
   } else if (severity === 'warn') {
-    toast.error(message);
+    toast.warning(message, { description });
   } else {
-    toast.success(message);
+    toast.success(message, { description });
   }
 }
 
@@ -322,7 +326,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
           if (parsed.data.type === 'notification.created') {
             const { notification } = parsed.data;
             dispatch({ type: 'created', notification });
-            toastForSeverity(handlerDeps.current.toast, notification.severity, notification.title);
+            toastForSeverity(
+              handlerDeps.current.toast,
+              notification.severity,
+              notification.title,
+              notification.body,
+            );
             maybeRaiseRef.current(notification);
           }
         } catch {

@@ -183,24 +183,38 @@ describe('notificationsReducer', () => {
 });
 
 describe('toastForSeverity', () => {
-  const makeToast = () => ({ success: vi.fn(), error: vi.fn() });
+  const makeToast = () => ({ success: vi.fn(), warning: vi.fn(), error: vi.fn() });
 
   it('fires an affirmative toast for info', () => {
     const toast = makeToast();
     toastForSeverity(toast, 'info', 'Task finished');
-    expect(toast.success).toHaveBeenCalledWith('Task finished');
+    expect(toast.success).toHaveBeenCalledWith('Task finished', { description: undefined });
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it('fires a destructive toast for warn', () => {
+  it('fires an amber (warning) toast for warn — not the destructive one', () => {
     const toast = makeToast();
-    toastForSeverity(toast, 'warn', 'Needs input');
-    expect(toast.error).toHaveBeenCalledWith('Needs input');
+    toastForSeverity(toast, 'warn', 'Agent needs your input');
+    expect(toast.warning).toHaveBeenCalledWith('Agent needs your input', {
+      description: undefined,
+    });
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('fires a long-lived (sticky-approximating) destructive toast for urgent', () => {
     const toast = makeToast();
     toastForSeverity(toast, 'urgent', 'Task abandoned');
-    expect(toast.error).toHaveBeenCalledWith('Task abandoned', { duration: URGENT_TOAST_MS });
+    expect(toast.error).toHaveBeenCalledWith('Task abandoned', {
+      duration: URGENT_TOAST_MS,
+      description: undefined,
+    });
+  });
+
+  it('passes the notification body through as the toast description', () => {
+    const toast = makeToast();
+    toastForSeverity(toast, 'warn', 'Agent needs your input', 'Create background assets');
+    expect(toast.warning).toHaveBeenCalledWith('Agent needs your input', {
+      description: 'Create background assets',
+    });
   });
 });

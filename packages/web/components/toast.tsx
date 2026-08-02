@@ -1,33 +1,41 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, TriangleAlert, X, XCircle, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ToastVariant = 'success' | 'error';
+type ToastVariant = 'success' | 'warning' | 'error';
 
 export type ToastOptions = {
   /** Milliseconds before the toast auto-dismisses. Errors default to longer. */
   duration?: number;
+  /**
+   * Secondary line under the message — the notification body to the message's
+   * title. Rendered muted + clamped so a long body can't grow the stack.
+   */
+  description?: React.ReactNode;
 };
 
 type ToastItem = {
   id: string;
   variant: ToastVariant;
   message: React.ReactNode;
+  description?: React.ReactNode;
   duration: number;
 };
 
 type ToastApi = {
   success: (message: React.ReactNode, opts?: ToastOptions) => void;
+  /** Amber styling — matches the notification center's `warn` severity. */
+  warning: (message: React.ReactNode, opts?: ToastOptions) => void;
   error: (message: React.ReactNode, opts?: ToastOptions) => void;
 };
 
 const ToastContext = React.createContext<ToastApi | null>(null);
 
 /**
- * Returns `{ success, error }` for surfacing transient feedback in the bottom-right
- * stack: `const toast = useToast(); toast.error(message)`.
+ * Returns `{ success, warning, error }` for surfacing transient feedback in the
+ * bottom-right stack: `const toast = useToast(); toast.error(message)`.
  */
 export function useToast() {
   const ctx = React.useContext(ToastContext);
@@ -36,9 +44,17 @@ export function useToast() {
 }
 
 const DEFAULT_DURATION: Record<ToastVariant, number> = {
-  success: 4000,
-  // Errors stick around longer so they can be read before they vanish.
-  error: 7000,
+  success: 6000,
+  // Warnings and errors stick around longer so they can be read before they vanish.
+  warning: 9000,
+  error: 9000,
+};
+
+/** Per-variant border accent + leading icon (mirrors the notification center). */
+const VARIANT_META: Record<ToastVariant, { Icon: LucideIcon; border: string; icon: string }> = {
+  success: { Icon: CheckCircle2, border: 'border-emerald-500/40', icon: 'text-emerald-500' },
+  warning: { Icon: TriangleAlert, border: 'border-amber-500/40', icon: 'text-amber-500' },
+  error: { Icon: XCircle, border: 'border-destructive/40', icon: 'text-destructive' },
 };
 
 let nextId = 0;
@@ -50,15 +66,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const push = React.useCallback((variant: ToastVariant, message: React.ReactNode, opts?: ToastOptions) => {
-    const id = `toast-${nextId++}`;
-    const duration = opts?.duration ?? DEFAULT_DURATION[variant];
-    setToasts((prev) => [...prev, { id, variant, message, duration }]);
-  }, []);
+  const push = React.useCallback(
+    (variant: ToastVariant, message: React.ReactNode, opts?: ToastOptions) => {
+      const id = `toast-${nextId++}`;
+      const duration = opts?.duration ?? DEFAULT_DURATION[variant];
+      setToasts((prev) => [
+        ...prev,
+        { id, variant, message, description: opts?.description, duration },
+      ]);
+    },
+    [],
+  );
 
   const api = React.useMemo<ToastApi>(
     () => ({
       success: (message, opts) => push('success', message, opts),
+      warning: (message, opts) => push('warning', message, opts),
       error: (message, opts) => push('error', message, opts),
     }),
     [push],
@@ -86,26 +109,25 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) 
     return () => clearTimeout(timer);
   }, [item.duration, onDismiss]);
 
-  const Icon = item.variant === 'success' ? CheckCircle2 : XCircle;
+  const { Icon, border, icon } = VARIANT_META[item.variant];
 
   return (
     <div
       role="status"
       className={cn(
-        'animate-toast-in pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-card/95 p-3 shadow-lg backdrop-blur-sm',
-        item.variant === 'success'
-          ? 'border-emerald-500/40 text-foreground'
-          : 'border-destructive/40 text-foreground',
+        'animate-toast-in pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-card/95 p-3 text-foreground shadow-lg backdrop-blur-sm',
+        border,
       )}
     >
-      <Icon
-        aria-hidden
-        className={cn(
-          'mt-0.5 h-4 w-4 shrink-0',
-          item.variant === 'success' ? 'text-emerald-500' : 'text-destructive',
-        )}
-      />
-      <div className="min-w-0 flex-1 break-words text-sm leading-snug">{item.message}</div>
+      <Icon aria-hidden className={cn('mt-0.5 h-4 w-4 shrink-0', icon)} />
+      <div className="min-w-0 flex-1 break-words text-sm leading-snug">
+        <div>{item.message}</div>
+        {item.description ? (
+          <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+            {item.description}
+          </div>
+        ) : null}
+      </div>
       <button
         type="button"
         onClick={onDismiss}
