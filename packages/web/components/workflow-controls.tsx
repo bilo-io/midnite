@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { RunStatus } from '@midnite/shared';
 import { Switch } from '@/components/ui/switch';
 import { updateWorkflow } from '@/lib/api';
@@ -17,7 +18,7 @@ const STATUS_HUE: Record<RunStatus, string> = {
   canceled: '--status-abandoned',
 };
 
-// Succeeded/failed collapse to a glyph; the rest keep their (capitalized) label.
+// Succeeded/failed collapse to a glyph; the rest keep their translated label.
 const STATUS_ICON: Partial<Record<RunStatus, LucideIcon>> = {
   succeeded: Check,
   failed: X,
@@ -26,6 +27,7 @@ const STATUS_ICON: Partial<Record<RunStatus, LucideIcon>> = {
 // Optimistic enable/disable toggle, shared by every workflow view so the action
 // behaves identically in grid, list, and table.
 export function WorkflowEnabledSwitch({ id, enabled: initial }: { id: string; enabled: boolean }) {
+  const t = useTranslations('workflows');
   const [enabled, setEnabled] = useState(initial);
   const [busy, setBusy] = useState(false);
 
@@ -42,10 +44,18 @@ export function WorkflowEnabledSwitch({ id, enabled: initial }: { id: string; en
     }
   };
 
-  return <Switch checked={enabled} onCheckedChange={toggle} disabled={busy} aria-label="Enabled" />;
+  return (
+    <Switch
+      checked={enabled}
+      onCheckedChange={toggle}
+      disabled={busy}
+      aria-label={t('editor.controls.enabledLabel')}
+    />
+  );
 }
 
 export function LastRunStatus({ status, className }: { status?: RunStatus; className?: string }) {
+  const t = useTranslations('workflows');
   if (!status) {
     return (
       <span
@@ -59,22 +69,20 @@ export function LastRunStatus({ status, className }: { status?: RunStatus; class
           className="h-1.5 w-1.5 rounded-full"
           style={{ background: 'hsl(var(--status-backlog))' }}
         />
-        Never run
+        {t('editor.controls.neverRun')}
       </span>
     );
   }
   const hue = STATUS_HUE[status] ?? '--status-backlog';
   const Icon = STATUS_ICON[status];
+  const label = t(`editor.controls.status.${status}`);
   return (
     <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] capitalize',
-        className,
-      )}
+      className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px]', className)}
       style={{ background: `hsl(var(${hue}) / 0.12)`, color: `hsl(var(${hue}))` }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: `hsl(var(${hue}))` }} />
-      {Icon ? <Icon className="h-3 w-3" aria-label={status} /> : status}
+      {Icon ? <Icon className="h-3 w-3" aria-label={label} /> : label}
     </span>
   );
 }

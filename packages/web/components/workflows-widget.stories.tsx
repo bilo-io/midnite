@@ -57,7 +57,7 @@ export const Default: Story = {
     await expect(await canvas.findByText(WORKFLOWS[0]!.name)).toBeInTheDocument();
     await expect(canvas.getByText(WORKFLOWS[1]!.name)).toBeInTheDocument();
     // The last-run badge collapses succeeded/failed to a glyph (labelled by status).
-    await expect(canvas.getByLabelText('succeeded')).toBeInTheDocument();
+    await expect(canvas.getByLabelText('Succeeded')).toBeInTheDocument();
   },
 };
 

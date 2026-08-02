@@ -10,6 +10,7 @@ import {
   useReactFlow,
   type NodeTypes,
 } from '@xyflow/react';
+import { useTranslations } from 'next-intl';
 import { WorkflowNodeView } from '@/components/nodes/workflow-node-view';
 import { NODE_DRAG_MIME } from '@/lib/workflow-node-catalog';
 import { useWorkflowStore } from '@/lib/workflow-store';
@@ -23,6 +24,7 @@ const nodeTypes: NodeTypes = {
 };
 
 export default function WorkflowCanvas() {
+  const t = useTranslations('workflows');
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
   const onNodesChange = useWorkflowStore((s) => s.onNodesChange);
@@ -64,6 +66,22 @@ export default function WorkflowCanvas() {
       fitView
       minZoom={0.2}
       defaultEdgeOptions={{ animated: true }}
+      // React Flow ships its own English a11y strings for the zoom controls, the
+      // mini map, the handles and the keyboard hints; `ariaLabelConfig` is the only
+      // seam for localising them (the built-in Controls/MiniMap buttons take no
+      // per-button label props).
+      ariaLabelConfig={{
+        'controls.ariaLabel': t('editor.canvas.a11y.controls'),
+        'controls.zoomIn.ariaLabel': t('editor.canvas.a11y.zoomIn'),
+        'controls.zoomOut.ariaLabel': t('editor.canvas.a11y.zoomOut'),
+        'controls.fitView.ariaLabel': t('editor.canvas.a11y.fitView'),
+        'controls.interactive.ariaLabel': t('editor.canvas.a11y.toggleInteractive'),
+        'minimap.ariaLabel': t('editor.canvas.a11y.minimap'),
+        'handle.ariaLabel': t('editor.canvas.a11y.handle'),
+        'node.a11yDescription.default': t('editor.canvas.a11y.node'),
+        'node.a11yDescription.keyboardDisabled': t('editor.canvas.a11y.nodeKeyboardDisabled'),
+        'edge.a11yDescription.default': t('editor.canvas.a11y.edge'),
+      }}
     >
       <Background gap={16} size={1} />
       <Controls showInteractive={false} />

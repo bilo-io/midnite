@@ -1,15 +1,19 @@
 import { CheckCircle2, Clock, MousePointerClick, Webhook, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { TriggerType } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
-const META: Record<TriggerType, { label: string; Icon: LucideIcon; hue: string }> = {
-  manual: { label: 'Manual', Icon: MousePointerClick, hue: '--status-backlog' },
-  schedule: { label: 'Schedule', Icon: Clock, hue: '--status-todo' },
-  webhook: { label: 'Webhook', Icon: Webhook, hue: '--kind-feature' },
-  'task-event': { label: 'Task Event', Icon: CheckCircle2, hue: '--status-done' },
+// Icon + hue only — the label comes from `workflows.list.triggers.*`, the same keys
+// the workflows table and create modal read, so the badge can't drift from them.
+const META: Record<TriggerType, { Icon: LucideIcon; hue: string }> = {
+  manual: { Icon: MousePointerClick, hue: '--status-backlog' },
+  schedule: { Icon: Clock, hue: '--status-todo' },
+  webhook: { Icon: Webhook, hue: '--kind-feature' },
+  'task-event': { Icon: CheckCircle2, hue: '--status-done' },
 };
 
 export function TriggerBadge({ type, className }: { type: TriggerType; className?: string }) {
+  const t = useTranslations('workflows');
   const meta = META[type];
   const Icon = meta.Icon;
   return (
@@ -25,7 +29,7 @@ export function TriggerBadge({ type, className }: { type: TriggerType; className
       }}
     >
       <Icon className="h-3 w-3" />
-      {meta.label}
+      {t(`list.triggers.${type}`)}
     </span>
   );
 }

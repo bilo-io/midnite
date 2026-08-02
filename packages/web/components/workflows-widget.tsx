@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { Check, RefreshCw, Workflow, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { getNodeTypeDefinition, type RunStatus, type WorkflowSummary } from '@midnite/shared';
 import { listWorkflows } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
 import { iconFor } from '@/lib/workflow-node-catalog';
+import { useNodeLabels } from '@/lib/workflow-node-labels';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
@@ -29,6 +31,7 @@ const RUN_ICON: Partial<Record<RunStatus, LucideIcon>> = {
 };
 
 export function WorkflowsWidget() {
+  const t = useTranslations('workflows');
   const { data, error, loading, refresh } = usePolling(() => listWorkflows(), REFRESH_MS);
 
   const workflows = (data ?? [])
@@ -37,13 +40,13 @@ export function WorkflowsWidget() {
 
   return (
     <WidgetCard
-      title="Workflows"
+      title={t('list.widget.title')}
       icon={Workflow}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh workflows"
+          aria-label={t('list.widget.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -52,11 +55,11 @@ export function WorkflowsWidget() {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load workflows.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('list.widget.error')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : workflows.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">No workflows yet.</p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('list.widget.empty')}</p>
       ) : (
         <ul className="divide-y divide-border/30">
           {workflows.map((w) => (
@@ -69,6 +72,10 @@ export function WorkflowsWidget() {
 }
 
 function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
+  const t = useTranslations('workflows');
+  // Node titles come from the shared catalogue — read them through the i18n seam
+  // rather than the raw English `definition.title`.
+  const nodeLabels = useNodeLabels();
   const steps = w.steps ?? [];
   const shown = steps.slice(0, MAX_STEPS);
   const overflow = steps.length - shown.length;
@@ -83,7 +90,7 @@ function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
         <span
           aria-hidden
           className={cn('h-2 w-2 shrink-0 rounded-full', w.enabled ? 'bg-emerald-500' : 'bg-muted-foreground/40')}
-          title={w.enabled ? 'Enabled' : 'Disabled'}
+          title={w.enabled ? t('list.widget.enabled') : t('list.widget.disabled')}
         />
         <div className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{w.name}</span>
@@ -94,7 +101,11 @@ function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
                   const def = getNodeTypeDefinition(s.type);
                   const Icon = iconFor(def?.icon);
                   return (
-                    <span key={i} title={s.label || def?.title || s.type} className="inline-flex">
+                    <span
+                      key={i}
+                      title={s.label || (def ? nodeLabels.title(def) : s.type)}
+                      className="inline-flex"
+                    >
                       <Icon className="h-3 w-3" aria-hidden />
                     </span>
                   );
@@ -105,15 +116,18 @@ function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
             </span>
           ) : (
             <span className="block truncate text-[11px] text-muted-foreground">
-              {meta || `${w.nodeCount} ${w.nodeCount === 1 ? 'node' : 'nodes'}`}
+              {meta || t('list.nodeCount', { count: w.nodeCount })}
             </span>
           )}
         </div>
         {w.lastRunStatus && (() => {
           const Icon = RUN_ICON[w.lastRunStatus];
+          // Run-status copy is owned by the workflow-controls slice
+          // (`workflows.editor.controls.status.*`) — read it rather than duplicating.
+          const label = t(`editor.controls.status.${w.lastRunStatus}`);
           return (
-            <span className={cn('inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', RUN_BADGE[w.lastRunStatus])}>
-              {Icon ? <Icon className="h-3 w-3" aria-label={w.lastRunStatus} /> : w.lastRunStatus}
+            <span className={cn('inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium', RUN_BADGE[w.lastRunStatus])}>
+              {Icon ? <Icon className="h-3 w-3" aria-label={label} /> : label}
             </span>
           );
         })()}

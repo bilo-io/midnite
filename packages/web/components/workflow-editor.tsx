@@ -13,6 +13,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { WORKFLOW_TEMPLATE_CATEGORIES, type WorkflowTemplateCategory } from '@midnite/shared';
 import type { Workflow } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,8 @@ function SaveAsTemplateModal({
   onClose: () => void;
   onSaved: (templateId: string) => void;
 }) {
+  const t = useTranslations('workflows');
+  const tCommon = useTranslations('common');
   const [name, setName] = useState(workflowName);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<WorkflowTemplateCategory>('monitoring');
@@ -66,7 +69,7 @@ function SaveAsTemplateModal({
       });
       onSaved(tpl.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save template');
+      setError(e instanceof Error ? e.message : t('editor.saveAsTemplate.failed'));
     } finally {
       setSaving(false);
     }
@@ -82,54 +85,71 @@ function SaveAsTemplateModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-base font-semibold">Save as template</h2>
-          <button type="button" onClick={onClose} className="rounded p-1 hover:bg-muted/60" aria-label="Close">
+          <h2 className="text-base font-semibold">{t('editor.saveAsTemplate.title')}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded p-1 hover:bg-muted/60"
+            aria-label={tCommon('close')}
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <label className="text-xs font-medium">Template name</label>
+            <label className="text-xs font-medium">{t('editor.saveAsTemplate.nameLabel')}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={workflowName} />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium">Description</label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this template do?" />
+            <label className="text-xs font-medium">{t('editor.saveAsTemplate.descriptionLabel')}</label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('editor.saveAsTemplate.descriptionPlaceholder')}
+            />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium">Category</label>
+            <label className="text-xs font-medium">{t('editor.saveAsTemplate.categoryLabel')}</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as WorkflowTemplateCategory)}
               className="w-full rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
             >
               {WORKFLOW_TEMPLATE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                // The `value` stays the machine enum the API expects; only the label translates.
+                <option key={cat} value={cat}>{t(`editor.saveAsTemplate.categories.${cat}`)}</option>
               ))}
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium">Tags <span className="text-muted-foreground">(comma-separated)</span></label>
-            <Input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="e.g. slack, tasks, daily" />
+            <label className="text-xs font-medium">
+              {t('editor.saveAsTemplate.tagsLabel')}{' '}
+              <span className="text-muted-foreground">{t('editor.saveAsTemplate.tagsHint')}</span>
+            </label>
+            <Input
+              value={tagsRaw}
+              onChange={(e) => setTagsRaw(e.target.value)}
+              placeholder={t('editor.saveAsTemplate.tagsPlaceholder')}
+            />
           </div>
 
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} className="rounded" />
-            Publish (visible to team)
+            {t('editor.saveAsTemplate.publish')}
           </label>
         </div>
 
         {error ? <p className="mt-3 text-xs text-destructive">{error}</p> : null}
 
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>{tCommon('cancel')}</Button>
           <Button size="sm" onClick={() => void submit()} disabled={saving}>
             {saving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-            Save template
+            {t('editor.saveAsTemplate.submit')}
           </Button>
         </div>
       </div>
@@ -137,13 +157,20 @@ function SaveAsTemplateModal({
   );
 }
 
+// A tiny component (not inline JSX) so the placeholder can call `useTranslations` —
+// `dynamic()`'s `loading` runs at module scope, where a hook can't.
+function CanvasLoading() {
+  const t = useTranslations('workflows');
+  return (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      {t('editor.canvas.loading')}
+    </div>
+  );
+}
+
 const WorkflowCanvas = dynamic(() => import('@/components/workflow-canvas'), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      Loading canvas…
-    </div>
-  ),
+  loading: () => <CanvasLoading />,
 });
 
 // A floating button that pins to the inner edge of the canvas and toggles the
@@ -186,6 +213,7 @@ function PanelToggle({
 }
 
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
+  const t = useTranslations('workflows');
   const router = useRouter();
   const [store] = useState(() => createWorkflowStore(workflow));
   const [saving, setSaving] = useState(false);
@@ -230,7 +258,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       store.getState().markSaved(atRevision);
       invalidateData();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save workflow');
+      setError(e instanceof Error ? e.message : t('editor.errors.saveWorkflow'));
     } finally {
       setSaving(false);
     }
@@ -317,14 +345,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   side="left"
                   open={paletteOpen}
                   onToggle={() => setPaletteOpen((o) => !o)}
-                  label={paletteOpen ? 'Hide node palette' : 'Show node palette'}
+                  label={paletteOpen ? t('editor.panels.hidePalette') : t('editor.panels.showPalette')}
                 />
                 {!historyOpen ? (
                   <PanelToggle
                     side="right"
                     open={configOpen}
                     onToggle={() => setConfigOpen((o) => !o)}
-                    label={configOpen ? 'Hide config panel' : 'Show config panel'}
+                    label={configOpen ? t('editor.panels.hideConfig') : t('editor.panels.showConfig')}
                   />
                 ) : null}
               </div>

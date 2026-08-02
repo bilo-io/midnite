@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { BookmarkPlus, History, Loader2, Pencil, Play, Power, Save } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { PageHeader } from '@/components/page-header';
 import { EditDetailsModal } from '@/components/edit-details-modal';
 import { HoverExpandButton } from '@/components/hover-expand-button';
@@ -43,6 +44,8 @@ export function WorkflowPageHeader({
   running: boolean;
   saving: boolean;
 }) {
+  const t = useTranslations('workflows');
+  const tCommon = useTranslations('common');
   const name = useWorkflowStore((s) => s.name);
   const setName = useWorkflowStore((s) => s.setName);
   const description = useWorkflowStore((s) => s.description);
@@ -57,17 +60,17 @@ export function WorkflowPageHeader({
     trigger.type === 'schedule'
       ? describeCron(trigger.cron)
       : trigger.type === 'webhook'
-        ? 'Runs on a webhook'
+        ? t('editor.header.trigger.webhook')
         : trigger.type === 'task-event'
-          ? 'Runs on a task event'
-          : 'Runs on demand';
+          ? t('editor.header.trigger.taskEvent')
+          : t('editor.header.trigger.manual');
 
   return (
     <>
       <PageHeader
-        title={name || 'Untitled workflow'}
+        title={name || t('editor.header.untitled')}
         icon="Workflow"
-        description={description || 'Describe what this workflow does…'}
+        description={description || t('editor.header.descriptionPlaceholder')}
       />
 
       {/* Editor actions live in the standard sticky controls row (not in the
@@ -79,8 +82,8 @@ export function WorkflowPageHeader({
           <button
             type="button"
             onClick={onEditTrigger}
-            title="Change trigger"
-            aria-label="Change trigger"
+            title={t('editor.header.changeTrigger')}
+            aria-label={t('editor.header.changeTrigger')}
             className="flex h-8 items-center gap-2 rounded-md border border-transparent px-2 transition-colors hover:border-border hover:bg-accent/40"
           >
             <TriggerBadge type={trigger.type} />
@@ -90,14 +93,14 @@ export function WorkflowPageHeader({
           <div className="flex shrink-0 items-center gap-1.5">
             <HoverExpandButton
               icon={<Pencil className="h-3.5 w-3.5" />}
-              label="Edit details"
+              label={t('editor.header.editDetails')}
               variant="ghost"
               onClick={() => setEditing(true)}
               className="text-muted-foreground"
             />
             <HoverExpandButton
               icon={<History className="h-3.5 w-3.5" />}
-              label="Run history"
+              label={t('editor.header.runHistory')}
               variant={historyOpen ? 'secondary' : 'ghost'}
               onClick={onHistory}
               className={cn('text-muted-foreground', historyOpen && 'border border-border bg-muted text-foreground')}
@@ -105,7 +108,7 @@ export function WorkflowPageHeader({
             {onSaveAsTemplate ? (
               <HoverExpandButton
                 icon={<BookmarkPlus className="h-3.5 w-3.5" />}
-                label="Save as template"
+                label={t('editor.saveAsTemplate.title')}
                 variant="ghost"
                 onClick={onSaveAsTemplate}
                 className="text-muted-foreground"
@@ -114,21 +117,21 @@ export function WorkflowPageHeader({
             {/* Enabled toggle — tints primary when on; label flips to reflect state. */}
             <HoverExpandButton
               icon={<Power className="h-3.5 w-3.5" />}
-              label={enabled ? 'Enabled' : 'Disabled'}
+              label={enabled ? t('editor.header.enabled') : t('editor.header.disabled')}
               variant="ghost"
               onClick={() => setEnabled(!enabled)}
               className={enabled ? 'text-primary' : 'text-muted-foreground'}
             />
             <HoverExpandButton
               icon={running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-              label="Run"
+              label={t('editor.header.run')}
               variant="default"
               onClick={onRun}
               disabled={running}
             />
             <HoverExpandButton
               icon={saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              label={dirty ? 'Save' : 'Saved'}
+              label={dirty ? tCommon('save') : tCommon('saved')}
               variant="secondary"
               onClick={onSave}
               disabled={!dirty || saving}
@@ -139,10 +142,10 @@ export function WorkflowPageHeader({
 
       {editing ? (
         <EditDetailsModal
-          heading="Edit workflow"
+          heading={t('editor.header.editHeading')}
           name={name}
           description={description}
-          nameLabel="Name"
+          nameLabel={t('editor.header.nameLabel')}
           onSave={(next) => {
             setName(next.name);
             setDescription(next.description);

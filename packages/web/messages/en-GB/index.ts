@@ -15,6 +15,7 @@ import search from './search.json';
 import settings from './settings.json';
 import slides from './slides.json';
 import task from './task.json';
+import workflows from './workflows.json';
 
 export default {
   auth,
@@ -32,4 +33,5 @@ export default {
   settings,
   slides,
   task,
+  workflows,
 };

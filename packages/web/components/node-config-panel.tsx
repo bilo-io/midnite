@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl';
 import { Bot, Copy, Loader2, Trash2, X } from 'lucide-react';
 import {
   getNodeTypeDefinition,
-  LLM_PROVIDERS,
-  LLM_PROVIDER_LABEL,
   TASK_EVENT_TRIGGER_EVENTS,
+  type LlmProvider,
   type NodeField,
+  type NodeTypeDefinition,
   type ScheduleTrigger,
   type TaskEventTrigger,
   type TaskEventTriggerEvent,
@@ -36,6 +36,7 @@ import {
   type RecurrenceKind,
   type RecurrencePreset,
 } from '@/lib/cron';
+import { nodeKeySegment, useNodeLabels, type NodeLabels } from '@/lib/workflow-node-labels';
 import { useWorkflowStore, type AppNode } from '@/lib/workflow-store';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
@@ -52,10 +53,12 @@ function JsonField({
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
+  const t = useTranslations('workflows.config');
   const [text, setText] = useState(() =>
     value && typeof value === 'object' && Object.keys(value).length ? JSON.stringify(value, null, 2) : '',
   );
   const [invalid, setInvalid] = useState(false);
+  // The `{ }` placeholder is JSON syntax, not prose — deliberately not translated.
   return (
     <div className="space-y-1">
       <textarea
@@ -78,7 +81,7 @@ function JsonField({
         }}
         placeholder="{ }"
       />
-      {invalid ? <p className="text-[11px] text-destructive">Invalid JSON</p> : null}
+      {invalid ? <p className="text-[11px] text-destructive">{t('json.invalid')}</p> : null}
     </div>
   );
 }
@@ -93,6 +96,7 @@ function CredentialPicker({
   value: string;
   onChange: (v: unknown) => void;
 }) {
+  const t = useTranslations('workflows.config');
   const { data } = useApiData(listWorkflowCredentials);
   const all = data ?? [];
   const filtered = credentialType ? all.filter((c) => c.type === credentialType) : all;
@@ -103,7 +107,7 @@ function CredentialPicker({
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
-      <option value="">— select a credential —</option>
+      <option value="">{t('credential.none')}</option>
       {filtered.map((c) => (
         <option key={c.id} value={c.id}>
           {c.name}
@@ -114,14 +118,19 @@ function CredentialPicker({
 }
 
 function FieldInput({
+  def,
   field,
+  labels,
   value,
   onChange,
 }: {
+  def: NodeTypeDefinition;
   field: NodeField;
+  labels: NodeLabels;
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
+  const placeholder = labels.fieldPlaceholder(def, field);
   switch (field.kind) {
     case 'text':
       return (
@@ -129,7 +138,7 @@ function FieldInput({
           className={textareaClass}
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={placeholder}
         />
       );
     case 'number':
@@ -139,11 +148,17 @@ function FieldInput({
           className={inputClass}
           value={typeof value === 'number' ? value : ''}
           onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-          placeholder={field.placeholder}
+          placeholder={placeholder}
         />
       );
     case 'boolean':
-      return <Switch checked={Boolean(value)} onCheckedChange={onChange} aria-label={field.label} />;
+      return (
+        <Switch
+          checked={Boolean(value)}
+          onCheckedChange={onChange}
+          aria-label={labels.fieldLabel(def, field)}
+        />
+      );
     case 'select':
       return (
         <select
@@ -153,7 +168,7 @@ function FieldInput({
         >
           {(field.options ?? []).map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {labels.optionLabel(def, field, o)}
             </option>
           ))}
         </select>
@@ -174,7 +189,7 @@ function FieldInput({
           className={inputClass}
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={placeholder}
         />
       );
   }
@@ -185,16 +200,23 @@ function isExpressionValue(value: unknown): boolean {
   return typeof value === 'string' && value.includes('{{');
 }
 
+/** The ƒx glyph stays `fx` in every locale — spreadsheet notation for "this is an
+ *  expression", not prose. Held in a constant so it reads as a symbol, not as copy
+ *  someone forgot to translate. */
+const FX_GLYPH = 'fx';
+
 /** The ƒx affordance: flip an expressionable field between a literal control and
- *  the expression input. */
+ *  the expression input. The accessible name and tooltip carry the translated
+ *  meaning; the glyph itself is notation. */
 function FxToggle({ active, onToggle, fieldLabel }: { active: boolean; onToggle: () => void; fieldLabel: string }) {
+  const t = useTranslations('workflows.config');
   return (
     <button
       type="button"
       onClick={onToggle}
       aria-pressed={active}
-      aria-label={`Toggle expression mode for ${fieldLabel}`}
-      title={active ? 'Use a literal value' : 'Use an expression'}
+      aria-label={t('fx.toggle', { field: fieldLabel })}
+      title={active ? t('fx.useLiteral') : t('fx.useExpression')}
       className={cn(
         'rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold italic transition-colors',
         active
@@ -202,7 +224,7 @@ function FxToggle({ active, onToggle, fieldLabel }: { active: boolean; onToggle:
           : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
       )}
     >
-      fx
+      {FX_GLYPH}
     </button>
   );
 }
@@ -210,6 +232,7 @@ function FxToggle({ active, onToggle, fieldLabel }: { active: boolean; onToggle:
 /** Editable node label in the config header. Commits on blur/Enter; the store
  *  may auto-suffix a clashing name, so we re-sync the draft from the prop. */
 function NodeLabelInput({ id, label }: { id: string; label: string }) {
+  const t = useTranslations('workflows.config');
   const setLabel = useWorkflowStore((s) => s.setLabel);
   const [draft, setDraft] = useState(label);
   useEffect(() => setDraft(label), [label]);
@@ -226,46 +249,77 @@ function NodeLabelInput({ id, label }: { id: string; label: string }) {
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
       }}
-      aria-label="Node label"
+      aria-label={t('nodeLabel')}
       className="-mx-1 w-full truncate rounded border border-transparent bg-transparent px-1 text-sm font-semibold hover:border-border focus-visible:border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     />
   );
 }
 
-// Provider options for the AI node, each branded with its icon. The empty value
-// follows the gateway's active provider (chosen on the Agents page).
-const AI_PROVIDER_OPTIONS: SelectOption<string>[] = [
-  { value: '', label: 'Active provider', icon: <Bot className="h-3.5 w-3.5 text-muted-foreground" /> },
-  ...LLM_PROVIDERS.map((p) => ({
-    value: p,
-    label: LLM_PROVIDER_LABEL[p],
-    icon: <ProviderIcon provider={LLM_PROVIDER_ICON_KEY[p]} size={14} />,
-  })),
-];
-
-function AiProviderField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/** Provider options for the AI node, each branded with its icon. Derived from the
+ *  shared field's own `options` (whose blank value follows the gateway's active
+ *  provider, chosen on the Agents page) so the labels come from the node catalogue
+ *  rather than a second hard-coded provider list. */
+function AiProviderField({
+  def,
+  field,
+  labels,
+  value,
+  onChange,
+}: {
+  def: NodeTypeDefinition;
+  field: NodeField;
+  labels: NodeLabels;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const options: SelectOption<string>[] = useMemo(
+    () =>
+      (field.options ?? []).map((o) => ({
+        value: o.value,
+        label: labels.optionLabel(def, field, o),
+        icon:
+          o.value === '' ? (
+            <Bot className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <ProviderIcon provider={LLM_PROVIDER_ICON_KEY[o.value as LlmProvider]} size={14} />
+          ),
+      })),
+    [def, field, labels],
+  );
   return (
-    <StyledSelect options={AI_PROVIDER_OPTIONS} value={value} onChange={onChange} aria-label="Provider" />
+    <StyledSelect
+      options={options}
+      value={value}
+      onChange={onChange}
+      aria-label={labels.fieldLabel(def, field)}
+    />
   );
 }
 
 function AiModelField({
+  def,
+  field,
+  labels,
   provider,
   value,
   onChange,
 }: {
+  def: NodeTypeDefinition;
+  field: NodeField;
+  labels: NodeLabels;
   provider: unknown;
   value: string;
   onChange: (v: string) => void;
 }) {
+  const t = useTranslations('workflows.config');
   const tCommon = useTranslations('common');
   return (
     <ModelComboSelect
       options={aiModelOptions(provider)}
       value={value}
       onChange={onChange}
-      placeholder="Select or type a model id"
-      aria-label="Model"
+      placeholder={t('ai.modelPlaceholder')}
+      aria-label={labels.fieldLabel(def, field)}
       formatCreateLabel={(input) => tCommon('ui.modelSelect.useCustom', { input })}
       noOptionsLabel={tCommon('ui.modelSelect.noOptions')}
     />
@@ -273,6 +327,8 @@ function AiModelField({
 }
 
 function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
+  const t = useTranslations('workflows.config');
+  const labels = useNodeLabels();
   const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams);
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
@@ -304,7 +360,7 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
 
   if (!def) return null;
   if (def.fields.length === 0) {
-    return <p className="text-xs text-muted-foreground">This node has no configuration.</p>;
+    return <p className="text-xs text-muted-foreground">{t('noConfig')}</p>;
   }
 
   const setParam = (key: string, val: unknown) => {
@@ -322,14 +378,16 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
         const value = node.data.params[field.key];
         const expressionable = field.expressionable === true;
         const inFx = expressionable && (fxMode[field.key] ?? false);
+        const label = labels.fieldLabel(def, field);
+        const help = labels.fieldHelp(def, field);
         let control: React.ReactNode;
         if (inFx) {
           control = (
             <ExpressionField
               value={value}
               onChange={(v) => setParam(field.key, v)}
-              placeholder={field.placeholder}
-              fieldLabel={field.label}
+              placeholder={labels.fieldPlaceholder(def, field)}
+              fieldLabel={label}
               context={context}
               hasData={hasData}
             />
@@ -337,6 +395,9 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
         } else if (isAi && field.key === 'provider') {
           control = (
             <AiProviderField
+              def={def}
+              field={field}
+              labels={labels}
               value={typeof value === 'string' ? value : ''}
               onChange={(v) => setParam('provider', v)}
             />
@@ -344,34 +405,43 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
         } else if (isAi && field.key === 'model') {
           control = (
             <AiModelField
+              def={def}
+              field={field}
+              labels={labels}
               provider={node.data.params.provider}
               value={typeof value === 'string' ? value : ''}
               onChange={(v) => setParam('model', v)}
             />
           );
         } else {
-          control = <FieldInput field={field} value={value} onChange={(v) => setParam(field.key, v)} />;
+          control = (
+            <FieldInput
+              def={def}
+              field={field}
+              labels={labels}
+              value={value}
+              onChange={(v) => setParam(field.key, v)}
+            />
+          );
         }
         return (
           <div key={field.key} className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <label className="text-xs font-medium text-muted-foreground">
-                {field.label}
+                {label}
                 {field.required ? <span className="text-destructive"> *</span> : null}
               </label>
               {expressionable ? (
                 <FxToggle
                   active={inFx}
-                  fieldLabel={field.label}
+                  fieldLabel={label}
                   onToggle={() => setFxMode((m) => ({ ...m, [field.key]: !(m[field.key] ?? false) }))}
                 />
               ) : null}
             </div>
             {control}
             {/* In ƒx mode the ExpressionField owns its own preview/hint line. */}
-            {!inFx && field.help ? (
-              <p className="text-[11px] text-muted-foreground">{field.help}</p>
-            ) : null}
+            {!inFx && help ? <p className="text-[11px] text-muted-foreground">{help}</p> : null}
           </div>
         );
       })}
@@ -379,19 +449,21 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
   );
 }
 
-const RECURRENCE_OPTIONS: SelectOption<string>[] = [
-  { value: 'daily', label: 'Every day' },
-  { value: 'weekdays', label: 'Weekdays (Mon–Fri)' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'custom', label: 'Custom (cron)' },
-];
-
-const DAY_OPTIONS: SelectOption<string>[] = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
-
+const RECURRENCE_MODES = ['daily', 'weekdays', 'weekly', 'monthly', 'custom'] as const;
 
 function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
+  const t = useTranslations('workflows.config.trigger.schedule');
   const setTrigger = useWorkflowStore((s) => s.setTrigger);
+  const recurrenceOptions: SelectOption<string>[] = useMemo(
+    () => RECURRENCE_MODES.map((m) => ({ value: m, label: t(`presets.${m}`) })),
+    [t],
+  );
+  // Day names are translated here rather than reusing `DAY_LABELS` (English, shared
+  // with the cron helpers); the array is still the source of the day count/order.
+  const dayOptions: SelectOption<string>[] = useMemo(
+    () => DAY_LABELS.map((_label, i) => ({ value: String(i), label: t(`days.${i}`) })),
+    [t],
+  );
   const preset = cronToPreset(trigger.cron);
   const mode: RecurrenceKind | 'custom' = preset?.kind ?? 'custom';
   const time = preset && 'time' in preset ? preset.time : '09:00';
@@ -416,8 +488,8 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
     }
   };
 
-  const onTime = (t: string) => {
-    const next = t || '09:00';
+  const onTime = (raw: string) => {
+    const next = raw || '09:00';
     if (mode === 'daily') apply({ kind: 'daily', time: next });
     else if (mode === 'weekdays') apply({ kind: 'weekdays', time: next });
     else if (mode === 'weekly') apply({ kind: 'weekly', day: weeklyDay, time: next });
@@ -427,26 +499,31 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Repeats</label>
-        <StyledSelect options={RECURRENCE_OPTIONS} value={mode} onChange={onMode} aria-label="Recurrence" />
+        <label className="text-xs font-medium text-muted-foreground">{t('repeats')}</label>
+        <StyledSelect
+          options={recurrenceOptions}
+          value={mode}
+          onChange={onMode}
+          aria-label={t('recurrence')}
+        />
       </div>
 
       {mode !== 'custom' ? (
         <div className="flex gap-2">
           {mode === 'weekly' ? (
             <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Day</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('day')}</label>
               <StyledSelect
-                options={DAY_OPTIONS}
+                options={dayOptions}
                 value={String(weeklyDay)}
                 onChange={(v) => apply({ kind: 'weekly', day: Number(v), time })}
-                aria-label="Day of week"
+                aria-label={t('dayOfWeek')}
               />
             </div>
           ) : null}
           {mode === 'monthly' ? (
             <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Day of month</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('dayOfMonth')}</label>
               <input
                 type="number"
                 min={1}
@@ -454,25 +531,25 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
                 className={inputClass}
                 value={monthlyDom}
                 onChange={(e) => apply({ kind: 'monthly', dom: Math.min(31, Math.max(1, Number(e.target.value) || 1)), time })}
-                aria-label="Day of month"
+                aria-label={t('dayOfMonth')}
               />
             </div>
           ) : null}
           <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Time</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('time')}</label>
             <input
               type="time"
               className={inputClass}
               value={time}
               onChange={(e) => onTime(e.target.value)}
-              aria-label="Time"
+              aria-label={t('time')}
             />
           </div>
         </div>
       ) : null}
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Cron expression</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('cron')}</label>
         <input
           className={cn(inputClass, 'font-mono')}
           value={trigger.cron}
@@ -483,7 +560,7 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Timezone</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('timezone')}</label>
         <input
           className={inputClass}
           value={trigger.timezone}
@@ -494,7 +571,7 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
 
       {runs.length > 0 ? (
         <div className="space-y-1">
-          <p className="text-[11px] font-medium text-muted-foreground">Next runs</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{t('nextRuns')}</p>
           <ul className="space-y-0.5">
             {runs.map((d, i) => (
               <li key={i} className="font-mono text-[11px] text-muted-foreground">
@@ -504,13 +581,14 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
           </ul>
         </div>
       ) : (
-        <p className="text-[11px] text-destructive">Invalid cron — no upcoming runs.</p>
+        <p className="text-[11px] text-destructive">{t('invalidCron')}</p>
       )}
     </div>
   );
 }
 
 function WebhookFields({ workflowId, hasSecret }: { workflowId: string; hasSecret: boolean }) {
+  const t = useTranslations('workflows.config.trigger.webhook');
   const [info, setInfo] = useState<{ url: string; token: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -533,50 +611,44 @@ function WebhookFields({ workflowId, hasSecret }: { workflowId: string; hasSecre
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Send a request to the workflow&rsquo;s URL to trigger a run. The URL embeds a secret token,
-        shown once when generated.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('hint')}</p>
       {info ? (
         <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Webhook URL</label>
+          <label className="text-xs font-medium text-muted-foreground">{t('url')}</label>
           <div className="flex items-center gap-1">
             <input className={cn(inputClass, 'font-mono text-[11px]')} value={info.url} readOnly />
-            <Button type="button" variant="secondary" size="icon" onClick={() => void copy()} aria-label="Copy URL">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              onClick={() => void copy()}
+              aria-label={t('copyUrl')}
+            >
               <Copy className="h-4 w-4" />
             </Button>
           </div>
-          {copied ? <p className="text-[11px] text-muted-foreground">Copied.</p> : null}
+          {copied ? <p className="text-[11px] text-muted-foreground">{t('copied')}</p> : null}
         </div>
       ) : (
         <p className="text-[11px] text-muted-foreground">
-          {hasSecret ? 'A token already exists. Regenerate to reveal a fresh URL.' : 'No URL generated yet.'}
+          {hasSecret ? t('tokenExists') : t('noUrlYet')}
         </p>
       )}
       <Button type="button" variant="outline" size="sm" onClick={() => void rotate()} disabled={busy}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        {hasSecret || info ? 'Regenerate URL' : 'Generate URL'}
+        {hasSecret || info ? t('regenerate') : t('generate')}
       </Button>
     </div>
   );
 }
 
-const TRIGGER_TAB_LABEL: Record<TriggerType, string> = {
-  manual: 'Manual',
-  schedule: 'Schedule',
-  webhook: 'Webhook',
-  'task-event': 'Task Event',
-};
-
-const TASK_EVENT_LABEL: Record<TaskEventTriggerEvent, string> = {
-  'task.done': 'Task done',
-  'task.abandoned': 'Task abandoned',
-  'task.needs-attention': 'Task needs attention',
-};
-
 function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
+  const t = useTranslations('workflows.config.trigger.taskEvent');
   const setTrigger = useWorkflowStore((s) => s.setTrigger);
   const filter = trigger.filter ?? {};
+  // Event ids are dotted (`task.done`) and a dot is next-intl's key separator, so the
+  // catalogue segment goes through the same escaping helper the node keys use.
+  const eventLabel = (event: TaskEventTriggerEvent) => t(`events.${nodeKeySegment(event)}`);
 
   const toggleEvent = (event: TaskEventTriggerEvent) => {
     const has = trigger.events.includes(event);
@@ -598,7 +670,7 @@ function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Fire on</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('fireOn')}</label>
         <div className="space-y-1">
           {TASK_EVENT_TRIGGER_EVENTS.map((event) => (
             <label key={event} className="flex items-center gap-2 text-xs">
@@ -606,41 +678,42 @@ function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
                 type="checkbox"
                 checked={trigger.events.includes(event)}
                 onChange={() => toggleEvent(event)}
-                aria-label={TASK_EVENT_LABEL[event]}
+                aria-label={eventLabel(event)}
               />
-              {TASK_EVENT_LABEL[event]}
+              {eventLabel(event)}
             </label>
           ))}
         </div>
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Repo filter (optional)</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('repoFilterLabel')}</label>
         <input
           className={inputClass}
           value={filter.repo ?? ''}
           onChange={(e) => setFilter({ repo: e.target.value })}
           placeholder="owner/repo"
-          aria-label="Repo filter"
+          aria-label={t('repoFilter')}
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Project filter (optional)</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('projectFilterLabel')}</label>
         <input
           className={inputClass}
           value={filter.projectId ?? ''}
           onChange={(e) => setFilter({ projectId: e.target.value })}
-          placeholder="project id"
-          aria-label="Project filter"
+          placeholder={t('projectPlaceholder')}
+          aria-label={t('projectFilter')}
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Priority filter (optional)</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('priorityFilterLabel')}</label>
         <StyledSelect
           options={[
-            { value: '', label: 'Any priority' },
+            { value: '', label: t('anyPriority') },
+            // P0–P3 are the board's own priority notation, identical in every locale.
             { value: '0', label: 'P0' },
             { value: '1', label: 'P1' },
             { value: '2', label: 'P2' },
@@ -648,7 +721,7 @@ function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
           ]}
           value={filter.priority === undefined ? '' : String(filter.priority)}
           onChange={(v) => setFilter({ priority: v === '' ? undefined : Number(v) })}
-          aria-label="Priority filter"
+          aria-label={t('priorityFilter')}
         />
       </div>
     </div>
@@ -656,6 +729,7 @@ function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
 }
 
 function TriggerConfig({ workflowId }: { workflowId: string }) {
+  const t = useTranslations('workflows.config.trigger');
   const trigger = useWorkflowStore((s) => s.trigger);
   const setTrigger = useWorkflowStore((s) => s.setTrigger);
   const types: TriggerType[] = ['manual', 'schedule', 'webhook', 'task-event'];
@@ -676,17 +750,19 @@ function TriggerConfig({ workflowId }: { workflowId: string }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-1">
-        {types.map((t) => (
+        {types.map((type) => (
           <button
-            key={t}
+            key={type}
             type="button"
-            onClick={() => choose(t)}
+            onClick={() => choose(type)}
             className={cn(
               'rounded-md border px-2 py-2 text-xs transition-colors',
-              trigger.type === t ? 'border-foreground/30 bg-accent' : 'border-border/60 hover:bg-accent/40',
+              trigger.type === type
+                ? 'border-foreground/30 bg-accent'
+                : 'border-border/60 hover:bg-accent/40',
             )}
           >
-            {TRIGGER_TAB_LABEL[t]}
+            {t(`tabs.${type}`)}
           </button>
         ))}
       </div>
@@ -696,16 +772,15 @@ function TriggerConfig({ workflowId }: { workflowId: string }) {
       ) : null}
       {trigger.type === 'task-event' ? <TaskEventFields trigger={trigger} /> : null}
       {trigger.type === 'manual' ? (
-        <p className="text-xs text-muted-foreground">
-          Runs only when you press Run. The Run button works for any trigger type, so you can always
-          test manually.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('manual.hint')}</p>
       ) : null}
     </div>
   );
 }
 
 export function NodeConfigPanel({ workflowId, run = null }: { workflowId: string; run?: WorkflowRun | null }) {
+  const t = useTranslations('workflows.config');
+  const { title } = useNodeLabels();
   const selectedId = useWorkflowStore((s) => s.selectedId);
   const node = useWorkflowStore((s) => s.nodes.find((n) => n.id === selectedId) ?? null);
   const select = useWorkflowStore((s) => s.select);
@@ -715,9 +790,9 @@ export function NodeConfigPanel({ workflowId, run = null }: { workflowId: string
   const deleteNode = async () => {
     if (!node) return;
     const ok = await confirm({
-      title: 'Delete this node?',
-      description: `“${node.data.label}” will be removed from the workflow.`,
-      confirmLabel: 'Delete node',
+      title: t('delete.title'),
+      description: t('delete.description', { label: node.data.label }),
+      confirmLabel: t('delete.confirm'),
     });
     if (ok) removeNode(node.id);
   };
@@ -725,7 +800,7 @@ export function NodeConfigPanel({ workflowId, run = null }: { workflowId: string
   if (!node) {
     return (
       <aside className="flex w-80 shrink-0 items-center justify-center border-l border-border/60 bg-background/40 p-6 text-center text-xs text-muted-foreground">
-        Select a node to configure it.
+        {t('empty')}
       </aside>
     );
   }
@@ -742,9 +817,15 @@ export function NodeConfigPanel({ workflowId, run = null }: { workflowId: string
           ) : (
             <NodeLabelInput id={node.id} label={node.data.label} />
           )}
-          <p className="text-[11px] text-muted-foreground">{def?.title ?? node.data.kind}</p>
+          <p className="text-[11px] text-muted-foreground">{def ? title(def) : node.data.kind}</p>
         </div>
-        <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={() => select(null)}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={t('close')}
+          onClick={() => select(null)}
+        >
           <X className="h-4 w-4" />
         </Button>
       </header>
@@ -763,7 +844,7 @@ export function NodeConfigPanel({ workflowId, run = null }: { workflowId: string
             className="gap-1.5 text-destructive hover:text-destructive"
           >
             <Trash2 className="h-4 w-4" />
-            Delete node
+            {t('delete.action')}
           </Button>
         </footer>
       ) : null}
