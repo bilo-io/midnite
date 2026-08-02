@@ -52,8 +52,10 @@ describe('WorkflowsView (i18n)', () => {
     render(<WorkflowsView initial={WORKFLOWS} />, { locale: 'fr-FR' });
     expect(screen.getByRole('button', { name: 'Nouveau workflow' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Vue tableau' })).toBeInTheDocument();
-    expect(screen.getByText('Manuel')).toBeInTheDocument();
-    expect(screen.getByText('Événement de tâche')).toBeInTheDocument();
+    // Both the trigger section heading and each card's TriggerBadge read the same
+    // `list.triggers.*` keys, so a trigger label appears more than once.
+    expect(screen.getAllByText('Manuel').length).toBeGreaterThan(1);
+    expect(screen.getAllByText('Événement de tâche').length).toBeGreaterThan(0);
     expect(screen.getByText('2 nœuds')).toBeInTheDocument();
     expect(screen.getByText('Aucun workflow webhook')).toBeInTheDocument();
     // The workflow's own name is user data — never translated.
