@@ -6,7 +6,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-08-03 — feat: Phase 80 Theme E — reading-primitive stories & verification 🟢
 
-PR #TBD. Discharges the deferral made in Theme A ("units now, stories in E") and runs the phase's verification sweep. Phase 80 now has only Theme D (the legal set) left.
+PR #590. Discharges the deferral made in Theme A ("units now, stories in E") and runs the phase's verification sweep. Phase 80 now has only Theme D (the legal set) left.
 
 - [x] **11 Storybook stories** across `ReadingLayout` (5), `Prose` (3) and `TableOfContents` (3), running as Vitest browser tests. `play` functions assert slugification (text wrapped in markup, duplicate-title de-dup, explicit `id` winning), injected-vs-external link routing, both `sidebarMobile` modes, single-section suppression, and `aria-current` moving on click. `Prose`'s `AllElements` story doubles as the design system's visual reference for reading typography.
 - [x] **Scroll-spy asserted via the click path, deliberately** — `IntersectionObserver` callbacks depend on scroll physics and canvas height, the exact timing dependency behind the browser-test flakiness this repo keeps hitting. The observer wiring is pinned by the jsdom specs instead.

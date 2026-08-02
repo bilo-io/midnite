@@ -166,7 +166,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Migrate docs onto the primitive (thin MDX adapter re-exporting `proseComponents`; local TOC deleted; `rehype-slug` kept so published anchors are unchanged; parity proven by a geometry probe, identical on both pages) (PR #589)
 - ✅ **C** — Rebuild site legal on the primitive (gains the right-rail TOC + heading deep-links it never had; added `sidebarMobile` to the primitive; fixed the site's missing `../ui/src` tailwind glob) (PR #586)
 - ◻ **D** — Complete legal set + real prose (Terms of Use + Cookies added to `LEGAL_DOCS`; effective dates; footer surfaces all four)
-- ✅ **E** — Stories, tests & verification (11 Storybook browser-test stories for the three primitives; scroll-spy asserted via the click path to avoid observer-timing flake; `ui` + `docs` boundary tests green) (PR #TBD)
+- ✅ **E** — Stories, tests & verification (11 Storybook browser-test stories for the three primitives; scroll-spy asserted via the click path to avoid observer-timing flake; `ui` + `docs` boundary tests green) (PR #590)
 
 ### [Phase 79 — Translations & Internationalization (i18n)](phase-79-translations-i18n.md)
 *Greenfield i18n for `web` via next-intl in **preference-based client mode** (locale from the Phase 43 synced pref, not middleware/URL routing — web defaults to static export with no server). en-GB canonical + de-DE/fr-FR/es-ES; `Locale` type in `shared`, catalogs in `web/messages/`; foundation + priority surfaces + lint gate (not all ~560 files).*

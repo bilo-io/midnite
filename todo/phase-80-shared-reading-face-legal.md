@@ -90,7 +90,7 @@ Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported
 - [ ] [`footer.tsx`](../packages/site/components/footer.tsx) now surfaces all four
       automatically (it maps `LEGAL_DOCS`) — confirm order + labels read well.
 
-## Theme E — Stories, tests & verification — **M** — ✅ DONE (PR #TBD, 2026-08-03)
+## Theme E — Stories, tests & verification — **M** — ✅ DONE (PR #590, 2026-08-03)
 
 - [x] **Storybook stories** for `ReadingLayout` (5), `Prose` (3) and `TableOfContents` (3) in [`packages/ui/src/components/reading/`](../packages/ui/src/components/reading) — they run as Vitest **browser** tests. `play` functions assert heading-id slugification (incl. text wrapped in markup, duplicate-title de-dup, and an explicit `id` winning), injected-vs-external link routing, both `sidebarMobile` modes, single-section suppression, and that the active section is marked with `aria-current` and moves on click.
   - **Scroll-spy is asserted through the click path, not a scrolled one.** `IntersectionObserver` callbacks depend on scroll physics and canvas height — precisely the timing dependency behind the browser-test flakiness this repo already fights. The observer wiring (observe on mount, disconnect on unmount) is pinned by the jsdom specs instead.
