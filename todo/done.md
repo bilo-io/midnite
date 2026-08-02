@@ -37,6 +37,20 @@ PR #583. The frame around the app plus the office's React layer, built as three 
 - [x] **fr-FR + tests** — 189 new fr keys (hand-authored, `needsReview`); key-audit tests `i18n-chrome-keys.test.ts` (38) + `i18n-office-keys.test.ts` (74); fr RTL renders (banner, user menu, lock screen, presence dialog); exempt list **293 → 247**.
 - [x] Gate: `:typecheck` + `:lint` + `:test` green; `i18n-validate`/`i18n-exempt`/`i18n-barrels` in sync.
 
+## 2026-08-02 — feat: Phase 82 Theme D — workflows i18n (incl. the node-catalogue seam) 🟢
+
+PR #587. Sixth Theme D slice and the largest single namespace so far (381 keys). Built by 3 parallel subagents on disjoint sets (node-catalogue seam · editor cluster · list surfaces), merged centrally.
+
+- [x] **Node-catalogue seam** — the consequential design call. `shared/node-types.ts` holds 22 `NodeTypeDefinition`s with ~130 English strings and is read by the gateway executor registry, so `shared` stays i18n-agnostic and keeps its English as the fallback. `lib/workflow-node-labels.ts` resolves `workflows.nodes.<id>.{title,description,fields.*,ports.*}` at the web call site; a missing key falls back rather than throwing, so a node added before its copy still renders. Node ids contain dots (next-intl key separators) → `.`→`_` escaping centralised in `nodeKeySegment`. Catalog values quote literal `{{ }}` so intl-messageformat renders expression syntax verbatim instead of parsing braces as ICU args.
+- [x] **Editor cluster** (62 keys) — canvas (React Flow `ariaLabelConfig`, previously an unlabelled a11y layer), controls, page header, node view, save-as-template. `canceled` now renders "Cancelled" from the catalog instead of the raw enum under CSS `capitalize`.
+- [x] **Palette + generic config panel** (68 keys) — category headings, translated-copy search, and the whole trigger config surface (schedule presets/day names/cron/timezone, webhook token states, task-event filters) plus the ƒx toggle's accessible name. Collapsed a duplicated AI-provider list so its options come from the shared field definition.
+- [x] **List surfaces + marketplace** (73 keys) — list page/table/card/widget/create modal; marketplace chrome only (seeded template names stay gateway data). Two English lookup tables became locale-driven, keeping only machine-facing type/hue/icon.
+- [x] **`trigger-badge.tsx` folded in** — it rendered English "Manual" beside the translated accordion header and the right keys already existed; 16 files leave `I18N_EXEMPT` (232 → 216).
+- [x] **Never translated** — `{{ }}` syntax, helper names, path tokens; gateway-seeded template names and node `data.label`s; cron expressions, run/node ids, webhook URLs.
+- [x] **Residue logged** — `lib/cron.ts` (`describeCron`) and `lib/utils` (`relativeTime`) emit English prose from shared helpers outside the `.tsx` gate; `expression-editor.tsx` composes a translated field name into an English aria template.
+- [x] **Tests** — registry-driven sweep (all 22 node ids need title + description, and every field label / declared placeholder / help / select option / labelled port needs a key, so a new node without copy fails CI); seam units for escaping, present-key-wins, verbatim `{{ }}`, missing-key fallback per resolver; fr renders for palette, config panel, controls, create modal, list view; `workflows-i18n-fr.shots.ts` previews of list + marketplace + editor.
+- [x] Gate green after two real diagnoses: a stale `@midnite/ui` `dist` in the worktree (built before rebasing onto the reading-primitives PR) was failing docs/shell/admin — proven pre-existing-free by running those suites on `main`, then fixed by a force rebuild; and my own `trigger-badge` change made a sibling's fr assertion match twice. Final: web 308, gateway 294, shared 77, ui 25, docs 8, shell 7, admin 8, cli 26, site 8, desktop 7.
+
 ## 2026-08-02 — feat: Phase 82 Theme D — memory workspace i18n + localised LLM output 🟢
 
 PR #585. Fifth Theme D slice, and the first to add real feature work alongside the sweep. Built by 3 parallel subagents (panels · pages · gateway) on disjoint sets, merged centrally.
