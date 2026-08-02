@@ -1,0 +1,80 @@
+{
+  "overview": {
+    "article": {
+      "x": 424,
+      "y": 97,
+      "w": 576,
+      "h": 2869
+    },
+    "sidebarNavItems": 20,
+    "tocLabel": "On this page",
+    "tocEntries": [
+      "What you can do with it",
+      "How it fits together",
+      "The command line"
+    ],
+    "tocActive": "What you can do with it",
+    "headingIds": [
+      "what-you-can-do-with-it",
+      "how-it-fits-together",
+      "the-command-line"
+    ],
+    "h2Style": {
+      "fontSize": "20px",
+      "fontWeight": "600",
+      "marginTop": "40px",
+      "marginBottom": "12px",
+      "borderBottomWidth": "1px"
+    },
+    "pStyle": {
+      "fontSize": "16px",
+      "lineHeight": "28px",
+      "marginTop": "16px",
+      "marginBottom": "16px"
+    },
+    "articleCount": 1
+  },
+  "getting-started": {
+    "article": {
+      "x": 424,
+      "y": 97,
+      "w": 576,
+      "h": 3053
+    },
+    "sidebarNavItems": 20,
+    "tocLabel": "On this page",
+    "tocEntries": [
+      "What you'll need",
+      "Install",
+      "macOS (Apple Silicon) — one command",
+      "Windows and Linux",
+      "First launch",
+      "Set up your workspace",
+      "Next steps"
+    ],
+    "tocActive": "What you'll need",
+    "headingIds": [
+      "what-youll-need",
+      "install",
+      "macos-apple-silicon--one-command",
+      "windows-and-linux",
+      "first-launch",
+      "set-up-your-workspace",
+      "next-steps"
+    ],
+    "h2Style": {
+      "fontSize": "20px",
+      "fontWeight": "600",
+      "marginTop": "40px",
+      "marginBottom": "12px",
+      "borderBottomWidth": "1px"
+    },
+    "pStyle": {
+      "fontSize": "16px",
+      "lineHeight": "28px",
+      "marginTop": "16px",
+      "marginBottom": "16px"
+    },
+    "articleCount": 1
+  }
+}
