@@ -26,6 +26,18 @@ PR #583. The frame around the app plus the office's React layer, built as three 
 - [x] **fr-FR + tests** — 189 new fr keys (hand-authored, `needsReview`); key-audit tests `i18n-chrome-keys.test.ts` (38) + `i18n-office-keys.test.ts` (74); fr RTL renders (banner, user menu, lock screen, presence dialog); exempt list **293 → 247**.
 - [x] Gate: `:typecheck` + `:lint` + `:test` green; `i18n-validate`/`i18n-exempt`/`i18n-barrels` in sync.
 
+## 2026-08-02 — feat: Phase 82 Theme D — memory workspace i18n + localised LLM output 🟢
+
+PR #585. Fifth Theme D slice, and the first to add real feature work alongside the sweep. Built by 3 parallel subagents (panels · pages · gateway) on disjoint sets, merged centrally.
+
+- [x] **Memory UI — 15 files → new `memory` namespace (132 keys)** — the 9 workspace panels (sources, Studio rail, chat composer, doc, scope, add-source/source-detail/metadata modals, artifact viewer) plus the `/memory` list page, card and create/edit modal; ICU plurals replace the old `memor(y|ies)` string surgery; the card's date moves onto the Phase 79 F `useLocaleFormat` seam. Exempt 247 → 232.
+- [x] **Enum labels centralised** — `useArtifactKindLabel`/`useArtifactStatusLabel`/`useSourceIngestStateLabel` in `lib/i18n-labels.ts` (the Theme B pattern), so rail/viewer/detail-modal share one wording; `MEMORY_ARTIFACT_META` in `shared` stays i18n-agnostic.
+- [x] **Localised LLM output (new capability)** — optional `locale` on `PostMemoryChatRequest` + `GenerateMemoryArtifactRequest` (typed over the wire, not Accept-Language); pure `agent/llm/lib/output-language.ts` appends a language directive read from `SUPPORTED_LOCALES`; threaded through chat, text/SVG studio, audio-script and video-deck prompts. `en-GB`/omitted → empty instruction. de-DE/es-ES honoured despite stub catalogs.
+- [x] **Deliberate gaps** — gateway-emitted canned replies (empty corpus, LLM off, generation failure) stay English; Phase 82 excludes gateway copy and there's no gateway catalog seam. Follow-up logged: `memory-view.tsx`'s search predicate matches the literal `'global'` token, so under fr-FR the translated scope chip won't match.
+- [x] **Tooling fix** — `scripts/i18n-barrels.mjs` skips `_`-prefixed fragments (a cross-slice partial had emitted an invalid identifier and broke every web test).
+- [x] **Tests** — static key audit + enum sweep (`lib/i18n-memory-keys.test.ts`); fr renders (sources panel, memory list); gateway prompt units across fr/de/es + byte-identical en-GB baseline; schema units incl. `pt-BR` → 400; web locale send-through; `memory-i18n-fr.shots.ts` previews.
+- [x] Gate: `:typecheck` + `:lint` green; shared 854, gateway 2337, web memory 35. The `web:test` reds were the known Storybook full-suite flake — a different unrelated set each run, all green in isolation.
+
 ## 2026-07-30 — feat: Phase 82 Theme D — roadmap/task-graph/slides/safety i18n slice 🟢
 
 PR #582. Fourth Theme D slice, four clusters at once (~160 new fr keys), built by 3 parallel subagents on disjoint file sets merged centrally.
