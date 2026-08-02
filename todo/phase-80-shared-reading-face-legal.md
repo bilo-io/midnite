@@ -59,19 +59,13 @@ Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported
 - [x] All four exported from [`packages/ui/src/index.ts`](../packages/ui/src/index.ts); leaf `boundary.test.ts` green.
 - [x] **Tests (48 in `ui`, chosen scope: units now, stories in Theme E)** — `slugify.test.ts` (13, node env: deep extraction, accent/punctuation handling, dedupe, empty-slug fallback) + a new **jsdom `dom` vitest project** for `prose.dom.test.tsx` (10: slugging, dedupe, id stability across re-render, link injection/external/anchor) and `table-of-contents.dom.test.tsx` (10: heading scan, single-section suppression, active-section highlight, click-to-scroll, explicit-ref scoping, re-scan, observer wiring + teardown).
 
-## Theme B — Migrate docs onto the primitive — **M**
+## Theme B — Migrate docs onto the primitive — **M** — ✅ DONE (PR #TBD, 2026-08-02)
 
-- [ ] Rebuild [`docs/src/components/layout.tsx`](../packages/docs/src/components/layout.tsx)'s
-      center column + TOC rail on `ReadingLayout` + `TableOfContents`; keep docs' own
-      grouped sidebar and starfield chrome local.
-- [ ] Point docs' `MDXProvider` at the shared `Prose` element map
-      ([`mdx-components.tsx`](../packages/docs/src/components/mdx-components.tsx) becomes a
-      thin adapter); wrap `react-router` `NavLink` into `ReadingLayoutProvider`. Drop the
-      now-redundant local `table-of-contents.tsx`.
-- [ ] Since `Prose` self-slugifies, docs' Vite `rehype-slug` is redundant for TOC — leave
-      it or remove it, but verify heading anchors + deep-links still resolve.
-- [ ] **Visual-parity check** (the risky bit): docs reading pages look/scroll/spy exactly
-      as before — TOC highlight, mobile drawer, `max-w-3xl` measure, code blocks.
+- [x] [`docs/src/components/layout.tsx`](../packages/docs/src/components/layout.tsx)'s centre column + TOC rail rebuilt on `ReadingLayout` + the shared `TableOfContents`; docs' own grouped sidebar, header, starfield and mobile drawer stay local. The primitive's grid metrics *are* docs' old ones (they were lifted verbatim when Theme A was extracted), so no override was needed.
+- [x] `MDXProvider` now points at the shared map: [`mdx-components.tsx`](../packages/docs/src/components/mdx-components.tsx) is a thin re-export of `proseComponents` (its react-router `a` is gone — the shared map's injected link covers it), and [`markdown-page.tsx`](../packages/docs/src/components/markdown-page.tsx) keeps deriving its node-stripped variant from it, so the react-markdown path follows for free. `ReadingLayoutProvider` wraps the router in [`app.tsx`](../packages/docs/src/app.tsx) with a react-router `Link` adapter. Local `table-of-contents.tsx` + its test **deleted** — the behaviour is covered by the shared component's dom tests in `ui`.
+- [x] **`rehype-slug` kept deliberately.** `Prose` honours an explicit `id`, so the plugin keeps winning and every anchor docs has ever published resolves byte-identically; self-slugging stays the safety net for paths without it. Verified: heading ids unchanged on both probed pages.
+- [x] **`ReadingLayout` owns the single `<article>`** — `DocPage` no longer renders its own, which would have nested one article in another and fought the shell's measure. Probe confirms exactly one `<article>` per page.
+- [x] **Visual-parity check (the risky bit) — passed.** A Playwright geometry probe (article bounding box, sidebar item count, TOC label/entries/active section, heading ids, computed `h2`/`p` typography, article count) run against a build of `main` and a build of this branch came back **byte-identical on both a design-system page and a long product doc**. Screenshots at desktop + mobile in the PR; a raw image diff is meaningless here because the starfield canvas animates.
 
 ## Theme C — Rebuild site legal on the primitive — **M** — ✅ DONE (PR #586, 2026-08-02)
 

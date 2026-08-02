@@ -1,13 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Download } from 'lucide-react';
-import { GithubIcon, NeuroCloudBackground } from '@midnite/ui';
+import {
+  GithubIcon,
+  NeuroCloudBackground,
+  ReadingLayout,
+  TableOfContents,
+} from '@midnite/ui';
 
 import type { NavGroup } from '../content/nav';
 import logoUrl from '../assets/logo.png';
 import { DocSearch } from './doc-search';
 import { Sidebar } from './sidebar';
-import { TableOfContents } from './table-of-contents';
 import { ThemeToggle } from './theme-toggle';
 
 // The app chrome — header + sidebar + content well — built entirely from the
@@ -103,17 +107,18 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
         </div>
       ) : null}
 
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-12 xl:grid-cols-[13rem_minmax(0,1fr)_14rem]">
-        <div className="hidden md:block">
-          <Sidebar nav={nav} />
-        </div>
-        <main className="min-w-0">{children}</main>
-        <aside className="hidden xl:block">
-          <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
-            <TableOfContents />
-          </div>
-        </aside>
-      </div>
+      {/* The reading columns come from `@midnite/ui` (Phase 80) — the same shell the
+          marketing site's legal pages read on. The grid metrics and the `xl` TOC gate
+          are the primitive's defaults, lifted from this file when it was extracted, so
+          the face is unchanged. The sidebar keeps its `hidden md:block` default here
+          because this app surfaces its nav on mobile through the drawer above. */}
+      <ReadingLayout
+        sidebar={<Sidebar nav={nav} />}
+        toc={<TableOfContents />}
+        articleClassName="pb-16"
+      >
+        {children}
+      </ReadingLayout>
     </div>
   );
 }

@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-02 — feat: Phase 80 Theme B — docs on the shared reading primitive 🟢
+
+PR #TBD. The second half of Theme A's purpose: one source of truth only counts if **both** apps read on it. Docs' layout, prose map and TOC now come from `@midnite/ui`, completing the extraction the site's legal pages started in Theme C.
+
+- [x] **Layout on `ReadingLayout` + shared `TableOfContents`** — docs' grouped sidebar, header, starfield and mobile drawer stay local. No metric overrides were needed: the primitive's grid *is* docs' old grid, lifted verbatim during the Theme A extraction.
+- [x] **One prose map, three render paths** — `mdx-components.tsx` is now a thin re-export of `proseComponents`; `markdown-page.tsx` keeps deriving its node-stripped variant from it, so MDX pages, imported product docs and the changelog all follow. `ReadingLayoutProvider` in `app.tsx` injects a react-router `Link`, so root-relative links keep working under the hash router without the typography knowing about routing.
+- [x] **Local `table-of-contents.tsx` + test deleted** — behaviour covered by the shared component's dom tests in `ui`; coverage moved rather than vanished.
+- [x] **`rehype-slug` kept on purpose** — `Prose` defers to an explicit `id`, so the plugin still wins and every published anchor resolves unchanged; self-slugging is the safety net for paths without it.
+- [x] **`ReadingLayout` owns the single `<article>`** — `DocPage` stopped rendering its own, which would have nested article-in-article and fought the shell's measure.
+- [x] **Parity proven, not eyeballed** — a Playwright geometry probe (article box, sidebar item count, TOC label/entries/active section, heading ids, computed `h2`/`p` typography, article count) against builds of `main` and the branch came back **byte-identical** on a design-system page and a long product doc. An image diff would have been useless: the starfield canvas animates, so no two screenshots ever match byte-for-byte.
+- [x] Gate: `:typecheck` + `:lint` + `:test` green; docs' own 32 tests pass unedited, including its boundary test.
+
 ## 2026-08-02 — feat: Phase 80 Theme C — site legal on the shared reading primitive 🟢
 
 PR #586. The legal pages rolled their own two-column layout and prose map, and had **no on-page navigation and no heading anchors at all**. They now read on `@midnite/ui`'s `ReadingLayout` + `Prose` — the same shell and element map docs uses — which is where the new right-rail TOC comes from.

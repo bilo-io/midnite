@@ -31,7 +31,7 @@
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 26/40 | `███████░░░` | 65% | — | D F |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
-| [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | 🔄 WIP | 12/27 | `████░░░░░░` | 44% | B | D E |
+| [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | 🔄 WIP | 17/28 | `██████░░░░` | 61% | — | D E |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 27/34 | `████████░░` | 79% | — | — |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
@@ -163,7 +163,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 80 — Shared reading face & complete legal set](phase-80-shared-reading-face-legal.md)
 *Extract the reading face (column shell + prose + scroll-spy TOC) into `@midnite/ui` as a framework-agnostic leaf, migrate **both** docs and site legal onto it, and complete the legal set (Terms + Cookies) with real, counsel-review-flagged prose.*
 - ✅ **A** — Shared reading primitives in `@midnite/ui` (`ReadingLayout` + `Prose` self-slugifying headings + `TableOfContents` scroll-spy + `ReadingLayoutProvider` injected Link; leaf rule intact; new jsdom `dom` test project, 48 tests) (PR #584)
-- ◻ **B** — Migrate docs onto the primitive (thin MDX adapter; visual-parity guardrail on the polished docs face)
+- ✅ **B** — Migrate docs onto the primitive (thin MDX adapter re-exporting `proseComponents`; local TOC deleted; `rehype-slug` kept so published anchors are unchanged; parity proven by a geometry probe, identical on both pages) (PR #TBD)
 - ✅ **C** — Rebuild site legal on the primitive (gains the right-rail TOC + heading deep-links it never had; added `sidebarMobile` to the primitive; fixed the site's missing `../ui/src` tailwind glob) (PR #586)
 - ◻ **D** — Complete legal set + real prose (Terms of Use + Cookies added to `LEGAL_DOCS`; effective dates; footer surfaces all four)
 - ◻ **E** — Stories, tests & verification (Storybook browser tests for the three primitives; `ui`/`docs`/`site` boundaries green)
