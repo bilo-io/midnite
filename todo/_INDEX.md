@@ -31,7 +31,7 @@
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 26/40 | `███████░░░` | 65% | — | D F |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
-| [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | 🔄 WIP | 17/28 | `██████░░░░` | 61% | E | D |
+| [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | 🔄 WIP | 20/28 | `███████░░░` | 71% | — | D |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | 🔄 WIP | 27/34 | `████████░░` | 79% | — | — |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
 | [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
@@ -166,7 +166,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Migrate docs onto the primitive (thin MDX adapter re-exporting `proseComponents`; local TOC deleted; `rehype-slug` kept so published anchors are unchanged; parity proven by a geometry probe, identical on both pages) (PR #589)
 - ✅ **C** — Rebuild site legal on the primitive (gains the right-rail TOC + heading deep-links it never had; added `sidebarMobile` to the primitive; fixed the site's missing `../ui/src` tailwind glob) (PR #586)
 - ◻ **D** — Complete legal set + real prose (Terms of Use + Cookies added to `LEGAL_DOCS`; effective dates; footer surfaces all four)
-- ◻ **E** — Stories, tests & verification (Storybook browser tests for the three primitives; `ui`/`docs`/`site` boundaries green)
+- ✅ **E** — Stories, tests & verification (11 Storybook browser-test stories for the three primitives; scroll-spy asserted via the click path to avoid observer-timing flake; `ui` + `docs` boundary tests green) (PR #TBD)
 
 ### [Phase 79 — Translations & Internationalization (i18n)](phase-79-translations-i18n.md)
 *Greenfield i18n for `web` via next-intl in **preference-based client mode** (locale from the Phase 43 synced pref, not middleware/URL routing — web defaults to static export with no server). en-GB canonical + de-DE/fr-FR/es-ES; `Locale` type in `shared`, catalogs in `web/messages/`; foundation + priority surfaces + lint gate (not all ~560 files).*

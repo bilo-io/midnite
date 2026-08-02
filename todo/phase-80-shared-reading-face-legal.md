@@ -90,15 +90,13 @@ Landed as `packages/ui/src/components/reading/` (a new grouped subdir), exported
 - [ ] [`footer.tsx`](../packages/site/components/footer.tsx) now surfaces all four
       automatically (it maps `LEGAL_DOCS`) — confirm order + labels read well.
 
-## Theme E — Stories, tests & verification — **M**
+## Theme E — Stories, tests & verification — **M** — ✅ DONE (PR #TBD, 2026-08-03)
 
-- [ ] Storybook stories for `ReadingLayout`, `Prose`, `TableOfContents` in `packages/ui`
-      (they run as Vitest **browser** tests via `@storybook/addon-vitest`), incl. a `play`
-      that asserts scroll-spy marks the active heading and heading-id slugification.
-- [ ] Unit test the slugifier (collision de-dup, punctuation/emoji stripping) and the
-      `useReadingLink` fallback (no provider → plain `<a>`).
-- [ ] `moon run ui:test docs:test site:test` green; `moon run :typecheck :lint` green;
-      `ui`/`docs`/`site` boundary tests pass.
+- [x] **Storybook stories** for `ReadingLayout` (5), `Prose` (3) and `TableOfContents` (3) in [`packages/ui/src/components/reading/`](../packages/ui/src/components/reading) — they run as Vitest **browser** tests. `play` functions assert heading-id slugification (incl. text wrapped in markup, duplicate-title de-dup, and an explicit `id` winning), injected-vs-external link routing, both `sidebarMobile` modes, single-section suppression, and that the active section is marked with `aria-current` and moves on click.
+  - **Scroll-spy is asserted through the click path, not a scrolled one.** `IntersectionObserver` callbacks depend on scroll physics and canvas height — precisely the timing dependency behind the browser-test flakiness this repo already fights. The observer wiring (observe on mount, disconnect on unmount) is pinned by the jsdom specs instead.
+  - The `ActiveSection` story renders the rail **outside** the layout's `toc` slot: that slot is deliberately `hidden` below `xl`, so inside a narrower story canvas the rail is `display:none` and correctly invisible to `getByRole`. The gate itself is pinned in `reading-layout.dom.test.tsx`.
+- [x] **Slugifier + `useReadingLink` fallback units** — already shipped with Theme A (PR #584): `slugify.test.ts` covers collision de-dup, punctuation/accent stripping and the empty-slug fallback; `prose.dom.test.tsx` covers the no-provider plain-`<a>` fallback. Ticked here rather than duplicated.
+- [x] **Verification sweep green** — `moon run ui:test docs:test site:test` (28 / 7 / 8 files), `:typecheck` + `:lint` across the graph, and the `ui` + `docs` boundary tests both pass, so the leaf and consumer edges survive the extraction. *(Note: `site` has no boundary test — the enforced set is `ui`/`shell`/`admin` per CLAUDE.md, so the theme's original wording was slightly off.)*
 
 ---
 

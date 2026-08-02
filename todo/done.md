@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-03 — feat: Phase 80 Theme E — reading-primitive stories & verification 🟢
+
+PR #TBD. Discharges the deferral made in Theme A ("units now, stories in E") and runs the phase's verification sweep. Phase 80 now has only Theme D (the legal set) left.
+
+- [x] **11 Storybook stories** across `ReadingLayout` (5), `Prose` (3) and `TableOfContents` (3), running as Vitest browser tests. `play` functions assert slugification (text wrapped in markup, duplicate-title de-dup, explicit `id` winning), injected-vs-external link routing, both `sidebarMobile` modes, single-section suppression, and `aria-current` moving on click. `Prose`'s `AllElements` story doubles as the design system's visual reference for reading typography.
+- [x] **Scroll-spy asserted via the click path, deliberately** — `IntersectionObserver` callbacks depend on scroll physics and canvas height, the exact timing dependency behind the browser-test flakiness this repo keeps hitting. The observer wiring is pinned by the jsdom specs instead.
+- [x] **Found the xl gate the hard way** — the first `ActiveSection` story put the rail in `ReadingLayout`'s `toc` slot, which is `hidden` below `xl`; inside a narrower story canvas it's `display:none` and so correctly invisible to `getByRole`. Story now renders the rail outside the slot; the gate itself stays pinned in `reading-layout.dom.test.tsx`.
+- [x] **Theme A's unit bullet ticked, not redone** — `slugify.test.ts` and the no-provider `<a>` fallback landed in PR #584 already.
+- [x] **Sweep green** — `ui`/`docs`/`site` tests (28/7/8 files), `:typecheck` + `:lint`, and the `ui` + `docs` boundary tests. Noted in the phase doc that `site` has no boundary test: the enforced set is `ui`/`shell`/`admin`.
+- [x] Confirmed the cold-run flake ui's own vitest config warns about is still real — one intermediate run failed 28 tests across pre-existing stories, then passed 71/71 warm on re-run with no code change.
+
 ## 2026-08-02 — feat: Phase 80 Theme B — docs on the shared reading primitive 🟢
 
 PR #589. The second half of Theme A's purpose: one source of truth only counts if **both** apps read on it. Docs' layout, prose map and TOC now come from `@midnite/ui`, completing the extraction the site's legal pages started in Theme C.
