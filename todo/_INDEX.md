@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | ◻ TODO | 0/47 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | 🔄 WIP | 26/40 | `███████░░░` | 65% | — | D F |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
@@ -135,6 +136,16 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 84 — Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md)
+*Makes GitHub a **connected account** rather than four unconnected touchpoints: a per-user OAuth token from a separate vault-style connect flow (login SSO untouched — Phase 75 owns that callback), a repo browser that matches your real repos to checkouts already on disk, a `project_repos` join so a project can span several repos, and a GitHub Projects v2 item kept in step with the task. Out: cloning, login-scope escalation, a GitHub App, full two-way sync, a `repoId` migration.*
+- ◻ **A** — Per-user GitHub connection (`github-oauth` credential variant, `user_id`/`team_id` on `workflow_credentials`, provider strategy table replacing the google/slack `if`-branches, `repo project read:org`, refresh + real revoke, fix `githubToken()`'s first-match-wins)
+- ◻ **B** — Repo discovery & checkout matching (new `github/` module, `GET /github/repos` with pagination + per-user cache, git-remote → `owner/repo` matching over `github.checkoutRoots`, picker showing *on disk* / *registered* / *not checked out*, one-click import)
+- ◻ **C** — Projects ↔ repos many-to-many (`project_repos` join + primary flag, derived `project.repos`, attach/detach endpoints, `workDir` backfill, project-detail Repos panel with per-repo git status)
+- ◻ **D** — cwd resolution correctness (invert `pickSessionCwd()` so `task.repo` beats `project.workDir` — a bug on `main` today; route spawn **and** `resolveChecksForRepo()` through one resolver; scope the task repo picker to the project)
+- ◻ **E** — GitHub Projects v2 link (first GraphQL client in the repo, project/field discovery, `github_project_items` satellite table à la `pr_status`, link/unlink, status → single-select mapping, task-detail card)
+- ◻ **F** — Event-driven push & read-back (`TaskEventBus` subscriber, idempotency + loop suppression, `lastError` + backoff instead of throwing into the event path, display-only read-back poller, per-task sync log)
+- ◻ **G** — Connect UI, tests & docs (Integrations connection card, auto-prompt banner on Repos after a GitHub sign-in, gateway + web specs, `docs/GITHUB.md`, `operator.example.json` + `midnite doctor` check)
 
 ### [Phase 83 — Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md)
 *Makes the login allowlist (today boot-time immutable file config) a runtime-editable store — a DB table layered under the file entries (`file ∪ db`, config entries as a read-only floor), operator-gated CRUD endpoints, and an admin "Access" page — so who's allowed in can change without a redeploy. The `operators` list itself stays file-only/deploy-time (out of scope).*
