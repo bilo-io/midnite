@@ -14,6 +14,54 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.10.0] - 2026-08-03
+
+_Minor release — every package moves in lockstep to 0.10.0._
+
+### Added
+
+- **The app speaks French.** A full localisation sweep took the remaining
+  English-only surfaces into the `en-GB` / `fr-FR` catalogues: the dashboard
+  widgets, the product guides, the roadmap, task graph, slides and safety
+  screens, the memory workspace, the workflow editor and its node catalogue, the
+  app chrome, the desktop shell and the office view — plus search and the command
+  palette, whose translation is restored. Switch language in
+  Settings → Appearance.
+- **LLM answers come back in your language.** Memory chat replies and Studio
+  artifacts (text, SVG, audio scripts, video decks) are generated in the locale
+  you're using, not always English.
+- **A table of contents for long-form pages.** The docs site and the legal pages
+  now share one reading layout, so both get a right-hand section rail that tracks
+  your position, self-slugged heading anchors that make every section
+  deep-linkable, and a sidebar that stays reachable on a phone.
+- **"In progress" in the status dropdown.** You can now start a task from the
+  status picker in the task modal and the task page — not just the dedicated
+  Start action — and picking Todo or Backlog out of a running state stops its
+  agent rather than silently leaving it running.
+- **Drag task rows between statuses** in the list and table views, matching the
+  board.
+- **Wordmark size setting** (xs → xl) in Settings → Appearance → Logo, alongside
+  **eight new script faces** for the wordmark and quote widget (Pinyon Script,
+  Imperial Script, Kapakana, Italianno, Parisienne, Arizonia, Meddon,
+  Tangerine).
+
+### Fixed
+
+- **Agent runs no longer die at 30 minutes.** `agent.runTimeoutMs` was a
+  wall-clock ceiling rather than a stall deadline, so any run — including a task
+  you were mid-conversation with, parked in Waiting — was killed at the half-hour
+  mark and bounced back to Todo. The timeout now only fires on a genuinely
+  stalled run (no output, or a dead process) and re-arms while the session is
+  alive, so a healthy run stays open until you stop it. Setting `runTimeoutMs` to
+  `0` disables the deadline outright.
+- **Warnings look like warnings.** A `warn` notification ("Agent needs your
+  input") surfaced as a red destructive toast while the notification centre
+  showed it amber. Warn toasts are now amber, carry the notification body as well
+  as its title so a stack of them is distinguishable, and linger a couple of
+  seconds longer so a two-line toast can be read.
+- **Accordion headers no longer nest interactive controls**, which had made the
+  ellipsis menus inside them unreliable for keyboard and screen-reader users.
+
 ## [0.9.1] - 2026-07-29
 
 _Patch release — `web` and `desktop` move to 0.9.1; every other package stays at
@@ -557,6 +605,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.10.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.10.0
 [0.9.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.1
 [0.9.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.0
 [0.8.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.8.0
