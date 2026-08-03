@@ -1,1 +1,0 @@
-import{n as s}from"./index-D98OljXx.js";function o(){const n=s("board");return t=>n(`columns.${t}`)}function e(){const n=s("board");return t=>n(`kinds.${t}`)}function r(){const n=s("board");return t=>n(`waitReasons.${t}`)}function u(){const n=s("board");return t=>n(`heldReasons.${t}`)}export{e as a,o as b,r as c,u};
