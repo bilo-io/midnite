@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Monitor } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/use-media-query';
 
@@ -33,16 +34,16 @@ export function DesktopOnly({
 }
 
 function DesktopOnlyNotice({ label }: { label: string }) {
+  const t = useTranslations('common');
   return (
     <div className="container flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <Monitor className="h-7 w-7" aria-hidden />
       </div>
       <div className="space-y-1.5">
-        <h2 className="text-lg font-semibold">{label} is best viewed on desktop</h2>
+        <h2 className="text-lg font-semibold">{t('chrome.desktopOnly.title', { label })}</h2>
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          This view needs a larger screen than your phone offers. Open Midnite on a
-          desktop or tablet in landscape to use it.
+          {t('chrome.desktopOnly.body')}
         </p>
       </div>
     </div>

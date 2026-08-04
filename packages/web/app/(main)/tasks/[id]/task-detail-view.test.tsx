@@ -116,14 +116,20 @@ describe('TaskDetailView', () => {
     getTask.mockRejectedValue(new Error('404'));
     render(withQueryClient(<TaskDetailView />));
 
-    expect(await screen.findByText('Task not found')).toBeInTheDocument();
+    // The heading's noun is an ICU argument now (Phase 82 D) and CSS raises the
+    // first letter, so the DOM text carries the noun in the caller's casing —
+    // visually unchanged, matched case-insensitively here.
+    expect(await screen.findByText(/task not found/i)).toBeInTheDocument();
   });
 
   it('shows not-found when no id is supplied', async () => {
     searchId = '';
     render(withQueryClient(<TaskDetailView />));
 
-    expect(await screen.findByText('Task not found')).toBeInTheDocument();
+    // The heading's noun is an ICU argument now (Phase 82 D) and CSS raises the
+    // first letter, so the DOM text carries the noun in the caller's casing —
+    // visually unchanged, matched case-insensitively here.
+    expect(await screen.findByText(/task not found/i)).toBeInTheDocument();
     expect(getTask).not.toHaveBeenCalled();
   });
 

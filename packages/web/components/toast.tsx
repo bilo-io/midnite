@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { CheckCircle2, TriangleAlert, X, XCircle, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -104,6 +105,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) {
+  const t = useTranslations('common');
   React.useEffect(() => {
     const timer = setTimeout(onDismiss, item.duration);
     return () => clearTimeout(timer);
@@ -131,7 +133,7 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) 
       <button
         type="button"
         onClick={onDismiss}
-        aria-label="Dismiss"
+        aria-label={t('chrome.dismiss')}
         className="-mr-1 -mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
       >
         <X className="h-3.5 w-3.5" />

@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { featureForPath, isFeatureEnabled } from '@/lib/features';
+import { useFeatureLabels } from '@/lib/feature-labels';
 
 /**
  * Watches the current route and, if it belongs to a feature the user has turned
@@ -15,6 +17,8 @@ import { featureForPath, isFeatureEnabled } from '@/lib/features';
  * a feature, so it's never gated — leaving a way back in to re-enable things.
  */
 export function FeatureGate() {
+  const t = useTranslations('common');
+  const featureLabels = useFeatureLabels();
   const router = useRouter();
   const pathname = usePathname();
   const [settings, setSettings, hydrated] = useLocalStorage<AppSettings>(
@@ -41,7 +45,11 @@ export function FeatureGate() {
 
   if (!gated || !feature) return null;
 
-  const { Icon, label, description } = feature;
+  // Label + description come from the catalog via the registry seam, so the dialog
+  // reads in the user's language rather than mixing English registry copy into it.
+  const { Icon } = feature;
+  const label = featureLabels.label(feature);
+  const description = featureLabels.description(feature);
 
   const enableFeature = () =>
     setSettings((prev) => ({
@@ -59,7 +67,7 @@ export function FeatureGate() {
       <div
         role="alertdialog"
         aria-modal="true"
-        aria-label={`${label} is disabled`}
+        aria-label={t('chrome.featureGate.title', { feature: label })}
         className="animate-dialog-in relative w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-2xl"
       >
         <div className="flex items-start gap-3">
@@ -69,19 +77,19 @@ export function FeatureGate() {
           <div className="min-w-0 flex-1">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold leading-snug">
               <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {label} is disabled
+              {t('chrome.featureGate.title', { feature: label })}
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {description} This feature is currently turned off — enable it to view this page.
+              {t('chrome.featureGate.body', { description })}
             </p>
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/settings/features')}>
-            Open settings
+            {t('chrome.featureGate.openSettings')}
           </Button>
           <Button type="button" variant="default" size="sm" onClick={enableFeature}>
-            Enable {label}
+            {t('chrome.featureGate.enable', { feature: label })}
           </Button>
         </div>
       </div>

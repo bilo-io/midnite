@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import type { Status } from '@midnite/shared';
 import { ALL_COLUMNS } from '@/components/task-columns';
 
@@ -32,12 +35,13 @@ export function StatusDonut({
   total: number;
   size?: number;
 }) {
+  const t = useTranslations('common');
   const segments = counts.filter((c) => c.count > 0);
 
   let offset = 0;
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={`${total} tasks by status`}>
+      <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={t('chrome.tasksByStatus', { count: total })}>
         <g transform="rotate(-90 50 50)">
           {total === 0 ? (
             <circle
@@ -79,7 +83,7 @@ export function StatusDonut({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-lg font-semibold leading-none tabular-nums">{total}</span>
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {total === 1 ? 'task' : 'tasks'}
+          {t('chrome.taskCount', { count: total })}
         </span>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import AsyncSelect from 'react-select/async';
 import {
   components,
@@ -91,14 +92,16 @@ function makeDebouncedLoader(
 export function AssetSearchSelect({
   kind,
   onSelect,
-  placeholder = 'Search…',
+  placeholder,
   autoFocus = false,
 }: {
   kind: AssetKind;
   onSelect: (result: AssetSearchResult) => void;
+  /** Overrides the catalog default (`common.chrome.assetSearch.placeholder`). */
   placeholder?: string;
   autoFocus?: boolean;
 }) {
+  const t = useTranslations('common');
   const [input, setInput] = useState('');
 
   // Rebuild the debounced loader when the asset class changes so in-flight
@@ -131,14 +134,16 @@ export function AssetSearchSelect({
           setInput('');
         }
       }}
-      placeholder={placeholder}
+      placeholder={placeholder ?? t('chrome.assetSearch.placeholder')}
       autoFocus={autoFocus}
       isClearable={false}
       // We do our own filtering server-side; show every result react-select is given.
       filterOption={() => true}
-      noOptionsMessage={({ inputValue }) => (inputValue.trim() ? 'No matches' : 'Type to search…')}
+      noOptionsMessage={({ inputValue }) =>
+        inputValue.trim() ? t('chrome.assetSearch.noMatches') : t('chrome.assetSearch.typeToSearch')
+      }
       loadingMessage={() => 'Searching…'}
-      aria-label={`Search ${kind === 'stock' ? 'stocks' : 'crypto'}`}
+      aria-label={kind === 'stock' ? t('chrome.assetSearch.ariaStock') : t('chrome.assetSearch.ariaCrypto')}
       menuPortalTarget={PORTAL_TARGET}
       menuPosition="fixed"
       components={{ Option, DropdownIndicator }}

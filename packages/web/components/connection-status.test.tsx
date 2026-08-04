@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { ConnectionStatus, ConnectionToaster } from './connection-status';
 import { ToastProvider } from './toast';
 import { useConnectionStore } from '@/lib/connection-store';

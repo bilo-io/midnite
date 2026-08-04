@@ -94,5 +94,44 @@
       "useCustom": "Utiliser « {input} »",
       "noOptions": "Aucune option"
     }
+  },
+  "chrome": {
+    "itemCount": "{count, plural, one {# élément} other {# éléments}}",
+    "taskCount": "{count, plural, one {# tâche} other {# tâches}}",
+    "tasksByStatus": "{count, plural, one {# tâche} other {# tâches}} par statut",
+    "select": "Sélectionner",
+    "deselect": "Désélectionner",
+    "working": "Traitement en cours",
+    "dismiss": "Fermer",
+    "sessionPill": {
+      "actioning": "en action",
+      "awaiting": "en attente",
+      "complete": "terminées",
+      "aria": "{count} {label} — voir les sessions"
+    },
+    "notFound": {
+      "title": "{noun} introuvable",
+      "body": "Ce {noun} est introuvable. Il a peut-être été supprimé, ou le lien est incorrect.",
+      "goDashboard": "Aller au tableau de bord",
+      "viewCollection": "Voir {collection}",
+      "fallbackCollection": "les éléments"
+    },
+    "desktopOnly": {
+      "title": "{label} s’affiche mieux sur ordinateur",
+      "body": "Cette vue nécessite un écran plus grand que celui de votre téléphone. Ouvrez Midnite sur un ordinateur, ou sur une tablette en mode paysage, pour l’utiliser."
+    },
+    "featureGate": {
+      "title": "{feature} est désactivé",
+      "body": "{description} Cette fonctionnalité est actuellement désactivée — activez-la pour voir cette page.",
+      "openSettings": "Ouvrir les paramètres",
+      "enable": "Activer {feature}"
+    },
+    "assetSearch": {
+      "noMatches": "Aucun résultat",
+      "typeToSearch": "Saisissez pour rechercher…",
+      "ariaStock": "Rechercher des actions",
+      "ariaCrypto": "Rechercher des cryptos",
+      "placeholder": "Rechercher…"
+    }
   }
 }

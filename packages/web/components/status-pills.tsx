@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { SessionStatus } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
@@ -10,10 +11,12 @@ import { cn } from '@/lib/utils';
 // The same three live states the screensaver surfaces. Each links through to the
 // sessions board pre-filtered to its status (the board reads `?status=` from the
 // URL); the hue is the canonical per-status colour from SESSION_STATUS_HUE.
-const PILLS: Array<{ status: SessionStatus; label: string }> = [
-  { status: 'running', label: 'actioning' },
-  { status: 'waiting', label: 'awaiting' },
-  { status: 'completed', label: 'complete' },
+// Copy lives in `common.chrome.sessionPill.<key>` (Phase 82 D); the registry keeps
+// only the status it links to and the catalog key for its word.
+const PILLS: Array<{ status: SessionStatus; key: 'actioning' | 'awaiting' | 'complete' }> = [
+  { status: 'running', key: 'actioning' },
+  { status: 'waiting', key: 'awaiting' },
+  { status: 'completed', key: 'complete' },
 ];
 
 type Counts = Record<SessionStatus, number>;
@@ -24,6 +27,7 @@ type Counts = Record<SessionStatus, number>;
  * status.
  */
 export function StatusPills({ className }: { className?: string }) {
+  const t = useTranslations('common');
   const [counts, setCounts] = useState<Counts | null>(null);
 
   useEffect(() => {
@@ -49,7 +53,8 @@ export function StatusPills({ className }: { className?: string }) {
 
   return (
     <div className={cn('flex flex-wrap items-center justify-center gap-2.5', className)}>
-      {PILLS.map(({ status, label }, i) => {
+      {PILLS.map(({ status, key }, i) => {
+        const label = t(`chrome.sessionPill.${key}`);
         const n = counts ? counts[status] : null;
         const triple = SESSION_STATUS_HUE[status];
         const hue = `hsl(${triple})`;
@@ -57,7 +62,7 @@ export function StatusPills({ className }: { className?: string }) {
           <Link
             key={status}
             href={`/sessions?status=${status}`}
-            aria-label={`${n ?? 0} ${label} — view sessions`}
+            aria-label={t('chrome.sessionPill.aria', { count: n ?? 0, label })}
             className="relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur transition-colors hover:border-foreground/30 hover:text-foreground"
           >
             <span
