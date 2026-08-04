@@ -106,7 +106,10 @@ describe('ProjectDetailContainer — not found', () => {
     useApiData.mockReturnValue({ data: null, loading: false, error: null, refresh: vi.fn() });
     params = new URLSearchParams(); // no id
     render(<ProjectDetailContainer />);
-    expect(screen.getByText('Project not found')).toBeInTheDocument();
+    // The heading's noun is an ICU argument now (Phase 82 D) and CSS raises the
+    // first letter, so the DOM text carries the noun in the caller's casing —
+    // visually unchanged, matched case-insensitively here.
+    expect(screen.getByText(/project not found/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /All projects/i })).toHaveAttribute('href', '/projects');
   });
 });

@@ -1,6 +1,8 @@
 'use client';
 
 import { Check, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -18,12 +20,13 @@ type Props = {
  * Clicking toggles selection (and stops propagation so it never opens the item).
  */
 export function SelectableIcon({ Icon, selected, onToggle, className }: Props) {
+  const t = useTranslations('common');
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={selected}
-      aria-label={selected ? 'Deselect' : 'Select'}
+      aria-label={selected ? t('chrome.deselect') : t('chrome.select')}
       onClick={(e) => {
         e.stopPropagation();
         onToggle(e.shiftKey);

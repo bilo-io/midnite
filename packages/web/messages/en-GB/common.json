@@ -94,5 +94,44 @@
       "useCustom": "Use “{input}”",
       "noOptions": "No options"
     }
+  },
+  "chrome": {
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "taskCount": "{count, plural, one {# task} other {# tasks}}",
+    "tasksByStatus": "{count, plural, one {# task} other {# tasks}} by status",
+    "select": "Select",
+    "deselect": "Deselect",
+    "working": "Working",
+    "dismiss": "Dismiss",
+    "sessionPill": {
+      "actioning": "actioning",
+      "awaiting": "awaiting",
+      "complete": "complete",
+      "aria": "{count} {label} — view sessions"
+    },
+    "notFound": {
+      "title": "{noun} not found",
+      "body": "This {noun} could not be found. It may have been deleted, or the link may be incorrect.",
+      "goDashboard": "Go to Dashboard",
+      "viewCollection": "View {collection}",
+      "fallbackCollection": "items"
+    },
+    "desktopOnly": {
+      "title": "{label} is best viewed on desktop",
+      "body": "This view needs a larger screen than your phone offers. Open Midnite on a desktop or tablet in landscape to use it."
+    },
+    "featureGate": {
+      "title": "{feature} is disabled",
+      "body": "{description} This feature is currently turned off — enable it to view this page.",
+      "openSettings": "Open settings",
+      "enable": "Enable {feature}"
+    },
+    "assetSearch": {
+      "noMatches": "No matches",
+      "typeToSearch": "Type to search…",
+      "ariaStock": "Search stocks",
+      "ariaCrypto": "Search crypto",
+      "placeholder": "Search…"
+    }
   }
 }

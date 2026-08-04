@@ -17,6 +17,17 @@
     "media": "Médias",
     "ops": "Opérations"
   },
+  "featureDescriptions": {
+    "dashboard": "Votre page d’accueil en un coup d’œil — widgets, horloges et statut en direct.",
+    "tasks": "Le tableau kanban qui orchestre le travail des agents.",
+    "slides": "Composez des présentations en Markdown et projetez-les avec des révélations à la machine à écrire.",
+    "workflows": "Créez et exécutez des workflows d’agents en plusieurs étapes.",
+    "memory": "Des mémoires durables injectées dans les prompts de vos agents.",
+    "sessions": "Sessions d’agents en cours et passées, avec terminaux intégrés.",
+    "councils": "Réunissez plusieurs agents, puis synthétisez dans le format de votre choix — remue-méninges, débat, analyse, et plus encore.",
+    "office": "Un étage en pixel art peuplé de vos agents — approchez-vous d’un bureau pour appeler ou écrire.",
+    "ops": "Santé de la flotte — utilisation des créneaux en direct, débit d’exécutions, distribution des durées et dépense LLM."
+  },
   "footer": {
     "settings": "Paramètres",
     "lock": "Verrouiller",

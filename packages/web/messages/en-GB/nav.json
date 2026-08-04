@@ -17,6 +17,17 @@
     "media": "Media",
     "ops": "Ops"
   },
+  "featureDescriptions": {
+    "dashboard": "Your at-a-glance home — widgets, clocks, and live status.",
+    "tasks": "The kanban board for orchestrating agent work.",
+    "slides": "Author decks from Markdown and present them with typewriter reveals.",
+    "workflows": "Build and run multi-step agent workflows.",
+    "memory": "Long-term memories injected into your agents’ prompts.",
+    "sessions": "Live and past agent sessions with embedded terminals.",
+    "councils": "Convene multiple agents, then synthesize in any format — brainstorm, debate, analyse, and more.",
+    "office": "A pixel-art floor of your agents — walk up to a desk to call or message.",
+    "ops": "Fleet health — live slot utilization, run throughput, duration distribution, and LLM spend."
+  },
   "footer": {
     "settings": "Settings",
     "lock": "Lock",

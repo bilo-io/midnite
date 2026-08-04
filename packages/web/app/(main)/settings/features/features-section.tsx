@@ -5,11 +5,13 @@ import { useTranslations } from 'next-intl';
 import { Accordion } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
 import { FEATURES, groupNavSections, isFeatureEnabled, type Feature, type FeatureKey } from '@/lib/features';
+import { useFeatureLabels } from '@/lib/feature-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 
 export function FeaturesSection() {
   const t = useTranslations('settings');
+  const featureLabels = useFeatureLabels();
   const [settings, setSettings] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -24,6 +26,11 @@ export function FeaturesSection() {
 
   const renderFeatureRow = (f: Feature, withDivider: boolean) => {
     const Icon = f.Icon;
+    // Registry copy resolves through the catalog (Phase 82 D shared-chrome slice) —
+    // this row and the FeatureGate dialog now read the same keys, so neither shows
+    // English registry text inside otherwise-translated copy.
+    const label = featureLabels.label(f);
+    const description = featureLabels.description(f);
     return (
       <div
         key={f.key}
@@ -34,14 +41,14 @@ export function FeaturesSection() {
             <Icon className="h-4 w-4" />
           </span>
           <div className="space-y-0.5">
-            <p className="text-sm font-medium">{f.label}</p>
-            <p className="text-xs text-muted-foreground">{f.description}</p>
+            <p className="text-sm font-medium">{label}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           </div>
         </div>
         <Switch
           checked={isFeatureEnabled(settings.features, f.key)}
           onCheckedChange={(on) => setFeatureEnabled(f.key, on)}
-          aria-label={t('features.enableAria', { feature: f.label })}
+          aria-label={t('features.enableAria', { feature: label })}
         />
       </div>
     );

@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { buttonVariants } from '@midnite/ui';
 import { FEATURES, type FeatureKey } from '@/lib/features';
+import { useFeatureLabels } from '@/lib/feature-labels';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -14,7 +16,12 @@ type Props = {
    * of truth.
    */
   feature: FeatureKey;
-  /** Singular noun for the record, e.g. `"council"` — used in the explainer. */
+  /**
+   * Singular noun for the record, e.g. `"council"` — used in the explainer.
+   * Callers pass it **already translated** (Phase 82 D): the heading is an ICU
+   * message with the noun as an argument, so no locale needs the old
+   * `charAt(0).toUpperCase()` surgery, which only ever worked for English.
+   */
   singular: string;
   className?: string;
 };
@@ -29,11 +36,13 @@ type Props = {
  * when a bookmarked or stale id resolves to nothing.
  */
 export function ResourceNotFound({ feature, singular, className }: Props) {
+  const t = useTranslations('common');
+  const featureLabels = useFeatureLabels();
   const meta = FEATURES.find((f) => f.key === feature);
   const Icon = meta?.Icon;
-  const collection = meta?.label ?? 'items';
+  const collection = meta ? featureLabels.label(meta) : t('chrome.notFound.fallbackCollection');
   const href = meta?.href ?? '/';
-  const title = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} not found`;
+  const title = t('chrome.notFound.title', { noun: singular });
 
   return (
     <div
@@ -51,7 +60,7 @@ export function ResourceNotFound({ feature, singular, className }: Props) {
           viewBox="0 0 224 160"
           fill="none"
           role="img"
-          aria-label={`${singular} not found`}
+          aria-label={title}
           className="h-full w-full text-muted-foreground"
         >
           {/* dashed orbit + drifting motes, echoing the empty-state language */}
@@ -130,19 +139,25 @@ export function ResourceNotFound({ feature, singular, className }: Props) {
       <span className="mb-2 rounded-full border border-border/60 bg-card/60 px-2.5 py-0.5 font-mono text-xs tracking-widest text-muted-foreground">
         404
       </span>
-      <h1 className="text-lg font-semibold tracking-tight text-foreground">{title}</h1>
+      {/* `first-letter:uppercase` replaces the old `charAt(0).toUpperCase()` surgery
+          (Phase 82 D): the noun is now interpolated into an ICU message, and letting
+          CSS raise the first letter keeps the sentence-cased heading working in every
+          locale instead of assuming English word order puts the noun first. */}
+      <h1 className="text-lg font-semibold tracking-tight text-foreground first-letter:uppercase">
+        {title}
+      </h1>
       <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-        This {singular} could not be found. It may have been deleted, or the link may be incorrect.
+        {t('chrome.notFound.body', { noun: singular })}
       </p>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
         <Link href="/dashboard" className={buttonVariants({ variant: 'default' })}>
           <LayoutDashboard className="h-4 w-4" />
-          Go to Dashboard
+          {t('chrome.notFound.goDashboard')}
         </Link>
         <Link href={href} className={buttonVariants({ variant: 'outline' })}>
           {Icon ? <Icon className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
-          View {collection}
+          {t('chrome.notFound.viewCollection', { collection })}
         </Link>
       </div>
     </div>

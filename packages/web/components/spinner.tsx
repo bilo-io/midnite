@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
@@ -130,6 +131,7 @@ export function Spinner({
   variant = 'orbit',
   mode,
 }: { variant?: SpinnerVariant; mode?: SpinnerMode } = {}) {
+  const t = useTranslations('common');
   const dotsRef = useRef<Array<HTMLSpanElement | null>>([null, null, null]);
   // The rAF loop reads the mode through a ref so a mode flip blends into the new
   // pool mid-flight instead of tearing the animation down and restarting it.
@@ -202,11 +204,11 @@ export function Spinner({
   }, [variant]);
 
   if (variant !== 'orbit') {
-    return <div className={`spinner-${variant}`} role="status" aria-label="Working" />;
+    return <div className={`spinner-${variant}`} role="status" aria-label={t('chrome.working')} />;
   }
 
   return (
-    <div className="relative h-14 w-14" role="status" aria-label="Working">
+    <div className="relative h-14 w-14" role="status" aria-label={t('chrome.working')}>
       {[0, 1, 2].map((i) => (
         <span
           key={i}

@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { ToastProvider, useToast } from './toast';
 
 afterEach(() => {

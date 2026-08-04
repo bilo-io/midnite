@@ -25,7 +25,9 @@ export const Council: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Names the resource + still shows 404.
-    await expect(canvas.getByRole('heading', { name: 'Council not found' })).toBeInTheDocument();
+    // The noun is an ICU argument now (Phase 82 D) and CSS raises the first letter,
+    // so the accessible name carries the caller's casing — visually unchanged.
+    await expect(canvas.getByRole('heading', { name: /council not found/i })).toBeInTheDocument();
     await expect(canvas.getByText('This council could not be found.', { exact: false })).toBeInTheDocument();
     // Both recovery links point at the right routes.
     await expect(canvas.getByRole('link', { name: /Go to Dashboard/ })).toHaveAttribute('href', '/dashboard');
@@ -39,7 +41,7 @@ export const Task: Story = {
   args: { feature: 'tasks', singular: 'task' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Task not found' })).toBeInTheDocument();
+    await expect(canvas.getByRole('heading', { name: /task not found/i })).toBeInTheDocument();
     await expect(canvas.getByRole('link', { name: /View Tasks/ })).toHaveAttribute('href', '/tasks');
   },
 };

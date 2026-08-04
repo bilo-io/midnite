@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-04 — feat: Phase 82 Theme D — shared chrome primitives i18n 🟢
+
+PR #596. The cross-page primitives — the ones that render on nearly every route, so their leftover English was visible everywhere. `I18N_EXEMPT` 197 → 163.
+
+- [x] **Only 10 of the 34 files carried copy.** The other 24 were exempt purely because Theme A seeded the whole tree; each was checked against the gate with its exemption stripped, then de-exempted with no code change. The PR says which is which so the 34-file number isn't read as 34 files of work.
+- [x] **Most of the real copy was invisible to the gate.** `i18next/no-literal-string` runs in `jsx-text-only` mode, so it never saw `{count === 1 ? 'item' : 'items'}` in `count-pill` (the `0 items` on every list page, which the council PR's own screenshot had just flagged), the `aria-label`s in `spinner`/`toast`/`selectable-icon`, or the template literal in `status-pills`. Decision §9 predicted this blind spot; this slice is what it looks like in practice. Worth knowing that "the gate is green" ≠ "no English left".
+- [x] **New `common.chrome.*` subtree** (36 keys) rather than a new namespace — these sit beside `common.ui.*`, which Theme E already used for propified `@midnite/ui` labels.
+- [x] **Feature-registry seam, third instance of the pattern** — `lib/feature-labels.ts` joins `workflow-node-labels` and `council-format-labels`: `nav.features.<key>` (existing) + `nav.featureDescriptions.<key>` (new) resolved with the registry English as fallback. That fixed untranslated descriptions in **two** places — the `FeatureGate` dialog and Settings → Features, the latter a Theme C file that had been quietly rendering English registry text inside translated copy since then.
+- [x] **`resource-not-found` no longer does string surgery** — `${singular.charAt(0).toUpperCase()}${singular.slice(1)} not found` only ever worked for English. Now an ICU message with the noun as an argument, plus `first-letter:uppercase` so the sentence-cased heading survives any locale. Visually identical; the DOM text carries the caller's casing, which is why four assertions moved to case-insensitive matchers (each with a comment saying why).
+- [x] **Tests** — a 33-case static audit (every `t()` key in the 10 migrated files resolves in en-GB *and* fr-FR, the `FEATURES` registry is swept for label **and** description, and no `common.chrome` leaf exists in en-GB only), plus 6 behavioural fr-FR renders covering both plural forms, both checkbox states, and the interpolated not-found panel.
+- [x] **9 existing specs re-pointed at `renderWithIntl`** — count-pill, desktop-only, toast, connection-status, ops-view, repo-status-widget, runtime-health-panel and the two detail views. Unavoidable: a primitive that gains `useTranslations` needs a provider in every suite that mounts it, which is the cost of translating this layer at all.
+- [x] **fr shot closes the loop** — re-ran the councils fr-FR screenshot from PR #594 and the pill now reads `0 élément`.
+- [x] Gate: `:typecheck` + `:lint` (0 errors) + `web:i18n-validate`/`i18n-exempt`/`i18n-barrels` green; shared 857 · ui 126 · shell 62 · admin 36 · docs 32 · site 25 · cli 229 · desktop 50.
+
 ## 2026-08-04 — feat: Phase 82 Theme D — council + assistant i18n (en-GB + fr-FR) 🟢
 
 PR #594. The councils feature and the assistant FAB — the two surfaces a user reaches from every route — now read from the catalogs. `I18N_EXEMPT` 216 → 197.

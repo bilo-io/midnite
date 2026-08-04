@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { mediaUp } from '@/lib/breakpoints';
 import { DesktopOnly } from './desktop-only';
 
