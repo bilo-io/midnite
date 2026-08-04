@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Brain, ChevronRight, FolderOpen, Loader2, Sparkles, X } from 'lucide-react';
 import { MAX_TAG_LENGTH, type Memory, type Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,6 @@ import { cn } from '@/lib/utils';
 
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
 
 type Props = {
   project: Project;
@@ -34,6 +31,8 @@ type Props = {
  * create-mode's form stays inline in the modal.
  */
 export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNavigate }: Props) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const router = useRouter();
 
   const [name, setName] = useState(project.name);
@@ -65,9 +64,14 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
 
+  const errMsg = useCallback(
+    (e: unknown): string => (e instanceof Error ? e.message : tCommon('errorTitle')),
+    [tCommon],
+  );
+
   const enhance = async () => {
     if (!description.trim()) {
-      setError('Write a short description first, then improve it with AI');
+      setError(t('form.writeDescriptionFirst'));
       return;
     }
     setAiLoading(true);
@@ -108,14 +112,14 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
       {/* Name */}
       <div className="space-y-1.5">
         <label htmlFor="project-name" className="text-xs font-medium text-muted-foreground">
-          Title
+          {t('form.title')}
         </label>
         <input
           id="project-name"
           className={inputClass}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Billing revamp"
+          placeholder={t('form.titlePlaceholder')}
         />
       </div>
 
@@ -123,7 +127,7 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label htmlFor="project-description" className="text-xs font-medium text-muted-foreground">
-            Description
+            {t('form.description')}
           </label>
           <Button
             type="button"
@@ -131,18 +135,18 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
             size="sm"
             onClick={enhance}
             disabled={aiLoading}
-            aria-label="Improve with AI"
+            aria-label={t('form.improveWithAi')}
             className="h-7 gap-1.5 text-xs"
           >
             {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-            Improve with AI
+            {t('form.improveWithAi')}
           </Button>
         </div>
         <Textarea
           id="project-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What is this project about?"
+          placeholder={t('form.descriptionPlaceholder')}
           rows={4}
         />
       </div>
@@ -157,19 +161,17 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
           tagInputId="project-tag"
           label={
             <label htmlFor="project-tag" className="text-xs font-medium text-muted-foreground">
-              Tag &amp; color
+              {t('form.tagAndColour')}
             </label>
           }
         />
-        <p className="text-[11px] text-muted-foreground">
-          Max {MAX_TAG_LENGTH} characters. Tasks in this project carry this tag.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{t('form.tagHint', { max: MAX_TAG_LENGTH })}</p>
       </div>
 
       {/* Work directory */}
       <div className="space-y-1.5">
         <label htmlFor="project-workdir" className="text-xs font-medium text-muted-foreground">
-          Work directory
+          {t('form.workDir')}
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -177,7 +179,7 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
             className={cn(inputClass, 'flex-1 font-mono text-xs')}
             value={workDir}
             onChange={(e) => setWorkDir(e.target.value)}
-            placeholder="~/Dev/my-project"
+            placeholder={t('form.workDirPlaceholder')}
             spellCheck={false}
           />
           {workDir.trim() ? (
@@ -185,7 +187,7 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Clear work directory"
+              aria-label={t('form.clearWorkDir')}
               onClick={() => setWorkDir('')}
             >
               <X className="h-4 w-4" />
@@ -199,52 +201,54 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
             onClick={() => setPicking(true)}
           >
             <FolderOpen className="h-4 w-4" />
-            Browse
+            {t('form.browse')}
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Where this project&apos;s agent sessions spawn. Leave blank to use the default.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{t('form.workDirHint')}</p>
         <ProjectRepoStatus projectId={project.id} workDir={project.workDir} />
       </div>
 
       {/* Start / build commands */}
       <div className="space-y-1.5">
         <label htmlFor="project-start-command" className="text-xs font-medium text-muted-foreground">
-          Start command
+          {t('form.startCommand')}
         </label>
         <input
           id="project-start-command"
           className={cn(inputClass, 'font-mono text-xs')}
           value={startCommand}
           onChange={(e) => setStartCommand(e.target.value)}
-          placeholder="pnpm dev"
+          placeholder={t('form.startCommandPlaceholder')}
           spellCheck={false}
         />
         <p className="text-[11px] text-muted-foreground">
-          Run by the <strong className="font-medium">Preview</strong> action, in the work directory above.
+          {t.rich('form.startCommandHint', {
+            b: (chunks) => <strong className="font-medium">{chunks}</strong>,
+          })}
         </p>
       </div>
       <div className="space-y-1.5">
         <label htmlFor="project-build-command" className="text-xs font-medium text-muted-foreground">
-          Build command
+          {t('form.buildCommand')}
         </label>
         <input
           id="project-build-command"
           className={cn(inputClass, 'font-mono text-xs')}
           value={buildCommand}
           onChange={(e) => setBuildCommand(e.target.value)}
-          placeholder="pnpm build"
+          placeholder={t('form.buildCommandPlaceholder')}
           spellCheck={false}
         />
         <p className="text-[11px] text-muted-foreground">
-          Run by the <strong className="font-medium">Build</strong> action, in the work directory above.
+          {t.rich('form.buildCommandHint', {
+            b: (chunks) => <strong className="font-medium">{chunks}</strong>,
+          })}
         </p>
       </div>
 
       {/* Project memory */}
       <div className="space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Project memory</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('form.projectMemory')}</span>
         <button
           type="button"
           onClick={() => {
@@ -260,14 +264,12 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
           <Brain className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
           <span className="min-w-0 flex-1 truncate">
             {projectMemories.length
-              ? `View ${projectMemories.length} memor${projectMemories.length === 1 ? 'y' : 'ies'}`
-              : 'Create a memory for this project'}
+              ? t('form.viewMemories', { count: projectMemories.length })
+              : t('form.createMemory')}
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
-        <p className="text-[11px] text-muted-foreground">
-          Knowledge entries scoped to this project, injected into agent prompts.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{t('form.memoryHint')}</p>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -275,7 +277,7 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
       <div className="flex justify-end">
         <Button type="button" size="sm" onClick={() => void save()} disabled={!canSave || saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Save
+          {tCommon('save')}
         </Button>
       </div>
 

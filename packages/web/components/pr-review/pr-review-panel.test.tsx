@@ -16,15 +16,17 @@ vi.mock('@/lib/api', () => ({
 import { PrReviewPanel } from './pr-review-panel';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { ToastProvider } from '@/components/toast';
+import { withLocale } from '@/lib/test-locale-wrapper';
 
-// The panel now mounts the review viewer, whose action bar uses toast/confirm.
+// The panel now mounts the review viewer, whose action bar uses toast/confirm; the
+// whole subtree reads the `prReview` catalog (Phase 82 D), so wrap the locale provider.
 function panel(props: { taskId: string; prUrl: string }) {
-  return (
+  return withLocale(
     <ToastProvider>
       <ConfirmProvider>
         <PrReviewPanel {...props} />
       </ConfirmProvider>
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 

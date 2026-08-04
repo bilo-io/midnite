@@ -1,11 +1,9 @@
-import { missingProjectRequirements, type Project, type ProjectRequirement } from '@midnite/shared';
-import { cn } from '@/lib/utils';
+'use client';
 
-const REQUIREMENT_LABEL: Record<ProjectRequirement, string> = {
-  name: 'a name',
-  tag: 'a tag',
-  folder: 'a project folder',
-};
+import { useTranslations } from 'next-intl';
+import { missingProjectRequirements, type Project } from '@midnite/shared';
+import { useProjectRequirementLabel } from '@/lib/i18n-labels';
+import { cn } from '@/lib/utils';
 
 /**
  * An orange status circle shown on incomplete projects — those still missing a
@@ -13,9 +11,13 @@ const REQUIREMENT_LABEL: Record<ProjectRequirement, string> = {
  * renders nothing once the project is complete.
  */
 export function ProjectStatusBadge({ project, className }: { project: Project; className?: string }) {
+  const t = useTranslations('projects');
+  const requirementLabel = useProjectRequirementLabel();
   const missing = missingProjectRequirements(project);
   if (missing.length === 0) return null;
-  const title = `Incomplete — still needs ${missing.map((m) => REQUIREMENT_LABEL[m]).join(', ')}`;
+  const title = t('statusBadge.incomplete', {
+    missing: missing.map(requirementLabel).join(t('statusBadge.separator')),
+  });
   return (
     <span
       role="status"

@@ -260,7 +260,6 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                   projects={projects}
                   value={projectId}
                   onChange={setProjectId}
-                  placeholder="No project"
                   direction="up"
                   className="ml-1 min-w-0 cascade-item"
                 />

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import type { Project, ProjectDoc, ProjectDocTemplate } from '@midnite/shared';
 
 afterEach(cleanup);
@@ -27,6 +28,10 @@ vi.mock('@/components/plan-doc-modal', () => ({
 }));
 
 import { ProjectPlanPanel } from './project-plan-panel';
+import { withLocale } from '@/lib/test-locale-wrapper';
+
+/** These components read the i18n catalog (Phase 82 D) — mount the locale provider. */
+const render = (ui: ReactElement) => rtlRender(withLocale(ui));
 
 const project: Project = {
   id: 'p1',
@@ -71,7 +76,10 @@ describe('ProjectPlanPanel', () => {
     await waitFor(() => expect(getProjectDocs).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole('button', { name: /Add document/ }));
-    fireEvent.click(await screen.findByRole('option', { name: /PRD template/ }));
+    // The template picker resolves its label through the Phase 82 D i18n seam, so a
+    // built-in id renders the catalog name — the fixture's own `name` is the fallback
+    // path (exercised by templates with no catalog entry, e.g. user-created ones).
+    fireEvent.click(await screen.findByRole('option', { name: /Product Requirements Doc/ }));
 
     await waitFor(() => expect(createProjectDoc).toHaveBeenCalledWith('p1', { templateId: 'prd' }));
     expect(await screen.findByTestId('doc-modal')).toHaveTextContent('PRD template');

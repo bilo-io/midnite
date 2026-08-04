@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import type { Project } from '@midnite/shared';
 import { STATUS_PILL } from '@/components/council-run-thread';
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
 import { useCouncilRunStatusLabel } from '@/lib/i18n-labels';
 import { getCouncilRunsByProject } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
-import { cn, relativeTime } from '@/lib/utils';
+import { useRelativeTimeLabel } from '@/lib/i18n-labels';
+import { cn } from '@/lib/utils';
 
 type Props = {
   project: Project;
@@ -23,6 +25,8 @@ type Props = {
  * (`/councils/view?id=`), matching every other council link in the codebase.
  */
 function ProjectCouncilRuns({ project }: Props) {
+  const t = useTranslations('projects');
+  const relativeTime = useRelativeTimeLabel();
   const { data, loading, error } = useApiData(
     () => getCouncilRunsByProject(project.id),
     [project.id],
@@ -33,23 +37,23 @@ function ProjectCouncilRuns({ project }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-muted-foreground">Council runs</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('councilRuns.label')}</label>
         {runs.length > 0 ? (
           <span className="text-[11px] tabular-nums text-muted-foreground">
-            {runs.length} run{runs.length === 1 ? '' : 's'}
+            {t('councilRuns.runCount', { count: runs.length })}
           </span>
         ) : null}
       </div>
 
       {loading ? (
         <p className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-          Loading council runs…
+          {t('councilRuns.loading')}
         </p>
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : runs.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-          No council runs linked to this project yet.
+          {t('councilRuns.empty')}
         </p>
       ) : (
         <ul className="space-y-1.5">

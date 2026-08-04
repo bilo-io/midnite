@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { TaskSummary } from '@midnite/shared';
 import { TaskRow } from '@/components/task-row';
 
@@ -14,10 +15,11 @@ type Props = {
  * modal and the detail page render the identical list. Layout-agnostic.
  */
 export function ProjectTasksPanel({ tasks, onSelectTask }: Props) {
+  const t = useTranslations('projects');
   if (tasks.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
-        No tasks in this project yet.
+        {t('stats.noTasksInProject')}
       </div>
     );
   }

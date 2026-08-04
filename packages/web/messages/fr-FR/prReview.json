@@ -1,0 +1,113 @@
+{
+  "panel": {
+    "loading": "Chargement du diff…",
+    "loadFailed": "Impossible de charger le diff : {message}",
+    "loadFailedFallback": "Échec du chargement du diff",
+    "retry": "Réessayer",
+    "openOnGithub": "Ouvrir sur GitHub"
+  },
+  "modal": {
+    "title": "Examiner les modifications",
+    "ariaLabel": "Diff de la pull request",
+    "openPr": "Ouvrir la PR",
+    "close": "Fermer"
+  },
+  "viewer": {
+    "filesChanged": "{count, plural, one {<c>{count}</c> fichier modifié} other {<c>{count}</c> fichiers modifiés}}",
+    "additions": "+{count}",
+    "deletions": "−{count}",
+    "collapseAll": "Tout replier",
+    "expandAll": "Tout déplier",
+    "layoutGroup": "Disposition du diff",
+    "unifiedView": "Vue unifiée",
+    "splitView": "Vue côte à côte",
+    "truncated": "Diff tronqué pour tenir — {count, plural, one {# fichier masqué} other {# fichiers masqués}}. Ouvrez la PR sur GitHub pour tout voir.",
+    "noFiles": "Aucun fichier dans ce diff.",
+    "editComment": "Modifier",
+    "deleteComment": "Supprimer le commentaire"
+  },
+  "composer": {
+    "placeholder": "Ajouter un commentaire en ligne…",
+    "cancel": "Annuler",
+    "save": "Enregistrer le commentaire"
+  },
+  "aiVerdict": {
+    "approved": "IA : LGTM",
+    "changes-requested": "IA : modifications demandées",
+    "commented": "IA : examiné"
+  },
+  "events": {
+    "approve": "Approuver",
+    "request-changes": "Demander des modifications",
+    "comment": "Commenter"
+  },
+  "mergeMethods": {
+    "squash": "squash",
+    "merge": "merge",
+    "rebase": "rebase"
+  },
+  "actions": {
+    "eventGroup": "Type de revue",
+    "pendingComments": "{count, plural, one {# commentaire en ligne en attente} other {# commentaires en ligne en attente}}",
+    "mergeMethod": "Méthode de fusion",
+    "merge": "Fusionner",
+    "mergeConfirmTitle": "Fusionner cette PR ({method}) ?",
+    "mergeConfirmDescription": "La fusion se fait sur GitHub, dans le respect des protections de branche. Cette action est irréversible depuis midnite.",
+    "submitReview": "Envoyer la revue",
+    "approvalNotePlaceholder": "Note d'approbation (facultative)…",
+    "commentPlaceholder": "Laisser un commentaire de revue…",
+    "toastApproved": "PR approuvée",
+    "toastChangesRequested": "Modifications demandées",
+    "toastSubmitted": "Revue envoyée",
+    "toastMerged": "PR fusionnée",
+    "requestFailed": "La requête GitHub a échoué"
+  },
+  "diffStatus": {
+    "add": "Ajouté",
+    "delete": "Supprimé",
+    "modify": "Modifié",
+    "rename": "Renommé",
+    "copy": "Copié"
+  },
+  "file": {
+    "renamedPath": "<old>{oldPath}</old> → {path}",
+    "binary": "Fichier binaire — non affiché.",
+    "noTextualChanges": "Aucune modification textuelle (mode ou métadonnées uniquement)."
+  },
+  "tree": {
+    "files": "{count, plural, one {# fichier} other {# fichiers}}",
+    "layoutGroup": "Disposition de la liste des fichiers",
+    "treeView": "Vue arborescente",
+    "listView": "Vue liste",
+    "hiddenFiles": "{count, plural, one {# fichier masqué (diff tronqué)} other {# fichiers masqués (diff tronqué)}}"
+  },
+  "checks": {
+    "title": "Contrôle qualité",
+    "rerun": "Relancer les contrôles",
+    "running": "En cours…",
+    "loading": "Chargement des contrôles…",
+    "loadFailed": "Échec du chargement des contrôles",
+    "runFailed": "Échec de l'exécution des contrôles",
+    "notConfigured": "Aucun contrôle configuré pour cette tâche — rien à exécuter.",
+    "empty": "Aucun contrôle n'a encore été exécuté pour cette tâche.",
+    "latestRun": "Dernière exécution",
+    "olderRuns": "{count, plural, one {# exécution précédente} other {# exécutions précédentes}}",
+    "noResults": "Aucun contrôle individuel enregistré.",
+    "passed": "Réussi",
+    "failed": "Échoué",
+    "exitCode": "sortie {code}",
+    "hideOutput": "masquer",
+    "showOutput": "détails",
+    "triggers": {
+      "gate": "Gate",
+      "manual": "Manuel",
+      "auto-fix": "Correction auto"
+    },
+    "duration": {
+      "ms": "{value} ms",
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "minutesSeconds": "{minutes} min {seconds} s"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, ChevronDown } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { cn } from '@/lib/utils';
@@ -17,7 +18,7 @@ export function ProjectSelect({
   value,
   onChange,
   disabled = false,
-  placeholder = 'No project',
+  placeholder,
   align = 'left',
   direction = 'down',
   className,
@@ -26,6 +27,7 @@ export function ProjectSelect({
   value: string | null;
   onChange: (projectId: string | null) => void;
   disabled?: boolean;
+  /** Label for the "no project" option; defaults to the translated `projects.select.noProject`. */
   placeholder?: string;
   /** Which edge the dropdown panel aligns to. */
   align?: 'left' | 'right';
@@ -33,9 +35,11 @@ export function ProjectSelect({
   direction?: 'down' | 'up';
   className?: string;
 }) {
+  const t = useTranslations('projects');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const emptyLabel = placeholder ?? t('select.noProject');
   const selected = value ? projects.find((p) => p.id === value) ?? null : null;
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export function ProjectSelect({
             <span className="truncate">{selected.name || selected.tag}</span>
           </span>
         ) : (
-          <span className="text-muted-foreground">{placeholder}</span>
+          <span className="text-muted-foreground">{emptyLabel}</span>
         )}
         <ChevronDown
           className={cn(
@@ -111,7 +115,7 @@ export function ProjectSelect({
             <span className="flex h-3.5 w-3.5 items-center justify-center">
               {value === null ? <Check className="h-3.5 w-3.5" /> : null}
             </span>
-            {placeholder}
+            {emptyLabel}
           </button>
           {projects.map((p) => {
             const on = p.id === value;

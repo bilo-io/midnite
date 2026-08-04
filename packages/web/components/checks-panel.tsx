@@ -1,60 +1,74 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { CheckCircle2, XCircle, RotateCcw, ShieldCheck, ShieldAlert, Clock } from 'lucide-react';
 import type { CheckRun } from '@midnite/shared';
 import { getCheckRuns, triggerCheck } from '@/lib/api';
+import { useCheckTriggerLabel } from '@/lib/i18n-labels';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
-  const m = Math.floor(ms / 60_000);
-  const s = Math.round((ms % 60_000) / 1000);
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+/**
+ * `ms` → a localised duration. The unit suffixes and their spacing are catalog
+ * copy (en-GB writes `1.5s`, fr-FR `1,5 s`) and the number itself goes through the
+ * locale formatter, so the decimal separator follows the active language too.
+ */
+function useDurationLabel(): (ms: number) => string {
+  const t = useTranslations('prReview');
+  const { number } = useLocaleFormat();
+  return (ms) => {
+    if (ms < 1000) return t('checks.duration.ms', { value: number(ms) });
+    if (ms < 60_000) {
+      const seconds = number(ms / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      return t('checks.duration.seconds', { value: seconds });
+    }
+    const m = Math.floor(ms / 60_000);
+    const s = Math.round((ms % 60_000) / 1000);
+    return s > 0
+      ? t('checks.duration.minutesSeconds', { minutes: number(m), seconds: number(s) })
+      : t('checks.duration.minutes', { value: number(m) });
+  };
 }
 
-function formatTimestamp(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
+/** An ISO timestamp → the active locale's short date + time (falls back to the raw ISO). */
+function useTimestampLabel(): (iso: string) => string {
+  const { dateTime } = useLocaleFormat();
+  return (iso) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return dateTime(date, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
     });
-  } catch {
-    return iso;
-  }
-}
-
-function triggerLabel(trigger: CheckRun['trigger']): string {
-  switch (trigger) {
-    case 'gate': return 'Gate';
-    case 'manual': return 'Manual';
-    case 'auto-fix': return 'Auto-fix';
-  }
+  };
 }
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
 function PassFailBadge({ passed }: { passed: boolean }) {
+  const t = useTranslations('prReview');
   return passed ? (
     <span className="inline-flex items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">
       <CheckCircle2 aria-hidden className="h-3 w-3" />
-      Passed
+      {t('checks.passed')}
     </span>
   ) : (
     <span className="inline-flex items-center gap-1 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive">
       <XCircle aria-hidden className="h-3 w-3" />
-      Failed
+      {t('checks.failed')}
     </span>
   );
 }
 
 function CheckResultRow({ result }: { result: CheckRun['results'][number] }) {
+  const t = useTranslations('prReview');
+  const durationLabel = useDurationLabel();
   const [expanded, setExpanded] = useState(false);
   const hasOutput = result.output.trim().length > 0;
 
@@ -72,10 +86,12 @@ function CheckResultRow({ result }: { result: CheckRun['results'][number] }) {
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Clock aria-hidden className="h-3 w-3" />
-            {formatDuration(result.durationMs)}
+            {durationLabel(result.durationMs)}
           </span>
           {result.exitCode !== null && (
-            <span className="text-[10px] text-muted-foreground">exit {result.exitCode}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {t('checks.exitCode', { code: result.exitCode })}
+            </span>
           )}
           {hasOutput && (
             <button
@@ -84,7 +100,7 @@ function CheckResultRow({ result }: { result: CheckRun['results'][number] }) {
               className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
               aria-expanded={expanded}
             >
-              {expanded ? 'hide' : 'output'}
+              {expanded ? t('checks.hideOutput') : t('checks.showOutput')}
             </button>
           )}
         </div>
@@ -107,6 +123,9 @@ function CheckRunSummary({
   label: string;
   defaultOpen?: boolean;
 }) {
+  const t = useTranslations('prReview');
+  const triggerLabel = useCheckTriggerLabel();
+  const timestampLabel = useTimestampLabel();
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -128,14 +147,14 @@ function CheckRunSummary({
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-[10px] text-muted-foreground">{triggerLabel(run.trigger)}</span>
           <PassFailBadge passed={run.passed} />
-          <span className="text-[10px] text-muted-foreground">{formatTimestamp(run.finishedAt)}</span>
+          <span className="text-[10px] text-muted-foreground">{timestampLabel(run.finishedAt)}</span>
           <span aria-hidden className="text-muted-foreground">{open ? '▲' : '▼'}</span>
         </div>
       </button>
       {open && (
         <div className="flex flex-col gap-2 border-t px-3 pb-3 pt-2">
           {run.results.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No individual checks recorded.</p>
+            <p className="text-sm text-muted-foreground">{t('checks.noResults')}</p>
           ) : (
             run.results.map((r) => <CheckResultRow key={r.name} result={r} />)
           )}
@@ -157,6 +176,8 @@ export interface ChecksPanelProps {
  * and refreshes the list. Pass/fail shown per-check with expandable output.
  */
 export function ChecksPanel({ taskId }: ChecksPanelProps) {
+  const t = useTranslations('prReview');
+  const timestampLabel = useTimestampLabel();
   const [runs, setRuns] = useState<CheckRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,7 +193,7 @@ export function ChecksPanel({ taskId }: ChecksPanelProps) {
         if (!cancelled) setRuns(res.runs);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load checks');
+        if (!cancelled) setError(err instanceof Error ? err.message : t('checks.loadFailed'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -180,7 +201,8 @@ export function ChecksPanel({ taskId }: ChecksPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [taskId]);
+    // `t` is memoised per locale by next-intl, so it doesn't re-trigger the fetch.
+  }, [taskId, t]);
 
   async function handleReRun() {
     setRunning(true);
@@ -192,10 +214,10 @@ export function ChecksPanel({ taskId }: ChecksPanelProps) {
       setRuns(res.runs);
       // If the run was a no-op stub (zero results) surface a gentle note.
       if (run.results.length === 0 && run.passed) {
-        setRunError('Checks are not configured for this task — nothing to run.');
+        setRunError(t('checks.notConfigured'));
       }
     } catch (err) {
-      setRunError(err instanceof Error ? err.message : 'Failed to run checks');
+      setRunError(err instanceof Error ? err.message : t('checks.runFailed'));
     } finally {
       setRunning(false);
     }
@@ -208,7 +230,7 @@ export function ChecksPanel({ taskId }: ChecksPanelProps) {
     <div className="flex flex-col gap-4">
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Quality Gate</h3>
+        <h3 className="text-sm font-semibold">{t('checks.title')}</h3>
         <button
           type="button"
           onClick={() => void handleReRun()}
@@ -218,10 +240,10 @@ export function ChecksPanel({ taskId }: ChecksPanelProps) {
             'bg-muted hover:bg-muted/80 text-foreground',
             running && 'cursor-not-allowed opacity-60',
           )}
-          aria-label="Re-run checks"
+          aria-label={t('checks.rerun')}
         >
           <RotateCcw aria-hidden className={cn('h-3 w-3', running && 'animate-spin')} />
-          {running ? 'Running…' : 'Re-run checks'}
+          {running ? t('checks.running') : t('checks.rerun')}
         </button>
       </div>
 
@@ -231,30 +253,28 @@ export function ChecksPanel({ taskId }: ChecksPanelProps) {
       )}
 
       {/* Loading / error / empty states */}
-      {loading && <p className="text-sm text-muted-foreground">Loading checks…</p>}
+      {loading && <p className="text-sm text-muted-foreground">{t('checks.loading')}</p>}
       {!loading && error && (
         <p className="rounded bg-destructive/10 px-2 py-1.5 text-xs text-destructive">{error}</p>
       )}
       {!loading && !error && runs.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No checks have been run for this task yet.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('checks.empty')}</p>
       )}
 
       {/* Latest run */}
       {!loading && latestRun && (
-        <CheckRunSummary run={latestRun} label="Latest run" defaultOpen />
+        <CheckRunSummary run={latestRun} label={t('checks.latestRun')} defaultOpen />
       )}
 
       {/* Older runs (collapsed) */}
       {!loading && olderRuns.length > 0 && (
         <details className="group">
           <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground select-none">
-            {olderRuns.length} older run{olderRuns.length !== 1 ? 's' : ''}
+            {t('checks.olderRuns', { count: olderRuns.length })}
           </summary>
           <div className="mt-2 flex flex-col gap-2">
             {olderRuns.map((run) => (
-              <CheckRunSummary key={run.id} run={run} label={formatTimestamp(run.finishedAt)} />
+              <CheckRunSummary key={run.id} run={run} label={timestampLabel(run.finishedAt)} />
             ))}
           </div>
         </details>

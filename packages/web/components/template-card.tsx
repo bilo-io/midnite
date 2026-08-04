@@ -2,6 +2,7 @@
 
 import { FileText } from 'lucide-react';
 import { ProjectTag } from '@/components/project-tag';
+import { useProjectTemplateLabels } from '@/lib/project-template-labels';
 import type { Template } from '@/app/(main)/projects/templates';
 
 type Props = {
@@ -11,6 +12,10 @@ type Props = {
 };
 
 export function TemplateCard({ template, layout, onOpen }: Props) {
+  const labels = useProjectTemplateLabels();
+  const name = labels.name(template);
+  const description = labels.description(template);
+
   if (layout === 'list') {
     return (
       <button
@@ -21,9 +26,9 @@ export function TemplateCard({ template, layout, onOpen }: Props) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <ProjectTag tag={template.tag} color={template.color} />
-            <span className="truncate text-sm font-medium">{template.name}</span>
+            <span className="truncate text-sm font-medium">{name}</span>
           </div>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{template.description}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
         </div>
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
@@ -40,8 +45,8 @@ export function TemplateCard({ template, layout, onOpen }: Props) {
         <ProjectTag tag={template.tag} color={template.color} />
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
       </div>
-      <span className="line-clamp-1 text-sm font-medium leading-snug">{template.name}</span>
-      <p className="line-clamp-2 text-xs text-muted-foreground">{template.description}</p>
+      <span className="line-clamp-1 text-sm font-medium leading-snug">{name}</span>
+      <p className="line-clamp-2 text-xs text-muted-foreground">{description}</p>
     </button>
   );
 }

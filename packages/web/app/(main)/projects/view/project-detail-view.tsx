@@ -25,13 +25,8 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 
 type Tab = 'details' | 'docs' | 'tasks' | 'roadmap';
-const TAB_OPTIONS: TabOption<Tab>[] = [
-  { value: 'details', label: 'Details' },
-  { value: 'docs', label: 'Docs' },
-  { value: 'tasks', label: 'Tasks' },
-  { value: 'roadmap', label: 'Roadmap' },
-];
-const TAB_VALUES = new Set<string>(TAB_OPTIONS.map((t) => t.value));
+const TAB_VALUES: readonly Tab[] = ['details', 'docs', 'tasks', 'roadmap'];
+const TAB_VALUE_SET = new Set<string>(TAB_VALUES);
 
 /**
  * Container (Phase 55 A): reads `?id=`, fetches the project + its tasks, and
@@ -39,6 +34,8 @@ const TAB_VALUES = new Set<string>(TAB_OPTIONS.map((t) => t.value));
  * deep link resolves standalone (Decision: inline not-found + back link).
  */
 export function ProjectDetailContainer() {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const id = useSearchParams().get('id') ?? '';
   const { data, loading, error, refresh } = useApiData(async () => {
     if (!id) return null;
@@ -55,7 +52,7 @@ export function ProjectDetailContainer() {
     };
   }, [data?.project]);
 
-  const back = <BackLink href="/projects" label="All projects" className="mb-4" />;
+  const back = <BackLink href="/projects" label={tCommon('allProjects')} className="mb-4" />;
 
   if (!id || error || (!loading && !data)) {
     return (
@@ -70,7 +67,7 @@ export function ProjectDetailContainer() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t('detail.loading')}</p>
       </div>
     );
   }
@@ -98,6 +95,7 @@ export function ProjectDetailView({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('projects');
   const tBoard = useTranslations('board');
   const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
@@ -109,7 +107,10 @@ export function ProjectDetailView({
   // Back-compat: a bookmarked `?tab=plan` link (the tab's old name) should still
   // land on the Docs panel rather than falling back to Details.
   const tab: Tab =
-    tabParam === 'plan' ? 'docs' : tabParam && TAB_VALUES.has(tabParam) ? (tabParam as Tab) : 'details';
+    tabParam === 'plan' ? 'docs' : tabParam && TAB_VALUE_SET.has(tabParam) ? (tabParam as Tab) : 'details';
+  const tabOptions: TabOption<Tab>[] = TAB_VALUES.map((value) => ({ value, label: t(`detail.tabs.${value}`) }));
+  const statsRail = t('detail.statsRail');
+  const knowledgeRail = t('detail.knowledgeRail');
   const setTab = (next: Tab) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', next);
@@ -155,7 +156,7 @@ export function ProjectDetailView({
           stickyRails
           hideFloatingToggles
           left={{
-            title: 'Stats & actions',
+            title: statsRail,
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: (
@@ -168,7 +169,7 @@ export function ProjectDetailView({
             ),
           }}
           right={{
-            title: 'Knowledge & activity',
+            title: knowledgeRail,
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <ProjectInfoPanel project={project} tasks={tasks} onSelectTask={openTask} />,
@@ -185,24 +186,24 @@ export function ProjectDetailView({
                   inline
                   side="left"
                   open={leftOpen}
-                  title="Stats & actions"
+                  title={statsRail}
                   onToggle={() => setLeftOpen(!leftOpen)}
-                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Stats & actions' })}
-                  expandLabel={tCommon('ui.rail.expand', { title: 'Stats & actions' })}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: statsRail })}
+                  expandLabel={tCommon('ui.rail.expand', { title: statsRail })}
                 />
               ) : null}
               <div className="min-w-0 flex-1">
-                <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} ariaLabel="Project sections" />
+                <Tabs options={tabOptions} value={tab} onChange={setTab} ariaLabel={t('detail.sectionsAria')} />
               </div>
               {!isMobile ? (
                 <RailFloatingToggle
                   inline
                   side="right"
                   open={rightOpen}
-                  title="Knowledge & activity"
+                  title={knowledgeRail}
                   onToggle={() => setRightOpen(!rightOpen)}
-                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Knowledge & activity' })}
-                  expandLabel={tCommon('ui.rail.expand', { title: 'Knowledge & activity' })}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: knowledgeRail })}
+                  expandLabel={tCommon('ui.rail.expand', { title: knowledgeRail })}
                 />
               ) : null}
             </div>

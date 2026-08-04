@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, FileText, FolderClosed, ListTree, Rows3 } from 'lucide-react';
 import type { PrDiffFile } from '@midnite/shared';
 import { cn } from '@/lib/utils';
@@ -9,11 +10,16 @@ import { buildFileTree, fileKey, type TreeNode } from './diff-model';
 export type FileTreeMode = 'tree' | 'list';
 
 function FileCounts({ file }: { file: PrDiffFile }) {
+  const t = useTranslations('prReview');
   return (
     <span className="ml-auto shrink-0 pl-2 font-mono text-[10px] tabular-nums">
-      {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
+      {file.additions > 0 ? (
+        <span className="text-success">{t('viewer.additions', { count: file.additions })}</span>
+      ) : null}
       {file.additions > 0 && file.deletions > 0 ? ' ' : null}
-      {file.deletions > 0 ? <span className="text-destructive-foreground">−{file.deletions}</span> : null}
+      {file.deletions > 0 ? (
+        <span className="text-destructive-foreground">{t('viewer.deletions', { count: file.deletions })}</span>
+      ) : null}
     </span>
   );
 }
@@ -71,6 +77,7 @@ type Props = {
 
 /** Left rail listing every changed file — toggles between a nested tree and a flat list. */
 export function DiffFileTree({ files, hiddenFiles, onJump }: Props) {
+  const t = useTranslations('prReview');
   const [mode, setMode] = useState<FileTreeMode>('tree');
   const tree = useMemo(() => buildFileTree(files), [files]);
 
@@ -84,14 +91,18 @@ export function DiffFileTree({ files, hiddenFiles, onJump }: Props) {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border/60 px-2 py-1.5">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          {files.length} file{files.length === 1 ? '' : 's'}
+          {t('tree.files', { count: files.length })}
         </span>
-        <div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5" role="group" aria-label="File list layout">
+        <div
+          className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5"
+          role="group"
+          aria-label={t('tree.layoutGroup')}
+        >
           <button
             type="button"
             onClick={() => setMode('tree')}
             aria-pressed={mode === 'tree'}
-            aria-label="Tree view"
+            aria-label={t('tree.treeView')}
             className={cn(
               'rounded p-1 text-muted-foreground transition-colors hover:text-foreground',
               mode === 'tree' && 'bg-background text-foreground shadow-sm',
@@ -103,7 +114,7 @@ export function DiffFileTree({ files, hiddenFiles, onJump }: Props) {
             type="button"
             onClick={() => setMode('list')}
             aria-pressed={mode === 'list'}
-            aria-label="Flat list view"
+            aria-label={t('tree.listView')}
             className={cn(
               'rounded p-1 text-muted-foreground transition-colors hover:text-foreground',
               mode === 'list' && 'bg-background text-foreground shadow-sm',
@@ -143,7 +154,7 @@ export function DiffFileTree({ files, hiddenFiles, onJump }: Props) {
 
         {hiddenFiles.length > 0 ? (
           <p className="mt-2 border-t border-border/60 px-2 pt-2 text-[11px] text-amber-600 dark:text-amber-400">
-            {hiddenFiles.length} file{hiddenFiles.length === 1 ? '' : 's'} hidden (diff truncated)
+            {t('tree.hiddenFiles', { count: hiddenFiles.length })}
           </p>
         ) : null}
       </div>

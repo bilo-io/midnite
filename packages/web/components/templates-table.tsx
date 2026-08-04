@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, FileText, Trash2 } from 'lucide-react';
 import { ProjectTag } from '@/components/project-tag';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -22,6 +23,7 @@ type Props = {
  * holds a description field and an editable view of the markdown document.
  */
 export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Props) {
+  const tr = useTranslations('projects');
   const [expanded, setExpanded] = useState<Set<string>>(() =>
     expandId ? new Set([expandId]) : new Set(),
   );
@@ -52,7 +54,11 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
                 type="button"
                 onClick={() => toggle(t.id)}
                 aria-expanded={open}
-                aria-label={open ? `Collapse ${t.name}` : `Expand ${t.name}`}
+                aria-label={
+                  open
+                    ? tr('templates.editor.collapse', { name: t.name })
+                    : tr('templates.editor.expand', { name: t.name })
+                }
                 className="flex shrink-0 items-center gap-2 rounded py-1 pl-1 text-left"
               >
                 <ChevronDown
@@ -66,14 +72,14 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
               <input
                 value={t.name}
                 onChange={(e) => onUpdate(t.id, { name: e.target.value })}
-                aria-label="Template title"
-                placeholder="Untitled template"
+                aria-label={tr('templates.editor.titleAria')}
+                placeholder={tr('templates.editor.untitled')}
                 className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1.5 py-1 text-sm font-medium outline-none transition-colors hover:border-border/60 focus:border-foreground/20 focus:bg-background"
               />
               <button
                 type="button"
                 onClick={() => onDelete(t.id)}
-                aria-label={`Delete ${t.name}`}
+                aria-label={tr('templates.editor.deleteTemplate', { name: t.name })}
                 className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-accent/50 hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -83,11 +89,11 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
             {open ? (
               <div className="space-y-3 border-t border-border/60 px-3 py-3">
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Description</span>
+                  <span className="text-xs font-medium text-muted-foreground">{tr('templates.editor.description')}</span>
                   <input
                     value={t.description}
                     onChange={(e) => onUpdate(t.id, { description: e.target.value })}
-                    placeholder="What this template is for…"
+                    placeholder={tr('templates.editor.descriptionPlaceholder')}
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </label>
@@ -98,7 +104,7 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
                   onColorChange={(v) => onUpdate(t.id, { color: v })}
                   label={
                     <span className="text-xs font-medium text-muted-foreground">
-                      Tag &amp; color
+                      {tr('templates.editor.tagAndColour')}
                     </span>
                   }
                 />
@@ -108,7 +114,7 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
                   label={
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                       <FileText className="h-3.5 w-3.5" />
-                      Document
+                      {tr('templates.editor.document')}
                     </span>
                   }
                 />

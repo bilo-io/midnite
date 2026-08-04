@@ -11,6 +11,8 @@ import memory from './memory.json';
 import nav from './nav.json';
 import office from './office.json';
 import plan from './plan.json';
+import prReview from './prReview.json';
+import projects from './projects.json';
 import roadmap from './roadmap.json';
 import safety from './safety.json';
 import search from './search.json';
@@ -31,6 +33,8 @@ export default {
   nav,
   office,
   plan,
+  prReview,
+  projects,
   roadmap,
   safety,
   search,

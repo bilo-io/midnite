@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { GithubIcon } from '@midnite/ui';
@@ -19,6 +20,8 @@ type Props = {
  * Fail-open states live in the panel.
  */
 export function PrDiffModal({ taskId, prUrl, onClose }: Props) {
+  const t = useTranslations('prReview');
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -34,21 +37,21 @@ export function PrDiffModal({ taskId, prUrl, onClose }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Pull request diff"
+          aria-label={t('modal.ariaLabel')}
           className="pointer-events-auto flex h-full max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">Review changes</h2>
+            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{t('modal.title')}</h2>
             <a
               href={prUrl}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              Open PR <GithubIcon className="h-3 w-3" />
+              {t('modal.openPr')} <GithubIcon className="h-3 w-3" />
             </a>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button type="button" variant="ghost" size="icon" aria-label={t('modal.close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>

@@ -1,19 +1,13 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, FileCode2 } from 'lucide-react';
 import { Diff, Hunk, type EventMap, type ViewType } from 'react-diff-view';
 import { cn } from '@/lib/utils';
+import { useDiffStatusLabel } from '@/lib/i18n-labels';
 import { languageForPath, tokenizeHunks } from './diff-highlight';
 import type { MappedDiffFile } from './diff-model';
-
-const STATUS_LABEL: Record<MappedDiffFile['diffType'], string> = {
-  add: 'Added',
-  delete: 'Deleted',
-  modify: 'Modified',
-  rename: 'Renamed',
-  copy: 'Copied',
-};
 
 type Props = {
   mapped: MappedDiffFile;
@@ -31,6 +25,8 @@ type Props = {
  * tokenization) mount only once expanded, so a large diff stays cheap.
  */
 export function DiffFile({ mapped, viewType, defaultOpen = false, widgets, gutterEvents }: Props) {
+  const t = useTranslations('prReview');
+  const diffStatusLabel = useDiffStatusLabel();
   const { file, diffType, hunks, key } = mapped;
   const [open, setOpen] = useState(defaultOpen);
 
@@ -53,33 +49,33 @@ export function DiffFile({ mapped, viewType, defaultOpen = false, widgets, gutte
         />
         <FileCode2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate font-mono text-xs">
-          {file.oldPath && file.oldPath !== file.path ? (
-            <>
-              <span className="text-muted-foreground line-through">{file.oldPath}</span>
-              {' → '}
-              {file.path}
-            </>
-          ) : (
-            file.path
-          )}
+          {file.oldPath && file.oldPath !== file.path
+            ? t.rich('file.renamedPath', {
+                oldPath: file.oldPath,
+                path: file.path,
+                old: (chunks) => <span className="text-muted-foreground line-through">{chunks}</span>,
+              })
+            : file.path}
         </span>
         <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">
-          {STATUS_LABEL[diffType]}
+          {diffStatusLabel(diffType)}
         </span>
         <span className="shrink-0 font-mono text-[11px] tabular-nums">
-          {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
+          {file.additions > 0 ? (
+            <span className="text-success">{t('viewer.additions', { count: file.additions })}</span>
+          ) : null}
           {file.additions > 0 && file.deletions > 0 ? ' ' : null}
-          {file.deletions > 0 ? <span className="text-destructive-foreground">−{file.deletions}</span> : null}
+          {file.deletions > 0 ? (
+            <span className="text-destructive-foreground">{t('viewer.deletions', { count: file.deletions })}</span>
+          ) : null}
         </span>
       </button>
 
       {open ? (
         file.binary ? (
-          <p className="px-3 py-3 text-xs text-muted-foreground">Binary file — not shown.</p>
+          <p className="px-3 py-3 text-xs text-muted-foreground">{t('file.binary')}</p>
         ) : hunks.length === 0 ? (
-          <p className="px-3 py-3 text-xs text-muted-foreground">
-            No textual changes (mode or metadata only).
-          </p>
+          <p className="px-3 py-3 text-xs text-muted-foreground">{t('file.noTextualChanges')}</p>
         ) : (
           <div className={cn('overflow-x-auto text-xs', gutterEvents && 'diff-reviewable')}>
             <Diff

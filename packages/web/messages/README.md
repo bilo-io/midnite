@@ -62,6 +62,25 @@ silently regress).
 > to the lint gate. The same applies to text drawn *inside* the 3D office's canvas
 > textures (e.g. the Breakout cabinet screen in `office3d/`) — only React-rendered
 > DOM overlays/panels (including drei `<Html>` plates) are localized.
+>
+> **Known gap:** the **markdown body** of a built-in project doc template
+> (`PROJECT_DOC_TEMPLATES` in `@midnite/shared`) stays English. Its `name` +
+> `description` are translated at the web call site via
+> [`lib/project-template-labels.ts`](../lib/project-template-labels.ts), but the
+> gateway writes the same `content` when it seeds or generates a doc server-side, so
+> translating only the web copy would make a document's language depend on who created
+> it. Same rationale as the shared node catalogue's expression syntax.
+
+### Shared-registry copy: translate at the call site
+
+Two registries in `@midnite/shared` carry user-visible English that `shared` must keep
+(the gateway reads the identical rows): the workflow **node catalogue** and the
+**project doc templates**. Neither is translated in place. Instead a `lib/*-labels.ts`
+seam resolves `<namespace>.<registryId>.<field>` at the web call site and **falls back
+per key to the shared English**, so a row added to `shared` renders (in English) before
+its catalog copy lands — never a raw key path. A registry-driven test fails CI when a
+row ships without copy. See [`lib/workflow-node-labels.ts`](../lib/workflow-node-labels.ts)
+and [`lib/project-template-labels.ts`](../lib/project-template-labels.ts).
 
 ## Tooling
 

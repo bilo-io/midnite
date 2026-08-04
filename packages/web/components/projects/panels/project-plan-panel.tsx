@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, FileText, Loader2, Plus, X } from 'lucide-react';
 import type { Project, ProjectDoc } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,8 @@ import { PlanDocModal } from '@/components/plan-doc-modal';
 import { useConfirm } from '@/components/confirm-dialog';
 import { TEMPLATES, type Template } from '@/app/(main)/projects/templates';
 import { createProjectDoc, deleteProjectDoc, generateProjectDoc, getProjectDocs, updateProjectDoc } from '@/lib/api';
+import { useProjectTemplateLabels } from '@/lib/project-template-labels';
 import { cn } from '@/lib/utils';
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
 
 type Props = {
   project: Project;
@@ -30,6 +28,9 @@ type Props = {
  * the same list + template picker + doc editor.
  */
 export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChange }: Props) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
+  const templateLabels = useProjectTemplateLabels();
   const confirm = useConfirm();
   const [docs, setDocs] = useState<ProjectDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,11 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
   const [addRect, setAddRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const addRef = useRef<HTMLButtonElement>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
+
+  const errMsg = useCallback(
+    (e: unknown): string => (e instanceof Error ? e.message : tCommon('errorTitle')),
+    [tCommon],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +65,7 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
     return () => {
       cancelled = true;
     };
-  }, [project.id]);
+  }, [project.id, errMsg]);
 
   // Let a host modal know when the nested doc editor owns Escape.
   useEffect(() => onDocOpenChange?.(openDocId !== null), [openDocId, onDocOpenChange]);
@@ -75,8 +81,8 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
     if (!addOpen) return;
     placeAddMenu();
     const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (addRef.current?.contains(t) || addMenuRef.current?.contains(t)) return;
+      const target = e.target as Node;
+      if (addRef.current?.contains(target) || addMenuRef.current?.contains(target)) return;
       setAddOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -112,15 +118,15 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
         setAddingTemplateId(null);
       }
     },
-    [project.id],
+    [project.id, errMsg],
   );
 
   const removeDoc = useCallback(
     async (id: string) => {
       const ok = await confirm({
-        title: 'Remove this document?',
-        description: 'It will be deleted from this project. The source template is unchanged.',
-        confirmLabel: 'Remove',
+        title: t('plan.removeConfirmTitle'),
+        description: t('plan.removeConfirmDescription'),
+        confirmLabel: tCommon('remove'),
       });
       if (!ok) return;
       setError(null);
@@ -132,7 +138,7 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
         setError(errMsg(e));
       }
     },
-    [confirm, project.id],
+    [confirm, project.id, errMsg, t, tCommon],
   );
 
   const saveDoc = useCallback(
@@ -152,25 +158,25 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
     [project.id],
   );
 
-  const availableTemplates = templates.filter((t) => !docs.some((d) => d.templateId === t.id));
+  const availableTemplates = templates.filter((tpl) => !docs.some((d) => d.templateId === tpl.id));
   const openDoc = docs.find((d) => d.id === openDocId) ?? null;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-muted-foreground">Documents</label>
+        <label className="text-xs font-medium text-muted-foreground">{t('plan.documents')}</label>
         <span className="text-[11px] tabular-nums text-muted-foreground">
-          {docs.length} doc{docs.length === 1 ? '' : 's'}
+          {t('plan.docCount', { count: docs.length })}
         </span>
       </div>
 
       {loading ? (
         <p className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-          Loading documents…
+          {t('plan.loading')}
         </p>
       ) : docs.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-          No planning documents yet. Add one from the template library to draft a spec or plan for this project.
+          {t('plan.empty')}
         </p>
       ) : (
         <ul className="space-y-1.5">
@@ -188,7 +194,7 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
               <button
                 type="button"
                 onClick={() => void removeDoc(d.id)}
-                aria-label="Remove document"
+                aria-label={t('plan.removeDoc')}
                 className="text-muted-foreground hover:text-destructive"
               >
                 <X className="h-3.5 w-3.5" />
@@ -213,13 +219,11 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
           className="gap-1.5"
         >
           {addingTemplateId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          Add document
+          {t('plan.addDocument')}
           <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', addOpen && 'rotate-180')} />
         </Button>
         <p className="mt-1.5 text-[11px] text-muted-foreground">
-          {availableTemplates.length === 0
-            ? 'Every template already has a document in this project.'
-            : 'Documents are copied from the template library and titled for this project.'}
+          {availableTemplates.length === 0 ? t('plan.allTemplatesUsed') : t('plan.addHint')}
         </p>
       </div>
 
@@ -228,21 +232,21 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChan
             <div
               ref={addMenuRef}
               role="listbox"
-              aria-label="Templates"
+              aria-label={t('plan.templatesListAria')}
               style={{ position: 'fixed', top: addRect.top, left: addRect.left, minWidth: Math.max(addRect.width, 224) }}
               className="z-[60] max-h-72 w-64 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg"
             >
-              {availableTemplates.map((t) => (
+              {availableTemplates.map((tpl) => (
                 <button
-                  key={t.id}
+                  key={tpl.id}
                   type="button"
                   role="option"
                   aria-selected={false}
-                  onClick={() => void addDoc(t)}
+                  onClick={() => void addDoc(tpl)}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                 >
-                  <ProjectTag tag={t.tag} color={t.color} />
-                  <span className="min-w-0 flex-1 truncate">{t.name}</span>
+                  <ProjectTag tag={tpl.tag} color={tpl.color} />
+                  <span className="min-w-0 flex-1 truncate">{templateLabels.name(tpl)}</span>
                 </button>
               ))}
             </div>,

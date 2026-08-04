@@ -1,24 +1,43 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Coins } from 'lucide-react';
 import { getCycleTime, getUsageAttribution } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 
-/** Sub-cent spend still reads rather than rounding away to nothing. */
-function fmtUsd(n: number): string {
-  return n > 0 && n < 0.01 ? '<$0.01' : `$${n.toFixed(2)}`;
+/**
+ * Sub-cent spend still reads rather than rounding away to nothing. Amounts go
+ * through the locale formatter (`$12.34` → `12,34 $US`); only the currency is
+ * fixed, since the gateway harvests USD.
+ */
+function useUsdLabel(): (n: number) => string {
+  const t = useTranslations('projects');
+  const { number } = useLocaleFormat();
+  // `narrowSymbol` keeps en-GB reading `$2.50` rather than `US$2.50` (its default for a
+  // foreign currency) — same glyph as before i18n, but the grouping/decimal separators
+  // and symbol placement now follow the active locale (`2,50 $` under fr-FR).
+  const usd = (n: number) => number(n, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol' });
+  return (n) => (n > 0 && n < 0.01 ? t('cost.subCent', { value: usd(0.01) }) : usd(n));
 }
 
-/** Human duration from ms (`—` when null): s / m / h / d. */
-function fmtDuration(ms: number | null): string {
-  if (ms === null) return '—';
-  const s = ms / 1_000;
-  if (s < 60) return `${Math.round(s)}s`;
-  const m = s / 60;
-  if (m < 60) return `${m < 10 ? m.toFixed(1) : Math.round(m)}m`;
-  const h = m / 60;
-  if (h < 24) return `${h < 10 ? h.toFixed(1) : Math.round(h)}h`;
-  return `${(h / 24).toFixed(1)}d`;
+/** Human duration from ms (the em dash when null): s / m / h / d, unit suffixes translated. */
+function useDurationLabel(): (ms: number | null) => string {
+  const t = useTranslations('projects');
+  const { number } = useLocaleFormat();
+  /** One fraction digit below 10, whole numbers above — the pre-i18n shape. */
+  const coarse = (v: number) =>
+    v < 10 ? number(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : number(Math.round(v));
+  return (ms) => {
+    if (ms === null) return t('cost.noValue');
+    const s = ms / 1_000;
+    if (s < 60) return t('cost.duration.seconds', { value: number(Math.round(s)) });
+    const m = s / 60;
+    if (m < 60) return t('cost.duration.minutes', { value: coarse(m) });
+    const h = m / 60;
+    if (h < 24) return t('cost.duration.hours', { value: coarse(h) });
+    return t('cost.duration.days', { value: number(h / 24, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
+  };
 }
 
 /**
@@ -28,6 +47,9 @@ function fmtDuration(ms: number | null): string {
  * endpoints and picks this project's bucket. Honest empty state when it has none.
  */
 export function ProjectCostCard({ projectId }: { projectId: string }) {
+  const t = useTranslations('projects');
+  const fmtUsd = useUsdLabel();
+  const fmtDuration = useDurationLabel();
   const { data } = useApiData(async () => {
     const [attribution, cycle] = await Promise.all([
       getUsageAttribution({ groupBy: 'project' }),
@@ -43,35 +65,38 @@ export function ProjectCostCard({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-2">
       <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Coins className="h-3.5 w-3.5" /> Cost & throughput
+        <Coins className="h-3.5 w-3.5" /> {t('cost.title')}
       </span>
       {!bucket ? (
-        <p className="text-[11px] text-muted-foreground">No agent-session cost recorded yet.</p>
+        <p className="text-[11px] text-muted-foreground">{t('cost.empty')}</p>
       ) : (
         <dl className="space-y-1.5 text-xs">
           <div className="flex items-baseline justify-between gap-2">
-            <dt className="text-muted-foreground">Spend</dt>
+            <dt className="text-muted-foreground">{t('cost.spend')}</dt>
             <dd className="font-semibold tabular-nums text-foreground">{fmtUsd(bucket.estCostUsd)}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-2">
-            <dt className="text-muted-foreground">Measured · estimated</dt>
+            <dt className="text-muted-foreground">{t('cost.measuredEstimated')}</dt>
             <dd className="tabular-nums text-foreground/90">
-              {fmtUsd(bucket.measuredCostUsd)} · {fmtUsd(bucket.estimatedCostUsd)}
+              {t('cost.measuredEstimatedValue', {
+                measured: fmtUsd(bucket.measuredCostUsd),
+                estimated: fmtUsd(bucket.estimatedCostUsd),
+              })}
             </dd>
           </div>
           <div className="flex items-baseline justify-between gap-2">
-            <dt className="text-muted-foreground">Sessions</dt>
+            <dt className="text-muted-foreground">{t('cost.sessions')}</dt>
             <dd className="tabular-nums text-foreground/90">{bucket.sessions}</dd>
           </div>
           {data?.p50EndToEndMs != null ? (
             <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-muted-foreground">p50 end-to-end</dt>
+              <dt className="text-muted-foreground">{t('cost.p50EndToEnd')}</dt>
               <dd className="tabular-nums text-foreground/90">{fmtDuration(data.p50EndToEndMs)}</dd>
             </div>
           ) : null}
           {bucket.unpricedSessions > 0 ? (
             <p className="text-[11px] text-muted-foreground">
-              {bucket.unpricedSessions} on an unpriced model — cost not counted.
+              {t('cost.unpriced', { count: bucket.unpricedSessions })}
             </p>
           ) : null}
         </dl>

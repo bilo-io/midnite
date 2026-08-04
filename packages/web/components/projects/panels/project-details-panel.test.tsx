@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import type { Project } from '@midnite/shared';
 
 const updateProject = vi.fn();
@@ -13,6 +14,10 @@ const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 import { ProjectDetailsPanel } from './project-details-panel';
+import { withLocale } from '@/lib/test-locale-wrapper';
+
+/** These components read the i18n catalog (Phase 82 D) — mount the locale provider. */
+const render = (ui: ReactElement) => rtlRender(withLocale(ui));
 
 afterEach(cleanup);
 beforeEach(() => {

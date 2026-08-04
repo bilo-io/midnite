@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Folder, ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { OverflowMenu, type OverflowMenuItem } from '@/components/overflow-menu';
@@ -39,6 +40,7 @@ export function ProjectsTree({
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }) {
+  const t = useTranslations('projects');
   const tasksByProject = new Map<string, TaskSummary[]>();
   const unassigned: TaskSummary[] = [];
   for (const t of tasks) {
@@ -65,11 +67,11 @@ export function ProjectsTree({
 
   const buildProjectMenuItems = (p: Project): OverflowMenuItem[] => {
     const items: OverflowMenuItem[] = [];
-    if (onAddTask) items.push({ key: 'add', label: 'Add task', icon: Plus, onClick: () => onAddTask(p.id) });
-    if (onPlan) items.push({ key: 'plan', label: 'Plan', icon: ListChecks, onClick: () => onPlan(p) });
-    if (onEdit) items.push({ key: 'edit', label: 'Edit', icon: Pencil, onClick: () => onEdit(p) });
+    if (onAddTask) items.push({ key: 'add', label: t('tree.addTask'), icon: Plus, onClick: () => onAddTask(p.id) });
+    if (onPlan) items.push({ key: 'plan', label: t('tree.plan'), icon: ListChecks, onClick: () => onPlan(p) });
+    if (onEdit) items.push({ key: 'edit', label: t('tree.edit'), icon: Pencil, onClick: () => onEdit(p) });
     if (onDelete) {
-      items.push({ key: 'delete', label: 'Delete', icon: Trash2, destructive: true, onClick: () => onDelete(p) });
+      items.push({ key: 'delete', label: t('tree.delete'), icon: Trash2, destructive: true, onClick: () => onDelete(p) });
     }
     return items;
   };
@@ -94,27 +96,27 @@ export function ProjectsTree({
         </span>
       ),
       count: items.length,
-      summary: `${items.length} task${items.length === 1 ? '' : 's'}`,
+      summary: t('card.taskCount', { count: items.length }),
       progress: { done, total: items.length },
-      actions: <OverflowMenu ariaLabel={`${p.name} options`} items={buildProjectMenuItems(p)} />,
+      actions: <OverflowMenu ariaLabel={t('tree.projectOptions', { name: p.name })} items={buildProjectMenuItems(p)} />,
       body: taskGroups(items, `midnite.projects.tree.status.${p.id}`, p.id),
     };
   });
 
   if (unassigned.length > 0) {
     const unassignedMenuItems: OverflowMenuItem[] = onAddTask
-      ? [{ key: 'add', label: 'Add task', icon: Plus, onClick: () => onAddTask(undefined) }]
+      ? [{ key: 'add', label: t('tree.addTask'), icon: Plus, onClick: () => onAddTask(undefined) }]
       : [];
     sections.push({
       id: '__unassigned__',
-      label: 'Unassigned',
+      label: t('tree.unassigned'),
       hue: '215 14% 52%',
       count: unassigned.length,
-      summary: `${unassigned.length} task${unassigned.length === 1 ? '' : 's'}`,
+      summary: t('card.taskCount', { count: unassigned.length }),
       progress: { done: unassigned.filter((task) => task.status === 'done').length, total: unassigned.length },
       actions:
         unassignedMenuItems.length > 0 ? (
-          <OverflowMenu ariaLabel="Unassigned options" items={unassignedMenuItems} />
+          <OverflowMenu ariaLabel={t('tree.unassignedOptions')} items={unassignedMenuItems} />
         ) : undefined,
       body: taskGroups(unassigned, 'midnite.projects.tree.status.__unassigned__', undefined),
     });

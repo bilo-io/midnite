@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { Project } from '@midnite/shared';
 import { projectCompletion } from '@midnite/shared';
 import { statusHueVar } from '@/components/task-columns';
@@ -23,6 +24,7 @@ type Props = {
  * tasks (nothing to be "N% done" about).
  */
 export function ProjectProgressBar({ project, done, total, hideLabel, className }: Props) {
+  const t = useTranslations('projects');
   const c = project
     ? projectCompletion(project)
     : (() => {
@@ -40,7 +42,7 @@ export function ProjectProgressBar({ project, done, total, hideLabel, className 
       aria-valuenow={c.pct}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={`${c.pct}% complete (${c.done} of ${c.total} tasks done)`}
+      aria-label={t('progress.aria', { pct: c.pct, done: c.done, total: c.total })}
     >
       <div
         className="h-full rounded-full transition-[width]"
@@ -58,10 +60,8 @@ export function ProjectProgressBar({ project, done, total, hideLabel, className 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span>Progress</span>
-        <span className="tabular-nums">
-          {c.done}/{c.total} · {c.pct}%
-        </span>
+        <span>{t('progress.label')}</span>
+        <span className="tabular-nums">{t('progress.summary', { done: c.done, total: c.total, pct: c.pct })}</span>
       </div>
       {track}
     </div>
