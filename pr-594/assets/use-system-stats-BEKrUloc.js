@@ -1,1 +1,0 @@
-import{u as n}from"./useQuery-B3nNa0dg.js";import{W as o}from"./api-B3P-OtKi.js";const e=2e3;function l(){const{data:t,isPending:r,isError:s}=n({queryKey:["system-stats"],queryFn:({signal:a})=>o(a),refetchInterval:e,refetchIntervalInBackground:!1,staleTime:e});return{stats:t??null,loading:r&&!t,error:s&&!t}}export{l as u};
