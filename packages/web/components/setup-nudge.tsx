@@ -72,7 +72,7 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
   return (
     <div
       role="region"
-      aria-label="Finish setting up midnite"
+      aria-label="Finish setting up Midnite"
       className="animate-dialog-in fixed bottom-4 right-4 z-40 w-[calc(100%-2rem)] max-w-sm rounded-xl border border-border bg-card p-4 shadow-2xl"
     >
       <div className="flex items-start gap-3">
@@ -80,7 +80,7 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
           <Rocket className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold leading-snug">Finish setting up midnite</h2>
+          <h2 className="text-sm font-semibold leading-snug">Finish setting up Midnite</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {blockers.length > 0
               ? `${blockers.length} step${blockers.length === 1 ? '' : 's'} left before agents can run.`

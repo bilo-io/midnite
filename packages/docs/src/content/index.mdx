@@ -11,10 +11,10 @@ import homeDark from './assets/home-dark.png';
 import homeLight from './assets/home-light.png';
 import cliHelp from './assets/cli-help.txt?raw';
 
-# midnite
+# Midnite
 
-**midnite is a desktop app for running many coding agents at once.** You describe
-the work as tasks; midnite schedules them across a pool of Claude Code agents,
+**Midnite is a desktop app for running many coding agents at once.** You describe
+the work as tasks; Midnite schedules them across a pool of Claude Code agents,
 runs each in its own session, and shows the whole fleet on a live kanban board —
 so you can supervise a dozen agents the way you'd supervise a team, instead of
 babysitting one terminal.
@@ -25,8 +25,8 @@ server to stand up — install it and open the app.
 <Screenshot
   dark={homeDark}
   light={homeLight}
-  alt="The midnite desktop app dashboard with the sidebar expanded"
-  caption="The midnite desktop app — the dashboard, with the sidebar expanded."
+  alt="The Midnite desktop app dashboard with the sidebar expanded"
+  caption="The Midnite desktop app — the dashboard, with the sidebar expanded."
 />
 
 Ready to try it? Head to **[Getting started](/getting-started)** to download and
@@ -34,7 +34,7 @@ install, then explore each feature from the sidebar.
 
 ## What you can do with it
 
-The sidebar groups midnite's features the same way the app does:
+The sidebar groups Midnite's features the same way the app does:
 
 - **App** — the day-to-day surfaces: the [Tasks](/app/tasks) board that schedules
   agent work, [Projects](/app/projects) that plan it, [Workflows](/app/workflows)
@@ -51,7 +51,7 @@ The sidebar groups midnite's features the same way the app does:
 
 ## How it fits together
 
-Under the hood, midnite is a small local **gateway** with thin clients in front of
+Under the hood, Midnite is a small local **gateway** with thin clients in front of
 it. The gateway is the brain — it holds your tasks in a local SQLite database,
 runs the scheduler, and manages a pool of agent processes. The **desktop app** (the
 web UI you see) and the optional **CLI** both talk to that gateway over HTTP and
@@ -66,7 +66,7 @@ provider.
 
 ## The command line
 
-The desktop app is the main way in, but midnite also ships a terminal client,
+The desktop app is the main way in, but Midnite also ships a terminal client,
 `midnite`, for people who live in the shell or want to script their fleet. It
 talks to the same local gateway, so the board, the CLI, and any agent all see one
 source of truth.

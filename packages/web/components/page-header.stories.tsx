@@ -37,7 +37,7 @@ export const Default: Story = {
  *  (`<AppBackdrop/>`), so the header itself carries no pattern. */
 export const Large: Story = {
   args: {
-    title: 'midnite',
+    title: 'Midnite',
     description: 'A multitask orchestrator for Claude Code.',
     size: 'lg',
   },

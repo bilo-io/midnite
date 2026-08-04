@@ -4,7 +4,7 @@
   "signInToSync": "Connectez-vous pour synchroniser entre appareils",
   "hub": {
     "title": "Paramètres",
-    "description": "Réglez l’apparence de midnite, son verrouillage et l’exécution de vos agents."
+    "description": "Réglez l’apparence de Midnite, son verrouillage et l’exécution de vos agents."
   },
   "groups": {
     "general": "Général",
@@ -87,7 +87,7 @@
     "size": "Taille",
     "sizeDescription": "La taille à laquelle le logo s'affiche partout où il apparaît.",
     "wordmarkSize": "Taille du logo",
-    "wordmarkFontDescription": "La police dans laquelle le logo midnite est composé dans toute l'application.",
+    "wordmarkFontDescription": "La police dans laquelle le logo Midnite est composé dans toute l'application.",
     "showIcon": "Afficher l'icône",
     "active": "Actif",
     "accentBuilder": {
@@ -173,7 +173,7 @@
     "parallelAgentsHint": "Combien de sessions d'agent peuvent s'exécuter simultanément. Les tâches supplémentaires attendent qu'un créneau se libère.",
     "poolDefault": "Par défaut {default} · maximum {max}.",
     "agentsTitle": "Agents",
-    "agentsIntro": "Chaque agent de codage que midnite connaît. Développez-en un pour installer ou mettre à jour son CLI (utilisé pour exécuter les sessions de tâches) ou, sous l'onglet API, ajoutez votre propre clé pour que ce fournisseur puisse alimenter les fonctionnalités d'IA de midnite.",
+    "agentsIntro": "Chaque agent de codage que Midnite connaît. Développez-en un pour installer ou mettre à jour son CLI (utilisé pour exécuter les sessions de tâches) ou, sous l'onglet API, ajoutez votre propre clé pour que ce fournisseur puisse alimenter les fonctionnalités d'IA de midnite.",
     "subAgents": "Sous-agents",
     "noSubagents": "Aucun sous-agent pour le moment",
     "noSubagentsHint": "Ajoutez des travailleurs ciblés auxquels l'orchestrateur peut déléguer.",
@@ -188,7 +188,7 @@
     "sessionCliHint": "L'agent de codage lancé dans un terminal de session pour exécuter les tâches.",
     "sessionAgentCli": "CLI de l'agent de session",
     "aiProvider": "Fournisseur d'IA",
-    "aiProviderHint": "Alimente l'IA propre à midnite (tri, rédaction de plans, battement de cœur). Ajoutez la clé de chaque fournisseur dans sa carte ci-dessous.",
+    "aiProviderHint": "Alimente l'IA propre à Midnite (tri, rédaction de plans, battement de cœur). Ajoutez la clé de chaque fournisseur dans sa carte ci-dessous.",
     "activeAiProvider": "Fournisseur d'IA actif",
     "collapseSubagent": "Réduire le sous-agent",
     "expandSubagent": "Développer le sous-agent",
@@ -236,7 +236,7 @@
     "errorFallback": "Une erreur est survenue",
     "mode": {
       "title": "Mode d’autonomie",
-      "description": "Contrôle la façon dont midnite gère les approbations d’utilisation d’outils pendant les sessions d’agent.",
+      "description": "Contrôle la façon dont Midnite gère les approbations d’utilisation d’outils pendant les sessions d’agent.",
       "active": "Actif",
       "options": {
         "manual": {
@@ -351,7 +351,7 @@
   "data": {
     "errorFallback": "Échec de la sauvegarde",
     "title": "Données",
-    "description": "Sauvegardez et restaurez l’intégralité de votre magasin midnite — pour la reprise après sinistre ou le déplacement d’instances.",
+    "description": "Sauvegardez et restaurez l’intégralité de votre magasin Midnite — pour la reprise après sinistre ou le déplacement d’instances.",
     "tabs": {
       "ariaLabel": "Sauvegarder ou restaurer",
       "backup": "Sauvegarder",
@@ -404,7 +404,7 @@
       "chooseAria": "Choisir une archive de sauvegarde",
       "choose": "Choisir une archive…",
       "reading": "Lecture de l’archive…",
-      "blocked": "Cette archive a été créée par une version plus récente de midnite (schéma v{schemaVersion}, {compat}) que ce que cette instance comprend. Mettez à jour midnite, puis réessayez — elle ne peut pas être importée en toute sécurité.",
+      "blocked": "Cette archive a été créée par une version plus récente de Midnite (schéma v{schemaVersion}, {compat}) que ce que cette instance comprend. Mettez à jour Midnite, puis réessayez — elle ne peut pas être importée en toute sécurité.",
       "previewLabel": "Aperçu — schéma v{version} ({compat}) : {count, plural, one {# enregistrement} other {# enregistrements}}",
       "conflicts": "· {count} existant(s)",
       "passphraseLabel": "Phrase secrète (pour restaurer les secrets de cette archive — laissez vide pour les ignorer)",
@@ -678,7 +678,7 @@
   "personalization": {
     "couldNotSave": "Impossible d'enregistrer",
     "aboutYou": "À propos de vous",
-    "aboutYouDescription": "Dites à midnite qui vous êtes — votre rôle, votre façon de travailler, le genre de choses que vous créez. Les agents peuvent s'en servir comme contexte.",
+    "aboutYouDescription": "Dites à Midnite qui vous êtes — votre rôle, votre façon de travailler, le genre de choses que vous créez. Les agents peuvent s'en servir comme contexte.",
     "aboutPlaceholder": "ex. Je suis ingénieur backend, attaché aux commits petits et bien testés…",
     "workingDirectory": "Répertoire de travail",
     "workingDirectoryDescription": "Le dossier vers lequel les terminaux de session se rabattent lorsqu'une tâche n'a pas de répertoire de projet propre. Laissez-le vide pour utiliser le répertoire de la passerelle.",
@@ -692,7 +692,7 @@
   "system": {
     "env": {
       "title": "Environnement",
-      "description": "La chaîne d'outils locale dont midnite a besoin, détectée sur l'hôte de la passerelle.",
+      "description": "La chaîne d'outils locale dont Midnite a besoin, détectée sur l'hôte de la passerelle.",
       "osAriaLabel": "Système d'exploitation",
       "detectedSystem": "Système détecté : {os}.",
       "notConfigured": "Les outils {os} ne sont pas encore configurés.",

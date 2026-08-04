@@ -296,7 +296,7 @@ function ApiTab({
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Use your own {providerLabel} API key to power midnite&apos;s AI features (task triage, plan
+        Use your own {providerLabel} API key to power Midnite&apos;s AI features (task triage, plan
         drafting, the heartbeat and AI workflow nodes). Stored on the gateway; never shown again
         after saving.
       </p>

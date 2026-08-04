@@ -94,7 +94,7 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
   // lose one-click updates to a flaky probe).
   const detectInstallMode = (): void => {
     if (process.platform !== 'darwin') return;
-    // app.getPath('exe') → …/midnite.app/Contents/MacOS/midnite; the bundle is 3 up.
+    // app.getPath('exe') → …/Midnite.app/Contents/MacOS/Midnite; the bundle is 3 up.
     const bundle = path.resolve(app.getPath('exe'), '..', '..', '..');
     execFile('codesign', ['--display', '--verbose=2', bundle], (_err, stdout, stderr) => {
       if (!isManualInstallCodesign(`${stdout ?? ''}\n${stderr ?? ''}`)) return;

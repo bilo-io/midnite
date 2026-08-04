@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // ── Brand constants ────────────────────────────────────────────────────────────
-// The midnite mark is a circle split into quadrants (two solid, two light) — a
+// The Midnite mark is a circle split into quadrants (two solid, two light) — a
 // duality nod to "midnight". In a terminal we render the split with two block
 // glyphs of differing density on a single accent colour, so the mark reads the
 // same whether it's painted with raw ANSI (here) or via ink's `color` prop (the
@@ -16,7 +16,7 @@ const TAGLINE = 'multitask orchestrator for Claude Code';
 const SOLID = '█'; // the two solid (dark) quadrants
 const LIGHT = '▒'; // the two light quadrants
 
-// The full midnite mark as pre-rendered ASCII art — a crescent-lit disc. Used for
+// The full Midnite mark as pre-rendered ASCII art — a crescent-lit disc. Used for
 // the entry banner (help + bare invoke). Kept as a literal so it needs no asset
 // file at runtime; backticks/backslashes in the art are escaped for the template.
 const LOGO_ART = `             $$$$$$$$$$$$$$
@@ -110,6 +110,6 @@ export function getVersion(): string {
  */
 export function banner(): string {
   const mark = LOGO_ART.map((l) => accent(l)).join('\n');
-  const wordmark = `${accent('midnite')}  v${getVersion()}`;
+  const wordmark = `${accent('Midnite')}  v${getVersion()}`;
   return `${mark}\n\n  ${wordmark}\n  ${TAGLINE}\n`;
 }

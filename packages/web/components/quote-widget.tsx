@@ -170,7 +170,7 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
                     font === 'system' ? 'text-primary' : 'text-foreground',
                   )}
                 >
-                  midnite
+                  Midnite
                 </span>
                 <span className="max-w-full truncate text-[10px] uppercase tracking-wide text-muted-foreground">
                   System

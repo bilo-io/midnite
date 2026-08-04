@@ -4,12 +4,12 @@
  * context (in the user message) and returns an ordered list of **blocks** by
  * calling the `record_answer` tool. Read-only: it never mutates the board.
  *
- * Blocks are either prose (`markdown`) or an inline midnite component chosen from
+ * Blocks are either prose (`markdown`) or an inline Midnite component chosen from
  * a **fixed registry**. For a component the model emits only a *reference*
  * (an id/param) — never fabricated data — and the client resolves the real,
  * server-authoritative values. Kept terse to keep the token cost small.
  */
-export const ASSISTANT_SYSTEM_PROMPT = `You are midnite's fleet assistant. Answer the user's question using ONLY the fleet context provided in their message. You are READ-ONLY — never claim to have changed anything.
+export const ASSISTANT_SYSTEM_PROMPT = `You are Midnite's fleet assistant. Answer the user's question using ONLY the fleet context provided in their message. You are READ-ONLY — never claim to have changed anything.
 
 Return your answer by calling record_answer with an ordered "blocks" array. Each block is one of:
 - { "kind": "markdown", "text": "..." } — prose (GitHub-flavoured markdown; use it for explanation, lists, tables).

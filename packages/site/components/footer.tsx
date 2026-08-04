@@ -19,7 +19,7 @@ export function Footer() {
               Stop running tasks one at a time.
             </h2>
             <p className="mx-auto mt-4 max-w-md text-pretty leading-relaxed text-muted-foreground">
-              Spin up midnite, point it at your repo, and let a pool of agents clear your backlog
+              Spin up Midnite, point it at your repo, and let a pool of agents clear your backlog
               while you review the results.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -45,7 +45,7 @@ export function Footer() {
         <div className="container flex flex-col items-center justify-between gap-4 py-8 text-sm text-muted-foreground sm:flex-row">
           <div className="flex items-center gap-2 font-medium text-foreground">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6]" />
-            <span className="font-brand">midnite</span>
+            <span className="font-brand">Midnite</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <a href="/#how" className="transition-colors hover:text-foreground">

@@ -111,7 +111,7 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
   // The wordmark types out during the intro's 'wordmark' beat; past it (or when
   // the intro was skipped) it renders in full immediately.
   const { typed: typedWordmark } = useTypewriter(
-    introAtLeast(intro, 'wordmark') ? 'midnite' : '',
+    introAtLeast(intro, 'wordmark') ? 'Midnite' : '',
     { duration: 600, enabled: typewriter && playedRef.current },
   );
 
@@ -192,7 +192,7 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
           <span className="auth-hero-logo-glow relative inline-flex rounded-full">
             <Image
               src="/logo.PNG"
-              alt="midnite"
+              alt="Midnite"
               width={72}
               height={72}
               priority

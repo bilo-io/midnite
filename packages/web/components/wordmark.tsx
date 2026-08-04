@@ -14,12 +14,13 @@ import {
   wordmarkSizeClass,
   type WordmarkCase,
   type WordmarkSize,
+  WORDMARK_TEXT,
 } from '@/lib/wordmark-fonts';
 
-// The "midnite" wordmark, following the live per-user trial selection made in
+// The "Midnite" wordmark, following the live per-user trial selection made in
 // Settings → Appearance → Logo: the font (`midnite.wordmark-font`, defaulting to
-// Cassandra), the letter-casing (`midnite.wordmark-case`, defaulting to
-// lowercase) and the size (`midnite.wordmark-size`, defaulting to 'm'). All are
+// Rooster), the letter-casing (`midnite.wordmark-case`, defaulting to title
+// case) and the size (`midnite.wordmark-size`, defaulting to 'm'). All are
 // localStorage-backed and broadcast, so picking any there updates every wordmark
 // instance at once.
 //
@@ -31,7 +32,7 @@ import {
 // keeps the caller's size).
 // `text` overrides the rendered string verbatim (no casing transform) — the auth
 // intro types the wordmark out character by character; everything else renders the
-// full "midnite" default in the stored casing.
+// full "Midnite" default in the stored casing.
 export function Wordmark({
   font,
   className,
@@ -51,7 +52,7 @@ export function Wordmark({
     DEFAULT_WORDMARK_SIZE,
   );
   const active = font ?? storedFont;
-  const label = text ?? applyWordmarkCase('midnite', storedCase);
+  const label = text ?? applyWordmarkCase(WORDMARK_TEXT, storedCase);
   return (
     <span
       className={cn(wordmarkSizeClass(storedSize, active), 'font-semibold', className)}

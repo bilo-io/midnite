@@ -150,7 +150,7 @@ async function boot(): Promise<void> {
     const dragStrip = frameless
       ? '<div style="position:fixed;top:0;left:0;right:0;height:48px;-webkit-app-region:drag"></div>'
       : '';
-    const html = `${dragStrip}<h1>midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>`;
+    const html = `${dragStrip}<h1>Midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>`;
     await win.loadURL(`data:text/html,${encodeURIComponent(html)}`);
     return;
   }

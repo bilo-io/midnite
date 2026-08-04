@@ -73,7 +73,7 @@ export function TaskDetailView() {
   useEffect(() => {
     if (!task) return;
     const previous = document.title;
-    document.title = `${task.title} · midnite`;
+    document.title = `${task.title} · Midnite`;
     return () => {
       document.title = previous;
     };

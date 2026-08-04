@@ -14,7 +14,7 @@ import { appearanceInitScript, localeInitScript, LocaleProvider } from '@midnite
 import { AppearanceEffects } from '@/components/appearance-effects';
 import { CATALOGS } from '@/i18n/messages';
 
-// Display fonts trialled for the "midnite" wordmark. Each is exposed as its own
+// Display fonts trialled for the "Midnite" wordmark. Each is exposed as its own
 // CSS var; the active one is chosen in Settings → Appearance → Logo and applied
 // by <Wordmark />.
 // `cyberwar` keeps the legacy `--font-brand`/`font-brand` name so existing usage
@@ -105,9 +105,9 @@ const fontVariables = [
   .join(' ');
 
 export const metadata: Metadata = {
-  title: 'midnite',
+  title: 'Midnite',
   description: 'Multitask coding agents',
-  applicationName: 'midnite',
+  applicationName: 'Midnite',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -121,7 +121,7 @@ export const metadata: Metadata = {
   // bar to match the app's default surface, and the app name on the home screen.
   appleWebApp: {
     capable: true,
-    title: 'midnite',
+    title: 'Midnite',
     statusBarStyle: 'black-translucent',
   },
 };

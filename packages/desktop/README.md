@@ -68,7 +68,7 @@ gateway closure in twice), run via the `bin/midnite` shim under the app's own
 Electron-as-Node (no system Node, ABI matches). It discovers the running gateway from
 `~/.midnite/gateway.json`, so `midnite list` works against the desktop app with no flags.
 `install:local` symlinks it to `/usr/local/bin`; end users can
-`ln -s "/Applications/midnite.app/Contents/Resources/bin/midnite" /usr/local/bin/midnite`.
+`ln -s "/Applications/Midnite.app/Contents/Resources/bin/midnite" /usr/local/bin/midnite`.
 (`midnite serve` is intentionally unavailable from the bundled copy — its
 `import('@midnite/gateway/bootstrap')` is kept external; the app IS the gateway.)
 
@@ -165,7 +165,7 @@ actual installed app rather than the dev shell:
 ```bash
 pnpm --filter @midnite/desktop run install:local
 # then:
-open /Applications/midnite.app
+open /Applications/Midnite.app
 ```
 
 macOS + Apple Silicon only (matches the release matrix). Your data is safe across
@@ -183,9 +183,9 @@ the same pipeline as the manual "Packaging" steps above, then installs:
 2. **Stage** — `pnpm run stage`: a flat, symlink-free gateway prod `node_modules`
    (`pnpm deploy` + `electron-rebuild` of the native deps for this arch) plus the
    web export, into `build-staging/`.
-3. **Package** — electron-builder emits `build/mac-arm64/midnite.app` (and the
+3. **Package** — electron-builder emits `build/mac-arm64/Midnite.app` (and the
    dmg/zip).
-4. **Install** — quit any running instance, replace `/Applications/midnite.app`
+4. **Install** — quit any running instance, replace `/Applications/Midnite.app`
    with the fresh build, and strip the quarantine bit so the unsigned build
    launches.
 
@@ -198,7 +198,7 @@ the reasons are commented at the relevant lines in the script:
   frameworks that use `Versions/Current` symlinks; a plain recursive copy breaks
   the code seal, and macOS then **SIGKILLs the app on launch with no output or
   logs**. If a locally-installed build won't open, check
-  `codesign -vv /Applications/midnite.app` — "unsealed contents … embedded
+  `codesign -vv /Applications/Midnite.app` — "unsealed contents … embedded
   framework" is this bug.
 - **`@midnite/web` must stay a _dev_ dependency of this package** (see
   [`moon.yml`](moon.yml): the `web` edge is scoped `development`). The web UI ships
@@ -244,7 +244,7 @@ To build a single OS locally: `pnpm --filter @midnite/desktop run stage`, then
 `pnpm --filter @midnite/desktop run package` (or `package:win` / `package:linux`).
 
 Unsigned builds trip Gatekeeper (macOS) and SmartScreen (Windows) — document
-right-click → Open, or `xattr -dr com.apple.quarantine /Applications/midnite.app`.
+right-click → Open, or `xattr -dr com.apple.quarantine /Applications/Midnite.app`.
 
 ## Code signing & auto-update (Phase 71 Theme E)
 

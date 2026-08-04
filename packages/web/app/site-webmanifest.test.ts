@@ -26,7 +26,7 @@ const manifest = JSON.parse(
 
 describe('site.webmanifest', () => {
   it('has a real name and standalone display', () => {
-    expect(manifest.name).toBe('midnite');
+    expect(manifest.name).toBe('Midnite');
     expect(manifest.short_name).toBeTruthy();
     expect(manifest.display).toBe('standalone');
   });

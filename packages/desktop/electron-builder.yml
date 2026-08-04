@@ -1,13 +1,21 @@
 appId: earth.ekko.midnite
-productName: midnite
+# The user-visible app name — the .app bundle, the macOS menu bar, the Dock, the
+# Windows Start menu. Distribution identifiers stay lowercase `midnite` (appId,
+# the CLI binary, ~/.midnite, the release asset names below).
+productName: Midnite
 directories:
   output: build
   buildResources: resources
 
 # Predictable, version- and arch-stamped asset names on every OS, so the
-# marketing site's download manifest can link them directly. Matches the macOS
-# default (midnite-<version>-<arch>.dmg) and extends the scheme to win/linux.
-artifactName: ${productName}-${version}-${arch}.${ext}
+# marketing site's download manifest can link them directly.
+#
+# NB: the `midnite-` prefix is spelled out rather than interpolated from
+# ${productName}. Asset filenames are part of the public download URLs (the site's
+# lib/downloads.ts, public/install.sh and public/install.ps1 all build them), and
+# every already-published release used the lowercase prefix — so pinning it here
+# keeps the display-name rename to Midnite from breaking those links.
+artifactName: midnite-${version}-${arch}.${ext}
 
 # Only the Electron main + preload go in the app asar; the gateway and web export
 # ride along as on-disk extraResources (native .node files can't load from asar,

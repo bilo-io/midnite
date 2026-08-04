@@ -1,4 +1,4 @@
-// The "midnite" wordmark can be rendered in any of these trial fonts. Each entry
+// The "Midnite" wordmark can be rendered in any of these trial fonts. Each entry
 // maps a stable key (persisted in localStorage) to a human label and the CSS var
 // declared by `next/font/local` in app/layout.tsx — keep `cssVar` in sync with
 // the `variable` names there. Only the wordmark's font varies; nothing else.
@@ -63,10 +63,10 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
   { key: 'cyber-punk-city', label: 'SD Cyber Punk City', cssVar: '--font-cyber-punk-city', scale: 0.75 },
   { key: 'quantum-sector', label: 'Quantum Sector', cssVar: '--font-quantum-sector', scale: 0.75 },
   { key: 'goretax', label: 'Goretax', cssVar: '--font-goretax', scale: 0.75 },
-  { key: 'cyberwar', label: 'Cyberwar (current)', cssVar: '--font-brand', scale: 0.75 },
+  { key: 'cyberwar', label: 'Cyberwar', cssVar: '--font-brand', scale: 0.75 },
   // FontSpace trial fonts — `scale` is a starting optical nudge; tune per-font in
   // the picker if a face renders noticeably larger/smaller than its neighbours.
-  { key: 'rooster', label: 'Rooster', cssVar: '--font-rooster', scale: 0.75 },
+  { key: 'rooster', label: 'Rooster (brand)', cssVar: '--font-rooster', scale: 0.75 },
   { key: 'cassandra', label: 'Cassandra', cssVar: '--font-cassandra', scale: 0.75 },
   { key: 'lemon-jelly', label: 'Lemon Jelly', cssVar: '--font-lemon-jelly', scale: 0.75 },
   { key: 'radeil-3d', label: 'Radeil 3D', cssVar: '--font-radeil-3d', scale: 0.75 },
@@ -101,14 +101,22 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
   { key: 'tangerine', label: 'Tangerine', cssVar: '--font-tangerine', scale: 0.75 },
 ];
 
+// The brand name as it is spelled publicly. `applyWordmarkCase` re-cases it for
+// the lower/upper trial options, so this literal is only the canonical form.
+// The sibling apps (site, docs, admin) spell it out inline — they can't import
+// from `web`.
+export const WORDMARK_TEXT = 'Midnite';
+
 export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font';
 export const DEFAULT_WORDMARK_FONT: WordmarkFontKey = 'signpainter';
 
-// The font the "midnite" wordmark logo defaults to app-wide (Cassandra reads
-// best). The Settings → Appearance → Logo picker persists a per-user override
-// under WORDMARK_FONT_STORAGE_KEY; the Wordmark follows it live, falling back to
-// this face until the user picks another.
-export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'cassandra';
+// The font the "Midnite" wordmark logo defaults to app-wide (Rooster is the
+// brand face). The Settings → Appearance → Logo picker persists a per-user
+// override under WORDMARK_FONT_STORAGE_KEY; the Wordmark follows it live,
+// falling back to this face until the user picks another. Keep in step with the
+// sibling apps that hard-code the same face: site/app/layout.tsx,
+// admin/app/layout.tsx and docs/src/styles.css.
+export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'rooster';
 
 // The wordmark's letter-casing is a separate, live-configurable trial dimension
 // (Settings → Appearance → Logo) so the same face can be judged in lower / title
@@ -116,7 +124,9 @@ export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'cassandra';
 export type WordmarkCase = 'lower' | 'title' | 'upper';
 
 export const WORDMARK_CASE_STORAGE_KEY = 'midnite.wordmark-case';
-export const DEFAULT_WORDMARK_CASE: WordmarkCase = 'lower';
+// Title case is the brand's public spelling ("Midnite"); the other two remain
+// selectable trial options.
+export const DEFAULT_WORDMARK_CASE: WordmarkCase = 'title';
 
 // Ordered for the settings toggle; each label doubles as the live preview of the
 // casing it selects.

@@ -10,7 +10,7 @@ const STEPS = [
   },
   {
     n: '02',
-    title: 'midnite classifies',
+    title: 'Midnite classifies',
     body: 'Each item is sorted by kind and readiness. Clear work queues up; anything ambiguous parks in the backlog.',
   },
   {

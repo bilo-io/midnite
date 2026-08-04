@@ -269,7 +269,7 @@
     },
     "task_create": {
       "title": "Créer une tâche",
-      "description": "Créer une tâche sur le tableau midnite — par ex. mettre en file une tâche récurrente selon une planification.",
+      "description": "Créer une tâche sur le tableau Midnite — par ex. mettre en file une tâche récurrente selon une planification.",
       "fields": {
         "prompt": {
           "label": "Prompt de la tâche",

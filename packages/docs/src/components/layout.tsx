@@ -64,9 +64,10 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
           </button>
 
           <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
-            <img src={logoUrl} alt="midnite logo" width={28} height={28} className="h-7 w-7 rounded-lg shadow" />
+            <img src={logoUrl} alt="Midnite logo" width={28} height={28} className="h-7 w-7 rounded-lg shadow" />
             <span>
-              midnite <span className="font-normal text-muted-foreground">/ docs</span>
+              <span className="font-brand text-lg">Midnite</span>{' '}
+              <span className="font-normal text-muted-foreground">/ docs</span>
             </span>
           </Link>
 

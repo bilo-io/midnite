@@ -98,7 +98,7 @@
       },
       "projects-new": {
         "title": "Start one",
-        "body": "Spin up a project from scratch or from a template. From a goal, midnite can even draft the whole task breakdown."
+        "body": "Spin up a project from scratch or from a template. From a goal, Midnite can even draft the whole task breakdown."
       },
       "project-detail": {
         "title": "The cockpit",
@@ -149,7 +149,7 @@
     "steps": {
       "settings": {
         "title": "Make it yours",
-        "body": "Tune how midnite looks, locks, and runs your agents — appearance, safety, integrations, and more."
+        "body": "Tune how Midnite looks, locks, and runs your agents — appearance, safety, integrations, and more."
       },
       "settings-nav": {
         "title": "Browse categories",

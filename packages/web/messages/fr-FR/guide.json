@@ -98,7 +98,7 @@
       },
       "projects-new": {
         "title": "Lancez-en un",
-        "body": "Créez un projet de zéro ou depuis un modèle. À partir d’un objectif, midnite peut même rédiger toute la répartition des tâches."
+        "body": "Créez un projet de zéro ou depuis un modèle. À partir d’un objectif, Midnite peut même rédiger toute la répartition des tâches."
       },
       "project-detail": {
         "title": "Le cockpit",
@@ -149,7 +149,7 @@
     "steps": {
       "settings": {
         "title": "Faites-le vôtre",
-        "body": "Réglez l’apparence de midnite, son verrouillage et l’exécution de vos agents — apparence, sécurité, intégrations et plus."
+        "body": "Réglez l’apparence de Midnite, son verrouillage et l’exécution de vos agents — apparence, sécurité, intégrations et plus."
       },
       "settings-nav": {
         "title": "Parcourez les catégories",

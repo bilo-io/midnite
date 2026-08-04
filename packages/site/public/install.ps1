@@ -1,4 +1,4 @@
-# midnite installer — Windows (x64)
+# Midnite installer — Windows (x64)
 #
 #   irm https://midnite-app.vercel.app/install.ps1 | iex
 #
@@ -49,7 +49,7 @@ $Asset = "midnite-$Version-x64.exe"
 $Url = "https://github.com/$Repo/releases/download/v$Version/$Asset"
 $Installer = Join-Path $env:TEMP $Asset
 
-Write-Host "Downloading midnite v$Version ..."
+Write-Host "Downloading Midnite v$Version ..."
 try {
     Invoke-WebRequest -Uri $Url -OutFile $Installer -UseBasicParsing
 } catch {
@@ -61,7 +61,7 @@ Unblock-File -Path $Installer -ErrorAction SilentlyContinue
 
 Write-Host "Installing ..."
 # Unsigned one-click NSIS installer: /S runs it fully silently (no UI to click
-# through) and installs per-user under %LOCALAPPDATA%\Programs\midnite — no
+# through) and installs per-user under %LOCALAPPDATA%\Programs\Midnite — no
 # admin elevation needed.
 $Proc = Start-Process -FilePath $Installer -ArgumentList '/S' -Wait -PassThru
 if ($Proc.ExitCode -ne 0) {
@@ -69,17 +69,24 @@ if ($Proc.ExitCode -ne 0) {
 }
 Remove-Item -Path $Installer -ErrorAction SilentlyContinue
 
-$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\midnite'
-$Exe = Join-Path $InstallDir 'midnite.exe'
+# NSIS installs to Programs\<productName>\<productName>.exe. The app was renamed
+# midnite → Midnite, and this script is served live from the site, so probe both
+# names — it has to launch whichever release it just resolved. (Windows paths are
+# case-insensitive, so this only matters if the layout itself changes.)
+$Exe = $null
+foreach ($Name in 'Midnite', 'midnite') {
+    $Candidate = Join-Path $env:LOCALAPPDATA "Programs\$Name\$Name.exe"
+    if (Test-Path $Candidate) { $Exe = $Candidate; break }
+}
 
 Write-Host ""
-Write-Host "midnite v$Version installed." -ForegroundColor Green
-if (Test-Path $Exe) {
+Write-Host "Midnite v$Version installed." -ForegroundColor Green
+if ($Exe) {
     if (-not $env:MIDNITE_NO_OPEN) {
         Start-Process -FilePath $Exe
     } else {
         Write-Host "Launch it with: $Exe"
     }
 } else {
-    Write-Host "Installed, but couldn't find $Exe to launch it automatically — open midnite from the Start menu."
+    Write-Host "Installed, but couldn't find the executable to launch it automatically — open Midnite from the Start menu."
 }

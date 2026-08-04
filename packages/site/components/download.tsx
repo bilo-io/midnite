@@ -14,7 +14,7 @@ const PLATFORM_INTRO: Record<Platform, string> = {
 };
 
 const PLATFORM_CAPTION: Record<Platform, string> = {
-  mac: 'Installs to /Applications with no Gatekeeper warnings, and links the midnite CLI. Re-run the same command any time to update.',
+  mac: 'Installs to /Applications with no Gatekeeper warnings, and links the Midnite CLI. Re-run the same command any time to update.',
   windows: 'Installs silently, no SmartScreen prompt. Re-run the same command any time to update.',
   linux: 'Installs to ~/.local/bin with a desktop-menu entry. Re-run the same command any time to update.',
 };
@@ -37,7 +37,7 @@ export function Download() {
     <section id="download" className="container scroll-mt-20 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-3xl font-semibold tracking-tight text-transparent sm:text-4xl">
-          Install midnite
+          Install Midnite
         </h2>
         <p className="mt-4 text-muted-foreground">
           The gateway and the board, bundled into one desktop app that runs entirely on your

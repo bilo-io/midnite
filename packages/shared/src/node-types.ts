@@ -216,7 +216,7 @@ export const StorageGetParamsSchema = z.object({
   defaultValue: z.unknown(),
 });
 
-// task.create — enqueue a midnite board task (e.g. a recurring task fired by a
+// task.create — enqueue a Midnite board task (e.g. a recurring task fired by a
 // schedule trigger). `prompt` is expression-enabled so a scheduled task can
 // interpolate run context; `priority` is the 0–3 scheduling band (defaults Normal).
 export const TaskCreateParamsSchema = z.object({
@@ -437,7 +437,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
     id: 'task.create',
     category: 'action',
     title: 'Create task',
-    description: 'Create a midnite board task — e.g. enqueue a recurring task on a schedule.',
+    description: 'Create a Midnite board task — e.g. enqueue a recurring task on a schedule.',
     icon: 'list-plus',
     inputs: MAIN_IN,
     outputs: MAIN_OUT,

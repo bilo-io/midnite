@@ -1,20 +1,20 @@
 // Build the desktop app from the CURRENT working tree and replace the installed
-// /Applications/midnite.app with it — one command for the local build→install loop.
+// /Applications/Midnite.app with it — one command for the local build→install loop.
 //
 //   node packages/desktop/scripts/install-local.mjs
 //   pnpm --filter @midnite/desktop run install:local   (same thing)
 //
 // macOS + Apple Silicon only (mirrors the release matrix — see electron-builder.yml).
 // It chains the same steps the README's "Packaging" section documents, then copies
-// electron-builder's unpacked app (build/mac-arm64/midnite.app) straight into
+// electron-builder's unpacked app (build/mac-arm64/Midnite.app) straight into
 // /Applications — no dmg mount needed — after quitting any running instance.
 //
 // Steps:
 //   1. build gateway dist + Electron main/preload (moon), then the web static
 //      export (moon, with a tolerance for a known output-check flake — see below)
 //   2. pnpm run stage    (flat gateway prod node_modules, rebuilt native deps, web/out)
-//   3. pnpm run package  (electron-builder → build/mac-arm64/midnite.app + the dmgs)
-//   4. quit → ditto into /Applications/midnite.app → de-quarantine
+//   3. pnpm run package  (electron-builder → build/mac-arm64/Midnite.app + the dmgs)
+//   4. quit → ditto into /Applications/Midnite.app → de-quarantine
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
@@ -67,7 +67,7 @@ try {
 // 2. Stage gateway prod deps (pnpm deploy + electron-rebuild) + the web export.
 run('pnpm', ['--filter', '@midnite/desktop', 'run', 'stage']);
 
-// 3. Package — produces build/mac-arm64/midnite.app alongside the dmgs.
+// 3. Package — produces build/mac-arm64/Midnite.app alongside the dmgs.
 //    Call electron-builder directly (the `package` script) rather than
 //    `moon run desktop:package`: the moon task declares web:build as a dep and
 //    would re-trigger the flaky static-export output check (see step 1). Every
@@ -75,19 +75,26 @@ run('pnpm', ['--filter', '@midnite/desktop', 'run', 'stage']);
 //    moon graph — this is the README's "single OS locally" path.
 run('pnpm', ['--filter', '@midnite/desktop', 'run', 'package']);
 
-const built = join(desktopDir, 'build', 'mac-arm64', 'midnite.app');
+// The bundle is named after electron-builder's `productName` (Midnite).
+const built = join(desktopDir, 'build', 'mac-arm64', 'Midnite.app');
 if (!existsSync(built)) {
   console.error(`install-local: expected packaged app not found at ${built}`);
   process.exit(1);
 }
 
-// 4. Quit any running instance, then swap it into /Applications.
-const installed = '/Applications/midnite.app';
-console.log('\n$ quitting any running midnite instance');
+// 4. Quit any running instance, then swap it into /Applications. An install from
+//    before the midnite → Midnite rename sits at the lowercase path; on the default
+//    case-insensitive volume that IS the same entry, but remove both so a
+//    case-sensitive volume doesn't end up with two copies.
+const installed = '/Applications/Midnite.app';
+const legacyInstalled = '/Applications/midnite.app';
+console.log('\n$ quitting any running Midnite instance');
+tryRun('osascript', ['-e', 'quit app "Midnite"']);
 tryRun('osascript', ['-e', 'quit app "midnite"']);
 
 console.log(`$ replacing ${installed}`);
 rmSync(installed, { recursive: true, force: true });
+rmSync(legacyInstalled, { recursive: true, force: true });
 // Copy with `ditto`, NOT `cp -R`/cpSync: the .app embeds signed frameworks whose
 // bundles use Versions/Current symlinks, and a plain recursive copy breaks the
 // code seal ("unsealed contents present in the root directory of an embedded

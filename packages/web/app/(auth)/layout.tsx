@@ -118,7 +118,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <Image
               src="/logo.PNG"
-              alt="midnite"
+              alt="Midnite"
               width={36}
               height={36}
               priority

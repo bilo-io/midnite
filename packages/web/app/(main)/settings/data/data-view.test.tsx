@@ -229,7 +229,7 @@ describe('DataView — restore (Phase 49 E)', () => {
     render(<DataView />);
     chooseArchive();
 
-    expect(await screen.findByText(/newer midnite/)).toBeInTheDocument();
+    expect(await screen.findByText(/newer Midnite/)).toBeInTheDocument();
     // No restore button is offered for an un-importable archive.
     expect(screen.queryByRole('button', { name: /^Restore/ })).not.toBeInTheDocument();
   });

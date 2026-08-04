@@ -49,7 +49,7 @@ export function ProjectDetailContainer() {
   useEffect(() => {
     if (!data?.project) return;
     const previous = document.title;
-    document.title = `${data.project.name} · midnite`;
+    document.title = `${data.project.name} · Midnite`;
     return () => {
       document.title = previous;
     };

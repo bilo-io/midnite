@@ -5,7 +5,7 @@ import { NeuroCloudBackground } from '@midnite/ui';
 
 /**
  * The site's ambient backdrop: the shared neuro-cloud starfield — the same canvas
- * the app and docs render — so every midnite surface wears one signature
+ * the app and docs render — so every Midnite surface wears one signature
  * background. Fixed + `pointer-events-none`, behind page content (content is
  * `relative z-10`). It reads the site's `--foreground` / `--node-*` tokens, so it
  * re-tints with the active theme; a bottom fade keeps text legible. Animates

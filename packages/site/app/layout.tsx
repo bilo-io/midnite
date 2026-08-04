@@ -5,27 +5,21 @@ import './globals.css';
 import { ThemeProvider } from './theme/theme-context';
 import { themeInitScript } from './theme/theme-script';
 
-// Display font for the "midnite" wordmark. Exposed as a CSS var so the
-// `font-brand` Tailwind utility can apply it wherever the brand name shows.
+// Display font for the "Midnite" wordmark — Rooster, the brand face. Exposed as a
+// CSS var so the `font-brand` Tailwind utility can apply it wherever the brand
+// name shows. Mirrors the app's WORDMARK_LOGO_FONT (web/lib/wordmark-fonts.ts);
+// keep the two in sync.
 const brand = localFont({
-  src: './fonts/cyberwar.ttf',
+  src: './fonts/rooster.ttf',
   variable: '--font-brand',
-  display: 'swap',
-});
-
-// Display font for the large "midnite" wordmark in the hero (mirrors the app's
-// `--font-cassandra`). Exposed as a CSS var for the `font-cassandra` utility.
-const cassandra = localFont({
-  src: './fonts/cassandra.ttf',
-  variable: '--font-cassandra',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://midnite-app.vercel.app'),
-  title: 'midnite AI Agent Manager',
+  title: 'Midnite AI Agent Manager',
   description:
-    'A task orchestrator wrapped around a pool of Claude Code agents. Drop in a list, let midnite classify and queue it, and run every task in parallel. Tracked on one live board.',
+    'A task orchestrator wrapped around a pool of Claude Code agents. Drop in a list, let Midnite classify and queue it, and run every task in parallel. Tracked on one live board.',
   // Favicons copied from packages/web/public/ (source of truth there) so the site
   // and the app share one brand mark; wired identically to the web layout.
   icons: {
@@ -38,24 +32,24 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'midnite AI Agent Manager',
+    title: 'Midnite AI Agent Manager',
     description:
-      'Drop in a freeform list. midnite classifies, queues, and runs every task across a pool of agents. Tracked on one live board.',
+      'Drop in a freeform list. Midnite classifies, queues, and runs every task across a pool of agents. Tracked on one live board.',
     type: 'website',
     url: 'https://midnite-app.vercel.app',
-    siteName: 'midnite',
+    siteName: 'Midnite',
     images: [
       {
         url: '/opengraph-banner.png',
         width: 1200,
         height: 630,
-        alt: 'midnite AI Agent Manager',
+        alt: 'Midnite AI Agent Manager',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'midnite AI Agent Manager',
+    title: 'Midnite AI Agent Manager',
     description: 'Run Claude Code in parallel. A task orchestrator for a pool of agents.',
     images: ['/opengraph-banner.png'],
   },
@@ -66,7 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // ThemeProvider then keeps it in sync. suppressHydrationWarning because the script
   // mutates <html> before React hydrates. Tokens in globals.css drive both themes.
   return (
-    <html lang="en" suppressHydrationWarning className={`${brand.variable} ${cassandra.variable}`}>
+    <html lang="en" suppressHydrationWarning className={brand.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

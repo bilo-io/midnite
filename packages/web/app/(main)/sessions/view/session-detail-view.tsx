@@ -41,7 +41,7 @@ export function SessionDetailContainer() {
   useEffect(() => {
     if (!data?.session) return;
     const previous = document.title;
-    document.title = `${data.session.title} · midnite`;
+    document.title = `${data.session.title} · Midnite`;
     return () => {
       document.title = previous;
     };

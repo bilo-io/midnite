@@ -1,6 +1,6 @@
 # Memory Workspace
 
-> A NotebookLM-style knowledge surface built on midnite's **memory** domain. Every
+> A NotebookLM-style knowledge surface built on Midnite's **memory** domain. Every
 > memory opens as a full-page, deep-linkable workspace at **`/memory/view?id=`** — a
 > left **Sources** rail, a center **doc + chat** composer, and a right **Studio** rail
 > that generates artifacts from the memory's corpus.

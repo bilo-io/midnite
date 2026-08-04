@@ -269,7 +269,7 @@
     },
     "task_create": {
       "title": "Create task",
-      "description": "Create a midnite board task — e.g. enqueue a recurring task on a schedule.",
+      "description": "Create a Midnite board task — e.g. enqueue a recurring task on a schedule.",
       "fields": {
         "prompt": {
           "label": "Task prompt",

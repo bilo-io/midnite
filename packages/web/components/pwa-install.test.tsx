@@ -43,7 +43,7 @@ describe('PwaInstall', () => {
     await screen.findByRole('button', { name: /install app/i });
 
     fireEvent(window, new Event('appinstalled'));
-    expect(await screen.findByText(/running midnite as an app/i)).toBeInTheDocument();
+    expect(await screen.findByText(/running Midnite as an app/i)).toBeInTheDocument();
   });
 
   it('reports already-installed when launched standalone', () => {
@@ -58,6 +58,6 @@ describe('PwaInstall', () => {
       dispatchEvent: () => false,
     }));
     render(<PwaInstall />);
-    expect(screen.getByText(/running midnite as an app/i)).toBeInTheDocument();
+    expect(screen.getByText(/running Midnite as an app/i)).toBeInTheDocument();
   });
 });

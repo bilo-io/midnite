@@ -4,7 +4,7 @@
   "signInToSync": "Sign in to sync across devices",
   "hub": {
     "title": "Settings",
-    "description": "Tune how midnite looks, locks, and runs your agents."
+    "description": "Tune how Midnite looks, locks, and runs your agents."
   },
   "groups": {
     "general": "General",
@@ -87,7 +87,7 @@
     "size": "Size",
     "sizeDescription": "How large the wordmark renders everywhere it appears.",
     "wordmarkSize": "Wordmark size",
-    "wordmarkFontDescription": "The font the midnite wordmark is set in across the app.",
+    "wordmarkFontDescription": "The font the Midnite wordmark is set in across the app.",
     "showIcon": "Show icon",
     "active": "Active",
     "accentBuilder": {
@@ -173,7 +173,7 @@
     "parallelAgentsHint": "How many agent sessions may run at once. Extra tasks queue until a slot frees up.",
     "poolDefault": "Default {default} · maximum {max}.",
     "agentsTitle": "Agents",
-    "agentsIntro": "Every coding agent midnite knows about. Expand one to install or update its CLI (used to run task sessions) or, under the API tab, add your own key so that provider can power midnite's own AI features.",
+    "agentsIntro": "Every coding agent Midnite knows about. Expand one to install or update its CLI (used to run task sessions) or, under the API tab, add your own key so that provider can power Midnite's own AI features.",
     "subAgents": "Sub Agents",
     "noSubagents": "No subagents yet",
     "noSubagentsHint": "Add focused workers the orchestrator can delegate to.",
@@ -188,7 +188,7 @@
     "sessionCliHint": "The coding agent launched in a session terminal to run tasks.",
     "sessionAgentCli": "Session agent CLI",
     "aiProvider": "AI provider",
-    "aiProviderHint": "Powers midnite's own AI (triage, plan drafting, heartbeat). Add each provider's key in its card below.",
+    "aiProviderHint": "Powers Midnite's own AI (triage, plan drafting, heartbeat). Add each provider's key in its card below.",
     "activeAiProvider": "Active AI provider",
     "collapseSubagent": "Collapse subagent",
     "expandSubagent": "Expand subagent",
@@ -236,7 +236,7 @@
     "errorFallback": "Something went wrong",
     "mode": {
       "title": "Autonomy mode",
-      "description": "Controls how midnite handles tool-use approvals during agent sessions.",
+      "description": "Controls how Midnite handles tool-use approvals during agent sessions.",
       "active": "Active",
       "options": {
         "manual": {
@@ -351,7 +351,7 @@
   "data": {
     "errorFallback": "Backup failed",
     "title": "Data",
-    "description": "Back up and restore your whole midnite store — for disaster recovery or moving instances.",
+    "description": "Back up and restore your whole Midnite store — for disaster recovery or moving instances.",
     "tabs": {
       "ariaLabel": "Backup or restore",
       "backup": "Backup",
@@ -404,7 +404,7 @@
       "chooseAria": "Choose backup archive",
       "choose": "Choose archive…",
       "reading": "Reading archive…",
-      "blocked": "This archive was made by a newer midnite (schema v{schemaVersion}, {compat}) than this instance understands. Upgrade midnite, then retry — it can’t be imported safely.",
+      "blocked": "This archive was made by a newer Midnite (schema v{schemaVersion}, {compat}) than this instance understands. Upgrade Midnite, then retry — it can’t be imported safely.",
       "previewLabel": "Preview — schema v{version} ({compat}): {count, plural, one {# record} other {# records}}",
       "conflicts": "· {count} existing",
       "passphraseLabel": "Passphrase (to restore this archive’s secrets — leave blank to skip them)",
@@ -678,7 +678,7 @@
   "personalization": {
     "couldNotSave": "Could not save",
     "aboutYou": "About you",
-    "aboutYouDescription": "Tell midnite who you are — your role, how you like to work, the kinds of things you build. Agents can use this for context.",
+    "aboutYouDescription": "Tell Midnite who you are — your role, how you like to work, the kinds of things you build. Agents can use this for context.",
     "aboutPlaceholder": "e.g. I'm a backend engineer who cares about small, well-tested commits…",
     "workingDirectory": "Working directory",
     "workingDirectoryDescription": "The folder session terminals fall back to when a task has no project directory of its own. Leave it unset to use the gateway's own directory.",
@@ -692,7 +692,7 @@
   "system": {
     "env": {
       "title": "Environment",
-      "description": "The local toolchain midnite needs, detected on the gateway host.",
+      "description": "The local toolchain Midnite needs, detected on the gateway host.",
       "osAriaLabel": "Operating system",
       "detectedSystem": "Detected system: {os}.",
       "notConfigured": "{os} tools aren't configured yet.",

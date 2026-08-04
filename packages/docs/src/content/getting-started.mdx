@@ -6,7 +6,7 @@ order: 1
 
 # Getting started
 
-midnite ships as a single desktop app for macOS (Apple Silicon), Windows,
+Midnite ships as a single desktop app for macOS (Apple Silicon), Windows,
 and Linux. Install it — one command on macOS — open it, and you're running — the app
 bundles everything it needs (the local [gateway](/) and the UI) and runs entirely
 on your machine. There's no server to stand up, no account to create, and no data
@@ -17,8 +17,8 @@ The rest of this page walks you from download to a running agent in a few minute
 ## What you'll need
 
 - A supported machine: **macOS (Apple Silicon)**, **Windows (x64)**, or **Linux (x64)**.
-- An **agent CLI** installed and on your `PATH` — midnite drives coding agents like
-  Claude Code rather than shipping its own. You'll point midnite at it under
+- An **agent CLI** installed and on your `PATH` — Midnite drives coding agents like
+  Claude Code rather than shipping its own. You'll point Midnite at it under
   [Settings → Agents](/settings/settings).
 - A **model-provider account** for whichever agent you use (e.g. an API key), so
   the agent can actually call a model.
@@ -62,7 +62,7 @@ page](https://github.com/bilo-io/midnite-app/releases/latest):
   & Security → Open Anyway** after the blocked attempt, or clear the quarantine
   flag:
   ```bash
-  xattr -dr com.apple.quarantine /Applications/midnite.app
+  xattr -dr com.apple.quarantine /Applications/Midnite.app
   ```
 - **Windows** — the installer is unsigned, so on the SmartScreen prompt click
   **More info → Run anyway**.
@@ -72,7 +72,7 @@ page](https://github.com/bilo-io/midnite-app/releases/latest):
   ./midnite-*.AppImage
   ```
 
-On first run midnite creates its local data folder (on macOS,
+On first run Midnite creates its local data folder (on macOS,
 `~/Library/Application Support/@midnite/desktop`) — that's where your tasks,
 sessions, and settings live, in a local SQLite database. Everything stays on your
 machine, and you can back it up or move it from [Settings →
@@ -108,7 +108,7 @@ Once you're up and running, each feature has its own page:
   rediscovering your conventions every run.
 - **[Ops](/overview/ops)** — track fleet health, spend, and the periodic
   [digests](/overview/digests).
-- **[Settings](/settings/settings)** — point midnite at your repos, pick the agent
+- **[Settings](/settings/settings)** — point Midnite at your repos, pick the agent
   CLI, and set safety guardrails.
 
 Power users can also drive everything from the terminal — see the CLI on the
