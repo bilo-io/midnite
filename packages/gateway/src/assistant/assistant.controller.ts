@@ -23,6 +23,6 @@ export class AssistantController {
       throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid question');
     }
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
-    return this.assistant.answer(parsed.data.question, scope);
+    return this.assistant.answer(parsed.data.question, scope, undefined, parsed.data.locale);
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   DndContext,
   KeyboardSensor,
@@ -40,7 +41,7 @@ import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { StyledSelect } from '@/components/ui/styled-select';
-import { FORMAT_SELECT_OPTIONS } from '@/lib/council-formats';
+import { useFormatSelectOptions } from '@/lib/council-formats';
 import {
   createCouncilMember,
   deleteCouncilMember,
@@ -96,6 +97,9 @@ export function CouncilMembersPanel({
   onEditCustom,
   open,
 }: Props) {
+  const t = useTranslations('council');
+  const tCommon = useTranslations('common');
+  const formatOptions = useFormatSelectOptions();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   // Compact by default; a member opens for editing (new ones auto-open).
@@ -113,7 +117,7 @@ export function CouncilMembersPanel({
     };
   }, []);
 
-  const errMsg = (e: unknown) => (e instanceof Error ? e.message : 'Save failed');
+  const errMsg = (e: unknown) => (e instanceof Error ? e.message : t('members.saveFailed'));
 
   const flashSaved = () => {
     setSaved(true);
@@ -225,12 +229,12 @@ export function CouncilMembersPanel({
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold">
           <Users className="h-4 w-4 text-muted-foreground" />
-          Members
+          {t('members.title')}
         </h2>
         <div className="flex items-center gap-1.5">
           {saved ? (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Check className="h-3 w-3" /> Saved
+              <Check className="h-3 w-3" /> {tCommon('saved')}
             </span>
           ) : null}
           <Button
@@ -241,7 +245,7 @@ export function CouncilMembersPanel({
             onClick={() => void add()}
           >
             <Plus className="h-4 w-4" />
-            Add
+            {tCommon('add')}
           </Button>
         </div>
       </div>
@@ -250,21 +254,21 @@ export function CouncilMembersPanel({
       <div className="space-y-2 rounded-lg border border-foreground/15 bg-accent/40 p-3 shadow-sm">
         <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
           <Sparkles className="h-3.5 w-3.5" />
-          Synthesize with
+          {t('members.synthesizeWith')}
         </span>
         <Select
-          aria-label="Synthesizer provider"
+          aria-label={t('members.synthProvider')}
           options={PROVIDER_OPTIONS}
           value={synthProvider}
           onChange={onSynthProviderChange}
           disabled={disabled}
         />
         <span className="block pt-1 text-[11px] font-medium text-muted-foreground">
-          Default format
+          {t('members.defaultFormat')}
         </span>
         <StyledSelect
-          aria-label="Default synthesis format"
-          options={FORMAT_SELECT_OPTIONS}
+          aria-label={t('members.defaultFormatLabel')}
+          options={formatOptions}
           value={defaultFormat}
           onChange={onDefaultFormatChange}
           disabled={disabled}
@@ -277,18 +281,13 @@ export function CouncilMembersPanel({
           className="w-full"
         >
           <Pencil className="h-3.5 w-3.5" />
-          Edit custom prompt
+          {t('members.editCustomPrompt')}
         </Button>
-        <p className="text-[11px] leading-snug text-muted-foreground">
-          Distils the pooled responses. The format is pre-selected for new runs and can be switched
-          per run — and re-run over the same responses.
-        </p>
+        <p className="text-[11px] leading-snug text-muted-foreground">{t('members.synthBlurb')}</p>
       </div>
 
       {members.length < 1 ? (
-        <p className="text-xs text-muted-foreground">
-          Add at least 1 member — each responds to the prompt from its own role.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('members.empty')}</p>
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -335,9 +334,10 @@ function SortableMember({
   onEdit: (patch: Partial<CouncilMember>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations('council');
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: m.id, disabled });
-  const name = m.name.trim() || `Member ${index + 1}`;
+  const name = m.name.trim() || t('members.fallbackName', { index: index + 1 });
 
   return (
     <div
@@ -358,7 +358,7 @@ function SortableMember({
           {...attributes}
           {...listeners}
           disabled={disabled}
-          aria-label={`Reorder ${name}`}
+          aria-label={t('members.reorder', { name })}
           className="shrink-0 cursor-grab touch-none rounded text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
         >
           <GripVertical className="h-4 w-4" />
@@ -367,25 +367,25 @@ function SortableMember({
           type="button"
           onClick={onToggle}
           aria-expanded={isOpen}
-          aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${name}`}
+          aria-label={isOpen ? t('members.collapse', { name }) : t('members.expand', { name })}
           className="flex shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronDown className={cn('h-4 w-4 transition-transform', !isOpen && '-rotate-90')} />
           <AgentCliLogo cli={m.provider} className="h-4 w-4" />
         </button>
         <input
-          aria-label={`${name} name`}
+          aria-label={t('members.nameField', { name })}
           value={m.name}
           disabled={disabled}
           onChange={(e) => onEdit({ name: e.target.value })}
-          placeholder={`Member ${index + 1}`}
+          placeholder={t('members.fallbackName', { index: index + 1 })}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`Remove ${name}`}
+          aria-label={t('members.remove', { name })}
           disabled={disabled}
           onClick={onRemove}
           className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
@@ -397,7 +397,7 @@ function SortableMember({
       <Collapse open={isOpen}>
         <div className="space-y-2 px-2.5 pb-2.5">
           <Select
-            aria-label={`${name} provider`}
+            aria-label={t('members.providerField', { name })}
             options={PROVIDER_OPTIONS}
             value={m.provider}
             disabled={disabled}
@@ -405,12 +405,12 @@ function SortableMember({
           />
 
           <textarea
-            aria-label={`${name} role`}
+            aria-label={t('members.roleField', { name })}
             className={textareaClass}
             value={m.role}
             disabled={disabled}
             onChange={(e) => onEdit({ role: e.target.value })}
-            placeholder="Role to respond from — e.g. “Argue the contrary view.”"
+            placeholder={t('members.rolePlaceholder')}
           />
         </div>
       </Collapse>

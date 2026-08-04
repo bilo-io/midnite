@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { RefreshCw, Users } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { getCouncils } from '@/lib/api';
@@ -14,6 +15,7 @@ import { WidgetCard } from './widget-card';
 const REFRESH_MS = 60_000;
 
 export function CouncilsWidget() {
+  const t = useTranslations('council');
   const { data, error, loading, refresh } = usePolling(() => getCouncils(), REFRESH_MS);
 
   const councils = (data ?? [])
@@ -22,13 +24,13 @@ export function CouncilsWidget() {
 
   return (
     <WidgetCard
-      title="Councils"
+      title={t('widget.title')}
       icon={Users}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh councils"
+          aria-label={t('widget.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -37,11 +39,11 @@ export function CouncilsWidget() {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load councils.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('widget.error')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : councils.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">No councils yet.</p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('widget.empty')}</p>
       ) : (
         <ul className="divide-y divide-border/30">
           {councils.map((c) => (
@@ -54,6 +56,7 @@ export function CouncilsWidget() {
 }
 
 function CouncilRow({ council: c }: { council: Council }) {
+  const t = useTranslations('council');
   // One logo per distinct member provider, stacked like the council cards.
   const providers = [...new Set(c.members.map((m) => m.provider))];
   return (
@@ -76,7 +79,9 @@ function CouncilRow({ council: c }: { council: Council }) {
               ))}
             </span>
           ) : (
-            <span className="block text-[11px] text-muted-foreground">No members</span>
+            <span className="block text-[11px] text-muted-foreground">
+              {t('widget.noMembers')}
+            </span>
           )}
         </div>
         <CouncilStats council={c} />

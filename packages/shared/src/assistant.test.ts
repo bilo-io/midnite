@@ -87,6 +87,15 @@ describe('Assistant request/response', () => {
     expect(AssistantQueryRequestSchema.safeParse({ question: 'what is blocked?' }).success).toBe(true);
   });
 
+  // Phase 82 D — the answer's prose is generated copy, so the caller states which
+  // language it wants. Optional (older clients keep working) and validated against
+  // the shared locale contract rather than accepting any string.
+  it('accepts an optional locale and rejects an unsupported one', () => {
+    expect(AssistantQueryRequestSchema.safeParse({ question: 'q', locale: 'fr-FR' }).success).toBe(true);
+    expect(AssistantQueryRequestSchema.safeParse({ question: 'q' }).data?.locale).toBeUndefined();
+    expect(AssistantQueryRequestSchema.safeParse({ question: 'q', locale: 'xx-XX' }).success).toBe(false);
+  });
+
   it('validates a response envelope', () => {
     const parsed = AssistantQueryResponseSchema.safeParse({
       blocks: [{ kind: 'markdown', text: 'ok' }],

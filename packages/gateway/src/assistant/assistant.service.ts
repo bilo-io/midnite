@@ -3,11 +3,13 @@ import {
   type AssistantBlock,
   type AssistantQueryResponse,
   coerceAssistantBlock,
+  type Locale,
   type Status,
   type TaskGraphNode,
   type TeamScope,
 } from '@midnite/shared';
 
+import { withOutputLanguage } from '../agent/llm/lib/output-language';
 import { LlmService } from '../agent/llm/llm.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { AgentPoolService } from '../pool/agent-pool.service';
@@ -84,7 +86,19 @@ export class AssistantService {
     @Inject(LlmService) private readonly llm: LlmService,
   ) {}
 
-  async answer(question: string, scope?: TeamScope, signal?: AbortSignal): Promise<AssistantQueryResponse> {
+  /**
+   * `locale` (Phase 82 D) steers the *generated* prose only: it's appended to the
+   * system prompt via {@link withOutputLanguage}. The deterministic paths below —
+   * the no-LLM overview and the context-assembly fallback — are assembled from
+   * English strings in this service and stay English; that's a documented gap, not
+   * a clamp (translating them would mean a catalog inside the gateway).
+   */
+  async answer(
+    question: string,
+    scope?: TeamScope,
+    signal?: AbortSignal,
+    locale?: Locale,
+  ): Promise<AssistantQueryResponse> {
     let context: { text: string; overview: string };
     try {
       context = await this.buildContext(scope);
@@ -109,7 +123,7 @@ export class AssistantService {
         {
           model: this.llm.getActModel(),
           maxTokens: 700,
-          system: ASSISTANT_SYSTEM_PROMPT,
+          system: withOutputLanguage(ASSISTANT_SYSTEM_PROMPT, locale),
           schema: ASSISTANT_LLM_SCHEMA,
           schemaName: 'record_answer',
           schemaDescription: 'Answer the fleet question as ordered blocks.',

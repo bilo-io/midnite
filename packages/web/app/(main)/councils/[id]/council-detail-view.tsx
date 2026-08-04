@@ -43,6 +43,7 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
   const [runs, setRuns] = useState<CouncilRun[]>(initialRuns);
   const [threadOpen, setThreadOpen] = useLocalStorage<boolean>('midnite.councils.thread', true);
   const [panelOpen, setPanelOpen] = useLocalStorage<boolean>('midnite.councils.panel', true);
+  const t = useTranslations('council');
   const tCommon = useTranslations('common');
   const isMobile = useIsMobile();
 
@@ -212,18 +213,18 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
                 <RailFloatingToggle
                   side="left"
                   open={threadOpen}
-                  title="Thread"
+                  title={t('detail.thread')}
                   onToggle={() => setThreadOpen(!threadOpen)}
-                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Thread' })}
-                  expandLabel={tCommon('ui.rail.expand', { title: 'Thread' })}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: t('detail.thread') })}
+                  expandLabel={tCommon('ui.rail.expand', { title: t('detail.thread') })}
                 />
                 <RailFloatingToggle
                   side="right"
                   open={panelOpen}
-                  title="Members"
+                  title={t('detail.members')}
                   onToggle={() => setPanelOpen(!panelOpen)}
-                  collapseLabel={tCommon('ui.rail.collapse', { title: 'Members' })}
-                  expandLabel={tCommon('ui.rail.expand', { title: 'Members' })}
+                  collapseLabel={tCommon('ui.rail.collapse', { title: t('detail.members') })}
+                  expandLabel={tCommon('ui.rail.expand', { title: t('detail.members') })}
                 />
               </>
             ) : null}
@@ -247,9 +248,7 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
                 />
               ) : (
                 <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
-                  Submit a prompt below and each member will respond from its role in its own
-                  terminal. The responses are then handed to the synthesizer and distilled in your
-                  chosen format.
+                  {t('detail.noRun')}
                 </div>
               )}
             </div>
@@ -293,9 +292,9 @@ export function CouncilDetailView({ initial, initialRuns, projects }: Props) {
                   disabled={!canStart}
                   disabledHint={
                     live
-                      ? 'A run is in progress — wait for the synthesis.'
+                      ? t('detail.liveHint')
                       : members.length < 1
-                        ? 'Add at least 1 member in the panel to start.'
+                        ? t('detail.noMembersHint')
                         : undefined
                   }
                   defaultFormat={defaultFormat}

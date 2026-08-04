@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { Loader2, RotateCcw, Sparkles, SkipForward } from 'lucide-react';
 import {
   AGENT_CLI_LABEL,
-  COUNCIL_FORMATS_META,
   type CouncilFormat,
   type CouncilRun,
   type CouncilRunMember,
@@ -26,7 +26,9 @@ import {
   type MemberView,
   type SynthesisHtmlEntry,
 } from '@/lib/council-html-export';
-import { FORMAT_SELECT_OPTIONS, formatIcon } from '@/lib/council-formats';
+import { useCouncilFormatLabels } from '@/lib/council-format-labels';
+import { useFormatSelectOptions, formatIcon } from '@/lib/council-formats';
+import { useCouncilMemberStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
 // xterm touches `window` — client-only, like SessionTerminal.
@@ -60,15 +62,6 @@ function TabShimmer() {
 
 const SYNTH_TAB = '__synthesis__';
 
-/** Member status → the same label the in-app MemberOutput shows. */
-const MEMBER_STATUS_LABEL: Record<CouncilRunMember['status'], string> = {
-  running: 'Running',
-  succeeded: 'Finished',
-  failed: 'Failed',
-  timeout: 'Timed out',
-  skipped: 'Skipped',
-};
-
 /**
  * The main panel of a council run: one tab per member (live terminal while
  * running, persisted output after) plus the Synthesis tab. Terminals stay
@@ -94,6 +87,9 @@ export function CouncilRunTabs({
   /** Re-synthesize the captured responses in a (possibly new) format (finished runs only). */
   onReSynthesize?: (format: CouncilFormat) => void;
 }) {
+  const t = useTranslations('council');
+  const formats = useCouncilFormatLabels();
+  const memberStatusLabel = useCouncilMemberStatusLabel();
   const [active, setActive] = useState<string>(run.members[0]?.id ?? SYNTH_TAB);
 
   // Export is meaningful once a run has settled (it has captured responses and/or
@@ -112,10 +108,10 @@ export function CouncilRunTabs({
   // builder (lib/council-html-export) handles escaping and the document shell.
   const buildHtml = useCallback(async (): Promise<{ filename: string; html: string }> => {
     const members: MemberView[] = run.members.map((m, i) => ({
-      name: m.name.trim() || `Member ${i + 1}`,
+      name: m.name.trim() || t('members.fallbackName', { index: i + 1 }),
       role: m.role,
       providerLabel: AGENT_CLI_LABEL[m.provider],
-      statusLabel: MEMBER_STATUS_LABEL[m.status],
+      statusLabel: memberStatusLabel(m.status),
       statusKey: m.status,
       output: m.output ?? null,
       error: m.error ?? null,
@@ -150,7 +146,9 @@ export function CouncilRunTabs({
           const member = run.members[index];
           return {
             label,
-            name: member?.name.trim() || `Member ${index >= 0 ? index + 1 : ''}`.trim(),
+            name:
+              member?.name.trim() ||
+              (index >= 0 ? t('members.fallbackName', { index: index + 1 }) : ''),
             providerLabel: member ? AGENT_CLI_LABEL[member.provider] : '',
           };
         });
@@ -160,7 +158,7 @@ export function CouncilRunTabs({
     for (const entry of ordered) {
       syntheses.push({
         format: entry.format,
-        label: COUNCIL_FORMATS_META[entry.format].label,
+        label: formats.label(entry.format),
         bodyHtml: await captureMarkdownHtml(entry.synthesis),
         isActive: entry.format === run.format,
         legend: legendFor(entry),
@@ -171,14 +169,14 @@ export function CouncilRunTabs({
       councilName,
       prompt: run.prompt,
       exportedAt: new Date(),
-      formatLabel: COUNCIL_FORMATS_META[run.format].label,
+      formatLabel: formats.label(run.format),
       synthProviderLabel: run.synthProvider ? AGENT_CLI_LABEL[run.synthProvider] : null,
       members,
       syntheses,
     });
     const date = (run.finishedAt ?? run.startedAt).slice(0, 10);
     return { filename: councilHtmlExportFilename(councilName, run.format, date), html };
-  }, [councilName, run]);
+  }, [councilName, formats, memberStatusLabel, run, t]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -188,9 +186,9 @@ export function CouncilRunTabs({
           this strip and must not stay readable through it. */}
       <div className="sticky top-12 z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/95 px-1 pb-2 pt-3 backdrop-blur">
         <p className="text-xs text-muted-foreground">
-          Prompt: <span className="text-foreground">{run.prompt}</span>
+          {t('run.prompt')} <span className="text-foreground">{run.prompt}</span>
         </p>
-        <div role="tablist" aria-label="Council run" className="flex flex-wrap items-center gap-1.5">
+        <div role="tablist" aria-label={t('run.tablist')} className="flex flex-wrap items-center gap-1.5">
           {run.members.map((m, i) => (
             <button
               key={m.id}
@@ -208,7 +206,7 @@ export function CouncilRunTabs({
               {m.status === 'running' ? <TabShimmer /> : null}
               <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[m.status])} aria-hidden />
               <AgentCliLogo cli={m.provider} className="h-3.5 w-3.5" />
-              {m.name.trim() || `Member ${i + 1}`}
+              {m.name.trim() || t('members.fallbackName', { index: i + 1 })}
             </button>
           ))}
           <button
@@ -224,12 +222,12 @@ export function CouncilRunTabs({
             )}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            Synthesis
+            {t('run.synthesis')}
           </button>
           {canExport ? (
             <ExportMenu
               className="ml-auto"
-              filename={`${COUNCIL_FORMATS_META[run.format].label.toLowerCase()}-${run.id.slice(0, 8)}`}
+              filename={`${formats.label(run.format).toLowerCase()}-${run.id.slice(0, 8)}`}
               fetchMarkdown={() => exportCouncilRunMarkdown(councilId, run.id)}
               buildHtml={buildHtml}
             />
@@ -248,18 +246,20 @@ export function CouncilRunTabs({
                   variant="outline"
                   size="sm"
                   onClick={() => onSkip(m.id)}
-                  title="Stop waiting on this member — the synthesis proceeds without it"
+                  title={t('run.skipTitle')}
                 >
                   <SkipForward className="h-3.5 w-3.5" />
-                  Skip member
+                  {t('run.skipMember')}
                 </Button>
               </div>
             ) : null}
             <div className="h-[420px] overflow-hidden rounded-lg border border-border/60">
               <LiveTerminal
                 attachId={m.terminalId}
-                label={`${m.name.trim() || `Member ${i + 1}`} · ${m.provider}`}
-                ariaLabel={`${m.name.trim() || `Member ${i + 1}`} terminal`}
+                label={`${m.name.trim() || t('members.fallbackName', { index: i + 1 })} · ${m.provider}`}
+                ariaLabel={t('run.memberTerminal', {
+                  name: m.name.trim() || t('members.fallbackName', { index: i + 1 }),
+                })}
                 loaderUntilOutput
               />
             </div>
@@ -285,21 +285,17 @@ function MemberOutput({
   member: CouncilRunMember;
   onRetry?: (runMemberId: string) => void;
 }) {
+  const t = useTranslations('council');
+  const memberStatusLabel = useCouncilMemberStatusLabel();
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-card/40 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[m.status])} aria-hidden />
           {m.role.trim() ? <span className="text-foreground">{m.role.trim()}</span> : null}
-          <span>
-            {m.status === 'succeeded'
-              ? 'Finished'
-              : m.status === 'timeout'
-                ? 'Timed out'
-                : m.status === 'skipped'
-                  ? 'Skipped'
-                  : 'Failed'}
-          </span>
+          {/* Only settled members reach here (the caller guards on `!== 'running'`),
+              so the shared status label covers every case this can render. */}
+          <span>{memberStatusLabel(m.status)}</span>
         </span>
         {onRetry && m.status !== 'succeeded' ? (
           <Button
@@ -307,10 +303,10 @@ function MemberOutput({
             variant="outline"
             size="sm"
             onClick={() => onRetry(m.id)}
-            title="Rerun this member, then re-synthesize"
+            title={t('run.rerunTitle')}
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Rerun
+            {t('run.rerun')}
           </Button>
         ) : null}
       </div>
@@ -320,7 +316,7 @@ function MemberOutput({
       {m.output ? (
         <MarkdownPreview content={m.output} />
       ) : (
-        <p className="text-sm text-muted-foreground">No output captured.</p>
+        <p className="text-sm text-muted-foreground">{t('run.noOutput')}</p>
       )}
     </div>
   );
@@ -335,24 +331,23 @@ function ReSynthesizeControl({
   run: CouncilRun;
   onReSynthesize: (format: CouncilFormat) => void;
 }) {
+  const t = useTranslations('council');
+  const formatOptions = useFormatSelectOptions();
   const [format, setFormat] = useState<CouncilFormat>(run.format);
   return (
     <div className="flex flex-wrap items-center gap-2">
       <StyledSelect
-        aria-label="Synthesis format"
+        aria-label={t('composer.formatLabel')}
         className="w-44"
-        options={FORMAT_SELECT_OPTIONS}
+        options={formatOptions}
         value={format}
         onChange={setFormat}
       />
       <Button type="button" variant="outline" size="sm" onClick={() => onReSynthesize(format)}>
         <RotateCcw className="h-3.5 w-3.5" />
-        Re-synthesize
+        {t('run.reSynthesize')}
       </Button>
-      <p className="text-xs text-muted-foreground">
-        Re-runs only the synthesis over the captured responses — switch formats freely; members
-        don&apos;t re-run.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('run.reSynthesizeBlurb')}</p>
     </div>
   );
 }
@@ -369,6 +364,8 @@ function SynthesisPanel({
   // Re-synthesis re-distils the *captured* responses, so it's only meaningful when
   // at least one member produced one (a completed run always has them; a run that
   // failed at the response stage does not — rerun a member instead).
+  const t = useTranslations('council');
+  const formats = useCouncilFormatLabels();
   const hasOutputs = run.members.some((m) => m.status === 'succeeded');
 
   if (run.status === 'running') {
@@ -377,7 +374,7 @@ function SynthesisPanel({
       <div className="space-y-3 rounded-lg border border-border/60 bg-card/40 p-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Waiting on {waiting.length} member{waiting.length === 1 ? '' : 's'}…
+          {t('run.waiting', { count: waiting.length })}
         </div>
         <ul className="space-y-1.5">
           {waiting.map((m, i) => (
@@ -385,7 +382,7 @@ function SynthesisPanel({
               <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT.running)} aria-hidden />
               <AgentCliLogo cli={m.provider} className="h-3.5 w-3.5" />
               <span className="min-w-0 truncate">
-                {m.name.trim() || `Member ${i + 1}`}
+                {m.name.trim() || t('members.fallbackName', { index: i + 1 })}
                 <span className="text-muted-foreground"> · {m.provider}</span>
               </span>
               {onSkip ? (
@@ -395,10 +392,10 @@ function SynthesisPanel({
                   size="sm"
                   onClick={() => onSkip(m.id)}
                   className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  title="Stop waiting on this member — the synthesis proceeds without it"
+                  title={t('run.skipTitle')}
                 >
                   <SkipForward className="h-3 w-3" />
-                  Skip
+                  {t('run.skip')}
                 </Button>
               ) : null}
             </li>
@@ -408,21 +405,22 @@ function SynthesisPanel({
     );
   }
   if (run.status === 'synthesizing') {
-    const synth = run.synthProvider ? AGENT_CLI_LABEL[run.synthProvider] : 'The synthesizer';
+    const synth = run.synthProvider
+      ? AGENT_CLI_LABEL[run.synthProvider]
+      : t('run.synthesizerFallback');
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           {run.synthProvider ? <AgentCliLogo cli={run.synthProvider} className="h-4 w-4" /> : null}
-          Synthesizing ({COUNCIL_FORMATS_META[run.format].label}) — {synth} is distilling the
-          responses…
+          {t('run.synthesizing', { format: formats.label(run.format), provider: synth })}
         </div>
         {run.synthTerminalId ? (
           <div className="h-[420px] overflow-hidden rounded-lg border border-border/60">
             <LiveTerminal
               attachId={run.synthTerminalId}
-              label={`Synthesis · ${synth}`}
-              ariaLabel="Synthesis terminal"
+              label={t('run.synthesisTerminalLabel', { provider: synth })}
+              ariaLabel={t('run.synthesisTerminal')}
               loaderUntilOutput
             />
           </div>
@@ -456,7 +454,7 @@ function SynthesisPanel({
     <div className="space-y-4 rounded-lg border border-border/60 bg-card/40 p-4">
       {run.status === 'failed' ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive break-words">
-          {run.error ?? 'The run failed.'}
+          {run.error ?? t('run.failed')}
         </div>
       ) : null}
       {onReSynthesize && hasOutputs ? (
@@ -465,7 +463,7 @@ function SynthesisPanel({
       {archive.length ? (
         <SynthesisArchive run={run} entries={archive} activeFormat={run.format} />
       ) : run.status !== 'failed' ? (
-        <p className="text-sm text-muted-foreground">No synthesis recorded.</p>
+        <p className="text-sm text-muted-foreground">{t('run.noSynthesis')}</p>
       ) : null}
     </div>
   );
@@ -482,6 +480,7 @@ function SynthesisArchive({
   entries: CouncilSynthesisEntry[];
   activeFormat: CouncilFormat;
 }) {
+  const formats = useCouncilFormatLabels();
   // Default to the active (most-recent) format if present, else the first entry.
   const [selected, setSelected] = useState<CouncilFormat>(
     entries.some((e) => e.format === activeFormat) ? activeFormat : entries[0]!.format,
@@ -507,7 +506,7 @@ function SynthesisArchive({
               )}
             >
               <Icon className="h-3 w-3" />
-              {COUNCIL_FORMATS_META[e.format].label}
+              {formats.label(e.format)}
             </button>
           );
         })}
@@ -522,6 +521,7 @@ function SynthesisArchive({
  *  that spoke as it — how the user de-anonymizes a debate after the fact. Renders
  *  nothing for attributed (non-anonymized) formats. */
 function DeAnonLegend({ run, entry }: { run: CouncilRun; entry: CouncilSynthesisEntry }) {
+  const t = useTranslations('council');
   const pairs = useMemo(() => {
     if (!entry.anonymized || !entry.labelMap) return [];
     return Object.entries(entry.labelMap).sort(([a], [b]) => a.localeCompare(b));
@@ -534,13 +534,17 @@ function DeAnonLegend({ run, entry }: { run: CouncilRun; entry: CouncilSynthesis
       {pairs.map(([label, runMemberId]) => {
         const member = run.members.find((m) => m.id === runMemberId);
         const index = run.members.findIndex((m) => m.id === runMemberId);
-        const name = member?.name.trim() || `Member ${index >= 0 ? index + 1 : ''}`.trim();
+        const name =
+          member?.name.trim() ||
+          (index >= 0 ? t('members.fallbackName', { index: index + 1 }) : '');
         return (
           <span
             key={label}
             className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground"
           >
-            <span className="font-medium text-foreground">Member {label}</span>
+            <span className="font-medium text-foreground">
+              {t('run.memberLabel', { label })}
+            </span>
             <span aria-hidden>=</span>
             {member ? <AgentCliLogo cli={member.provider} className="h-3 w-3" /> : null}
             {name}

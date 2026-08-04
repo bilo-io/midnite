@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { CirclePile } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function CouncilCard({ council, layout, selected = false, onToggleSelect }: Props) {
+  const t = useTranslations('council');
   // One logo per distinct provider on the panel, stacked like source favicons.
   const providers = [...new Set(council.members.map((m) => m.provider))];
   const logos =
@@ -38,7 +40,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
 
   const archivedBadge = council.archived ? (
     <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-      Archived
+      {t('archived')}
     </span>
   ) : null;
 

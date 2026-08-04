@@ -140,7 +140,9 @@ export class CouncilsController {
     const parsed = StartCouncilRunRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return {
-      run: this.translate(() => this.runner.startRun(id, parsed.data.prompt, parsed.data.format)),
+      run: this.translate(() =>
+        this.runner.startRun(id, parsed.data.prompt, parsed.data.format, parsed.data.locale),
+      ),
     };
   }
 
@@ -170,7 +172,11 @@ export class CouncilsController {
   ): CouncilRunResponse {
     const parsed = RetryCouncilSynthesisRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { run: this.translate(() => this.runner.retrySynthesis(id, runId, parsed.data.format)) };
+    return {
+      run: this.translate(() =>
+        this.runner.retrySynthesis(id, runId, parsed.data.format, parsed.data.locale),
+      ),
+    };
   }
 
   @Get(':id/runs')

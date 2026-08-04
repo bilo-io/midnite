@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Bot, MessagesSquare } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
  * the dashboard widget so the two always read the same.
  */
 export function CouncilStats({ council, className }: { council: Council; className?: string }) {
+  const t = useTranslations('council');
   const consultations = council.consultationCount ?? 0;
   return (
     <span
@@ -18,11 +20,17 @@ export function CouncilStats({ council, className }: { council: Council; classNa
         className,
       )}
     >
-      <span className="flex items-center gap-1" title={`${council.members.length} members`}>
+      <span
+        className="flex items-center gap-1"
+        title={t('stats.members', { count: council.members.length })}
+      >
         <Bot className="h-3.5 w-3.5" />
         {council.members.length}
       </span>
-      <span className="flex items-center gap-1" title={`${consultations} consultations`}>
+      <span
+        className="flex items-center gap-1"
+        title={t('stats.consultations', { count: consultations })}
+      >
         <MessagesSquare className="h-3.5 w-3.5" />
         {consultations}
       </span>

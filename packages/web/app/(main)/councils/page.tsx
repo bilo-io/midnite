@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { PageHeader } from '@/components/page-header';
 import { getCouncils } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
@@ -7,6 +9,7 @@ import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { CouncilsView } from './councils-view';
 
 export default function CouncilsPage() {
+  const t = useTranslations('council');
   const { data, error } = useApiData(() => getCouncils());
   const councils = data ?? [];
   useGatewayErrorToast(error);
@@ -14,9 +17,9 @@ export default function CouncilsPage() {
   return (
     <>
       <PageHeader
-        title="Councils"
+        title={t('title')}
         icon="CirclePile"
-        description="Panels of AI members that respond to a prompt from fixed roles — then a synthesizer distils them in any format: brainstorm, debate, analyse, and more."
+        description={t('description')}
       />
       <div className="reveal-staged container space-y-6 pb-8 pt-2">
         <CouncilsView initial={councils} />

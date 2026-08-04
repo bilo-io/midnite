@@ -633,11 +633,19 @@ export async function undoChatCommand(undoToken: string, signal?: AbortSignal): 
  * Phase 66 E — ask the read-only fleet assistant a free-form question. Returns an
  * ordered list of blocks (markdown prose + inline component references, resolved
  * client-side) + the inference path used. Never mutates.
+ *
+ * `locale` is the active UI locale (Phase 82 D) — the gateway tells the model to
+ * write its prose blocks in it. The deterministic (no-LLM) fallback overview stays
+ * English; that's a documented gap, not a clamp.
  */
-export async function assistantQuery(question: string, signal?: AbortSignal): Promise<AssistantQueryResponse> {
+export async function assistantQuery(
+  question: string,
+  locale?: Locale,
+  signal?: AbortSignal,
+): Promise<AssistantQueryResponse> {
   return fetchJson(
     '/assistant/query',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ question }), signal },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ question, locale }), signal },
     AssistantQueryResponseSchema,
   );
 }
@@ -2147,14 +2155,22 @@ export async function reorderCouncilMembers(
   return council.members;
 }
 
+/**
+ * Start a run: every member responds through its role, then the synthesizer
+ * distils them. `locale` is the active UI locale (Phase 82 D) — it rides on the
+ * request so the gateway appends a language directive to both the member prompts
+ * and the synthesis prompt, and the whole transcript comes back in the user's
+ * language.
+ */
 export async function startCouncilRun(
   councilId: string,
   prompt: string,
   format?: CouncilFormat,
+  locale?: Locale,
 ): Promise<CouncilRun> {
   const { run } = await fetchJson(
     `/councils/${encodeURIComponent(councilId)}/runs`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ prompt, format }) },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ prompt, format, locale }) },
     CouncilRunResponseSchema,
   );
   return run;
@@ -2204,14 +2220,16 @@ export async function retryCouncilRunMember(
   return run;
 }
 
+/** Re-synthesize captured responses, optionally in a new format and locale. */
 export async function retryCouncilSynthesis(
   councilId: string,
   runId: string,
   format?: CouncilFormat,
+  locale?: Locale,
 ): Promise<CouncilRun> {
   const { run } = await fetchJson(
     `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/synthesis/retry`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ format }) },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ format, locale }) },
     CouncilRunResponseSchema,
   );
   return run;

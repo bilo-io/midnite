@@ -11,38 +11,55 @@
  * synthesis entry (the only place the de-anonymization mapping is stored).
  */
 
-import type { CouncilFormat } from '@midnite/shared';
+import type { CouncilFormat, Locale } from '@midnite/shared';
 
-/** The one-shot prompt a member CLI responds to the prompt with, through its role. */
-export function buildMemberPrompt(format: CouncilFormat, role: string, prompt: string): string {
-  if (format === 'brainstorm') {
-    return [
-      'You are an idea generator on a panel. Generate ideas through this role/angle:',
-      '',
-      role.trim() || '(no specific role given — generate broadly and creatively)',
-      '',
-      'Prompt:',
-      prompt.trim(),
-      '',
-      'Produce 5–8 distinct, non-obvious ideas. For each idea give a short title, one or two sentences',
-      'describing it, and a brief note on why it could work. Be divergent — avoid near-duplicates and',
-      'obvious answers, and push past the first thing that comes to mind.',
-      'Respond in markdown, under 600 words. Do not use tools, do not read or write files — answer directly.',
-    ].join('\n');
-  }
-  return [
-    'You are one member of a panel responding to a prompt. Respond from this role/angle:',
-    '',
-    role.trim() || '(no specific role given — respond on the merits)',
-    '',
-    'Prompt:',
-    prompt.trim(),
-    '',
-    'Give your substantive take: your position and the ideas or arguments behind it, your strongest points',
-    'and reasoning, the key risks or trade-offs you see, and one concrete recommendation. Be specific and',
-    'non-obvious — push past the first thing that comes to mind.',
-    'Respond in markdown, under 600 words. Do not use tools, do not read or write files — answer directly.',
-  ].join('\n');
+import { outputLanguageInstruction } from '../../agent/llm/lib/output-language';
+
+/**
+ * The one-shot prompt a member CLI responds to the prompt with, through its role.
+ *
+ * `locale` (Phase 82 D) appends the shared language directive so the member answers
+ * in the user's language. It's a *suffix*, not a rewrite: the framing itself stays
+ * English (it's a prompt, not UI copy), and at the default locale the helper returns
+ * `''`, so the prompt is byte-identical to before — which is what keeps this file's
+ * existing snapshot-ish specs honest.
+ */
+export function buildMemberPrompt(
+  format: CouncilFormat,
+  role: string,
+  prompt: string,
+  locale?: Locale,
+): string {
+  const lines =
+    format === 'brainstorm'
+      ? [
+          'You are an idea generator on a panel. Generate ideas through this role/angle:',
+          '',
+          role.trim() || '(no specific role given — generate broadly and creatively)',
+          '',
+          'Prompt:',
+          prompt.trim(),
+          '',
+          'Produce 5–8 distinct, non-obvious ideas. For each idea give a short title, one or two sentences',
+          'describing it, and a brief note on why it could work. Be divergent — avoid near-duplicates and',
+          'obvious answers, and push past the first thing that comes to mind.',
+          'Respond in markdown, under 600 words. Do not use tools, do not read or write files — answer directly.',
+        ]
+      : [
+          'You are one member of a panel responding to a prompt. Respond from this role/angle:',
+          '',
+          role.trim() || '(no specific role given — respond on the merits)',
+          '',
+          'Prompt:',
+          prompt.trim(),
+          '',
+          'Give your substantive take: your position and the ideas or arguments behind it, your strongest points',
+          'and reasoning, the key risks or trade-offs you see, and one concrete recommendation. Be specific and',
+          'non-obvious — push past the first thing that comes to mind.',
+          'Respond in markdown, under 600 words. Do not use tools, do not read or write files — answer directly.',
+        ];
+  const language = outputLanguageInstruction(locale);
+  return (language ? [...lines, language] : lines).join('\n');
 }
 
 /** Framing for attributed synthesis — the synthesizer sees who said what. */

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import { GradientGlow } from '@midnite/ui';
 
@@ -57,6 +58,7 @@ export function AssistantFab() {
   const fabRef = useRef<HTMLButtonElement>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const headingId = useId();
+  const t = useTranslations('assistant');
 
   // Subtle nudge: at least one product guide is unseen at its current version
   // (Phase 67 C — was scoped to the current route's guide). A dot until every
@@ -179,7 +181,7 @@ export function AssistantFab() {
           type="button"
           data-tour="assistant"
           onClick={() => (open ? close() : openPanel())}
-          aria-label="Open assistant"
+          aria-label={t('open')}
           aria-haspopup="dialog"
           aria-expanded={open}
           className="relative flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground transition-transform hover:scale-105 motion-reduce:transition-none"

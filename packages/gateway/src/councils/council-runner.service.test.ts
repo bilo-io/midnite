@@ -157,6 +157,38 @@ describe('CouncilRunnerService', () => {
     expect(terminal.spawns.get(t2!)!.command).toBe('agy');
   });
 
+  // Phase 82 D — the run's locale reaches BOTH the member CLIs and the synthesizer.
+  // The synthesis fires from the settle barrier, long after startRun returned, so the
+  // locale has to survive that hop (an in-memory per-run map, not a request arg).
+  it("carries the run's locale into the member prompts and the synthesis prompt", async () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_MEMBERS);
+    const run = runner.startRun('c1', 'Rust ?', 'brainstorm', 'fr-FR');
+
+    for (const m of run.members) {
+      expect(terminal.spawns.get(m.terminalId)!.args.join('\n')).toContain('French (Français)');
+    }
+
+    for (const m of run.members) {
+      terminal.spawns.get(m.terminalId)!.onData('une réponse');
+      terminal.spawns.get(m.terminalId)!.onExit(0, null);
+    }
+    const synthId = `council-${run.id}-synth`;
+    await waitUntil(() => terminal.spawns.has(synthId));
+    expect(terminal.spawns.get(synthId)!.args.join('\n')).toContain('French (Français)');
+  });
+
+  it('leaves the prompts untouched when no locale is sent', () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_MEMBERS);
+    const run = runner.startRun('c1', 'topic');
+    for (const m of run.members) {
+      expect(terminal.spawns.get(m.terminalId)!.args.join('\n')).not.toContain(
+        'Write your entire response in',
+      );
+    }
+  });
+
   it('completes the brainstorm flow: capture → clean → attributed synthesis', async () => {
     const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_MEMBERS);

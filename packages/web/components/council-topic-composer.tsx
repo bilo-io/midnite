@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, Mic, MicOff, Pencil, Send } from 'lucide-react';
 import type { CouncilFormat } from '@midnite/shared';
 import { GradientGlow } from '@midnite/ui';
@@ -11,7 +12,7 @@ import {
   ComposerFullscreenToggle,
   useComposerFullscreen,
 } from '@/components/composer-fullscreen';
-import { FORMAT_SELECT_OPTIONS } from '@/lib/council-formats';
+import { useFormatSelectOptions } from '@/lib/council-formats';
 import { useAutoResizeTextarea } from '@/lib/use-auto-resize-textarea';
 import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,8 @@ export function CouncilComposer({
   onSubmit,
   onEditCustom,
 }: Props) {
+  const t = useTranslations('council');
+  const formatOptions = useFormatSelectOptions();
   const [text, setText] = useState('');
   const [format, setFormat] = useState<CouncilFormat>(defaultFormat);
   const [submitting, setSubmitting] = useState(false);
@@ -87,7 +90,7 @@ export function CouncilComposer({
           <ComposerFullscreenToggle full={full} onToggle={toggle} />
           <textarea
             ref={ta.ref}
-            aria-label="Prompt for the council"
+            aria-label={t('composer.label')}
             className="w-full resize-none overflow-y-auto bg-transparent pr-8 text-sm placeholder:text-muted-foreground transition-[height] duration-300 ease-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
             value={displayText}
             disabled={disabled || submitting}
@@ -98,7 +101,7 @@ export function CouncilComposer({
               if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void submit();
             }}
             placeholder={
-              disabled && disabledHint ? disabledHint : 'Ask the council anything · ⌘/Ctrl + ⏎'
+              disabled && disabledHint ? disabledHint : t('composer.placeholder')
             }
           />
           <div className="flex items-center justify-between gap-2">
@@ -108,7 +111,7 @@ export function CouncilComposer({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={speech.listening ? 'Stop dictation' : 'Dictate prompt'}
+                  aria-label={speech.listening ? t('composer.stopDictation') : t('composer.dictate')}
                   aria-pressed={speech.listening}
                   disabled={disabled || submitting}
                   onClick={speech.listening ? speech.stop : speech.start}
@@ -118,9 +121,9 @@ export function CouncilComposer({
                 </Button>
               ) : null}
               <StyledSelect
-                aria-label="Synthesis format"
+                aria-label={t('composer.formatLabel')}
                 className="w-fit shrink-0"
-                options={FORMAT_SELECT_OPTIONS}
+                options={formatOptions}
                 value={format}
                 onChange={setFormat}
                 disabled={disabled || submitting}
@@ -130,8 +133,8 @@ export function CouncilComposer({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label="Edit custom synthesis prompt"
-                  title="Edit the custom synthesis prompt"
+                  aria-label={t('composer.editCustom')}
+                  title={t('composer.editCustomTitle')}
                   disabled={submitting}
                   onClick={onEditCustom}
                   className="h-8 w-8 text-muted-foreground"
@@ -147,7 +150,7 @@ export function CouncilComposer({
               onClick={() => void submit()}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Start
+              {t('composer.start')}
             </Button>
           </div>
         </div>

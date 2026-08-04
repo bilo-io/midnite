@@ -1,27 +1,42 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Clock } from 'lucide-react';
 import type { CouncilRun, CouncilRunStatus, Project } from '@midnite/shared';
 import { ProjectSelect } from '@/components/project-select';
+import { useCouncilRunStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
-/** Exported so other surfaces (e.g. the project cockpit's Docs tab) render the
- *  same run-status pill instead of reinventing the label/colour mapping. */
-export const STATUS_PILL: Record<CouncilRunStatus, { label: string; className: string }> = {
-  running: { label: 'Running', className: 'border-blue-500/40 text-blue-500' },
-  synthesizing: { label: 'Synthesizing', className: 'border-blue-500/40 text-blue-500' },
-  completed: { label: 'Completed', className: 'border-emerald-500/40 text-emerald-600' },
-  failed: { label: 'Failed', className: 'border-destructive/40 text-destructive' },
+/**
+ * Exported so other surfaces (e.g. the project cockpit's Docs tab) render the
+ * same run-status pill instead of reinventing the colour mapping. The *label* is
+ * no longer part of this table (Phase 82 D) — it comes from
+ * {@link useCouncilRunStatusLabel}, so both surfaces read one set of keys.
+ */
+export const STATUS_PILL: Record<CouncilRunStatus, { className: string }> = {
+  running: { className: 'border-blue-500/40 text-blue-500' },
+  synthesizing: { className: 'border-blue-500/40 text-blue-500' },
+  completed: { className: 'border-emerald-500/40 text-emerald-600' },
+  failed: { className: 'border-destructive/40 text-destructive' },
 };
 
-function relativeTime(iso: string): string {
-  const ms = Date.now() - Date.parse(iso);
-  const mins = Math.round(ms / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
+/**
+ * Coarse "how long ago" for a run, translated (Phase 82 D). Deliberately not
+ * `Intl.RelativeTimeFormat`: the buckets here are the product's (just now / m / h
+ * / d), and the ICU messages keep the shape so a locale can reorder or re-word
+ * them (`il y a {count} min`) without touching this arithmetic.
+ */
+export function useRelativeRunTime(): (iso: string) => string {
+  const t = useTranslations('council');
+  return (iso) => {
+    const ms = Date.now() - Date.parse(iso);
+    const mins = Math.round(ms / 60_000);
+    if (mins < 1) return t('thread.justNow');
+    if (mins < 60) return t('thread.minutesAgo', { count: mins });
+    const hours = Math.round(mins / 60);
+    if (hours < 24) return t('thread.hoursAgo', { count: hours });
+    return t('thread.daysAgo', { count: Math.round(hours / 24) });
+  };
 }
 
 type Props = {
@@ -51,6 +66,9 @@ export function CouncilRunThread({
   projects,
   onChangeProject,
 }: Props) {
+  const t = useTranslations('council');
+  const statusLabel = useCouncilRunStatusLabel();
+  const relativeTime = useRelativeRunTime();
   return (
     <aside
       aria-hidden={!open}
@@ -72,13 +90,11 @@ export function CouncilRunThread({
         <div className="flex items-center gap-2">
           <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
-            Thread
+            {t('thread.title')}
           </h2>
         </div>
         {runs.length === 0 ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            No runs yet — submit the first prompt below.
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{t('thread.empty')}</p>
         ) : (
           <div className="mt-2 flex flex-col gap-1.5">
             {runs.map((run) => {
@@ -107,7 +123,7 @@ export function CouncilRunThread({
                           pill.className,
                         )}
                       >
-                        {pill.label}
+                        {statusLabel(run.status)}
                       </span>
                       <span className="text-[11px] tabular-nums text-muted-foreground">
                         {relativeTime(run.startedAt)}

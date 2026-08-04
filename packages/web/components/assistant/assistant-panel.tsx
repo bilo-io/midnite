@@ -22,8 +22,6 @@ type EntryKey = 'docs' | 'guide' | 'chat' | 'agent' | 'report';
 
 type Entry = {
   key: EntryKey;
-  label: string;
-  description: string;
   icon: ComponentType<{ className?: string }>;
   /** Themes E (agent) + F (guide) land later — shown but not yet wired. */
   soon?: boolean;
@@ -31,12 +29,14 @@ type Entry = {
   beta?: boolean;
 };
 
+// Copy lives in the `assistant` catalog under `entries.<key>` (Phase 82 D); the
+// registry itself carries only the key, the glyph and the two state flags.
 const ENTRIES: readonly Entry[] = [
-  { key: 'docs', label: 'Docs', description: "This page's documentation", icon: BookOpen },
-  { key: 'guide', label: 'Guide', description: 'Play this page — or browse all', icon: Compass },
-  { key: 'chat', label: 'Chat', description: 'Change the board in words', icon: MessageSquare, beta: true },
-  { key: 'agent', label: 'Agent', description: 'Ask about your fleet', icon: Sparkles, soon: true },
-  { key: 'report', label: 'Report issue', description: 'Something broken? Tell us', icon: Bug },
+  { key: 'docs', icon: BookOpen },
+  { key: 'guide', icon: Compass },
+  { key: 'chat', icon: MessageSquare, beta: true },
+  { key: 'agent', icon: Sparkles, soon: true },
+  { key: 'report', icon: Bug },
 ];
 
 type Props = {
@@ -116,6 +116,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
 
   // The current route's guide floats to the top of the index.
   const currentGuide = pathname ? resolveGuide(pathname) : null;
+  const t = useTranslations('assistant');
   const tGuide = useTranslations('guide');
   const orderedGuides = [...ALL_GUIDES].sort((a, b) =>
     a.id === currentGuide?.id ? -1 : b.id === currentGuide?.id ? 1 : 0,
@@ -150,7 +151,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
             <button
               type="button"
               onClick={() => onView('menu')}
-              aria-label="Back to assistant menu"
+              aria-label={t('back')}
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -159,12 +160,12 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
             <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden />
           )}
           <h2 id={headingId} className="flex-1 text-sm font-semibold">
-            {view === 'chat' ? 'Chat' : view === 'guides' ? 'Guides' : 'Assistant'}
+            {view === 'chat' ? t('views.chat') : view === 'guides' ? t('views.guides') : t('title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close assistant"
+            aria-label={t('close')}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
             <X className="h-4 w-4" />
@@ -187,16 +188,18 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
                       >
                         <entry.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                         <span className="flex-1">
-                          <span className="block text-sm font-medium">{entry.label}</span>
+                          <span className="block text-sm font-medium">
+                            {t(`entries.${entry.key}.label`)}
+                          </span>
                           <span className="block text-xs text-muted-foreground">
-                            {entry.description}
+                            {t(`entries.${entry.key}.description`)}
                           </span>
                         </span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onView('guides')}
-                        aria-label="Browse all guides"
+                        aria-label={t('guides.browseAll')}
                         className="flex items-center border-l border-border/40 px-2.5 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                       >
                         <ChevronRight className="h-4 w-4" aria-hidden />
@@ -219,17 +222,21 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
                   >
                     <entry.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                     <span className="flex-1">
-                      <span className="block text-sm font-medium">{entry.label}</span>
-                      <span className="block text-xs text-muted-foreground">{entry.description}</span>
+                      <span className="block text-sm font-medium">
+                        {t(`entries.${entry.key}.label`)}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {t(`entries.${entry.key}.description`)}
+                      </span>
                     </span>
                     {entry.beta && (
                       <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
-                        Beta
+                        {t('beta')}
                       </span>
                     )}
                     {entry.soon && (
                       <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Soon
+                        {t('soon')}
                       </span>
                     )}
                   </button>
@@ -254,15 +261,15 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
                       <span className="block text-sm font-medium">{tGuide(guideLabelKey(guide))}</span>
                       <span className="block text-xs text-muted-foreground">
                         {isCurrent
-                          ? 'This page'
-                          : `${guide.steps.length} step${guide.steps.length === 1 ? '' : 's'}`}
+                          ? t('guides.thisPage')
+                          : t('guides.stepCount', { count: guide.steps.length })}
                       </span>
                     </span>
                     {!seen && (
                       <span
                         className="h-2 w-2 shrink-0 rounded-full bg-primary"
-                        aria-label="Not seen yet"
-                        title="Not seen yet"
+                        aria-label={t('guides.notSeen')}
+                        title={t('guides.notSeen')}
                       />
                     )}
                   </button>

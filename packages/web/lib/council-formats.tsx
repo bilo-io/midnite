@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   CloudRain,
   Lightbulb,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { COUNCIL_FORMATS, COUNCIL_FORMATS_META, type CouncilFormat } from '@midnite/shared';
 import type { SelectOption } from '@/components/ui/select';
+import { useCouncilFormatLabels } from '@/lib/council-format-labels';
 
 // `shared` is UI-library-free, so each format carries a string `iconKey`; the web
 // maps it to a concrete lucide icon here. Keep this table in sync with the keys in
@@ -29,13 +31,24 @@ export function formatIcon(format: CouncilFormat): LucideIcon {
   return FORMAT_ICON[COUNCIL_FORMATS_META[format].iconKey] ?? SlidersHorizontal;
 }
 
-/** Format options for a {@link StyledSelect}: value + label + the format's icon. */
-export const FORMAT_SELECT_OPTIONS: ReadonlyArray<SelectOption<CouncilFormat>> =
-  COUNCIL_FORMATS.map((f) => {
-    const Icon = formatIcon(f);
-    return {
-      value: f,
-      label: COUNCIL_FORMATS_META[f].label,
-      icon: <Icon className="h-3.5 w-3.5" />,
-    };
-  });
+/**
+ * Format options for a {@link StyledSelect}: value + translated label + the
+ * format's icon. A hook rather than a module constant (Phase 82 Theme D) because
+ * the label now resolves against the active locale — see
+ * {@link useCouncilFormatLabels} for why the English stays canonical in `shared`.
+ */
+export function useFormatSelectOptions(): ReadonlyArray<SelectOption<CouncilFormat>> {
+  const formats = useCouncilFormatLabels();
+  return useMemo(
+    () =>
+      COUNCIL_FORMATS.map((f) => {
+        const Icon = formatIcon(f);
+        return {
+          value: f,
+          label: formats.label(f),
+          icon: <Icon className="h-3.5 w-3.5" />,
+        };
+      }),
+    [formats],
+  );
+}

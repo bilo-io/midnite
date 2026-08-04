@@ -19,6 +19,28 @@ describe('buildMemberPrompt', () => {
   it('falls back to on-the-merits framing for a blank role', () => {
     expect(buildMemberPrompt('analyse', '   ', 'topic')).toContain('respond on the merits');
   });
+
+  // Phase 82 D — a member's response is generated copy, so the run's locale is
+  // appended as a language directive. At the default locale (and with none at all)
+  // the prompt must be byte-identical to the pre-i18n one, so the framing specs
+  // above keep meaning what they say.
+  it('is unchanged at the default locale and with no locale', () => {
+    const base = buildMemberPrompt('debate', 'role', 'topic');
+    expect(buildMemberPrompt('debate', 'role', 'topic', undefined)).toBe(base);
+    expect(buildMemberPrompt('debate', 'role', 'topic', 'en-GB')).toBe(base);
+  });
+
+  it('appends the language directive for a non-default locale', () => {
+    const out = buildMemberPrompt('debate', 'role', 'topic', 'fr-FR');
+    expect(out).toContain('French (Français)');
+    // A suffix, not a rewrite — the English framing is a prompt, not UI copy.
+    expect(out).toContain('one member of a panel');
+    expect(out.startsWith(buildMemberPrompt('debate', 'role', 'topic'))).toBe(true);
+  });
+
+  it('appends the directive for the brainstorm framing too', () => {
+    expect(buildMemberPrompt('brainstorm', 'role', 'topic', 'de-DE')).toContain('German (Deutsch)');
+  });
 });
 
 const ENTRIES = [

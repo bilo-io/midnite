@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { AgentCliSchema } from './agents.js';
+import { LocaleSchema } from './i18n.js';
 
 // A council is a standing panel of AI members, each responding to a prompt from
 // a fixed *role* via its provider CLI. Submitting a prompt starts a *run*: every
@@ -292,12 +293,22 @@ export const StartCouncilRunRequestSchema = z.object({
   prompt: z.string().trim().min(1).max(20000),
   /** Synthesis format for this run; defaults to the council's defaultFormat. */
   format: CouncilFormatSchema.optional(),
+  /**
+   * The language the members and the synthesizer should answer in (Phase 82 D) —
+   * the caller's *active* UI locale, explicit on the request rather than looked up
+   * server-side. It steers generated prose only; the run's stored `prompt` and the
+   * status vocabulary are untouched. Honoured for a locale whose UI catalog is
+   * still a stub (never clamped to a `complete` one).
+   */
+  locale: LocaleSchema.optional(),
 });
 export type StartCouncilRunRequest = z.infer<typeof StartCouncilRunRequestSchema>;
 
 /** Re-synthesize a finished run's captured responses, optionally switching the format. */
 export const RetryCouncilSynthesisRequestSchema = z.object({
   format: CouncilFormatSchema.optional(),
+  /** Language for the re-synthesis (Phase 82 D) — see StartCouncilRunRequestSchema. */
+  locale: LocaleSchema.optional(),
 });
 export type RetryCouncilSynthesisRequest = z.infer<typeof RetryCouncilSynthesisRequestSchema>;
 
