@@ -6,7 +6,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-08-04 — feat: Phase 82 Theme D — shared chrome primitives i18n 🟢
 
-PR #<PR>. The cross-page primitives — the ones that render on nearly every route, so their leftover English was visible everywhere. `I18N_EXEMPT` 197 → 163.
+PR #596. The cross-page primitives — the ones that render on nearly every route, so their leftover English was visible everywhere. `I18N_EXEMPT` 197 → 163.
 
 - [x] **Only 10 of the 34 files carried copy.** The other 24 were exempt purely because Theme A seeded the whole tree; each was checked against the gate with its exemption stripped, then de-exempted with no code change. The PR says which is which so the 34-file number isn't read as 34 files of work.
 - [x] **Most of the real copy was invisible to the gate.** `i18next/no-literal-string` runs in `jsx-text-only` mode, so it never saw `{count === 1 ? 'item' : 'items'}` in `count-pill` (the `0 items` on every list page, which the council PR's own screenshot had just flagged), the `aria-label`s in `spinner`/`toast`/`selectable-icon`, or the template literal in `status-pills`. Decision §9 predicted this blind spot; this slice is what it looks like in practice. Worth knowing that "the gate is green" ≠ "no English left".
