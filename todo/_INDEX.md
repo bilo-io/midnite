@@ -159,7 +159,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Gate flip & catalog machinery (ESLint allowlist → generated `I18N_EXEMPT` exception list, default-on; catalogs split to `messages/<locale>/<namespace>.json` + generated barrels; progress meter) — runs first (PR #530)
 - ✅ **B** — Board & tasks (cards, task detail, dialogs, bulk bar, toasts; new `task` namespace, exempt 406→384) (PR #533)
 - ✅ **C** — Auth & Settings sweep (register/forgot/invite; every settings subpage; shared error/empty states) (PR #535)
-- 🔄 **D** — Feature areas, per-slice (✅ council+assistant PR #594, 🔄 projects + pr-review + checks-panel *claimed*, ✅ search+palette PR #572 (re-landed #579 after an accidental revert), ✅ dashboard widgets PR #580, ✅ guide PR #581, ✅ roadmap/task-graph/slides/safety PR #582, ✅ memory PR #585, ✅ workflows PR #587, residue → exempt list to zero)
+- 🔄 **D** — Feature areas, per-slice (✅ council+assistant PR #594, 🔄 projects + pr-review + checks-panel *claimed*, 🔄 shared chrome primitives *claimed*, ✅ search+palette PR #572 (re-landed #579 after an accidental revert), ✅ dashboard widgets PR #580, ✅ guide PR #581, ✅ roadmap/task-graph/slides/safety PR #582, ✅ memory PR #585, ✅ workflows PR #587, residue → exempt list to zero)
 - ✅ **E** — Chrome, desktop & office DOM (header, update banners, lock screen labels, title-bar residue, office React UI via new `office` namespace; `ui` default-label propify audit; exempt 293 → 247) (PR #583)
 - ◻ **F** — Close-out (absorb Phase 79's verification, full fr-FR walkthrough + screenshots, exception list at zero)
 
