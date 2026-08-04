@@ -6,7 +6,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-08-04 — feat: Phase 82 Theme D — council + assistant i18n (en-GB + fr-FR) 🟢
 
-PR #593. The councils feature and the assistant FAB — the two surfaces a user reaches from every route — now read from the catalogs. `I18N_EXEMPT` 216 → 197.
+PR #594. The councils feature and the assistant FAB — the two surfaces a user reaches from every route — now read from the catalogs. `I18N_EXEMPT` 216 → 197.
 
 - [x] **Two namespaces, not one** — the phase-doc bullet said `assistant`, but councils is its own nav feature with 15 files of its own, so per decision §8 it got `council` (126 keys) and the FAB/panel/chat/blocks got `assistant` (53). Recorded in the phase doc rather than silently reinterpreted.
 - [x] **19 files migrated** — the 5 assistant files plus the councils list page + view, detail view, card/table/stats/widget, create + custom-format modals, members panel, run tabs, run thread, composer, and `lib/council-formats`. Reused `common.*` for cancel/close/save/add rather than minting council-local duplicates.
