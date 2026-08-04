@@ -106,6 +106,30 @@ describe('Phase 82 D — projects surfaces render fr-FR', () => {
 });
 
 describe('Phase 82 D — pr-review surfaces render fr-FR', () => {
+  it('renders the renamed-path tag message for a moved file', async () => {
+    // `file.renamedPath` is the slice's only tag-bearing message outside the toolbar,
+    // and only a *renamed* file reaches it — so pin it, or a malformed ICU tag would
+    // throw on a path no other test walks.
+    const { DiffFile } = await import('@/components/pr-review/diff-file');
+    const { mapDiffFiles } = await import('@/components/pr-review/diff-model');
+    const [mapped] = mapDiffFiles([
+      {
+        path: 'src/nouveau.ts',
+        oldPath: 'src/ancien.ts',
+        status: 'renamed',
+        additions: 1,
+        deletions: 1,
+        binary: false,
+        hunks: [],
+      },
+    ] as unknown as Parameters<typeof mapDiffFiles>[0]);
+    renderWithIntl(<DiffFile mapped={mapped!} viewType="unified" defaultOpen />, { locale: 'fr-FR' });
+    expect(screen.getByText('src/ancien.ts')).toBeInTheDocument();
+    expect(screen.getByText('Renommé')).toBeInTheDocument();
+    // The open, hunk-less file falls through to the "no textual changes" copy.
+    expect(screen.getByText('Aucune modification textuelle (mode ou métadonnées uniquement).')).toBeInTheDocument();
+  });
+
   it('pluralises pending inline comments in French', async () => {
     const { PrReviewActions } = await import('@/components/pr-review/pr-review-actions');
     const { ToastProvider } = await import('@/components/toast');
