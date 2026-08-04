@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, Columns2, MessageSquare, Rows2, UnfoldVertical, FoldVertical, X, XCircle } from 'lucide-react';
 import { getChangeKey, type ChangeData, type EventMap, type HunkData, type ViewType } from 'react-diff-view';
 import type { PrDiff, PrReviewDraft, Task } from '@midnite/shared';
 import { cn } from '@/lib/utils';
+import { useAiVerdictLabel, type AiReviewVerdict } from '@/lib/i18n-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { createPrDraft, deletePrDraft, listPrDrafts, updatePrDraft } from '@/lib/api';
 import { DiffFile } from './diff-file';
@@ -69,6 +71,7 @@ function keyIndex(hunks: HunkData[]): Map<string, string> {
  * with the Phase 37 AI-review verdict surfaced as a banner.
  */
 export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
+  const t = useTranslations('prReview');
   const [viewType, setViewType] = useLocalStorage<ViewType>(VIEW_TYPE_KEY, 'unified');
   const [expand, setExpand] = useState<ExpandState>('initial');
   const [expandSignal, setExpandSignal] = useState(0);
@@ -150,11 +153,11 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
                 <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 flex-1 whitespace-pre-wrap">{d.body}</span>
                 <button type="button" onClick={() => setEditing(d.id)} className="shrink-0 text-muted-foreground hover:text-foreground">
-                  Edit
+                  {t('viewer.editComment')}
                 </button>
                 <button
                   type="button"
-                  aria-label="Delete comment"
+                  aria-label={t('viewer.deleteComment')}
                   onClick={() => void removeDraft(d.id)}
                   className="shrink-0 text-muted-foreground hover:text-destructive-foreground"
                 >
@@ -180,11 +183,13 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
       {/* Toolbar */}
       <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
         <span className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{diff.files.length}</span> file
-          {diff.files.length === 1 ? '' : 's'} changed
+          {t.rich('viewer.filesChanged', {
+            count: diff.files.length,
+            c: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+          })}
           {' · '}
-          <span className="text-success">+{diff.additions}</span>{' '}
-          <span className="text-destructive-foreground">−{diff.deletions}</span>
+          <span className="text-success">{t('viewer.additions', { count: diff.additions })}</span>{' '}
+          <span className="text-destructive-foreground">{t('viewer.deletions', { count: diff.deletions })}</span>
         </span>
 
         <div className="ml-auto flex items-center gap-1">
@@ -194,15 +199,19 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
             className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
           >
             {expand === 'all' ? <FoldVertical className="h-3.5 w-3.5" /> : <UnfoldVertical className="h-3.5 w-3.5" />}
-            {expand === 'all' ? 'Collapse all' : 'Expand all'}
+            {expand === 'all' ? t('viewer.collapseAll') : t('viewer.expandAll')}
           </button>
 
-          <div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5" role="group" aria-label="Diff layout">
+          <div
+            className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5"
+            role="group"
+            aria-label={t('viewer.layoutGroup')}
+          >
             <button
               type="button"
               onClick={() => setViewType('unified')}
               aria-pressed={viewType === 'unified'}
-              aria-label="Unified view"
+              aria-label={t('viewer.unifiedView')}
               className={cn(
                 'rounded px-1.5 py-1 text-muted-foreground transition-colors hover:text-foreground',
                 viewType === 'unified' && 'bg-background text-foreground shadow-sm',
@@ -214,7 +223,7 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
               type="button"
               onClick={() => setViewType('split')}
               aria-pressed={viewType === 'split'}
-              aria-label="Split view"
+              aria-label={t('viewer.splitView')}
               className={cn(
                 'rounded px-1.5 py-1 text-muted-foreground transition-colors hover:text-foreground',
                 viewType === 'split' && 'bg-background text-foreground shadow-sm',
@@ -230,8 +239,7 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
 
       {diff.truncated ? (
         <div className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-300">
-          Diff truncated to fit — {diff.hiddenFileCount} file
-          {diff.hiddenFileCount === 1 ? '' : 's'} not shown. Open the PR on GitHub to see everything.
+          {t('viewer.truncated', { count: diff.hiddenFileCount })}
         </div>
       ) : null}
 
@@ -242,7 +250,7 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
 
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3">
           {mapped.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No files in this diff.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">{t('viewer.noFiles')}</p>
           ) : (
             <div className="space-y-3">
               {mapped.map((m, i) => (
@@ -272,19 +280,21 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
   );
 }
 
-const AI_VERDICT: Record<'approved' | 'commented' | 'changes-requested', { label: string; cls: string; Icon: typeof Check }> = {
-  approved: { label: 'AI: LGTM', cls: 'border-success/40 bg-success/10 text-success', Icon: Check },
+/** Per-verdict banner styling; the label itself comes from the `prReview` catalog. */
+const AI_VERDICT: Record<AiReviewVerdict, { cls: string; Icon: typeof Check }> = {
+  approved: { cls: 'border-success/40 bg-success/10 text-success', Icon: Check },
   'changes-requested': {
-    label: 'AI: changes requested',
     cls: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
     Icon: XCircle,
   },
-  commented: { label: 'AI: reviewed', cls: 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300', Icon: MessageSquare },
+  commented: { cls: 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300', Icon: MessageSquare },
 };
 
 /** Phase 52 D — the task's Phase 37 AI-review verdict + summary, atop the diff. */
 function AiReviewBanner({ review }: { review: NonNullable<PrDiff['aiReview']> }) {
-  const { label, cls, Icon } = AI_VERDICT[review.verdict];
+  const verdictLabel = useAiVerdictLabel();
+  const { cls, Icon } = AI_VERDICT[review.verdict];
+  const label = verdictLabel(review.verdict);
   return (
     <div className={cn('flex items-start gap-2 border-b px-3 py-2 text-xs', cls)}>
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -306,6 +316,7 @@ function InlineComposer({
   onCancel: () => void;
   initial?: string;
 }) {
+  const t = useTranslations('prReview');
   const [body, setBody] = useState(initial);
   return (
     <div className="border-y border-border/60 bg-muted/30 px-3 py-2">
@@ -313,13 +324,13 @@ function InlineComposer({
         autoFocus
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="Add an inline comment…"
+        placeholder={t('composer.placeholder')}
         rows={2}
         className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
       <div className="mt-1 flex justify-end gap-1.5">
         <button type="button" onClick={onCancel} className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
-          Cancel
+          {t('composer.cancel')}
         </button>
         <button
           type="button"
@@ -327,7 +338,7 @@ function InlineComposer({
           disabled={!body.trim()}
           className="rounded bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-50"
         >
-          Save comment
+          {t('composer.save')}
         </button>
       </div>
     </div>

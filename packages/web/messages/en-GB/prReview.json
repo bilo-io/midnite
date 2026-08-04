@@ -1,0 +1,113 @@
+{
+  "panel": {
+    "loading": "Loading diff…",
+    "loadFailed": "Couldn't load the diff: {message}",
+    "loadFailedFallback": "Failed to load the diff",
+    "retry": "Retry",
+    "openOnGithub": "Open on GitHub"
+  },
+  "modal": {
+    "title": "Review changes",
+    "ariaLabel": "Pull request diff",
+    "openPr": "Open PR",
+    "close": "Close"
+  },
+  "viewer": {
+    "filesChanged": "{count, plural, one {<c>{count}</c> file changed} other {<c>{count}</c> files changed}}",
+    "additions": "+{count}",
+    "deletions": "−{count}",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
+    "layoutGroup": "Diff layout",
+    "unifiedView": "Unified view",
+    "splitView": "Split view",
+    "truncated": "Diff truncated to fit — {count, plural, one {# file} other {# files}} not shown. Open the PR on GitHub to see everything.",
+    "noFiles": "No files in this diff.",
+    "editComment": "Edit",
+    "deleteComment": "Delete comment"
+  },
+  "composer": {
+    "placeholder": "Add an inline comment…",
+    "cancel": "Cancel",
+    "save": "Save comment"
+  },
+  "aiVerdict": {
+    "approved": "AI: LGTM",
+    "changes-requested": "AI: changes requested",
+    "commented": "AI: reviewed"
+  },
+  "events": {
+    "approve": "Approve",
+    "request-changes": "Request changes",
+    "comment": "Comment"
+  },
+  "mergeMethods": {
+    "squash": "squash",
+    "merge": "merge",
+    "rebase": "rebase"
+  },
+  "actions": {
+    "eventGroup": "Review event",
+    "pendingComments": "{count, plural, one {# inline comment pending} other {# inline comments pending}}",
+    "mergeMethod": "Merge method",
+    "merge": "Merge",
+    "mergeConfirmTitle": "Merge this PR ({method})?",
+    "mergeConfirmDescription": "Merges on GitHub, honouring branch protection. This cannot be undone from midnite.",
+    "submitReview": "Submit review",
+    "approvalNotePlaceholder": "Optional approval note…",
+    "commentPlaceholder": "Leave a review comment…",
+    "toastApproved": "PR approved",
+    "toastChangesRequested": "Changes requested",
+    "toastSubmitted": "Review submitted",
+    "toastMerged": "PR merged",
+    "requestFailed": "GitHub request failed"
+  },
+  "diffStatus": {
+    "add": "Added",
+    "delete": "Deleted",
+    "modify": "Modified",
+    "rename": "Renamed",
+    "copy": "Copied"
+  },
+  "file": {
+    "renamedPath": "<old>{oldPath}</old> → {path}",
+    "binary": "Binary file — not shown.",
+    "noTextualChanges": "No textual changes (mode or metadata only)."
+  },
+  "tree": {
+    "files": "{count, plural, one {# file} other {# files}}",
+    "layoutGroup": "File list layout",
+    "treeView": "Tree view",
+    "listView": "Flat list view",
+    "hiddenFiles": "{count, plural, one {# file hidden (diff truncated)} other {# files hidden (diff truncated)}}"
+  },
+  "checks": {
+    "title": "Quality gate",
+    "rerun": "Re-run checks",
+    "running": "Running…",
+    "loading": "Loading checks…",
+    "loadFailed": "Failed to load checks",
+    "runFailed": "Failed to run checks",
+    "notConfigured": "Checks are not configured for this task — nothing to run.",
+    "empty": "No checks have been run for this task yet.",
+    "latestRun": "Latest run",
+    "olderRuns": "{count, plural, one {# older run} other {# older runs}}",
+    "noResults": "No individual checks recorded.",
+    "passed": "Passed",
+    "failed": "Failed",
+    "exitCode": "exit {code}",
+    "hideOutput": "hide",
+    "showOutput": "output",
+    "triggers": {
+      "gate": "Gate",
+      "manual": "Manual",
+      "auto-fix": "Auto-fix"
+    },
+    "duration": {
+      "ms": "{value}ms",
+      "seconds": "{value}s",
+      "minutes": "{value}m",
+      "minutesSeconds": "{minutes}m {seconds}s"
+    }
+  }
+}

@@ -1,24 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, GitMerge, MessageSquare, XCircle } from 'lucide-react';
 import type { PrMergeMethod, PrReviewComment, PrReviewEvent, Task } from '@midnite/shared';
 import { mergePr, submitPrReview } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
 import { useToast } from '@/components/toast';
+import { useMergeMethodLabel, useReviewEventLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
-const EVENTS: { value: PrReviewEvent; label: string; Icon: typeof Check }[] = [
-  { value: 'approve', label: 'Approve', Icon: Check },
-  { value: 'request-changes', label: 'Request changes', Icon: XCircle },
-  { value: 'comment', label: 'Comment', Icon: MessageSquare },
+const EVENTS: { value: PrReviewEvent; Icon: typeof Check }[] = [
+  { value: 'approve', Icon: Check },
+  { value: 'request-changes', Icon: XCircle },
+  { value: 'comment', Icon: MessageSquare },
 ];
 const METHODS: PrMergeMethod[] = ['squash', 'merge', 'rebase'];
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'GitHub request failed';
-}
 
 type Props = {
   taskId: string;
@@ -36,6 +34,9 @@ type Props = {
  * refusal (branch protection, unmergeable) surfaces as a toast.
  */
 export function PrReviewActions({ taskId, comments, onClearComments, onDone }: Props) {
+  const t = useTranslations('prReview');
+  const eventLabel = useReviewEventLabel();
+  const mergeMethodLabel = useMergeMethodLabel();
   const confirm = useConfirm();
   const toast = useToast();
   const [event, setEvent] = useState<PrReviewEvent>('comment');
@@ -45,13 +46,19 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
 
   const canSubmit = event === 'approve' || body.trim().length > 0 || comments.length > 0;
 
+  const errMsg = (e: unknown): string => (e instanceof Error ? e.message : t('actions.requestFailed'));
+
   const submit = async () => {
     setBusy('review');
     try {
       // Inline comments are the task's persisted drafts (server-sourced) — send only event + body.
       const task = await submitPrReview(taskId, { event, body: body.trim() || undefined });
       toast.success(
-        event === 'approve' ? 'PR approved' : event === 'request-changes' ? 'Changes requested' : 'Review submitted',
+        event === 'approve'
+          ? t('actions.toastApproved')
+          : event === 'request-changes'
+            ? t('actions.toastChangesRequested')
+            : t('actions.toastSubmitted'),
       );
       setBody('');
       onClearComments();
@@ -65,15 +72,15 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
 
   const merge = async () => {
     const ok = await confirm({
-      title: `Merge this PR (${method})?`,
-      description: 'Merges on GitHub, honoring branch protection. This cannot be undone from midnite.',
-      confirmLabel: 'Merge',
+      title: t('actions.mergeConfirmTitle', { method: mergeMethodLabel(method) }),
+      description: t('actions.mergeConfirmDescription'),
+      confirmLabel: t('actions.merge'),
     });
     if (!ok) return;
     setBusy('merge');
     try {
       const task = await mergePr(taskId, method);
-      toast.success('PR merged');
+      toast.success(t('actions.toastMerged'));
       onDone(task);
     } catch (e) {
       toast.error(errMsg(e));
@@ -85,8 +92,12 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
   return (
     <div className="space-y-2 border-t border-border/60 bg-muted/20 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5" role="group" aria-label="Review event">
-          {EVENTS.map(({ value, label, Icon }) => (
+        <div
+          className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5"
+          role="group"
+          aria-label={t('actions.eventGroup')}
+        >
+          {EVENTS.map(({ value, Icon }) => (
             <button
               key={value}
               type="button"
@@ -98,25 +109,25 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
               )}
             >
               <Icon className="h-3.5 w-3.5" />
-              {label}
+              {eventLabel(value)}
             </button>
           ))}
         </div>
         {comments.length > 0 ? (
           <span className="text-[11px] text-muted-foreground">
-            {comments.length} inline comment{comments.length === 1 ? '' : 's'} pending
+            {t('actions.pendingComments', { count: comments.length })}
           </span>
         ) : null}
         <div className="ml-auto flex items-center gap-1.5">
           <select
-            aria-label="Merge method"
+            aria-label={t('actions.mergeMethod')}
             value={method}
             onChange={(e) => setMethod(e.target.value as PrMergeMethod)}
             className="h-8 rounded-md border border-border bg-background px-2 text-xs"
           >
             {METHODS.map((m) => (
               <option key={m} value={m}>
-                {m}
+                {mergeMethodLabel(m)}
               </option>
             ))}
           </select>
@@ -128,7 +139,7 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
             onClick={() => void merge()}
             className="h-8 gap-1.5"
           >
-            <GitMerge className="h-3.5 w-3.5" /> Merge
+            <GitMerge className="h-3.5 w-3.5" /> {t('actions.merge')}
           </Button>
         </div>
       </div>
@@ -136,7 +147,9 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder={event === 'approve' ? 'Optional approval note…' : 'Leave a review comment…'}
+        placeholder={
+          event === 'approve' ? t('actions.approvalNotePlaceholder') : t('actions.commentPlaceholder')
+        }
         rows={2}
         className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
@@ -149,7 +162,7 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
           onClick={() => void submit()}
           className="h-8 gap-1.5"
         >
-          <Check className="h-3.5 w-3.5" /> Submit review
+          <Check className="h-3.5 w-3.5" /> {t('actions.submitReview')}
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import type { PrDiff } from '@midnite/shared';
 import { GithubIcon } from '@midnite/ui';
@@ -16,11 +17,12 @@ type Props = {
 
 type State =
   | { phase: 'loading' }
-  | { phase: 'error'; message: string }
+  | { phase: 'error'; message: string | null }
   | { phase: 'ready'; diff: PrDiff };
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Failed to load the diff';
+/** The thrown message, or `null` for "use the translated fallback". */
+function errMsg(e: unknown): string | null {
+  return e instanceof Error ? e.message : null;
 }
 
 /**
@@ -30,6 +32,7 @@ function errMsg(e: unknown): string {
  * Review tab (Phase 52 Theme E). Fills its container (`h-full`).
  */
 export function PrReviewPanel({ taskId, prUrl }: Props) {
+  const t = useTranslations('prReview');
   const [state, setState] = useState<State>({ phase: 'loading' });
 
   const load = useCallback(
@@ -55,7 +58,7 @@ export function PrReviewPanel({ taskId, prUrl }: Props) {
   if (state.phase === 'loading') {
     return (
       <div className="flex h-full min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading diff…
+        <Loader2 className="h-4 w-4 animate-spin" /> {t('panel.loading')}
       </div>
     );
   }
@@ -64,10 +67,12 @@ export function PrReviewPanel({ taskId, prUrl }: Props) {
     return (
       <div className="flex h-full min-h-40 flex-col items-center justify-center gap-3 px-6 text-center">
         <AlertTriangle className="h-6 w-6 text-amber-500" />
-        <p className="text-sm text-muted-foreground">Couldn&apos;t load the diff: {state.message}</p>
+        <p className="text-sm text-muted-foreground">
+          {t('panel.loadFailed', { message: state.message ?? t('panel.loadFailedFallback') })}
+        </p>
         <div className="flex items-center gap-2">
           <Button type="button" variant="secondary" size="sm" onClick={() => load()}>
-            Retry
+            {t('panel.retry')}
           </Button>
           <a
             href={prUrl}
@@ -75,7 +80,7 @@ export function PrReviewPanel({ taskId, prUrl }: Props) {
             rel="noreferrer"
             className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
           >
-            Open on GitHub <GithubIcon className="h-3 w-3" />
+            {t('panel.openOnGithub')} <GithubIcon className="h-3 w-3" />
           </a>
         </div>
       </div>

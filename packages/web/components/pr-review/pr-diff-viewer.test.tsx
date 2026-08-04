@@ -1,8 +1,13 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { PrDiff } from '@midnite/shared';
+import { withLocale } from '@/lib/test-locale-wrapper';
 import { PrDiffViewer } from './pr-diff-viewer';
 import { fileKey } from './diff-model';
+
+/** The viewer reads the `prReview` catalog (Phase 82 D) — mount the provider. */
+const render = (ui: ReactElement) => rtlRender(withLocale(ui));
 
 function makeDiff(overrides: Partial<PrDiff> = {}): PrDiff {
   return {
