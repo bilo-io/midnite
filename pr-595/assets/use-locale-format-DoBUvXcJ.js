@@ -1,0 +1,1 @@
+import{e as a}from"./index-Ddc5NNOG.js";import{aH as i}from"./iframe-CgkUxXSp.js";function u(){const t=a(),m=i(),r=Intl.DateTimeFormat().resolvedOptions().timeZone;return{locale:m,number:(e,o)=>t.number(e,o),money:(e,o,n)=>t.number(e,{style:"currency",currency:o,...n}),dateTime:(e,o)=>t.dateTime(e,{timeZone:r,...o})}}export{u};
