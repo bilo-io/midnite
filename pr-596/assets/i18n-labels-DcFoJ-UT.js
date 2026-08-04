@@ -1,1 +1,0 @@
-import{b1 as t}from"./iframe-Dbv8GeUC.js";function o(){const n=t("board");return s=>n(`columns.${s}`)}function e(){const n=t("board");return s=>n(`kinds.${s}`)}function r(){const n=t("board");return s=>n(`waitReasons.${s}`)}function u(){const n=t("board");return s=>n(`heldReasons.${s}`)}export{e as a,o as b,r as c,u};
