@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Repo, Status, Task, TaskSummary } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
@@ -34,10 +35,7 @@ const VIEW_STORAGE_KEY = 'midnite.projects.view';
 const TEMPLATES_STORAGE_KEY = 'midnite.templates';
 
 type Tab = 'projects' | 'templates';
-const TABS: readonly { value: Tab; label: string }[] = [
-  { value: 'projects', label: 'Projects' },
-  { value: 'templates', label: 'Templates' },
-];
+const TABS: readonly Tab[] = ['projects', 'templates'];
 
 export function ProjectsView({
   initial,
@@ -50,6 +48,9 @@ export function ProjectsView({
   repos?: Repo[];
   memories?: Memory[];
 }) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
+  const tBoard = useTranslations('board');
   const toast = useToast();
   const [view, setView] = useState<View>('grid');
   const [tab, setTab] = useState<Tab>('projects');
@@ -138,16 +139,16 @@ export function ProjectsView({
   );
 
   const newTemplate = useCallback(() => {
-    const t = createBlankTemplate();
+    const created = createBlankTemplate(t('templates.editor.untitled'));
     setTemplates((prev) => {
-      const next = [t, ...prev];
+      const next = [created, ...prev];
       persistTemplates(next);
       return next;
     });
     // Open it for editing: the modal in card views, an expanded row in the table.
-    if (view === 'table') setExpandTemplateId(t.id);
-    else setOpenTemplateId(t.id);
-  }, [persistTemplates, view]);
+    if (view === 'table') setExpandTemplateId(created.id);
+    else setOpenTemplateId(created.id);
+  }, [persistTemplates, view, t]);
 
   const refresh = useCallback(() => invalidateData(), []);
 
@@ -184,28 +185,28 @@ export function ProjectsView({
   const deleteSelection = useCallback(async () => {
     if (selectedIds.length === 0) return;
     const ok = await confirm({
-      title: `Delete ${selectedIds.length} project${selectedIds.length === 1 ? '' : 's'}?`,
-      description: 'Their tasks are kept but become unassigned. This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('bulk.deleteConfirmTitle', { count: selectedIds.length }),
+      description: t('bulk.deleteConfirmDescription'),
+      confirmLabel: tCommon('delete'),
     });
     if (!ok) return;
     await Promise.all(selectedIds.map((id) => deleteProject(id)));
     clearSelection();
     refresh();
-  }, [selectedIds, confirm, clearSelection, refresh]);
+  }, [selectedIds, confirm, clearSelection, refresh, t, tCommon]);
 
   const deleteOneProject = useCallback(
     async (project: Project) => {
       const ok = await confirm({
-        title: `Delete “${project.name}”?`,
-        description: 'Its tasks are kept but become unassigned. This cannot be undone.',
-        confirmLabel: 'Delete',
+        title: t('bulk.deleteOneTitle', { name: project.name }),
+        description: t('bulk.deleteOneDescription'),
+        confirmLabel: tCommon('delete'),
       });
       if (!ok) return;
       await deleteProject(project.id);
       refresh();
     },
-    [confirm, refresh],
+    [confirm, refresh, t, tCommon],
   );
 
   const bulkActions = useMemo<BulkAction[]>(() => {
@@ -215,7 +216,7 @@ export function ProjectsView({
     if (toArchive.length) {
       actions.push({
         key: 'archive',
-        label: 'Archive',
+        label: t('bulk.archive'),
         color: BULK_COLORS.archive,
         onClick: () => void setArchivedFor(toArchive, true),
       });
@@ -223,19 +224,19 @@ export function ProjectsView({
     if (toUnarchive.length) {
       actions.push({
         key: 'unarchive',
-        label: 'Unarchive',
+        label: t('bulk.unarchive'),
         color: BULK_COLORS.archive,
         onClick: () => void setArchivedFor(toUnarchive, false),
       });
     }
     actions.push({
       key: 'delete',
-      label: 'Delete',
+      label: t('bulk.delete'),
       color: BULK_COLORS.delete,
       onClick: () => void deleteSelection(),
     });
     return actions;
-  }, [selectedProjects, setArchivedFor, deleteSelection]);
+  }, [selectedProjects, setArchivedFor, deleteSelection, t]);
 
   const closeModal = useCallback(() => setCreating(false), []);
 
@@ -281,32 +282,32 @@ export function ProjectsView({
         <div className="flex items-center gap-3">
           <CountPill count={count} />
           <div className="flex items-center gap-1.5">
-            {TABS.map((t) => (
+            {TABS.map((value) => (
               <button
-                key={t.value}
+                key={value}
                 type="button"
-                onClick={() => setTab(t.value)}
-                aria-pressed={tab === t.value}
+                onClick={() => setTab(value)}
+                aria-pressed={tab === value}
                 className={cn(
                   'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                  tab === t.value
+                  tab === value
                     ? 'border-foreground/20 bg-accent text-accent-foreground'
                     : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                 )}
               >
-                {t.label}
+                {t(`list.tabs.${value}`)}
               </button>
             ))}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <SearchBar placeholder="Search projects" />
+          <SearchBar placeholder={tCommon('searchProjects')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="List view"
+              aria-label={t('list.listView')}
               aria-pressed={view === 'list'}
               onClick={() => onSetView('list')}
               className={cn('h-7 w-7', view === 'list' && 'bg-accent text-accent-foreground')}
@@ -317,7 +318,7 @@ export function ProjectsView({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Grid view"
+              aria-label={t('list.gridView')}
               aria-pressed={view === 'grid'}
               onClick={() => onSetView('grid')}
               className={cn('h-7 w-7', view === 'grid' && 'bg-accent text-accent-foreground')}
@@ -328,7 +329,7 @@ export function ProjectsView({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Tree view"
+              aria-label={t('list.treeView')}
               aria-pressed={view === 'table'}
               onClick={() => onSetView('table')}
               className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
@@ -339,12 +340,12 @@ export function ProjectsView({
           {tab === 'projects' ? (
             <Button type="button" size="sm" onClick={() => setCreating(true)} data-tour="projects-new">
               <Plus className="h-4 w-4" />
-              New project
+              {tCommon('newProject')}
             </Button>
           ) : (
             <Button type="button" size="sm" onClick={newTemplate}>
               <Plus className="h-4 w-4" />
-              New template
+              {t('list.newTemplate')}
             </Button>
           )}
         </div>
@@ -359,13 +360,13 @@ export function ProjectsView({
           templates.length === 0 ? (
             <EmptyState
               Icon={FileText}
-              title="No templates yet"
-              description="Create one to draft plans and specs from a reusable document."
-              actionLabel="New template"
+              title={t('list.emptyTemplatesTitle')}
+              description={t('list.emptyTemplatesDescription')}
+              actionLabel={t('list.newTemplate')}
               onAction={newTemplate}
             />
           ) : filteredTemplates.length === 0 ? (
-            <EmptyState Icon={FileText} title={`No templates match “${q}”`} />
+            <EmptyState Icon={FileText} title={t('list.noTemplatesMatch', { query: q })} />
           ) : view === 'table' ? (
             <TemplatesTable
               templates={filteredTemplates}
@@ -399,13 +400,13 @@ export function ProjectsView({
         ) : initial.length === 0 ? (
           <EmptyState
             Icon={Folder}
-            title="No projects yet"
-            description="Create one to group tasks, attach sources, and draft a plan."
-            actionLabel="New project"
+            title={t('list.emptyProjectsTitle')}
+            description={t('list.emptyProjectsDescription')}
+            actionLabel={tCommon('newProject')}
             onAction={() => setCreating(true)}
           />
         ) : filtered.length === 0 ? (
-          <EmptyState Icon={Folder} title={`No projects match “${q}”`} />
+          <EmptyState Icon={Folder} title={t('list.noProjectsMatch', { query: q })} />
         ) : view === 'table' ? (
           <ProjectsTree
             projects={filtered}
@@ -486,11 +487,11 @@ export function ProjectsView({
           defaultProjectId={newTask.projectId}
           defaultStatus={newTask.status}
           onCreated={() => {
-            toast.success('Task created');
+            toast.success(tBoard('toasts.taskCreated'));
             invalidateData();
           }}
           onBulkCreated={({ counts }) => {
-            if (counts.created > 0) toast.success(`${counts.created} tasks created`);
+            if (counts.created > 0) toast.success(tBoard('toasts.tasksCreated', { count: counts.created }));
             invalidateData();
           }}
           onClose={() => setNewTask(null)}

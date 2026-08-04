@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import type { RepoStatusResponse } from '@midnite/shared';
 
 const getRepoStatus = vi.fn();
@@ -11,6 +12,10 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { ProjectRepoStatus } from './project-repo-status';
+import { withLocale } from '@/lib/test-locale-wrapper';
+
+/** These components read the i18n catalog (Phase 82 D) — mount the locale provider. */
+const render = (ui: ReactElement) => rtlRender(withLocale(ui));
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -97,6 +97,26 @@ export function useCouncilMemberStatusLabel(): (status: CouncilMemberRunStatus) 
 }
 
 /**
+ * A coarse "time ago" label (Phase 82 Theme D). The English original is
+ * [`relativeTime()`](./utils.ts) — a pure helper that can't reach the catalog, still
+ * called from the not-yet-migrated tail. This is its translated counterpart: same
+ * thresholds and same terse shape, but locale-aware (`5m ago` → `il y a 5 min`).
+ * Prefer it in any migrated surface; keys live in `common.relativeTime.*`.
+ */
+export function useRelativeTimeLabel(): (input: string | number) => string {
+  const t = useTranslations('common');
+  return (input) => {
+    const ms = typeof input === 'number' ? input : new Date(input).getTime();
+    const diff = Date.now() - ms;
+    if (!Number.isFinite(diff)) return '';
+    if (diff < 60_000) return t('relativeTime.justNow');
+    if (diff < 3_600_000) return t('relativeTime.minutesAgo', { count: Math.floor(diff / 60_000) });
+    if (diff < 86_400_000) return t('relativeTime.hoursAgo', { count: Math.floor(diff / 3_600_000) });
+    return t('relativeTime.daysAgo', { count: Math.floor(diff / 86_400_000) });
+  };
+}
+
+/**
  * The projects domain (Phase 82 Theme D). `PROJECT_REQUIREMENTS` in
  * `@midnite/shared` is the canonical machine list; the reader-facing wording for
  * each missing requirement lives in the `projects` catalog so the status badge and

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, Copy, Save, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,8 @@ type Props = {
  * document can be copied out to seed a project plan.
  */
 export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const [name, setName] = useState(template.name);
   const [description, setDescription] = useState(template.description);
   const [tag, setTag] = useState(template.tag);
@@ -64,31 +67,31 @@ export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`${template.name} template`}
+          aria-label={t('templates.editor.dialogAria', { name: template.name })}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
-            <ProjectTag tag={tag.trim() || 'tag'} color={color} />
+            <ProjectTag tag={tag.trim() || t('templates.editor.fallbackTag')} color={color} />
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              aria-label="Template title"
-              placeholder="Untitled template"
+              aria-label={t('templates.editor.titleAria')}
+              placeholder={t('templates.editor.untitled')}
               className="h-8 flex-1 border-transparent bg-transparent px-1.5 text-sm font-semibold hover:border-border/60 focus-visible:border-foreground/20"
             />
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Description</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('templates.editor.description')}</span>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What this template is for…"
+                placeholder={t('templates.editor.descriptionPlaceholder')}
               />
             </label>
             <TagColorPicker
@@ -97,14 +100,14 @@ export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
               onTagChange={setTag}
               onColorChange={setColor}
               label={
-                <span className="text-xs font-medium text-muted-foreground">Tag &amp; color</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('templates.editor.tagAndColour')}</span>
               }
             />
             <MarkdownEditor
               value={content}
               onChange={setContent}
               minHeight={320}
-              label={<span className="text-xs font-medium text-muted-foreground">Document</span>}
+              label={<span className="text-xs font-medium text-muted-foreground">{t('templates.editor.document')}</span>}
             />
           </div>
 
@@ -117,16 +120,16 @@ export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
-              Delete
+              {tCommon('delete')}
             </Button>
             <div className="flex items-center gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => void copy()}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'Copied' : 'Copy markdown'}
+                {copied ? t('templates.editor.copied') : t('templates.editor.copyMarkdown')}
               </Button>
               <Button type="button" size="sm" onClick={save} disabled={!dirty && !saved}>
                 {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-                {saved ? 'Saved' : 'Save'}
+                {saved ? t('templates.editor.saved') : tCommon('save')}
               </Button>
             </div>
           </footer>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ChevronsUpDown, FolderKanban } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ProjectModal } from '@/components/project-modal';
@@ -9,18 +10,11 @@ import { ProjectProgressBar } from '@/components/project-progress';
 import { invalidateData } from '@/lib/data-refresh';
 import { ProjectTag } from '@/components/project-tag';
 import { StatusDonut, statusCounts } from '@/components/status-donut';
+import { useRelativeTimeLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 import { taskModalHref } from '@/lib/task-route';
 
 export const RECENT_LIMIT = 3;
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 60_000) return 'just now';
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return `${Math.floor(diff / 86_400_000)}d ago`;
-}
 
 interface ProjectCardProps {
   /** The project to show. Undefined → render the empty "choose a project" state. */
@@ -42,13 +36,14 @@ function ProjectPicker({
   selectedId: string | null;
   onSelect: (projectId: string) => void;
 }) {
+  const t = useTranslations('projects');
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Choose project"
+        aria-label={t('card.chooseProject')}
         className="flex h-6 w-6 items-center justify-center rounded-md bg-background/70 text-muted-foreground backdrop-blur transition-colors hover:bg-accent hover:text-foreground"
       >
         <ChevronsUpDown className="h-3.5 w-3.5" />
@@ -58,7 +53,7 @@ function ProjectPicker({
           <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
           <div className="absolute right-0 z-50 mt-1 max-h-60 w-48 overflow-auto rounded-md border bg-popover p-1 shadow-md">
             {projects.length === 0 ? (
-              <p className="px-2 py-1.5 text-xs text-muted-foreground">No projects</p>
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('card.noProjects')}</p>
             ) : (
               projects.map((p) => (
                 <button
@@ -86,6 +81,9 @@ function ProjectPicker({
 }
 
 export function ProjectCard({ project, tasks, projects, onSelectProject }: ProjectCardProps) {
+  const t = useTranslations('projects');
+  const statusLabel = useStatusLabel();
+  const relativeTime = useRelativeTimeLabel();
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -120,7 +118,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed surface-glass p-4 text-center">
         <FolderKanban className="h-5 w-5 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">No project selected</p>
+        <p className="text-xs text-muted-foreground">{t('card.noProjectSelected')}</p>
         {picker}
       </div>
     );
@@ -154,7 +152,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
             {project.description ? (
               <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p>
             ) : (
-              <p className="text-xs italic text-muted-foreground">No description</p>
+              <p className="text-xs italic text-muted-foreground">{t('card.noDescription')}</p>
             )}
           </div>
           <StatusDonut counts={counts} total={total} />
@@ -165,20 +163,20 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
             {legend.map((c) => (
               <span key={c.status} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: `hsl(var(${c.hueVar}))` }} />
-                {c.label}
+                {statusLabel(c.status)}
                 <span className="tabular-nums text-foreground">{c.count}</span>
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-[11px] text-muted-foreground">No tasks yet</p>
+          <p className="text-[11px] text-muted-foreground">{t('card.noTasksYet')}</p>
         )}
 
         <ProjectProgressBar done={doneCount} total={total} hideLabel />
 
         <div className="mt-auto flex items-center justify-end gap-2 border-t border-border/40 pt-2">
           <span className="text-[11px] tabular-nums text-muted-foreground">
-            Updated {relativeTime(project.updatedAt)}
+            {t('card.updated', { time: relativeTime(project.updatedAt) })}
           </span>
         </div>
       </button>
@@ -197,6 +195,9 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
 }
 
 export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks: TaskSummary[] }) {
+  const t = useTranslations('projects');
+  const statusLabel = useStatusLabel();
+  const relativeTime = useRelativeTimeLabel();
   const router = useRouter();
   const [editProject, setEditProject] = useState<Project | null>(null);
 
@@ -220,7 +221,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
 
   return (
     <section className="space-y-3">
-      <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Project</h2>
+      <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('widget.recentHeading')}</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {recent.map((project) => {
           const counts = statusCounts(countsByProject.get(project.id) ?? new Map());
@@ -241,7 +242,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className="w-fit"><ProjectTag tag={project.tag} color={project.color} /></span>
                   <span className="line-clamp-1 text-sm font-semibold leading-snug">{project.name}</span>
-                  {project.description ? <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p> : <p className="text-xs italic text-muted-foreground">No description</p>}
+                  {project.description ? <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p> : <p className="text-xs italic text-muted-foreground">{t('card.noDescription')}</p>}
                 </div>
                 <StatusDonut counts={counts} total={total} />
               </div>
@@ -250,14 +251,14 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
                   {legend.map((c) => (
                     <span key={c.status} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                       <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: `hsl(var(${c.hueVar}))` }} />
-                      {c.label}<span className="tabular-nums text-foreground">{c.count}</span>
+                      {statusLabel(c.status)}<span className="tabular-nums text-foreground">{c.count}</span>
                     </span>
                   ))}
                 </div>
-              ) : <p className="text-[11px] text-muted-foreground">No tasks yet</p>}
+              ) : <p className="text-[11px] text-muted-foreground">{t('card.noTasksYet')}</p>}
               <ProjectProgressBar done={doneCount} total={total} hideLabel />
               <div className="mt-auto flex items-center justify-end gap-2 border-t border-border/40 pt-3">
-                <span className="text-[11px] tabular-nums text-muted-foreground">Updated {relativeTime(project.updatedAt)}</span>
+                <span className="text-[11px] tabular-nums text-muted-foreground">{t('card.updated', { time: relativeTime(project.updatedAt) })}</span>
               </div>
             </button>
           );

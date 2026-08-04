@@ -1,0 +1,225 @@
+{
+  "page": {
+    "title": "Projects",
+    "description": "Group related work, attach sources, and draft a plan that becomes tasks."
+  },
+  "list": {
+    "tabs": {
+      "projects": "Projects",
+      "templates": "Templates"
+    },
+    "listView": "List view",
+    "gridView": "Grid view",
+    "treeView": "Tree view",
+    "newTemplate": "New template",
+    "emptyProjectsTitle": "No projects yet",
+    "emptyProjectsDescription": "Create one to group tasks, attach sources, and draft a plan.",
+    "emptyTemplatesTitle": "No templates yet",
+    "emptyTemplatesDescription": "Create one to draft plans and specs from a reusable document.",
+    "noProjectsMatch": "No projects match “{query}”",
+    "noTemplatesMatch": "No templates match “{query}”"
+  },
+  "bulk": {
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "deleteConfirmTitle": "{count, plural, one {Delete # project?} other {Delete # projects?}}",
+    "deleteConfirmDescription": "Their tasks are kept but become unassigned. This cannot be undone.",
+    "deleteOneTitle": "Delete “{name}”?",
+    "deleteOneDescription": "Its tasks are kept but become unassigned. This cannot be undone."
+  },
+  "card": {
+    "archived": "Archived",
+    "plan": "Plan",
+    "draftPlan": "Draft plan",
+    "taskCount": "{count, plural, one {# task} other {# tasks}}",
+    "noDescription": "No description",
+    "noTasksYet": "No tasks yet",
+    "updated": "Updated {time}",
+    "noProjectSelected": "No project selected",
+    "chooseProject": "Choose project",
+    "noProjects": "No projects"
+  },
+  "widget": {
+    "allProjects": "All projects",
+    "refresh": "Refresh projects",
+    "loadFailed": "Couldn’t load projects.",
+    "empty": "No projects yet.",
+    "recentHeading": "Project"
+  },
+  "progress": {
+    "label": "Progress",
+    "summary": "{done}/{total} · {pct}%",
+    "aria": "{pct}% complete ({done} of {total} tasks done)"
+  },
+  "requirements": {
+    "name": "a name",
+    "tag": "a tag",
+    "folder": "a project folder"
+  },
+  "statusBadge": {
+    "incomplete": "Incomplete — still needs {missing}",
+    "separator": ", "
+  },
+  "select": {
+    "noProject": "No project"
+  },
+  "tree": {
+    "unassigned": "Unassigned",
+    "unassignedOptions": "Unassigned options",
+    "projectOptions": "{name} options",
+    "addTask": "Add task",
+    "plan": "Plan",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "detail": {
+    "loading": "Loading…",
+    "tabs": {
+      "details": "Details",
+      "docs": "Docs",
+      "tasks": "Tasks",
+      "roadmap": "Roadmap"
+    },
+    "sectionsAria": "Project sections",
+    "statsRail": "Stats & actions",
+    "knowledgeRail": "Knowledge & activity",
+    "roadmapBoardView": "Board view",
+    "roadmapGraphView": "Graph view"
+  },
+  "stats": {
+    "tasks": "Tasks",
+    "doneSuffix": "· {count} done",
+    "noTasks": "No tasks assigned to this project yet.",
+    "actions": "Actions",
+    "preview": "Preview",
+    "build": "Build",
+    "archive": "Archive project",
+    "unarchive": "Unarchive project",
+    "deleteProject": "Delete project",
+    "deleteConfirmTitle": "Delete this project?",
+    "deleteConfirmDescription": "“{name}” and its sources will be permanently deleted. Its tasks are kept but become unassigned. This can’t be undone.",
+    "noTasksInProject": "No tasks in this project yet."
+  },
+  "info": {
+    "knowledge": "Knowledge",
+    "manageInMemory": "Manage knowledge in Memory",
+    "knowledgeHint": "Sources and notes for this project live in its scoped memories, injected into agent prompts.",
+    "activity": "Activity",
+    "noActivity": "No task activity yet."
+  },
+  "cost": {
+    "title": "Cost & throughput",
+    "empty": "No agent-session cost recorded yet.",
+    "spend": "Spend",
+    "measuredEstimated": "Measured · estimated",
+    "measuredEstimatedValue": "{measured} · {estimated}",
+    "sessions": "Sessions",
+    "p50EndToEnd": "p50 end-to-end",
+    "unpriced": "{count, plural, one {# on an unpriced model — cost not counted.} other {# on an unpriced model — cost not counted.}}",
+    "subCent": "<{value}",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value}s",
+      "minutes": "{value}m",
+      "hours": "{value}h",
+      "days": "{value}d"
+    }
+  },
+  "form": {
+    "title": "Title",
+    "titlePlaceholder": "e.g. Billing revamp",
+    "description": "Description",
+    "descriptionPlaceholder": "What is this project about?",
+    "improveWithAi": "Improve with AI",
+    "writeDescriptionFirst": "Write a short description first, then improve it with AI",
+    "tagAndColour": "Tag & colour",
+    "tagHint": "Max {max} characters. Tasks in this project carry this tag.",
+    "workDir": "Work directory",
+    "workDirPlaceholder": "~/Dev/my-project",
+    "clearWorkDir": "Clear work directory",
+    "browse": "Browse",
+    "workDirHint": "Where this project’s agent sessions spawn. Leave blank to use the default.",
+    "startCommand": "Start command",
+    "startCommandPlaceholder": "pnpm dev",
+    "startCommandHint": "Run by the <b>Preview</b> action, in the work directory above.",
+    "buildCommand": "Build command",
+    "buildCommandPlaceholder": "pnpm build",
+    "buildCommandHint": "Run by the <b>Build</b> action, in the work directory above.",
+    "projectMemory": "Project memory",
+    "viewMemories": "{count, plural, one {View # memory} other {View # memories}}",
+    "createMemory": "Create a memory for this project",
+    "memoryHint": "Knowledge entries scoped to this project, injected into agent prompts."
+  },
+  "modal": {
+    "editTitle": "Edit project",
+    "newTitle": "New project",
+    "createProject": "Create project",
+    "deleteConfirmTitle": "Delete this project?",
+    "deleteConfirmDescription": "“{name}” will be permanently deleted. This can’t be undone.",
+    "deleteConfirmLabel": "Delete project"
+  },
+  "repoStatus": {
+    "noFolder": "No folder set",
+    "checking": "Checking repo status…",
+    "folderNotFound": "Folder not found",
+    "notARepo": "Not a git repo",
+    "initRepo": "Init repo",
+    "unavailable": "Repo status unavailable: {message}",
+    "uncommitted": "· uncommitted changes",
+    "clean": "· clean"
+  },
+  "plan": {
+    "documents": "Documents",
+    "docCount": "{count, plural, one {# doc} other {# docs}}",
+    "loading": "Loading documents…",
+    "empty": "No planning documents yet. Add one from the template library to draft a spec or plan for this project.",
+    "removeDoc": "Remove document",
+    "removeConfirmTitle": "Remove this document?",
+    "removeConfirmDescription": "It will be deleted from this project. The source template is unchanged.",
+    "addDocument": "Add document",
+    "allTemplatesUsed": "Every template already has a document in this project.",
+    "addHint": "Documents are copied from the template library and titled for this project.",
+    "templatesListAria": "Templates"
+  },
+  "councilRuns": {
+    "label": "Council runs",
+    "runCount": "{count, plural, one {# run} other {# runs}}",
+    "loading": "Loading council runs…",
+    "empty": "No council runs linked to this project yet."
+  },
+  "templates": {
+    "prd": {
+      "name": "Product Requirements Doc",
+      "description": "Define the problem, goals, requirements, and success metrics for a product."
+    },
+    "tech-spec": {
+      "name": "Technical Specification",
+      "description": "Specify the solution, APIs, data model, rollout, and testing strategy."
+    },
+    "tech-design": {
+      "name": "Technical Design Doc",
+      "description": "Lay out the architecture, components, data flow, and trade-offs of a system."
+    },
+    "game-design": {
+      "name": "Game Design Doc",
+      "description": "Capture the concept, core loop, mechanics, progression, and world of a game."
+    },
+    "editor": {
+      "untitled": "Untitled template",
+      "titleAria": "Template title",
+      "dialogAria": "{name} template",
+      "fallbackTag": "tag",
+      "description": "Description",
+      "descriptionPlaceholder": "What this template is for…",
+      "tagAndColour": "Tag & colour",
+      "document": "Document",
+      "copyMarkdown": "Copy markdown",
+      "copied": "Copied",
+      "saved": "Saved",
+      "collapse": "Collapse {name}",
+      "expand": "Expand {name}",
+      "deleteTemplate": "Delete {name}"
+    }
+  }
+}

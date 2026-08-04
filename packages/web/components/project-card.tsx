@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Folder, ListChecks } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -20,11 +21,8 @@ type Props = {
   onToggleSelect?: (shiftKey: boolean) => void;
 };
 
-function plural(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
-}
-
 export function ProjectCard({ project, layout, onOpen, onPlan, selected = false, onToggleSelect }: Props) {
+  const t = useTranslations('projects');
   const tasks = project.taskCount ?? 0;
   const exportFilename = (project.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
 
@@ -34,7 +32,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
 
   const archivedBadge = project.archived ? (
     <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-      Archived
+      {t('card.archived')}
     </span>
   ) : null;
 
@@ -49,7 +47,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
       }}
     >
       <ListChecks className="h-4 w-4" />
-      {project.plan ? 'Plan' : 'Draft plan'}
+      {project.plan ? t('card.plan') : t('card.draftPlan')}
     </Button>
   );
 
@@ -86,7 +84,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         </button>
         <ProjectProgressBar project={project} hideLabel className="hidden w-24 shrink-0 md:flex" />
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
-          {plural(tasks, 'task')}
+          {t('card.taskCount', { count: tasks })}
         </span>
         {exportMenu}
         {planButton}
@@ -110,7 +108,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
           {archivedBadge}
         </div>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-          {plural(tasks, 'task')}
+          {t('card.taskCount', { count: tasks })}
         </span>
       </div>
       <button type="button" onClick={onOpen} className="flex flex-col gap-2 text-left">
@@ -118,7 +116,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         {project.description ? (
           <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p>
         ) : (
-          <p className="text-xs italic text-muted-foreground">No description</p>
+          <p className="text-xs italic text-muted-foreground">{t('card.noDescription')}</p>
         )}
       </button>
       <ProjectProgressBar project={project} />

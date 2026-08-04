@@ -1,0 +1,225 @@
+{
+  "page": {
+    "title": "Projets",
+    "description": "Regroupez des travaux liés, rattachez des sources et rédigez un plan qui deviendra des tâches."
+  },
+  "list": {
+    "tabs": {
+      "projects": "Projets",
+      "templates": "Modèles"
+    },
+    "listView": "Vue liste",
+    "gridView": "Vue grille",
+    "treeView": "Vue arborescente",
+    "newTemplate": "Nouveau modèle",
+    "emptyProjectsTitle": "Aucun projet",
+    "emptyProjectsDescription": "Créez-en un pour regrouper des tâches, rattacher des sources et rédiger un plan.",
+    "emptyTemplatesTitle": "Aucun modèle",
+    "emptyTemplatesDescription": "Créez-en un pour rédiger des plans et des spécifications à partir d’un document réutilisable.",
+    "noProjectsMatch": "Aucun projet ne correspond à « {query} »",
+    "noTemplatesMatch": "Aucun modèle ne correspond à « {query} »"
+  },
+  "bulk": {
+    "archive": "Archiver",
+    "unarchive": "Désarchiver",
+    "delete": "Supprimer",
+    "deleteConfirmTitle": "{count, plural, one {Supprimer # projet ?} other {Supprimer # projets ?}}",
+    "deleteConfirmDescription": "Leurs tâches sont conservées mais ne seront plus assignées. Cette action est irréversible.",
+    "deleteOneTitle": "Supprimer « {name} » ?",
+    "deleteOneDescription": "Ses tâches sont conservées mais ne seront plus assignées. Cette action est irréversible."
+  },
+  "card": {
+    "archived": "Archivé",
+    "plan": "Plan",
+    "draftPlan": "Rédiger un plan",
+    "taskCount": "{count, plural, one {# tâche} other {# tâches}}",
+    "noDescription": "Aucune description",
+    "noTasksYet": "Aucune tâche",
+    "updated": "Mis à jour {time}",
+    "noProjectSelected": "Aucun projet sélectionné",
+    "chooseProject": "Choisir un projet",
+    "noProjects": "Aucun projet"
+  },
+  "widget": {
+    "allProjects": "Tous les projets",
+    "refresh": "Actualiser les projets",
+    "loadFailed": "Impossible de charger les projets.",
+    "empty": "Aucun projet.",
+    "recentHeading": "Projet"
+  },
+  "progress": {
+    "label": "Progression",
+    "summary": "{done}/{total} · {pct} %",
+    "aria": "{pct} % terminé ({done} tâches terminées sur {total})"
+  },
+  "requirements": {
+    "name": "un nom",
+    "tag": "une étiquette",
+    "folder": "un dossier de projet"
+  },
+  "statusBadge": {
+    "incomplete": "Incomplet — il manque encore {missing}",
+    "separator": ", "
+  },
+  "select": {
+    "noProject": "Aucun projet"
+  },
+  "tree": {
+    "unassigned": "Non assignées",
+    "unassignedOptions": "Options des tâches non assignées",
+    "projectOptions": "Options de {name}",
+    "addTask": "Ajouter une tâche",
+    "plan": "Plan",
+    "edit": "Modifier",
+    "delete": "Supprimer"
+  },
+  "detail": {
+    "loading": "Chargement…",
+    "tabs": {
+      "details": "Détails",
+      "docs": "Documents",
+      "tasks": "Tâches",
+      "roadmap": "Feuille de route"
+    },
+    "sectionsAria": "Sections du projet",
+    "statsRail": "Statistiques et actions",
+    "knowledgeRail": "Connaissances et activité",
+    "roadmapBoardView": "Vue tableau",
+    "roadmapGraphView": "Vue graphe"
+  },
+  "stats": {
+    "tasks": "Tâches",
+    "doneSuffix": "· {count, plural, one {# terminée} other {# terminées}}",
+    "noTasks": "Aucune tâche assignée à ce projet pour l’instant.",
+    "actions": "Actions",
+    "preview": "Aperçu",
+    "build": "Compiler",
+    "archive": "Archiver le projet",
+    "unarchive": "Désarchiver le projet",
+    "deleteProject": "Supprimer le projet",
+    "deleteConfirmTitle": "Supprimer ce projet ?",
+    "deleteConfirmDescription": "« {name} » et ses sources seront définitivement supprimés. Ses tâches sont conservées mais ne seront plus assignées. Cette action est irréversible.",
+    "noTasksInProject": "Aucune tâche dans ce projet pour l’instant."
+  },
+  "info": {
+    "knowledge": "Connaissances",
+    "manageInMemory": "Gérer les connaissances dans Mémoire",
+    "knowledgeHint": "Les sources et notes de ce projet vivent dans ses mémoires dédiées, injectées dans les prompts des agents.",
+    "activity": "Activité",
+    "noActivity": "Aucune activité de tâche pour l’instant."
+  },
+  "cost": {
+    "title": "Coût et débit",
+    "empty": "Aucun coût de session d’agent enregistré pour l’instant.",
+    "spend": "Dépense",
+    "measuredEstimated": "Mesuré · estimé",
+    "measuredEstimatedValue": "{measured} · {estimated}",
+    "sessions": "Sessions",
+    "p50EndToEnd": "p50 de bout en bout",
+    "unpriced": "{count, plural, one {# sur un modèle sans tarif — coût non compté.} other {# sur des modèles sans tarif — coût non compté.}}",
+    "subCent": "< {value}",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hours": "{value} h",
+      "days": "{value} j"
+    }
+  },
+  "form": {
+    "title": "Titre",
+    "titlePlaceholder": "ex. Refonte de la facturation",
+    "description": "Description",
+    "descriptionPlaceholder": "De quoi s’agit-il dans ce projet ?",
+    "improveWithAi": "Améliorer avec l’IA",
+    "writeDescriptionFirst": "Écrivez d’abord une courte description, puis améliorez-la avec l’IA",
+    "tagAndColour": "Étiquette et couleur",
+    "tagHint": "{max} caractères maximum. Les tâches de ce projet portent cette étiquette.",
+    "workDir": "Répertoire de travail",
+    "workDirPlaceholder": "~/Dev/mon-projet",
+    "clearWorkDir": "Effacer le répertoire de travail",
+    "browse": "Parcourir",
+    "workDirHint": "Là où les sessions d’agent de ce projet démarrent. Laissez vide pour utiliser la valeur par défaut.",
+    "startCommand": "Commande de démarrage",
+    "startCommandPlaceholder": "pnpm dev",
+    "startCommandHint": "Exécutée par l’action <b>Aperçu</b>, dans le répertoire de travail ci-dessus.",
+    "buildCommand": "Commande de compilation",
+    "buildCommandPlaceholder": "pnpm build",
+    "buildCommandHint": "Exécutée par l’action <b>Compiler</b>, dans le répertoire de travail ci-dessus.",
+    "projectMemory": "Mémoire du projet",
+    "viewMemories": "{count, plural, one {Voir # mémoire} other {Voir # mémoires}}",
+    "createMemory": "Créer une mémoire pour ce projet",
+    "memoryHint": "Entrées de connaissances propres à ce projet, injectées dans les prompts des agents."
+  },
+  "modal": {
+    "editTitle": "Modifier le projet",
+    "newTitle": "Nouveau projet",
+    "createProject": "Créer le projet",
+    "deleteConfirmTitle": "Supprimer ce projet ?",
+    "deleteConfirmDescription": "« {name} » sera définitivement supprimé. Cette action est irréversible.",
+    "deleteConfirmLabel": "Supprimer le projet"
+  },
+  "repoStatus": {
+    "noFolder": "Aucun dossier défini",
+    "checking": "Vérification de l’état du dépôt…",
+    "folderNotFound": "Dossier introuvable",
+    "notARepo": "Pas un dépôt git",
+    "initRepo": "Initialiser le dépôt",
+    "unavailable": "État du dépôt indisponible : {message}",
+    "uncommitted": "· modifications non validées",
+    "clean": "· propre"
+  },
+  "plan": {
+    "documents": "Documents",
+    "docCount": "{count, plural, one {# document} other {# documents}}",
+    "loading": "Chargement des documents…",
+    "empty": "Aucun document de planification. Ajoutez-en un depuis la bibliothèque de modèles pour rédiger une spécification ou un plan pour ce projet.",
+    "removeDoc": "Retirer le document",
+    "removeConfirmTitle": "Retirer ce document ?",
+    "removeConfirmDescription": "Il sera supprimé de ce projet. Le modèle source reste inchangé.",
+    "addDocument": "Ajouter un document",
+    "allTemplatesUsed": "Chaque modèle a déjà un document dans ce projet.",
+    "addHint": "Les documents sont copiés depuis la bibliothèque de modèles et intitulés pour ce projet.",
+    "templatesListAria": "Modèles"
+  },
+  "councilRuns": {
+    "label": "Exécutions de conseil",
+    "runCount": "{count, plural, one {# exécution} other {# exécutions}}",
+    "loading": "Chargement des exécutions de conseil…",
+    "empty": "Aucune exécution de conseil liée à ce projet pour l’instant."
+  },
+  "templates": {
+    "prd": {
+      "name": "Document d’exigences produit",
+      "description": "Définit le problème, les objectifs, les exigences et les indicateurs de succès d’un produit."
+    },
+    "tech-spec": {
+      "name": "Spécification technique",
+      "description": "Précise la solution, les API, le modèle de données, le déploiement et la stratégie de test."
+    },
+    "tech-design": {
+      "name": "Document de conception technique",
+      "description": "Présente l’architecture, les composants, les flux de données et les compromis d’un système."
+    },
+    "game-design": {
+      "name": "Document de conception de jeu",
+      "description": "Capture le concept, la boucle de jeu, les mécaniques, la progression et l’univers d’un jeu."
+    },
+    "editor": {
+      "untitled": "Modèle sans titre",
+      "titleAria": "Titre du modèle",
+      "dialogAria": "Modèle {name}",
+      "fallbackTag": "étiquette",
+      "description": "Description",
+      "descriptionPlaceholder": "À quoi sert ce modèle…",
+      "tagAndColour": "Étiquette et couleur",
+      "document": "Document",
+      "copyMarkdown": "Copier le markdown",
+      "copied": "Copié",
+      "saved": "Enregistré",
+      "collapse": "Replier {name}",
+      "expand": "Déplier {name}",
+      "deleteTemplate": "Supprimer {name}"
+    }
+  }
+}

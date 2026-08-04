@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LayoutGrid, RefreshCw } from 'lucide-react';
 import { getProjects, getTasks } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
@@ -11,6 +12,7 @@ import { WidgetCard } from './widget-card';
 const REFRESH_MS = 60_000;
 
 export function AllProjectsWidget() {
+  const t = useTranslations('projects');
   const projects = usePolling(() => getProjects(), REFRESH_MS);
   const tasks = usePolling(() => getTasks(), REFRESH_MS);
 
@@ -25,13 +27,13 @@ export function AllProjectsWidget() {
 
   return (
     <WidgetCard
-      title="All projects"
+      title={t('widget.allProjects')}
       icon={LayoutGrid}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh projects"
+          aria-label={t('widget.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', (projects.loading || tasks.loading) && 'animate-spin')} />
@@ -40,11 +42,11 @@ export function AllProjectsWidget() {
       bodyClassName="overflow-auto p-3"
     >
       {projects.error && !projects.data ? (
-        <p className="py-6 text-center text-sm text-destructive">Couldn’t load projects.</p>
+        <p className="py-6 text-center text-sm text-destructive">{t('widget.loadFailed')}</p>
       ) : !projects.data && projects.loading ? (
         <WidgetLoader />
       ) : list.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No projects yet.</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('widget.empty')}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {list.map((project) => (

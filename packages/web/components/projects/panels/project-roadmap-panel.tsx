@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Columns3, Workflow, type LucideIcon } from 'lucide-react';
 import type { Project, TaskSummary } from '@midnite/shared';
 import { RoadmapBoard } from '@/components/roadmap/roadmap-board';
@@ -27,6 +28,7 @@ const VIEW_ICONS: Array<{ value: RoadmapViewMode; Icon: LucideIcon }> = [
  * switches list/board/graph.
  */
 export function ProjectRoadmapPanel({ project, onSelectTask }: Props) {
+  const t = useTranslations('projects');
   const tagInfo = { tag: project.tag, color: project.color };
   const [view, setView] = useLocalStorage<RoadmapViewMode>(VIEW_STORAGE_KEY, 'board');
 
@@ -40,7 +42,7 @@ export function ProjectRoadmapPanel({ project, onSelectTask }: Props) {
               type="button"
               variant="ghost"
               size="icon"
-              aria-label={`${value} view`}
+              aria-label={value === 'board' ? t('detail.roadmapBoardView') : t('detail.roadmapGraphView')}
               aria-pressed={view === value}
               onClick={() => setView(value)}
               className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}

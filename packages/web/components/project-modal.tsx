@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { FolderOpen, Loader2, Sparkles, Trash2, X } from 'lucide-react';
 import { ExportMenu } from '@/components/export-menu';
 import {
@@ -28,10 +29,6 @@ import { cn } from '@/lib/utils';
 
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
 
 type Props = {
   /** Edit an existing project, or create a new one when null. */
@@ -64,6 +61,8 @@ export function ProjectModal({
   onClose,
   onSaved,
 }: Props) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const isEdit = project !== null;
 
   const [tab, setTab] = useState<Tab>('details');
@@ -99,9 +98,14 @@ export function ProjectModal({
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
 
+  const errMsg = useCallback(
+    (e: unknown): string => (e instanceof Error ? e.message : tCommon('errorTitle')),
+    [tCommon],
+  );
+
   const enhance = async () => {
     if (!description.trim()) {
-      setError('Write a short description first, then improve it with AI');
+      setError(t('form.writeDescriptionFirst'));
       return;
     }
     setAiLoading(true);
@@ -139,9 +143,9 @@ export function ProjectModal({
   const remove = async () => {
     if (!current) return;
     const ok = await confirm({
-      title: 'Delete this project?',
-      description: `“${current.name}” will be permanently deleted. This can’t be undone.`,
-      confirmLabel: 'Delete project',
+      title: t('modal.deleteConfirmTitle'),
+      description: t('modal.deleteConfirmDescription', { name: current.name }),
+      confirmLabel: t('modal.deleteConfirmLabel'),
     });
     if (!ok) return;
     setSaving(true);
@@ -163,12 +167,12 @@ export function ProjectModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={isEdit ? 'Edit project' : 'New project'}
+          aria-label={isEdit ? t('modal.editTitle') : tCommon('newProject')}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-lg flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
-            <h2 className="text-sm font-semibold">{isEdit ? 'Edit project' : 'New project'}</h2>
+            <h2 className="text-sm font-semibold">{isEdit ? t('modal.editTitle') : tCommon('newProject')}</h2>
             <div className="flex items-center gap-1">
               {isEdit && project ? (
                 <ExportMenu
@@ -177,34 +181,34 @@ export function ProjectModal({
                   fetchMarkdown={() => exportProjectMarkdown(project.id)}
                 />
               ) : null}
-              <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+              <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </header>
 
-          <div role="tablist" aria-label="Project sections" className="flex items-center gap-1 border-b border-border/60 px-3">
-            {tabs.map((t) => {
-              const count = tabCounts[t];
+          <div role="tablist" aria-label={t('detail.sectionsAria')} className="flex items-center gap-1 border-b border-border/60 px-3">
+            {tabs.map((value) => {
+              const count = tabCounts[value];
               return (
                 <button
-                  key={t}
+                  key={value}
                   type="button"
                   role="tab"
-                  aria-selected={tab === t}
-                  onClick={() => setTab(t)}
+                  aria-selected={tab === value}
+                  onClick={() => setTab(value)}
                   className={cn(
-                    'relative px-3 py-2 text-xs font-medium capitalize transition-colors',
-                    tab === t ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                    'relative px-3 py-2 text-xs font-medium transition-colors',
+                    tab === value ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {t}
+                  {value === 'plan' ? t('detail.tabs.docs') : t(`detail.tabs.${value}`)}
                   {count ? (
                     <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
                       {count}
                     </span>
                   ) : null}
-                  {tab === t ? (
+                  {tab === value ? (
                     <span aria-hidden className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
                   ) : null}
                 </button>
@@ -227,14 +231,14 @@ export function ProjectModal({
                   {/* Name */}
                   <div className="space-y-1.5">
                     <label htmlFor="project-name" className="text-xs font-medium text-muted-foreground">
-                      Title
+                      {t('form.title')}
                     </label>
                     <input
                       id="project-name"
                       className={inputClass}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Billing revamp"
+                      placeholder={t('form.titlePlaceholder')}
                       autoFocus
                     />
                   </div>
@@ -243,7 +247,7 @@ export function ProjectModal({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label htmlFor="project-description" className="text-xs font-medium text-muted-foreground">
-                        Description
+                        {t('form.description')}
                       </label>
                       <Button
                         type="button"
@@ -251,7 +255,7 @@ export function ProjectModal({
                         size="sm"
                         onClick={enhance}
                         disabled={aiLoading}
-                        aria-label="Improve with AI"
+                        aria-label={t('form.improveWithAi')}
                         className="h-7 gap-1.5 text-xs"
                       >
                         {aiLoading ? (
@@ -259,14 +263,14 @@ export function ProjectModal({
                         ) : (
                           <Sparkles className="h-3.5 w-3.5" />
                         )}
-                        Improve with AI
+                        {t('form.improveWithAi')}
                       </Button>
                     </div>
                     <Textarea
                       id="project-description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="What is this project about?"
+                      placeholder={t('form.descriptionPlaceholder')}
                       rows={4}
                     />
                   </div>
@@ -281,19 +285,17 @@ export function ProjectModal({
                       tagInputId="project-tag"
                       label={
                         <label htmlFor="project-tag" className="text-xs font-medium text-muted-foreground">
-                          Tag &amp; color
+                          {t('form.tagAndColour')}
                         </label>
                       }
                     />
-                    <p className="text-[11px] text-muted-foreground">
-                      Max {MAX_TAG_LENGTH} characters. Tasks in this project carry this tag.
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t('form.tagHint', { max: MAX_TAG_LENGTH })}</p>
                   </div>
 
                   {/* Work directory */}
                   <div className="space-y-1.5">
                     <label htmlFor="project-workdir" className="text-xs font-medium text-muted-foreground">
-                      Work directory
+                      {t('form.workDir')}
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -301,7 +303,7 @@ export function ProjectModal({
                         className={cn(inputClass, 'flex-1 font-mono text-xs')}
                         value={workDir}
                         onChange={(e) => setWorkDir(e.target.value)}
-                        placeholder="~/Dev/my-project"
+                        placeholder={t('form.workDirPlaceholder')}
                         spellCheck={false}
                       />
                       {workDir.trim() ? (
@@ -309,7 +311,7 @@ export function ProjectModal({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          aria-label="Clear work directory"
+                          aria-label={t('form.clearWorkDir')}
                           onClick={() => setWorkDir('')}
                         >
                           <X className="h-4 w-4" />
@@ -323,12 +325,10 @@ export function ProjectModal({
                         onClick={() => setPicking(true)}
                       >
                         <FolderOpen className="h-4 w-4" />
-                        Browse
+                        {t('form.browse')}
                       </Button>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Where this project&apos;s agent sessions spawn. Leave blank to use the default.
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t('form.workDirHint')}</p>
                   </div>
                 </div>
               )}
@@ -363,18 +363,18 @@ export function ProjectModal({
                   className="gap-1.5 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  {tCommon('delete')}
                 </Button>
               ) : null}
             </div>
             <div className="flex items-center gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-                {isEdit ? 'Close' : 'Cancel'}
+                {isEdit ? tCommon('close') : tCommon('cancel')}
               </Button>
               {isEdit ? null : (
                 <Button type="button" size="sm" onClick={() => void submit()} disabled={!canSave || saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Create project
+                  {t('modal.createProject')}
                 </Button>
               )}
             </div>

@@ -13,11 +13,15 @@ export type Template = ProjectDocTemplate;
 
 export const TEMPLATES: Template[] = PROJECT_DOC_TEMPLATES;
 
-/** A fresh, empty template for the "New Template" action. */
-export function createBlankTemplate(): Template {
+/**
+ * A fresh, empty template for the "New Template" action. The caller passes the
+ * translated default title (`projects.templates.editor.untitled`) — this module is
+ * hook-free, and the stored name is user data from the moment it's created.
+ */
+export function createBlankTemplate(name = 'Untitled template'): Template {
   return {
     id: crypto.randomUUID(),
-    name: 'Untitled template',
+    name,
     tag: 'DOC',
     color: '#6366f1',
     description: '',

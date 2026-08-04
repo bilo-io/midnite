@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Archive, ArchiveRestore, Hammer, Loader2, Play, Trash2 } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ExportMenu } from '@/components/export-menu';
@@ -8,7 +9,8 @@ import { ProjectProgressBar } from '@/components/project-progress';
 import { RunCommandModal } from '@/components/run-command-modal';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
-import { ALL_COLUMNS, statusLabel, statusHueVar } from '@/components/task-columns';
+import { ALL_COLUMNS, statusHueVar } from '@/components/task-columns';
+import { useStatusLabel } from '@/lib/i18n-labels';
 import { buildProject, deleteProject, exportProjectMarkdown, previewProject, updateProject } from '@/lib/api';
 
 type Props = {
@@ -27,6 +29,8 @@ type Props = {
  * — no new endpoint. Actions all use existing endpoints.
  */
 export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props) {
+  const t = useTranslations('projects');
+  const statusLabel = useStatusLabel();
   const confirm = useConfirm();
   const [busy, setBusy] = useState<'archive' | 'delete' | null>(null);
   const [running, setRunning] = useState<'preview' | 'build' | null>(null);
@@ -48,9 +52,9 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
 
   const remove = async () => {
     const ok = await confirm({
-      title: 'Delete this project?',
-      description: `“${project.name}” and its sources will be permanently deleted. Its tasks are kept but become unassigned. This can’t be undone.`,
-      confirmLabel: 'Delete project',
+      title: t('stats.deleteConfirmTitle'),
+      description: t('stats.deleteConfirmDescription', { name: project.name }),
+      confirmLabel: t('stats.deleteProject'),
     });
     if (!ok) return;
     setBusy('delete');
@@ -67,17 +71,19 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
       {/* Stats */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <span className="text-xs font-medium text-muted-foreground">Tasks</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('stats.tasks')}</span>
           <span className="text-sm font-semibold tabular-nums">
             {tasks.length}
             {tasks.length > 0 ? (
-              <span className="ml-1 text-xs font-normal text-muted-foreground">· {done} done</span>
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
+                {t('stats.doneSuffix', { count: done })}
+              </span>
             ) : null}
           </span>
         </div>
         <ProjectProgressBar done={done} total={tasks.length} hideLabel />
         {counts.length === 0 ? (
-          <p className="text-[11px] text-muted-foreground">No tasks assigned to this project yet.</p>
+          <p className="text-[11px] text-muted-foreground">{t('stats.noTasks')}</p>
         ) : (
           <ul className="space-y-1">
             {counts.map(({ status, count }) => (
@@ -97,7 +103,7 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
 
       {/* Quick actions */}
       <div className="space-y-1.5 border-t border-border/60 pt-3">
-        <span className="text-xs font-medium text-muted-foreground">Actions</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('stats.actions')}</span>
         <div className="flex flex-col gap-1.5">
           {project.startCommand?.trim() ? (
             <Button
@@ -108,7 +114,7 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
               className="justify-start gap-2"
             >
               <Play className="h-4 w-4" />
-              Preview
+              {t('stats.preview')}
             </Button>
           ) : null}
           {project.buildCommand?.trim() ? (
@@ -120,7 +126,7 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
               className="justify-start gap-2"
             >
               <Hammer className="h-4 w-4" />
-              Build
+              {t('stats.build')}
             </Button>
           ) : null}
           <ExportMenu
@@ -143,7 +149,7 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
             ) : (
               <Archive className="h-4 w-4" />
             )}
-            {project.archived ? 'Unarchive project' : 'Archive project'}
+            {project.archived ? t('stats.unarchive') : t('stats.archive')}
           </Button>
           <Button
             type="button"
@@ -154,21 +160,21 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
             className="justify-start gap-2 text-destructive hover:text-destructive"
           >
             {busy === 'delete' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            Delete project
+            {t('stats.deleteProject')}
           </Button>
         </div>
       </div>
 
       {running === 'preview' ? (
         <RunCommandModal
-          title="Preview"
+          title={t('stats.preview')}
           start={() => previewProject(project.id)}
           onClose={() => setRunning(null)}
         />
       ) : null}
       {running === 'build' ? (
         <RunCommandModal
-          title="Build"
+          title={t('stats.build')}
           start={() => buildProject(project.id)}
           onClose={() => setRunning(null)}
         />
