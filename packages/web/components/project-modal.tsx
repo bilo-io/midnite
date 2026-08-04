@@ -202,7 +202,7 @@ export function ProjectModal({
                     tab === value ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {value === 'plan' ? t('detail.tabs.docs') : t(`detail.tabs.${value}`)}
+                  {t(`modal.tabs.${value}`)}
                   {count ? (
                     <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
                       {count}

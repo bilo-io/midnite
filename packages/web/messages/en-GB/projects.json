@@ -157,7 +157,12 @@
     "createProject": "Create project",
     "deleteConfirmTitle": "Delete this project?",
     "deleteConfirmDescription": "“{name}” will be permanently deleted. This can’t be undone.",
-    "deleteConfirmLabel": "Delete project"
+    "deleteConfirmLabel": "Delete project",
+    "tabs": {
+      "details": "Details",
+      "plan": "Plan",
+      "tasks": "Tasks"
+    }
   },
   "repoStatus": {
     "noFolder": "No folder set",

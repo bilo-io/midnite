@@ -157,7 +157,12 @@
     "createProject": "Créer le projet",
     "deleteConfirmTitle": "Supprimer ce projet ?",
     "deleteConfirmDescription": "« {name} » sera définitivement supprimé. Cette action est irréversible.",
-    "deleteConfirmLabel": "Supprimer le projet"
+    "deleteConfirmLabel": "Supprimer le projet",
+    "tabs": {
+      "details": "Détails",
+      "plan": "Plan",
+      "tasks": "Tâches"
+    }
   },
   "repoStatus": {
     "noFolder": "Aucun dossier défini",
