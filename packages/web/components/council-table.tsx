@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { CirclePile } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
@@ -24,6 +25,7 @@ export function CouncilTable({
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }) {
   const router = useRouter();
+  const t = useTranslations('council');
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border/60">
@@ -31,10 +33,10 @@ export function CouncilTable({
         <thead>
           <tr className="border-b border-border/60 text-left text-xs text-muted-foreground">
             <th className="w-8 px-3 py-2 font-medium"></th>
-            <th className="px-3 py-2 font-medium">Name</th>
-            <th className="px-3 py-2 font-medium">Description</th>
-            <th className="px-3 py-2 font-medium">Providers</th>
-            <th className="px-3 py-2 text-right font-medium">Activity</th>
+            <th className="px-3 py-2 font-medium">{t('table.name')}</th>
+            <th className="px-3 py-2 font-medium">{t('table.description')}</th>
+            <th className="px-3 py-2 font-medium">{t('table.providers')}</th>
+            <th className="px-3 py-2 text-right font-medium">{t('table.activity')}</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +62,9 @@ export function CouncilTable({
                 </td>
                 <td className="px-3 py-2 font-medium">{council.name}</td>
                 <td className="max-w-md px-3 py-2 text-muted-foreground">
-                  <span className="line-clamp-1">{council.description ?? '—'}</span>
+                  <span className="line-clamp-1">
+                    {council.description ?? t('table.none')}
+                  </span>
                 </td>
                 <td className="px-3 py-2">
                   {providers.length > 0 ? (
@@ -75,7 +79,7 @@ export function CouncilTable({
                       ))}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-muted-foreground">{t('table.none')}</span>
                   )}
                 </td>
                 <td className="px-3 py-2">

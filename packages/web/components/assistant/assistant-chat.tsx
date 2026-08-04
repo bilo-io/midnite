@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type KeyboardEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { CornerDownLeft } from 'lucide-react';
 
 import type { ChatCommandState } from '@/hooks/use-chat-command';
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils';
  */
 export function AssistantChat({ chat }: { chat: ChatCommandState }) {
   const [text, setText] = useState('');
+  const t = useTranslations('assistant');
   const { phase, busy } = chat;
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -39,8 +41,8 @@ export function AssistantChat({ chat }: { chat: ChatCommandState }) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           disabled={busy}
-          placeholder="Tell the board what to do…"
-          aria-label="Chat with the board"
+          placeholder={t('chatToBoard.placeholder')}
+          aria-label={t('chatToBoard.label')}
           className={cn(
             'w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground',
             'disabled:cursor-not-allowed disabled:opacity-50',

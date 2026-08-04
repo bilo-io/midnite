@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CouncilFormat, CouncilRun } from '@midnite/shared';
+import { useLocale, useTranslations } from 'next-intl';
+import type { CouncilFormat, CouncilRun, Locale } from '@midnite/shared';
 import { getCouncilRun, retryCouncilSynthesis, startCouncilRun } from '@/lib/api';
 
 const TERMINAL = new Set(['completed', 'failed']);
@@ -30,6 +31,11 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useRef(true);
   const onFinishedRef = useRef(onFinished);
+  const t = useTranslations('council');
+  // Every generated word of a run — each member's response and the synthesis — is
+  // model output, so the active locale rides on the start/re-synthesize requests
+  // and the gateway tells the CLIs which language to write in (Phase 82 D).
+  const locale = useLocale() as Locale;
 
   useEffect(() => {
     onFinishedRef.current = onFinished;
@@ -57,13 +63,13 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
           }
         } catch (err) {
           if (!mounted.current) return;
-          setError(err instanceof Error ? err.message : 'Failed to poll run');
+          setError(err instanceof Error ? err.message : t('errors.poll'));
         }
         timer.current = setTimeout(() => void tick(), POLL_MS);
       };
       void tick();
     },
-    [councilId],
+    [councilId, t],
   );
 
   const start = useCallback(
@@ -71,17 +77,17 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
       setError(null);
       setRunning(true);
       try {
-        const started = await startCouncilRun(councilId, prompt, format);
+        const started = await startCouncilRun(councilId, prompt, format, locale);
         if (!mounted.current) return;
         setRun(started);
         poll(started.id);
       } catch (err) {
         if (!mounted.current) return;
-        setError(err instanceof Error ? err.message : 'Failed to start run');
+        setError(err instanceof Error ? err.message : t('errors.start'));
         setRunning(false);
       }
     },
-    [councilId, poll],
+    [councilId, locale, poll, t],
   );
 
   // Re-synthesize the *currently shown* run's captured responses, optionally in a
@@ -94,7 +100,7 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
       setError(null);
       setRunning(true);
       try {
-        const updated = await retryCouncilSynthesis(councilId, current.id, format);
+        const updated = await retryCouncilSynthesis(councilId, current.id, format, locale);
         if (!mounted.current) return;
         setRun(updated);
         if (TERMINAL.has(updated.status)) {
@@ -105,11 +111,11 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
         poll(updated.id);
       } catch (err) {
         if (!mounted.current) return;
-        setError(err instanceof Error ? err.message : 'Failed to re-synthesize');
+        setError(err instanceof Error ? err.message : t('errors.resynthesize'));
         setRunning(false);
       }
     },
-    [councilId, run, poll],
+    [councilId, locale, run, poll, t],
   );
 
   const select = useCallback((past: CouncilRun) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createCouncil } from '@/lib/api';
@@ -11,6 +12,8 @@ const inputClass =
 
 export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const t = useTranslations('council');
+  const tCommon = useTranslations('common');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
@@ -35,7 +38,7 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
       });
       router.push(`/councils/view?id=${council.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create council');
+      setError(e instanceof Error ? e.message : t('create.failed'));
       setSaving(false);
     }
   };
@@ -51,13 +54,19 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="New council"
+          aria-label={t('create.title')}
           className="pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
-            <h2 className="text-sm font-semibold">New council</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <h2 className="text-sm font-semibold">{t('create.title')}</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -65,7 +74,7 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-5 px-5 py-4">
             <div className="space-y-1.5">
               <label htmlFor="council-name" className="text-xs font-medium text-muted-foreground">
-                Name
+                {t('create.name')}
               </label>
               <input
                 id="council-name"
@@ -75,7 +84,7 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void submit();
                 }}
-                placeholder="e.g. Architecture review board"
+                placeholder={t('create.namePlaceholder')}
                 autoFocus
               />
             </div>
@@ -85,7 +94,8 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
                 htmlFor="council-description"
                 className="text-xs font-medium text-muted-foreground"
               >
-                Description <span className="font-normal">(optional)</span>
+                {t('create.description')}{' '}
+                <span className="font-normal">{t('create.optional')}</span>
               </label>
               <input
                 id="council-description"
@@ -95,7 +105,7 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void submit();
                 }}
-                placeholder="What this council weighs in on"
+                placeholder={t('create.descriptionPlaceholder')}
               />
             </div>
 
@@ -104,10 +114,10 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
 
           <footer className="flex items-center justify-end gap-2 border-t border-border/60 px-5 py-3.5">
             <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="button" size="sm" disabled={!name.trim() || saving} onClick={() => void submit()}>
-              {saving ? 'Creating…' : 'Create council'}
+              {saving ? t('create.creating') : t('create.submit')}
             </Button>
           </footer>
         </div>

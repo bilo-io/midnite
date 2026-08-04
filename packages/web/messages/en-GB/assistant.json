@@ -1,0 +1,83 @@
+{
+  "title": "Assistant",
+  "open": "Open assistant",
+  "close": "Close assistant",
+  "back": "Back to assistant menu",
+  "views": {
+    "chat": "Chat",
+    "guides": "Guides"
+  },
+  "beta": "Beta",
+  "soon": "Soon",
+  "entries": {
+    "docs": {
+      "label": "Docs",
+      "description": "This page’s documentation"
+    },
+    "guide": {
+      "label": "Guide",
+      "description": "Play this page — or browse all"
+    },
+    "chat": {
+      "label": "Chat",
+      "description": "Change the board in words"
+    },
+    "agent": {
+      "label": "Agent",
+      "description": "Ask about your fleet"
+    },
+    "report": {
+      "label": "Report issue",
+      "description": "Something broken? Tell us"
+    }
+  },
+  "guides": {
+    "browseAll": "Browse all guides",
+    "thisPage": "This page",
+    "stepCount": "{count, plural, one {# step} other {# steps}}",
+    "notSeen": "Not seen yet"
+  },
+  "chatToBoard": {
+    "placeholder": "Tell the board what to do…",
+    "label": "Chat with the board"
+  },
+  "agent": {
+    "label": "Fleet assistant",
+    "empty": "Ask about your fleet — <em>“what should I focus on?”</em>, <em>“which tasks are blocked?”</em>, <em>“how are the active sessions doing?”</em>",
+    "thinking": "Thinking…",
+    "placeholder": "Ask your fleet…",
+    "inputLabel": "Ask the fleet assistant",
+    "ask": "Ask",
+    "failed": "Assistant request failed.",
+    "path": {
+      "deterministic": "answered from fleet state — no AI used",
+      "provider": "via your AI provider"
+    }
+  },
+  "blocks": {
+    "unsupported": "Unsupported component.",
+    "loadingTask": "Loading task…",
+    "taskGone": "Task {taskId} is no longer on the board.",
+    "loadingCounts": "Loading counts…",
+    "countsUnavailable": "Counts unavailable.",
+    "countsLabel": "Fleet task counts",
+    "counts": {
+      "backlog": "Backlog",
+      "todo": "To do",
+      "inProgress": "In progress",
+      "done": "Done"
+    },
+    "loadingSessions": "Loading sessions…",
+    "noSessions": "No active sessions.",
+    "sessionsLabel": "Active sessions",
+    "metrics": {
+      "cycle-time": "Cycle time (wait · work · lead, p50)",
+      "throughput": "Throughput (runs/day)",
+      "queue-depth": "Queue depth",
+      "cost": "Spend by dimension (USD)"
+    },
+    "loadingMetric": "Loading {metric}…",
+    "notEnoughData": "Not enough data to plot a trend yet.",
+    "trend": "trend"
+  }
+}

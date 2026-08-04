@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type {
+  CouncilMemberRunStatus,
+  CouncilRunStatus,
   MemoryArtifactKind,
   MemoryArtifactStatus,
   SourceIngestState,
@@ -68,4 +70,24 @@ export function useArtifactStatusLabel(): (status: MemoryArtifactStatus) => stri
 export function useSourceIngestStateLabel(): (state: SourceIngestState) => string {
   const t = useTranslations('memory');
   return (state) => t(`sourceState.${state}`);
+}
+
+/**
+ * The council domain's run/member status enums (Phase 82 Theme D). The *colour*
+ * mapping stays with the pill that renders it (`STATUS_PILL` in
+ * `components/council-run-thread`); only the wording moves here, so the councils
+ * thread, the run tabs and the project cockpit's Docs tab share one set of keys.
+ * Keys live in `council`.
+ */
+
+/** Run status → thread/pill label (`council.runStatus.*`). */
+export function useCouncilRunStatusLabel(): (status: CouncilRunStatus) => string {
+  const t = useTranslations('council');
+  return (status) => t(`runStatus.${status}`);
+}
+
+/** Member status → tab/output label (`council.run.memberStatus.*`). */
+export function useCouncilMemberStatusLabel(): (status: CouncilMemberRunStatus) => string {
+  const t = useTranslations('council');
+  return (status) => t(`run.memberStatus.${status}`);
 }

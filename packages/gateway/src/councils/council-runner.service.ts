@@ -10,9 +10,11 @@ import {
   type AgentCli,
   type CouncilFormat,
   type CouncilRun,
+  type Locale,
   type MidniteConfig,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { withOutputLanguage } from '../agent/llm/lib/output-language';
 import { TerminalService } from '../terminal/terminal.service';
 import { cleanPtyOutput } from '../terminal/lib/clean-output';
 import { oneshotCommand } from '../terminal/lib/oneshot-command';
@@ -62,6 +64,12 @@ export class CouncilRunnerService implements OnModuleInit {
   private readonly activeRuns = new Set<string>();
   // Live per-member state by run id, so a viewer can skip a hung CLI.
   private readonly liveRuns = new Map<string, LiveMember[]>();
+  // The language a live run should answer in (Phase 82 D). In-memory rather than a
+  // `council_runs` column because it's only needed between `startRun` and the
+  // synthesis barrier that fires once the members settle — and a restart fails every
+  // in-flight run anyway (`onModuleInit`), so there is nothing to recover. A
+  // re-synthesis carries its own locale on the request.
+  private readonly runLocales = new Map<string, Locale>();
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -90,7 +98,7 @@ export class CouncilRunnerService implements OnModuleInit {
     }
   }
 
-  startRun(councilId: string, prompt: string, format?: CouncilFormat): CouncilRun {
+  startRun(councilId: string, prompt: string, format?: CouncilFormat, locale?: Locale): CouncilRun {
     const council = this.repo.getCouncil(councilId);
     if (!council) throw new CouncilDoesNotExistError(`council ${councilId} does not exist`);
     const members = this.repo.listMembers(councilId);
@@ -108,6 +116,7 @@ export class CouncilRunnerService implements OnModuleInit {
     const runId = randomUUID();
     const startedAt = new Date().toISOString();
     this.activeRuns.add(councilId);
+    if (locale) this.runLocales.set(runId, locale);
     this.repo.insertRun({
       id: runId,
       councilId,
@@ -176,7 +185,7 @@ export class CouncilRunnerService implements OnModuleInit {
     format: CouncilFormat,
     all: LiveMember[],
   ): void {
-    const memberPrompt = buildMemberPrompt(format, role, prompt);
+    const memberPrompt = buildMemberPrompt(format, role, prompt, this.runLocales.get(runId));
     const spawned = this.terminal.spawnManagedRun(
       lm.terminalId,
       { ...oneshotCommand(provider, memberPrompt), cwd: process.cwd() },
@@ -312,7 +321,12 @@ export class CouncilRunnerService implements OnModuleInit {
    * the cheap synthesis step without re-running the members. Also the rate-limit
    * escape hatch (switch the synthesizer provider and retry).
    */
-  retrySynthesis(councilId: string, runId: string, format?: CouncilFormat): CouncilRun {
+  retrySynthesis(
+    councilId: string,
+    runId: string,
+    format?: CouncilFormat,
+    locale?: Locale,
+  ): CouncilRun {
     const run = this.repo.getRun(runId);
     if (!run || run.councilId !== councilId) {
       throw new CouncilDoesNotExistError(`run ${runId} does not exist on council ${councilId}`);
@@ -330,6 +344,10 @@ export class CouncilRunnerService implements OnModuleInit {
 
     this.activeRuns.add(councilId);
     this.liveRuns.set(runId, []);
+    // A re-synthesis is its own request, so its locale replaces whatever the
+    // original run used (and clears it when the caller sends none).
+    if (locale) this.runLocales.set(runId, locale);
+    else this.runLocales.delete(runId);
     this.synthesize(councilId, runId);
     return this.repo.hydrateRun(this.repo.getRun(runId)!);
   }
@@ -443,8 +461,13 @@ export class CouncilRunnerService implements OnModuleInit {
         anonymize: meta.anonymize,
         customPrompt: council?.customPrompt ?? undefined,
       });
-      // CLIs take a single prompt, so the synthesizer framing rides in front.
-      const system = meta.anonymize ? SYNTH_SYSTEM_PROMPT_ANONYMIZED : SYNTH_SYSTEM_PROMPT_ATTRIBUTED;
+      // CLIs take a single prompt, so the synthesizer framing rides in front — with
+      // the run's language directive appended to it (Phase 82 D), so the synthesis
+      // comes back in the same language the members answered in.
+      const system = withOutputLanguage(
+        meta.anonymize ? SYNTH_SYSTEM_PROMPT_ANONYMIZED : SYNTH_SYSTEM_PROMPT_ATTRIBUTED,
+        this.runLocales.get(runId),
+      );
       const prompt = `${system}\n\n${body}`;
       this.runSynthesis(councilId, runId, provider, { format, anonymized: meta.anonymize, labelMap }, prompt);
     } catch (err) {
@@ -545,5 +568,6 @@ export class CouncilRunnerService implements OnModuleInit {
   private finishRun(councilId: string, runId: string): void {
     this.activeRuns.delete(councilId);
     this.liveRuns.delete(runId);
+    this.runLocales.delete(runId);
   }
 }

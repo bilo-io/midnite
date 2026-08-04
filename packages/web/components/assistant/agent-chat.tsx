@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { AssistantBlock, AssistantInferencePath } from '@midnite/shared';
+import { useLocale, useTranslations } from 'next-intl';
+import type { AssistantBlock, AssistantInferencePath, Locale } from '@midnite/shared';
 
 import { assistantQuery } from '@/lib/api';
 import { AssistantBlockView } from './assistant-blocks';
@@ -19,50 +20,55 @@ type Turn =
   | { role: 'assistant'; blocks: AssistantBlock[]; inferencePath: AssistantInferencePath }
   | { role: 'error'; text: string };
 
-const PATH_LABEL: Record<AssistantInferencePath, string> = {
-  deterministic: 'answered from fleet state — no AI used',
-  provider: 'via your AI provider',
-};
-
 export function AgentChat() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const t = useTranslations('assistant');
+  // The answer itself is model output, so the active locale rides on the request
+  // and the gateway tells the model which language to write in (Phase 82 D) —
+  // the same seam the memory chat uses.
+  const locale = useLocale() as Locale;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const question = input.trim();
     if (!question || busy) return;
     setInput('');
-    setTurns((t) => [...t, { role: 'user', text: question }]);
+    setTurns((prev) => [...prev, { role: 'user', text: question }]);
     setBusy(true);
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
-      const res = await assistantQuery(question, ctrl.signal);
-      setTurns((t) => [...t, { role: 'assistant', blocks: res.blocks, inferencePath: res.inferencePath }]);
+      const res = await assistantQuery(question, locale, ctrl.signal);
+      setTurns((prev) => [
+        ...prev,
+        { role: 'assistant', blocks: res.blocks, inferencePath: res.inferencePath },
+      ]);
     } catch (err) {
       if (ctrl.signal.aborted) return;
-      setTurns((t) => [...t, { role: 'error', text: err instanceof Error ? err.message : 'Assistant request failed.' }]);
+      setTurns((prev) => [
+        ...prev,
+        { role: 'error', text: err instanceof Error ? err.message : t('agent.failed') },
+      ]);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="flex h-full flex-col gap-3" aria-label="Fleet assistant">
+    <div className="flex h-full flex-col gap-3" aria-label={t('agent.label')}>
       <div className="flex-1 space-y-4 overflow-y-auto" role="log" aria-live="polite">
         {turns.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Ask about your fleet — <em>“what should I focus on?”</em>, <em>“which tasks are blocked?”</em>,{' '}
-            <em>“how are the active sessions doing?”</em>
+            {t.rich('agent.empty', { em: (chunks) => <em>{chunks}</em> })}
           </p>
         ) : (
           turns.map((turn, i) => <TurnView key={i} turn={turn} />)
         )}
-        {busy ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
+        {busy ? <p className="text-sm text-muted-foreground">{t('agent.thinking')}</p> : null}
       </div>
 
       <form onSubmit={submit} className="flex items-end gap-2">
@@ -76,8 +82,8 @@ export function AgentChat() {
             }
           }}
           rows={1}
-          placeholder="Ask your fleet…"
-          aria-label="Ask the fleet assistant"
+          placeholder={t('agent.placeholder')}
+          aria-label={t('agent.inputLabel')}
           className="min-h-[2.5rem] flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <button
@@ -85,7 +91,7 @@ export function AgentChat() {
           disabled={busy || !input.trim()}
           className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
-          Ask
+          {t('agent.ask')}
         </button>
       </form>
     </div>
@@ -93,6 +99,7 @@ export function AgentChat() {
 }
 
 function TurnView({ turn }: { turn: Turn }) {
+  const t = useTranslations('assistant');
   if (turn.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -108,7 +115,9 @@ function TurnView({ turn }: { turn: Turn }) {
       {turn.blocks.map((block, i) => (
         <AssistantBlockView key={i} block={block} />
       ))}
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{PATH_LABEL[turn.inferencePath]}</p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        {t(`agent.path.${turn.inferencePath}`)}
+      </p>
     </div>
   );
 }

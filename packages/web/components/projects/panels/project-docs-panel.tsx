@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Project } from '@midnite/shared';
 import { STATUS_PILL } from '@/components/council-run-thread';
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
+import { useCouncilRunStatusLabel } from '@/lib/i18n-labels';
 import { getCouncilRunsByProject } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { cn, relativeTime } from '@/lib/utils';
@@ -15,7 +16,8 @@ type Props = {
 /**
  * The council runs linked to this project — a compact, read-only list. Reuses
  * the same status-pill mapping the council's own thread renders (`STATUS_PILL`
- * in `council-run-thread.tsx`) so a run reads identically in both places. There
+ * for the colour + `useCouncilRunStatusLabel` for the wording, Phase 82 D) so a
+ * run reads identically in both places. There
  * is no run-specific deep link in the app today (council run selection is local
  * component state, not a URL param), so each row links to the council itself
  * (`/councils/view?id=`), matching every other council link in the codebase.
@@ -26,6 +28,7 @@ function ProjectCouncilRuns({ project }: Props) {
     [project.id],
   );
   const runs = data ?? [];
+  const statusLabel = useCouncilRunStatusLabel();
 
   return (
     <div className="space-y-3">
@@ -65,7 +68,7 @@ function ProjectCouncilRuns({ project }: Props) {
                       pill.className,
                     )}
                   >
-                    {pill.label}
+                    {statusLabel(run.status)}
                   </span>
                   <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                     {relativeTime(run.startedAt)}

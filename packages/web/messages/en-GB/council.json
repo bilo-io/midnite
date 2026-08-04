@@ -1,0 +1,172 @@
+{
+  "title": "Councils",
+  "description": "Panels of AI members that respond to a prompt from fixed roles — then a synthesizer distils them in any format: brainstorm, debate, analyse, and more.",
+  "new": "New council",
+  "searchPlaceholder": "Search councils",
+  "archived": "Archived",
+  "views": {
+    "list": "List view",
+    "grid": "Grid view",
+    "table": "Table view"
+  },
+  "empty": {
+    "title": "No councils yet",
+    "description": "Create one, add members with distinct roles, and put a prompt to them.",
+    "noMatch": "No councils match “{query}”"
+  },
+  "bulk": {
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "deleteTitle": "Delete {count, plural, one {# council} other {# councils}}?",
+    "deleteDescription": "This cannot be undone."
+  },
+  "table": {
+    "name": "Name",
+    "description": "Description",
+    "providers": "Providers",
+    "activity": "Activity",
+    "none": "—"
+  },
+  "stats": {
+    "members": "{count, plural, one {# member} other {# members}}",
+    "consultations": "{count, plural, one {# consultation} other {# consultations}}"
+  },
+  "widget": {
+    "title": "Councils",
+    "refresh": "Refresh councils",
+    "error": "Couldn’t load councils.",
+    "empty": "No councils yet.",
+    "noMembers": "No members"
+  },
+  "create": {
+    "title": "New council",
+    "name": "Name",
+    "namePlaceholder": "e.g. Architecture review board",
+    "description": "Description",
+    "optional": "(optional)",
+    "descriptionPlaceholder": "What this council weighs in on",
+    "submit": "Create council",
+    "creating": "Creating…",
+    "failed": "Failed to create council"
+  },
+  "custom": {
+    "title": "Custom synthesis prompt",
+    "blurb": "This prompt is used as the synthesis task whenever a run’s format is Custom.",
+    "promptFor": "Prompt for {name}"
+  },
+  "detail": {
+    "thread": "Thread",
+    "members": "Members",
+    "noRun": "Submit a prompt below and each member will respond from its role in its own terminal. The responses are then handed to the synthesizer and distilled in your chosen format.",
+    "liveHint": "A run is in progress — wait for the synthesis.",
+    "noMembersHint": "Add at least 1 member in the panel to start."
+  },
+  "thread": {
+    "title": "Thread",
+    "empty": "No runs yet — submit the first prompt below.",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  },
+  "runStatus": {
+    "running": "Running",
+    "synthesizing": "Synthesizing",
+    "completed": "Completed",
+    "failed": "Failed"
+  },
+  "composer": {
+    "label": "Prompt for the council",
+    "placeholder": "Ask the council anything · ⌘/Ctrl + ⏎",
+    "formatLabel": "Synthesis format",
+    "dictate": "Dictate prompt",
+    "stopDictation": "Stop dictation",
+    "editCustom": "Edit custom synthesis prompt",
+    "editCustomTitle": "Edit the custom synthesis prompt",
+    "start": "Start"
+  },
+  "members": {
+    "title": "Members",
+    "saveFailed": "Save failed",
+    "synthesizeWith": "Synthesize with",
+    "synthProvider": "Synthesizer provider",
+    "defaultFormat": "Default format",
+    "defaultFormatLabel": "Default synthesis format",
+    "editCustomPrompt": "Edit custom prompt",
+    "synthBlurb": "Distils the pooled responses. The format is pre-selected for new runs and can be switched per run — and re-run over the same responses.",
+    "empty": "Add at least 1 member — each responds to the prompt from its own role.",
+    "fallbackName": "Member {index}",
+    "reorder": "Reorder {name}",
+    "remove": "Remove {name}",
+    "collapse": "Collapse {name}",
+    "expand": "Expand {name}",
+    "nameField": "{name} name",
+    "providerField": "{name} provider",
+    "roleField": "{name} role",
+    "rolePlaceholder": "Role to respond from — e.g. “Argue the contrary view.”"
+  },
+  "run": {
+    "tablist": "Council run",
+    "prompt": "Prompt:",
+    "synthesis": "Synthesis",
+    "memberStatus": {
+      "running": "Running",
+      "succeeded": "Finished",
+      "failed": "Failed",
+      "timeout": "Timed out",
+      "skipped": "Skipped"
+    },
+    "skipMember": "Skip member",
+    "skip": "Skip",
+    "skipTitle": "Stop waiting on this member — the synthesis proceeds without it",
+    "rerun": "Rerun",
+    "rerunTitle": "Rerun this member, then re-synthesize",
+    "noOutput": "No output captured.",
+    "memberTerminal": "{name} terminal",
+    "waiting": "Waiting on {count, plural, one {# member} other {# members}}…",
+    "synthesizing": "Synthesizing ({format}) — {provider} is distilling the responses…",
+    "synthesizerFallback": "The synthesizer",
+    "synthesisTerminalLabel": "Synthesis · {provider}",
+    "synthesisTerminal": "Synthesis terminal",
+    "reSynthesize": "Re-synthesize",
+    "reSynthesizeBlurb": "Re-runs only the synthesis over the captured responses — switch formats freely; members don’t re-run.",
+    "failed": "The run failed.",
+    "noSynthesis": "No synthesis recorded.",
+    "memberLabel": "Member {label}"
+  },
+  "errors": {
+    "poll": "Failed to poll run",
+    "start": "Failed to start run",
+    "resynthesize": "Failed to re-synthesize"
+  },
+  "formats": {
+    "brainstorm": {
+      "label": "Brainstorm",
+      "description": "Generate ideas, then cluster and curate the strongest."
+    },
+    "debate": {
+      "label": "Debate",
+      "description": "Weigh anonymized positions into a single verdict."
+    },
+    "analyse": {
+      "label": "Analyse",
+      "description": "Neutral analysis of themes, agreements, and tensions."
+    },
+    "critique": {
+      "label": "Critique",
+      "description": "Impartially stress-test each position — strengths and risks."
+    },
+    "motivate": {
+      "label": "Motivate",
+      "description": "Build the strongest optimistic case and a path forward."
+    },
+    "demotivate": {
+      "label": "Demotivate",
+      "description": "A skeptical pre-mortem — surface every reason it fails."
+    },
+    "custom": {
+      "label": "Custom",
+      "description": "Write your own synthesis prompt."
+    }
+  }
+}

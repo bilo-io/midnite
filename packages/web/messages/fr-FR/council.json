@@ -1,0 +1,172 @@
+{
+  "title": "Conseils",
+  "description": "Des panels de membres IA qui répondent à une consigne depuis des rôles fixes — puis un synthétiseur les distille dans le format de votre choix : remue-méninges, débat, analyse, et plus encore.",
+  "new": "Nouveau conseil",
+  "searchPlaceholder": "Rechercher un conseil",
+  "archived": "Archivé",
+  "views": {
+    "list": "Vue liste",
+    "grid": "Vue grille",
+    "table": "Vue tableau"
+  },
+  "empty": {
+    "title": "Aucun conseil pour l’instant",
+    "description": "Créez-en un, ajoutez des membres aux rôles distincts, et soumettez-leur une consigne.",
+    "noMatch": "Aucun conseil ne correspond à « {query} »"
+  },
+  "bulk": {
+    "archive": "Archiver",
+    "unarchive": "Désarchiver",
+    "deleteTitle": "Supprimer {count, plural, one {# conseil} other {# conseils}} ?",
+    "deleteDescription": "Cette action est irréversible."
+  },
+  "table": {
+    "name": "Nom",
+    "description": "Description",
+    "providers": "Fournisseurs",
+    "activity": "Activité",
+    "none": "—"
+  },
+  "stats": {
+    "members": "{count, plural, one {# membre} other {# membres}}",
+    "consultations": "{count, plural, one {# consultation} other {# consultations}}"
+  },
+  "widget": {
+    "title": "Conseils",
+    "refresh": "Rafraîchir les conseils",
+    "error": "Impossible de charger les conseils.",
+    "empty": "Aucun conseil pour l’instant.",
+    "noMembers": "Aucun membre"
+  },
+  "create": {
+    "title": "Nouveau conseil",
+    "name": "Nom",
+    "namePlaceholder": "p. ex. Comité de revue d’architecture",
+    "description": "Description",
+    "optional": "(facultatif)",
+    "descriptionPlaceholder": "Sur quoi ce conseil se prononce",
+    "submit": "Créer le conseil",
+    "creating": "Création…",
+    "failed": "Échec de la création du conseil"
+  },
+  "custom": {
+    "title": "Consigne de synthèse personnalisée",
+    "blurb": "Cette consigne sert de tâche de synthèse dès qu’une exécution utilise le format Personnalisé.",
+    "promptFor": "Consigne pour {name}"
+  },
+  "detail": {
+    "thread": "Fil",
+    "members": "Membres",
+    "noRun": "Soumettez une consigne ci-dessous : chaque membre répondra depuis son rôle, dans son propre terminal. Les réponses sont ensuite confiées au synthétiseur et distillées dans le format que vous avez choisi.",
+    "liveHint": "Une exécution est en cours — attendez la synthèse.",
+    "noMembersHint": "Ajoutez au moins 1 membre dans le panneau pour démarrer."
+  },
+  "thread": {
+    "title": "Fil",
+    "empty": "Aucune exécution pour l’instant — soumettez la première consigne ci-dessous.",
+    "justNow": "à l’instant",
+    "minutesAgo": "il y a {count} min",
+    "hoursAgo": "il y a {count} h",
+    "daysAgo": "il y a {count} j"
+  },
+  "runStatus": {
+    "running": "En cours",
+    "synthesizing": "Synthèse en cours",
+    "completed": "Terminé",
+    "failed": "Échec"
+  },
+  "composer": {
+    "label": "Consigne pour le conseil",
+    "placeholder": "Demandez ce que vous voulez au conseil · ⌘/Ctrl + ⏎",
+    "formatLabel": "Format de synthèse",
+    "dictate": "Dicter la consigne",
+    "stopDictation": "Arrêter la dictée",
+    "editCustom": "Modifier la consigne de synthèse personnalisée",
+    "editCustomTitle": "Modifier la consigne de synthèse personnalisée",
+    "start": "Démarrer"
+  },
+  "members": {
+    "title": "Membres",
+    "synthesizeWith": "Synthétiser avec",
+    "synthProvider": "Fournisseur du synthétiseur",
+    "defaultFormat": "Format par défaut",
+    "defaultFormatLabel": "Format de synthèse par défaut",
+    "editCustomPrompt": "Modifier la consigne personnalisée",
+    "synthBlurb": "Distille les réponses réunies. Le format est pré-sélectionné pour les nouvelles exécutions et peut être changé à chaque exécution — et relancé sur les mêmes réponses.",
+    "empty": "Ajoutez au moins 1 membre — chacun répond à la consigne depuis son propre rôle.",
+    "saveFailed": "Échec de l’enregistrement",
+    "fallbackName": "Membre {index}",
+    "reorder": "Réordonner {name}",
+    "remove": "Retirer {name}",
+    "collapse": "Replier {name}",
+    "expand": "Déplier {name}",
+    "nameField": "Nom de {name}",
+    "providerField": "Fournisseur de {name}",
+    "roleField": "Rôle de {name}",
+    "rolePlaceholder": "Rôle depuis lequel répondre — p. ex. « Défendez la thèse contraire. »"
+  },
+  "run": {
+    "tablist": "Exécution du conseil",
+    "prompt": "Consigne :",
+    "synthesis": "Synthèse",
+    "memberStatus": {
+      "running": "En cours",
+      "succeeded": "Terminé",
+      "failed": "Échec",
+      "timeout": "Délai dépassé",
+      "skipped": "Ignoré"
+    },
+    "skipMember": "Ignorer le membre",
+    "skip": "Ignorer",
+    "skipTitle": "Ne plus attendre ce membre — la synthèse se poursuit sans lui",
+    "rerun": "Relancer",
+    "rerunTitle": "Relancer ce membre, puis refaire la synthèse",
+    "noOutput": "Aucune sortie capturée.",
+    "memberTerminal": "Terminal de {name}",
+    "waiting": "En attente de {count, plural, one {# membre} other {# membres}}…",
+    "synthesizing": "Synthèse en cours ({format}) — {provider} distille les réponses…",
+    "synthesizerFallback": "Le synthétiseur",
+    "synthesisTerminalLabel": "Synthèse · {provider}",
+    "synthesisTerminal": "Terminal de synthèse",
+    "reSynthesize": "Refaire la synthèse",
+    "reSynthesizeBlurb": "Relance uniquement la synthèse sur les réponses capturées — changez de format librement, les membres ne sont pas relancés.",
+    "failed": "L’exécution a échoué.",
+    "noSynthesis": "Aucune synthèse enregistrée.",
+    "memberLabel": "Membre {label}"
+  },
+  "errors": {
+    "poll": "Échec du suivi de l’exécution",
+    "start": "Échec du démarrage de l’exécution",
+    "resynthesize": "Échec de la nouvelle synthèse"
+  },
+  "formats": {
+    "brainstorm": {
+      "label": "Remue-méninges",
+      "description": "Générer des idées, puis regrouper et retenir les plus fortes."
+    },
+    "debate": {
+      "label": "Débat",
+      "description": "Peser des positions anonymisées pour aboutir à un verdict unique."
+    },
+    "analyse": {
+      "label": "Analyse",
+      "description": "Analyse neutre des thèmes, des accords et des tensions."
+    },
+    "critique": {
+      "label": "Critique",
+      "description": "Éprouver chaque position avec impartialité — forces et risques."
+    },
+    "motivate": {
+      "label": "Motiver",
+      "description": "Bâtir le meilleur argumentaire optimiste et une voie à suivre."
+    },
+    "demotivate": {
+      "label": "Démotiver",
+      "description": "Un post-mortem anticipé et sceptique — exposer chaque raison d’échouer."
+    },
+    "custom": {
+      "label": "Personnalisé",
+      "description": "Rédigez votre propre consigne de synthèse."
+    }
+  }
+}

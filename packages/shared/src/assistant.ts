@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { LocaleSchema } from './i18n.js';
+
 /**
  * Phase 66 E — the **Assistant answer contract**. The agent answers a free-form
  * question about the fleet/tasks/sessions as an ordered list of **blocks**:
@@ -102,6 +104,11 @@ export type AssistantInferencePath = z.infer<typeof AssistantInferencePathSchema
 /** `POST /assistant/query` request — one free-form question. */
 export const AssistantQueryRequestSchema = z.object({
   question: z.string().min(1).max(2_000),
+  // The locale the answer's prose should be written in (Phase 82 D). Explicit on
+  // the request — not an Accept-Language header, not a server-side prefs lookup —
+  // so the caller's *active* UI language is what the model is told to write in,
+  // and honoured for a locale whose UI catalog is still a stub.
+  locale: LocaleSchema.optional(),
 });
 export type AssistantQueryRequest = z.infer<typeof AssistantQueryRequestSchema>;
 

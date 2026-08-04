@@ -59,7 +59,25 @@ describe('AgentChat', () => {
     expect(await screen.findByText('what is blocked?')).toBeInTheDocument(); // user turn
     expect(await screen.findByText('One task is blocked.')).toBeInTheDocument(); // assistant markdown
     expect(screen.getByText(/no AI used/i)).toBeInTheDocument(); // deterministic cost line
-    expect(assistantQuery).toHaveBeenCalledWith('what is blocked?', expect.anything());
+    expect(assistantQuery).toHaveBeenCalledWith('what is blocked?', 'en-GB', expect.anything());
+  });
+
+  // Phase 82 D — the answer's prose is generated copy, so the active locale rides on
+  // the request and the gateway tells the model which language to write in. That must
+  // hold for a locale whose *UI* catalog is still a stub: de-DE renders English chrome
+  // (fallback) but the user is typing German, so the model is still asked for German.
+  // No clamping to a "complete" locale.
+  it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
+    answer({ blocks: [{ kind: 'markdown', text: 'ok' }], inferencePath: 'provider' });
+    render(withQueryClient(<AgentChat />), { locale: 'de-DE' });
+    fireEvent.change(screen.getByLabelText(/ask the fleet assistant/i), {
+      target: { value: 'was ist blockiert?' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /ask/i }));
+
+    await waitFor(() =>
+      expect(assistantQuery).toHaveBeenCalledWith('was ist blockiert?', 'de-DE', expect.anything()),
+    );
   });
 
   it('resolves a task-card component block by id against the task list', async () => {

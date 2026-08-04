@@ -100,6 +100,33 @@ describe('AssistantService', () => {
     expect(generateStructured).toHaveBeenCalledWith(expect.anything(), 'assistant');
   });
 
+  // Phase 82 D — the prose blocks are generated copy, so the request's locale is
+  // appended to the system prompt. The default locale adds nothing (the models
+  // already answer in English), so the prompt stays byte-identical.
+  it('tells the model which language to answer in for a non-default locale', async () => {
+    const generateStructured = vi.fn(async () => ({
+      data: { blocks: [{ kind: 'markdown', text: 'bonjour' }] },
+      model: 'm', usage: {},
+    }));
+    const svc = build({ enabled: true, getActModel: () => 'm', generateStructured } as unknown as Partial<LlmService>);
+    await svc.answer('quoi de neuf ?', undefined, undefined, 'fr-FR');
+    const [req] = generateStructured.mock.calls[0] as unknown as [{ system: string }];
+    expect(req.system).toContain('French (Français)');
+  });
+
+  it('leaves the system prompt untouched at the default locale', async () => {
+    const generateStructured = vi.fn(async () => ({
+      data: { blocks: [{ kind: 'markdown', text: 'hi' }] },
+      model: 'm', usage: {},
+    }));
+    const svc = build({ enabled: true, getActModel: () => 'm', generateStructured } as unknown as Partial<LlmService>);
+    await svc.answer('x', undefined, undefined, 'en-GB');
+    const [withLocale] = generateStructured.mock.calls[0] as unknown as [{ system: string }];
+    await svc.answer('x');
+    const [without] = generateStructured.mock.calls[1] as unknown as [{ system: string }];
+    expect(withLocale.system).toBe(without.system);
+  });
+
   it('downgrades an invalid component block to markdown', async () => {
     const generateStructured = vi.fn(async () => ({
       data: { blocks: [{ kind: 'component', name: 'ghost', props: {} }] },

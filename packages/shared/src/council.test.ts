@@ -215,4 +215,17 @@ describe('request schemas', () => {
     expect(RetryCouncilSynthesisRequestSchema.parse({ format: 'analyse' }).format).toBe('analyse');
     expect(RetryCouncilSynthesisRequestSchema.safeParse({ format: 'nope' }).success).toBe(false);
   });
+
+  // Phase 82 D — every generated word of a run (member responses + synthesis) can be
+  // written in the caller's language. Optional on both request shapes, so an older
+  // client that sends neither keeps working, and bounded by the locale contract.
+  it('accepts an optional locale on start + retry, and rejects an unsupported one', () => {
+    expect(StartCouncilRunRequestSchema.parse({ prompt: 'go', locale: 'fr-FR' }).locale).toBe('fr-FR');
+    expect(StartCouncilRunRequestSchema.parse({ prompt: 'go' }).locale).toBeUndefined();
+    expect(StartCouncilRunRequestSchema.safeParse({ prompt: 'go', locale: 'xx-XX' }).success).toBe(
+      false,
+    );
+    expect(RetryCouncilSynthesisRequestSchema.parse({ locale: 'de-DE' }).locale).toBe('de-DE');
+    expect(RetryCouncilSynthesisRequestSchema.safeParse({ locale: 'klingon' }).success).toBe(false);
+  });
 });

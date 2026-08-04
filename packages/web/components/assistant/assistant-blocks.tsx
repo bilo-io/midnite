@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type {
   AssistantBlock,
   AssistantComponentBlock,
@@ -24,6 +25,12 @@ import { useApiData } from '@/lib/use-api-data';
  * resolves the *real* data client-side from the id/param the LLM emitted (the
  * LLM never carries the data itself — see the AssistantBlock contract). An
  * unknown name degrades to a small notice rather than crashing the transcript.
+ *
+ * Phase 82 D — the block *chrome* (loading/empty/error notices, the count and
+ * metric labels the web supplies, aria labels) is translated here. Block
+ * *content* is model output and is governed by the request's `locale` instead:
+ * `AgentChat` sends the active locale and the gateway tells the model which
+ * language to answer in.
  */
 export function AssistantBlockView({ block }: { block: AssistantBlock }) {
   if (block.kind === 'markdown') {
@@ -33,6 +40,7 @@ export function AssistantBlockView({ block }: { block: AssistantBlock }) {
 }
 
 function ComponentBlockView({ block }: { block: AssistantComponentBlock }) {
+  const t = useTranslations('assistant');
   switch (block.name) {
     case 'task-card':
       return <TaskCardBlock taskId={block.props.taskId} />;
@@ -45,7 +53,7 @@ function ComponentBlockView({ block }: { block: AssistantComponentBlock }) {
     default:
       // Exhaustiveness guard — an unknown name shouldn't reach here (the contract
       // validates names), but degrade gracefully if it ever does.
-      return <BlockNotice>Unsupported component.</BlockNotice>;
+      return <BlockNotice>{t('blocks.unsupported')}</BlockNotice>;
   }
 }
 
@@ -55,28 +63,35 @@ function BlockNotice({ children }: { children: React.ReactNode }) {
 
 /** `task-card` — resolve the referenced id against the (cached) board task list. */
 function TaskCardBlock({ taskId }: { taskId: string }) {
+  const t = useTranslations('assistant');
   const { data, loading } = useApiData(getTasks, ['assistant-tasks']);
-  if (loading && !data) return <BlockNotice>Loading task…</BlockNotice>;
-  const task = data?.find((t) => t.id === taskId);
-  if (!task) return <BlockNotice>Task {taskId} is no longer on the board.</BlockNotice>;
+  if (loading && !data) return <BlockNotice>{t('blocks.loadingTask')}</BlockNotice>;
+  const task = data?.find((x) => x.id === taskId);
+  if (!task) return <BlockNotice>{t('blocks.taskGone', { taskId })}</BlockNotice>;
   return <TaskCard task={task} />;
 }
 
 /** `fleet-gauge` — live status counts as a compact strip. */
 function FleetGaugeBlock() {
+  const t = useTranslations('assistant');
   const { data, loading } = useApiData(getTaskCounts, ['assistant-counts']);
-  if (loading && !data) return <BlockNotice>Loading counts…</BlockNotice>;
-  if (!data) return <BlockNotice>Counts unavailable.</BlockNotice>;
-  const cells: Array<{ label: string; value: number; className: string }> = [
-    { label: 'Backlog', value: data.backlog, className: 'text-muted-foreground' },
-    { label: 'To do', value: data.todo, className: 'text-blue-600 dark:text-blue-400' },
-    { label: 'In progress', value: data.inProgress, className: 'text-amber-600 dark:text-amber-400' },
-    { label: 'Done', value: data.done, className: 'text-success' },
+  if (loading && !data) return <BlockNotice>{t('blocks.loadingCounts')}</BlockNotice>;
+  if (!data) return <BlockNotice>{t('blocks.countsUnavailable')}</BlockNotice>;
+  const cells: Array<{ key: string; label: string; value: number; className: string }> = [
+    { key: 'backlog', label: t('blocks.counts.backlog'), value: data.backlog, className: 'text-muted-foreground' },
+    { key: 'todo', label: t('blocks.counts.todo'), value: data.todo, className: 'text-blue-600 dark:text-blue-400' },
+    {
+      key: 'inProgress',
+      label: t('blocks.counts.inProgress'),
+      value: data.inProgress,
+      className: 'text-amber-600 dark:text-amber-400',
+    },
+    { key: 'done', label: t('blocks.counts.done'), value: data.done, className: 'text-success' },
   ];
   return (
-    <div className="grid grid-cols-4 gap-2" role="group" aria-label="Fleet task counts">
+    <div className="grid grid-cols-4 gap-2" role="group" aria-label={t('blocks.countsLabel')}>
       {cells.map((c) => (
-        <div key={c.label} className="rounded-md border border-border/60 bg-card px-2 py-1.5 text-center">
+        <div key={c.key} className="rounded-md border border-border/60 bg-card px-2 py-1.5 text-center">
           <div className={`text-lg font-semibold tabular-nums ${c.className}`}>{c.value}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{c.label}</div>
         </div>
@@ -87,12 +102,16 @@ function FleetGaugeBlock() {
 
 /** `session-list` — the active (non-archived) sessions, capped. */
 function SessionListBlock({ limit = 8 }: { limit?: number }) {
+  const t = useTranslations('assistant');
   const { data, loading } = useApiData(getSessions, ['assistant-sessions']);
-  if (loading && !data) return <BlockNotice>Loading sessions…</BlockNotice>;
+  if (loading && !data) return <BlockNotice>{t('blocks.loadingSessions')}</BlockNotice>;
   const active = (data ?? []).filter((s) => !s.archivedAt).slice(0, limit);
-  if (active.length === 0) return <BlockNotice>No active sessions.</BlockNotice>;
+  if (active.length === 0) return <BlockNotice>{t('blocks.noSessions')}</BlockNotice>;
   return (
-    <ul className="divide-y divide-border/60 rounded-md border border-border/60 bg-card" aria-label="Active sessions">
+    <ul
+      className="divide-y divide-border/60 rounded-md border border-border/60 bg-card"
+      aria-label={t('blocks.sessionsLabel')}
+    >
       {active.map((s) => (
         <li key={s.id} className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm">
           <span className="truncate">{s.title}</span>
@@ -105,23 +124,22 @@ function SessionListBlock({ limit = 8 }: { limit?: number }) {
   );
 }
 
-const METRIC_LABEL: Record<AssistantSparklineMetric, string> = {
-  'cycle-time': 'Cycle time (wait · work · lead, p50)',
-  throughput: 'Throughput (runs/day)',
-  'queue-depth': 'Queue depth',
-  cost: 'Spend by dimension (USD)',
-};
-
 /** `sparkline` — a small trend of one metric, resolved from its metrics endpoint. */
 function SparklineBlock({ metric }: { metric: AssistantSparklineMetric }) {
+  const t = useTranslations('assistant');
   const { data, loading } = useApiData(() => resolveMetricSeries(metric), ['assistant-metric', metric]);
-  if (loading && !data) return <BlockNotice>Loading {METRIC_LABEL[metric]}…</BlockNotice>;
+  // Metric ids carry a dash, which is fine as a key segment (unlike a dot, which
+  // next-intl reads as a separator) — so they address the catalog directly.
+  const label = t(`blocks.metrics.${metric}`);
+  if (loading && !data) return <BlockNotice>{t('blocks.loadingMetric', { metric: label })}</BlockNotice>;
   const points = data ?? [];
   return (
     <figure className="rounded-md border border-border/60 bg-card px-3 py-2">
-      <figcaption className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{METRIC_LABEL[metric]}</figcaption>
+      <figcaption className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </figcaption>
       {points.length < 2 ? (
-        <div className="text-xs text-muted-foreground">Not enough data to plot a trend yet.</div>
+        <div className="text-xs text-muted-foreground">{t('blocks.notEnoughData')}</div>
       ) : (
         <Sparkline points={points} />
       )}
@@ -156,6 +174,7 @@ async function resolveMetricSeries(metric: AssistantSparklineMetric): Promise<nu
 
 /** Minimal dependency-free sparkline (inline SVG polyline). */
 function Sparkline({ points }: { points: number[] }) {
+  const t = useTranslations('assistant');
   const width = 240;
   const height = 40;
   const max = Math.max(...points, 1);
@@ -166,7 +185,14 @@ function Sparkline({ points }: { points: number[] }) {
     .map((p, i) => `${(i * step).toFixed(1)},${(height - ((p - min) / span) * height).toFixed(1)}`)
     .join(' ');
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label="trend">
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      role="img"
+      aria-label={t('blocks.trend')}
+    >
       <polyline points={coords} fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinejoin="round" />
     </svg>
   );

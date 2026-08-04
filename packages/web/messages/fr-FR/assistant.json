@@ -1,0 +1,83 @@
+{
+  "title": "Assistant",
+  "open": "Ouvrir l’assistant",
+  "close": "Fermer l’assistant",
+  "back": "Retour au menu de l’assistant",
+  "views": {
+    "chat": "Discussion",
+    "guides": "Guides"
+  },
+  "beta": "Bêta",
+  "soon": "Bientôt",
+  "entries": {
+    "docs": {
+      "label": "Docs",
+      "description": "La documentation de cette page"
+    },
+    "guide": {
+      "label": "Guide",
+      "description": "Lancer celui de cette page — ou tout parcourir"
+    },
+    "chat": {
+      "label": "Discussion",
+      "description": "Modifier le tableau en langage naturel"
+    },
+    "agent": {
+      "label": "Agent",
+      "description": "Interroger votre flotte"
+    },
+    "report": {
+      "label": "Signaler un problème",
+      "description": "Quelque chose ne va pas ? Dites-le nous"
+    }
+  },
+  "guides": {
+    "browseAll": "Parcourir tous les guides",
+    "thisPage": "Cette page",
+    "stepCount": "{count, plural, one {# étape} other {# étapes}}",
+    "notSeen": "Pas encore vu"
+  },
+  "chatToBoard": {
+    "placeholder": "Dites au tableau quoi faire…",
+    "label": "Discuter avec le tableau"
+  },
+  "agent": {
+    "label": "Assistant de flotte",
+    "empty": "Interrogez votre flotte — <em>« sur quoi devrais-je me concentrer ? »</em>, <em>« quelles tâches sont bloquées ? »</em>, <em>« comment se portent les sessions actives ? »</em>",
+    "thinking": "Réflexion…",
+    "placeholder": "Interrogez votre flotte…",
+    "inputLabel": "Interroger l’assistant de flotte",
+    "ask": "Demander",
+    "failed": "La requête à l’assistant a échoué.",
+    "path": {
+      "deterministic": "réponse issue de l’état de la flotte — sans IA",
+      "provider": "via votre fournisseur d’IA"
+    }
+  },
+  "blocks": {
+    "unsupported": "Composant non pris en charge.",
+    "loadingTask": "Chargement de la tâche…",
+    "taskGone": "La tâche {taskId} n’est plus sur le tableau.",
+    "loadingCounts": "Chargement des totaux…",
+    "countsUnavailable": "Totaux indisponibles.",
+    "countsLabel": "Totaux des tâches de la flotte",
+    "counts": {
+      "backlog": "Réserve",
+      "todo": "À faire",
+      "inProgress": "En cours",
+      "done": "Terminé"
+    },
+    "loadingSessions": "Chargement des sessions…",
+    "noSessions": "Aucune session active.",
+    "sessionsLabel": "Sessions actives",
+    "metrics": {
+      "cycle-time": "Temps de cycle (attente · travail · bout-en-bout, p50)",
+      "throughput": "Débit (exécutions/jour)",
+      "queue-depth": "Profondeur de file",
+      "cost": "Dépense par dimension (USD)"
+    },
+    "loadingMetric": "Chargement de {metric}…",
+    "notEnoughData": "Pas encore assez de données pour tracer une tendance.",
+    "trend": "tendance"
+  }
+}

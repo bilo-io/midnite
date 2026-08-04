@@ -107,7 +107,14 @@ describe('CouncilsController — valid input delegates to the services', () => {
   it('starts a run with the parsed prompt', () => {
     const { controller, runner } = build();
     expect(controller.startRun('c1', { prompt: 'decide' })).toEqual({ run: fakeRun });
-    expect(runner.startRun).toHaveBeenCalledWith('c1', 'decide', undefined);
+    // format + locale (Phase 82 D) are both optional and pass through as given.
+    expect(runner.startRun).toHaveBeenCalledWith('c1', 'decide', undefined, undefined);
+  });
+
+  it('passes the requested format + locale through to the runner', () => {
+    const { controller, runner } = build();
+    controller.startRun('c1', { prompt: 'decide', format: 'debate', locale: 'fr-FR' });
+    expect(runner.startRun).toHaveBeenCalledWith('c1', 'decide', 'debate', 'fr-FR');
   });
 
   it('streams a markdown export with attachment headers', () => {

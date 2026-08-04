@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { CouncilRun, Project } from '@midnite/shared';
+
+import { renderWithIntl } from '@/vitest.render-intl';
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -44,9 +46,12 @@ function makeRun(overrides: Partial<CouncilRun> = {}): CouncilRun {
 }
 
 // useApiData is backed by TanStack Query — every render needs a client in scope.
+// The run-status pill's wording comes from the `council` catalog (Phase 82 D), so the
+// panel needs an intl provider too — `renderWithIntl` supplies the real catalogs at
+// en-GB, keeping the English assertions below exact.
 function renderPanel() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  return renderWithIntl(
     <QueryClientProvider client={queryClient}>
       <ProjectDocsPanel project={project} />
     </QueryClientProvider>,

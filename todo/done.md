@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-04 — feat: Phase 82 Theme D — council + assistant i18n (en-GB + fr-FR) 🟢
+
+PR #593. The councils feature and the assistant FAB — the two surfaces a user reaches from every route — now read from the catalogs. `I18N_EXEMPT` 216 → 197.
+
+- [x] **Two namespaces, not one** — the phase-doc bullet said `assistant`, but councils is its own nav feature with 15 files of its own, so per decision §8 it got `council` (126 keys) and the FAB/panel/chat/blocks got `assistant` (53). Recorded in the phase doc rather than silently reinterpreted.
+- [x] **19 files migrated** — the 5 assistant files plus the councils list page + view, detail view, card/table/stats/widget, create + custom-format modals, members panel, run tabs, run thread, composer, and `lib/council-formats`. Reused `common.*` for cancel/close/save/add rather than minting council-local duplicates.
+- [x] **Format-label seam mirroring the workflows node seam** — `COUNCIL_FORMATS_META` keeps its English in `shared` (the gateway reads the same table when it builds the synthesis prompt and when it explains why an anonymized format needs ≥2 responses), and `lib/council-format-labels.ts` resolves `council.formats.<id>.*` at the web call site with that English as the per-key fallback. `FORMAT_SELECT_OPTIONS` became `useFormatSelectOptions()`.
+- [x] **`STATUS_PILL` is colour-only now** — run + member status wording moved into `lib/i18n-labels.ts`, so the councils thread, the run tabs *and* the project cockpit's Docs tab read one set of keys instead of three copies. That last file is in the still-open projects slice; touching it was the honest way to avoid a half-translated pill.
+- [x] **Localised LLM output**, same scope call as the memory slice — optional `locale` on `AssistantQueryRequest` + `StartCouncilRun`/`RetryCouncilSynthesis`, then `withOutputLanguage()` on the assistant system prompt and `outputLanguageInstruction()` appended to both the member prompts and the synthesis framing. A French user gets a French debate *and* a French verdict. At the default locale the prompts are byte-identical, so the existing prompt specs keep meaning what they say.
+- [x] **The locale survives the settle barrier** — synthesis fires once the members exit, long after `startRun` returned, so the runner holds it in a per-run in-memory map. No migration: a restart already fails every in-flight run, so there is nothing to recover (and it dodged the parallel-worktree migration-number hazard).
+- [x] **Tests** — a 62-case static key audit (every `t()` key in all 19 files resolves in en-GB *and* fr-FR, plus registry-driven sweeps over `COUNCIL_FORMATS`, both status enums, the view modes and the assistant entries), 6 behavioural fr-FR renders, a de-DE plumbing test proving a stub-catalog locale is still sent for generation, gateway prompt/runner/controller locale specs, and shared schema bounds. `council-run-thread.test.tsx` re-pointed at `renderWithIntl`.
+- [x] **fr Playwright shot** of the councils page + the open assistant panel — the panel is fully French. The page's `0 items` count pill is still English: it lives in the untouched residue slice, and the shot shows it honestly rather than cropping it out.
+- [x] Gate: `:typecheck` + `:lint` (0 errors) + `web:i18n-validate`/`i18n-exempt`/`i18n-barrels` green. `ui:test` failed 35 browser tests inside the full parallel run and passed 126/126 alone — the contention flake, in files this branch never touched.
+
 ## 2026-08-03 — feat: Phase 80 Theme E — reading-primitive stories & verification 🟢
 
 PR #590. Discharges the deferral made in Theme A ("units now, stories in E") and runs the phase's verification sweep. Phase 80 now has only Theme D (the legal set) left.

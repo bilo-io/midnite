@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { CirclePile, LayoutGrid, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { CountPill } from '@/components/count-pill';
@@ -22,13 +23,16 @@ import { cn } from '@/lib/utils';
 type View = 'list' | 'grid' | 'table';
 const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.councils.view';
-const VIEW_OPTIONS: Array<{ value: View; label: string; Icon: LucideIcon }> = [
-  { value: 'list', label: 'List view', Icon: List },
-  { value: 'grid', label: 'Grid view', Icon: LayoutGrid },
-  { value: 'table', label: 'Table view', Icon: ListTree },
+// Copy lives in `council.views.<value>`; only the glyph stays here (Phase 82 D).
+const VIEW_OPTIONS: Array<{ value: View; Icon: LucideIcon }> = [
+  { value: 'list', Icon: List },
+  { value: 'grid', Icon: LayoutGrid },
+  { value: 'table', Icon: ListTree },
 ];
 
 export function CouncilsView({ initial }: { initial: Council[] }) {
+  const t = useTranslations('council');
+  const tCommon = useTranslations('common');
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
 
@@ -76,15 +80,15 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
   const deleteSelection = useCallback(async () => {
     if (selectedIds.length === 0) return;
     const ok = await confirm({
-      title: `Delete ${selectedIds.length} council${selectedIds.length === 1 ? '' : 's'}?`,
-      description: 'This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: t('bulk.deleteTitle', { count: selectedIds.length }),
+      description: t('bulk.deleteDescription'),
+      confirmLabel: tCommon('delete'),
     });
     if (!ok) return;
     await Promise.all(selectedIds.map((id) => deleteCouncil(id)));
     clearSelection();
     refresh();
-  }, [selectedIds, confirm, clearSelection, refresh]);
+  }, [selectedIds, confirm, clearSelection, refresh, t, tCommon]);
 
   const bulkActions = useMemo<BulkAction[]>(() => {
     const actions: BulkAction[] = [];
@@ -93,7 +97,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
     if (toArchive.length) {
       actions.push({
         key: 'archive',
-        label: 'Archive',
+        label: t('bulk.archive'),
         color: BULK_COLORS.archive,
         onClick: () => void setArchivedFor(toArchive, true),
       });
@@ -101,19 +105,19 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
     if (toUnarchive.length) {
       actions.push({
         key: 'unarchive',
-        label: 'Unarchive',
+        label: t('bulk.unarchive'),
         color: BULK_COLORS.archive,
         onClick: () => void setArchivedFor(toUnarchive, false),
       });
     }
     actions.push({
       key: 'delete',
-      label: 'Delete',
+      label: tCommon('delete'),
       color: BULK_COLORS.delete,
       onClick: () => void deleteSelection(),
     });
     return actions;
-  }, [selectedCouncils, setArchivedFor, deleteSelection]);
+  }, [selectedCouncils, setArchivedFor, deleteSelection, t, tCommon]);
 
   const searchParams = useSearchParams();
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
@@ -130,15 +134,15 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
       <StickyToolbar className="reveal-controls">
         <CountPill count={filtered.length} />
         <div className="flex items-center gap-2">
-          <SearchBar placeholder="Search councils" />
+          <SearchBar placeholder={t('searchPlaceholder')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-            {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+            {VIEW_OPTIONS.map(({ value, Icon }) => (
               <Button
                 key={value}
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={label}
+                aria-label={t(`views.${value}`)}
                 aria-pressed={view === value}
                 onClick={() => onSetView(value)}
                 className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
@@ -149,7 +153,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
           </div>
           <Button type="button" size="sm" onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" />
-            New council
+            {t('new')}
           </Button>
         </div>
       </StickyToolbar>
@@ -160,13 +164,13 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
         {initial.length === 0 ? (
           <EmptyState
             Icon={CirclePile}
-            title="No councils yet"
-            description="Create one, add members with distinct roles, and put a prompt to them."
-            actionLabel="New council"
+            title={t('empty.title')}
+            description={t('empty.description')}
+            actionLabel={t('new')}
             onAction={() => setCreating(true)}
           />
         ) : filtered.length === 0 ? (
-          <EmptyState Icon={CirclePile} title={`No councils match “${q}”`} />
+          <EmptyState Icon={CirclePile} title={t('empty.noMatch', { query: q })} />
         ) : view === 'table' ? (
           <CouncilTable
             councils={filtered}
