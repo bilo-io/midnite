@@ -59,6 +59,12 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      fontFamily: {
+        // The "Midnite" wordmark face (Rooster), declared as an @font-face in
+        // styles.css. Mirrors the app's WORDMARK_LOGO_FONT and the site's
+        // `font-brand`; keep the three in sync.
+        brand: ['var(--font-brand)', 'sans-serif'],
+      },
     },
   },
 };

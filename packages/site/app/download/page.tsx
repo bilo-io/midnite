@@ -10,29 +10,29 @@ import { DESKTOP_VERSION } from '@/lib/downloads';
 import { RELEASES_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'Download midnite',
-  description: 'Download the midnite desktop app for macOS, Windows, or Linux.',
+  title: 'Download Midnite',
+  description: 'Download the Midnite desktop app for macOS, Windows, or Linux.',
   // Explicit (rather than inherited from the root layout) so the share preview
   // describes this page, with its own url and title, instead of the landing page's.
   openGraph: {
-    title: 'Download midnite',
-    description: 'Download the midnite desktop app for macOS, Windows, or Linux.',
+    title: 'Download Midnite',
+    description: 'Download the Midnite desktop app for macOS, Windows, or Linux.',
     type: 'website',
     url: 'https://midnite-app.vercel.app/download',
-    siteName: 'midnite',
+    siteName: 'Midnite',
     images: [
       {
         url: '/opengraph-banner.png',
         width: 1200,
         height: 630,
-        alt: 'midnite AI Agent Manager',
+        alt: 'Midnite AI Agent Manager',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Download midnite',
-    description: 'Download the midnite desktop app for macOS, Windows, or Linux.',
+    title: 'Download Midnite',
+    description: 'Download the Midnite desktop app for macOS, Windows, or Linux.',
     images: ['/opengraph-banner.png'],
   },
 };
@@ -50,7 +50,7 @@ export default function DownloadPage() {
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
               <h1 className="bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-3xl font-semibold tracking-tight text-transparent sm:text-4xl">
-                Download midnite
+                Download Midnite
               </h1>
               <p className="mt-4 text-muted-foreground">
                 The gateway and the board, bundled into one desktop app that runs entirely on your

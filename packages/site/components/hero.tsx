@@ -34,13 +34,13 @@ export function Hero() {
         <div className="mb-3 flex items-center justify-center gap-3">
           <Image
             src="/logo.PNG"
-            alt="midnite logo"
+            alt="Midnite logo"
             width={72}
             height={72}
             className="h-16 w-16 rounded-2xl shadow-lg sm:h-[72px] sm:w-[72px]"
             priority
           />
-          <span className="font-cassandra text-4xl leading-none tracking-tight sm:text-5xl">midnite</span>
+          <span className="font-brand text-4xl leading-none tracking-tight sm:text-5xl">Midnite</span>
         </div>
 
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
@@ -63,7 +63,7 @@ export function Hero() {
           <span aria-hidden="true">{subtitle}</span>
         </p>
         {/* Stable text for assistive tech / crawlers regardless of the animation. */}
-        <span className="sr-only">midnite — multitask Claude Code. {HERO_PAIRS[0]?.subtitle}</span>
+        <span className="sr-only">Midnite — multitask Claude Code. {HERO_PAIRS[0]?.subtitle}</span>
 
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a href="#cli" className="gradient-border rounded-md">

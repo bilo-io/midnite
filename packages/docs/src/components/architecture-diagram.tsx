@@ -52,7 +52,7 @@ function Box({
 export function ArchitectureDiagram() {
   return (
     <figure className="my-6">
-      <svg viewBox="0 0 760 430" role="img" aria-label="How midnite fits together" className="w-full max-w-full">
+      <svg viewBox="0 0 760 430" role="img" aria-label="How Midnite fits together" className="w-full max-w-full">
         <defs>
           <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
             <path d="M0,0 L7,3 L0,6 Z" fill={MUTED} />

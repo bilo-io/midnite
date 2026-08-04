@@ -32,7 +32,7 @@ async function expectLoginCopy(canvasElement: HTMLElement) {
   await expect(TITLES.some((t) => t.startsWith(heading.textContent ?? ''))).toBe(true);
   // The wordmark types out (and its intro waits on the layout's starfield, absent
   // in isolation), so assert the brand via the always-present logo image instead.
-  await expect(canvas.getByAltText('midnite')).toBeInTheDocument();
+  await expect(canvas.getByAltText('Midnite')).toBeInTheDocument();
 }
 
 /** The living knowledge-graph starfield behind the animated login copy. */
@@ -72,7 +72,7 @@ export const SplitScreen: Story = {
       <div className="flex w-1/3 flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <h1 className="mb-6 text-2xl font-semibold tracking-tight text-foreground">
-            Sign in to midnite
+            Sign in to Midnite
           </h1>
           <div
             role="group"
@@ -88,7 +88,7 @@ export const SplitScreen: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('Sign in to midnite')).toBeInTheDocument();
+    await expect(canvas.getByText('Sign in to Midnite')).toBeInTheDocument();
     await expectLoginCopy(canvasElement);
   },
 };

@@ -41,7 +41,7 @@ function DesktopOnlyNotice({ label }: { label: string }) {
       <div className="space-y-1.5">
         <h2 className="text-lg font-semibold">{label} is best viewed on desktop</h2>
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          This view needs a larger screen than your phone offers. Open midnite on a
+          This view needs a larger screen than your phone offers. Open Midnite on a
           desktop or tablet in landscape to use it.
         </p>
       </div>

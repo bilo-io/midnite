@@ -492,7 +492,7 @@ export function AppearanceSection() {
 }
 
 /**
- * Collapsible trial picker for the "midnite" wordmark — its font and its
+ * Collapsible trial picker for the "Midnite" wordmark — its font and its
  * letter-casing, applied app-wide live. Both persist in their own localStorage
  * keys (not synced), so the sidenav and every other wordmark update the moment a
  * card or casing is chosen. Picking a casing re-renders the whole font grid in

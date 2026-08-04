@@ -50,7 +50,7 @@ export function LoginScreen() {
               priority
               className="h-12 w-12 rounded-full object-cover ring-1 ring-border"
             />
-            <span className="font-brand text-3xl font-semibold text-foreground">midnite</span>
+            <span className="font-brand text-3xl font-semibold text-foreground">Midnite</span>
           </div>
           <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">operator console</span>
         </div>

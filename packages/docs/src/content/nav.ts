@@ -22,7 +22,7 @@ export type NavGroup = { section: string; items: NavItem[] };
 
 /**
  * Section display order in the sidebar; unknown sections trail, alphabetically.
- * `Introduction` leads (what midnite is + how to download it), then the
+ * `Introduction` leads (what Midnite is + how to download it), then the
  * product-feature sections that mirror the desktop app's own sidenav grouping
  * (App · Agents · Overview · Settings — see content/app|agents|overview|settings),
  * then `Guides` (a little of the repo's own markdown — see content/product-docs.tsx).

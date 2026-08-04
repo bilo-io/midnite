@@ -8,7 +8,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The "Midnite" wordmark face (Rooster). Vite fingerprints and emits the .ttf
+ * from this url(), so no public/ copy is needed. Exposed as `--font-brand` to
+ * match the site + app, where next/font declares the same var. */
+@font-face {
+  font-family: 'Rooster';
+  src: url('./fonts/rooster.ttf') format('truetype');
+  font-display: swap;
+}
+
 @layer base {
+  :root {
+    --font-brand: 'Rooster', sans-serif;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
   }

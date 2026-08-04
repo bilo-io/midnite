@@ -74,7 +74,7 @@ export function PwaInstall() {
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Check className="h-4 w-4 text-primary" />
-        Installed — you’re running midnite as an app.
+        Installed — you’re running Midnite as an app.
       </p>
     );
   }
@@ -91,7 +91,7 @@ export function PwaInstall() {
           Install app
         </button>
         <p className="text-xs text-muted-foreground">
-          Launches midnite in its own window. It still needs a live gateway connection — this is a
+          Launches Midnite in its own window. It still needs a live gateway connection — this is a
           fast shell, not an offline copy.
         </p>
       </div>

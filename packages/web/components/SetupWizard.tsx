@@ -97,7 +97,7 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
       <div className="space-y-1">
         <h3 className="text-sm font-semibold">AI provider</h3>
         <p className="text-xs text-muted-foreground">
-          midnite uses an LLM to classify tasks, plan, and guide agents. Paste your API key here
+          Midnite uses an LLM to classify tasks, plan, and guide agents. Paste your API key here
           — it's encrypted at rest.
         </p>
       </div>
@@ -164,7 +164,7 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
       <div className="space-y-1">
         <h3 className="text-sm font-semibold">System tools</h3>
         <p className="text-xs text-muted-foreground">
-          midnite runs <code className="font-mono text-[11px]">claude</code> to execute tasks and uses <code className="font-mono text-[11px]">gh</code> to open pull requests.
+          Midnite runs <code className="font-mono text-[11px]">claude</code> to execute tasks and uses <code className="font-mono text-[11px]">gh</code> to open pull requests.
         </p>
       </div>
 
@@ -279,7 +279,7 @@ function RepoStep({ onDone, onSkip }: { onDone: () => void; onSkip: () => void }
       <div className="space-y-1">
         <h3 className="text-sm font-semibold">Repository <span className="font-normal text-muted-foreground">(optional)</span></h3>
         <p className="text-xs text-muted-foreground">
-          Add the repository midnite will work in. You can add more later under Settings → Repos.
+          Add the repository Midnite will work in. You can add more later under Settings → Repos.
         </p>
       </div>
 
@@ -435,7 +435,7 @@ export function SetupWizard({ open, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
           <Rocket className="h-4 w-4 shrink-0 text-primary" />
-          <span className="flex-1 text-sm font-semibold">Set up midnite</span>
+          <span className="flex-1 text-sm font-semibold">Set up Midnite</span>
           <button
             type="button"
             onClick={onClose}

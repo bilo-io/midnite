@@ -22,7 +22,7 @@ const LAST_UPDATED = 'Last updated: _pending_';
 const privacy: LegalDoc = {
   slug: 'privacy',
   title: 'Privacy Policy',
-  description: 'How midnite handles your data.',
+  description: 'How Midnite handles your data.',
   content: `# Privacy Policy
 
 ${PLACEHOLDER_NOTE}
@@ -31,7 +31,7 @@ ${LAST_UPDATED}
 
 ## Overview
 
-midnite is a desktop application that orchestrates Claude Code agents on your own
+Midnite is a desktop application that orchestrates Claude Code agents on your own
 machine. This placeholder describes the shape of a privacy policy; the real policy
 will detail exactly what is and isn't collected.
 
@@ -48,7 +48,7 @@ operating the app, improving reliability, and providing support.
 
 ## Data storage & retention
 
-Placeholder. midnite runs locally; describe what is stored on your machine versus
+Placeholder. Midnite runs locally; describe what is stored on your machine versus
 transmitted to any service, and for how long.
 
 ## Third-party services
@@ -69,7 +69,7 @@ Placeholder. Provide a contact address for privacy questions.
 const eula: LegalDoc = {
   slug: 'eula',
   title: 'End-User License Agreement',
-  description: 'The terms under which you may use midnite.',
+  description: 'The terms under which you may use Midnite.',
   content: `# End-User License Agreement
 
 ${PLACEHOLDER_NOTE}
@@ -78,7 +78,7 @@ ${LAST_UPDATED}
 
 ## 1. License grant
 
-Placeholder. Describe the license granted to use the midnite desktop application,
+Placeholder. Describe the license granted to use the Midnite desktop application,
 including scope and any restrictions.
 
 ## 2. Restrictions

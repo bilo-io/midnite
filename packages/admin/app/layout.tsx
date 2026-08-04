@@ -6,17 +6,17 @@ import './globals.css';
 import { themeInitScript } from './theme/theme-script';
 import { Providers } from '@/components/providers';
 
-// The wordmark display font. Admin ships only what it needs — the "midnite"
+// The wordmark display font. Admin ships only what it needs — the "Midnite"
 // wordmark font (exposed as `--font-brand`) plus the platform system stack for UI
-// text — not web's 30+ display-font trial set. Cassandra is the face web's
-// wordmark is hard-coded to (see web/lib/wordmark-fonts.ts WORDMARK_LOGO_FONT);
-// keep the two in sync.
-const cassandra = localFont({ src: './fonts/cassandra.ttf', variable: '--font-brand', display: 'swap' });
+// text — not web's 30+ display-font trial set. Rooster is the face web's wordmark
+// is hard-coded to (see web/lib/wordmark-fonts.ts WORDMARK_LOGO_FONT); keep the
+// two in sync.
+const rooster = localFont({ src: './fonts/rooster.ttf', variable: '--font-brand', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'midnite · operator',
-  description: 'midnite operator console',
-  applicationName: 'midnite operator',
+  title: 'Midnite · operator',
+  description: 'Midnite operator console',
+  applicationName: 'Midnite operator',
 };
 
 export const viewport: Viewport = {
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cassandra.variable}>
+    <html lang="en" suppressHydrationWarning className={rooster.variable}>
       <head>
         {/* Pre-paint no-flash init: theme (.dark class) then the appearance runtime. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

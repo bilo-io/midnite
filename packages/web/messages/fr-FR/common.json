@@ -1,5 +1,5 @@
 {
-  "appName": "midnite",
+  "appName": "Midnite",
   "loading": "Chargement…",
   "save": "Enregistrer",
   "cancel": "Annuler",
@@ -39,7 +39,7 @@
   "update": {
     "action": "Mettre à jour",
     "newVersionAvailable": "Une nouvelle version est disponible",
-    "updateRequired": "Mise à jour requise pour continuer à utiliser midnite",
+    "updateRequired": "Mise à jour requise pour continuer à utiliser Midnite",
     "latestVersionFallback": "la dernière version",
     "unsupported": "cette version n’est plus prise en charge, veuillez mettre à jour pour continuer",
     "downloadingHeadline": "Téléchargement de la mise à jour…",

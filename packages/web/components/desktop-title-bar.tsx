@@ -89,7 +89,7 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
   const feature = FEATURES.find(
     (f) => pathname === f.href || pathname.startsWith(`${f.href}/`),
   );
-  const title = feature ? tNav(`features.${feature.key}`) : 'midnite';
+  const title = feature ? tNav(`features.${feature.key}`) : 'Midnite';
 
   return (
     <TitleBar

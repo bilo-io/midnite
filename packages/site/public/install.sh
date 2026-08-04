@@ -1,5 +1,5 @@
 #!/bin/sh
-# midnite installer — macOS (Apple Silicon) and Linux (x86_64)
+# Midnite installer — macOS (Apple Silicon) and Linux (x86_64)
 #
 #   curl -fsSL https://midnite-app.vercel.app/install.sh | sh
 #
@@ -30,8 +30,12 @@
 set -eu
 
 REPO="bilo-io/midnite-app"
-APP="midnite.app"
 DEST="/Applications"
+# The .app bundle name is DISCOVERED from the downloaded archive rather than
+# hard-coded: the app was renamed midnite.app → Midnite.app, and this script is
+# served live from the site, so it has to install whichever name the release it
+# resolves actually ships. Set after the archive is extracted.
+APP=""
 # The framework binary is ~150MB; a truncated copy is the failure we guard
 # against, so treat anything under 100MB as incomplete.
 MIN_FRAMEWORK_BYTES=104857600
@@ -53,7 +57,10 @@ esac
 verify_bundle() {
   _b="$1"
   [ -f "$_b/Contents/Info.plist" ] || { echo "  missing Contents/Info.plist" >&2; return 1; }
-  [ -x "$_b/Contents/MacOS/midnite" ] || { echo "  missing Contents/MacOS/midnite" >&2; return 1; }
+  # The executable is named after the bundle (midnite.app → MacOS/midnite,
+  # Midnite.app → MacOS/Midnite), so derive it instead of hard-coding.
+  _exe="${_b##*/}"; _exe="${_exe%.app}"
+  [ -x "$_b/Contents/MacOS/$_exe" ] || { echo "  missing Contents/MacOS/$_exe" >&2; return 1; }
   _fw="$_b/Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework"
   [ -f "$_fw" ] || { echo "  missing Electron Framework" >&2; return 1; }
   _sz=$(stat -f%z "$_fw" 2>/dev/null || echo 0)
@@ -78,7 +85,7 @@ else
 fi
 
 if [ "$OS" = "Linux" ]; then
-  [ "$(uname -m)" = "x86_64" ] || fail "midnite ships x86_64 Linux builds only, and this machine reports $(uname -m)."
+  [ "$(uname -m)" = "x86_64" ] || fail "Midnite ships x86_64 Linux builds only, and this machine reports $(uname -m)."
 
   asset="midnite-${version}-x86_64.AppImage"
   url="https://github.com/$REPO/releases/download/v${version}/${asset}"
@@ -88,7 +95,7 @@ if [ "$OS" = "Linux" ]; then
   tmp=$(mktemp -d)
   trap 'rm -rf "$tmp"' EXIT
 
-  say "Downloading midnite v${version} …"
+  say "Downloading Midnite v${version} …"
   curl -fL --progress-bar "$url" -o "$tmp/$asset" || fail "download failed: $url"
   chmod +x "$tmp/$asset"
 
@@ -121,7 +128,7 @@ WRAPPER
   cat > "$apps_dir/midnite.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=midnite
+Name=Midnite
 Exec=$wrapper %U
 Icon=$icons_dir/midnite.png
 Terminal=false
@@ -134,7 +141,7 @@ DESKTOP
   esac
 
   say ""
-  say "✓ midnite v${version} installed: $wrapper"
+  say "✓ Midnite v${version} installed: $wrapper"
   if [ -z "${MIDNITE_NO_OPEN:-}" ]; then
     "$wrapper" >/dev/null 2>&1 &
     disown 2>/dev/null || true
@@ -145,27 +152,36 @@ DESKTOP
 fi
 
 # ── macOS ────────────────────────────────────────────────────────────────────
-[ "$(uname -m)" = "arm64" ] || fail "midnite ships Apple Silicon (arm64) builds only, and this Mac reports $(uname -m)."
+[ "$(uname -m)" = "arm64" ] || fail "Midnite ships Apple Silicon (arm64) builds only, and this Mac reports $(uname -m)."
 
 asset="midnite-${version}-arm64.zip"
 url="https://github.com/$REPO/releases/download/v${version}/${asset}"
 
 tmp=$(mktemp -d)
-staged="$DEST/.$APP.new.$$"
-backup="$DEST/.$APP.old.$$"
+staged=""
+backup=""
 # Best-effort cleanup of the temp dir and any staging leftovers on exit.
 cleanup() {
   rm -rf "$tmp" 2>/dev/null || true
-  [ -e "$staged" ] && { rm -rf "$staged" 2>/dev/null || sudo rm -rf "$staged" 2>/dev/null || true; }
+  [ -n "$staged" ] && [ -e "$staged" ] &&
+    { rm -rf "$staged" 2>/dev/null || sudo rm -rf "$staged" 2>/dev/null || true; }
 }
 trap cleanup EXIT
 
-say "Downloading midnite v${version} …"
+say "Downloading Midnite v${version} …"
 curl -fL --progress-bar "$url" -o "$tmp/$asset" || fail "download failed: $url"
 
 # ditto (not unzip/cp) preserves the code-signing seal and extended attributes.
 ditto -xk "$tmp/$asset" "$tmp/extracted" || fail "could not extract $asset — the download may be corrupt. Re-run the installer."
-[ -d "$tmp/extracted/$APP" ] || fail "archive did not contain $APP"
+
+# Whichever .app the archive carries is the one we install (see APP above).
+for _candidate in "$tmp"/extracted/*.app; do
+  [ -d "$_candidate" ] && APP="${_candidate##*/}" && break
+done
+[ -n "$APP" ] || fail "archive did not contain a .app bundle"
+
+staged="$DEST/.$APP.new.$$"
+backup="$DEST/.$APP.old.$$"
 
 # Gate on a complete download BEFORE touching /Applications — a truncated
 # download/extract stops here instead of installing a broken app.
@@ -174,10 +190,14 @@ verify_bundle "$tmp/extracted/$APP" ||
   fail "the downloaded app is incomplete (interrupted download?). Nothing was installed — re-run the installer."
 
 # ── Install (staged + atomic) ────────────────────────────────────────────────
-# Quit a running copy so the bundle can be replaced (best-effort).
-if pgrep -xq "midnite" 2>/dev/null; then
-  say "Quitting the running midnite …"
-  osascript -e 'tell application "midnite" to quit' >/dev/null 2>&1 || true
+# Quit a running copy so the bundle can be replaced (best-effort). The process is
+# named after the bundle, and an already-installed copy may still carry the old
+# lowercase name, so try both.
+running="${APP%.app}"
+if pgrep -xq "$running" 2>/dev/null || pgrep -xq "midnite" 2>/dev/null; then
+  say "Quitting the running Midnite …"
+  osascript -e "tell application \"$running\" to quit" >/dev/null 2>&1 ||
+    osascript -e 'tell application "midnite" to quit' >/dev/null 2>&1 || true
   sleep 2
 fi
 
@@ -212,6 +232,17 @@ if ! verify_bundle "$DEST/$APP"; then
 fi
 run rm -rf "$backup"
 
+# On a case-SENSITIVE volume the pre-rename /Applications/midnite.app is a
+# separate entry that the swap above left behind, so the user would end up with
+# two copies. Drop it — it is this app's own previous install. (On the default
+# case-insensitive volume the paths are the same entry and this is a no-op.)
+legacy="$DEST/midnite.app"
+if [ "$APP" != "midnite.app" ] && [ -d "$legacy" ] &&
+  [ "$(cd "$legacy" && pwd -P)" != "$(cd "$DEST/$APP" && pwd -P)" ]; then
+  say "Removing the pre-rename $legacy …"
+  run rm -rf "$legacy"
+fi
+
 # curl doesn't quarantine, but clear the bit defensively (e.g. re-runs over a
 # browser-downloaded copy). Best-effort: the attribute usually isn't there.
 run xattr -dr com.apple.quarantine "$DEST/$APP" 2>/dev/null || true
@@ -229,9 +260,9 @@ if [ -e "$cli" ]; then
 fi
 
 say ""
-say "✓ midnite v${version} installed."
+say "✓ Midnite v${version} installed."
 if [ -z "${MIDNITE_NO_OPEN:-}" ]; then
   open "$DEST/$APP"
 else
-  say "Launch it with: open -a midnite"
+  say "Launch it with: open -a \"${APP%.app}\""
 fi

@@ -148,18 +148,18 @@ export function AppShellClient({ children }: { children: ReactNode }) {
     <>
       <Link
         href="/"
-        aria-label="midnite"
+        aria-label="Midnite"
         className={cn('group relative flex h-9 items-center', expanded ? 'gap-2' : 'w-9 justify-center')}
       >
         <Image
           src="/logo.PNG"
-          alt="midnite"
+          alt="Midnite"
           width={32}
           height={32}
           priority
           className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
         />
-        {expanded ? <Wordmark /> : <RailTooltip>midnite</RailTooltip>}
+        {expanded ? <Wordmark /> : <RailTooltip>Midnite</RailTooltip>}
       </Link>
       {expanded ? (
         <div className="flex items-center gap-1.5">

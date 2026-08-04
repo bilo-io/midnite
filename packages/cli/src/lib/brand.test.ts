@@ -81,7 +81,7 @@ describe('banner', () => {
   it('includes the wordmark, version and tagline', () => {
     withTerminal({ tty: false }, () => {
       const out = banner();
-      expect(out).toContain('midnite');
+      expect(out).toContain('Midnite');
       expect(out).toContain(`v${getVersion()}`);
       expect(out).toContain('multitask orchestrator for Claude Code');
       expect(out).not.toContain('\x1b['); // plain when not interactive

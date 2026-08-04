@@ -3,7 +3,7 @@
 > Register the two OAuth apps, drop their client IDs into the **operator config**, export
 > the secrets, and sign in — locally and hosted. This is the operator-facing runbook for
 > [Phase 70](../todo/phase-70-google-github-sso.md) (the SSO flow) + [Phase 72](../todo/phase-72-sso-go-live-operator-config.md)
-> (turning it on). midnite's SSO is **self-hosted** — no Firebase; it issues midnite's own
+> (turning it on). Midnite's SSO is **self-hosted** — no Firebase; it issues Midnite's own
 > JWTs over an encrypted one-time code.
 
 ## How it fits together
@@ -27,7 +27,7 @@ Export these before booting the gateway (or put them in `.env`):
 
 | Var | What | Required |
 |-----|------|----------|
-| `MIDNITE_JWT_SECRET` | Signs midnite's JWTs; SSO needs it | Yes (else 503) |
+| `MIDNITE_JWT_SECRET` | Signs Midnite's JWTs; SSO needs it | Yes (else 503) |
 | `MIDNITE_SECRET_KEY` | 32-byte hex key (`openssl rand -hex 32`) encrypting the OAuth state | Yes |
 | `MIDNITE_GOOGLE_CLIENT_SECRET` | Google OAuth client secret (name is referenced by `clientSecretEnv`) | If Google enabled |
 | `MIDNITE_GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | If GitHub enabled |
@@ -81,7 +81,7 @@ fall-back-to-a-random-port case, since there's no callback at all.
   always wins — `GET /auth/sso/providers` reports each provider under
   `providers` (redirect) or `deviceProviders` (device), never both.
 - **Client ID:** `sso.github.clientId` when a (secretless) block exists, else the
-  **built-in midnite OAuth app ID** baked into the gateway (client IDs are public
+  **built-in Midnite OAuth app ID** baked into the gateway (client IDs are public
   identifiers; this is how the `gh` CLI ships too). The OAuth app must have
   **Enable Device Flow** ticked or the start call fails loudly.
 - **Endpoints:** `POST /auth/sso/:provider/device/start` →

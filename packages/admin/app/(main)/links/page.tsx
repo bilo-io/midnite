@@ -44,7 +44,7 @@ type ExternalLink = {
 const EXTERNAL_LINKS: readonly ExternalLink[] = [
   {
     label: 'Web app',
-    description: 'The task board — open the main midnite web app.',
+    description: 'The task board — open the main Midnite web app.',
     href: APP_URL,
     icon: <AppWindow aria-hidden />,
   },

@@ -20,13 +20,13 @@ export function Nav() {
         <Link href="#top" className="flex items-center gap-2 tracking-tight">
           <Image
             src="/logo.PNG"
-            alt="midnite logo"
+            alt="Midnite logo"
             width={28}
             height={28}
             className="h-7 w-7 rounded-lg shadow"
             priority
           />
-          <span className="font-cassandra text-xl leading-none">midnite</span>
+          <span className="font-brand text-xl leading-none">Midnite</span>
         </Link>
 
         <div className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">

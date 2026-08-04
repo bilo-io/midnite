@@ -11,7 +11,7 @@ export function DocPage({ route }: { route: ResolvedRoute }) {
   const { Component, title } = route;
 
   useEffect(() => {
-    document.title = `${title} · midnite docs`;
+    document.title = `${title} · Midnite docs`;
   }, [title]);
 
   return <Component />;

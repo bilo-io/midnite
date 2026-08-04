@@ -56,7 +56,7 @@ describe('AuthLayout', () => {
         <form aria-label="sign-in" />
       </AuthLayout>,
     );
-    expect(screen.getByText('midnite')).toBeInTheDocument();
+    expect(screen.getByText('Midnite')).toBeInTheDocument();
     expect(screen.getByLabelText(/switch to (light|dark) theme/i)).toBeInTheDocument();
   });
 });

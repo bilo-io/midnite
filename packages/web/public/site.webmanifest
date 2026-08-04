@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "midnite",
-  "short_name": "midnite",
+  "name": "Midnite",
+  "short_name": "Midnite",
   "description": "Multitask coding agents — orchestrate, monitor, and steer parallel Claude Code sessions.",
   "start_url": "/dashboard/",
   "scope": "/",

@@ -106,7 +106,7 @@ export function DownloadPicker() {
         <strong className="text-foreground">System Settings → Privacy &amp; Security → Open Anyway</strong>
         , or run{' '}
         <code className="rounded bg-muted px-1 py-0.5">
-          xattr -dr com.apple.quarantine /Applications/midnite.app
+          xattr -dr com.apple.quarantine /Applications/Midnite.app
         </code>
         ); Windows SmartScreen may block the unsigned .exe (right-click → Properties → Unblock, or
         run <code className="rounded bg-muted px-1 py-0.5">Unblock-File</code>); the Linux
