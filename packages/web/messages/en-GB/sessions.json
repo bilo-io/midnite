@@ -155,5 +155,41 @@
     "ariaLabel": "Reply to the agent",
     "sendAria": "Send reply",
     "send": "Send"
+  },
+  "composer": {
+    "placeholder": "Add tasks, one per line · ⌘/Ctrl + ⏎",
+    "attachImage": "Attach image",
+    "startDictation": "Start dictation",
+    "stopDictation": "Stop dictation",
+    "taskCount": "{count, plural, one {# task} other {# tasks}}",
+    "pingAria": "Ping the AI",
+    "pingTitle": "Check the AI is reachable",
+    "ping": "Ping",
+    "pinging": "Pinging…",
+    "pingFailed": "Ping failed",
+    "addCount": "Add {count}",
+    "requestFailed": "Request failed",
+    "expandDetails": "Expand details",
+    "collapseDetails": "Collapse details",
+    "dockInput": "Dock input",
+    "expandFullscreen": "Expand input to full screen",
+    "fullScreen": "Full screen"
+  },
+  "chatBar": {
+    "title": "Chat to board",
+    "pressEnterToPreview": "Press <kbd>Enter</kbd> to preview",
+    "quotedCommand": "“{command}”",
+    "examplesIntro": "Type a natural-language command. Examples:",
+    "exampleItem": "› {example}",
+    "working": "Working…",
+    "appliesTo": "{count, plural, one {Applies to # task} other {Applies to # tasks}} (from your last result).",
+    "enterToConfirm": "Enter to confirm",
+    "undo": "Undo",
+    "lowConfidence": "Low confidence — double-check.",
+    "inferencePath": {
+      "deterministic": "parsed locally — no AI used",
+      "local": "via local model",
+      "provider": "via provider"
+    }
   }
 }

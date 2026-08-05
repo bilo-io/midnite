@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Activity,
   AlertTriangle,
@@ -33,6 +34,8 @@ import {
 } from '@/components/composer-fullscreen';
 
 export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
+  const t = useTranslations('sessions');
+  const tc = useTranslations('common');
   const [text, setText] = React.useState('');
   const [projectId, setProjectId] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<File[]>([]);
@@ -134,7 +137,10 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
       const res = await pingAgent();
       setPingResult({ ok: res.ok, text: res.model ? `${res.model} — ${res.reply}` : res.reply });
     } catch (err) {
-      setPingResult({ ok: false, text: err instanceof Error ? err.message : 'Ping failed' });
+      setPingResult({
+        ok: false,
+        text: err instanceof Error ? err.message : t('composer.pingFailed'),
+      });
     } finally {
       setPinging(false);
     }
@@ -189,7 +195,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
           onFocus={ta.onFocus}
           onBlur={ta.onBlur}
           onKeyDown={onKeyDown}
-          placeholder="Add tasks, one per line · ⌘/Ctrl + ⏎"
+          placeholder={t('composer.placeholder')}
           rows={1}
           className="min-h-0 resize-none overflow-y-auto border-0 bg-transparent p-0 pr-8 text-base transition-[height] duration-300 ease-in-out focus-visible:ring-0 motion-reduce:transition-none"
         />
@@ -211,7 +217,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                   type="button"
                   onClick={() => removeFile(idx)}
                   className="absolute -right-1 -top-1 rounded-full bg-background p-0.5 opacity-0 shadow ring-1 ring-border transition group-hover:opacity-100"
-                  aria-label={`Remove ${p.name}`}
+                  aria-label={tc('removeNamed', { name: p.name })}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -236,7 +242,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                 variant="ghost"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                aria-label="Attach image"
+                aria-label={t('composer.attachImage')}
                 className="cascade-item"
                 style={{ animationDelay: '0ms' }}
               >
@@ -248,7 +254,9 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                   variant="ghost"
                   size="icon"
                   onClick={speech.listening ? speech.stop : speech.start}
-                  aria-label={speech.listening ? 'Stop dictation' : 'Start dictation'}
+                  aria-label={
+                    speech.listening ? t('composer.stopDictation') : t('composer.startDictation')
+                  }
                   className={cn('cascade-item', speech.listening && 'text-destructive')}
                   style={{ animationDelay: '90ms' }}
                 >
@@ -266,7 +274,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
               )}
               {taskCount > 1 && (
                 <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-                  {taskCount} tasks
+                  {t('composer.taskCount', { count: taskCount })}
                 </span>
               )}
             </div>
@@ -277,13 +285,13 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                 size="sm"
                 onClick={() => void ping()}
                 disabled={pinging}
-                aria-label="Ping the AI"
-                title="Check the AI is reachable"
+                aria-label={t('composer.pingAria')}
+                title={t('composer.pingTitle')}
                 className="cascade-item"
                 style={{ animationDelay: '160ms' }}
               >
                 <Activity className={cn('h-4 w-4', pinging && 'animate-pulse')} />
-                {pinging ? 'Pinging…' : 'Ping'}
+                {pinging ? t('composer.pinging') : t('composer.ping')}
               </Button>
               <Button
                 type="button"
@@ -294,7 +302,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                 style={{ animationDelay: '180ms' }}
               >
                 <ListPlus className="h-4 w-4" />
-                {taskCount > 1 ? `Add ${taskCount}` : 'Add'}
+                {taskCount > 1 ? t('composer.addCount', { count: taskCount }) : tc('add')}
               </Button>
             </div>
           </div>
@@ -322,13 +330,18 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
 // Errors thrown by the API client read like `500 Internal Server Error: {json}`.
 // Split the human-readable head from any JSON tail so the panel can show a
 // one-line summary collapsed and the pretty-printed body when expanded.
-function parseComposerError(raw: string): { title: string; body: string | null } {
+// `fallbackTitle` is passed in (rather than baked in) so the copy stays
+// translatable while this helper remains a pure, hook-free function.
+function parseComposerError(
+  raw: string,
+  fallbackTitle: string,
+): { title: string; body: string | null } {
   const braceIdx = raw.search(/[[{]/);
   if (braceIdx > -1) {
     const head = raw.slice(0, braceIdx).replace(/[:\s]+$/, '').trim();
     try {
       const parsed = JSON.parse(raw.slice(braceIdx));
-      return { title: head || 'Request failed', body: JSON.stringify(parsed, null, 2) };
+      return { title: head || fallbackTitle, body: JSON.stringify(parsed, null, 2) };
     } catch {
       // Tail wasn't valid JSON — fall through to the plain split below.
     }
@@ -378,15 +391,21 @@ function ComposerStatusPanel({
   message: string;
   onDismiss: () => void;
 }) {
+  const t = useTranslations('sessions');
+  const tc = useTranslations('common');
   const [expanded, setExpanded] = React.useState(false);
   // The exit animation drives the actual unmount: clicking dismiss plays
   // `animate-error-out`, and onAnimationEnd then calls the parent's onDismiss.
   const [closing, setClosing] = React.useState(false);
   // Only errors carry a structured body worth pretty-printing; a success ping
   // is a single status line, shown whole.
+  const requestFailed = t('composer.requestFailed');
   const { title, body } = React.useMemo(
-    () => (tone === 'error' ? parseComposerError(message) : { title: message, body: null }),
-    [tone, message],
+    () =>
+      tone === 'error'
+        ? parseComposerError(message, requestFailed)
+        : { title: message, body: null },
+    [tone, message, requestFailed],
   );
   const styles = PANEL_TONES[tone];
   const Icon = tone === 'success' ? CheckCircle2 : AlertTriangle;
@@ -413,7 +432,7 @@ function ComposerStatusPanel({
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
-            aria-label={expanded ? 'Collapse details' : 'Expand details'}
+            aria-label={expanded ? t('composer.collapseDetails') : t('composer.expandDetails')}
             className={cn('rounded p-0.5 transition-colors', styles.btn)}
           >
             {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -422,7 +441,7 @@ function ComposerStatusPanel({
         <button
           type="button"
           onClick={() => setClosing(true)}
-          aria-label="Dismiss"
+          aria-label={tc('chrome.dismiss')}
           className={cn('rounded p-0.5 transition-colors', styles.btn)}
         >
           <X className="h-4 w-4" />

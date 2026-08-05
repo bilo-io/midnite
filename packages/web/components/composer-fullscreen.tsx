@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
+import { useTranslations } from 'next-intl';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,6 +67,7 @@ export function ComposerFullscreenToggle({
   onToggle: () => void;
   className?: string;
 }) {
+  const t = useTranslations('sessions');
   const Icon = full ? Minimize2 : Maximize2;
   return (
     <button
@@ -74,9 +76,9 @@ export function ComposerFullscreenToggle({
       // the docked box and races the toggle. We drive focus explicitly on toggle.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onToggle}
-      aria-label={full ? 'Dock input' : 'Expand input to full screen'}
+      aria-label={full ? t('composer.dockInput') : t('composer.expandFullscreen')}
       aria-pressed={full}
-      title={full ? 'Dock input' : 'Full screen'}
+      title={full ? t('composer.dockInput') : t('composer.fullScreen')}
       className={cn(
         'absolute right-2 top-2 z-10 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
         className,
