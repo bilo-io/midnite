@@ -1,11 +1,14 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ExternalLink, GitPullRequest, RefreshCw, Rocket } from 'lucide-react';
 import type { TaskSummary } from '@midnite/shared';
 import { getTasks } from '@/lib/api';
 import { PrStatusChip } from '@/components/pr-status-chip';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
+import { useRelativeTimeLabel } from '@/lib/i18n-labels';
 import { usePolling } from '@/lib/use-polling';
-import { cn, relativeTime } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
@@ -18,6 +21,8 @@ function shippedSortKey(t: TaskSummary): string {
 }
 
 export function ShippedWidget() {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const { data, error, loading, refresh } = usePolling(() => getTasks(), REFRESH_MS);
 
   const shipped = (data ?? [])
@@ -27,13 +32,13 @@ export function ShippedWidget() {
 
   return (
     <WidgetCard
-      title="Shipped"
+      title={widgetLabels.label('shipped')}
       icon={Rocket}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh shipped work"
+          aria-label={t('shipped.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -42,11 +47,11 @@ export function ShippedWidget() {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load shipped work.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('shipped.error')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : shipped.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nothing shipped yet.</p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('shipped.empty')}</p>
       ) : (
         <ul className="divide-y divide-border/30">
           {shipped.map((t) => (
@@ -59,6 +64,8 @@ export function ShippedWidget() {
 }
 
 function ShippedRow({ task }: { task: TaskSummary }) {
+  const t = useTranslations('dashboard');
+  const relativeTime = useRelativeTimeLabel();
   const when = task.updatedAt ?? task.createdAt;
   return (
     <li className="px-4 py-2">
@@ -89,7 +96,7 @@ function ShippedRow({ task }: { task: TaskSummary }) {
           </a>
         </div>
       ) : (
-        <span className="mt-0.5 block text-[11px] text-muted-foreground">no PR linked</span>
+        <span className="mt-0.5 block text-[11px] text-muted-foreground">{t('shipped.noPr')}</span>
       )}
     </li>
   );

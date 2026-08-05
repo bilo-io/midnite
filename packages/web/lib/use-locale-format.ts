@@ -30,6 +30,23 @@ export type LocaleFormat = {
   dateTime: (value: Date | number, options?: DateTimeFormatOptions) => string;
 };
 
+/**
+ * Agent spend in USD, with sub-cent amounts kept legible rather than rounded to nothing
+ * (Phase 82 Theme D). `narrowSymbol` keeps en-GB at `$2.50` — Intl's default for a
+ * non-native currency would write `US$2.50` — while fr-FR gets `2,50 $`.
+ *
+ * Every cost surface needs exactly this: `session-cost-line`, the project cost card, the
+ * digest detail and (as of the dashboard round-2 slice) the cost-by-repo and usage
+ * widgets had each rolled their own copy. USD is hardcoded because the gateway records
+ * agent spend in USD — there is no multi-currency story to parameterise yet.
+ */
+export function useUsdLabel(): (n: number) => string {
+  const { number } = useLocaleFormat();
+  const usd = (v: number) =>
+    number(v, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol' });
+  return (n) => (n > 0 && n < 0.01 ? `<${usd(0.01)}` : usd(n));
+}
+
 export function useLocaleFormat(): LocaleFormat {
   const format = useFormatter();
   const locale = useLocale() as Locale;

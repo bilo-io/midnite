@@ -1,7 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { FolderGit2, RefreshCw } from 'lucide-react';
 import { getRepos, getTasks } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { summarizeByRepo, type RepoStatusRow } from '@/lib/repo-status';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
@@ -17,6 +19,8 @@ const REFRESH_MS = 15_000;
  * board; the task WS broadcast also refreshes it. Sorted by activity.
  */
 export function RepoStatusWidget() {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const { data, error, loading, refresh } = usePolling(
     () => Promise.all([getTasks(), getRepos()]),
     REFRESH_MS,
@@ -26,13 +30,13 @@ export function RepoStatusWidget() {
 
   return (
     <WidgetCard
-      title="Per-repo status"
+      title={widgetLabels.label('repo-status')}
       icon={FolderGit2}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh repo status"
+          aria-label={t('repoStatus.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -41,13 +45,11 @@ export function RepoStatusWidget() {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load repo status.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('repoStatus.error')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : rows.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-          No repos registered — add one in Settings → Repos.
-        </p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('repoStatus.empty')}</p>
       ) : (
         <ul className="divide-y divide-border/30">
           {rows.map((row) => (
@@ -60,6 +62,7 @@ export function RepoStatusWidget() {
 }
 
 function RepoRow({ row }: { row: RepoStatusRow }) {
+  const t = useTranslations('dashboard');
   return (
     <li className="flex items-center gap-2 px-4 py-2">
       <span
@@ -69,20 +72,23 @@ function RepoRow({ row }: { row: RepoStatusRow }) {
         {row.label}
       </span>
       <div className="flex shrink-0 items-center gap-2.5 tabular-nums">
-        <Stat n={row.running} hue="--status-wip" word="running" />
-        <Stat n={row.queued} hue="--status-todo" word="queued" />
-        <Stat n={row.done} hue="--status-done" word="done" muted />
+        {/* The chips show a bare number, so the count's meaning lives entirely in the
+            aria-label — one ICU message per status rather than `${n} ${word}`, since the
+            plural agreement is the translator's to decide. */}
+        <Stat n={row.running} hue="--status-wip" label={t('repoStatus.running', { count: row.running })} />
+        <Stat n={row.queued} hue="--status-todo" label={t('repoStatus.queued', { count: row.queued })} />
+        <Stat n={row.done} hue="--status-done" label={t('repoStatus.done', { count: row.done })} muted />
       </div>
     </li>
   );
 }
 
 /** One count chip: a status-coloured dot + number, dimmed when zero. */
-function Stat({ n, hue, word, muted }: { n: number; hue: string; word: string; muted?: boolean }) {
+function Stat({ n, hue, label, muted }: { n: number; hue: string; label: string; muted?: boolean }) {
   return (
     <span
       className={cn('flex items-center gap-1 text-xs', (n === 0 || muted) && 'text-muted-foreground', n === 0 && 'opacity-50')}
-      aria-label={`${n} ${word}`}
+      aria-label={label}
     >
       <span
         aria-hidden

@@ -1,10 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ArrowUp, Clock, LayoutGrid, List, MessageSquare, Newspaper, RefreshCw } from 'lucide-react';
 import { NEWS_MAX_COUNT, NEWS_MIN_COUNT, type HackerNewsStory } from '@midnite/shared';
 import { getNews } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import type { NewsLayout, WidgetConfig } from '@/lib/dashboard-widgets';
 import { usePolling } from '@/lib/use-polling';
+import { useUnitFormat } from '@/lib/use-unit-format';
 import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
@@ -25,12 +28,22 @@ function hostOf(url: string | undefined): string | null {
   }
 }
 
-function relativeTime(unixSeconds: number): string {
-  const diff = Date.now() / 1000 - unixSeconds;
-  const h = Math.floor(diff / 3600);
-  if (h < 1) return `${Math.max(1, Math.floor(diff / 60))}m`;
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+/**
+ * A story's age in the compact `5m` / `3h` / `2d` shape. Deliberately **not**
+ * `useRelativeTimeLabel()`: this row is score · comments · age behind a clock icon, so
+ * the "ago" that hook adds would both restate the icon and overflow the meta line. Only
+ * the unit rendering moves to the catalog (`common.units.duration.*`, shared with
+ * `useUnitFormat`), so the digits and spacing follow the locale.
+ */
+function useStoryAge(): (unixSeconds: number) => string {
+  const { age } = useUnitFormat();
+  return (unixSeconds) => {
+    const diff = Date.now() / 1000 - unixSeconds;
+    const h = Math.floor(diff / 3600);
+    if (h < 1) return age(Math.max(1, Math.floor(diff / 60)), 'minutes');
+    if (h < 24) return age(h, 'hours');
+    return age(Math.floor(h / 24), 'days');
+  };
 }
 
 function hrefFor(story: HackerNewsStory): string {
@@ -39,6 +52,7 @@ function hrefFor(story: HackerNewsStory): string {
 
 /** Score (HN-orange upvote) · comments · age — shared by both layouts. */
 function StoryMeta({ story }: { story: HackerNewsStory }) {
+  const storyAge = useStoryAge();
   return (
     <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
       <span className="inline-flex items-center gap-0.5 font-medium text-orange-500">
@@ -51,7 +65,7 @@ function StoryMeta({ story }: { story: HackerNewsStory }) {
       </span>
       <span className="inline-flex items-center gap-0.5">
         <Clock className="h-3 w-3" />
-        {relativeTime(story.time)}
+        {storyAge(story.time)}
       </span>
     </div>
   );
@@ -119,6 +133,8 @@ function StoryGridCard({ story, index }: { story: HackerNewsStory; index: number
 }
 
 export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const { count } = config;
   const layout: NewsLayout = config.layout ?? 'list';
   const { data, error, loading, refresh } = usePolling(() => getNews(count), REFRESH_MS, [count]);
@@ -130,7 +146,7 @@ export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
 
   return (
     <WidgetCard
-      title="Hacker News"
+      title={widgetLabels.label('news')}
       icon={Newspaper}
       actions={
         <>
@@ -140,7 +156,7 @@ export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
                 key={value}
                 type="button"
                 onClick={() => setLayout(value)}
-                aria-label={`${value} view`}
+                aria-label={t(`news.layout.${value}`)}
                 aria-pressed={layout === value}
                 className={cn(
                   'rounded p-1 transition-colors',
@@ -156,7 +172,7 @@ export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
           <select
             value={count}
             onChange={(e) => onConfigChange({ ...config, count: Number(e.target.value) })}
-            aria-label="Number of stories"
+            aria-label={t('news.count')}
             className="rounded-md border border-border/60 bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             {options.map((n) => (
@@ -168,7 +184,7 @@ export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
           <button
             type="button"
             onClick={refresh}
-            aria-label="Refresh stories"
+            aria-label={t('news.refresh')}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -178,7 +194,7 @@ export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load stories.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('news.error')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : layout === 'grid' ? (

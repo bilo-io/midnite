@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Quote, Settings2, X } from 'lucide-react';
 import {
   QUOTE_CYCLE_MAX_MS,
@@ -8,6 +9,7 @@ import {
   type QuoteSize,
   type WidgetConfig,
 } from '@/lib/dashboard-widgets';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { QUOTES } from '@/lib/quotes';
 import { cn } from '@/lib/utils';
 import {
@@ -53,6 +55,9 @@ function nextIndex(current: number): number {
  * interval. Text size, typing speed, and cycle duration live in the settings panel.
  */
 export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
+  const widgetLabels = useWidgetLabels();
   const { size, typingSpeedMs, cycleMs, font } = config;
   const [editing, setEditing] = useState(false);
   // Deterministic initial index (avoids SSR/hydration mismatch); randomised on mount.
@@ -112,13 +117,13 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
 
   return (
     <WidgetCard
-      title="Quote"
+      title={widgetLabels.label('quote')}
       icon={Quote}
       actions={
         <button
           type="button"
           onClick={() => setEditing((e) => !e)}
-          aria-label={editing ? 'Close settings' : 'Quote settings'}
+          aria-label={editing ? t('quote.closeSettings') : t('quote.openSettings')}
           aria-pressed={editing}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
@@ -132,7 +137,7 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
       {editing ? (
         <div className="flex flex-col gap-3 text-xs">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">Size</span>
+            <span className="text-muted-foreground">{t('quote.size')}</span>
             <div className="flex gap-1">
               {SIZES.map((s) => (
                 <button
@@ -152,13 +157,13 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-muted-foreground">Font</span>
+            <span className="text-muted-foreground">{t('quote.font')}</span>
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={() => setFont('system')}
                 aria-pressed={font === 'system'}
-                title="System font"
+                title={t('quote.systemFont')}
                 className={cn(
                   'flex min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-2 transition-colors',
                   font === 'system' ? 'border-primary bg-primary/10' : 'border-border/60 hover:bg-accent',
@@ -170,10 +175,12 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
                     font === 'system' ? 'text-primary' : 'text-foreground',
                   )}
                 >
-                  Midnite
+                  {/* The brand itself, not copy — `common.appName` so the one place it's
+                      spelled stays the one place it's spelled. */}
+                  {tCommon('appName')}
                 </span>
                 <span className="max-w-full truncate text-[10px] uppercase tracking-wide text-muted-foreground">
-                  System
+                  {t('quote.system')}
                 </span>
               </button>
               {WORDMARK_FONTS.map((f) => {
@@ -208,7 +215,7 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
             </div>
           </div>
           <label className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">Typing speed</span>
+            <span className="text-muted-foreground">{t('quote.typingSpeed')}</span>
             <input
               type="range"
               min={0}
@@ -218,11 +225,11 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
               value={120 - Math.min(120, typingSpeedMs)}
               onChange={(e) => setTypingSpeed(120 - Number(e.target.value))}
               className="w-32 accent-primary"
-              aria-label="Typing speed"
+              aria-label={t('quote.typingSpeed')}
             />
           </label>
           <label className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">Cycle (seconds)</span>
+            <span className="text-muted-foreground">{t('quote.cycleSeconds')}</span>
             <input
               type="number"
               min={QUOTE_CYCLE_MIN_MS / 1000}

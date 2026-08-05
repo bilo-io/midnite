@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { RefreshCw, TrendingUp } from 'lucide-react';
 import {
   CartesianGrid,
@@ -13,6 +14,7 @@ import {
 } from 'recharts';
 import type { GaugeSample } from '@midnite/shared';
 import { getGaugeHistory } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
@@ -22,11 +24,8 @@ const REFRESH_MS = 60_000;
 type Series = 'queueDepth' | 'slotsUsed' | 'tickLatencyMs';
 type Config = { series: Series };
 
-const SERIES_LABEL: Record<Series, string> = {
-  queueDepth: 'Queue depth',
-  slotsUsed: 'Slots used',
-  tickLatencyMs: 'Tick latency',
-};
+/** The series options, in select order; wording comes from `dashboard.fleetTrend.series.*`. */
+const SERIES_OPTIONS: readonly Series[] = ['queueDepth', 'slotsUsed', 'tickLatencyMs'];
 
 /** Whether a sample carries a value for the chosen series. */
 function hasValue(s: GaugeSample, series: Series): boolean {
@@ -58,7 +57,11 @@ export function FleetTrendWidget({
   config: Config;
   onConfigChange: (c: Config) => void;
 }) {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
+  const widgetLabels = useWidgetLabels();
   const { data, error, loading, refresh } = usePolling(() => getGaugeHistory(), REFRESH_MS);
+  const seriesLabel = t(`fleetTrend.series.${config.series}`);
 
   // Keep only samples that carry the chosen series (skip nulls so the line is honest).
   const points = useMemo(
@@ -68,21 +71,21 @@ export function FleetTrendWidget({
 
   return (
     <WidgetCard
-      title="Fleet trend"
+      title={widgetLabels.label('fleet-trend')}
       icon={TrendingUp}
       actions={
         <>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="sr-only">Fleet series</span>
+            <span className="sr-only">{t('fleetTrend.seriesAria')}</span>
             <select
-              aria-label="Fleet series"
+              aria-label={t('fleetTrend.seriesAria')}
               value={config.series}
               onChange={(e) => onConfigChange({ series: e.target.value as Series })}
               className="rounded-md border bg-background px-1.5 py-0.5 text-xs text-foreground"
             >
-              {(Object.keys(SERIES_LABEL) as Series[]).map((k) => (
+              {SERIES_OPTIONS.map((k) => (
                 <option key={k} value={k}>
-                  {SERIES_LABEL[k]}
+                  {t(`fleetTrend.series.${k}`)}
                 </option>
               ))}
             </select>
@@ -90,7 +93,7 @@ export function FleetTrendWidget({
           <button
             type="button"
             onClick={refresh}
-            aria-label="Refresh fleet trend"
+            aria-label={t('fleetTrend.refresh')}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -100,17 +103,17 @@ export function FleetTrendWidget({
       bodyClassName="flex flex-col gap-2 p-4"
     >
       {error && !data ? (
-        <p className="m-auto text-sm text-destructive">Couldn’t load fleet trend.</p>
+        <p className="m-auto text-sm text-destructive">{t('fleetTrend.error')}</p>
       ) : !data && loading ? (
-        <p className="m-auto text-sm text-muted-foreground">Loading…</p>
+        <p className="m-auto text-sm text-muted-foreground">{tCommon('loading')}</p>
       ) : !data ? null : (data.samples.length === 0 || points.length === 0) ? (
         <p className="m-auto max-w-[28ch] text-center text-sm text-muted-foreground">
-          No gauge history yet — trends appear as the sampler records.
+          {t('fleetTrend.empty')}
         </p>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">{SERIES_LABEL[config.series]}</p>
-          <div className="min-h-0 flex-1" role="img" aria-label={`${SERIES_LABEL[config.series]} chart`}>
+          <p className="text-xs text-muted-foreground">{seriesLabel}</p>
+          <div className="min-h-0 flex-1" role="img" aria-label={t('fleetTrend.chartAria', { series: seriesLabel })}>
             <ResponsiveContainer width="100%" height="100%" minHeight={100}>
               <LineChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -135,7 +138,7 @@ export function FleetTrendWidget({
                 <Line
                   type="monotone"
                   dataKey={config.series}
-                  name={SERIES_LABEL[config.series]}
+                  name={seriesLabel}
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   dot={false}

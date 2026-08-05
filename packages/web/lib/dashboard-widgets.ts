@@ -562,7 +562,11 @@ export function newInstance(type: WidgetType): WidgetInstance {
     case 'timer':
       return { type, config: { workMin: 25, breakMin: 5 } };
     case 'scratchpad':
-      return { type, id: crypto.randomUUID(), config: { title: 'Scratchpad', text: '' } };
+      // Empty title, not the English word: a scratchpad title is persisted user data, so
+      // the *display* falls back to the localised catalog label until the user names it
+      // (see `ScratchpadWidget`). Instances created before Phase 82 D keep their stored
+      // `'Scratchpad'`.
+      return { type, id: crypto.randomUUID(), config: { title: '', text: '' } };
     case 'projects':
       return { type, id: crypto.randomUUID(), config: { projectId: null } };
     case 'links':

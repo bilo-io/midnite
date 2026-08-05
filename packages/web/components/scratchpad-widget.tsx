@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Eye, NotebookPen, Pencil } from 'lucide-react';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import type { WidgetConfig } from '@/lib/dashboard-widgets';
 import { cn } from '@/lib/utils';
 import { MarkdownPreview } from './markdown-preview';
@@ -15,6 +17,8 @@ type ScratchpadWidgetProps = {
 const DEBOUNCE_MS = 400;
 
 export function ScratchpadWidget({ config, onConfigChange }: ScratchpadWidgetProps) {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const [text, setText] = useState(config.text);
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [editingTitle, setEditingTitle] = useState(false);
@@ -32,7 +36,9 @@ export function ScratchpadWidget({ config, onConfigChange }: ScratchpadWidgetPro
 
   const commitTitle = (next: string) => {
     setEditingTitle(false);
-    const title = next.trim() || 'Scratchpad';
+    // Clearing the title falls back to the widget's catalog name, so an emptied
+    // scratchpad reads in the active locale rather than in English.
+    const title = next.trim() || widgetLabels.label('scratchpad');
     if (title !== config.title) onChangeRef.current({ ...cfgRef.current, title });
   };
 
@@ -46,15 +52,15 @@ export function ScratchpadWidget({ config, onConfigChange }: ScratchpadWidgetPro
         else if (e.key === 'Escape') setEditingTitle(false);
       }}
       className="w-full min-w-0 rounded bg-transparent text-sm font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      aria-label="Scratchpad title"
+      aria-label={t('scratchpad.titleAria')}
     />
   ) : (
     <span
       className="cursor-text truncate"
       onDoubleClick={() => setEditingTitle(true)}
-      title="Double-click to rename"
+      title={t('scratchpad.renameHint')}
     >
-      {config.title}
+      {config.title || widgetLabels.label('scratchpad')}
     </span>
   );
 
@@ -77,8 +83,8 @@ export function ScratchpadWidget({ config, onConfigChange }: ScratchpadWidgetPro
 
   const toggle = (
     <div className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-card/40 p-0.5">
-      {tab('edit', <Pencil className="h-3.5 w-3.5" />, 'Edit')}
-      {tab('preview', <Eye className="h-3.5 w-3.5" />, 'Preview')}
+      {tab('edit', <Pencil className="h-3.5 w-3.5" />, t('scratchpad.edit'))}
+      {tab('preview', <Eye className="h-3.5 w-3.5" />, t('scratchpad.preview'))}
     </div>
   );
 
@@ -88,9 +94,9 @@ export function ScratchpadWidget({ config, onConfigChange }: ScratchpadWidgetPro
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Jot something down… (Markdown, saved on this device)"
+          placeholder={t('scratchpad.placeholder')}
           spellCheck
-          aria-label="Scratchpad content"
+          aria-label={t('scratchpad.contentAria')}
           className="h-full w-full resize-none bg-transparent px-4 py-3 text-sm leading-relaxed focus-visible:outline-none"
         />
       ) : (
@@ -98,7 +104,7 @@ export function ScratchpadWidget({ config, onConfigChange }: ScratchpadWidgetPro
           {text.trim() ? (
             <MarkdownPreview content={text} />
           ) : (
-            <p className="text-sm italic text-muted-foreground">Nothing to preview yet.</p>
+            <p className="text-sm italic text-muted-foreground">{t('scratchpad.emptyPreview')}</p>
           )}
         </div>
       )}

@@ -12,6 +12,7 @@
   "edit": "Modifier",
   "delete": "Supprimer",
   "remove": "Retirer",
+  "removeNamed": "Supprimer {name}",
   "back": "Retour",
   "none": "Aucun",
   "selectedCount": "{count, plural, one {# sélectionné} other {# sélectionnés}}",
@@ -139,5 +140,22 @@
     "minutesAgo": "il y a {count} min",
     "hoursAgo": "il y a {count} h",
     "daysAgo": "il y a {count} j"
+  },
+  "units": {
+    "emDash": "—",
+    "bytes": {
+      "b": "{value} o",
+      "kb": "{value} ko",
+      "mb": "{value} Mo",
+      "gb": "{value} Go",
+      "tb": "{value} To",
+      "pb": "{value} Po"
+    },
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hours": "{value} h",
+      "days": "{value} j"
+    }
   }
 }

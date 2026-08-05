@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   DndContext,
   KeyboardSensor,
@@ -31,9 +32,31 @@ import { cn } from '@/lib/utils';
  * amongst unpinned). Double-click a tab to rename; "+" adds up to {@link MAX_DASHBOARDS}.
  * `trailing` renders far-right on the same line (e.g. the add-widget button).
  */
+/** The per-tab copy `SortableTab` renders; resolved once in the parent. */
+type SortableTabLabels = {
+  pin: string;
+  unpin: string;
+  pinNamed: (name: string) => string;
+  unpinNamed: (name: string) => string;
+  closeNamed: (name: string) => string;
+  dragHint: (name: string) => string;
+};
+
 export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
+  const t = useTranslations('dashboard');
   const { tabs, activeId, hydrated, setActiveId, addTab, closeTab, renameTab, togglePin, reorderTabs } =
     useDashboardTabs();
+  const tabLabels: SortableTabLabels = useMemo(
+    () => ({
+      pin: t('tabs.pin'),
+      unpin: t('tabs.unpin'),
+      pinNamed: (name) => t('tabs.pinNamed', { name }),
+      unpinNamed: (name) => t('tabs.unpinNamed', { name }),
+      closeNamed: (name) => t('tabs.closeNamed', { name }),
+      dragHint: (name) => t('tabs.dragHint', { name }),
+    }),
+    [t],
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +85,9 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
   };
 
   const defaultTab = tabs[0];
+  // The anchor tab ships unnamed (see `DEFAULT_TABS`); an empty stored name means
+  // "show the localised page title", so a fresh install reads in the active locale.
+  const defaultName = defaultTab?.name || t('page.title');
   const nonDefault = tabs.filter((t) => !isDefaultTab(t.id));
   const pinned = nonDefault.filter((t) => t.pinned);
   const unpinned = nonDefault.filter((t) => !t.pinned);
@@ -98,7 +124,7 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
         if (e.key === 'Enter') commitRename();
         if (e.key === 'Escape') setEditingId(null);
       }}
-      aria-label={`Rename ${tab.name}`}
+      aria-label={t('tabs.rename', { name: tab.name })}
       className="h-8 w-36 shrink-0 rounded-md border border-primary bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     />
   );
@@ -115,6 +141,7 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
         onRename={() => startRename(tab.id, tab.name)}
         onTogglePin={() => togglePin(tab.id)}
         onClose={() => closeTab(tab.id)}
+        labels={tabLabels}
       />
     );
 
@@ -146,11 +173,11 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
               <button
                 type="button"
                 onClick={() => setActiveId(defaultTab.id)}
-                onDoubleClick={() => startRename(defaultTab.id, defaultTab.name)}
+                onDoubleClick={() => startRename(defaultTab.id, defaultName)}
                 className="max-w-[12rem] truncate focus-visible:outline-none"
-                title={`${defaultTab.name} — double-click to rename`}
+                title={t('tabs.defaultHint', { name: defaultName })}
               >
-                {defaultTab.name}
+                {defaultName}
               </button>
             </div>
           ))}
@@ -168,8 +195,8 @@ export function DashboardTabs({ trailing }: { trailing?: ReactNode } = {}) {
         {tabs.length < MAX_DASHBOARDS && (
           <button
             type="button"
-            onClick={addTab}
-            aria-label="Add dashboard"
+            onClick={() => addTab(t('tabs.newName', { n: tabs.length + 1 }))}
+            aria-label={t('tabs.add')}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Plus className="h-4 w-4" />
@@ -200,6 +227,7 @@ function SortableTab({
   onRename,
   onTogglePin,
   onClose,
+  labels,
 }: {
   tab: DashboardTab;
   active: boolean;
@@ -207,6 +235,8 @@ function SortableTab({
   onRename: () => void;
   onTogglePin: () => void;
   onClose: () => void;
+  /** Resolved copy, passed down so this stays a presentational chip. */
+  labels: SortableTabLabels;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: tab.id });
@@ -225,9 +255,9 @@ function SortableTab({
       <button
         type="button"
         onClick={onTogglePin}
-        aria-label={tab.pinned ? `Unpin ${tab.name}` : `Pin ${tab.name}`}
+        aria-label={tab.pinned ? labels.unpinNamed(tab.name) : labels.pinNamed(tab.name)}
         aria-pressed={tab.pinned}
-        title={tab.pinned ? 'Unpin' : 'Pin'}
+        title={tab.pinned ? labels.unpin : labels.pin}
         className={cn(
           'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm transition-opacity',
           tab.pinned
@@ -248,7 +278,7 @@ function SortableTab({
         onClick={onActivate}
         onDoubleClick={onRename}
         className="max-w-[12rem] cursor-grab truncate px-0.5 focus-visible:outline-none active:cursor-grabbing"
-        title={`${tab.name} — drag to reorder, double-click to rename`}
+        title={labels.dragHint(tab.name)}
       >
         {tab.name}
       </button>
@@ -257,7 +287,7 @@ function SortableTab({
         <button
           type="button"
           onClick={onClose}
-          aria-label={`Close ${tab.name}`}
+          aria-label={labels.closeNamed(tab.name)}
           className={cn(
             'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm transition-colors',
             active ? 'hover:bg-primary-foreground/20' : 'hover:bg-destructive/15 hover:text-destructive',

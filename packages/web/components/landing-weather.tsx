@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Droplets } from 'lucide-react';
 import type { WeatherResponse } from '@midnite/shared';
 import { getWeather } from '@/lib/api';
 import type { WeatherLocation, WeatherUnits } from '@/lib/dashboard-widgets';
 import { readSavedWeatherConfig } from '@/lib/saved-weather-location';
 import { usePolling } from '@/lib/use-polling';
-import { describe, deg, temp } from '@/components/weather-widget';
+import { deg, describeWeatherCode, temp, useWeatherCodeLabel } from '@/lib/weather-format';
 
 const REFRESH_MS = 10 * 60_000;
 /** Caches a one-time geolocation lookup so the landing page never re-prompts. */
@@ -38,6 +39,8 @@ function readCachedCoords(): WeatherLocation | null {
  * where it shares the top row with the header-actions cluster.
  */
 export function LandingWeather() {
+  const t = useTranslations('dashboard');
+  const codeLabel = useWeatherCodeLabel();
   const [coords, setCoords] = useState<WeatherLocation | null>(null);
   const [units, setUnits] = useState<WeatherUnits>('c');
 
@@ -82,13 +85,14 @@ export function LandingWeather() {
   // no prompt and no empty shell in the corner.
   if (!coords || !data) return null;
 
-  const { icon: Icon, label } = describe(data.current.weatherCode);
+  const { icon: Icon, bucket } = describeWeatherCode(data.current.weatherCode);
+  const label = codeLabel(bucket);
   const headline = temp(data.current.temperatureC, units);
 
   return (
     <div
       className="absolute left-6 top-6 z-10 flex items-center gap-2 text-left"
-      aria-label={`Weather: ${label}, ${headline}`}
+      aria-label={t('landing.weather.aria', { conditions: label, temperature: headline })}
     >
       <Icon className="h-6 w-6 shrink-0 text-muted-foreground sm:h-7 sm:w-7" aria-hidden />
       <div className="leading-tight">
@@ -104,7 +108,7 @@ export function LandingWeather() {
           </span>
           <span aria-hidden>·</span>
           <span className="inline-flex items-center gap-1 tabular-nums">
-            <Droplets className="h-3 w-3" aria-label="Chance of precipitation" />
+            <Droplets className="h-3 w-3" aria-label={t('landing.weather.precipitation')} />
             {data.today.precipitationProbability}%
           </span>
         </div>

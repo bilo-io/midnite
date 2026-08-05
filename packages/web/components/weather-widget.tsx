@@ -1,24 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Droplets,
-  MapPin,
-  Sun,
-  type LucideIcon,
-} from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { CloudSun, Droplets, MapPin } from 'lucide-react';
 import type { WeatherResponse } from '@midnite/shared';
 import { getWeather } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import type { WeatherLocation, WeatherUnits, WidgetConfig } from '@/lib/dashboard-widgets';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
+import { deg, describeWeatherCode, temp, useWeatherCodeLabel } from '@/lib/weather-format';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
@@ -30,32 +21,9 @@ type WeatherWidgetProps = {
   onConfigChange: (config: WidgetConfig['weather']) => void;
 };
 
-// WMO weather codes → icon + label. Buckets cover Open-Meteo's full code range.
-export function describe(code: number): { icon: LucideIcon; label: string } {
-  if (code === 0) return { icon: Sun, label: 'Clear' };
-  if (code <= 2) return { icon: CloudSun, label: 'Partly cloudy' };
-  if (code === 3) return { icon: Cloud, label: 'Overcast' };
-  if (code <= 48) return { icon: CloudFog, label: 'Fog' };
-  if (code <= 57) return { icon: CloudDrizzle, label: 'Drizzle' };
-  if (code <= 67) return { icon: CloudRain, label: 'Rain' };
-  if (code <= 77) return { icon: CloudSnow, label: 'Snow' };
-  if (code <= 82) return { icon: CloudRain, label: 'Rain showers' };
-  if (code <= 86) return { icon: CloudSnow, label: 'Snow showers' };
-  return { icon: CloudLightning, label: 'Thunderstorm' };
-}
-
-// Bare degrees — no unit letter. Used for the high/low range, where the unit is
-// already implied by the headline temperature and the °C/°F toggle.
-export function deg(celsius: number, units: WeatherUnits): string {
-  const value = units === 'f' ? celsius * 1.8 + 32 : celsius;
-  return `${Math.round(value)}°`;
-}
-
-export function temp(celsius: number, units: WeatherUnits): string {
-  return `${deg(celsius, units)}${units === 'f' ? 'F' : 'C'}`;
-}
-
 export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const { units, location } = config;
   const [coords, setCoords] = useState<WeatherLocation | null>(location);
   const [needsManual, setNeedsManual] = useState(false);
@@ -99,7 +67,7 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
 
   return (
     <WidgetCard
-      title={location?.label ?? 'Weather'}
+      title={location?.label ?? widgetLabels.label('weather')}
       icon={CloudSun}
       actions={
         <div className="flex items-center rounded-md border border-border/60 p-0.5 text-[10px]">
@@ -124,7 +92,7 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
         {needsManual && !coords ? (
           <ManualLocationForm onSave={(loc) => onConfigChange({ ...config, location: loc })} />
         ) : error && !data ? (
-          <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load weather.</p>
+          <p className="px-4 py-6 text-center text-sm text-destructive">{t('weather.error')}</p>
         ) : !data ? (
           <WidgetLoader />
         ) : (
@@ -136,7 +104,7 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
             onClick={() => onConfigChange({ ...config, location: null })}
             className="block w-full px-4 pb-2 text-left text-[10px] text-muted-foreground hover:text-foreground"
           >
-            Use my location instead
+            {t('weather.useMyLocation')}
           </button>
         )}
       </div>
@@ -145,7 +113,9 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
 }
 
 function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units: WeatherUnits; compact: boolean }) {
-  const { icon: Icon, label } = describe(data.current.weatherCode);
+  const t = useTranslations('dashboard');
+  const codeLabel = useWeatherCodeLabel();
+  const { icon: Icon, bucket } = describeWeatherCode(data.current.weatherCode);
 
   // Shared low–high range and precipitation chance: terse, icon-led, no prose.
   const range = (
@@ -155,7 +125,7 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
   );
   const precip = (
     <span className="inline-flex items-center gap-1 tabular-nums">
-      <Droplets className="h-3 w-3" aria-label="Chance of precipitation" />
+      <Droplets className="h-3 w-3" aria-label={t('weather.precipitation')} />
       {data.today.precipitationProbability}%
     </span>
   );
@@ -179,7 +149,7 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
     <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
       <span className="flex items-center gap-2 text-muted-foreground">
         <Icon className="h-8 w-8" aria-hidden />
-        <span className="text-base font-medium">{label}</span>
+        <span className="text-base font-medium">{codeLabel(bucket)}</span>
       </span>
       <span className="text-4xl font-semibold tabular-nums leading-none">{temp(data.current.temperatureC, units)}</span>
       <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
@@ -192,6 +162,7 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
 }
 
 function ManualLocationForm({ onSave }: { onSave: (loc: WeatherLocation) => void }) {
+  const t = useTranslations('dashboard');
   const [lat, setLat] = useState('');
   const [lon, setLon] = useState('');
   const [label, setLabel] = useState('');
@@ -208,20 +179,20 @@ function ManualLocationForm({ onSave }: { onSave: (loc: WeatherLocation) => void
     <div className="flex h-full flex-col justify-center gap-2 p-4">
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <MapPin className="h-3.5 w-3.5" />
-        Location unavailable — enter coordinates.
+        {t('weather.locationUnavailable')}
       </p>
       <div className="flex gap-2">
         <input
           value={lat}
           onChange={(e) => setLat(e.target.value)}
-          placeholder="Latitude"
+          placeholder={t('weather.latitude')}
           inputMode="decimal"
           className="min-w-0 flex-1 rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <input
           value={lon}
           onChange={(e) => setLon(e.target.value)}
-          placeholder="Longitude"
+          placeholder={t('weather.longitude')}
           inputMode="decimal"
           className="min-w-0 flex-1 rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
@@ -229,7 +200,7 @@ function ManualLocationForm({ onSave }: { onSave: (loc: WeatherLocation) => void
       <input
         value={label}
         onChange={(e) => setLabel(e.target.value)}
-        placeholder="Label (optional)"
+        placeholder={t('weather.labelOptional')}
         className="rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
       <button
@@ -237,7 +208,7 @@ function ManualLocationForm({ onSave }: { onSave: (loc: WeatherLocation) => void
         onClick={submit}
         className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
       >
-        Save location
+        {t('weather.saveLocation')}
       </button>
     </div>
   );

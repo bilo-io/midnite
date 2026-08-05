@@ -20,7 +20,14 @@ export const MAX_DASHBOARDS = 10;
  */
 const DEFAULT_TAB_ID = 'default';
 
-export const DEFAULT_TABS: DashboardTab[] = [{ id: DEFAULT_TAB_ID, name: 'Dashboard' }];
+/**
+ * The anchor tab is seeded with an **empty** name: a tab name is user-editable data that
+ * gets persisted on first write, so seeding it with an English literal would pin "Dashboard"
+ * into a French user's localStorage forever. Empty means "not yet named by the user", and
+ * the tab strip renders the localised page title in its place. (Installs created before
+ * Phase 82 D still hold the literal `'Dashboard'`; nothing rewrites stored names.)
+ */
+export const DEFAULT_TABS: DashboardTab[] = [{ id: DEFAULT_TAB_ID, name: '' }];
 
 const TABS_KEY = 'midnite.dashboard.tabs';
 const ACTIVE_KEY = 'midnite.dashboard.active';
@@ -60,7 +67,12 @@ export type UseDashboardTabs = {
   activeId: string;
   hydrated: boolean;
   setActiveId: (id: string) => void;
-  addTab: () => void;
+  /**
+   * Add a tab. The **caller** supplies the name because this module is copy-free —
+   * a new tab's name is a snapshot the user can rename, so naming it in the locale
+   * active at creation time is the correct behaviour.
+   */
+  addTab: (name: string) => void;
   closeTab: (id: string) => void;
   renameTab: (id: string, name: string) => void;
   togglePin: (id: string) => void;
@@ -85,22 +97,25 @@ export function useDashboardTabs(): UseDashboardTabs {
     ? activeId
     : (ordered[0]?.id ?? DEFAULT_TAB_ID);
 
-  const addTab = useCallback(() => {
-    if (tabs.length >= MAX_DASHBOARDS) return;
-    const id = crypto.randomUUID();
-    // Seed a near-empty board (just time + date, side by side in the top-left) so
-    // the new tab opens ready but uncluttered. The grid reads these keys once the
-    // tab becomes active; direct write — no hook is mounted on it yet.
-    try {
-      localStorage.setItem(widgetsKey(id), JSON.stringify(NEW_TAB_WIDGETS));
-      localStorage.setItem(layoutKey(id), JSON.stringify(NEW_TAB_LAYOUT));
-    } catch {
-      // ignore write failures (private mode / quota)
-    }
-    // New tabs join unpinned at the end; canonicalize keeps the invariant.
-    setTabs(canonicalize([...tabs, { id, name: `Dashboard ${tabs.length + 1}` }]));
-    setActiveId(id);
-  }, [tabs, setTabs, setActiveId]);
+  const addTab = useCallback(
+    (name: string) => {
+      if (tabs.length >= MAX_DASHBOARDS) return;
+      const id = crypto.randomUUID();
+      // Seed a near-empty board (just time + date, side by side in the top-left) so
+      // the new tab opens ready but uncluttered. The grid reads these keys once the
+      // tab becomes active; direct write — no hook is mounted on it yet.
+      try {
+        localStorage.setItem(widgetsKey(id), JSON.stringify(NEW_TAB_WIDGETS));
+        localStorage.setItem(layoutKey(id), JSON.stringify(NEW_TAB_LAYOUT));
+      } catch {
+        // ignore write failures (private mode / quota)
+      }
+      // New tabs join unpinned at the end; canonicalize keeps the invariant.
+      setTabs(canonicalize([...tabs, { id, name }]));
+      setActiveId(id);
+    },
+    [tabs, setTabs, setActiveId],
+  );
 
   const closeTab = useCallback(
     (id: string) => {

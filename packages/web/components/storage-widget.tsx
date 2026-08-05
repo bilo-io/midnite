@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Database, RefreshCw } from 'lucide-react';
 import { RadialGauge, type RadialGaugeLabels } from '@midnite/ui';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
+import { useUnitFormat } from '@/lib/use-unit-format';
 import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
@@ -20,7 +22,10 @@ type State = Estimate | 'unsupported' | 'error' | null;
  * real hard-drive space. Titled "App cache" to keep the two distinct.
  */
 export function StorageWidget() {
+  const t = useTranslations('dashboard');
   const tCommon = useTranslations('common');
+  const widgetLabels = useWidgetLabels();
+  const { bytes } = useUnitFormat();
   const [state, setState] = useState<State>(null);
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +34,7 @@ export function StorageWidget() {
     used: (pct) => tCommon('ui.gauge.pctUsed', { pct }),
     of: (total) => tCommon('ui.gauge.ofTotal', { total }),
     free: (free) => tCommon('ui.gauge.free', { free }),
+    bytes,
   };
 
   const refresh = useCallback(async () => {
@@ -53,13 +59,13 @@ export function StorageWidget() {
 
   return (
     <WidgetCard
-      title="App cache"
+      title={widgetLabels.label('storage')}
       icon={Database}
       actions={
         <button
           type="button"
           onClick={() => void refresh()}
-          aria-label="Refresh cache estimate"
+          aria-label={t('storage.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -70,11 +76,9 @@ export function StorageWidget() {
       {state === null ? (
         <WidgetLoader />
       ) : state === 'unsupported' ? (
-        <p className="px-2 text-center text-sm text-muted-foreground">
-          Cache estimates aren’t available in this browser.
-        </p>
+        <p className="px-2 text-center text-sm text-muted-foreground">{t('storage.unsupported')}</p>
       ) : state === 'error' ? (
-        <p className="px-2 text-center text-sm text-destructive">Couldn’t read cache usage.</p>
+        <p className="px-2 text-center text-sm text-destructive">{t('storage.error')}</p>
       ) : (
         <RadialGauge usedBytes={state.usage} totalBytes={state.quota} labels={gaugeLabels} />
       )}

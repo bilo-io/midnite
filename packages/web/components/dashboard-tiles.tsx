@@ -1,17 +1,27 @@
-import Link from 'next/link';
-import type { TaskCounts } from '@midnite/shared';
+'use client';
 
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import type { TaskCounts } from '@midnite/shared';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
+import type { WidgetType } from '@/lib/dashboard-widgets';
+
+/**
+ * The four count tiles, in display order. The **label** is not stored here: each tile is
+ * also a dashboard widget (`tile-backlog` … `tile-done`), so its name comes from the
+ * widget catalog via `useWidgetLabels()` — one source for the tile heading and the
+ * Add-widget picker entry. Only the one-line `hint`, which the picker has no equivalent
+ * for, needs its own key (`dashboard.tiles.<key>.hint`).
+ */
 export const TILES: Array<{
   key: keyof TaskCounts;
-  label: string;
-  hint: string;
   hueVar: string;
   href: string;
 }> = [
-  { key: 'backlog',    label: 'Backlog',      hint: 'Parked or ambiguous',          hueVar: '--status-backlog', href: '/tasks?status=backlog' },
-  { key: 'todo',       label: 'Todo',         hint: 'Queued, ready to start',       hueVar: '--status-todo',    href: '/tasks?status=todo' },
-  { key: 'inProgress', label: 'In progress',  hint: 'Running or waiting on input',  hueVar: '--status-wip',     href: '/tasks?status=wip,waiting' },
-  { key: 'done',       label: 'Done',         hint: 'Completed',                    hueVar: '--status-done',    href: '/tasks?status=done' },
+  { key: 'backlog',    hueVar: '--status-backlog', href: '/tasks?status=backlog' },
+  { key: 'todo',       hueVar: '--status-todo',    href: '/tasks?status=todo' },
+  { key: 'inProgress', hueVar: '--status-wip',     href: '/tasks?status=wip,waiting' },
+  { key: 'done',       hueVar: '--status-done',    href: '/tasks?status=done' },
 ];
 
 interface DashboardTileProps {
@@ -21,7 +31,11 @@ interface DashboardTileProps {
 }
 
 export function DashboardTile({ tile, value, total }: DashboardTileProps) {
-  const { label, hint, hueVar, href } = tile;
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
+  const { key, hueVar, href } = tile;
+  const label = widgetLabels.label(`tile-${key}` as WidgetType);
+  const hint = t(`tiles.${key}.hint`);
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <Link

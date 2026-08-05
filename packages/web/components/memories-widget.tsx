@@ -1,10 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Brain, RefreshCw } from 'lucide-react';
 import type { Memory } from '@midnite/shared';
 import { getMemories } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
+import { useRelativeTimeLabel } from '@/lib/i18n-labels';
 import { usePolling } from '@/lib/use-polling';
-import { cn, relativeTime } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
@@ -12,6 +15,8 @@ const REFRESH_MS = 60_000;
 const MAX_ROWS = 6;
 
 export function MemoriesWidget() {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const { data, error, loading, refresh } = usePolling(() => getMemories(), REFRESH_MS);
 
   const memories = (data ?? [])
@@ -21,13 +26,13 @@ export function MemoriesWidget() {
 
   return (
     <WidgetCard
-      title="Recent memories"
+      title={widgetLabels.label('memories')}
       icon={Brain}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh memories"
+          aria-label={t('memories.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -36,11 +41,11 @@ export function MemoriesWidget() {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load memories.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('memories.error')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : memories.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">No memories yet.</p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('memories.empty')}</p>
       ) : (
         <ul className="divide-y divide-border/30">
           {memories.map((m) => (
@@ -53,6 +58,8 @@ export function MemoriesWidget() {
 }
 
 function MemoryRow({ memory: m }: { memory: Memory }) {
+  const t = useTranslations('dashboard');
+  const relativeTime = useRelativeTimeLabel();
   return (
     <li className="px-4 py-2">
       <div className="flex items-center gap-2">
@@ -63,12 +70,12 @@ function MemoryRow({ memory: m }: { memory: Memory }) {
             m.projectId === null ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
           )}
         >
-          {m.projectId === null ? 'Global' : 'Project'}
+          {m.projectId === null ? t('memories.scopeGlobal') : t('memories.scopeProject')}
         </span>
       </div>
       {m.content && <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{m.content}</p>}
       <span className="mt-0.5 block text-[10px] tabular-nums text-muted-foreground">
-        Updated {relativeTime(m.updatedAt)}
+        {t('memories.updated', { when: relativeTime(m.updatedAt) })}
       </span>
     </li>
   );

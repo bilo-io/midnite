@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Coins, RefreshCw } from 'lucide-react';
 import {
   Bar,
@@ -14,6 +15,8 @@ import {
 } from 'recharts';
 import type { UsageAttributionResponse } from '@midnite/shared';
 import { getUsageAttribution } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
+import { useUsdLabel } from '@/lib/use-locale-format';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
@@ -31,10 +34,6 @@ function windowFrom(days: number): string {
   d.setDate(d.getDate() - (days - 1));
   d.setHours(0, 0, 0, 0);
   return d.toISOString();
-}
-
-function fmtUsd(n: number): string {
-  return n > 0 && n < 0.01 ? '<$0.01' : `$${n.toFixed(2)}`;
 }
 
 const TOOLTIP_STYLE = {
@@ -67,6 +66,10 @@ export function CostByRepoWidget({
   config: Config;
   onConfigChange: (c: Config) => void;
 }) {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
+  const widgetLabels = useWidgetLabels();
+  const fmtUsd = useUsdLabel();
   const { data, error, loading, refresh } = usePolling(
     () => getUsageAttribution({ groupBy: 'repo', from: windowFrom(config.windowDays) }),
     REFRESH_MS,
@@ -77,21 +80,21 @@ export function CostByRepoWidget({
 
   return (
     <WidgetCard
-      title="Cost by repo"
+      title={widgetLabels.label('cost-by-repo')}
       icon={Coins}
       actions={
         <>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="sr-only">Cost window</span>
+            <span className="sr-only">{t('costByRepo.windowAria')}</span>
             <select
-              aria-label="Cost window"
+              aria-label={t('costByRepo.windowAria')}
               value={config.windowDays}
               onChange={(e) => onConfigChange({ windowDays: Number(e.target.value) })}
               className="rounded-md border bg-background px-1.5 py-0.5 text-xs text-foreground"
             >
               {WINDOWS.map((w) => (
                 <option key={w} value={w}>
-                  {w}d
+                  {t('costByRepo.windowDays', { days: w })}
                 </option>
               ))}
             </select>
@@ -99,7 +102,7 @@ export function CostByRepoWidget({
           <button
             type="button"
             onClick={refresh}
-            aria-label="Refresh cost by repo"
+            aria-label={t('costByRepo.refresh')}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -109,12 +112,12 @@ export function CostByRepoWidget({
       bodyClassName="flex flex-col gap-3 overflow-y-auto p-4"
     >
       {error && !data ? (
-        <p className="m-auto text-sm text-destructive">Couldn’t load cost data.</p>
+        <p className="m-auto text-sm text-destructive">{t('costByRepo.error')}</p>
       ) : !data && loading ? (
-        <p className="m-auto text-sm text-muted-foreground">Loading…</p>
+        <p className="m-auto text-sm text-muted-foreground">{tCommon('loading')}</p>
       ) : !data ? null : data.buckets.length === 0 ? (
         <p className="m-auto max-w-[28ch] text-center text-sm text-muted-foreground">
-          No session cost recorded yet — spend appears once agent sessions run.
+          {t('costByRepo.empty')}
         </p>
       ) : (
         <>
@@ -123,12 +126,11 @@ export function CostByRepoWidget({
               {fmtUsd(data.totals.estCostUsd)}
             </span>
             <span className="ml-1.5 text-xs text-muted-foreground">
-              est over {config.windowDays}d · {data.totals.sessions} session
-              {data.totals.sessions === 1 ? '' : 's'}
+              {t('costByRepo.estOverWindow', { days: config.windowDays, count: data.totals.sessions })}
             </span>
           </div>
 
-          <div className="min-h-0 flex-1" role="img" aria-label="Cost by repo chart">
+          <div className="min-h-0 flex-1" role="img" aria-label={t('costByRepo.chartAria')}>
             <ResponsiveContainer width="100%" height="100%" minHeight={rows.length * 34 + 40}>
               <BarChart
                 layout="vertical"
@@ -157,14 +159,14 @@ export function CostByRepoWidget({
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar
                   dataKey="measured"
-                  name="measured"
+                  name={t('costByRepo.series.measured')}
                   stackId="cost"
                   fill="hsl(var(--primary))"
                   isAnimationActive={false}
                 />
                 <Bar
                   dataKey="estimated"
-                  name="estimated"
+                  name={t('costByRepo.series.estimated')}
                   stackId="cost"
                   fill="hsl(var(--primary) / 0.4)"
                   isAnimationActive={false}
@@ -175,9 +177,7 @@ export function CostByRepoWidget({
 
           {data.totals.unpricedSessions > 0 ? (
             <p className="text-[11px] text-muted-foreground">
-              {data.totals.unpricedSessions} session
-              {data.totals.unpricedSessions === 1 ? '' : 's'} on an unpriced model — cost not
-              counted.
+              {t('costByRepo.unpriced', { count: data.totals.unpricedSessions })}
             </p>
           ) : null}
         </>

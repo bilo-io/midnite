@@ -17,21 +17,31 @@ describe('dashboard tab storage keys', () => {
 describe('useDashboardTabs', () => {
   beforeEach(() => localStorage.clear());
 
-  it('starts with a single default tab', () => {
+  it('starts with a single default tab, seeded unnamed', () => {
     const { result } = renderHook(() => useDashboardTabs());
     expect(result.current.tabs).toHaveLength(1);
     expect(result.current.activeId).toBe('default');
+    // Phase 82 D: the anchor tab ships with no name so nothing pins an English
+    // "Dashboard" into a non-English user's localStorage; the strip renders the
+    // localised page title whenever the stored name is empty.
+    expect(result.current.tabs[0]!.name).toBe('');
+  });
+
+  it('names an added tab from the caller, keeping this module copy-free', () => {
+    const { result } = renderHook(() => useDashboardTabs());
+    act(() => result.current.addTab('Tableau 2'));
+    expect(result.current.tabs[1]!.name).toBe('Tableau 2');
   });
 
   it('adds tabs up to the max and no further', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    for (let i = 0; i < MAX_DASHBOARDS + 1; i++) act(() => result.current.addTab());
+    for (let i = 0; i < MAX_DASHBOARDS + 1; i++) act(() => result.current.addTab('Dashboard 2'));
     expect(result.current.tabs).toHaveLength(MAX_DASHBOARDS);
   });
 
   it('makes a new tab active and seeds it with the near-empty time+date board', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab());
+    act(() => result.current.addTab('Dashboard 2'));
     const newId = result.current.tabs[1]!.id;
     expect(result.current.activeId).toBe(newId);
     const seeded = JSON.parse(localStorage.getItem(widgetsKey(newId))!) as { type: string }[];
@@ -40,7 +50,7 @@ describe('useDashboardTabs', () => {
 
   it('seeds a layout with time + date side by side in the top-left', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab());
+    act(() => result.current.addTab('Dashboard 2'));
     const newId = result.current.tabs[1]!.id;
     const layout = JSON.parse(localStorage.getItem(layoutKey(newId))!) as {
       lg: { i: string; x: number; y: number; w: number; h: number }[];
@@ -58,7 +68,7 @@ describe('useDashboardTabs', () => {
 
   it('refuses to close the first tab, closes others and clears their storage', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab());
+    act(() => result.current.addTab('Dashboard 2'));
     const firstId = result.current.tabs[0]!.id;
     const newId = result.current.tabs[1]!.id;
 
@@ -73,7 +83,7 @@ describe('useDashboardTabs', () => {
 
   it('renames a tab (trimmed)', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab());
+    act(() => result.current.addTab('Dashboard 2'));
     const newId = result.current.tabs[1]!.id;
     act(() => result.current.renameTab(newId, '  Research  '));
     expect(result.current.tabs[1]!.name).toBe('Research');
@@ -81,8 +91,8 @@ describe('useDashboardTabs', () => {
 
   it('pinning moves a tab into the pinned zone (after default, before unpinned)', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab()); // A
-    act(() => result.current.addTab()); // B
+    act(() => result.current.addTab('Dashboard 2')); // A
+    act(() => result.current.addTab('Dashboard 2')); // B
     const [, aId, bId] = result.current.tabs.map((t) => t.id); // [default, A, B]
 
     act(() => result.current.togglePin(bId!));
@@ -93,8 +103,8 @@ describe('useDashboardTabs', () => {
 
   it('unpinning returns a tab to the front of the unpinned zone', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab()); // A
-    act(() => result.current.addTab()); // B
+    act(() => result.current.addTab('Dashboard 2')); // A
+    act(() => result.current.addTab('Dashboard 2')); // B
     const [, aId, bId] = result.current.tabs.map((t) => t.id);
 
     act(() => result.current.togglePin(aId!)); // [default, A(pinned), B]
@@ -105,7 +115,7 @@ describe('useDashboardTabs', () => {
 
   it('refuses to close a pinned tab until it is unpinned', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab());
+    act(() => result.current.addTab('Dashboard 2'));
     const aId = result.current.tabs[1]!.id;
 
     act(() => result.current.togglePin(aId));
@@ -119,9 +129,9 @@ describe('useDashboardTabs', () => {
 
   it('reorders tabs within a zone, preserving the canonical partition', () => {
     const { result } = renderHook(() => useDashboardTabs());
-    act(() => result.current.addTab()); // A
-    act(() => result.current.addTab()); // B
-    act(() => result.current.addTab()); // C
+    act(() => result.current.addTab('Dashboard 2')); // A
+    act(() => result.current.addTab('Dashboard 2')); // B
+    act(() => result.current.addTab('Dashboard 2')); // C
     const [, aId, bId, cId] = result.current.tabs.map((t) => t.id); // [default, A, B, C]
 
     act(() => result.current.reorderTabs([cId!, aId!, bId!])); // C to front of unpinned
