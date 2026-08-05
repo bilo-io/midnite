@@ -1,0 +1,1 @@
+import{ba as t}from"./iframe-DT5QZXTQ.js";const n=t.createContext({getAll:()=>[],register:()=>{},unregister:()=>{}});function c(e,r){const{register:o,unregister:u}=t.useContext(n),s=t.useRef(r);s.current=r,t.useEffect(()=>(o(e,s.current),()=>u(e)),[e])}function i(){const{getAll:e}=t.useContext(n);return e()}export{c as a,i as u};

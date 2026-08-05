@@ -1,0 +1,1 @@
+import{D as s,aH as a}from"./iframe-DT5QZXTQ.js";import{D as t}from"./features-DCTkboDS.js";const o=4;a.map(e=>({value:{kind:"solid",swatch:e.id},label:e.label,swatch:e.id}));const l="system",{theme:r,features:c,...E}=s,d={...E,features:t,agentPoolSize:o,requirePasscode:!1,passcodeOnlyWhenLocked:!1,notifyTaskUpdates:!1,editorAutosaveSeconds:30};export{d as D,l as M};
