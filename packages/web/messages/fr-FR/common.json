@@ -159,5 +159,39 @@
       "hours": "{value} h",
       "days": "{value} j"
     }
+  },
+  "editor": {
+    "previewTab": "Aperçu",
+    "contentAria": "Contenu Markdown",
+    "nothingToPreview": "Rien à prévisualiser pour l’instant.",
+    "taskItem": {
+      "completed": "Tâche terminée",
+      "incomplete": "Tâche non terminée"
+    }
+  },
+  "pickers": {
+    "folder": {
+      "title": "Choisir un dossier",
+      "goHome": "Aller au dossier personnel",
+      "openFailed": "Impossible d’ouvrir ce dossier",
+      "createFailed": "Impossible de créer ce dossier",
+      "missingPrompt": "Ce dossier n’existe pas encore. Le créer ?",
+      "createPath": "Créer {path}",
+      "empty": "Aucun sous-dossier ici.",
+      "hint": "Les sessions de ce projet s’exécuteront ici.",
+      "use": "Utiliser ce dossier"
+    },
+    "tagColour": {
+      "tagPlaceholder": "étiquette-courte",
+      "tagAria": "Étiquette",
+      "colourAria": "Couleur de l’étiquette",
+      "swatchAria": "Utiliser la couleur {hex}",
+      "fallbackTag": "étiquette"
+    },
+    "editDetails": {
+      "nameLabel": "Titre",
+      "descriptionLabel": "Description",
+      "nameRequired": "Veuillez renseigner le champ « {label} »."
+    }
   }
 }

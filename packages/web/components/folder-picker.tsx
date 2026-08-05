@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ChevronUp, Folder, FolderOpen, FolderPlus, Home, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { BrowseDirResponse } from '@midnite/shared';
 import { browseDirectory, createDirectory } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ type Props = {
 // can't hand a browser a real path, and sessions run on the gateway host anyway,
 // so the picker navigates *that* machine. Paths are exchanged in `~`-form.
 export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
+  const t = useTranslations('common');
   const [data, setData] = useState<BrowseDirResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,18 +33,21 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
   const [attempted, setAttempted] = useState<string | undefined>(initialPath);
   const [creating, setCreating] = useState(false);
 
-  const navigate = useCallback(async (path?: string) => {
-    setLoading(true);
-    setError(null);
-    setAttempted(path);
-    try {
-      setData(await browseDirectory(path));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Cannot open that folder');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const navigate = useCallback(
+    async (path?: string) => {
+      setLoading(true);
+      setError(null);
+      setAttempted(path);
+      try {
+        setData(await browseDirectory(path));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t('pickers.folder.openFailed'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t],
+  );
 
   const create = useCallback(async () => {
     if (!attempted) return;
@@ -51,11 +56,11 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
     try {
       setData(await createDirectory(attempted));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Cannot create that folder');
+      setError(e instanceof Error ? e.message : t('pickers.folder.createFailed'));
     } finally {
       setCreating(false);
     }
-  }, [attempted]);
+  }, [attempted, t]);
 
   useEffect(() => {
     void navigate(initialPath);
@@ -82,7 +87,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Choose a folder"
+          aria-label={t('pickers.folder.title')}
           className="pointer-events-auto flex max-h-[80vh] w-full max-w-md flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
@@ -96,7 +101,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
               variant="ghost"
               size="icon"
               className="h-7 w-7 shrink-0"
-              aria-label="Go to home directory"
+              aria-label={t('pickers.folder.goHome')}
               onClick={() => void navigate('~')}
             >
               <Home className="h-4 w-4" />
@@ -114,7 +119,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
                 {attempted && MISSING_DIR.test(error) ? (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">
-                      This folder doesn’t exist yet. Create it?
+                      {t('pickers.folder.missingPrompt')}
                     </p>
                     <Button
                       type="button"
@@ -128,7 +133,9 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
                       ) : (
                         <FolderPlus className="h-4 w-4" />
                       )}
-                      <span className="min-w-0 truncate">Create {attempted}</span>
+                      <span className="min-w-0 truncate">
+                        {t('pickers.folder.createPath', { path: attempted })}
+                      </span>
                     </Button>
                   </div>
                 ) : null}
@@ -160,7 +167,9 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
                   </li>
                 ))}
                 {!data?.parent && (data?.entries.length ?? 0) === 0 ? (
-                  <p className="px-2.5 py-4 text-sm text-muted-foreground">No subfolders here.</p>
+                  <p className="px-2.5 py-4 text-sm text-muted-foreground">
+                    {t('pickers.folder.empty')}
+                  </p>
                 ) : null}
               </ul>
             )}
@@ -168,11 +177,11 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
 
           <footer className="flex items-center justify-between gap-2 border-t border-border/60 px-4 py-3">
             <span className="truncate text-[11px] text-muted-foreground">
-              Sessions in this project will run here.
+              {t('pickers.folder.hint')}
             </span>
             <div className="flex shrink-0 items-center gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 type="button"
@@ -184,7 +193,7 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
                   onClose();
                 }}
               >
-                Use this folder
+                {t('pickers.folder.use')}
               </Button>
             </div>
           </footer>
