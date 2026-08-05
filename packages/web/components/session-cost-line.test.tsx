@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { UsageAttributionResponse } from '@midnite/shared';
 import { withQueryClient } from '@/lib/test-query-wrapper';
 

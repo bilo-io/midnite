@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { SessionTranscript, TranscriptMessage } from '@midnite/shared';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
 
 /**
@@ -10,8 +12,9 @@ import { cn } from '@/lib/utils';
  * view render an identical transcript.
  */
 export function SessionTranscriptBody({ transcript }: { transcript: SessionTranscript }) {
+  const t = useTranslations('sessions');
   if (transcript.messages.length === 0) {
-    return <p className="text-sm text-muted-foreground">No messages in this session.</p>;
+    return <p className="text-sm text-muted-foreground">{t('terminal.noMessages')}</p>;
   }
   return (
     <div className="space-y-3">
@@ -21,7 +24,7 @@ export function SessionTranscriptBody({ transcript }: { transcript: SessionTrans
       {transcript.taskEvents && transcript.taskEvents.length > 0 ? (
         <details className="mt-6 rounded-lg border border-border/60 bg-background/40 p-3">
           <summary className="cursor-pointer text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Task events ({transcript.taskEvents.length})
+            {t('terminal.taskEvents', { count: transcript.taskEvents.length })}
           </summary>
           <ul className="mt-2 space-y-1 font-mono text-[11px] text-muted-foreground">
             {transcript.taskEvents.map((ev, idx) => (
@@ -38,6 +41,8 @@ export function SessionTranscriptBody({ transcript }: { transcript: SessionTrans
 }
 
 function Message({ msg }: { msg: TranscriptMessage }) {
+  const t = useTranslations('sessions');
+  const formatTime = useTimeLabel();
   const isUser = msg.role === 'user';
   const isSystem = msg.role === 'system';
   const time = formatTime(msg.timestamp);
@@ -56,7 +61,7 @@ function Message({ msg }: { msg: TranscriptMessage }) {
           isUser ? 'bg-primary/10 text-foreground ml-12' : 'bg-muted/60 text-foreground mr-12',
         )}
       >
-        {msg.text || <span className="text-muted-foreground italic">(no text)</span>}
+        {msg.text || <span className="text-muted-foreground italic">{t('terminal.noText')}</span>}
       </div>
       {msg.toolCalls && msg.toolCalls.length > 0 ? (
         <div className="mr-12 space-y-0.5 font-mono text-[11px] text-muted-foreground">
@@ -72,10 +77,11 @@ function Message({ msg }: { msg: TranscriptMessage }) {
   );
 }
 
-function formatTime(ms: number): string {
-  try {
-    return new Date(ms).toLocaleString();
-  } catch {
-    return '';
-  }
+/** A message timestamp in the active locale (was pinned to the browser's). */
+function useTimeLabel(): (ms: number) => string {
+  const { dateTime } = useLocaleFormat();
+  return (ms) => {
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? '' : dateTime(d, { dateStyle: 'medium', timeStyle: 'short' });
+  };
 }

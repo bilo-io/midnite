@@ -5,6 +5,7 @@ import type { SessionStatus, SessionSummary } from '@midnite/shared';
 import { ContextRing, type ContextRingLabels } from '@midnite/ui';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
+import { useRelativeTimeLabel, useSessionStatusLabel } from '@/lib/i18n-labels';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { cn } from '@/lib/utils';
 
@@ -15,6 +16,11 @@ export const SESSION_STATUS_HUE: Record<SessionStatus, string> = {
   idle: '215 14% 52%',
 };
 
+/**
+ * The canonical **English** status wording. Kept because `lib/office/agents.ts`
+ * re-exports it for the Phaser office, whose canvas text is a documented
+ * non-localised gap — DOM surfaces read `useSessionStatusLabel()` instead.
+ */
 export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
   running: 'Running',
   waiting: 'Waiting',
@@ -23,14 +29,16 @@ export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
 };
 
 export function SessionStatusDot({ status }: { status: SessionStatus }) {
+  const statusLabel = useSessionStatusLabel();
   const hue = SESSION_STATUS_HUE[status];
+  const label = statusLabel(status);
   return (
     <span
       // role="img" gives this status dot a name-supporting role; a bare <span> doesn't
       // support aria-label (axe aria-prohibited-attr).
       role="img"
-      aria-label={SESSION_STATUS_LABEL[status]}
-      title={SESSION_STATUS_LABEL[status]}
+      aria-label={label}
+      title={label}
       className={cn('h-2 w-2 rounded-full shrink-0', status === 'running' && 'animate-pulse')}
       style={{
         background: `hsl(${hue})`,
@@ -38,14 +46,6 @@ export function SessionStatusDot({ status }: { status: SessionStatus }) {
       }}
     />
   );
-}
-
-function relativeTime(ms: number): string {
-  const diff = Date.now() - ms;
-  if (diff < 60_000) return 'just now';
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
 type SelectProps = {
@@ -66,12 +66,14 @@ function SessionSelect({ selected, onToggleSelect }: SelectProps) {
  * the card's modal onClick.
  */
 function OpenDetailLink({ sessionId }: { sessionId: string }) {
+  const t = useTranslations('sessions');
+  const label = t('card.openPage');
   return (
     <Link
       href={`/sessions/view?id=${sessionId}`}
       onClick={(e) => e.stopPropagation()}
-      aria-label="Open session page"
-      title="Open session page"
+      aria-label={label}
+      title={label}
       className="shrink-0 rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
     >
       <ArrowUpRight className="h-4 w-4" />
@@ -101,6 +103,7 @@ export function SessionRow({
   onClick: () => void;
 } & SelectProps) {
   const ringLabels = useContextRingLabels();
+  const relativeTime = useRelativeTimeLabel();
   return (
     <div
       className={cn(
@@ -143,6 +146,8 @@ type Props = {
 
 export function SessionCard({ session, layout, onClick, selected = false, onToggleSelect }: Props) {
   const ringLabels = useContextRingLabels();
+  const statusLabel = useSessionStatusLabel();
+  const relativeTime = useRelativeTimeLabel();
   if (layout === 'list') {
     return (
       <div
@@ -184,7 +189,7 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
         <SessionSelect selected={selected} onToggleSelect={onToggleSelect} />
         <SessionStatusDot status={session.status} />
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {SESSION_STATUS_LABEL[session.status]}
+          {statusLabel(session.status)}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {session.contextTokens != null && session.contextLimit != null ? (

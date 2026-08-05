@@ -1,23 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { X } from 'lucide-react';
 import { AGENT_CLI_LABEL, type AgentCli } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
+import { TerminalStarting } from '@/components/session-terminal-starting';
 import { createCliTerminal } from '@/lib/api';
 
 // xterm.js touches the DOM — load the terminal view client-only, same as the
 // session terminal and the CLI install modal.
 const LiveTerminal = dynamic(() => import('./live-terminal').then((m) => m.LiveTerminal), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      Starting terminal…
-    </div>
-  ),
+  loading: () => <TerminalStarting />,
 });
 
 /**
@@ -26,6 +24,8 @@ const LiveTerminal = dynamic(() => import('./live-terminal').then((m) => m.LiveT
  * reaped on idle. Used by the Sessions page's "New session" agent picker.
  */
 export function SessionLaunchModal({ cli, onClose }: { cli: AgentCli; onClose: () => void }) {
+  const t = useTranslations('sessions');
+  const tCommon = useTranslations('common');
   const [terminalId, setTerminalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +36,7 @@ export function SessionLaunchModal({ cli, onClose }: { cli: AgentCli; onClose: (
         if (!cancelled) setTerminalId(id);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to start session');
+        if (!cancelled) setError(e instanceof Error ? e.message : t('launch.failedToStart'));
       });
     return () => {
       cancelled = true;
@@ -73,12 +73,12 @@ export function SessionLaunchModal({ cli, onClose }: { cli: AgentCli; onClose: (
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <AgentCliLogo cli={cli} className="h-5 w-5 shrink-0" />
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-sm font-semibold leading-tight">{label} session</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                A live {label} terminal. Close anytime — it keeps running until idle.
-              </p>
+              <h2 className="truncate text-sm font-semibold leading-tight">
+                {t('launch.dialogTitle', { cli: label })}
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">{t('launch.blurb', { cli: label })}</p>
             </div>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button type="button" variant="ghost" size="icon" aria-label={tCommon('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -90,11 +90,11 @@ export function SessionLaunchModal({ cli, onClose }: { cli: AgentCli; onClose: (
               <LiveTerminal
                 attachId={terminalId}
                 label={label}
-                ariaLabel={`${label} session terminal`}
+                ariaLabel={t('launch.terminalAria', { cli: label })}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Starting {label}…
+                {t('launch.starting', { cli: label })}
               </div>
             )}
           </div>

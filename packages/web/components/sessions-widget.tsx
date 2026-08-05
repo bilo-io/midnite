@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { RefreshCw, TerminalSquare } from 'lucide-react';
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
-import { cn, relativeTime } from '@/lib/utils';
+import { useRelativeTimeLabel } from '@/lib/i18n-labels';
+import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
@@ -22,6 +24,7 @@ const STATUS_DOT: Record<SessionStatus, string> = {
 };
 
 export function SessionsWidget() {
+  const t = useTranslations('sessions');
   const { data, error, loading, refresh } = usePolling(() => getSessions(), REFRESH_MS);
 
   const sessions = (data ?? [])
@@ -31,13 +34,13 @@ export function SessionsWidget() {
 
   return (
     <WidgetCard
-      title="Live sessions"
+      title={t('widget.title')}
       icon={TerminalSquare}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Refresh sessions"
+          aria-label={t('widget.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
@@ -46,11 +49,11 @@ export function SessionsWidget() {
       bodyClassName="overflow-auto"
     >
       {error && !data ? (
-        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load sessions.</p>
+        <p className="px-4 py-6 text-center text-sm text-destructive">{t('widget.loadFailed')}</p>
       ) : !data && loading ? (
         <WidgetLoader />
       ) : sessions.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">No active sessions.</p>
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t('widget.empty')}</p>
       ) : (
         <ul className="divide-y divide-border/30">
           {sessions.map((s) => (
@@ -63,6 +66,7 @@ export function SessionsWidget() {
 }
 
 function SessionRow({ session }: { session: SessionSummary }) {
+  const relativeTime = useRelativeTimeLabel();
   const pct =
     session.contextTokens != null && session.contextLimit
       ? Math.min(100, Math.round((session.contextTokens / session.contextLimit) * 100))

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react';
 import { isTerminal, type ApprovalLogEntry, type Project, type SessionDetail, type Task } from '@midnite/shared';
 import { ReplyBox } from '@/components/reply-box';
@@ -8,9 +9,10 @@ import { listApprovalLog } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
 import { projectPageHref } from '@/lib/project-route';
-import { relativeTime } from '@/lib/utils';
+import { useRelativeTimeLabel, useStatusLabel } from '@/lib/i18n-labels';
 
-const PRIORITY_LABEL = ['low', 'normal', 'high', 'urgent'] as const;
+/** `task.priority` is 0–3; the wording lives in `board.priority.*` (Theme B). */
+const PRIORITY_KEY = ['low', 'normal', 'high', 'urgent'] as const;
 
 /** How a resolved decision reads + colours in the history list. */
 const RESOLUTION_STYLE: Record<string, string> = {
@@ -38,6 +40,11 @@ export function SessionLeftPanel({
   task: Task | null;
   project: Project | null;
 }) {
+  const t = useTranslations('sessions');
+  const tBoard = useTranslations('board');
+  const tSettings = useTranslations('settings');
+  const statusLabel = useStatusLabel();
+  const relativeTime = useRelativeTimeLabel();
   const { pending, deciding, decide } = useApprovalsSocket();
   const live = pending.filter((p) => p.sessionId === session.id);
 
@@ -57,7 +64,7 @@ export function SessionLeftPanel({
       {liveWait ? (
         <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
-            Agent is waiting on you
+            {t('left.agentWaiting')}
           </h3>
           <ReplyBox sessionId={session.id} />
         </section>
@@ -65,10 +72,10 @@ export function SessionLeftPanel({
       {/* Live pending approvals for this session. */}
       <section>
         <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5" /> Pending approvals
+          <ShieldCheck className="h-3.5 w-3.5" /> {t('left.pendingApprovals')}
         </h3>
         {live.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nothing awaiting a decision.</p>
+          <p className="text-xs text-muted-foreground">{t('left.nothingPending')}</p>
         ) : (
           <ul className="space-y-2">
             {live.map((a) => (
@@ -84,7 +91,7 @@ export function SessionLeftPanel({
                     onClick={() => decide(a.id, a.sessionId, 'allow')}
                     className="inline-flex items-center gap-1 rounded border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50"
                   >
-                    <Check className="h-3 w-3" /> Allow
+                    <Check className="h-3 w-3" /> {t('left.allow')}
                   </button>
                   <button
                     type="button"
@@ -92,7 +99,7 @@ export function SessionLeftPanel({
                     onClick={() => decide(a.id, a.sessionId, 'allow_session')}
                     className="inline-flex items-center rounded border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
-                    Allow session
+                    {t('left.allowSession')}
                   </button>
                   <button
                     type="button"
@@ -100,7 +107,7 @@ export function SessionLeftPanel({
                     onClick={() => decide(a.id, a.sessionId, 'deny')}
                     className="inline-flex items-center gap-1 rounded border border-destructive/40 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
                   >
-                    <X className="h-3 w-3" /> Deny
+                    <X className="h-3 w-3" /> {t('left.deny')}
                   </button>
                 </div>
               </li>
@@ -112,10 +119,10 @@ export function SessionLeftPanel({
       {/* Historical decisions for this session (recent 25). */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Decision history
+          {t('left.decisionHistory')}
         </h3>
         {history.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No decisions recorded yet.</p>
+          <p className="text-xs text-muted-foreground">{t('left.noDecisions')}</p>
         ) : (
           <ul className="space-y-1.5">
             {history.map((e: ApprovalLogEntry) => (
@@ -125,7 +132,9 @@ export function SessionLeftPanel({
                   {e.summary ? <span className="text-muted-foreground"> · {e.summary}</span> : null}
                 </span>
                 <span className={RESOLUTION_STYLE[e.resolution] ?? 'text-muted-foreground'}>
-                  {e.resolution}
+                  {tSettings.has(`approvals.history.resolution.${e.resolution}`)
+                    ? tSettings(`approvals.history.resolution.${e.resolution}`)
+                    : e.resolution}
                 </span>
               </li>
             ))}
@@ -137,29 +146,33 @@ export function SessionLeftPanel({
       {task ? (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Task
+            {t('left.task')}
           </h3>
           <Link href={`/tasks/view?id=${task.id}`} className="text-foreground hover:underline">
             {task.title}
           </Link>
           <dl className="mt-1.5 space-y-1 text-xs text-muted-foreground">
             <div className="flex justify-between gap-2">
-              <dt>Status</dt>
-              <dd className="text-foreground">{task.status}</dd>
+              <dt>{t('left.status')}</dt>
+              <dd className="text-foreground">{statusLabel(task.status)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt>Priority</dt>
-              <dd className="text-foreground">{PRIORITY_LABEL[task.priority] ?? task.priority}</dd>
+              <dt>{t('left.priority')}</dt>
+              <dd className="text-foreground">
+                {PRIORITY_KEY[task.priority]
+                  ? tBoard(`priority.${PRIORITY_KEY[task.priority]}`)
+                  : task.priority}
+              </dd>
             </div>
             {task.retryCount ? (
               <div className="flex justify-between gap-2">
-                <dt>Retries</dt>
+                <dt>{t('left.retries')}</dt>
                 <dd className="text-foreground">{task.retryCount}</dd>
               </div>
             ) : null}
             {task.createdAt ? (
               <div className="flex justify-between gap-2">
-                <dt>Created</dt>
+                <dt>{t('left.created')}</dt>
                 <dd className="text-foreground">{relativeTime(task.createdAt)}</dd>
               </div>
             ) : null}
@@ -170,7 +183,7 @@ export function SessionLeftPanel({
               href={`/tasks/view?id=${task.id}&tab=retro`}
               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
-              View retrospective
+              {t('left.viewRetro')}
               <ArrowRight className="h-3 w-3" />
             </Link>
           ) : null}
@@ -181,7 +194,7 @@ export function SessionLeftPanel({
       {project ? (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Project
+            {t('left.project')}
           </h3>
           <Link href={projectPageHref(project.id)} className="text-foreground hover:underline">
             {project.name}

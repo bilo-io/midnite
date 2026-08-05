@@ -18,6 +18,7 @@ import projects from './projects.json';
 import roadmap from './roadmap.json';
 import safety from './safety.json';
 import search from './search.json';
+import sessions from './sessions.json';
 import settings from './settings.json';
 import slides from './slides.json';
 import task from './task.json';
@@ -42,6 +43,7 @@ export default {
   roadmap,
   safety,
   search,
+  sessions,
   settings,
   slides,
   task,

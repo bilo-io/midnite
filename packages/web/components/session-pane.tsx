@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { SessionSummary, SessionStatus, SessionTranscript } from '@midnite/shared';
 import { SessionTerminal } from '@/components/session-terminal';
 import { SessionTranscriptBody } from '@/components/session-transcript-body';
@@ -26,6 +27,7 @@ type Props = {
  * (archive / delete) + "Open page" live on the modal's shared control row, not here.
  */
 export function SessionPane({ session, loading = false }: Props) {
+  const t = useTranslations('sessions');
   const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export function SessionPane({ session, loading = false }: Props) {
         if (!cancelled) setTranscript(t);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load transcript');
+        if (!cancelled) setError(err instanceof Error ? err.message : t('pane.transcriptFailed'));
       })
       .finally(() => {
         if (!cancelled) setTranscriptLoading(false);
@@ -52,12 +54,13 @@ export function SessionPane({ session, loading = false }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [session, live]);
+    // `t` is memoised per locale by next-intl, so it doesn't re-trigger the fetch.
+  }, [session, live, t]);
 
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center px-5 py-10 text-sm text-muted-foreground">
-        Loading session…
+        {t('pane.loadingSession')}
       </div>
     );
   }
@@ -65,9 +68,9 @@ export function SessionPane({ session, loading = false }: Props) {
   if (!session) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-1 px-5 py-10 text-center">
-        <p className="text-sm font-medium">No session yet</p>
+        <p className="text-sm font-medium">{t('pane.noSessionTitle')}</p>
         <p className="text-xs text-muted-foreground">
-          This task hasn’t started a session. Start it to spawn an agent.
+          {t('pane.noSessionHint')}
         </p>
       </div>
     );
@@ -82,7 +85,7 @@ export function SessionPane({ session, loading = false }: Props) {
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {transcriptLoading ? (
-            <p className="text-sm text-muted-foreground">Loading transcript…</p>
+            <p className="text-sm text-muted-foreground">{t('pane.loadingTranscript')}</p>
           ) : error ? (
             <p className="text-sm text-destructive-foreground">{error}</p>
           ) : transcript ? (
