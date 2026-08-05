@@ -29,6 +29,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { SourceIngestState, SourceKind } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SourceIcon } from '@/components/source-icon';
@@ -37,8 +38,9 @@ import { cn } from '@/lib/utils';
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
+/** A thrown value's message, or the caller's translated fallback for a non-`Error`. */
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 /** The minimal shape this editor needs from a source row. */
@@ -108,15 +110,18 @@ export function SourceListEditor({
   reorderable = true,
   onOpen,
 }: Props) {
+  const t = useTranslations('memory');
+  const tCommon = useTranslations('common');
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const atLimit = sources.length >= max;
+  const fallbackError = tCommon('errorTitle');
 
   const upload = async (file: File | undefined) => {
     if (!file || !onUploadFile) return;
     if (atLimit) {
-      setError(`Up to ${max} sources`);
+      setError(t('sourceEditor.atLimit', { count: max }));
       return;
     }
     setError(null);
@@ -124,7 +129,7 @@ export function SourceListEditor({
     try {
       await onUploadFile(file);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, fallbackError));
     } finally {
       setBusy(false);
     }
@@ -136,7 +141,7 @@ export function SourceListEditor({
     try {
       await onReingest(id);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, fallbackError));
     }
   };
 
@@ -151,11 +156,11 @@ export function SourceListEditor({
     try {
       new URL(u);
     } catch {
-      setError('Enter a full URL, including https://');
+      setError(t('sourceEditor.invalidUrl'));
       return;
     }
     if (atLimit) {
-      setError(`Up to ${max} sources`);
+      setError(t('sourceEditor.atLimit', { count: max }));
       return;
     }
     setError(null);
@@ -164,7 +169,7 @@ export function SourceListEditor({
       await onAdd(u);
       setUrl('');
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, fallbackError));
     } finally {
       setBusy(false);
     }
@@ -176,7 +181,7 @@ export function SourceListEditor({
     try {
       await onRemove(id);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, fallbackError));
     } finally {
       setBusy(false);
     }
@@ -190,7 +195,7 @@ export function SourceListEditor({
     const to = ids.indexOf(String(over.id));
     if (from === -1 || to === -1) return;
     setError(null);
-    Promise.resolve(onReorder(arrayMove(ids, from, to))).catch((e) => setError(errMsg(e)));
+    Promise.resolve(onReorder(arrayMove(ids, from, to))).catch((e) => setError(errMsg(e, fallbackError)));
   };
 
   return (
@@ -207,7 +212,7 @@ export function SourceListEditor({
                 void add();
               }
             }}
-            placeholder={placeholder ?? 'Paste a GitHub, Notion, Google Docs or any link'}
+            placeholder={placeholder ?? t('sourceEditor.urlPlaceholder')}
             disabled={atLimit || busy || disabled}
           />
           <Button
@@ -216,7 +221,7 @@ export function SourceListEditor({
             size="icon"
             onClick={() => void add()}
             disabled={atLimit || busy || disabled || !url.trim()}
-            aria-label="Add source"
+            aria-label={t('sourceEditor.addSource')}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           </Button>
@@ -226,8 +231,8 @@ export function SourceListEditor({
                 'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:text-foreground',
                 (atLimit || busy || disabled) && 'cursor-not-allowed opacity-50',
               )}
-              title="Upload a file (PDF, Markdown, text)"
-              aria-label="Upload a file source"
+              title={t('sourceEditor.uploadTitle')}
+              aria-label={t('sourceEditor.uploadLabel')}
             >
               <Upload className="h-4 w-4" />
               <input
@@ -284,11 +289,13 @@ function SortableSourceRow({
   onReingest?: () => void;
   onOpen?: () => void;
 }) {
+  const t = useTranslations('memory');
   const dragDisabled = disabled || !reorderable;
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: s.id, disabled: dragDisabled });
 
-  const label = s.title ?? s.fileName ?? s.url ?? 'Source';
+  // Same untitled-source wording the detail modal falls back to.
+  const label = s.title ?? s.fileName ?? s.url ?? t('sourceDetail.fallbackLabel');
 
   return (
     <li
@@ -305,7 +312,7 @@ function SortableSourceRow({
         {...attributes}
         {...listeners}
         disabled={dragDisabled}
-        aria-label="Reorder source"
+        aria-label={t('sourceEditor.reorder')}
         className="shrink-0 cursor-grab touch-none rounded text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
       >
         <GripVertical className="h-4 w-4" />
@@ -332,7 +339,7 @@ function SortableSourceRow({
           href={s.url}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Open source in new tab"
+          aria-label={t('sourceEditor.openInNewTab')}
           onClick={(e) => e.stopPropagation()}
           className="text-muted-foreground hover:text-foreground"
         >
@@ -343,7 +350,7 @@ function SortableSourceRow({
         type="button"
         onClick={onRemove}
         disabled={disabled}
-        aria-label="Remove source"
+        aria-label={t('sourceEditor.remove')}
         className="text-muted-foreground hover:text-destructive disabled:opacity-40"
       >
         <X className="h-3.5 w-3.5" />
@@ -363,22 +370,31 @@ function IngestStatus({
   onReingest?: () => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations('memory');
   if (!onReingest) return null;
   if (s.ingestState === 'pending') {
-    return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" aria-label="Reading source" />;
+    return (
+      <Loader2
+        className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground"
+        aria-label={t('sourceEditor.reading')}
+      />
+    );
   }
   if (s.ingestState === 'ready') {
-    return <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="Source read" />;
+    return <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label={t('sourceEditor.read')} />;
   }
   // failed or not-yet-ingested → offer a (re)read action.
   const failed = s.ingestState === 'failed';
+  const failedTitle = s.ingestError
+    ? t('sourceEditor.readFailedTitleWithError', { error: s.ingestError })
+    : t('sourceEditor.readFailedTitle');
   return (
     <button
       type="button"
       onClick={onReingest}
       disabled={disabled}
-      aria-label={failed ? 'Retry reading source' : 'Read source'}
-      title={failed ? `Failed to read${s.ingestError ? `: ${s.ingestError}` : ''} — retry` : 'Read source'}
+      aria-label={failed ? t('sourceEditor.retryRead') : t('sourceEditor.readSource')}
+      title={failed ? failedTitle : t('sourceEditor.readSource')}
       className={cn(
         'shrink-0 disabled:opacity-40',
         failed ? 'text-amber-500 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground',

@@ -18,6 +18,24 @@
     "ready": "Read",
     "failed": "Failed"
   },
+  "sourceKinds": {
+    "github": "GitHub",
+    "figma": "Figma",
+    "google-docs": "Google Docs",
+    "google-sheets": "Google Sheets",
+    "google-slides": "Google Slides",
+    "google-drive": "Google Drive",
+    "notion": "Notion",
+    "youtube": "YouTube",
+    "x": "X",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "reddit": "Reddit",
+    "medium": "Medium",
+    "substack": "Substack",
+    "link": "Link",
+    "file": "File"
+  },
   "list": {
     "title": "Memory",
     "description": "Knowledge your agents carry into every session — global or scoped to a project.",
@@ -80,7 +98,32 @@
     "removeDescription": "It will be detached from this memory.",
     "reingestError": "Could not re-read that source",
     "removeError": "Could not remove that source",
-    "reorderError": "Could not reorder sources"
+    "reorderError": "Could not reorder sources",
+    "filterPlaceholder": "Filter by type…",
+    "filterLabel": "Filter sources by type",
+    "filterNoOptions": "No types match"
+  },
+  "sourceEditor": {
+    "urlPlaceholder": "Paste a GitHub, Notion, Google Docs or any link",
+    "addSource": "Add source",
+    "uploadTitle": "Upload a file (PDF, Markdown, text)",
+    "uploadLabel": "Upload a file source",
+    "atLimit": "{count, plural, one {Up to # source} other {Up to # sources}}",
+    "invalidUrl": "Enter a full URL, including https://",
+    "reorder": "Reorder source",
+    "openInNewTab": "Open source in new tab",
+    "remove": "Remove source",
+    "reading": "Reading source",
+    "read": "Source read",
+    "readSource": "Read source",
+    "retryRead": "Retry reading source",
+    "readFailedTitle": "Failed to read — retry",
+    "readFailedTitleWithError": "Failed to read: {error} — retry"
+  },
+  "tree": {
+    "empty": "No memories",
+    "memoryCount": "{count, plural, one {# memory} other {# memories}}",
+    "sourceCount": "{count, plural, one {# source} other {# sources}}"
   },
   "studio": {
     "intro": "Generate artifacts from this memory and its sources.",

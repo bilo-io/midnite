@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { LLM_FEATURE_LABEL } from '@midnite/shared';
+import { LLM_FEATURE_LABEL, SOURCE_KIND_LABEL } from '@midnite/shared';
 import type {
   ApprovalDecidedBy,
   ApprovalResolution,
@@ -15,6 +15,7 @@ import type {
   ProjectRequirement,
   SessionStatus,
   SourceIngestState,
+  SourceKind,
   Status,
   TaskHeldReason,
   TaskSummary,
@@ -80,6 +81,25 @@ export function useArtifactStatusLabel(): (status: MemoryArtifactStatus) => stri
 export function useSourceIngestStateLabel(): (state: SourceIngestState) => string {
   const t = useTranslations('memory');
   return (state) => t(`sourceState.${state}`);
+}
+
+/**
+ * Source kind → type label (`memory.sourceKinds.*`).
+ *
+ * `SOURCE_KIND_LABEL` in `@midnite/shared` stays canonical for the CLI/gateway, and most
+ * of its entries are brand names that must not be translated (`GitHub`, `Notion`, `X`) —
+ * only `link` / `file` are real words. The catalog therefore restates the whole map (so a
+ * new kind gets a translated home) with the shared English as the per-key fallback, which
+ * keeps a kind the catalog hasn't caught up with rendering its brand name rather than a
+ * raw enum value. Read by the sources filter, the task-detail link pills and the source
+ * detail modal.
+ */
+export function useSourceKindLabel(): (kind: SourceKind) => string {
+  const t = useTranslations('memory');
+  return (kind) => {
+    const key = `sourceKinds.${kind}`;
+    return t.has(key) ? t(key) : SOURCE_KIND_LABEL[kind];
+  };
 }
 
 /**

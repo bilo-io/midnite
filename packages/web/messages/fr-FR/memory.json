@@ -18,6 +18,24 @@
     "ready": "Lu",
     "failed": "Échec"
   },
+  "sourceKinds": {
+    "github": "GitHub",
+    "figma": "Figma",
+    "google-docs": "Google Docs",
+    "google-sheets": "Google Sheets",
+    "google-slides": "Google Slides",
+    "google-drive": "Google Drive",
+    "notion": "Notion",
+    "youtube": "YouTube",
+    "x": "X",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "reddit": "Reddit",
+    "medium": "Medium",
+    "substack": "Substack",
+    "link": "Lien",
+    "file": "Fichier"
+  },
   "list": {
     "title": "Mémoire",
     "description": "Les connaissances que vos agents emportent dans chaque session — globales ou limitées à un projet.",
@@ -80,7 +98,32 @@
     "removeDescription": "Elle sera détachée de cette mémoire.",
     "reingestError": "Impossible de relire cette source",
     "removeError": "Impossible de retirer cette source",
-    "reorderError": "Impossible de réordonner les sources"
+    "reorderError": "Impossible de réordonner les sources",
+    "filterPlaceholder": "Filtrer par type…",
+    "filterLabel": "Filtrer les sources par type",
+    "filterNoOptions": "Aucun type correspondant"
+  },
+  "sourceEditor": {
+    "urlPlaceholder": "Collez un lien GitHub, Notion, Google Docs ou tout autre lien",
+    "addSource": "Ajouter une source",
+    "uploadTitle": "Importer un fichier (PDF, Markdown, texte)",
+    "uploadLabel": "Importer un fichier comme source",
+    "atLimit": "{count, plural, one {Jusqu’à # source} other {Jusqu’à # sources}}",
+    "invalidUrl": "Saisissez une URL complète, avec https://",
+    "reorder": "Réordonner la source",
+    "openInNewTab": "Ouvrir la source dans un nouvel onglet",
+    "remove": "Retirer la source",
+    "reading": "Lecture de la source",
+    "read": "Source lue",
+    "readSource": "Lire la source",
+    "retryRead": "Réessayer de lire la source",
+    "readFailedTitle": "Échec de la lecture — réessayer",
+    "readFailedTitleWithError": "Échec de la lecture : {error} — réessayer"
+  },
+  "tree": {
+    "empty": "Aucune mémoire",
+    "memoryCount": "{count, plural, one {# mémoire} other {# mémoires}}",
+    "sourceCount": "{count, plural, one {# source} other {# sources}}"
   },
   "studio": {
     "intro": "Générez des documents à partir de cette mémoire et de ses sources.",
