@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Braces, ChevronRight, Database } from 'lucide-react';
 import { ExpressionError, resolveExpression, type ExpressionContext } from '@midnite/shared';
 import {
@@ -29,6 +30,20 @@ function renderPreview(value: unknown): string {
  * input with reference autocomplete, a click-to-insert data picker drawn from the
  * last run, and an inline resolved-value preview. The grammar + resolution are
  * the shared contract; this is purely the design-time affordance over them.
+ *
+ * **i18n (Phase 82 Theme D).** Copy lives under `workflows.expression.*`. Every
+ * accessible name that mentions the field is a whole-sentence ICU message taking
+ * `field` as an argument (`fieldAria`, `dataPicker.toggle`, `suggestionsAria`,
+ * `dataPicker.groupAria`) rather than a translated label concatenated into an
+ * English template — so the label reads naturally in each locale's word order.
+ * `fieldLabel` arrives already translated from the node catalogue
+ * (`lib/workflow-node-labels.ts`).
+ *
+ * Expression syntax (`{{ }}`, `$json`, `$node`) is a machine language: it is
+ * copied verbatim, never translated. `ExpressionError.message` comes from
+ * `@midnite/shared`, which is i18n-agnostic by rule, so a malformed-expression
+ * diagnostic stays English; the surrounding presentation (and the generic
+ * unresolved fallback) is translated.
  */
 export function ExpressionField({
   value,
@@ -45,6 +60,7 @@ export function ExpressionField({
   context: ExpressionContext;
   hasData: boolean;
 }) {
+  const t = useTranslations('workflows.expression');
   const text = typeof value === 'string' ? value : '';
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursor, setCursor] = useState(text.length);
@@ -66,9 +82,14 @@ export function ExpressionField({
     try {
       return { ok: true, text: renderPreview(resolveExpression(text, context)) };
     } catch (err) {
-      return { ok: false, text: err instanceof ExpressionError ? err.message : 'cannot resolve' };
+      // `ExpressionError.message` is the shared grammar diagnostic (English by
+      // rule — `shared` is i18n-agnostic); anything else gets our own copy.
+      return {
+        ok: false,
+        text: err instanceof ExpressionError ? err.message : t('preview.unresolved'),
+      };
     }
-  }, [text, context]);
+  }, [text, context, t]);
 
   const syncCursor = () => setCursor(inputRef.current?.selectionStart ?? text.length);
 
@@ -128,8 +149,8 @@ export function ExpressionField({
           className={cn(inputClass, 'font-mono text-xs')}
           value={text}
           spellCheck={false}
-          aria-label={`${fieldLabel} expression`}
-          placeholder={placeholder ?? '{{ $json.field }}'}
+          aria-label={t('fieldAria', { field: fieldLabel })}
+          placeholder={placeholder ?? t('placeholder')}
           onChange={(e) => {
             onChange(e.target.value);
             setCursor(e.target.selectionStart ?? e.target.value.length);
@@ -145,9 +166,9 @@ export function ExpressionField({
         <button
           type="button"
           onClick={() => setPickerOpen((o) => !o)}
-          aria-label={`Toggle data picker for ${fieldLabel}`}
+          aria-label={t('dataPicker.toggle', { field: fieldLabel })}
           aria-pressed={pickerOpen}
-          title="Insert a reference from run data"
+          title={t('dataPicker.insertTooltip')}
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input transition-colors',
             pickerOpen ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
@@ -158,7 +179,7 @@ export function ExpressionField({
       </div>
 
       {acOpen && items.length ? (
-        <ul role="listbox" aria-label={`${fieldLabel} expression suggestions`} className="overflow-hidden rounded-md border border-border/60 bg-popover shadow-sm">
+        <ul role="listbox" aria-label={t('suggestionsAria', { field: fieldLabel })} className="overflow-hidden rounded-md border border-border/60 bg-popover shadow-sm">
           {items.map((item, i) => (
             <li key={`${item.label}-${i}`} role="option" aria-selected={i === active}>
               <button
@@ -188,15 +209,17 @@ export function ExpressionField({
             // role="group" (not "tree"): the rows are click-to-insert buttons, not a
             // keyboard-navigable treegrid; "tree" would demand role="treeitem" children
             // (axe aria-required-children), whereas "group" carries the label without it.
-            <div className="max-h-44 overflow-y-auto" role="group" aria-label={`${fieldLabel} data picker`}>
+            <div
+              className="max-h-44 overflow-y-auto"
+              role="group"
+              aria-label={t('dataPicker.groupAria', { field: fieldLabel })}
+            >
               {tree.map((entry) => (
                 <TreeRow key={entry.ref} entry={entry} depth={0} onInsert={insertFromTree} />
               ))}
             </div>
           ) : (
-            <p className="px-2 py-2 text-[11px] text-muted-foreground">
-              No run data yet — run the workflow once to explore its data here.
-            </p>
+            <p className="px-2 py-2 text-[11px] text-muted-foreground">{t('dataPicker.empty')}</p>
           )}
         </div>
       ) : null}
@@ -213,16 +236,14 @@ export function ExpressionField({
               preview.ok ? 'text-foreground' : 'text-destructive',
             )}
           >
-            {preview.text || (preview.ok ? '(empty)' : '')}
+            {preview.text || (preview.ok ? t('preview.emptyValue') : '')}
           </pre>
         </div>
-      ) : !hasData ? (
-        <p className="text-[11px] text-muted-foreground">
-          Reference run data, e.g. <code className="font-mono">{'{{ $json.field }}'}</code>. Run once to preview values.
-        </p>
       ) : (
         <p className="text-[11px] text-muted-foreground">
-          Reference run data with <code className="font-mono">{'{{ }}'}</code> — pick a field with the data button.
+          {t.rich(hasData ? 'hint.withData' : 'hint.noData', {
+            code: (chunks) => <code className="font-mono">{chunks}</code>,
+          })}
         </p>
       )}
     </div>
@@ -239,6 +260,7 @@ function TreeRow({
   depth: number;
   onInsert: (ref: string) => void;
 }) {
+  const t = useTranslations('workflows.expression');
   const [open, setOpen] = useState(depth === 0);
   const hasChildren = Boolean(entry.children?.length);
   return (
@@ -251,7 +273,7 @@ function TreeRow({
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            aria-label={open ? `Collapse ${entry.key}` : `Expand ${entry.key}`}
+            aria-label={t(open ? 'dataPicker.collapse' : 'dataPicker.expand', { key: entry.key })}
             className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground"
           >
             <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-90')} />
@@ -262,7 +284,7 @@ function TreeRow({
         <button
           type="button"
           onClick={() => onInsert(entry.ref)}
-          title={`Insert ${entry.ref}`}
+          title={t('dataPicker.insertRef', { ref: entry.ref })}
           className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left"
         >
           <Braces className="h-3 w-3 shrink-0 text-muted-foreground" />

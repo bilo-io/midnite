@@ -687,5 +687,27 @@
         "anyPriority": "Toute priorité"
       }
     }
+  },
+  "expression": {
+    "fieldAria": "Expression pour {field}",
+    "placeholder": "'{{ $json.field }}'",
+    "suggestionsAria": "Suggestions d’expression pour {field}",
+    "dataPicker": {
+      "toggle": "Afficher ou masquer le sélecteur de données pour {field}",
+      "insertTooltip": "Insérer une référence depuis les données d’exécution",
+      "groupAria": "Sélecteur de données pour {field}",
+      "empty": "Aucune donnée d’exécution pour l’instant — lancez le workflow une fois pour explorer ses données ici.",
+      "insertRef": "Insérer {ref}",
+      "expand": "Développer {key}",
+      "collapse": "Réduire {key}"
+    },
+    "preview": {
+      "emptyValue": "(vide)",
+      "unresolved": "impossible à résoudre"
+    },
+    "hint": {
+      "noData": "Référencez les données d’exécution, par ex. <code>'{{ $json.field }}'</code>. Lancez une exécution pour prévisualiser les valeurs.",
+      "withData": "Référencez les données d’exécution avec <code>'{{ }}'</code> — choisissez un champ avec le bouton de données."
+    }
   }
 }

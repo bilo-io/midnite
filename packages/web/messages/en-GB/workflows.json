@@ -687,5 +687,27 @@
         "anyPriority": "Any priority"
       }
     }
+  },
+  "expression": {
+    "fieldAria": "{field} expression",
+    "placeholder": "'{{ $json.field }}'",
+    "suggestionsAria": "{field} expression suggestions",
+    "dataPicker": {
+      "toggle": "Toggle data picker for {field}",
+      "insertTooltip": "Insert a reference from run data",
+      "groupAria": "{field} data picker",
+      "empty": "No run data yet — run the workflow once to explore its data here.",
+      "insertRef": "Insert {ref}",
+      "expand": "Expand {key}",
+      "collapse": "Collapse {key}"
+    },
+    "preview": {
+      "emptyValue": "(empty)",
+      "unresolved": "cannot resolve"
+    },
+    "hint": {
+      "noData": "Reference run data, e.g. <code>'{{ $json.field }}'</code>. Run once to preview values.",
+      "withData": "Reference run data with <code>'{{ }}'</code> — pick a field with the data button."
+    }
   }
 }
