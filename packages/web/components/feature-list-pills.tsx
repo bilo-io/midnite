@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { ListPlus } from 'lucide-react';
 import type { FeatureDraft } from '@/lib/feature-drafts';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ type Props = {
  * the side(s) that can still be scrolled get the gradient.
  */
 export function FeatureListPills({ drafts, onOpen }: Props) {
+  const t = useTranslations('plan');
   const ref = React.useRef<HTMLDivElement>(null);
   const [edges, setEdges] = React.useState({ left: false, right: false });
 
@@ -52,6 +54,10 @@ export function FeatureListPills({ drafts, onOpen }: Props) {
     <div
       ref={ref}
       onScroll={recompute}
+      // `aria-label` is only exposed on elements with a role, so a bare <div> would have
+      // dropped this name entirely. `role="group"` makes it reach assistive tech.
+      role="group"
+      aria-label={t('pills.rowAria')}
       className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-2"
       style={{ maskImage, WebkitMaskImage: maskImage }}
     >
@@ -60,6 +66,7 @@ export function FeatureListPills({ drafts, onOpen }: Props) {
           key={d.id}
           type="button"
           onClick={() => onOpen(d.id)}
+          aria-label={t('pills.openAria', { name: d.name })}
           title={d.name}
           className={cn(
             'group inline-flex max-w-[16rem] shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur',

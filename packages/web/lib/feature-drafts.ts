@@ -32,12 +32,21 @@ function newId(): string {
 }
 
 /** Derive a short, human pill label from the draft's text. */
+/**
+ * The placeholder name for an unnamed draft. **Deliberately English and not translated**:
+ * it is written into persisted draft data, so a localised value would pin one language into
+ * a user's stored state and read differently depending on which code path created the draft.
+ * Localising it means storing an empty name and resolving the placeholder at render — a
+ * change to this module's persistence contract, tracked as a follow-up.
+ */
+export const UNTITLED_DRAFT_NAME = 'Untitled idea';
+
 export function deriveDraftName(text: string): string {
   const firstLine = text
     .split('\n')
     .map((l) => l.trim())
     .find(Boolean);
-  if (!firstLine) return 'Untitled idea';
+  if (!firstLine) return UNTITLED_DRAFT_NAME;
   return firstLine.length > 48 ? `${firstLine.slice(0, 47).trimEnd()}…` : firstLine;
 }
 
@@ -64,7 +73,7 @@ export function useFeatureDrafts(): FeatureDraftsApi {
     (text: string, name?: string, projectId?: string | null): FeatureDraft => {
       const draft: FeatureDraft = {
         id: newId(),
-        name: (name ?? deriveDraftName(text)).trim() || 'Untitled idea',
+        name: (name ?? deriveDraftName(text)).trim() || UNTITLED_DRAFT_NAME,
         text,
         projectId: projectId ?? null,
         createdAt: Date.now(),

@@ -9,5 +9,61 @@
     "draftFailed": "Overview drafting failed.",
     "regenerate": "Regenerate",
     "approve": "Approve"
+  },
+  "featureList": {
+    "dialogAria": "Edit feature list request",
+    "heading": "Feature list request",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Billing revamp",
+    "tasksLabel": "Tasks",
+    "tasksPlaceholder": "Describe the work — one task per line.",
+    "tasksHint": "Each non-empty line becomes its own task when you craft this list.",
+    "discard": "Discard",
+    "discardTitle": "Discard this feature list?",
+    "discardDescription": "The draft and everything typed into it will be removed.",
+    "craft": "{count, plural, =0 {Craft task} one {Craft task} other {Craft # tasks}}",
+    "destinationHeading": "Where should these go?",
+    "destinationSubtitle": "{count, plural, one {# task} other {# tasks}} from “{name}”.",
+    "todoDetail": "Queue now — agents pick these up as slots free.",
+    "backlogDetail": "Park for later — nothing starts until you move them."
+  },
+  "pills": {
+    "rowAria": "Feature list requests",
+    "openAria": "Open feature list {name}"
+  },
+  "workItem": {
+    "fallbackTitle": "Work item",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "sessionNoun": "session"
+  },
+  "notes": {
+    "heading": "Action items",
+    "doneCount": "{count, plural, one {# done} other {# done}}",
+    "showCompletedAria": "Show completed",
+    "hideCompletedAria": "Hide completed",
+    "showDone": "Show done",
+    "hideDone": "Hide done",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark incomplete",
+    "deleteNote": "Delete note",
+    "emptyAll": "No notes yet — add one below.",
+    "emptyActive": "No active notes.",
+    "listening": "Listening…",
+    "addPlaceholder": "Add a note…",
+    "dictate": "Dictate note",
+    "stopDictation": "Stop dictation"
+  },
+  "breakdown": {
+    "empty": "No tasks in this breakdown yet.",
+    "listAria": "Breakdown tasks",
+    "titleAria": "Title for {ref}",
+    "kindAria": "Kind for {title}",
+    "priorityAria": "Priority for {title}",
+    "blockedByLabel": "Blocked by:",
+    "noBlockers": "nothing",
+    "removeBlockerAria": "Remove blocker {blocker} from {title}",
+    "addBlockerAria": "Add blocker for {title}",
+    "addBlockerOption": "Add blocker…"
   }
 }

@@ -117,6 +117,111 @@
       "hue": "Hue",
       "gradientStop": "Gradient stop {number}",
       "angle": "Angle"
+    },
+    "options": {
+      "density": {
+        "comfortable": {
+          "label": "Comfortable",
+          "hint": "Default spacing and type scale"
+        },
+        "compact": {
+          "label": "Compact",
+          "hint": "Tighter spacing — fits more on screen"
+        }
+      },
+      "motion": {
+        "system": {
+          "label": "System",
+          "hint": "Follow the OS reduced-motion setting"
+        },
+        "reduced": {
+          "label": "Reduced",
+          "hint": "Minimise animation everywhere"
+        },
+        "full": {
+          "label": "Full",
+          "hint": "Always animate, even if the OS says reduce"
+        }
+      },
+      "effects": {
+        "pageReveal": {
+          "label": "Page reveal",
+          "hint": "Staggered fade-in of page content"
+        },
+        "typewriter": {
+          "label": "Typewriter titles",
+          "hint": "Type page titles out character by character"
+        },
+        "glass": {
+          "label": "Frosted glass",
+          "hint": "Backdrop blur on overlays and panels"
+        }
+      },
+      "shimmer": {
+        "ltr": {
+          "label": "Left first",
+          "hint": "Cascade sweeps left → right"
+        },
+        "rtl": {
+          "label": "Right first",
+          "hint": "Cascade sweeps right → left"
+        }
+      },
+      "uiFont": {
+        "system": {
+          "label": "System",
+          "hint": "Your platform default sans-serif"
+        },
+        "grotesk": {
+          "label": "Grotesk",
+          "hint": "Clean neo-grotesque sans"
+        },
+        "humanist": {
+          "label": "Humanist",
+          "hint": "Warmer humanist sans"
+        },
+        "serif": {
+          "label": "Serif",
+          "hint": "Classic serif"
+        },
+        "mono": {
+          "label": "Mono",
+          "hint": "Monospaced"
+        }
+      },
+      "bgIntensity": {
+        "subtle": {
+          "label": "Subtle"
+        },
+        "balanced": {
+          "label": "Balanced"
+        },
+        "bold": {
+          "label": "Bold"
+        }
+      },
+      "gradientType": {
+        "linear": {
+          "label": "Linear"
+        },
+        "conic": {
+          "label": "Conic"
+        }
+      },
+      "editorAutosave": {
+        "0": {
+          "label": "Off"
+        },
+        "10": {
+          "label": "Every 10s"
+        },
+        "30": {
+          "label": "Every 30s"
+        },
+        "60": {
+          "label": "Every 60s"
+        }
+      }
     }
   },
   "profile": {

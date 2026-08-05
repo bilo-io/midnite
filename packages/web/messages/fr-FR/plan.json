@@ -9,5 +9,61 @@
     "draftFailed": "Échec de la rédaction de l'aperçu.",
     "regenerate": "Régénérer",
     "approve": "Approuver"
+  },
+  "featureList": {
+    "dialogAria": "Modifier la demande de liste de fonctionnalités",
+    "heading": "Demande de liste de fonctionnalités",
+    "nameLabel": "Nom",
+    "namePlaceholder": "ex. Refonte de la facturation",
+    "tasksLabel": "Tâches",
+    "tasksPlaceholder": "Décrivez le travail — une tâche par ligne.",
+    "tasksHint": "Chaque ligne non vide devient sa propre tâche lorsque vous créez cette liste.",
+    "discard": "Abandonner",
+    "discardTitle": "Abandonner cette liste de fonctionnalités ?",
+    "discardDescription": "Le brouillon et tout ce qui y a été saisi seront supprimés.",
+    "craft": "{count, plural, one {Créer la tâche} other {Créer # tâches}}",
+    "destinationHeading": "Où doivent-elles aller ?",
+    "destinationSubtitle": "{count, plural, one {# tâche} other {# tâches}} depuis « {name} ».",
+    "todoDetail": "Mettre en file maintenant — les agents les prennent dès qu'un créneau se libère.",
+    "backlogDetail": "Garder pour plus tard — rien ne démarre avant que vous les déplaciez."
+  },
+  "pills": {
+    "rowAria": "Demandes de liste de fonctionnalités",
+    "openAria": "Ouvrir la liste de fonctionnalités {name}"
+  },
+  "workItem": {
+    "fallbackTitle": "Élément de travail",
+    "archive": "Archiver",
+    "unarchive": "Désarchiver",
+    "sessionNoun": "session"
+  },
+  "notes": {
+    "heading": "Actions à mener",
+    "doneCount": "{count, plural, one {# terminée} other {# terminées}}",
+    "showCompletedAria": "Afficher les éléments terminés",
+    "hideCompletedAria": "Masquer les éléments terminés",
+    "showDone": "Afficher terminées",
+    "hideDone": "Masquer terminées",
+    "markComplete": "Marquer comme terminée",
+    "markIncomplete": "Marquer comme non terminée",
+    "deleteNote": "Supprimer la note",
+    "emptyAll": "Aucune note pour l'instant — ajoutez-en une ci-dessous.",
+    "emptyActive": "Aucune note active.",
+    "listening": "Écoute en cours…",
+    "addPlaceholder": "Ajouter une note…",
+    "dictate": "Dicter une note",
+    "stopDictation": "Arrêter la dictée"
+  },
+  "breakdown": {
+    "empty": "Aucune tâche dans cette décomposition pour l'instant.",
+    "listAria": "Tâches de la décomposition",
+    "titleAria": "Titre pour {ref}",
+    "kindAria": "Type pour {title}",
+    "priorityAria": "Priorité pour {title}",
+    "blockedByLabel": "Bloquée par :",
+    "noBlockers": "rien",
+    "removeBlockerAria": "Retirer le bloqueur {blocker} de {title}",
+    "addBlockerAria": "Ajouter un bloqueur pour {title}",
+    "addBlockerOption": "Ajouter un bloqueur…"
   }
 }

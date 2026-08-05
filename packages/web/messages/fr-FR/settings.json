@@ -117,6 +117,111 @@
       "hue": "Teinte",
       "gradientStop": "Palier de dégradé {number}",
       "angle": "Angle"
+    },
+    "options": {
+      "density": {
+        "comfortable": {
+          "label": "Confortable",
+          "hint": "Espacement et échelle typographique par défaut"
+        },
+        "compact": {
+          "label": "Compact",
+          "hint": "Espacement resserré — affiche plus de contenu à l’écran"
+        }
+      },
+      "motion": {
+        "system": {
+          "label": "Système",
+          "hint": "Suivre le réglage de mouvement réduit du système"
+        },
+        "reduced": {
+          "label": "Réduit",
+          "hint": "Minimiser les animations partout"
+        },
+        "full": {
+          "label": "Complet",
+          "hint": "Toujours animer, même si le système demande de réduire"
+        }
+      },
+      "effects": {
+        "pageReveal": {
+          "label": "Révélation de page",
+          "hint": "Apparition en fondu échelonnée du contenu"
+        },
+        "typewriter": {
+          "label": "Titres machine à écrire",
+          "hint": "Affiche les titres de page caractère par caractère"
+        },
+        "glass": {
+          "label": "Verre dépoli",
+          "hint": "Flou d’arrière-plan sur les superpositions et les panneaux"
+        }
+      },
+      "shimmer": {
+        "ltr": {
+          "label": "Gauche d’abord",
+          "hint": "Le balayage va de gauche à droite"
+        },
+        "rtl": {
+          "label": "Droite d’abord",
+          "hint": "Le balayage va de droite à gauche"
+        }
+      },
+      "uiFont": {
+        "system": {
+          "label": "Système",
+          "hint": "Police sans empattement par défaut de votre plateforme"
+        },
+        "grotesk": {
+          "label": "Grotesque",
+          "hint": "Néo-grotesque sobre"
+        },
+        "humanist": {
+          "label": "Humaniste",
+          "hint": "Sans empattement humaniste, plus chaleureuse"
+        },
+        "serif": {
+          "label": "Avec empattement",
+          "hint": "Empattement classique"
+        },
+        "mono": {
+          "label": "Monospace",
+          "hint": "À largeur fixe"
+        }
+      },
+      "bgIntensity": {
+        "subtle": {
+          "label": "Discrète"
+        },
+        "balanced": {
+          "label": "Équilibrée"
+        },
+        "bold": {
+          "label": "Marquée"
+        }
+      },
+      "gradientType": {
+        "linear": {
+          "label": "Linéaire"
+        },
+        "conic": {
+          "label": "Conique"
+        }
+      },
+      "editorAutosave": {
+        "0": {
+          "label": "Désactivé"
+        },
+        "10": {
+          "label": "Toutes les 10 s"
+        },
+        "30": {
+          "label": "Toutes les 30 s"
+        },
+        "60": {
+          "label": "Toutes les 60 s"
+        }
+      }
     }
   },
   "profile": {

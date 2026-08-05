@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+
+// The dialog's chrome comes from `common.reportIssue.*` (Phase 82 F), so it needs
+// the app's LocaleProvider; `renderWithIntl` defaults to en-GB, keeping every
+// assertion below on the same English copy.
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 // usePathname needs the App Router runtime; stub it to the page under test.
 vi.mock('next/navigation', () => ({ usePathname: () => '/board' }));
