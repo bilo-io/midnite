@@ -9,8 +9,10 @@ import SelectBase, {
   type OptionProps,
 } from 'react-select';
 import { ChevronDown } from 'lucide-react';
-import { SOURCE_KIND_LABEL, type SourceKind } from '@midnite/shared';
+import { useTranslations } from 'next-intl';
+import type { SourceKind } from '@midnite/shared';
 import { SourceIcon } from '@/components/source-icon';
+import { useSourceKindLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
 // A react-select multi-select for filtering the sources list by kind. Styling
@@ -99,7 +101,9 @@ export function SourceKindMultiSelect({
   onChange: (kinds: SourceKind[]) => void;
   className?: string;
 }) {
-  const options: KindOption[] = available.map((k) => ({ value: k, label: SOURCE_KIND_LABEL[k] }));
+  const t = useTranslations('memory');
+  const kindLabel = useSourceKindLabel();
+  const options: KindOption[] = available.map((k) => ({ value: k, label: kindLabel(k) }));
   const selected = options.filter((o) => value.includes(o.value));
 
   return (
@@ -115,8 +119,9 @@ export function SourceKindMultiSelect({
         closeMenuOnSelect={false}
         hideSelectedOptions={false}
         isClearable
-        placeholder="Filter by type…"
-        aria-label="Filter sources by type"
+        placeholder={t('sources.filterPlaceholder')}
+        aria-label={t('sources.filterLabel')}
+        noOptionsMessage={() => t('sources.filterNoOptions')}
         menuPortalTarget={PORTAL_TARGET}
         menuPosition="fixed"
         components={{ Option, MultiValueLabel, DropdownIndicator }}

@@ -1,6 +1,7 @@
 'use client';
 
 import { BrainCircuit } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Memory, Project } from '@midnite/shared';
 import { ProjectNameLink } from '@/components/project-name-link';
 import { SelectableIcon } from '@/components/selectable-icon';
@@ -10,10 +11,6 @@ import { cn } from '@/lib/utils';
 /** Matches MemoryView's GLOBAL scope id and violet hue. */
 const GLOBAL_SCOPE = 'global';
 const GLOBAL_HUE = '262 83% 66%';
-
-function plural(n: number): string {
-  return `${n} memor${n === 1 ? 'y' : 'ies'}`;
-}
 
 function excerptOf(content: string): string {
   return (
@@ -35,6 +32,7 @@ function MemoryRow({
   selected: boolean;
   onToggleSelect: (shiftKey: boolean) => void;
 }) {
+  const t = useTranslations('memory');
   const excerpt = excerptOf(memory.content);
   return (
     <div
@@ -50,7 +48,7 @@ function MemoryRow({
           <span className="truncate text-sm font-medium">{memory.title}</span>
           {memory.archived ? (
             <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Archived
+              {t('list.card.archived')}
             </span>
           ) : null}
         </div>
@@ -60,7 +58,7 @@ function MemoryRow({
       </button>
       {memory.sources.length > 0 ? (
         <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-          {memory.sources.length} source{memory.sources.length === 1 ? '' : 's'}
+          {t('tree.sourceCount', { count: memory.sources.length })}
         </span>
       ) : null}
     </div>
@@ -85,9 +83,10 @@ export function MemoriesTree({
   isSelected: (id: string) => boolean;
   onToggleSelect: (id: string, shiftKey: boolean) => void;
 }) {
+  const t = useTranslations('memory');
   const rowsFor = (items: Memory[]) =>
     items.length === 0 ? (
-      <div className="px-4 py-3 text-xs text-muted-foreground">No memories</div>
+      <div className="px-4 py-3 text-xs text-muted-foreground">{t('tree.empty')}</div>
     ) : (
       items.map((m) => (
         <MemoryRow
@@ -106,10 +105,10 @@ export function MemoriesTree({
   if (globalMemories.length > 0) {
     sections.push({
       id: GLOBAL_SCOPE,
-      label: 'Global',
+      label: t('scope.global'),
       hue: GLOBAL_HUE,
       count: globalMemories.length,
-      summary: plural(globalMemories.length),
+      summary: t('tree.memoryCount', { count: globalMemories.length }),
       body: rowsFor(globalMemories),
     });
   }
@@ -122,7 +121,7 @@ export function MemoriesTree({
       label: <ProjectNameLink projectId={p.id} name={p.name} />,
       color: p.color,
       count: items.length,
-      summary: plural(items.length),
+      summary: t('tree.memoryCount', { count: items.length }),
       body: rowsFor(items),
     });
   }

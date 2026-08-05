@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { SOURCE_KIND_LABEL, type MemorySourceContent } from '@midnite/shared';
+import type { MemorySourceContent } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Tabs, type TabOption } from '@/components/ui/tabs';
 import { SourceIcon } from '@/components/source-icon';
 import type { EditableSource } from '@/components/source-list-editor';
 import { getMemorySourceContent } from '@/lib/api';
-import { useSourceIngestStateLabel } from '@/lib/i18n-labels';
+import { useSourceIngestStateLabel, useSourceKindLabel } from '@/lib/i18n-labels';
 import { youtubeEmbedUrl } from '@/lib/youtube';
 import { cn } from '@/lib/utils';
 
@@ -101,6 +101,7 @@ export function SourceDetailModal({
 function SourcePreview({ source }: { source: EditableSource }) {
   const t = useTranslations('memory');
   const ingestStateLabel = useSourceIngestStateLabel();
+  const kindLabel = useSourceKindLabel();
   const embed = source.kind === 'youtube' ? youtubeEmbedUrl(source.url) : null;
 
   if (embed) {
@@ -152,7 +153,7 @@ function SourcePreview({ source }: { source: EditableSource }) {
     <div className="space-y-3">
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
         <dt className="text-muted-foreground">{t('sourceDetail.typeLabel')}</dt>
-        <dd>{SOURCE_KIND_LABEL[source.kind]}</dd>
+        <dd>{kindLabel(source.kind)}</dd>
         {source.fileName ? (
           <>
             <dt className="text-muted-foreground">{t('sourceDetail.fileLabel')}</dt>

@@ -159,5 +159,39 @@
       "hours": "{value}h",
       "days": "{value}d"
     }
+  },
+  "editor": {
+    "previewTab": "Preview",
+    "contentAria": "Markdown content",
+    "nothingToPreview": "Nothing to preview yet.",
+    "taskItem": {
+      "completed": "Completed task",
+      "incomplete": "Incomplete task"
+    }
+  },
+  "pickers": {
+    "folder": {
+      "title": "Choose a folder",
+      "goHome": "Go to home directory",
+      "openFailed": "Cannot open that folder",
+      "createFailed": "Cannot create that folder",
+      "missingPrompt": "This folder doesn’t exist yet. Create it?",
+      "createPath": "Create {path}",
+      "empty": "No subfolders here.",
+      "hint": "Sessions in this project will run here.",
+      "use": "Use this folder"
+    },
+    "tagColour": {
+      "tagPlaceholder": "short-tag",
+      "tagAria": "Tag",
+      "colourAria": "Tag colour",
+      "swatchAria": "Use colour {hex}",
+      "fallbackTag": "tag"
+    },
+    "editDetails": {
+      "nameLabel": "Title",
+      "descriptionLabel": "Description",
+      "nameRequired": "Give it a {label}."
+    }
   }
 }

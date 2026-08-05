@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
@@ -12,8 +13,13 @@ import { cn } from '@/lib/utils';
  * coloured by the shared `.hljs-*` palette from `@midnite/ui/code-highlight.css`
  * (imported once in globals.css). Elements are styled individually (no
  * typography plugin in this project), tuned to match the rest of the UI.
+ *
+ * The rendered markdown is the *user's* content — never translated. The only copy
+ * this component owns is the accessible name synthesised for GFM task-list
+ * checkboxes, which lives under `common.editor.taskItem.*` (Phase 82 Theme D).
  */
 export function MarkdownPreview({ content, className }: { content: string; className?: string }) {
+  const t = useTranslations('common');
   return (
     <div className={cn('text-sm leading-relaxed text-foreground', className)}>
       <ReactMarkdown
@@ -60,7 +66,7 @@ export function MarkdownPreview({ content, className }: { content: string; class
                 readOnly
                 // GFM task-list items render a bare checkbox; the item text sits in a
                 // sibling node, so the input has no accessible name (axe `label`).
-                aria-label={checked ? 'Completed task' : 'Incomplete task'}
+                aria-label={t(checked ? 'editor.taskItem.completed' : 'editor.taskItem.incomplete')}
                 className="mr-1.5 h-3.5 w-3.5 translate-y-0.5 accent-foreground"
               />
             ) : null,

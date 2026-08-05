@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +12,9 @@ type Props = {
   heading: string;
   name: string;
   description?: string;
+  /** Defaults to the translated `common.pickers.editDetails.nameLabel`. */
   nameLabel?: string;
+  /** Defaults to the translated `common.pickers.editDetails.descriptionLabel`. */
   descriptionLabel?: string;
   /** Hide the description field for resources that only rename. */
   withDescription?: boolean;
@@ -30,12 +33,15 @@ export function EditDetailsModal({
   heading,
   name: initialName,
   description: initialDescription = '',
-  nameLabel = 'Title',
-  descriptionLabel = 'Description',
+  nameLabel,
+  descriptionLabel,
   withDescription = true,
   onSave,
   onClose,
 }: Props) {
+  const t = useTranslations('common');
+  const nameLabelText = nameLabel ?? t('pickers.editDetails.nameLabel');
+  const descriptionLabelText = descriptionLabel ?? t('pickers.editDetails.descriptionLabel');
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +57,7 @@ export function EditDetailsModal({
   const save = () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setError(`Give it a ${nameLabel.toLowerCase()}.`);
+      setError(t('pickers.editDetails.nameRequired', { label: nameLabelText.toLowerCase() }));
       return;
     }
     onSave({ name: trimmed, description: description.trim() });
@@ -71,7 +77,7 @@ export function EditDetailsModal({
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
             <h2 className="text-sm font-semibold">{heading}</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button type="button" variant="ghost" size="icon" aria-label={t('close')} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -84,21 +90,23 @@ export function EditDetailsModal({
             }}
           >
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{nameLabel}</span>
+              <span className="text-xs font-medium text-muted-foreground">{nameLabelText}</span>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                aria-label={nameLabel}
+                aria-label={nameLabelText}
                 autoFocus
               />
             </label>
             {withDescription ? (
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">{descriptionLabel}</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {descriptionLabelText}
+                </span>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  aria-label={descriptionLabel}
+                  aria-label={descriptionLabelText}
                   rows={3}
                 />
               </label>
@@ -108,10 +116,10 @@ export function EditDetailsModal({
 
           <footer className="flex items-center justify-end gap-2 border-t border-border/60 px-5 py-3.5">
             <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="button" size="sm" onClick={save}>
-              Save
+              {t('save')}
             </Button>
           </footer>
         </div>

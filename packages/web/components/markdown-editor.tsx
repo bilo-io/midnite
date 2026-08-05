@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Eye, Pencil } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { MarkdownPreview } from '@/components/markdown-preview';
@@ -16,7 +17,8 @@ type Props = {
   /**
    * Accessible name for the editor textarea — the visible `label` is an arbitrary
    * node rendered beside the mode toggle, not associated with the field, so the
-   * textarea needs its own name (axe `label`).
+   * textarea needs its own name (axe `label`). Defaults to the translated
+   * `common.editor.contentAria` when a caller supplies nothing more specific.
    */
   ariaLabel?: string;
 };
@@ -24,6 +26,10 @@ type Props = {
 /**
  * A markdown field that toggles between a raw editor (monospace textarea) and a
  * rendered, read-only "pretty" preview.
+ *
+ * i18n (Phase 82 Theme D): copy lives under `common.editor.*`; the Edit tab reuses
+ * the shared `common.edit`. A caller-supplied `ariaLabel` wins so a specific field
+ * ("Plan document", "Memory note") can name itself — the default is translated.
  */
 export function MarkdownEditor({
   value,
@@ -31,8 +37,9 @@ export function MarkdownEditor({
   minHeight = 280,
   defaultMode = 'preview',
   label,
-  ariaLabel = 'Markdown content',
+  ariaLabel,
 }: Props) {
+  const t = useTranslations('common');
   const [mode, setMode] = useState<'edit' | 'preview'>(defaultMode);
 
   const tab = (m: 'edit' | 'preview', icon: ReactNode, text: string) => (
@@ -57,15 +64,15 @@ export function MarkdownEditor({
       <div className="flex items-center justify-between gap-2">
         {label ?? <span />}
         <div className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-card/40 p-0.5">
-          {tab('preview', <Eye className="h-3.5 w-3.5" />, 'Preview')}
-          {tab('edit', <Pencil className="h-3.5 w-3.5" />, 'Edit')}
+          {tab('preview', <Eye className="h-3.5 w-3.5" />, t('editor.previewTab'))}
+          {tab('edit', <Pencil className="h-3.5 w-3.5" />, t('edit'))}
         </div>
       </div>
       {mode === 'edit' ? (
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          aria-label={ariaLabel}
+          aria-label={ariaLabel ?? t('editor.contentAria')}
           spellCheck={false}
           className="resize-y font-mono text-xs leading-relaxed"
           style={{ minHeight }}
@@ -78,7 +85,7 @@ export function MarkdownEditor({
           {value.trim() ? (
             <MarkdownPreview content={value} />
           ) : (
-            <p className="text-sm italic text-muted-foreground">Nothing to preview yet.</p>
+            <p className="text-sm italic text-muted-foreground">{t('editor.nothingToPreview')}</p>
           )}
         </div>
       )}

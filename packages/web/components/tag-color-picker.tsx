@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { MAX_TAG_LENGTH } from '@midnite/shared';
 import { Input } from '@/components/ui/input';
@@ -28,7 +29,8 @@ type Props = {
   label?: ReactNode;
   /** id for the tag input so an external `<label htmlFor>` can target it. */
   tagInputId?: string;
-  /** Chip text shown in the preview while the tag is empty. */
+  /** Chip text shown in the preview while the tag is empty; defaults to the
+   *  translated `common.pickers.tagColour.fallbackTag`. */
   fallbackTag?: string;
 };
 
@@ -44,9 +46,13 @@ export function TagColorPicker({
   onColorChange,
   label,
   tagInputId,
-  fallbackTag = 'tag',
+  fallbackTag,
 }: Props) {
+  const t = useTranslations('common');
   const tooLong = tag.trim().length > MAX_TAG_LENGTH;
+  // `??` on `fallbackTag`, not `||` — the old destructuring default only applied when the
+  // prop was absent, so an intentional `fallbackTag=""` must still win over the catalog.
+  const previewTag = tag.trim() || (fallbackTag ?? t('pickers.tagColour.fallbackTag'));
   return (
     <div className="space-y-1.5">
       {label}
@@ -56,25 +62,25 @@ export function TagColorPicker({
           value={tag}
           maxLength={MAX_TAG_LENGTH}
           onChange={(e) => onTagChange(e.target.value)}
-          placeholder="short-tag"
-          aria-label={tagInputId ? undefined : 'Tag'}
+          placeholder={t('pickers.tagColour.tagPlaceholder')}
+          aria-label={tagInputId ? undefined : t('pickers.tagColour.tagAria')}
           className={cn('flex-1', tooLong && 'border-destructive')}
         />
         <input
           type="color"
-          aria-label="Tag color"
+          aria-label={t('pickers.tagColour.colourAria')}
           value={color}
           onChange={(e) => onColorChange(e.target.value)}
           className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
         />
-        <ProjectTag tag={tag.trim() || fallbackTag} color={color} />
+        <ProjectTag tag={previewTag} color={color} />
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
         {SWATCHES.map((s) => (
           <button
             key={s}
             type="button"
-            aria-label={`Use color ${s}`}
+            aria-label={t('pickers.tagColour.swatchAria', { hex: s })}
             onClick={() => onColorChange(s)}
             className={cn(
               'h-5 w-5 rounded-full border transition-transform hover:scale-110',

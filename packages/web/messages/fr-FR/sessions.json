@@ -155,5 +155,41 @@
     "ariaLabel": "Répondre à l’agent",
     "sendAria": "Envoyer la réponse",
     "send": "Envoyer"
+  },
+  "composer": {
+    "placeholder": "Ajoutez des tâches, une par ligne · ⌘/Ctrl + ⏎",
+    "attachImage": "Joindre une image",
+    "startDictation": "Démarrer la dictée",
+    "stopDictation": "Arrêter la dictée",
+    "taskCount": "{count, plural, one {# tâche} other {# tâches}}",
+    "pingAria": "Tester l’IA",
+    "pingTitle": "Vérifier que l’IA est joignable",
+    "ping": "Tester",
+    "pinging": "Test en cours…",
+    "pingFailed": "Échec du test",
+    "addCount": "Ajouter {count}",
+    "requestFailed": "Échec de la requête",
+    "expandDetails": "Afficher les détails",
+    "collapseDetails": "Masquer les détails",
+    "dockInput": "Ancrer la saisie",
+    "expandFullscreen": "Afficher la saisie en plein écran",
+    "fullScreen": "Plein écran"
+  },
+  "chatBar": {
+    "title": "Discussion vers le tableau",
+    "pressEnterToPreview": "Appuyez sur <kbd>Entrée</kbd> pour prévisualiser",
+    "quotedCommand": "« {command} »",
+    "examplesIntro": "Saisissez une commande en langage naturel. Exemples :",
+    "exampleItem": "› {example}",
+    "working": "Traitement…",
+    "appliesTo": "{count, plural, one {S’applique à # tâche} other {S’applique à # tâches}} (d’après votre dernier résultat).",
+    "enterToConfirm": "Entrée pour confirmer",
+    "undo": "Annuler",
+    "lowConfidence": "Confiance faible — à vérifier.",
+    "inferencePath": {
+      "deterministic": "analysé en local — aucune IA utilisée",
+      "local": "via un modèle local",
+      "provider": "via le fournisseur"
+    }
   }
 }

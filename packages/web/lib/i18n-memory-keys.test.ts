@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -10,8 +10,8 @@ import enGB from '@/messages/en-GB';
  * `i18n-settings-keys.test.ts` / `i18n-dashboard-keys.test.ts`. fr-FR parity is
  * enforced separately by `i18n-validate` (fr-FR is a `complete` locale), so an
  * en hit implies a fr hit. The enum sweep at the bottom covers the
- * template-literal lookups the regex can't see (artifact kinds/statuses,
- * source ingest states) by walking the shared enums themselves.
+ * template-literal lookups the regex can't see (artifact kinds/statuses, source
+ * ingest states, source kinds) by walking the shared enums themselves.
  */
 
 function keyExists(catalog: Record<string, unknown>, dotted: string): boolean {
@@ -31,6 +31,7 @@ const FILES = [
   'app/(main)/memory/memory-view.tsx',
   'app/(main)/memory/page.tsx',
   'app/(main)/memory/view/memory-detail-view.tsx',
+  'components/memories-tree.tsx',
   'components/memory-card.tsx',
   'components/memory-modal.tsx',
   'components/memory/add-source-modal.tsx',
@@ -42,6 +43,8 @@ const FILES = [
   'components/memory/memory-sources-panel.tsx',
   'components/memory/memory-studio-rail.tsx',
   'components/memory/source-detail-modal.tsx',
+  'components/source-kind-multi-select.tsx',
+  'components/source-list-editor.tsx',
 ];
 
 // `const <name> = useTranslations('ns')` — ns may be nested ('memory.sources').
@@ -76,8 +79,9 @@ describe('Phase 82 D — memory i18n keys resolve in en-GB', () => {
   });
 
   // The enum-keyed lookups the i18n-labels hooks build by template literal.
-  it('covers every artifact kind, artifact status and source ingest state', async () => {
-    const { MEMORY_ARTIFACT_KINDS, MEMORY_ARTIFACT_STATUSES } = await import('@midnite/shared');
+  it('covers every artifact kind, artifact status, source ingest state and source kind', async () => {
+    const { MEMORY_ARTIFACT_KINDS, MEMORY_ARTIFACT_STATUSES, SOURCE_KINDS } =
+      await import('@midnite/shared');
     const catalog = enGB as Record<string, unknown>;
     for (const kind of MEMORY_ARTIFACT_KINDS) {
       expect(keyExists(catalog, `memory.kinds.${kind}`), `memory.kinds.${kind}`).toBe(true);
@@ -93,5 +97,36 @@ describe('Phase 82 D — memory i18n keys resolve in en-GB', () => {
         true,
       );
     }
+    // `useSourceKindLabel` falls back to shared's English map per key, so a gap here
+    // degrades silently rather than throwing — hence the explicit sweep.
+    for (const kind of SOURCE_KINDS) {
+      expect(keyExists(catalog, `memory.sourceKinds.${kind}`), `memory.sourceKinds.${kind}`).toBe(
+        true,
+      );
+    }
+  });
+
+  /**
+   * The keys existing is not the same as the call sites using them. Three surfaces
+   * rendered `SOURCE_KIND_LABEL` (or react-select's built-in English) straight to the
+   * user in files earlier slices had already marked migrated, and every one of them
+   * passed the `jsx-text-only` lint gate. These two guards fail if any of the three
+   * is reverted — the key sweep above would not.
+   */
+  it('leaves `useSourceKindLabel` as the only consumer of the shared English map', () => {
+    const web = join(__dirname, '..');
+    const offenders = globSync('{app,components,lib}/**/*.{ts,tsx}', { cwd: web })
+      .filter((rel) => !rel.endsWith('.test.ts') && !rel.endsWith('.test.tsx'))
+      // The hook itself owns the fallback; everything else must go through the hook.
+      .filter((rel) => rel !== join('lib', 'i18n-labels.ts'))
+      .filter((rel) => /\bSOURCE_KIND_LABEL\b/.test(readFileSync(join(web, rel), 'utf8')));
+    expect(offenders, 'these render source-kind labels without going through the hook').toEqual([]);
+  });
+
+  it('overrides react-select’s built-in English empty message', () => {
+    // `noOptionsMessage` renders "No options" from the library, so it is unreachable
+    // through a `t()` scan of our own JSX — only its presence can be asserted.
+    const src = readFileSync(join(__dirname, '..', 'components/source-kind-multi-select.tsx'), 'utf8');
+    expect(src).toMatch(/noOptionsMessage=\{/);
   });
 });

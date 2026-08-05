@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { screen, cleanup, fireEvent } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { ChatBar } from './chat-bar';
 import type { ChatCommandState } from '@/hooks/use-chat-command';
 

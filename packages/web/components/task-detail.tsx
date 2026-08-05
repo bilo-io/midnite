@@ -16,7 +16,6 @@ import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
 import {
   ANSWER_EVENT_KIND,
   MAX_TASK_TITLE_LENGTH,
-  SOURCE_KIND_LABEL,
   isAnsweredQuestion,
   isTerminal,
   parseGithubPr,
@@ -52,7 +51,7 @@ import {
   updateTaskProject,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
-import { useKindLabel, useStatusLabel } from '@/lib/i18n-labels';
+import { useKindLabel, useSourceKindLabel, useStatusLabel } from '@/lib/i18n-labels';
 import { dependentsOf } from '@/lib/task-dependencies';
 import { taskModalHref } from '@/lib/task-route';
 import { moveTask } from '@/lib/task-transitions';
@@ -283,6 +282,7 @@ export function TaskDetail({
   const tCommon = useTranslations('common');
   const kindLabel = useKindLabel();
   const statusLabel = useStatusLabel();
+  const sourceKindLabel = useSourceKindLabel();
   const kind = task.kind ?? 'unknown';
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
 
@@ -915,7 +915,7 @@ export function TaskDetail({
                       rel="noreferrer"
                       className="min-w-0 truncate hover:underline"
                     >
-                      {linkLabel(link)}
+                      {linkLabel(link, sourceKindLabel)}
                     </a>
                     <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
                     <button
@@ -1189,7 +1189,7 @@ export function Timeline({ events }: { events: TaskEvent[] }) {
   );
 }
 
-function linkLabel(link: TaskLink): string {
+function linkLabel(link: TaskLink, kindLabel: (kind: TaskLink['kind']) => string): string {
   if (link.label) return link.label;
   if (link.kind === 'github') {
     const pr = parseGithubPr(link.url);
@@ -1199,7 +1199,7 @@ function linkLabel(link: TaskLink): string {
   }
   try {
     const u = new URL(link.url);
-    return `${SOURCE_KIND_LABEL[link.kind]} · ${u.hostname.replace(/^www\./, '')}`;
+    return `${kindLabel(link.kind)} · ${u.hostname.replace(/^www\./, '')}`;
   } catch {
     return link.url;
   }
