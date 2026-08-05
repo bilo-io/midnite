@@ -52,14 +52,25 @@ case "$OS" in
   *) fail "this installer supports macOS and Linux only. Windows: irm https://midnite-app.vercel.app/install.ps1 | iex" ;;
 esac
 
-# Verify a .app bundle is structurally complete. $1 = bundle path.
+# Verify a .app bundle is structurally complete.
+#   $1 = bundle path
+#   $2 = expected executable name (optional)
 # Returns non-zero (logging what's missing) for a partial/truncated bundle.
 verify_bundle() {
   _b="$1"
+  _exe="${2:-}"
   [ -f "$_b/Contents/Info.plist" ] || { echo "  missing Contents/Info.plist" >&2; return 1; }
-  # The executable is named after the bundle (midnite.app → MacOS/midnite,
-  # Midnite.app → MacOS/Midnite), so derive it instead of hard-coding.
-  _exe="${_b##*/}"; _exe="${_exe%.app}"
+  # The executable is named after the app (midnite.app → MacOS/midnite,
+  # Midnite.app → MacOS/Midnite) — but NOT after the directory it currently sits
+  # in: the copy this function guards hardest is the one staged under a temp name
+  # (/Applications/.midnite.app.new.$$), where deriving from the path would look
+  # for MacOS/.midnite.app.new.1234 and fail every single install. So take the
+  # caller's name, else the bundle's own Info.plist, and only fall back to the
+  # directory name when neither is available.
+  if [ -z "$_exe" ]; then
+    _exe=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$_b/Contents/Info.plist" 2>/dev/null) || _exe=""
+  fi
+  if [ -z "$_exe" ]; then _exe="${_b##*/}"; _exe="${_exe%.app}"; fi
   [ -x "$_b/Contents/MacOS/$_exe" ] || { echo "  missing Contents/MacOS/$_exe" >&2; return 1; }
   _fw="$_b/Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework"
   [ -f "$_fw" ] || { echo "  missing Electron Framework" >&2; return 1; }
@@ -179,6 +190,9 @@ for _candidate in "$tmp"/extracted/*.app; do
   [ -d "$_candidate" ] && APP="${_candidate##*/}" && break
 done
 [ -n "$APP" ] || fail "archive did not contain a .app bundle"
+# The bundle name minus .app is the executable name, and it is passed to every
+# verify_bundle call so the check never depends on the path it is verifying.
+APP_EXE="${APP%.app}"
 
 staged="$DEST/.$APP.new.$$"
 backup="$DEST/.$APP.old.$$"
@@ -186,14 +200,14 @@ backup="$DEST/.$APP.old.$$"
 # Gate on a complete download BEFORE touching /Applications — a truncated
 # download/extract stops here instead of installing a broken app.
 say "Verifying download …"
-verify_bundle "$tmp/extracted/$APP" ||
+verify_bundle "$tmp/extracted/$APP" "$APP_EXE" ||
   fail "the downloaded app is incomplete (interrupted download?). Nothing was installed — re-run the installer."
 
 # ── Install (staged + atomic) ────────────────────────────────────────────────
 # Quit a running copy so the bundle can be replaced (best-effort). The process is
 # named after the bundle, and an already-installed copy may still carry the old
 # lowercase name, so try both.
-running="${APP%.app}"
+running="$APP_EXE"
 if pgrep -xq "$running" 2>/dev/null || pgrep -xq "midnite" 2>/dev/null; then
   say "Quitting the running Midnite …"
   osascript -e "tell application \"$running\" to quit" >/dev/null 2>&1 ||
@@ -215,7 +229,7 @@ say "Installing to $DEST/$APP …"
 run rm -rf "$staged" "$backup"
 # Stage on the SAME volume as $DEST so the final swap is an atomic rename.
 run ditto "$tmp/extracted/$APP" "$staged"
-verify_bundle "$staged" || { run rm -rf "$staged"; fail "staged copy is incomplete — $DEST left untouched."; }
+verify_bundle "$staged" "$APP_EXE" || { run rm -rf "$staged"; fail "staged copy is incomplete — $DEST left untouched."; }
 
 # Swap: move the old copy aside, rename the staged one into place.
 if [ -e "$DEST/$APP" ]; then run mv "$DEST/$APP" "$backup"; fi
@@ -225,7 +239,7 @@ if ! run mv "$staged" "$DEST/$APP"; then
 fi
 
 # Final integrity check on the live bundle; restore the backup if it fails.
-if ! verify_bundle "$DEST/$APP"; then
+if ! verify_bundle "$DEST/$APP" "$APP_EXE"; then
   run rm -rf "$DEST/$APP"
   [ -e "$backup" ] && run mv "$backup" "$DEST/$APP"
   fail "installed bundle failed verification — previous copy restored."

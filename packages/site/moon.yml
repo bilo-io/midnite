@@ -55,6 +55,9 @@ tasks:
       - 'app/**/*'
       - 'components/**/*'
       - 'lib/**/*'
+      # install-script.test.ts reads the real installer, so a change to it must
+      # bust the test cache.
+      - 'public/install.sh'
       - 'vitest.config.ts'
       - 'vitest.setup.ts'
 
