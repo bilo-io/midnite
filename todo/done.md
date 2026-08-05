@@ -4,6 +4,23 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-05 — feat: Phase 82 Theme D — composer / editors / pickers residue 🟢
+
+PR #601. The twelve controls that are either always on screen or sit in front of every other flow. **16 files leave `I18N_EXEMPT` (65 → 49)**, landed as five separately-green commits so each cluster reviews on its own.
+
+- [x] **Routed by owning feature, not into one new bucket** — `sessions.composer.*`/`chatBar.*` (31 keys: dashboard composer, fullscreen toggle, chat-to-board bar), `memory.sourceKinds/sourceEditor/tree/sources.*` (45: source list editor, kind multi-select, memories tree), `common.pickers.*` (17: folder picker, tag/colour picker, edit-details modal), `common.editor.*` (5: markdown editor + preview), `workflows.expression.*` (14). 103 keys per locale. No new namespace — each key sits with the concept that owns it.
+- [x] **16 files, not 12** — `lib/highlight`, `lib/capture-markdown-html` and the two test wrappers carry no user-facing copy at all, so their exemptions were pure Theme A seeding noise. Verified by stripping the exemption and running the gate, not asserted.
+- [x] **Three live English leaks fixed, all in files earlier slices already marked migrated, and all three passed the gate** — §9's blind spot for the fourth time. `task-detail`'s link pills and `memory/source-detail-modal`'s Type row rendered `SOURCE_KIND_LABEL` straight from `shared`, so fr-FR showed `Google Docs · docs.google.com`; `source-kind-multi-select` never overrode react-select's built-in English `No options`, a string `t()` structurally cannot reach.
+- [x] **Closes PR #587's logged aria residue** — `expression-editor` built four accessible names by concatenating an already-translated field label into an English template, so fr-FR rendered the half-translated `URL expression`. Each is now a whole-sentence ICU message taking `field`, which is what lets French say `Expression pour URL`. en-GB strings stayed byte-identical, so the existing story `play` functions passed unedited, and the audit test asserts the interpolation so it can't regress.
+- [x] **6th and 7th registry seams** — `useSourceKindLabel()` in `lib/i18n-labels.ts`, plus an inline `chatBar.inferencePath.<path>` lookup replacing the `CHAT_INFERENCE_PATH_LABEL` import. Both keep the English canonical in `shared` (gateway + CLI read the same modules) as the per-key fallback. Side effect worth noting: that label map now has **zero runtime consumers** — a deletion candidate, deliberately not taken here.
+- [x] **A real fix, not a migration** — `lib/capture-markdown-html` mounts `MarkdownPreview` into a **detached `createRoot`** for HTML export, i.e. outside the provider tree, so `useTranslations` would have thrown. It now wraps that render in `LocaleProvider` with no `initialLocale`, so an export inherits the reader's language.
+- [x] **In scope by explicit decision, all invisible to the `jsx-text-only` gate** — aria-labels, placeholders, `title` tooltips, and `toast`/error copy. Prop defaults that were English literals in the destructuring (`fallbackTag`, `nameLabel`, `descriptionLabel`) moved to `prop ?? t(...)`.
+- [x] **Tests** — `i18n-composer-keys.test.ts` (static audit over the nine string-bearing sources + a `CHAT_INFERENCE_PATHS` sweep + the aria-interpolation assertion; the memory trio audits from `i18n-memory-keys.test.ts` where that namespace lives), 5 behavioural fr renders, and `composer-editors-i18n-fr.shots.ts` whose picker assertion goes through the dialog's *accessible name* rather than visible text. `:typecheck`, `:lint` and the full `:test` **all green first pass** (web 2202, gateway 2349).
+- [x] **Documented gaps** — `ExpressionError.message` needs a structured error code on the shared error to localise (a `shared` change); `chat-bar`'s three `EXAMPLES` are literal input for the English-grammar parser in `shared/src/chat.ts`, so a translated verb wouldn't parse; 14 of 16 `sourceKinds` fr values equal their en values because they're product names.
+- [x] **Found for Theme F, pre-existing** — the fr screenshot caught the dashboard header description clipping mid-word in French (`…puis transformez-la e`). A French-length layout bug on a surface migrated in #580/#598, not a missing key. No test would have caught it.
+
+---
+
 ## 2026-08-05 — feat: Phase 82 Theme D — sessions / media / digests residue 🟢
 
 PR #597. The first big bite of Theme D's residue bullet (every *named* slice was already done). **30 files leave `I18N_EXEMPT` (131 → 101)** across three namespaces, landed as three separately-green commits so each cluster is reviewable on its own.
