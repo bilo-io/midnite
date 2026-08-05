@@ -1,1 +1,0 @@
-import{u as n}from"./useQuery-5FmduxkR.js";import{W as o}from"./api-DcHHGle2.js";const e=2e3;function l(){const{data:t,isPending:r,isError:s}=n({queryKey:["system-stats"],queryFn:({signal:a})=>o(a),refetchInterval:e,refetchIntervalInBackground:!1,staleTime:e});return{stats:t??null,loading:r&&!t,error:s&&!t}}export{l as u};
