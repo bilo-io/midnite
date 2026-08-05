@@ -66,6 +66,7 @@ import {
   type UiFont,
   type VisualEffects,
 } from '@/lib/app-settings';
+import { useAppearanceOptionLabels } from '@/lib/appearance-option-labels';
 import {
   applyAccent,
   applyAccentSecondary,
@@ -111,6 +112,12 @@ export function AppearanceSection() {
   // Active locale (resolved by the shell provider); one write path via setSettings.
   const locale = useLocale() as Locale;
   const t = useTranslations('settings');
+  // The motion/effects registries live in a `.ts` module the jsx-text-only gate can't
+  // see, so their copy is resolved here — see lib/appearance-option-labels.ts.
+  const densityLabels = useAppearanceOptionLabels('density');
+  const motionLabels = useAppearanceOptionLabels('motion');
+  const effectLabels = useAppearanceOptionLabels('effects');
+  const shimmerLabels = useAppearanceOptionLabels('shimmer');
 
   const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [
     { value: 'light', label: t('appearance.themeOptions.light'), Icon: Sun },
@@ -395,13 +402,15 @@ export function AppearanceSection() {
               ariaLabel={t('appearance.density')}
               value={density}
               onChange={setDensity}
-              options={DENSITY_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+              options={DENSITY_OPTIONS.map((o) => ({
+                value: o.value,
+                label: densityLabels.label(o.value),
+                title: densityLabels.hint(o.value),
+              }))}
               hydrated={hydrated}
             />
           </SettingRow>
-          <p className="text-xs text-muted-foreground">
-            {DENSITY_OPTIONS.find((o) => o.value === density)?.hint}.
-          </p>
+          <p className="text-xs text-muted-foreground">{densityLabels.hint(density)}.</p>
           <div className="border-t border-border/60 pt-4">
             <SettingRow
               title={t('appearance.motion')}
@@ -411,29 +420,33 @@ export function AppearanceSection() {
                 ariaLabel={t('appearance.motion')}
                 value={motion}
                 onChange={setMotion}
-                options={MOTION_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+                options={MOTION_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: motionLabels.label(o.value),
+                  title: motionLabels.hint(o.value),
+                }))}
                 hydrated={hydrated}
               />
             </SettingRow>
-            <p className="mt-4 text-xs text-muted-foreground">
-              {MOTION_OPTIONS.find((o) => o.value === motion)?.hint}.
-            </p>
+            <p className="mt-4 text-xs text-muted-foreground">{motionLabels.hint(motion)}.</p>
           </div>
           <div className="space-y-3 border-t border-border/60 pt-4">
             {EFFECT_OPTIONS.map((opt) => (
               <label
                 key={opt.key}
                 className="flex items-center justify-between gap-4"
-                title={opt.hint}
+                title={effectLabels.hint(opt.key)}
               >
                 <span className="space-y-0.5">
-                  <span className="block text-sm font-medium">{opt.label}</span>
-                  <span className="block text-xs text-muted-foreground">{opt.hint}</span>
+                  <span className="block text-sm font-medium">{effectLabels.label(opt.key)}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {effectLabels.hint(opt.key)}
+                  </span>
                 </span>
                 <Switch
                   checked={effects[opt.key]}
                   onCheckedChange={(v: boolean) => setEffect(opt.key, v)}
-                  aria-label={opt.label}
+                  aria-label={effectLabels.label(opt.key)}
                 />
               </label>
             ))}
@@ -449,14 +462,14 @@ export function AppearanceSection() {
                 onChange={setShimmerDirection}
                 options={SHIMMER_DIRECTION_OPTIONS.map((o) => ({
                   value: o.value,
-                  label: o.label,
-                  title: o.hint,
+                  label: shimmerLabels.label(o.value),
+                  title: shimmerLabels.hint(o.value),
                 }))}
                 hydrated={hydrated}
               />
             </SettingRow>
             <p className="mt-4 text-xs text-muted-foreground">
-              {SHIMMER_DIRECTION_OPTIONS.find((o) => o.value === shimmerDirection)?.hint}.
+              {shimmerLabels.hint(shimmerDirection)}.
             </p>
           </div>
         </div>
