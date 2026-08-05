@@ -84,10 +84,13 @@ function OpenDetailLink({ sessionId }: { sessionId: string }) {
 /** A session as a flat table row, used inside the Sessions table accordions. */
 /** Translated copy for the `@midnite/ui` ContextRing (defaults are English). */
 function useContextRingLabels(): ContextRingLabels {
-  const t = useTranslations('common');
+  // `tCommon`, not `t` — this file also binds the `sessions` namespace, and two
+  // same-named translators in one module read ambiguously (and defeat the
+  // static key audit, which matches call sites by binding name).
+  const tCommon = useTranslations('common');
   return {
-    aria: (pct) => t('ui.contextRing.aria', { pct }),
-    tooltip: (pct, tokens, limit) => t('ui.contextRing.tooltip', { pct, tokens, limit }),
+    aria: (pct) => tCommon('ui.contextRing.aria', { pct }),
+    tooltip: (pct, tokens, limit) => tCommon('ui.contextRing.tooltip', { pct, tokens, limit }),
   };
 }
 
