@@ -4,6 +4,21 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-05 — feat: Phase 82 Theme D — sessions / media / digests residue 🟢
+
+PR #597. The first big bite of Theme D's residue bullet (every *named* slice was already done). **30 files leave `I18N_EXEMPT` (131 → 101)** across three namespaces, landed as three separately-green commits so each cluster is reviewable on its own.
+
+- [x] **`sessions` (19 files, 121 keys)** — the list page (all three views, status/archive filters, bulk bar), cards + table rows, the Phase 51 cockpit (both rails, pending approvals, decision history, the instrument panel), the xterm chrome, the launch modal, the live-sessions widget and the Phase 69 reply box. Terminal copy sits under a `sessions.terminal.*` subtree so the xterm layer stays visibly separate from the list/cockpit vocabulary.
+- [x] **`media` (8 files, 70 keys)** — the gallery (list/grid/table + masonry), its filter sidebar, the type picker, the create/edit detail rails and the wavesurfer player. Two of those files were Suspense wrappers with no copy at all.
+- [x] **`digests` (3 files, 29 keys)** — the Phase 62 G two-pane feed + the structured digest render. `/digests` itself is a pure redirect and carried nothing.
+- [x] **Reuse over duplication** — the cockpit's left rail renders approval resolutions through the existing `settings.approvals.history.resolution.*`, priority through `board.priority.*`, and task status through `useStatusLabel()`. Two enums join the `lib/i18n-labels.ts` hooks (`useSessionStatusLabel`, `useMediaTypeLabel`), replacing five local `Record<Enum, string>` maps, and three more hand-rolled `relativeTime` copies collapse onto `useRelativeTimeLabel()`.
+- [x] **Two deliberate English gaps, both documented** — `SESSION_STATUS_LABEL` stays exported and English because `lib/office/agents.ts` re-exports it for the Phaser office (canvas text is an existing documented gap), and text written *into* the xterm buffer is left alone: it interleaves with the agent's own English output, so a half-French scrollback would read worse than a consistent one.
+- [x] **Locale-aware numbers, not just words** — every `toLocaleString()`/`toLocaleDateString(undefined)` in these files was pinned to the *browser* locale while the UI spoke the app's language (session uptime, token counts, message timestamps, digest dates, per-session spend, media byte sizes). All now go through `useLocaleFormat()` with unit suffixes as catalog copy, which also **closes the byte-unit follow-up Theme E flagged**. `currencyDisplay: 'narrowSymbol'` keeps en-GB at `$2.50`, so English is a visual no-op.
+- [x] **Tests** — `i18n-residue-keys.test.ts` (static audit over all 25 string-bearing files + registry sweeps for both enums, the terminal's two key maps, and the reused resolution/priority keys), `i18n-residue-fr.test.tsx` (5 behavioural fr renders), fr Playwright shots of the sessions list / media library / type picker / digests empty state, and 6 colocated specs wrapped in the locale provider. `:typecheck`, `:lint` and the **full `:test` all passed first try** (318 web files, 294 gateway).
+- [x] The key audit earned its keep immediately: it caught `session-card.tsx` binding `t` twice (to `sessions` *and* `common`) — ambiguous to read and a cross-product for the by-binding-name matcher. Renamed to `tCommon`. A follow-up strict orphan scan also pruned 2 keys I'd added speculatively.
+
+---
+
 ## 2026-08-04 — feat: Phase 82 Theme D — shared chrome primitives i18n 🟢
 
 PR #596. The cross-page primitives — the ones that render on nearly every route, so their leftover English was visible everywhere. `I18N_EXEMPT` 197 → 163.

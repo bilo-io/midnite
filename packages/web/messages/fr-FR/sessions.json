@@ -103,7 +103,6 @@
     "breakdownTitle": "mesuré {measured} · estimé {estimated}"
   },
   "pane": {
-    "openPage": "Ouvrir la page",
     "transcriptFailed": "Échec du chargement de la transcription",
     "loadingSession": "Chargement de la session…",
     "noSessionTitle": "Aucune session",
@@ -139,7 +138,6 @@
     "empty": "Aucune session active."
   },
   "launch": {
-    "title": "Nouvelle session",
     "failedToStart": "Échec du démarrage de la session",
     "dialogTitle": "Session {cli}",
     "blurb": "Un terminal {cli} en direct. Fermez-le quand vous voulez — il continue jusqu’à inactivité.",

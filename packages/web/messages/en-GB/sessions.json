@@ -103,7 +103,6 @@
     "breakdownTitle": "measured {measured} · estimated {estimated}"
   },
   "pane": {
-    "openPage": "Open page",
     "transcriptFailed": "Failed to load transcript",
     "loadingSession": "Loading session…",
     "noSessionTitle": "No session yet",
@@ -139,7 +138,6 @@
     "empty": "No active sessions."
   },
   "launch": {
-    "title": "New session",
     "failedToStart": "Failed to start session",
     "dialogTitle": "{cli} session",
     "blurb": "A live {cli} terminal. Close anytime — it keeps running until idle.",
