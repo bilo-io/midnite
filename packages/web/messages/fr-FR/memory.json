@@ -120,6 +120,11 @@
     "readFailedTitle": "Échec de la lecture — réessayer",
     "readFailedTitleWithError": "Échec de la lecture : {error} — réessayer"
   },
+  "tree": {
+    "empty": "Aucune mémoire",
+    "memoryCount": "{count, plural, one {# mémoire} other {# mémoires}}",
+    "sourceCount": "{count, plural, one {# source} other {# sources}}"
+  },
   "studio": {
     "intro": "Générez des documents à partir de cette mémoire et de ses sources.",
     "groups": {

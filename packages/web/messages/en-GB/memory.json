@@ -120,6 +120,11 @@
     "readFailedTitle": "Failed to read — retry",
     "readFailedTitleWithError": "Failed to read: {error} — retry"
   },
+  "tree": {
+    "empty": "No memories",
+    "memoryCount": "{count, plural, one {# memory} other {# memories}}",
+    "sourceCount": "{count, plural, one {# source} other {# sources}}"
+  },
   "studio": {
     "intro": "Generate artifacts from this memory and its sources.",
     "groups": {
