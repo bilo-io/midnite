@@ -241,5 +241,16 @@
       "descriptionLabel": "Description",
       "nameRequired": "Veuillez renseigner le champ « {label} »."
     }
+  },
+  "reportIssue": {
+    "title": "Signaler un problème",
+    "description": "Cela ouvre un ticket <strong>public</strong> sur GitHub. Tout ce qui suit est modifiable — supprimez ce que vous préférez ne pas partager avant de l’ouvrir.",
+    "titleLabel": "Titre",
+    "detailsLabel": "Détails",
+    "tooLong": "Ce rapport est trop long pour un lien GitHub — il s’ouvrira tronqué. Utilisez « Copier le contenu » pour récupérer le texte complet et le coller dans le ticket.",
+    "environmentTrimmed": "Les détails d’environnement capturés ont été tronqués pour respecter la limite d’URL de GitHub.",
+    "copyBody": "Copier le contenu",
+    "copied": "Copié",
+    "openOnGitHub": "Ouvrir sur GitHub"
   }
 }

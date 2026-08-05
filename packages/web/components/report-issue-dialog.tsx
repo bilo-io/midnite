@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import { Bug, Copy, ExternalLink } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,8 +32,16 @@ const FOCUSABLE =
  * editable: nothing leaves the app until the user clicks "Open on GitHub" (which
  * opens a *public* issue). A URL-length guard auto-trims the auto-captured
  * environment block when oversized, warns, and offers a Copy-body fallback.
+ *
+ * i18n (Phase 82 Theme F): the **chrome** is translated from `common.reportIssue.*`
+ * — the dialog is reachable from global chrome rather than any one feature, so
+ * `common` is its home. The **payload** deliberately stays English: the seeded
+ * `{ title, body }` comes from {@link buildReportContext} (untranslated by design)
+ * and the truncation marker appended below is part of that outbound issue body.
+ * A French issue title in a public tracker helps nobody triaging it.
  */
 export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('common');
   const pathname = usePathname();
   const { preference, resolved } = useTheme();
   const connection = useConnectionStore((s) => worstStatus(s.statuses));
@@ -80,6 +89,8 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
       githubIssuesNewUrl({ title, body: b }).length <= MAX_ISSUE_URL_LENGTH;
     const stripped = stripEnvironment(body);
     if (fits(stripped)) return githubIssuesNewUrl({ title, body: stripped });
+    // Outbound issue body, not UI copy — stays English alongside the rest of the
+    // payload `buildReportContext` seeds (see the component doc comment).
     const marker = '\n\n_(truncated — use “Copy body” for the full report)_';
     let lo = 0;
     let hi = stripped.length;
@@ -155,7 +166,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Report an issue"
+        aria-label={t('reportIssue.title')}
         className="animate-dialog-in relative flex w-full max-w-lg flex-col rounded-xl border border-border bg-card p-5 shadow-2xl"
       >
         <div className="flex items-start gap-3">
@@ -163,16 +174,17 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
             <Bug className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold leading-snug">Report an issue</h2>
+            <h2 className="text-sm font-semibold leading-snug">{t('reportIssue.title')}</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              This opens a <strong>public</strong> issue on GitHub. Everything below is
-              editable — trim anything you'd rather not share before you open it.
+              {t.rich('reportIssue.description', {
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
           </div>
         </div>
 
         <label className="mt-4 block text-xs font-medium text-muted-foreground" htmlFor="report-title">
-          Title
+          {t('reportIssue.titleLabel')}
         </label>
         <input
           ref={titleRef}
@@ -183,7 +195,7 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
         />
 
         <label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor="report-body">
-          Details
+          {t('reportIssue.detailsLabel')}
         </label>
         <Textarea
           id="report-body"
@@ -203,24 +215,22 @@ export function ReportIssueDialog({ onClose }: { onClose: () => void }) {
                 : 'bg-muted text-muted-foreground',
             )}
           >
-            {overflow
-              ? "This report is too long for a GitHub link — it'll open trimmed. Use “Copy body” to grab the full text and paste it into the issue."
-              : 'The captured environment details were trimmed to fit GitHub’s URL limit.'}
+            {overflow ? t('reportIssue.tooLong') : t('reportIssue.environmentTrimmed')}
           </p>
         )}
 
         <div className="mt-5 flex items-center justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={copyBody}>
             <Copy className="mr-1.5 h-3.5 w-3.5" />
-            {copied ? 'Copied' : 'Copy body'}
+            {copied ? t('reportIssue.copied') : t('reportIssue.copyBody')}
           </Button>
           <div className="flex-1" />
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button type="button" size="sm" onClick={openOnGitHub}>
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-            Open on GitHub
+            {t('reportIssue.openOnGitHub')}
           </Button>
         </div>
       </div>

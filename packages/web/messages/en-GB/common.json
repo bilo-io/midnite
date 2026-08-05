@@ -241,5 +241,16 @@
       "descriptionLabel": "Description",
       "nameRequired": "Give it a {label}."
     }
+  },
+  "reportIssue": {
+    "title": "Report an issue",
+    "description": "This opens a <strong>public</strong> issue on GitHub. Everything below is editable — trim anything you’d rather not share before you open it.",
+    "titleLabel": "Title",
+    "detailsLabel": "Details",
+    "tooLong": "This report is too long for a GitHub link — it’ll open trimmed. Use “Copy body” to grab the full text and paste it into the issue.",
+    "environmentTrimmed": "The captured environment details were trimmed to fit GitHub’s URL limit.",
+    "copyBody": "Copy body",
+    "copied": "Copied",
+    "openOnGitHub": "Open on GitHub"
   }
 }
