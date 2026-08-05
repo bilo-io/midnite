@@ -17,6 +17,8 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { MEDIA_PROVIDER_CATALOG, useMediaModels } from '@/lib/use-media-models';
 import { ProviderSelect } from '@/components/provider-select';
+import { useMediaTypeLabel } from '@/lib/i18n-labels';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { PageHeader } from '@/components/page-header';
 import { RailFloatingToggle, RailHeaderToggle } from '@midnite/ui';
 import { cn } from '@/lib/utils';
@@ -32,10 +34,16 @@ type Props =
   | { mode: 'create'; initialType: MediaType; projects: Project[]; initial?: never }
   | { mode: 'edit'; initial: Media; projects: Project[]; initialType?: never };
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+/** Byte-unit suffixes are catalog copy; the number follows the active locale. */
+function useSizeLabel(): (bytes: number) => string {
+  const t = useTranslations('media');
+  const { number } = useLocaleFormat();
+  const one = (v: number) => number(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return (bytes) => {
+    if (bytes < 1024) return t('size.bytes', { value: number(bytes) });
+    if (bytes < 1024 * 1024) return t('size.kilobytes', { value: one(bytes / 1024) });
+    return t('size.megabytes', { value: one(bytes / (1024 * 1024)) });
+  };
 }
 
 // `LucideIcon`, not `React.ElementType`: the latter maps over `keyof
@@ -52,7 +60,12 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
   const mediaType = mode === 'edit' ? initial.type : initialType;
   const TypeIcon = TYPE_ICON[mediaType];
 
+  const t = useTranslations('media');
   const tCommon = useTranslations('common');
+  const typeLabel = useMediaTypeLabel();
+  const formatSize = useSizeLabel();
+  const propertiesRail = t('detail.propertiesRail');
+  const promptRail = t('detail.promptRail');
   const isMobile = useIsMobile();
   const [propertiesOpen, setPropertiesOpen] = useLocalStorage('midnite.media.properties', true);
   const [promptOpen, setPromptOpen] = useLocalStorage('midnite.media.prompt', true);
@@ -122,15 +135,20 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
     try {
       await fetch(`${process.env['NEXT_PUBLIC_GATEWAY_URL'] ?? 'http://localhost:7777'}/media/${saved.id}/generate`, { method: 'POST' });
     } catch {
-      setGenerateError('Generation not yet available.');
+      setGenerateError(t('detail.generationUnavailable'));
     }
-    setGenerateError('Generation not yet available.');
-  }, [saved]);
+    setGenerateError(t('detail.generationUnavailable'));
+  }, [saved, t]);
 
   return (
     <>
       <PageHeader
-        title={title || (mode === 'create' ? `New ${mediaType}` : 'Media')}
+        title={
+          title ||
+          (mode === 'create'
+            ? t('detail.newTitle', { type: typeLabel(mediaType).toLocaleLowerCase() })
+            : t('detail.fallbackTitle'))
+        }
         icon="Images"
         actions={
           isMobile ? (
@@ -174,36 +192,42 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
               <div className="mb-3 flex items-center gap-1.5">
                 <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <TypeIcon className="h-3.5 w-3.5" aria-hidden />
-                  Properties
+                  {propertiesRail}
                 </h2>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Title</label>
+                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                    {t('detail.titleLabel')}
+                  </label>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     onBlur={() => saveField({ title: title.trim() || undefined })}
-                    placeholder="Untitled"
+                    placeholder={t('detail.titlePlaceholder')}
                     className="w-full rounded-md border border-border/60 bg-transparent px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Description</label>
+                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                    {t('detail.descriptionLabel')}
+                  </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     onBlur={() => saveField({ description: description || undefined })}
-                    placeholder="Optional description"
+                    placeholder={t('detail.descriptionPlaceholder')}
                     rows={3}
                     className="w-full resize-none rounded-md border border-border/60 bg-transparent px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Project</label>
+                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                    {t('detail.projectLabel')}
+                  </label>
                   <select
                     value={projectId}
                     onChange={(e) => {
@@ -212,7 +236,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                     }}
                     className="w-full rounded-md border border-border/60 bg-transparent px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="">No project</option>
+                    <option value="">{t('detail.noProject')}</option>
                     {projects.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -220,14 +244,16 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Tags</label>
+                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                    {t('detail.tagsLabel')}
+                  </label>
                   <input
                     value={tagsInput}
                     onChange={(e) => setTagsInput(e.target.value)}
                     onBlur={() =>
                       saveField({ tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean) })
                     }
-                    placeholder="tag1, tag2"
+                    placeholder={t('detail.tagsPlaceholder')}
                     className="w-full rounded-md border border-border/60 bg-transparent px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </div>
@@ -237,29 +263,34 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                     <div className="h-px bg-border/60" />
                     <dl className="space-y-1 text-xs text-muted-foreground">
                       <div className="flex justify-between">
-                        <dt>Type</dt>
-                        <dd className="capitalize">{saved.type}</dd>
+                        <dt>{t('detail.type')}</dt>
+                        <dd>{typeLabel(saved.type)}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt>Size</dt>
-                        <dd>{saved.fileSize > 0 ? formatSize(saved.fileSize) : '—'}</dd>
+                        <dt>{t('detail.size')}</dt>
+                        <dd>{saved.fileSize > 0 ? formatSize(saved.fileSize) : t('detail.noValue')}</dd>
                       </div>
                       {(saved.width != null || saved.height != null) && (
                         <div className="flex justify-between">
-                          <dt>Dimensions</dt>
-                          <dd>{saved.width ?? '?'} × {saved.height ?? '?'}</dd>
+                          <dt>{t('detail.dimensions')}</dt>
+                          <dd>
+                            {t('detail.dimensionsValue', {
+                              width: saved.width ?? t('detail.unknownDimension'),
+                              height: saved.height ?? t('detail.unknownDimension'),
+                            })}
+                          </dd>
                         </div>
                       )}
                       {saved.duration != null && (
                         <div className="flex justify-between">
-                          <dt>Duration</dt>
+                          <dt>{t('detail.duration')}</dt>
                           <dd>
                             {Math.floor(saved.duration / 60)}:{String(Math.floor(saved.duration % 60)).padStart(2, '0')}
                           </dd>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <dt>MIME</dt>
+                        <dt>{t('detail.mime')}</dt>
                         <dd className="truncate">{saved.mimeType}</dd>
                       </div>
                     </dl>
@@ -270,7 +301,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                       className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                      Delete
+                      {tCommon('delete')}
                     </button>
                   </>
                 )}
@@ -288,18 +319,18 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
               <RailFloatingToggle
                 side="left"
                 open={propertiesOpen}
-                title="Properties"
+                title={propertiesRail}
                 onToggle={() => setPropertiesOpen(!propertiesOpen)}
-                collapseLabel={tCommon('ui.rail.collapse', { title: 'Properties' })}
-                expandLabel={tCommon('ui.rail.expand', { title: 'Properties' })}
+                collapseLabel={tCommon('ui.rail.collapse', { title: propertiesRail })}
+                expandLabel={tCommon('ui.rail.expand', { title: propertiesRail })}
               />
               <RailFloatingToggle
                 side="right"
                 open={promptOpen}
-                title="Prompt / Generate"
+                title={promptRail}
                 onToggle={() => setPromptOpen(!promptOpen)}
-                collapseLabel={tCommon('ui.rail.collapse', { title: 'Prompt / Generate' })}
-                expandLabel={tCommon('ui.rail.expand', { title: 'Prompt / Generate' })}
+                collapseLabel={tCommon('ui.rail.collapse', { title: promptRail })}
+                expandLabel={tCommon('ui.rail.expand', { title: promptRail })}
               />
             </>
           )}
@@ -308,8 +339,8 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
               <div className="flex flex-col items-center gap-6 rounded-xl border border-dashed border-border/60 p-10 text-center">
                 <TypeIcon className="h-12 w-12 text-muted-foreground" aria-hidden />
                 <div>
-                  <p className="text-sm text-muted-foreground">Fill in the details and add a prompt,</p>
-                  <p className="text-sm text-muted-foreground">then click Generate — or save a placeholder.</p>
+                  <p className="text-sm text-muted-foreground">{t('detail.createHintLine1')}</p>
+                  <p className="text-sm text-muted-foreground">{t('detail.createHintLine2')}</p>
                 </div>
                 <button
                   type="button"
@@ -317,7 +348,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                   onClick={handleCreate}
                   className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  {saving ? 'Saving…' : 'Save placeholder'}
+                  {saving ? t('detail.saving') : t('detail.savePlaceholder')}
                 </button>
               </div>
             ) : saved ? (
@@ -343,7 +374,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
             >
               <div className="mb-3 flex items-center gap-1.5">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Prompt / Generate
+                  {promptRail}
                 </h2>
               </div>
 
@@ -356,7 +387,9 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                   return (
                     <>
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Provider</label>
+                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                          {t('detail.providerLabel')}
+                        </label>
                         <ProviderSelect
                           providers={providers}
                           value={sel.provider}
@@ -367,7 +400,9 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Model</label>
+                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                          {t('detail.modelLabel')}
+                        </label>
                         <select
                           value={sel.model}
                           onChange={(e) => setMediaModel(mediaType, { provider: sel.provider, model: e.target.value })}
@@ -383,12 +418,14 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                 })()}
 
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Prompt</label>
+                  <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                    {t('detail.promptLabel')}
+                  </label>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onBlur={() => saveField({ prompt: prompt || undefined })}
-                    placeholder="Describe what to generate…"
+                    placeholder={t('detail.promptPlaceholder')}
                     rows={5}
                     className="w-full resize-none rounded-md border border-border/60 bg-transparent px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
@@ -400,7 +437,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                   onClick={handleGenerate}
                   className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  Generate
+                  {t('detail.generate')}
                 </button>
 
                 {generateError && (
@@ -410,7 +447,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                 )}
 
                 <div className="h-px bg-border/60" />
-                <p className="text-xs text-muted-foreground">No generation history.</p>
+                <p className="text-xs text-muted-foreground">{t('detail.noGenerationHistory')}</p>
               </div>
             </div>
           </aside>
@@ -429,13 +466,14 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
 }
 
 function MediaViewer({ media, onLightbox }: { media: Media; onLightbox: () => void }) {
+  const t = useTranslations('media');
   if (media.type === 'image') {
     return (
       <button
         type="button"
         onClick={onLightbox}
         className="block w-full overflow-hidden rounded-xl border border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label="Open image in lightbox"
+        aria-label={t('detail.openLightbox')}
       >
         {media.filePath ? (
           <img

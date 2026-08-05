@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type {
   CheckTrigger,
+  MediaType,
   CouncilMemberRunStatus,
   CouncilRunStatus,
   MemoryArtifactKind,
@@ -8,6 +9,7 @@ import type {
   PrMergeMethod,
   PrReviewEvent,
   ProjectRequirement,
+  SessionStatus,
   SourceIngestState,
   Status,
   TaskHeldReason,
@@ -176,3 +178,25 @@ export type DiffFileStatus = 'add' | 'delete' | 'modify' | 'rename' | 'copy';
 
 /** The Phase 37 AI-review verdicts the diff banner renders. */
 export type AiReviewVerdict = 'approved' | 'commented' | 'changes-requested';
+
+/**
+ * The sessions + media domains (Phase 82 Theme D, residue slice).
+ *
+ * `SESSION_STATUS_LABEL` in [`components/session-card`](../components/session-card.tsx)
+ * stays as the canonical **English** map: `lib/office/agents.ts` re-exports it for the
+ * Phaser office, whose canvas text is a documented non-localised gap. DOM surfaces
+ * (list, cards, cockpit, table sections) read the translated wording from here
+ * instead, so the two can't drift within the app's own chrome.
+ */
+
+/** Session status → dot title / chip / section label (`sessions.status.*`). */
+export function useSessionStatusLabel(): (status: SessionStatus) => string {
+  const t = useTranslations('sessions');
+  return (status) => t(`status.${status}`);
+}
+
+/** Media type → tab / picker / column label (`media.types.*`). */
+export function useMediaTypeLabel(): (type: MediaType) => string {
+  const t = useTranslations('media');
+  return (type) => t(`types.${type}`);
+}

@@ -29,6 +29,7 @@ import { SessionLeftPanel } from './session-left-panel';
  * states so a bookmarked deep link resolves standalone (Decision §1).
  */
 export function SessionDetailContainer() {
+  const t = useTranslations('sessions');
   const id = useSearchParams().get('id') ?? '';
   const { data, loading, error, refresh } = useApiData(async () => {
     if (!id) return null;
@@ -47,7 +48,7 @@ export function SessionDetailContainer() {
     };
   }, [data?.session]);
 
-  const back = <BackLink href="/sessions" label="All sessions" className="mb-4" />;
+  const back = <BackLink href="/sessions" label={t('detail.allSessions')} className="mb-4" />;
 
   if (!id || error || (!loading && !data)) {
     return (
@@ -62,7 +63,7 @@ export function SessionDetailContainer() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t('detail.loading')}</p>
       </div>
     );
   }
@@ -106,7 +107,10 @@ export function SessionDetailView({
   project: Project | null;
   onTaskChanged?: () => void;
 }) {
+  const t = useTranslations('sessions');
   const tCommon = useTranslations('common');
+  const approvalsRail = t('detail.approvalsRail');
+  const infoRail = t('detail.infoRail');
   const [leftOpen, setLeftOpen] = useLocalStorage<boolean>('midnite.session.leftOpen', true);
   const [rightOpen, setRightOpen] = useLocalStorage<boolean>('midnite.session.rightOpen', true);
   const isMobile = useIsMobile();
@@ -134,7 +138,7 @@ export function SessionDetailView({
             {task ? (
               <HoverExpandButton
                 icon={<ListChecks className="h-3.5 w-3.5" />}
-                label="View task"
+                label={t('detail.viewTask')}
                 variant="secondary"
                 onClick={() => router.push(taskPageHref(task.id))}
               />
@@ -165,20 +169,20 @@ export function SessionDetailView({
         <RailShell
           isMobile={isMobile}
           left={{
-            title: 'Approvals & context',
+            title: approvalsRail,
             open: leftOpen,
             onToggle: () => setLeftOpen(!leftOpen),
             content: <SessionLeftPanel session={session} task={task} project={project} />,
-            collapseLabel: tCommon('ui.rail.collapse', { title: 'Approvals & context' }),
-            expandLabel: tCommon('ui.rail.expand', { title: 'Approvals & context' }),
+            collapseLabel: tCommon('ui.rail.collapse', { title: approvalsRail }),
+            expandLabel: tCommon('ui.rail.expand', { title: approvalsRail }),
           }}
           right={{
-            title: 'Session info',
+            title: infoRail,
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
             content: <SessionInfoPanel session={session} />,
-            collapseLabel: tCommon('ui.rail.collapse', { title: 'Session info' }),
-            expandLabel: tCommon('ui.rail.expand', { title: 'Session info' }),
+            collapseLabel: tCommon('ui.rail.collapse', { title: infoRail }),
+            expandLabel: tCommon('ui.rail.expand', { title: infoRail }),
           }}
         >
           {/* Center — the terminal: live WS terminal or ended transcript. */}

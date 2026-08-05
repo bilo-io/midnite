@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Newspaper } from 'lucide-react';
 import type { Digest, DigestListItem } from '@midnite/shared';
 
@@ -11,10 +12,15 @@ import { useApiData } from '@/lib/use-api-data';
 import { EmptyState } from '@/components/empty-state';
 import { WidgetLoader } from '@/components/spinner';
 import { DigestDetail } from '@/components/digest-detail';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 
-function fmtDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { dateStyle: 'medium' });
+/** The row's date in the active locale's medium style (was pinned to the browser's). */
+function useDateLabel(): (iso: string) => string {
+  const { dateTime } = useLocaleFormat();
+  return (iso) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : dateTime(d, { dateStyle: 'medium' });
+  };
 }
 
 function DigestListRow({
@@ -26,6 +32,8 @@ function DigestListRow({
   active: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations('digests');
+  const fmtDate = useDateLabel();
   return (
     <button
       type="button"
@@ -39,10 +47,16 @@ function DigestListRow({
       <div className="text-xs text-muted-foreground">{fmtDate(item.createdAt)}</div>
       <div className="mt-0.5 line-clamp-2 text-sm font-medium text-foreground">{item.headline}</div>
       <div className="mt-1 flex gap-2 text-[11px] tabular-nums text-muted-foreground">
-        <span className="text-emerald-600 dark:text-emerald-400">{item.counts.shipped} shipped</span>
-        <span className="text-rose-600 dark:text-rose-400">{item.counts.failed} failed</span>
+        <span className="text-emerald-600 dark:text-emerald-400">
+          {t('feed.shipped', { count: item.counts.shipped })}
+        </span>
+        <span className="text-rose-600 dark:text-rose-400">
+          {t('feed.failed', { count: item.counts.failed })}
+        </span>
         {item.counts.needsAttention > 0 && (
-          <span className="text-amber-600 dark:text-amber-400">{item.counts.needsAttention} attn</span>
+          <span className="text-amber-600 dark:text-amber-400">
+            {t('feed.attention', { count: item.counts.needsAttention })}
+          </span>
         )}
       </div>
     </button>
@@ -52,6 +66,7 @@ function DigestListRow({
 /** The selected digest, self-fetched from `?id=`. Split out so its own fetch
  *  state doesn't re-render the list. */
 function SelectedDigest({ id }: { id: string }) {
+  const t = useTranslations('digests');
   const { data: digest, loading } = useApiData<Digest | null>((signal) => getDigest(id, signal), [id]);
 
   if (loading && !digest) {
@@ -62,7 +77,7 @@ function SelectedDigest({ id }: { id: string }) {
     );
   }
   if (!digest) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">Digest not found.</p>;
+    return <p className="py-16 text-center text-sm text-muted-foreground">{t('feed.notFound')}</p>;
   }
   return <DigestDetail digest={digest} />;
 }
@@ -76,6 +91,7 @@ function SelectedDigest({ id }: { id: string }) {
  * updates preserve the host page's other params (e.g. `?tab=digest`).
  */
 export function DigestsFeed() {
+  const t = useTranslations('digests');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -112,13 +128,13 @@ export function DigestsFeed() {
       ) : list.length === 0 ? (
         <EmptyState
           Icon={Newspaper}
-          title="No digests yet"
-          description="Digests are produced by the daily-digest workflow. Enable it in Workflows to get a periodic fleet roll-up here."
+          title={t('feed.emptyTitle')}
+          description={t('feed.emptyDescription')}
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-[minmax(14rem,18rem)_1fr]">
           {/* Master: the feed list */}
-          <nav aria-label="Digests" className="space-y-2 md:max-h-[calc(100vh-12rem)] md:overflow-y-auto">
+          <nav aria-label={t('feed.navAria')} className="space-y-2 md:max-h-[calc(100vh-12rem)] md:overflow-y-auto">
             {list.map((item) => (
               <DigestListRow
                 key={item.id}
@@ -134,9 +150,7 @@ export function DigestsFeed() {
             {effectiveId ? (
               <SelectedDigest id={effectiveId} />
             ) : (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                Select a digest to view it.
-              </p>
+              <p className="py-16 text-center text-sm text-muted-foreground">{t('feed.selectPrompt')}</p>
             )}
           </div>
         </div>

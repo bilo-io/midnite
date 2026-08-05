@@ -2,8 +2,10 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { type LucideIcon, ImageIcon, Music2, Video } from 'lucide-react';
 import type { MediaType } from '@midnite/shared';
+import { useMediaTypeLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -13,13 +15,15 @@ type Props = {
 // `LucideIcon`, not `React.ElementType` — the latter maps over `keyof
 // JSX.IntrinsicElements`, which @react-three/fiber (Phase 63) bloats with
 // hundreds of three.js elements, collapsing the mapped type to `never`.
-const OPTIONS: { type: MediaType; label: string; description: string; Icon: LucideIcon }[] = [
-  { type: 'image', label: 'Image', description: 'Generate or upload a still image', Icon: ImageIcon },
-  { type: 'video', label: 'Video', description: 'Generate or upload a video clip', Icon: Video },
-  { type: 'audio', label: 'Audio', description: 'Generate or upload an audio file', Icon: Music2 },
+const OPTIONS: { type: MediaType; Icon: LucideIcon }[] = [
+  { type: 'image', Icon: ImageIcon },
+  { type: 'video', Icon: Video },
+  { type: 'audio', Icon: Music2 },
 ];
 
 export function MediaTypePickerModal({ onClose }: Props) {
+  const t = useTranslations('media');
+  const typeLabel = useMediaTypeLabel();
   const router = useRouter();
 
   useEffect(() => {
@@ -43,11 +47,11 @@ export function MediaTypePickerModal({ onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Choose media type"
+        aria-label={t('typePicker.dialogAria')}
       >
-        <h2 className="mb-4 text-base font-semibold">What type of media?</h2>
+        <h2 className="mb-4 text-base font-semibold">{t('typePicker.title')}</h2>
         <div className="flex flex-col gap-2">
-          {OPTIONS.map(({ type, label, description, Icon }) => (
+          {OPTIONS.map(({ type, Icon }) => (
             <button
               key={type}
               type="button"
@@ -59,8 +63,8 @@ export function MediaTypePickerModal({ onClose }: Props) {
             >
               <Icon className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
               <span>
-                <span className="block text-sm font-medium">{label}</span>
-                <span className="block text-xs text-muted-foreground">{description}</span>
+                <span className="block text-sm font-medium">{typeLabel(type)}</span>
+                <span className="block text-xs text-muted-foreground">{t(`typePicker.${type}`)}</span>
               </span>
             </button>
           ))}

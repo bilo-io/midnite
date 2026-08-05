@@ -1,0 +1,159 @@
+{
+  "page": {
+    "title": "Sessions",
+    "description": "Une session par tâche — son statut suit celui de la tâche (en cours, en attente de réponse, terminée ou inactive)."
+  },
+  "status": {
+    "running": "En cours",
+    "waiting": "En attente",
+    "completed": "Terminée",
+    "idle": "Inactive",
+    "endedPill": "terminée"
+  },
+  "filters": {
+    "awaitingInput": "En attente de réponse",
+    "allStatuses": "Tous les statuts",
+    "archived": "Archivées",
+    "active": "Actives"
+  },
+  "list": {
+    "listView": "Vue liste",
+    "gridView": "Vue grille",
+    "tableView": "Vue tableau",
+    "search": "Rechercher des sessions",
+    "emptyTitle": "Aucune session",
+    "emptyDescription": "Créez une tâche et sa session d’agent apparaîtra ici.",
+    "noMatch": "Aucune session ne correspond à ce filtre",
+    "sectionEmpty": "Vide",
+    "sectionNothing": "Rien ici",
+    "sessionCount": "{count, plural, one {# session} other {# sessions}}",
+    "projectCount": "{count, plural, one {# projet} other {# projets}}",
+    "sectionSummary": "{sessions} · {projects}"
+  },
+  "card": {
+    "openPage": "Ouvrir la page de la session"
+  },
+  "bulk": {
+    "archive": "Archiver",
+    "unarchive": "Désarchiver",
+    "delete": "Supprimer",
+    "archiveConfirmTitle": "Archiver cette session ?",
+    "archiveConfirmDescription": "Elle quitte le tableau actif. Vous pourrez la désarchiver plus tard.",
+    "deleteConfirmTitle": "{count, plural, one {Supprimer # session ?} other {Supprimer # sessions ?}}",
+    "deleteConfirmDescription": "Cela supprime définitivement la transcription. Cette action est irréversible."
+  },
+  "detail": {
+    "loading": "Chargement…",
+    "allSessions": "Toutes les sessions",
+    "viewTask": "Voir la tâche",
+    "approvalsRail": "Approbations et contexte",
+    "infoRail": "Infos de la session"
+  },
+  "left": {
+    "agentWaiting": "L’agent attend votre réponse",
+    "pendingApprovals": "Approbations en attente",
+    "nothingPending": "Rien n’attend de décision.",
+    "allow": "Autoriser",
+    "allowSession": "Autoriser pour la session",
+    "deny": "Refuser",
+    "decisionHistory": "Historique des décisions",
+    "noDecisions": "Aucune décision enregistrée.",
+    "task": "Tâche",
+    "status": "Statut",
+    "priority": "Priorité",
+    "retries": "Tentatives",
+    "created": "Créée",
+    "viewRetro": "Voir la rétrospective",
+    "project": "Projet"
+  },
+  "info": {
+    "status": "Statut",
+    "provider": "Fournisseur",
+    "agentCli": "CLI de l’agent",
+    "ranFor": "Durée d’exécution",
+    "uptime": "Temps d’activité",
+    "lastActivity": "Dernière activité",
+    "workingDir": "Répertoire de travail",
+    "retries": "Tentatives",
+    "archived": "Archivée",
+    "context": "Contexte",
+    "estBadge": "est",
+    "estTitle": "Approximatif — dérivé d’un hachage, pas un décompte de tokens mesuré",
+    "startedTitle": "Démarrée {when}",
+    "contextValue": "{tokens} / {limit}",
+    "contextValueEstimate": "{tokens} / {limit} (est.)",
+    "tokens": {
+      "millions": "{value} M",
+      "thousands": "{value} k"
+    },
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "daysHours": "{days} j {hours} h"
+    }
+  },
+  "cost": {
+    "label": "Coût",
+    "noValue": "—",
+    "unpriced": "sans tarif",
+    "unpricedTitle": "Modèle absent de la table des tarifs — coût non compté",
+    "measured": " (mesuré)",
+    "measuredEstimated": " (mesuré + est.)",
+    "breakdownTitle": "mesuré {measured} · estimé {estimated}"
+  },
+  "pane": {
+    "transcriptFailed": "Échec du chargement de la transcription",
+    "loadingSession": "Chargement de la session…",
+    "noSessionTitle": "Aucune session",
+    "noSessionHint": "Cette tâche n’a pas encore démarré de session. Lancez-la pour créer un agent.",
+    "loadingTranscript": "Chargement de la transcription…"
+  },
+  "terminal": {
+    "label": "Terminal",
+    "ariaLabel": "Terminal de la session",
+    "starting": "Démarrage du terminal…",
+    "loadingTranscript": "Chargement de la transcription…",
+    "noTranscript": "Aucune transcription disponible.",
+    "noMessages": "Aucun message dans cette session.",
+    "taskEvents": "Événements de la tâche ({count})",
+    "noText": "(aucun texte)",
+    "connecting": "Connexion…",
+    "disconnected": "Déconnecté",
+    "connectionError": "Erreur de connexion",
+    "sessionEnded": "Session terminée",
+    "readOnly": "Lecture seule",
+    "approvalNeeded": "Approbation requise",
+    "accept": "Accepter",
+    "acceptForSession": "Accepter pour la session",
+    "live": "En direct",
+    "deny": "Refuser",
+    "endedBadge": "terminée · lecture seule",
+    "liveBadge": "en direct"
+  },
+  "widget": {
+    "title": "Sessions en direct",
+    "refresh": "Actualiser les sessions",
+    "loadFailed": "Impossible de charger les sessions.",
+    "empty": "Aucune session active."
+  },
+  "launch": {
+    "failedToStart": "Échec du démarrage de la session",
+    "dialogTitle": "Session {cli}",
+    "blurb": "Un terminal {cli} en direct. Fermez-le quand vous voulez — il continue jusqu’à inactivité.",
+    "terminalAria": "Terminal de la session {cli}",
+    "starting": "Démarrage de {cli}…"
+  },
+  "newButton": {
+    "label": "Nouvelle session",
+    "codingAgent": "Agent de code"
+  },
+  "reply": {
+    "placeholder": "Répondre à l’agent…",
+    "noLiveSession": "Aucune session active — cette tâche demande une résolution, pas une réponse.",
+    "sendFailed": "Échec de l’envoi de la réponse.",
+    "ariaLabel": "Répondre à l’agent",
+    "sendAria": "Envoyer la réponse",
+    "send": "Envoyer"
+  }
+}

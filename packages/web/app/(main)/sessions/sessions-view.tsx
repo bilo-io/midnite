@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { BotMessageSquare, LayoutGrid, List, ListTree } from 'lucide-react';
 import {
   SESSION_STATUSES,
@@ -14,12 +15,8 @@ import { CountPill } from '@/components/count-pill';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
-import {
-  SESSION_STATUS_HUE,
-  SESSION_STATUS_LABEL,
-  SessionCard,
-  SessionRow,
-} from '@/components/session-card';
+import { SESSION_STATUS_HUE, SessionCard, SessionRow } from '@/components/session-card';
+import { useSessionStatusLabel } from '@/lib/i18n-labels';
 import { CollapsibleStatusGroups } from '@/components/collapsible-status-groups';
 import { WorkItemModal } from '@/components/work-item-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
@@ -40,16 +37,6 @@ type View = 'list' | 'grid' | 'table';
 const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.sessions.view';
 
-const SESSION_FILTERS: FilterOption[] = [
-  { value: 'running', label: 'Running', hue: SESSION_STATUS_HUE.running },
-  { value: 'waiting', label: 'Awaiting input', hue: SESSION_STATUS_HUE.waiting },
-  { value: 'completed', label: 'Completed', hue: SESSION_STATUS_HUE.completed },
-  { value: 'idle', label: 'Idle', hue: SESSION_STATUS_HUE.idle },
-];
-
-function plural(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
-}
 
 export function SessionsView({
   initial,
@@ -60,6 +47,15 @@ export function SessionsView({
   tasks: TaskSummary[];
   projects: Project[];
 }) {
+  const t = useTranslations('sessions');
+  const statusLabel = useSessionStatusLabel();
+  // `waiting` reads "Awaiting input" as a filter pill — more descriptive than the
+  // one-word status the dot/chip uses.
+  const sessionFilters: FilterOption[] = SESSION_STATUSES.map((status) => ({
+    value: status,
+    label: status === 'waiting' ? t('filters.awaitingInput') : statusLabel(status),
+    hue: SESSION_STATUS_HUE[status],
+  }));
   const [view, setView] = useState<View>('list');
   const [selected, setSelected] = useState<SessionSummary | null>(null);
 
@@ -95,9 +91,9 @@ export function SessionsView({
     async (session: SessionSummary) => {
       if (!session.archivedAt) {
         const ok = await confirm({
-          title: 'Archive this session?',
-          description: 'It moves out of the active board. You can unarchive it again later.',
-          confirmLabel: 'Archive',
+          title: t('bulk.archiveConfirmTitle'),
+          description: t('bulk.archiveConfirmDescription'),
+          confirmLabel: t('bulk.archive'),
           tone: 'neutral',
         });
         if (!ok) return;
@@ -110,7 +106,7 @@ export function SessionsView({
         invalidateData();
       }
     },
-    [confirm, onClose],
+    [confirm, onClose, t],
   );
 
   // Permanent delete — only offered once a session is archived.
@@ -154,14 +150,14 @@ export function SessionsView({
     async (ids: string[]) => {
       if (ids.length === 0) return;
       const ok = await confirm({
-        title: `Delete ${ids.length} session${ids.length === 1 ? '' : 's'}?`,
-        description: 'This permanently removes the transcript. This cannot be undone.',
-        confirmLabel: 'Delete',
+        title: t('bulk.deleteConfirmTitle', { count: ids.length }),
+        description: t('bulk.deleteConfirmDescription'),
+        confirmLabel: t('bulk.delete'),
       });
       if (!ok) return;
       await runBulk(ids, (id) => deleteSession(id));
     },
-    [confirm, runBulk],
+    [confirm, runBulk, t],
   );
 
   // Archive endpoints are session-specific; delete is only valid once archived,
@@ -173,7 +169,7 @@ export function SessionsView({
     if (toArchive.length) {
       actions.push({
         key: 'archive',
-        label: 'Archive',
+        label: t('bulk.archive'),
         color: BULK_COLORS.archive,
         onClick: () => void runBulk(toArchive, (id) => archiveSession(id)),
       });
@@ -181,19 +177,19 @@ export function SessionsView({
     if (archived.length) {
       actions.push({
         key: 'unarchive',
-        label: 'Unarchive',
+        label: t('bulk.unarchive'),
         color: BULK_COLORS.archive,
         onClick: () => void runBulk(archived, (id) => unarchiveSession(id)),
       });
       actions.push({
         key: 'delete',
-        label: 'Delete',
+        label: t('bulk.delete'),
         color: BULK_COLORS.delete,
         onClick: () => void deleteSelection(archived),
       });
     }
     return actions;
-  }, [selectedSessions, runBulk, deleteSelection]);
+  }, [selectedSessions, runBulk, deleteSelection, t]);
 
   // A session's project is resolved through its linked task.
   const projectIdByTask = useMemo(() => new Map(tasks.map((t) => [t.id, t.projectId])), [tasks]);
@@ -267,16 +263,19 @@ export function SessionsView({
     ).size;
     return {
       id: status,
-      label: SESSION_STATUS_LABEL[status],
+      label: statusLabel(status),
       hue: SESSION_STATUS_HUE[status],
       count: items.length,
       summary:
         items.length === 0
-          ? 'Empty'
-          : `${plural(items.length, 'session')} · ${plural(projectCount, 'project')}`,
+          ? t('list.sectionEmpty')
+          : t('list.sectionSummary', {
+              sessions: t('list.sessionCount', { count: items.length }),
+              projects: t('list.projectCount', { count: projectCount }),
+            }),
       body:
         items.length === 0 ? (
-          <div className="px-4 py-3 text-xs text-muted-foreground">Nothing here</div>
+          <div className="px-4 py-3 text-xs text-muted-foreground">{t('list.sectionNothing')}</div>
         ) : (
           <WindowVirtualList
             items={items}
@@ -306,21 +305,21 @@ export function SessionsView({
       <StickyToolbar className="reveal-controls">
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={sessions.length} className="mr-1" />
-          <FilterPills options={SESSION_FILTERS} allLabel="All statuses" />
+          <FilterPills options={sessionFilters} allLabel={t('filters.allStatuses')} />
           <FilterPills
-            options={[{ value: '1', label: 'Archived', hue: '215 14% 47%' }]}
+            options={[{ value: '1', label: t('filters.archived'), hue: '215 14% 47%' }]}
             paramKey="archived"
-            allLabel="Active"
+            allLabel={t('filters.active')}
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <SearchBar placeholder="Search sessions" />
+          <SearchBar placeholder={t('list.search')} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="List view"
+              aria-label={t('list.listView')}
               aria-pressed={view === 'list'}
               onClick={() => onSetView('list')}
               className={cn('h-7 w-7', view === 'list' && 'bg-accent text-accent-foreground')}
@@ -331,7 +330,7 @@ export function SessionsView({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Grid view"
+              aria-label={t('list.gridView')}
               aria-pressed={view === 'grid'}
               onClick={() => onSetView('grid')}
               className={cn('h-7 w-7', view === 'grid' && 'bg-accent text-accent-foreground')}
@@ -342,7 +341,7 @@ export function SessionsView({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Table view"
+              aria-label={t('list.tableView')}
               aria-pressed={view === 'table'}
               onClick={() => onSetView('table')}
               className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
@@ -360,19 +359,19 @@ export function SessionsView({
         {initial.length === 0 ? (
           <EmptyState
             Icon={BotMessageSquare}
-            title="No sessions yet"
-            description="Create a task and its agent session shows up here."
+            title={t('list.emptyTitle')}
+            description={t('list.emptyDescription')}
           />
         ) : view === 'table' ? (
           <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" variant="split" />
         ) : sessions.length === 0 ? (
-          <EmptyState Icon={BotMessageSquare} title="No sessions match this filter" />
+          <EmptyState Icon={BotMessageSquare} title={t('list.noMatch')} />
         ) : (
           <CollapsibleStatusGroups
             storageKey={`midnite.sessions.${view}Groups`}
             groups={statusGroups.map((g) => ({
               id: g.status,
-              label: SESSION_STATUS_LABEL[g.status],
+              label: statusLabel(g.status),
               hue: SESSION_STATUS_HUE[g.status],
               count: g.items.length,
               body:

@@ -1,7 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LLM_PROVIDER_LABEL, type SessionDetail } from '@midnite/shared';
-import { cn, relativeTime } from '@/lib/utils';
+import { useRelativeTimeLabel, useSessionStatusLabel } from '@/lib/i18n-labels';
+import { useLocaleFormat } from '@/lib/use-locale-format';
+import { cn } from '@/lib/utils';
 import { SessionCostLine } from './session-cost-line';
 
 // Status → the status-hue CSS var, so the Status pill tints itself the same way
@@ -22,15 +25,20 @@ const STATUS_HUE: Record<SessionDetail['status'], string> = {
  * window is shown as a bar explicitly labeled an estimate (Decision §4).
  */
 export function SessionInfoPanel({ session }: { session: SessionDetail }) {
+  const t = useTranslations('sessions');
+  const statusLabel = useSessionStatusLabel();
+  const relativeTime = useRelativeTimeLabel();
+  const absolute = useAbsoluteLabel();
+  const formatDuration = useDurationLabel();
   const ended = session.status === 'completed' || Boolean(session.archivedAt);
-  const uptime = computeUptime(session, ended);
+  const uptime = useUptime(session, ended, formatDuration, absolute);
   const provider = session.provider ? LLM_PROVIDER_LABEL[session.provider] : undefined;
   const showContext = session.contextTokens != null && session.contextLimit != null;
 
   return (
     <dl className="space-y-2.5 text-xs">
       <div className="flex items-baseline justify-between gap-3">
-        <dt className="shrink-0 text-muted-foreground">Status</dt>
+        <dt className="shrink-0 text-muted-foreground">{t('info.status')}</dt>
         <dd className="min-w-0">
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
@@ -39,33 +47,41 @@ export function SessionInfoPanel({ session }: { session: SessionDetail }) {
               color: `hsl(var(${STATUS_HUE[session.status]}))`,
             }}
           >
-            {ended ? 'ended' : session.status}
+            {ended ? t('status.endedPill') : statusLabel(session.status).toLocaleLowerCase()}
           </span>
         </dd>
       </div>
-      {provider ? <Row label="Provider" value={provider} /> : null}
-      {session.agentCli ? <Row label="Agent CLI" value={session.agentCli} mono /> : null}
+      {provider ? <Row label={t('info.provider')} value={provider} /> : null}
+      {session.agentCli ? <Row label={t('info.agentCli')} value={session.agentCli} mono /> : null}
       {uptime ? (
         <Row
-          label={ended ? 'Ran for' : 'Uptime'}
+          label={ended ? t('info.ranFor') : t('info.uptime')}
           value={uptime.text}
           title={uptime.title}
         />
       ) : null}
-      <Row label="Last activity" value={relativeTime(session.lastActivity)} title={absolute(session.lastActivity)} />
+      <Row
+        label={t('info.lastActivity')}
+        value={relativeTime(session.lastActivity)}
+        title={absolute(session.lastActivity)}
+      />
       {session.cwd ? (
         <div>
-          <dt className="text-muted-foreground">Working dir</dt>
+          <dt className="text-muted-foreground">{t('info.workingDir')}</dt>
           <dd className="mt-0.5 break-all font-mono text-[11px] text-foreground/90" title={session.cwd}>
             {session.cwd}
           </dd>
         </div>
       ) : null}
       {session.retryCount != null && session.retryCount > 0 ? (
-        <Row label="Retries" value={String(session.retryCount)} mono />
+        <Row label={t('info.retries')} value={String(session.retryCount)} mono />
       ) : null}
       {session.archivedAt ? (
-        <Row label="Archived" value={relativeTime(session.archivedAt)} title={absolute(session.archivedAt)} />
+        <Row
+          label={t('info.archived')}
+          value={relativeTime(session.archivedAt)}
+          title={absolute(session.archivedAt)}
+        />
       ) : null}
       {showContext ? (
         <ContextBar
@@ -92,17 +108,24 @@ function Row({ label, value, title, mono }: { label: string; value: string; titl
 
 /** The (estimated) context window as a labeled bar — never fabricated precision. */
 function ContextBar({ tokens, limit, estimate }: { tokens: number; limit: number; estimate: boolean }) {
+  const t = useTranslations('sessions');
+  const formatTokens = useTokensLabel();
   const pct = limit > 0 ? Math.min(100, Math.round((tokens / limit) * 100)) : 0;
-  const label = `${formatTokens(tokens)} / ${formatTokens(limit)}${estimate ? ' (est.)' : ''}`;
+  const args = { tokens: formatTokens(tokens), limit: formatTokens(limit) };
+  const label = estimate ? t('info.contextValueEstimate', args) : t('info.contextValue', args);
   return (
     <div className="pt-1">
       <div className="flex items-baseline justify-between gap-3">
         <dt
           className="flex items-center gap-1 text-muted-foreground"
-          title={estimate ? 'Approximate — hash-seeded, not a measured token count' : undefined}
+          title={estimate ? t('info.estTitle') : undefined}
         >
-          Context
-          {estimate ? <span className="rounded bg-muted px-1 text-[9px] uppercase tracking-wide">est</span> : null}
+          {t('info.context')}
+          {estimate ? (
+            <span className="rounded bg-muted px-1 text-[9px] uppercase tracking-wide">
+              {t('info.estBadge')}
+            </span>
+          ) : null}
         </dt>
         <dd className="min-w-0 truncate text-right font-mono text-foreground/90">{label}</dd>
       </div>
@@ -119,7 +142,13 @@ function ContextBar({ tokens, limit, estimate }: { tokens: number; limit: number
 type Uptime = { text: string; title: string };
 
 /** Session lifespan: created → now (live) or created → end (ended). Null if unknown. */
-function computeUptime(session: SessionDetail, ended: boolean): Uptime | null {
+function useUptime(
+  session: SessionDetail,
+  ended: boolean,
+  formatDuration: (ms: number) => string,
+  absolute: (input: string | number) => string,
+): Uptime | null {
+  const t = useTranslations('sessions');
   if (!session.createdAt) return null;
   const start = new Date(session.createdAt).getTime();
   if (!Number.isFinite(start)) return null;
@@ -130,30 +159,43 @@ function computeUptime(session: SessionDetail, ended: boolean): Uptime | null {
     : Date.now();
   const ms = end - start;
   if (!Number.isFinite(ms) || ms < 0) return null;
-  return { text: formatDuration(ms), title: `Started ${absolute(session.createdAt)}` };
+  return { text: formatDuration(ms), title: t('info.startedTitle', { when: absolute(session.createdAt) }) };
 }
 
-function formatDuration(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ${m % 60}m`;
-  const d = Math.floor(h / 24);
-  return `${d}d ${h % 24}h`;
+/** Duration unit suffixes are catalog copy; the digits follow the active locale. */
+function useDurationLabel(): (ms: number) => string {
+  const t = useTranslations('sessions');
+  const { number } = useLocaleFormat();
+  return (ms) => {
+    const secs = Math.floor(ms / 1000);
+    if (secs < 60) return t('info.duration.seconds', { value: number(secs) });
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return t('info.duration.minutes', { value: number(mins) });
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) {
+      return t('info.duration.hoursMinutes', { hours: number(hours), minutes: number(mins % 60) });
+    }
+    return t('info.duration.daysHours', { days: number(Math.floor(hours / 24)), hours: number(hours % 24) });
+  };
 }
 
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
+/** `1.2M` / `8.5k` / `640` — the `M`/`k` suffix is copy, the number is formatted. */
+function useTokensLabel(): (n: number) => string {
+  const t = useTranslations('sessions');
+  const { number } = useLocaleFormat();
+  const one = (v: number) => number(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return (n) => {
+    if (n >= 1_000_000) return t('info.tokens.millions', { value: one(n / 1_000_000) });
+    if (n >= 1_000) return t('info.tokens.thousands', { value: one(n / 1_000) });
+    return number(n);
+  };
 }
 
-function absolute(input: string | number): string {
-  try {
-    return new Date(input).toLocaleString();
-  } catch {
-    return '';
-  }
+/** A full timestamp for the hover titles, in the active locale (was the browser's). */
+function useAbsoluteLabel(): (input: string | number) => string {
+  const { dateTime } = useLocaleFormat();
+  return (input) => {
+    const d = new Date(input);
+    return Number.isNaN(d.getTime()) ? '' : dateTime(d, { dateStyle: 'medium', timeStyle: 'medium' });
+  };
 }

@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AGENT_CLI_LABEL, AgentCliSchema, type SessionSummary } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { LiveTerminal } from '@/components/live-terminal';
 
 export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
+  const t = useTranslations('sessions');
   // Header reads "{project folder} {agent icon} {agent name}" rather than the
   // live foreground process — the agent is a more meaningful label than "zsh".
   const parsed = AgentCliSchema.safeParse(session.agentCli);
@@ -25,7 +27,7 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
           ) : null}
         </span>
       }
-      ariaLabel="Session terminal"
+      ariaLabel={t('terminal.ariaLabel')}
       approvals
     />
   );

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { ReactElement } from 'react';
 import type { PendingApproval, Project, SessionDetail, Task } from '@midnite/shared';
 import { withQueryClient } from '@/lib/test-query-wrapper';
@@ -90,13 +91,16 @@ describe('SessionLeftPanel', () => {
     });
     renderPanel(<SessionLeftPanel session={session} task={null} project={null} />);
     expect(await screen.findByText('Edit')).toBeInTheDocument();
-    expect(screen.getByText('allow')).toBeInTheDocument();
+    // The resolution enum now renders through `settings.approvals.history.resolution.*`
+    // (Phase 82 D) rather than the raw wire value.
+    expect(screen.getByText('Allow')).toBeInTheDocument();
   });
 
   it('renders task + project context with links, and omits project when absent', async () => {
     const { rerender } = renderPanel(<SessionLeftPanel session={session} task={task} project={project} />);
     expect(screen.getByRole('link', { name: 'Fix bug' })).toHaveAttribute('href', '/tasks/view?id=t1');
-    expect(screen.getByText('wip')).toBeInTheDocument();
+    // Task status reads the shared `useStatusLabel()` wording, not the raw enum.
+    expect(screen.getByText('In progress')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Web' })).toHaveAttribute('href', '/projects/view?id=p1');
 
     rerender(withQueryClient(<SessionLeftPanel session={session} task={task} project={null} />));

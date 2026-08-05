@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Médias"
+  },
+  "types": {
+    "all": "Tous",
+    "image": "Image",
+    "video": "Vidéo",
+    "audio": "Audio"
+  },
+  "sidebar": {
+    "heading": "Médias",
+    "expand": "Déplier la barre latérale des médias",
+    "collapse": "Replier la barre latérale des médias",
+    "project": "Projet",
+    "allProjects": "Tous les projets",
+    "generationModels": "Modèles de génération",
+    "providerAria": "Fournisseur {type}",
+    "modelAria": "Modèle {type}"
+  },
+  "list": {
+    "listView": "Vue liste",
+    "gridView": "Vue grille",
+    "tableView": "Vue tableau",
+    "search": "Rechercher des médias",
+    "columns": {
+      "title": "Titre",
+      "type": "Type",
+      "project": "Projet",
+      "size": "Taille"
+    },
+    "sections": {
+      "images": "Images",
+      "video": "Vidéo",
+      "audio": "Audio"
+    }
+  },
+  "empty": {
+    "allTitle": "Aucun média",
+    "typedTitle": "Aucun élément de type {type}",
+    "description": "Générez ou importez des médias pour étoffer votre bibliothèque."
+  },
+  "newButton": {
+    "label": "Nouveau média"
+  },
+  "typePicker": {
+    "dialogAria": "Choisir un type de média",
+    "title": "Quel type de média ?",
+    "image": "Générer ou importer une image fixe",
+    "video": "Générer ou importer un clip vidéo",
+    "audio": "Générer ou importer un fichier audio"
+  },
+  "detail": {
+    "newTitle": "Nouveau média : {type}",
+    "fallbackTitle": "Média",
+    "propertiesRail": "Propriétés",
+    "promptRail": "Prompt / Génération",
+    "titleLabel": "Titre",
+    "titlePlaceholder": "Sans titre",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Description facultative",
+    "projectLabel": "Projet",
+    "noProject": "Aucun projet",
+    "tagsLabel": "Étiquettes",
+    "tagsPlaceholder": "étiquette1, étiquette2",
+    "type": "Type",
+    "size": "Taille",
+    "dimensions": "Dimensions",
+    "duration": "Durée",
+    "mime": "MIME",
+    "noValue": "—",
+    "unknownDimension": "?",
+    "dimensionsValue": "{width} × {height}",
+    "createHintLine1": "Renseignez les détails et ajoutez un prompt,",
+    "createHintLine2": "puis cliquez sur Générer — ou enregistrez un brouillon.",
+    "saving": "Enregistrement…",
+    "savePlaceholder": "Enregistrer un brouillon",
+    "providerLabel": "Fournisseur",
+    "modelLabel": "Modèle",
+    "promptLabel": "Prompt",
+    "promptPlaceholder": "Décrivez ce qu’il faut générer…",
+    "generationUnavailable": "Génération pas encore disponible.",
+    "noGenerationHistory": "Aucun historique de génération.",
+    "openLightbox": "Ouvrir l’image en plein écran",
+    "generate": "Générer"
+  },
+  "size": {
+    "bytes": "{value} o",
+    "kilobytes": "{value} ko",
+    "megabytes": "{value} Mo"
+  },
+  "player": {
+    "play": "Lecture",
+    "pause": "Pause"
+  }
+}

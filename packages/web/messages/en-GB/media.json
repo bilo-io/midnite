@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Media"
+  },
+  "types": {
+    "all": "All",
+    "image": "Image",
+    "video": "Video",
+    "audio": "Audio"
+  },
+  "sidebar": {
+    "heading": "Media",
+    "expand": "Expand media sidebar",
+    "collapse": "Collapse media sidebar",
+    "project": "Project",
+    "allProjects": "All projects",
+    "generationModels": "Generation models",
+    "providerAria": "{type} provider",
+    "modelAria": "{type} model"
+  },
+  "list": {
+    "listView": "List view",
+    "gridView": "Grid view",
+    "tableView": "Table view",
+    "search": "Search media",
+    "columns": {
+      "title": "Title",
+      "type": "Type",
+      "project": "Project",
+      "size": "Size"
+    },
+    "sections": {
+      "images": "Images",
+      "video": "Video",
+      "audio": "Audio"
+    }
+  },
+  "empty": {
+    "allTitle": "No media yet",
+    "typedTitle": "No {type} items yet",
+    "description": "Generate or upload media to build out your library."
+  },
+  "newButton": {
+    "label": "New media"
+  },
+  "typePicker": {
+    "dialogAria": "Choose media type",
+    "title": "What type of media?",
+    "image": "Generate or upload a still image",
+    "video": "Generate or upload a video clip",
+    "audio": "Generate or upload an audio file"
+  },
+  "detail": {
+    "newTitle": "New {type}",
+    "fallbackTitle": "Media",
+    "propertiesRail": "Properties",
+    "promptRail": "Prompt / Generate",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Untitled",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional description",
+    "projectLabel": "Project",
+    "noProject": "No project",
+    "tagsLabel": "Tags",
+    "tagsPlaceholder": "tag1, tag2",
+    "type": "Type",
+    "size": "Size",
+    "dimensions": "Dimensions",
+    "duration": "Duration",
+    "mime": "MIME",
+    "noValue": "—",
+    "unknownDimension": "?",
+    "dimensionsValue": "{width} × {height}",
+    "createHintLine1": "Fill in the details and add a prompt,",
+    "createHintLine2": "then click Generate — or save a placeholder.",
+    "saving": "Saving…",
+    "savePlaceholder": "Save placeholder",
+    "providerLabel": "Provider",
+    "modelLabel": "Model",
+    "promptLabel": "Prompt",
+    "promptPlaceholder": "Describe what to generate…",
+    "generationUnavailable": "Generation not yet available.",
+    "noGenerationHistory": "No generation history.",
+    "openLightbox": "Open image in lightbox",
+    "generate": "Generate"
+  },
+  "size": {
+    "bytes": "{value} B",
+    "kilobytes": "{value} KB",
+    "megabytes": "{value} MB"
+  },
+  "player": {
+    "play": "Play",
+    "pause": "Pause"
+  }
+}

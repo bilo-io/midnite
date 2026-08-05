@@ -6,7 +6,9 @@ import board from './board.json';
 import common from './common.json';
 import council from './council.json';
 import dashboard from './dashboard.json';
+import digests from './digests.json';
 import guide from './guide.json';
+import media from './media.json';
 import memory from './memory.json';
 import nav from './nav.json';
 import office from './office.json';
@@ -16,6 +18,7 @@ import projects from './projects.json';
 import roadmap from './roadmap.json';
 import safety from './safety.json';
 import search from './search.json';
+import sessions from './sessions.json';
 import settings from './settings.json';
 import slides from './slides.json';
 import task from './task.json';
@@ -28,7 +31,9 @@ export default {
   common,
   council,
   dashboard,
+  digests,
   guide,
+  media,
   memory,
   nav,
   office,
@@ -38,6 +43,7 @@ export default {
   roadmap,
   safety,
   search,
+  sessions,
   settings,
   slides,
   task,

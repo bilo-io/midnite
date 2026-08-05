@@ -1,0 +1,159 @@
+{
+  "page": {
+    "title": "Sessions",
+    "description": "One session per task — its status follows the task (in progress, awaiting input, completed, or idle)."
+  },
+  "status": {
+    "running": "Running",
+    "waiting": "Waiting",
+    "completed": "Completed",
+    "idle": "Idle",
+    "endedPill": "ended"
+  },
+  "filters": {
+    "awaitingInput": "Awaiting input",
+    "allStatuses": "All statuses",
+    "archived": "Archived",
+    "active": "Active"
+  },
+  "list": {
+    "listView": "List view",
+    "gridView": "Grid view",
+    "tableView": "Table view",
+    "search": "Search sessions",
+    "emptyTitle": "No sessions yet",
+    "emptyDescription": "Create a task and its agent session shows up here.",
+    "noMatch": "No sessions match this filter",
+    "sectionEmpty": "Empty",
+    "sectionNothing": "Nothing here",
+    "sessionCount": "{count, plural, one {# session} other {# sessions}}",
+    "projectCount": "{count, plural, one {# project} other {# projects}}",
+    "sectionSummary": "{sessions} · {projects}"
+  },
+  "card": {
+    "openPage": "Open session page"
+  },
+  "bulk": {
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "archiveConfirmTitle": "Archive this session?",
+    "archiveConfirmDescription": "It moves out of the active board. You can unarchive it again later.",
+    "deleteConfirmTitle": "{count, plural, one {Delete # session?} other {Delete # sessions?}}",
+    "deleteConfirmDescription": "This permanently removes the transcript. This cannot be undone."
+  },
+  "detail": {
+    "loading": "Loading…",
+    "allSessions": "All sessions",
+    "viewTask": "View task",
+    "approvalsRail": "Approvals & context",
+    "infoRail": "Session info"
+  },
+  "left": {
+    "agentWaiting": "Agent is waiting on you",
+    "pendingApprovals": "Pending approvals",
+    "nothingPending": "Nothing awaiting a decision.",
+    "allow": "Allow",
+    "allowSession": "Allow session",
+    "deny": "Deny",
+    "decisionHistory": "Decision history",
+    "noDecisions": "No decisions recorded yet.",
+    "task": "Task",
+    "status": "Status",
+    "priority": "Priority",
+    "retries": "Retries",
+    "created": "Created",
+    "viewRetro": "View retrospective",
+    "project": "Project"
+  },
+  "info": {
+    "status": "Status",
+    "provider": "Provider",
+    "agentCli": "Agent CLI",
+    "ranFor": "Ran for",
+    "uptime": "Uptime",
+    "lastActivity": "Last activity",
+    "workingDir": "Working dir",
+    "retries": "Retries",
+    "archived": "Archived",
+    "context": "Context",
+    "estBadge": "est",
+    "estTitle": "Approximate — hash-seeded, not a measured token count",
+    "startedTitle": "Started {when}",
+    "contextValue": "{tokens} / {limit}",
+    "contextValueEstimate": "{tokens} / {limit} (est.)",
+    "tokens": {
+      "millions": "{value}M",
+      "thousands": "{value}k"
+    },
+    "duration": {
+      "seconds": "{value}s",
+      "minutes": "{value}m",
+      "hoursMinutes": "{hours}h {minutes}m",
+      "daysHours": "{days}d {hours}h"
+    }
+  },
+  "cost": {
+    "label": "Cost",
+    "noValue": "—",
+    "unpriced": "unpriced",
+    "unpricedTitle": "Model not in the price table — cost not counted",
+    "measured": " (measured)",
+    "measuredEstimated": " (measured + est.)",
+    "breakdownTitle": "measured {measured} · estimated {estimated}"
+  },
+  "pane": {
+    "transcriptFailed": "Failed to load transcript",
+    "loadingSession": "Loading session…",
+    "noSessionTitle": "No session yet",
+    "noSessionHint": "This task hasn’t started a session. Start it to spawn an agent.",
+    "loadingTranscript": "Loading transcript…"
+  },
+  "terminal": {
+    "label": "Terminal",
+    "ariaLabel": "Session terminal",
+    "starting": "Starting terminal…",
+    "loadingTranscript": "Loading transcript…",
+    "noTranscript": "No transcript available.",
+    "noMessages": "No messages in this session.",
+    "taskEvents": "Task events ({count})",
+    "noText": "(no text)",
+    "connecting": "Connecting…",
+    "disconnected": "Disconnected",
+    "connectionError": "Connection error",
+    "sessionEnded": "Session ended",
+    "readOnly": "Read-only",
+    "approvalNeeded": "Approval needed",
+    "accept": "Accept",
+    "acceptForSession": "Accept for session",
+    "live": "Live",
+    "deny": "Deny",
+    "endedBadge": "ended · read-only",
+    "liveBadge": "live"
+  },
+  "widget": {
+    "title": "Live sessions",
+    "refresh": "Refresh sessions",
+    "loadFailed": "Couldn’t load sessions.",
+    "empty": "No active sessions."
+  },
+  "launch": {
+    "failedToStart": "Failed to start session",
+    "dialogTitle": "{cli} session",
+    "blurb": "A live {cli} terminal. Close anytime — it keeps running until idle.",
+    "terminalAria": "{cli} session terminal",
+    "starting": "Starting {cli}…"
+  },
+  "newButton": {
+    "label": "New session",
+    "codingAgent": "Coding agent"
+  },
+  "reply": {
+    "placeholder": "Reply to the agent…",
+    "noLiveSession": "No live session — this task needs resolve, not reply.",
+    "sendFailed": "Failed to send reply.",
+    "ariaLabel": "Reply to the agent",
+    "sendAria": "Send reply",
+    "send": "Send"
+  }
+}

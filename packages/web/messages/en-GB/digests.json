@@ -1,0 +1,37 @@
+{
+  "feed": {
+    "navAria": "Digests",
+    "emptyTitle": "No digests yet",
+    "emptyDescription": "Digests are produced by the daily-digest workflow. Enable it in Workflows to get a periodic fleet roll-up here.",
+    "notFound": "Digest not found.",
+    "selectPrompt": "Select a digest to view it.",
+    "shipped": "{count} shipped",
+    "failed": "{count} failed",
+    "attention": "{count} attn"
+  },
+  "detail": {
+    "dateRange": "{from} – {to}",
+    "outcomes": "Outcomes",
+    "shipped": "Shipped",
+    "abandoned": "Abandoned",
+    "failed": "Failed",
+    "needsAttention": "Needs attention",
+    "spend": "Spend",
+    "total": "Total",
+    "measured": "Measured",
+    "sessions": "Sessions",
+    "cycleTime": "Cycle time",
+    "tasks": "Tasks",
+    "p50": "p50",
+    "p90": "p90",
+    "bySection": "By repo / project",
+    "highlights": "Highlights",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value}s",
+      "minutes": "{value}m",
+      "hoursMinutes": "{hours}h {minutes}m",
+      "daysHours": "{days}d {hours}h"
+    }
+  }
+}

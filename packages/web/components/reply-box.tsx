@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ export type ReplyBoxProps = {
   /** Compact single-line variant for the board card popover (vs. detail surfaces). */
   compact?: boolean;
   autoFocus?: boolean;
+  /** Overrides the translated `sessions.reply.placeholder` default. */
   placeholder?: string;
   className?: string;
 };
@@ -33,9 +35,10 @@ export function ReplyBox({
   onSent,
   compact = false,
   autoFocus = false,
-  placeholder = 'Reply to the agent…',
+  placeholder,
   className,
 }: ReplyBoxProps) {
+  const t = useTranslations('sessions');
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +59,9 @@ export function ReplyBox({
       setError(
         err instanceof ApiError
           ? err.status === 409
-            ? 'No live session — this task needs resolve, not reply.'
+            ? t('reply.noLiveSession')
             : err.message
-          : 'Failed to send reply.',
+          : t('reply.sendFailed'),
       );
     } finally {
       setPending(false);
@@ -81,18 +84,18 @@ export function ReplyBox({
           onKeyDown={onKeyDown}
           disabled={pending}
           autoFocus={autoFocus}
-          placeholder={placeholder}
-          aria-label="Reply to the agent"
+          placeholder={placeholder ?? t('reply.placeholder')}
+          aria-label={t('reply.ariaLabel')}
           className={cn(compact && 'h-8 text-sm')}
         />
         <Button
           type="submit"
           size={compact ? 'sm' : 'default'}
           disabled={!canSend}
-          aria-label="Send reply"
+          aria-label={t('reply.sendAria')}
         >
           <Send aria-hidden className="h-4 w-4" />
-          {!compact ? <span className="ml-1.5">Send</span> : null}
+          {!compact ? <span className="ml-1.5">{t('reply.send')}</span> : null}
         </Button>
       </div>
       {error ? (

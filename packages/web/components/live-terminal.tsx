@@ -2,6 +2,7 @@
 
 import '@xterm/xterm/css/xterm.css';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Terminal, type ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import type {
@@ -31,11 +32,12 @@ const TERMINAL_THEMES: Record<'light' | 'dark', ITheme> = {
   },
 };
 
-const STATUS_HINT: Record<TerminalConnectionState, string> = {
-  connecting: 'Connecting…',
-  open: 'Live',
-  closed: 'Disconnected',
-  error: 'Connection error',
+/** Connection state → the `sessions.terminal.*` key describing it. */
+const STATUS_HINT_KEY: Record<TerminalConnectionState, string> = {
+  connecting: 'terminal.connecting',
+  open: 'terminal.live',
+  closed: 'terminal.disconnected',
+  error: 'terminal.connectionError',
 };
 
 type Props = {
@@ -71,6 +73,7 @@ export function LiveTerminal({
   ariaLabel,
   loaderUntilOutput = false,
 }: Props) {
+  const t = useTranslations('sessions');
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -236,11 +239,11 @@ export function LiveTerminal({
                     : 'hsl(38 92% 50%)',
             }}
           />
-          {exited ? 'Session ended' : STATUS_HINT[connectionState]}
+          {exited ? t('terminal.sessionEnded') : t(STATUS_HINT_KEY[connectionState])}
         </span>
         {isMobile && (
           <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            Read-only
+            {t('terminal.readOnly')}
           </span>
         )}
       </div>
@@ -248,7 +251,7 @@ export function LiveTerminal({
         <div
           ref={containerRef}
           role="group"
-          aria-label={ariaLabel ?? 'Terminal'}
+          aria-label={ariaLabel ?? t('terminal.label')}
           onClick={readOnlyRef.current ? undefined : () => termRef.current?.focus()}
           className="h-full overflow-hidden rounded-lg border border-border/60 p-2"
           style={{ background: TERMINAL_THEMES[resolved].background }}
@@ -264,10 +267,11 @@ export function LiveTerminal({
   );
 }
 
-const APPROVAL_LABELS: Record<ApprovalDecision, string> = {
-  allow: 'Accept',
-  'allow-session': 'Accept for session',
-  deny: 'Deny',
+/** Decision → the `sessions.terminal.*` key for its button label. */
+const APPROVAL_LABEL_KEY: Record<ApprovalDecision, string> = {
+  allow: 'terminal.accept',
+  'allow-session': 'terminal.acceptForSession',
+  deny: 'terminal.deny',
 };
 
 function ApprovalOverlay({
@@ -277,10 +281,11 @@ function ApprovalOverlay({
   request: TerminalApprovalRequestMessage;
   onAnswer: (requestId: string, decision: ApprovalDecision) => void;
 }) {
+  const t = useTranslations('sessions');
   return (
     <div className="absolute inset-x-3 bottom-3 z-10 rounded-lg border border-border bg-card/95 p-3 shadow-xl backdrop-blur">
       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        Approval needed
+        {t('terminal.approvalNeeded')}
       </p>
       <p className="mt-1 break-words font-mono text-sm">{request.summary}</p>
       {request.cwd ? (
@@ -295,7 +300,7 @@ function ApprovalOverlay({
             variant={opt === 'deny' ? 'destructive' : opt === 'allow' ? 'default' : 'secondary'}
             onClick={() => onAnswer(request.requestId, opt)}
           >
-            {APPROVAL_LABELS[opt]}
+            {t(APPROVAL_LABEL_KEY[opt])}
           </Button>
         ))}
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { History, Radio } from 'lucide-react';
 import type { SessionDetail } from '@midnite/shared';
 import { SessionTerminal } from '@/components/session-terminal';
@@ -15,15 +16,16 @@ import { useApiData } from '@/lib/use-api-data';
  * a read-only transcript scrollback. A badge makes live-vs-ended unambiguous.
  */
 export function SessionTerminalRegion({ session }: { session: SessionDetail }) {
+  const t = useTranslations('sessions');
   const ended = session.status === 'completed' || Boolean(session.archivedAt);
 
   return (
     <div className="flex min-h-[28rem] flex-col overflow-hidden rounded-lg border border-border/60 bg-card/30 lg:h-[calc(100vh-12.75rem)]">
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">Terminal</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('terminal.label')}</span>
         {ended ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            <History className="h-3 w-3" /> ended · read-only
+            <History className="h-3 w-3" /> {t('terminal.endedBadge')}
           </span>
         ) : (
           <span
@@ -33,7 +35,7 @@ export function SessionTerminalRegion({ session }: { session: SessionDetail }) {
               color: 'hsl(var(--status-wip))',
             }}
           >
-            <Radio className="h-3 w-3" /> live
+            <Radio className="h-3 w-3" /> {t('terminal.liveBadge')}
           </span>
         )}
       </div>
@@ -46,6 +48,7 @@ export function SessionTerminalRegion({ session }: { session: SessionDetail }) {
 
 /** Read-only scrollback for an ended session (the ring buffer is gone). */
 function EndedTranscript({ session }: { session: SessionDetail }) {
+  const t = useTranslations('sessions');
   const { data: transcript, loading, error } = useApiData(
     () => getSessionTranscript(session.projectSlug, session.id),
     [session.projectSlug, session.id],
@@ -54,13 +57,13 @@ function EndedTranscript({ session }: { session: SessionDetail }) {
   return (
     <div className="h-full overflow-y-auto">
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading transcript…</p>
+        <p className="text-sm text-muted-foreground">{t('terminal.loadingTranscript')}</p>
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : transcript ? (
         <SessionTranscriptBody transcript={transcript} />
       ) : (
-        <p className="text-sm text-muted-foreground">No transcript available.</p>
+        <p className="text-sm text-muted-foreground">{t('terminal.noTranscript')}</p>
       )}
     </div>
   );
