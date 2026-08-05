@@ -1,0 +1,245 @@
+{
+  "page": {
+    "title": "Ops",
+    "description": "Fleet health — live slot utilization, run throughput, duration distribution, retry/abandon rates, and LLM spend."
+  },
+  "tabsAria": "Ops sections",
+  "tabs": {
+    "metrics": "Metrics",
+    "decisions": "Decisions",
+    "digest": "Digest"
+  },
+  "noData": "No data yet",
+  "windowAria": "Time window",
+  "windowDays": "{days}d",
+  "picker": {
+    "add": "Add ops widget",
+    "search": "Search ops widgets",
+    "added": "Already on this board"
+  },
+  "categories": {
+    "fleet": "Fleet",
+    "runs": "Runs & throughput",
+    "cost": "Cost & spend",
+    "health": "Health & audit"
+  },
+  "catalog": {
+    "gauges": {
+      "label": "Live fleet state",
+      "description": "Slot utilization, queue depth and scheduler tick latency"
+    },
+    "throughput": {
+      "label": "Throughput",
+      "description": "Server-recorded runs completed per day"
+    },
+    "outcomes": {
+      "label": "Run outcomes",
+      "description": "Done / abandoned / failed / cancelled breakdown"
+    },
+    "duration": {
+      "label": "Run duration",
+      "description": "Distribution of run durations across buckets"
+    },
+    "spend": {
+      "label": "LLM spend",
+      "description": "Estimated LLM spend over the last 30 days"
+    },
+    "cost-trend": {
+      "label": "Cost over time",
+      "description": "Agent-session spend trend (measured/estimated/LLM) across the window"
+    },
+    "cost-breakdown": {
+      "label": "Cost by dimension",
+      "description": "Per-repo / project / provider spend breakdown"
+    },
+    "cycle-time": {
+      "label": "Cycle time",
+      "description": "Wait-vs-work percentiles for completed tasks"
+    },
+    "fleet-trend": {
+      "label": "Fleet trends",
+      "description": "Queue depth, slot utilization and tick latency over time"
+    },
+    "run-timeline": {
+      "label": "Run timeline",
+      "description": "Drill into a single task’s agent-run strip by id"
+    },
+    "task-health": {
+      "label": "Task health",
+      "description": "What’s wedged — stuck, aged, waiting and recently failed tasks"
+    },
+    "runtime-health": {
+      "label": "Runtime health",
+      "description": "Gateway preflight checks and uptime"
+    },
+    "decisions": {
+      "label": "Decisions",
+      "description": "Approval audit log — tool, resolution and who decided"
+    }
+  },
+  "cards": {
+    "gauges": {
+      "title": "Live fleet state"
+    },
+    "throughput": {
+      "title": "Throughput (server-recorded)"
+    },
+    "outcomes": {
+      "title": "Run outcomes"
+    },
+    "duration": {
+      "title": "Run duration distribution"
+    },
+    "spend": {
+      "title": "LLM spend (last 30d)"
+    },
+    "cost-trend": {
+      "title": "Cost over time"
+    },
+    "cost-breakdown": {
+      "title": "Cost by dimension"
+    },
+    "cycle-time": {
+      "title": "Cycle time (wait vs. work)"
+    },
+    "fleet-trend": {
+      "title": "Fleet trends"
+    },
+    "run-timeline": {
+      "title": "Run timeline"
+    },
+    "task-health": {
+      "title": "Task health"
+    },
+    "runtime-health": {
+      "title": "Runtime health"
+    },
+    "decisions": {
+      "title": "Decisions"
+    }
+  },
+  "gauges": {
+    "slotUtilization": "Slot utilization",
+    "slotsUsedAria": "{used} of {total} slots used",
+    "running": "Running",
+    "ofSlots": "of {total, plural, one {# slot} other {# slots}}",
+    "queuedTodo": "Queued todo",
+    "queueDepth": "Queue depth",
+    "fromGauges": "from gauges",
+    "lastTick": "Last tick",
+    "tickMs": "{ms}ms",
+    "schedulerLatency": "scheduler latency"
+  },
+  "throughput": {
+    "runsInWindow": "runs in window",
+    "chartAria": "Throughput bar chart",
+    "barTooltip": "{day}: {count}"
+  },
+  "duration": {
+    "barTooltip": "{bucket}: {count}",
+    "buckets": {
+      "lt1s": "<1s",
+      "lt5s": "<5s",
+      "lt30s": "<30s",
+      "lt2m": "<2m",
+      "gte2m": "≥2m"
+    }
+  },
+  "outcomes": {
+    "done": "Done",
+    "abandoned": "Abandoned",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "barAria": "{outcome}: {count}"
+  },
+  "spend": {
+    "total": "total",
+    "chartAria": "LLM spend bar chart",
+    "barTooltip": "{day}: {cost}"
+  },
+  "cost": {
+    "windowAria": "Cost time window",
+    "groupByAria": "Group cost by",
+    "groupBy": {
+      "repo": "By repo",
+      "project": "By project",
+      "provider": "By provider"
+    },
+    "totalInWindow": "<strong>{total}</strong> in window",
+    "trendChartAria": "Cost over time chart",
+    "breakdownChartAria": "Cost by dimension chart",
+    "series": {
+      "llm": "Gateway LLM",
+      "measured": "Session (measured)",
+      "estimated": "Session (estimated)"
+    },
+    "split": {
+      "measured": "Measured",
+      "estimated": "Estimated"
+    },
+    "unpriced": "<strong>{count}</strong> {count, plural, one {unpriced session} other {unpriced sessions}} (cost unknown)"
+  },
+  "cycleTime": {
+    "completedInWindow": "<strong>{count}</strong> {count, plural, one {completed task} other {completed tasks}} in window",
+    "retryOverhead": "Retry overhead: <strong>{duration}</strong> across {count, plural, one {# task} other {# tasks}}"
+  },
+  "fleetTrend": {
+    "truncated": "showing recent samples",
+    "queueDepth": "Queue depth",
+    "slotsUsedTotal": "Slots used / total",
+    "tickLatency": "Tick latency (ms)"
+  },
+  "runTimeline": {
+    "placeholder": "Enter a task id to inspect its agent runs",
+    "taskIdAria": "Task id",
+    "show": "Show",
+    "empty": "Enter a task id above to see its agent run strip.",
+    "error": "Couldn’t load agent runs.",
+    "noRuns": "No agent runs recorded yet.",
+    "chartAria": "Run timeline chart",
+    "running": "Running",
+    "unknownOutcome": "Unknown",
+    "tooltipMeta": "{duration} · started {time}",
+    "runCount": "<strong>{count}</strong> {count, plural, one {run} other {runs}}"
+  },
+  "runtimeHealth": {
+    "ready": "Ready",
+    "notReady": "Not ready",
+    "unreachable": "Gateway unreachable — can’t read health.",
+    "uptime": "Uptime",
+    "spawner": "Spawner",
+    "noPreflight": "Preflight report unavailable.",
+    "status": {
+      "ok": "OK",
+      "warn": "Warn",
+      "fail": "Fail"
+    }
+  },
+  "decisions": {
+    "columns": {
+      "tool": "Tool / summary",
+      "resolution": "Resolution",
+      "decidedBy": "Decided by",
+      "when": "When"
+    },
+    "range": "{from}–{to} of {total}",
+    "prev": "Prev",
+    "next": "Next",
+    "resolution": {
+      "allow": "Allowed",
+      "allow-session": "Allowed (session)",
+      "deny": "Denied",
+      "ask": "Asked",
+      "timeout": "Timed out",
+      "expired": "Expired",
+      "auto-allow": "Auto-allowed",
+      "auto-deny": "Auto-denied"
+    },
+    "decidedBy": {
+      "user": "User",
+      "policy": "Policy",
+      "timeout": "Timeout",
+      "system": "System"
+    }
+  }
+}

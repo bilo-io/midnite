@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchTasksDoctor, getOpsMetrics, getPoolSnapshot, getUsageSummary } from '@/lib/api';
@@ -21,12 +22,9 @@ const OpsGrid = dynamic(() => import('@/components/ops-grid').then((m) => m.OpsG
 const POLL_MS = 10_000;
 const SPEND_REFRESH_MS = 60_000;
 
-const TABS = [
-  { value: 'metrics', label: 'Metrics' },
-  { value: 'decisions', label: 'Decisions' },
-  { value: 'digest', label: 'Digest' },
-] as const;
-type OpsTab = (typeof TABS)[number]['value'];
+/** Tab order; wording comes from `ops.tabs.*`. */
+const TABS = ['metrics', 'decisions', 'digest'] as const;
+type OpsTab = (typeof TABS)[number];
 
 function windowFrom(): string {
   const d = new Date();
@@ -47,6 +45,7 @@ export default function OpsPage() {
 }
 
 function OpsPageInner() {
+  const t = useTranslations('ops');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -87,9 +86,9 @@ function OpsPageInner() {
   return (
     <>
       <PageHeader
-        title="Ops"
+        title={t('page.title')}
         icon="ActivitySquare"
-        description="Fleet health — live slot utilization, run throughput, duration distribution, retry/abandon rates, and LLM spend."
+        description={t('page.description')}
       />
 
       {/* Pin the tab strip + "+" under the collapsed header (top-12) so it stays
@@ -97,8 +96,8 @@ function OpsPageInner() {
           pattern (StickyToolbar / council cockpit). */}
       <div className="sticky top-12 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="container flex items-center justify-between gap-2 py-2">
-          <div role="tablist" aria-label="Ops sections" className="flex w-fit gap-1 rounded-lg border p-1 text-sm">
-            {TABS.map(({ value, label }) => (
+          <div role="tablist" aria-label={t('tabsAria')} className="flex w-fit gap-1 rounded-lg border p-1 text-sm">
+            {TABS.map((value) => (
               <button
                 key={value}
                 type="button"
@@ -110,7 +109,7 @@ function OpsPageInner() {
                   tab === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {label}
+                {t(`tabs.${value}`)}
               </button>
             ))}
           </div>

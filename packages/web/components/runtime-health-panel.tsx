@@ -1,41 +1,55 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { PreflightCheck, PreflightStatus } from '@midnite/shared';
 import { getPreflight, getReadiness } from '@/lib/api';
+import { useOpsCardTitle } from '@/lib/ops-widget-labels';
 import { usePolling } from '@/lib/use-polling';
+import { useUnitFormat } from '@/lib/use-unit-format';
 import { cn } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
 
 const POLL_MS = 10_000;
 
-const STATUS_META: Record<PreflightStatus, { dot: string; label: string }> = {
-  ok: { dot: 'bg-[hsl(var(--success))]', label: 'OK' },
-  warn: { dot: 'bg-amber-500', label: 'Warn' },
-  fail: { dot: 'bg-destructive', label: 'Fail' },
+/** Dot colour per preflight status; the words live in `ops.runtimeHealth.status.*`. */
+const STATUS_DOT: Record<PreflightStatus, string> = {
+  ok: 'bg-[hsl(var(--success))]',
+  warn: 'bg-amber-500',
+  fail: 'bg-destructive',
 };
 
-function fmtUptime(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+/**
+ * Uptime as a two-part coarse figure (`3d 4h`, `12h 30m`, `45m`). Composed from
+ * `useUnitFormat().age` so both halves carry the locale's unit spelling — the pair
+ * shape (two units, largest first) is this panel's own, hence the local helper.
+ */
+function useUptimeLabel(): (ms: number) => string {
+  const { age } = useUnitFormat();
+  return (ms) => {
+    const s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (d > 0) return `${age(d, 'days')} ${age(h, 'hours')}`;
+    if (h > 0) return `${age(h, 'hours')} ${age(m, 'minutes')}`;
+    return age(m, 'minutes');
+  };
 }
 
 function CheckRow({ check }: { check: PreflightCheck }) {
-  const meta = STATUS_META[check.status];
+  const t = useTranslations('ops');
   return (
     <li className="flex items-start gap-3 py-2">
       <span
         aria-hidden
-        className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', meta.dot)}
+        className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', STATUS_DOT[check.status])}
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="font-mono text-sm text-foreground">{check.name}</span>
-          <span className="text-xs text-muted-foreground">{meta.label}</span>
+          <span className="text-xs text-muted-foreground">
+            {t(`runtimeHealth.status.${check.status}`)}
+          </span>
         </div>
         <p className="text-xs text-muted-foreground">{check.detail}</p>
         {check.status !== 'ok' && check.remedy ? (
@@ -54,6 +68,10 @@ function CheckRow({ check }: { check: PreflightCheck }) {
  * Theme E.
  */
 export function RuntimeHealthPanel() {
+  const t = useTranslations('ops');
+  const tCommon = useTranslations('common');
+  const cardTitle = useOpsCardTitle();
+  const uptime = useUptimeLabel();
   const { data: readiness, error: readyErr, loading: readyLoading } = usePolling(
     () => getReadiness(),
     POLL_MS,
@@ -70,7 +88,7 @@ export function RuntimeHealthPanel() {
   return (
     <div className="rounded-xl border surface-glass p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground">Runtime health</h2>
+        <h2 className="text-sm font-semibold text-foreground">{cardTitle('runtime-health')}</h2>
         {readiness ? (
           <span
             className={cn(
@@ -80,7 +98,7 @@ export function RuntimeHealthPanel() {
                 : 'bg-destructive/15 text-destructive',
             )}
           >
-            {readiness.ready ? 'Ready' : 'Not ready'}
+            {readiness.ready ? t('runtimeHealth.ready') : t('runtimeHealth.notReady')}
           </span>
         ) : null}
       </div>
@@ -91,21 +109,23 @@ export function RuntimeHealthPanel() {
         </div>
       ) : unreachable ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Gateway unreachable — can&apos;t read health.
+          {t('runtimeHealth.unreachable')}
         </p>
       ) : (
         <>
           <div className="mb-4 flex flex-wrap gap-x-8 gap-y-2">
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs text-muted-foreground">Uptime</span>
+              <span className="text-xs text-muted-foreground">{t('runtimeHealth.uptime')}</span>
               <span className="text-sm font-medium tabular-nums">
-                {readiness ? fmtUptime(readiness.uptimeMs) : '—'}
+                {readiness ? uptime(readiness.uptimeMs) : tCommon('units.emDash')}
               </span>
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs text-muted-foreground">Spawner</span>
+              <span className="text-xs text-muted-foreground">{t('runtimeHealth.spawner')}</span>
               <span className="text-sm font-medium">
-                {spawner?.status === 'ok' ? spawner.detail : (spawner?.detail ?? '—')}
+                {/* `detail` is gateway-composed prose — English until the health
+                    endpoint takes a locale. Documented gap. */}
+                {spawner?.detail ?? tCommon('units.emDash')}
               </span>
             </div>
           </div>
@@ -118,7 +138,7 @@ export function RuntimeHealthPanel() {
             </ul>
           ) : (
             <p className="py-4 text-center text-xs text-muted-foreground">
-              Preflight report unavailable.
+              {t('runtimeHealth.noPreflight')}
             </p>
           )}
         </>

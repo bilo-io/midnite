@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
@@ -14,7 +15,6 @@ import {
   DEFAULT_OPS_WIDGETS,
   migrateOpsWidgets,
   OPS_LAYOUT_STORAGE_KEY,
-  OPS_WIDGETS,
   OPS_WIDGETS_STORAGE_KEY,
   opsSizeForKey,
   opsWidgetsNeedMigration,
@@ -22,6 +22,7 @@ import {
   type OpsWidgetInstance,
   type OpsWidgetType,
 } from '@/lib/ops-widgets';
+import { useOpsWidgetLabels } from '@/lib/ops-widget-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   DecisionsSection,
@@ -149,6 +150,8 @@ interface OpsGridProps {
 }
 
 export function OpsGrid({ pool, summary, usage, doctor, loading }: OpsGridProps) {
+  const tCommon = useTranslations('common');
+  const widgetLabels = useOpsWidgetLabels();
   const { width, mounted, containerRef } = useContainerWidth({ measureBeforeMount: true });
 
   const [widgets, setWidgets] = useLocalStorage<OpsWidgetInstance[]>(
@@ -264,7 +267,7 @@ export function OpsGrid({ pool, summary, usage, doctor, loading }: OpsGridProps)
               <button
                 type="button"
                 onClick={() => removeWidget(key as OpsWidgetType)}
-                aria-label={`Remove ${OPS_WIDGETS[key as OpsWidgetType]?.label ?? 'widget'}`}
+                aria-label={tCommon('removeNamed', { name: widgetLabels.label(key as OpsWidgetType) })}
                 className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md bg-background/70 text-muted-foreground opacity-0 backdrop-blur transition-opacity hover:bg-accent hover:text-destructive group-hover/panel:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <X className="h-3.5 w-3.5" />

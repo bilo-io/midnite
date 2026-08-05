@@ -23,6 +23,7 @@
   "switchToLightTheme": "Passer au thème clair",
   "switchToDarkTheme": "Passer au thème sombre",
   "errorTitle": "Une erreur est survenue",
+  "gatewayUnreachable": "Passerelle injoignable : {error}",
   "emptyTitle": "Rien ici pour l’instant",
   "saving": "Enregistrement…",
   "saved": "Enregistré",
@@ -152,6 +153,7 @@
       "pb": "{value} Po"
     },
     "duration": {
+      "milliseconds": "{value} ms",
       "seconds": "{value} s",
       "minutes": "{value} min",
       "hours": "{value} h",

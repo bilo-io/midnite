@@ -1,0 +1,245 @@
+{
+  "page": {
+    "title": "Exploitation",
+    "description": "Santé de la flotte — utilisation des emplacements en direct, débit des exécutions, distribution des durées, taux de relance/abandon et dépenses LLM."
+  },
+  "tabsAria": "Sections d’exploitation",
+  "tabs": {
+    "metrics": "Métriques",
+    "decisions": "Décisions",
+    "digest": "Résumé"
+  },
+  "noData": "Aucune donnée pour l’instant",
+  "windowAria": "Période",
+  "windowDays": "{days} j",
+  "picker": {
+    "add": "Ajouter un widget d’exploitation",
+    "search": "Rechercher des widgets d’exploitation",
+    "added": "Déjà sur ce tableau"
+  },
+  "categories": {
+    "fleet": "Flotte",
+    "runs": "Exécutions et débit",
+    "cost": "Coûts et dépenses",
+    "health": "Santé et audit"
+  },
+  "catalog": {
+    "gauges": {
+      "label": "État de la flotte en direct",
+      "description": "Utilisation des emplacements, profondeur de file et latence du tick"
+    },
+    "throughput": {
+      "label": "Débit",
+      "description": "Exécutions terminées par jour, enregistrées côté serveur"
+    },
+    "outcomes": {
+      "label": "Résultats des exécutions",
+      "description": "Répartition terminées / abandonnées / en échec / annulées"
+    },
+    "duration": {
+      "label": "Durée des exécutions",
+      "description": "Distribution des durées d’exécution par tranche"
+    },
+    "spend": {
+      "label": "Dépenses LLM",
+      "description": "Dépenses LLM estimées sur les 30 derniers jours"
+    },
+    "cost-trend": {
+      "label": "Coût dans le temps",
+      "description": "Tendance des dépenses de session (mesurées/estimées/LLM) sur la période"
+    },
+    "cost-breakdown": {
+      "label": "Coût par dimension",
+      "description": "Répartition des dépenses par dépôt / projet / fournisseur"
+    },
+    "cycle-time": {
+      "label": "Temps de cycle",
+      "description": "Percentiles attente/travail des tâches terminées"
+    },
+    "fleet-trend": {
+      "label": "Tendances de la flotte",
+      "description": "Profondeur de file, utilisation des emplacements et latence dans le temps"
+    },
+    "run-timeline": {
+      "label": "Chronologie des exécutions",
+      "description": "Explorer la bande d’exécutions d’une tâche par identifiant"
+    },
+    "task-health": {
+      "label": "Santé des tâches",
+      "description": "Ce qui bloque — tâches coincées, anciennes, en attente ou récemment en échec"
+    },
+    "runtime-health": {
+      "label": "Santé du runtime",
+      "description": "Contrôles de préflight de la passerelle et disponibilité"
+    },
+    "decisions": {
+      "label": "Décisions",
+      "description": "Journal d’audit des approbations — outil, résolution et décideur"
+    }
+  },
+  "cards": {
+    "gauges": {
+      "title": "État de la flotte en direct"
+    },
+    "throughput": {
+      "title": "Débit (enregistré côté serveur)"
+    },
+    "outcomes": {
+      "title": "Résultats des exécutions"
+    },
+    "duration": {
+      "title": "Distribution des durées d’exécution"
+    },
+    "spend": {
+      "title": "Dépenses LLM (30 derniers jours)"
+    },
+    "cost-trend": {
+      "title": "Coût dans le temps"
+    },
+    "cost-breakdown": {
+      "title": "Coût par dimension"
+    },
+    "cycle-time": {
+      "title": "Temps de cycle (attente vs travail)"
+    },
+    "fleet-trend": {
+      "title": "Tendances de la flotte"
+    },
+    "run-timeline": {
+      "title": "Chronologie des exécutions"
+    },
+    "task-health": {
+      "title": "Santé des tâches"
+    },
+    "runtime-health": {
+      "title": "Santé du runtime"
+    },
+    "decisions": {
+      "title": "Décisions"
+    }
+  },
+  "gauges": {
+    "slotUtilization": "Utilisation des emplacements",
+    "slotsUsedAria": "{used} emplacements utilisés sur {total}",
+    "running": "En cours",
+    "ofSlots": "sur {total, plural, one {# emplacement} other {# emplacements}}",
+    "queuedTodo": "À faire en file",
+    "queueDepth": "Profondeur de file",
+    "fromGauges": "d’après les jauges",
+    "lastTick": "Dernier tick",
+    "tickMs": "{ms} ms",
+    "schedulerLatency": "latence de l’ordonnanceur"
+  },
+  "throughput": {
+    "runsInWindow": "exécutions sur la période",
+    "chartAria": "Graphique à barres du débit",
+    "barTooltip": "{day} : {count}"
+  },
+  "duration": {
+    "barTooltip": "{bucket} : {count}",
+    "buckets": {
+      "lt1s": "<1 s",
+      "lt5s": "<5 s",
+      "lt30s": "<30 s",
+      "lt2m": "<2 min",
+      "gte2m": "≥2 min"
+    }
+  },
+  "outcomes": {
+    "done": "Terminées",
+    "abandoned": "Abandonnées",
+    "failed": "En échec",
+    "cancelled": "Annulées",
+    "barAria": "{outcome} : {count}"
+  },
+  "spend": {
+    "total": "total",
+    "chartAria": "Graphique à barres des dépenses LLM",
+    "barTooltip": "{day} : {cost}"
+  },
+  "cost": {
+    "windowAria": "Période de coût",
+    "groupByAria": "Grouper le coût par",
+    "groupBy": {
+      "repo": "Par dépôt",
+      "project": "Par projet",
+      "provider": "Par fournisseur"
+    },
+    "totalInWindow": "<strong>{total}</strong> sur la période",
+    "trendChartAria": "Graphique du coût dans le temps",
+    "breakdownChartAria": "Graphique du coût par dimension",
+    "series": {
+      "llm": "LLM passerelle",
+      "measured": "Session (mesuré)",
+      "estimated": "Session (estimé)"
+    },
+    "split": {
+      "measured": "Mesuré",
+      "estimated": "Estimé"
+    },
+    "unpriced": "<strong>{count}</strong> {count, plural, one {session sans tarif} other {sessions sans tarif}} (coût inconnu)"
+  },
+  "cycleTime": {
+    "completedInWindow": "<strong>{count}</strong> {count, plural, one {tâche terminée} other {tâches terminées}} sur la période",
+    "retryOverhead": "Surcoût des relances : <strong>{duration}</strong> sur {count, plural, one {# tâche} other {# tâches}}"
+  },
+  "fleetTrend": {
+    "truncated": "échantillons récents seulement",
+    "queueDepth": "Profondeur de file",
+    "slotsUsedTotal": "Emplacements utilisés / total",
+    "tickLatency": "Latence du tick (ms)"
+  },
+  "runTimeline": {
+    "placeholder": "Saisissez un identifiant de tâche pour inspecter ses exécutions",
+    "taskIdAria": "Identifiant de tâche",
+    "show": "Afficher",
+    "empty": "Saisissez un identifiant de tâche ci-dessus pour voir sa bande d’exécutions.",
+    "error": "Impossible de charger les exécutions.",
+    "noRuns": "Aucune exécution enregistrée pour l’instant.",
+    "chartAria": "Graphique de la chronologie des exécutions",
+    "running": "En cours",
+    "unknownOutcome": "Inconnu",
+    "tooltipMeta": "{duration} · démarré à {time}",
+    "runCount": "<strong>{count}</strong> {count, plural, one {exécution} other {exécutions}}"
+  },
+  "runtimeHealth": {
+    "ready": "Prêt",
+    "notReady": "Pas prêt",
+    "unreachable": "Passerelle injoignable — impossible de lire l’état.",
+    "uptime": "Disponibilité",
+    "spawner": "Lanceur",
+    "noPreflight": "Rapport de préflight indisponible.",
+    "status": {
+      "ok": "OK",
+      "warn": "Alerte",
+      "fail": "Échec"
+    }
+  },
+  "decisions": {
+    "columns": {
+      "tool": "Outil / résumé",
+      "resolution": "Résolution",
+      "decidedBy": "Décidé par",
+      "when": "Quand"
+    },
+    "range": "{from}–{to} sur {total}",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "resolution": {
+      "allow": "Autorisé",
+      "allow-session": "Autorisé (session)",
+      "deny": "Refusé",
+      "ask": "Demandé",
+      "timeout": "Expiré (délai)",
+      "expired": "Expiré",
+      "auto-allow": "Auto-autorisé",
+      "auto-deny": "Auto-refusé"
+    },
+    "decidedBy": {
+      "user": "Utilisateur",
+      "policy": "Politique",
+      "timeout": "Délai",
+      "system": "Système"
+    }
+  }
+}

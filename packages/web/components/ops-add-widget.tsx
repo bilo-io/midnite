@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useOpsWidgetLabels } from '@/lib/ops-widget-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   DEFAULT_OPS_WIDGETS,
@@ -22,16 +24,28 @@ import { WidgetPickerMenu } from '@/components/widget-picker-menu';
  * picker so the two boards' options stay mutually exclusive.
  */
 export function OpsAddWidget() {
+  const t = useTranslations('ops');
+  const widgetLabels = useOpsWidgetLabels();
   const [widgets, setWidgets] = useLocalStorage<OpsWidgetInstance[]>(
     OPS_WIDGETS_STORAGE_KEY,
     DEFAULT_OPS_WIDGETS,
   );
   const [query, setQuery] = useState('');
 
-  const groups = useMemo(
-    () => groupOpsWidgetCatalog(opsWidgetCatalog(widgets), query),
-    [widgets, query],
-  );
+  // Localise the registry's labels/descriptions BEFORE filtering, so search matches what
+  // the user actually reads; category headers localise after — the same ordering the
+  // dashboard picker uses.
+  const groups = useMemo(() => {
+    const entries = opsWidgetCatalog(widgets).map((entry) => ({
+      ...entry,
+      label: widgetLabels.label(entry.type),
+      description: widgetLabels.description(entry.type),
+    }));
+    return groupOpsWidgetCatalog(entries, query).map((group) => ({
+      ...group,
+      label: widgetLabels.category(group.category),
+    }));
+  }, [widgets, query, widgetLabels]);
 
   const add = (type: OpsWidgetType) =>
     setWidgets((prev) => (prev.some((w) => w.type === type) ? prev : [...prev, { type }]));
@@ -42,9 +56,9 @@ export function OpsAddWidget() {
       query={query}
       onQueryChange={setQuery}
       onAdd={add}
-      triggerLabel="Add ops widget"
-      searchLabel="Search ops widgets"
-      addedTitle="Already on this board"
+      triggerLabel={t('picker.add')}
+      searchLabel={t('picker.search')}
+      addedTitle={t('picker.added')}
     />
   );
 }

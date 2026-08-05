@@ -12,6 +12,7 @@ import media from './media.json';
 import memory from './memory.json';
 import nav from './nav.json';
 import office from './office.json';
+import ops from './ops.json';
 import plan from './plan.json';
 import prReview from './prReview.json';
 import projects from './projects.json';
@@ -37,6 +38,7 @@ export default {
   memory,
   nav,
   office,
+  ops,
   plan,
   prReview,
   projects,

@@ -23,6 +23,7 @@
   "switchToLightTheme": "Switch to light theme",
   "switchToDarkTheme": "Switch to dark theme",
   "errorTitle": "Something went wrong",
+  "gatewayUnreachable": "Could not reach the gateway: {error}",
   "emptyTitle": "Nothing here yet",
   "saving": "Saving…",
   "saved": "Saved",
@@ -152,6 +153,7 @@
       "pb": "{value} PB"
     },
     "duration": {
+      "milliseconds": "{value}ms",
       "seconds": "{value}s",
       "minutes": "{value}m",
       "hours": "{value}h",

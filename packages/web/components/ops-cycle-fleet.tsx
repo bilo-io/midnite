@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Area,
   AreaChart,
@@ -16,7 +17,9 @@ import {
 } from 'recharts';
 import type { CycleTimeGroupBy, CycleTimeResponse, GaugeHistoryResponse } from '@midnite/shared';
 import { getCycleTime, getGaugeHistory } from '@/lib/api';
+import { useOpsCardTitle } from '@/lib/ops-widget-labels';
 import { usePolling } from '@/lib/use-polling';
+import { useUnitFormat } from '@/lib/use-unit-format';
 import { SectionCard, WindowToggle } from './ops-view';
 
 // ── Window control ─────────────────────────────────────────────────────────────
@@ -33,18 +36,7 @@ function windowFrom(days: number): string {
 }
 
 /** Human-readable duration from milliseconds (e.g. `2.5h`, `3m`, `12s`, `—`). */
-export function formatDuration(ms: number | null): string {
-  if (ms === null) return '—';
-  if (ms < 1_000) return `${Math.round(ms)}ms`;
-  const s = ms / 1_000;
-  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)}s`;
-  const m = s / 60;
-  if (m < 60) return `${m < 10 ? m.toFixed(1) : Math.round(m)}m`;
-  const h = m / 60;
-  if (h < 24) return `${h < 10 ? h.toFixed(1) : Math.round(h)}h`;
-  return `${(h / 24).toFixed(1)}d`;
-}
-
+export 
 const TOOLTIP_STYLE = {
   background: 'var(--card)',
   border: '1px solid var(--border)',
@@ -53,23 +45,24 @@ const TOOLTIP_STYLE = {
   padding: '4px 8px',
 } as const;
 
-const GROUP_BY_LABEL: Record<CycleTimeGroupBy, string> = {
-  none: 'Fleet',
-  repo: 'By repo',
-  project: 'By project',
-  priority: 'By priority',
-};
+/** Group-by options in select order; wording is shared with the dashboard's cycle-time
+ *  widget via `dashboard.cycleTime.groupBy.*` — one vocabulary for one concept. */
+const GROUP_BY_OPTIONS: readonly CycleTimeGroupBy[] = ['none', 'repo', 'project', 'priority'];
+
 
 // ── Cycle-time section ──────────────────────────────────────────────────────────
 
+/** Segment wording, passed in so this stays pure. Shared with the dashboard widget. */
+type SegmentLabels = { wait: string; work: string; endToEnd: string };
+
 /** Bars for `groupBy=none`: one row per lifecycle segment, p50 + p90. */
-function fleetSegments(data: CycleTimeResponse) {
+function fleetSegments(data: CycleTimeResponse, segments: SegmentLabels) {
   const g = data.groups[0];
   if (!g) return [];
   return [
-    { label: 'Wait', p50: g.wait.p50Ms, p90: g.wait.p90Ms },
-    { label: 'Work', p50: g.work.p50Ms, p90: g.work.p90Ms },
-    { label: 'End-to-end', p50: g.endToEnd.p50Ms, p90: g.endToEnd.p90Ms },
+    { label: segments.wait, p50: g.wait.p50Ms, p90: g.wait.p90Ms },
+    { label: segments.work, p50: g.work.p50Ms, p90: g.work.p90Ms },
+    { label: segments.endToEnd, p50: g.endToEnd.p50Ms, p90: g.endToEnd.p90Ms },
   ];
 }
 
@@ -95,10 +88,20 @@ export function CycleTimeSection({
   onGroupByChange: (g: CycleTimeGroupBy) => void;
   windowControl?: React.ReactNode;
 }) {
+  const t = useTranslations('ops');
+  const tDash = useTranslations('dashboard');
+  const cardTitle = useOpsCardTitle();
+  const { preciseDuration } = useUnitFormat();
   const rows = useMemo(() => {
     if (!data) return [];
-    return groupBy === 'none' ? fleetSegments(data) : groupedRows(data);
-  }, [data, groupBy]);
+    return groupBy === 'none'
+      ? fleetSegments(data, {
+          wait: tDash('cycleTime.segments.wait'),
+          work: tDash('cycleTime.segments.work'),
+          endToEnd: tDash('cycleTime.segments.endToEnd'),
+        })
+      : groupedRows(data);
+  }, [data, groupBy, tDash]);
 
   const totalTasks = data?.groups.reduce((s, g) => s + g.taskCount, 0) ?? 0;
   const retryMs = data?.groups.reduce((s, g) => s + g.retryOverheadMsTotal, 0) ?? 0;
@@ -108,16 +111,16 @@ export function CycleTimeSection({
   const selector = (
     <div className="flex items-center gap-2">
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span className="sr-only">Group cycle-time by</span>
+        <span className="sr-only">{tDash('cycleTime.groupByAria')}</span>
         <select
-          aria-label="Group cycle-time by"
+          aria-label={tDash('cycleTime.groupByAria')}
           value={groupBy}
           onChange={(e) => onGroupByChange(e.target.value as CycleTimeGroupBy)}
           className="rounded-md border bg-background px-2 py-1 text-xs text-foreground"
         >
-          {(Object.keys(GROUP_BY_LABEL) as CycleTimeGroupBy[]).map((k) => (
+          {GROUP_BY_OPTIONS.map((k) => (
             <option key={k} value={k}>
-              {GROUP_BY_LABEL[k]}
+              {tDash(`cycleTime.groupBy.${k}`)}
             </option>
           ))}
         </select>
@@ -128,12 +131,12 @@ export function CycleTimeSection({
 
   return (
     <SectionCard
-      title="Cycle time (wait vs. work)"
+      title={cardTitle('cycle-time')}
       action={selector}
       loading={loading && !data}
       empty={empty}
     >
-      <div className="h-56 w-full min-w-0" aria-label="Cycle-time chart">
+      <div className="h-56 w-full min-w-0" aria-label={tDash('cycleTime.chartAria')}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -146,28 +149,32 @@ export function CycleTimeSection({
               tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               tickLine={false}
               width={44}
-              tickFormatter={(v: number) => formatDuration(v)}
+              tickFormatter={(v: number) => preciseDuration(v)}
             />
             <Tooltip
               isAnimationActive={false}
               contentStyle={TOOLTIP_STYLE}
-              formatter={(v: number | string, name: string) => [formatDuration(Number(v)), name]}
+              formatter={(v: number | string, name: string) => [preciseDuration(Number(v)), name]}
             />
-            <Bar dataKey="p50" name="p50" fill="hsl(217 91% 60%)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-            <Bar dataKey="p90" name="p90" fill="hsl(45 93% 58%)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+            <Bar dataKey="p50" name={tDash('cycleTime.series.p50')} fill="hsl(217 91% 60%)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+            <Bar dataKey="p90" name={tDash('cycleTime.series.p90')} fill="hsl(45 93% 58%)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>
-          <span className="font-medium text-foreground">{totalTasks}</span> completed task
-          {totalTasks === 1 ? '' : 's'} in window
+          {t.rich('cycleTime.completedInWindow', {
+            count: totalTasks,
+            strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+          })}
         </span>
         {retryTasks > 0 && (
           <span>
-            Retry overhead:{' '}
-            <span className="font-medium text-foreground">{formatDuration(retryMs)}</span> across{' '}
-            {retryTasks} task{retryTasks === 1 ? '' : 's'}
+            {t.rich('cycleTime.retryOverhead', {
+              duration: preciseDuration(retryMs),
+              count: retryTasks,
+              strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+            })}
           </span>
         )}
       </div>
@@ -213,6 +220,8 @@ export function FleetTrendSection({
   loading: boolean;
   windowControl?: React.ReactNode;
 }) {
+  const t = useTranslations('ops');
+  const cardTitle = useOpsCardTitle();
   const samples = data?.samples ?? [];
   const empty = !loading && samples.length === 0;
 
@@ -231,11 +240,11 @@ export function FleetTrendSection({
 
   return (
     <SectionCard
-      title="Fleet trends"
+      title={cardTitle('fleet-trend')}
       action={
         <div className="flex items-center gap-2">
           {data?.truncated && (
-            <span className="text-[10px] text-muted-foreground">showing recent samples</span>
+            <span className="text-[10px] text-muted-foreground">{t('fleetTrend.truncated')}</span>
           )}
           {windowControl}
         </div>
@@ -244,7 +253,7 @@ export function FleetTrendSection({
       empty={empty}
     >
       <div className="grid gap-5 sm:grid-cols-3">
-        <MiniChart title="Queue depth">
+        <MiniChart title={t('fleetTrend.queueDepth')}>
           <AreaChart data={samples} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="fleet-queue" x1="0" y1="0" x2="0" y2="1">
@@ -269,7 +278,7 @@ export function FleetTrendSection({
           </AreaChart>
         </MiniChart>
 
-        <MiniChart title="Slots used / total">
+        <MiniChart title={t('fleetTrend.slotsUsedTotal')}>
           <LineChart data={samples} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
             <XAxis {...commonX} />
             <YAxis {...commonY} allowDecimals={false} />
@@ -298,7 +307,7 @@ export function FleetTrendSection({
           </LineChart>
         </MiniChart>
 
-        <MiniChart title="Tick latency (ms)">
+        <MiniChart title={t('fleetTrend.tickLatency')}>
           <LineChart data={samples} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
             <XAxis {...commonX} />
             <YAxis {...commonY} />
@@ -329,6 +338,7 @@ const GAUGE_POLL_MS = 10_000;
 export function CycleTimePanel() {
   const [windowDays, setWindowDays] = useState<WindowDays>(30);
   const [groupBy, setGroupBy] = useState<CycleTimeGroupBy>('none');
+  const t = useTranslations('ops');
 
   const { data: cycle, loading } = usePolling<CycleTimeResponse>(
     () => getCycleTime({ groupBy, windowDays }),
@@ -342,13 +352,16 @@ export function CycleTimePanel() {
       loading={loading}
       groupBy={groupBy}
       onGroupByChange={setGroupBy}
-      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} />}
+      windowControl={
+        <WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label={t('windowAria')} />
+      }
     />
   );
 }
 
 /** Fleet trends as its own board cell: owns its window + gauge-history poll. */
 export function FleetTrendPanel() {
+  const t = useTranslations('ops');
   const [windowDays, setWindowDays] = useState<WindowDays>(30);
 
   const { data: gauges, loading } = usePolling<GaugeHistoryResponse>(
@@ -361,7 +374,9 @@ export function FleetTrendPanel() {
     <FleetTrendSection
       data={gauges}
       loading={loading}
-      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} />}
+      windowControl={
+        <WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label={t('windowAria')} />
+      }
     />
   );
 }

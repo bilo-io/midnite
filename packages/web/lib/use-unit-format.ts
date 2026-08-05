@@ -33,11 +33,24 @@ export type UnitFormat = {
    */
   duration: (ms: number | null) => string;
   /**
-   * A whole-number age in the same s/m/h/d vocabulary — for callers that already
-   * floor to an integer step (the news feed's `3h`) and would look wrong with a
-   * decimal. Shares the `units.duration.*` messages so one locale edit moves both.
+   * As {@link UnitFormat.duration}, but with a **sub-second step**: below 1s it reads
+   * `250ms` rather than `0.3s`. Two charts need that resolution — the ops cycle-time bars
+   * and the run timeline — while the dashboard's cycle-time widget shipped without it, so
+   * it's a separate member rather than a change to `duration()`.
    */
-  age: (value: number, step: 'seconds' | 'minutes' | 'hours' | 'days') => string;
+  preciseDuration: (ms: number | null) => string;
+  /**
+   * A whole-number age in the same ms/s/m/h/d vocabulary — for callers that already
+   * floor to an integer step (the news feed's `3h`, the ops uptime pair's `3d 4h`) and
+   * would look wrong with a decimal. Shares the `units.duration.*` messages so one locale
+   * edit moves both.
+   *
+   * `milliseconds` exists only here, not in {@link UnitFormat.duration}: the run timeline
+   * shows sub-second bars, but adding an `ms` step to `duration()` would silently reformat
+   * the shipped cycle-time widget's sub-second values from `0.5s` to `500ms`. A caller
+   * that wants the finer step asks for it.
+   */
+  age: (value: number, step: 'milliseconds' | 'seconds' | 'minutes' | 'hours' | 'days') => string;
 };
 
 /** Ordered smallest-first; the index into this array is the `1024**i` step. */
@@ -55,6 +68,17 @@ export function useUnitFormat(): UnitFormat {
       value: number(value, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }),
     });
 
+  /** The s → m → h → d ladder, shared by `duration` and `preciseDuration`. */
+  const durationFrom = (ms: number): string => {
+    const s = ms / 1_000;
+    if (s < 60) return s < 10 ? unit(s, 1, 'units.duration.seconds') : unit(Math.round(s), 0, 'units.duration.seconds');
+    const m = s / 60;
+    if (m < 60) return m < 10 ? unit(m, 1, 'units.duration.minutes') : unit(Math.round(m), 0, 'units.duration.minutes');
+    const h = m / 60;
+    if (h < 24) return h < 10 ? unit(h, 1, 'units.duration.hours') : unit(Math.round(h), 0, 'units.duration.hours');
+    return unit(h / 24, 1, 'units.duration.days');
+  };
+
   return {
     bytes: (bytes) => {
       if (!Number.isFinite(bytes) || bytes <= 0) return unit(0, 0, 'units.bytes.b');
@@ -64,16 +88,12 @@ export function useUnitFormat(): UnitFormat {
       const decimals = i === 0 || value >= 100 ? 0 : 1;
       return unit(decimals === 0 ? Math.round(value) : value, decimals, `units.bytes.${BYTE_UNITS[i]}`);
     },
-    duration: (ms) => {
-      if (ms === null) return t('units.emDash');
-      const s = ms / 1_000;
-      if (s < 60) return s < 10 ? unit(s, 1, 'units.duration.seconds') : unit(Math.round(s), 0, 'units.duration.seconds');
-      const m = s / 60;
-      if (m < 60) return m < 10 ? unit(m, 1, 'units.duration.minutes') : unit(Math.round(m), 0, 'units.duration.minutes');
-      const h = m / 60;
-      if (h < 24) return h < 10 ? unit(h, 1, 'units.duration.hours') : unit(Math.round(h), 0, 'units.duration.hours');
-      return unit(h / 24, 1, 'units.duration.days');
-    },
+    duration: (ms) => (ms === null ? t('units.emDash') : durationFrom(ms)),
     age: (value, step) => unit(value, 0, `units.duration.${step}`),
+    preciseDuration: (ms) => {
+      if (ms === null) return t('units.emDash');
+      if (ms < 1_000) return unit(Math.round(ms), 0, 'units.duration.milliseconds');
+      return durationFrom(ms);
+    },
   };
 }
