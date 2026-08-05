@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, EyeOff, Eye, Mic, MicOff, Trash2 } from 'lucide-react';
 import type { Note } from '@midnite/shared';
 import { createNote, deleteNote, updateNote } from '@/lib/api';
@@ -10,6 +11,8 @@ import { cn } from '@/lib/utils';
 const SETTLE_MS = 1150;
 
 export function NotesPanel({ notes: initial }: { notes: Note[] }) {
+  const t = useTranslations('plan');
+  const tc = useTranslations('common');
   const [notes, setNotes] = useState<Note[]>(initial);
   const [showCompleted, setShowCompleted] = useState(false);
   const [draft, setDraft] = useState('');
@@ -72,10 +75,10 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">Action items</span>
+          <span className="text-sm font-semibold">{t('notes.heading')}</span>
           {completedCount > 0 && (
             <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              {completedCount} done
+              {t('notes.doneCount', { count: completedCount })}
             </span>
           )}
         </div>
@@ -83,10 +86,10 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
           type="button"
           onClick={() => setShowCompleted((v) => !v)}
           className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          aria-label={showCompleted ? 'Hide completed' : 'Show completed'}
+          aria-label={t(showCompleted ? 'notes.hideCompletedAria' : 'notes.showCompletedAria')}
         >
           {showCompleted ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-          {showCompleted ? 'Hide done' : 'Show done'}
+          {t(showCompleted ? 'notes.hideDone' : 'notes.showDone')}
         </button>
       </div>
 
@@ -98,7 +101,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
             <button
               type="button"
               onClick={() => toggle(note)}
-              aria-label={note.completed ? 'Mark incomplete' : 'Mark complete'}
+              aria-label={t(note.completed ? 'notes.markIncomplete' : 'notes.markComplete')}
               className={cn(
                 'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors',
                 note.completed
@@ -145,7 +148,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
             <button
               type="button"
               onClick={() => remove(note.id)}
-              aria-label="Delete note"
+              aria-label={t('notes.deleteNote')}
               className="ml-auto flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -155,7 +158,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
 
         {visible.length === 0 && (
           <li className="px-5 py-6 text-center text-sm text-muted-foreground">
-            {notes.length === 0 ? 'No notes yet — add one below.' : 'No active notes.'}
+            {t(notes.length === 0 ? 'notes.emptyAll' : 'notes.emptyActive')}
           </li>
         )}
       </ul>
@@ -167,7 +170,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
           value={speech.listening ? speech.interim || draft : draft}
           onChange={(e) => !speech.listening && setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
-          placeholder={speech.listening ? 'Listening…' : 'Add a note…'}
+          placeholder={t(speech.listening ? 'notes.listening' : 'notes.addPlaceholder')}
           readOnly={speech.listening}
           className={cn(
             'min-w-0 flex-1 bg-transparent text-sm outline-none',
@@ -180,7 +183,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
           <button
             type="button"
             onClick={() => (speech.listening ? speech.stop() : speech.start())}
-            aria-label={speech.listening ? 'Stop dictation' : 'Dictate note'}
+            aria-label={t(speech.listening ? 'notes.stopDictation' : 'notes.dictate')}
             className={cn(
               'flex-shrink-0 rounded-md p-1.5 transition-colors',
               speech.listening
@@ -197,7 +200,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
           disabled={!draft.trim() || speech.listening}
           className="flex-shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity disabled:opacity-40"
         >
-          Add
+          {tc('add')}
         </button>
       </div>
     </section>

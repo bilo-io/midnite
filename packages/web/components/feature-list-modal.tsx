@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslations } from 'next-intl';
 import { Inbox, ListChecks, Loader2, Send, Trash2, X } from 'lucide-react';
 import type { Status } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -9,14 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { createTask } from '@/lib/api';
 import { draftTasks, type FeatureDraft } from '@/lib/feature-drafts';
 import { useConfirm } from '@/components/confirm-dialog';
+import { useStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
 
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
-}
 
 type Props = {
   draft: FeatureDraft;
@@ -44,6 +42,9 @@ export function FeatureListModal({
   onDelete,
   onCommitted,
 }: Props) {
+  const t = useTranslations('plan');
+  const tc = useTranslations('common');
+  const statusLabel = useStatusLabel();
   const [name, setName] = React.useState(draft.name);
   const [text, setText] = React.useState(draft.text);
   const [choosing, setChoosing] = React.useState(false);
@@ -61,9 +62,9 @@ export function FeatureListModal({
 
   const discard = async () => {
     const ok = await confirm({
-      title: 'Discard this feature list?',
-      description: 'The draft and everything typed into it will be removed.',
-      confirmLabel: 'Discard',
+      title: t('featureList.discardTitle'),
+      description: t('featureList.discardDescription'),
+      confirmLabel: t('featureList.discard'),
     });
     if (ok) onDelete();
   };
@@ -85,7 +86,7 @@ export function FeatureListModal({
   // overkill here — the store is cheap, so mirror on every change).
   const setNameAndStore = (v: string) => {
     setName(v);
-    onChange({ name: v.trim() || 'Untitled idea' });
+    onChange({ name: v.trim() || t('featureList.untitledName') });
   };
   const setTextAndStore = (v: string) => {
     setText(v);
@@ -112,7 +113,7 @@ export function FeatureListModal({
       );
       onCommitted(status);
     } catch (e) {
-      setError(errMsg(e));
+      setError(e instanceof Error ? e.message : tc('errorTitle'));
       setBusy(null);
     }
   };
@@ -130,17 +131,17 @@ export function FeatureListModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Edit feature list request"
+          aria-label={t('featureList.dialogAria')}
           className="pointer-events-auto relative flex max-h-[88vh] w-full max-w-lg flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
-            <h2 className="text-sm font-semibold">Feature list request</h2>
+            <h2 className="text-sm font-semibold">{t('featureList.heading')}</h2>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Close"
+              aria-label={tc('close')}
               onClick={onClose}
               disabled={!!busy}
             >
@@ -151,14 +152,14 @@ export function FeatureListModal({
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
             <div className="space-y-1.5">
               <label htmlFor="draft-name" className="text-xs font-medium text-muted-foreground">
-                Name
+                {t('featureList.nameLabel')}
               </label>
               <input
                 id="draft-name"
                 className={inputClass}
                 value={name}
                 onChange={(e) => setNameAndStore(e.target.value)}
-                placeholder="e.g. Billing revamp"
+                placeholder={t('featureList.namePlaceholder')}
                 autoFocus
               />
             </div>
@@ -166,22 +167,20 @@ export function FeatureListModal({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label htmlFor="draft-text" className="text-xs font-medium text-muted-foreground">
-                  Tasks
+                  {t('featureList.tasksLabel')}
                 </label>
                 <span className="text-[11px] tabular-nums text-muted-foreground">
-                  {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+                  {tc('chrome.taskCount', { count: taskCount })}
                 </span>
               </div>
               <Textarea
                 id="draft-text"
                 value={text}
                 onChange={(e) => setTextAndStore(e.target.value)}
-                placeholder="Describe the work — one task per line."
+                placeholder={t('featureList.tasksPlaceholder')}
                 rows={8}
               />
-              <p className="text-[11px] text-muted-foreground">
-                Each non-empty line becomes its own task when you craft this list.
-              </p>
+              <p className="text-[11px] text-muted-foreground">{t('featureList.tasksHint')}</p>
             </div>
 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -196,7 +195,7 @@ export function FeatureListModal({
               className="gap-1.5 text-destructive hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
-              Discard
+              {t('featureList.discard')}
             </Button>
             <Button
               type="button"
@@ -206,7 +205,7 @@ export function FeatureListModal({
               className="gap-1.5"
             >
               <Send className="h-4 w-4" />
-              Craft {taskCount > 1 ? `${taskCount} tasks` : 'task'}
+              {t('featureList.craft', { count: taskCount })}
             </Button>
           </footer>
 
@@ -220,23 +219,23 @@ export function FeatureListModal({
                 className="w-full max-w-sm rounded-lg border border-border bg-card p-5 shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 className="text-sm font-semibold">Where should these go?</h3>
+                <h3 className="text-sm font-semibold">{t('featureList.destinationHeading')}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {taskCount} {taskCount === 1 ? 'task' : 'tasks'} from “{name}”.
+                  {t('featureList.destinationSubtitle', { count: taskCount, name })}
                 </p>
                 <div className="mt-4 grid gap-2">
                   <ChoiceButton
                     icon={<ListChecks className="h-4 w-4" />}
-                    title="Todo"
-                    detail="Queue now — agents pick these up as slots free."
+                    title={statusLabel('todo')}
+                    detail={t('featureList.todoDetail')}
                     loading={busy === 'todo'}
                     disabled={!!busy}
                     onClick={() => void commit('todo')}
                   />
                   <ChoiceButton
                     icon={<Inbox className="h-4 w-4" />}
-                    title="Backlog"
-                    detail="Park for later — nothing starts until you move them."
+                    title={statusLabel('backlog')}
+                    detail={t('featureList.backlogDetail')}
                     loading={busy === 'backlog'}
                     disabled={!!busy}
                     onClick={() => void commit('backlog')}
@@ -248,7 +247,7 @@ export function FeatureListModal({
                   disabled={!!busy}
                   className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
-                  Cancel
+                  {tc('cancel')}
                 </button>
               </div>
             </div>

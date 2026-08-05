@@ -1,20 +1,20 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Trash2, X } from 'lucide-react';
 import { TASK_KINDS, type Breakdown, type BreakdownTask, type TaskKind } from '@midnite/shared';
 import { Input } from '@/components/ui/input';
 import { StyledSelect } from '@/components/ui/styled-select';
 import { Button } from '@/components/ui/button';
+import { useKindLabel } from '@/lib/i18n-labels';
 
-const KIND_OPTIONS = TASK_KINDS.map((k) => ({ value: k, label: k }));
-
-const PRIORITY_OPTIONS: { value: string; label: string }[] = [
-  { value: '0', label: 'Low' },
-  { value: '1', label: 'Normal' },
-  { value: '2', label: 'High' },
-  { value: '3', label: 'Urgent' },
-];
+/**
+ * The four scheduling bands, as the *data* (`task.priority` 0–3) — the human wording
+ * comes from `board.priority.*` at the call site, the same keys `PrioritySelect` and
+ * the task card render, so the three surfaces can't word a band differently.
+ */
+const PRIORITY_KEYS = ['low', 'normal', 'high', 'urgent'] as const;
 
 type Props = {
   breakdown: Breakdown;
@@ -31,7 +31,16 @@ type Props = {
  * duplicate edges at the picker.
  */
 export function BreakdownEditor({ breakdown, onChange }: Props) {
+  const t = useTranslations('plan');
+  const tc = useTranslations('common');
+  const tBoard = useTranslations('board');
+  const kindLabel = useKindLabel();
   const tasks = breakdown.tasks;
+  const kindOptions = TASK_KINDS.map((k) => ({ value: k, label: kindLabel(k) }));
+  const priorityOptions = PRIORITY_KEYS.map((key, i) => ({
+    value: String(i),
+    label: tBoard(`priority.${key}`),
+  }));
   const titleByRef = useMemo(() => {
     const m = new Map<string, string>();
     for (const t of tasks) m.set(t.ref, t.title);
@@ -63,13 +72,11 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
   };
 
   if (tasks.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No tasks in this breakdown yet.</p>
-    );
+    return <p className="text-sm text-muted-foreground">{t('breakdown.empty')}</p>;
   }
 
   return (
-    <ul className="space-y-3" aria-label="Breakdown tasks">
+    <ul className="space-y-3" aria-label={t('breakdown.listAria')}>
       {tasks.map((task) => {
         const available = tasks.filter(
           (t) => t.ref !== task.ref && !task.dependsOn.includes(t.ref),
@@ -82,7 +89,7 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
             <div className="flex items-start gap-2">
               <Input
                 value={task.title}
-                aria-label={`Title for ${task.ref}`}
+                aria-label={t('breakdown.titleAria', { ref: task.ref })}
                 onChange={(e) => patch(task.ref, { title: e.target.value })}
                 className="flex-1"
               />
@@ -90,7 +97,7 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={`Remove ${task.title}`}
+                aria-label={tc('removeNamed', { name: task.title })}
                 className="text-muted-foreground hover:text-destructive"
                 onClick={() => removeTask(task.ref)}
               >
@@ -100,15 +107,15 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
 
             <div className="flex flex-wrap items-center gap-2">
               <StyledSelect
-                aria-label={`Kind for ${task.title}`}
-                options={KIND_OPTIONS}
+                aria-label={t('breakdown.kindAria', { title: task.title })}
+                options={kindOptions}
                 value={(task.kind ?? 'unknown') as TaskKind}
                 onChange={(value) => patch(task.ref, { kind: value })}
                 className="w-32"
               />
               <StyledSelect
-                aria-label={`Priority for ${task.title}`}
-                options={PRIORITY_OPTIONS}
+                aria-label={t('breakdown.priorityAria', { title: task.title })}
+                options={priorityOptions}
                 value={String(task.priority ?? 1)}
                 onChange={(value) => patch(task.ref, { priority: Number(value) })}
                 className="w-32"
@@ -116,9 +123,9 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Blocked by:</span>
+              <span className="text-xs text-muted-foreground">{t('breakdown.blockedByLabel')}</span>
               {task.dependsOn.length === 0 ? (
-                <span className="text-xs text-muted-foreground">nothing</span>
+                <span className="text-xs text-muted-foreground">{t('breakdown.noBlockers')}</span>
               ) : (
                 task.dependsOn.map((d) => (
                   <span
@@ -128,7 +135,10 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
                     {titleByRef.get(d) ?? d}
                     <button
                       type="button"
-                      aria-label={`Remove blocker ${titleByRef.get(d) ?? d} from ${task.title}`}
+                      aria-label={t('breakdown.removeBlockerAria', {
+                        blocker: titleByRef.get(d) ?? d,
+                        title: task.title,
+                      })}
                       onClick={() => removeEdge(task.ref, d)}
                       className="rounded-full hover:text-destructive"
                     >
@@ -139,9 +149,13 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
               )}
               {available.length > 0 ? (
                 <StyledSelect
-                  aria-label={`Add blocker for ${task.title}`}
+                  aria-label={t('breakdown.addBlockerAria', { title: task.title })}
                   options={[
-                    { value: '', label: 'Add blocker…', icon: <Plus className="h-3 w-3" /> },
+                    {
+                      value: '',
+                      label: t('breakdown.addBlockerOption'),
+                      icon: <Plus className="h-3 w-3" />,
+                    },
                     ...available.map((t) => ({ value: t.ref, label: t.title })),
                   ]}
                   value=""

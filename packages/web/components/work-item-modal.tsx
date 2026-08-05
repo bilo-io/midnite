@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Archive, ArchiveRestore, ArrowUpRight, X } from 'lucide-react';
 import type { Project, SessionSummary, Task, TaskSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,12 @@ export function WorkItemModal({
   onDelete,
 }: Props) {
   const router = useRouter();
+  // `plan.workItem.*` carries this shell's own copy; the badge and the "Open page"
+  // affordance reuse `task.*`, the very keys TaskDetail's tab strip renders — so the
+  // session-only shell and the tabbed one can't drift apart.
+  const t = useTranslations('plan');
+  const tTask = useTranslations('task');
+  const tc = useTranslations('common');
   const id = origin.kind === 'task' ? origin.task.id : origin.session.id;
 
   const [task, setTask] = useState<Task | null>(origin.kind === 'task' ? origin.task : null);
@@ -125,7 +132,11 @@ export function WorkItemModal({
 
   if (typeof document === 'undefined') return null;
 
-  const title = task?.title ?? session?.title ?? 'Work item';
+  // `||`, not `??`: `Task.title` / `SessionSummary.title` are both non-nullable strings
+  // in `shared`, so a titleless session arrives as `''` — which `??` would happily pass
+  // through, leaving the dialog with `aria-label=""` and an empty `<h2>`. The fallback
+  // is only reachable at all through the empty-string case.
+  const title = task?.title || session?.title || t('workItem.fallbackTitle');
 
   const sessionSlot = <SessionPane session={session} loading={sessionLoading} />;
 
@@ -144,14 +155,17 @@ export function WorkItemModal({
                 <Archive className="h-4 w-4" />
               )
             }
-            label={session.archivedAt ? 'Unarchive' : 'Archive'}
+            label={session.archivedAt ? t('workItem.unarchive') : t('workItem.archive')}
             variant="ghost"
             onClick={() => onArchiveToggle(session)}
             className="text-muted-foreground"
           />
         ) : null}
         {onDelete && session.archivedAt ? (
-          <DeleteConfirmButton noun="session" onConfirm={() => onDelete(session)} />
+          <DeleteConfirmButton
+            noun={t('workItem.sessionNoun')}
+            onConfirm={() => onDelete(session)}
+          />
         ) : null}
       </>
     ) : null;
@@ -206,7 +220,7 @@ export function WorkItemModal({
                   <h2 className="truncate text-sm font-semibold leading-tight">{title}</h2>
                   <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="inline-flex shrink-0 items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Session
+                      {tTask('tabs.session')}
                     </span>
                     {session ? <span className="truncate font-mono">{session.projectDisplay}</span> : null}
                   </div>
@@ -215,12 +229,18 @@ export function WorkItemModal({
                 {session && !disableNavigation ? (
                   <HoverExpandButton
                     icon={<ArrowUpRight className="h-3.5 w-3.5" />}
-                    label="Open page"
+                    label={tTask('openPage')}
                     variant="secondary"
                     onClick={openSessionPage}
                   />
                 ) : null}
-                <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={tc('close')}
+                  onClick={onClose}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </header>

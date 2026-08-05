@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { Breakdown } from '@midnite/shared';
 
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import { BreakdownEditor } from './breakdown-editor';
 
 afterEach(cleanup);
