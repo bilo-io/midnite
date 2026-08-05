@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { CycleTimeGroup, CycleTimeResponse, GaugeHistoryResponse, GaugeSample } from '@midnite/shared';
 
-import { CycleTimeSection, FleetTrendSection, formatDuration } from './ops-cycle-fleet';
+import { CycleTimeSection, FleetTrendSection } from './ops-cycle-fleet';
 
 function stat(p50: number | null, p90: number | null, count = p50 === null ? 0 : 1) {
   return { p50Ms: p50, p90Ms: p90, count };
@@ -26,16 +27,8 @@ function sample(partial: Partial<GaugeSample> = {}): GaugeSample {
   return { at: '2026-07-07T10:00:00.000Z', queueDepth: 2, slotsUsed: 1, slotsTotal: 4, tickLatencyMs: 5, ...partial };
 }
 
-describe('formatDuration', () => {
-  it('formats across ms/s/m/h/d and null', () => {
-    expect(formatDuration(null)).toBe('—');
-    expect(formatDuration(250)).toBe('250ms');
-    expect(formatDuration(3_000)).toBe('3.0s');
-    expect(formatDuration(90_000)).toBe('1.5m');
-    expect(formatDuration(3_600_000)).toBe('1.0h');
-    expect(formatDuration(2 * 86_400_000)).toBe('2.0d');
-  });
-});
+// The `formatDuration` cases that lived here moved to `lib/use-unit-format.test.tsx` when
+// the local helper folded into the shared `preciseDuration` seam.
 
 describe('CycleTimeSection', () => {
   it('renders the group-by selector with all four options', () => {

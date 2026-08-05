@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Area,
   AreaChart,
@@ -18,6 +19,8 @@ import type {
   UsageAttributionResponse,
 } from '@midnite/shared';
 import { getMetricsRollups, getUsageAttribution } from '@/lib/api';
+import { useOpsCardTitle } from '@/lib/ops-widget-labels';
+import { useUsdLabel } from '@/lib/use-locale-format';
 import { usePolling } from '@/lib/use-polling';
 import { SectionCard, WindowToggle } from './ops-view';
 
@@ -31,11 +34,8 @@ type WindowDays = (typeof WINDOWS)[number];
  *  (attribution has no provider dimension). */
 type CostGroupBy = 'repo' | 'project' | 'provider';
 
-const GROUP_BY_LABEL: Record<CostGroupBy, string> = {
-  repo: 'By repo',
-  project: 'By project',
-  provider: 'By provider',
-};
+/** Grouping options in select order; wording comes from `ops.cost.groupBy.*`. */
+const GROUP_BY_OPTIONS: readonly CostGroupBy[] = ['repo', 'project', 'provider'];
 
 /** ISO timestamp `days` ago at local midnight — the window lower bound. */
 function windowFrom(days: number): string {
@@ -43,12 +43,6 @@ function windowFrom(days: number): string {
   d.setDate(d.getDate() - (days - 1));
   d.setHours(0, 0, 0, 0);
   return d.toISOString();
-}
-
-function fmtUsd(n: number): string {
-  if (n <= 0) return '$0';
-  if (n < 0.01) return '<$0.01';
-  return `$${n.toFixed(2)}`;
 }
 
 const TOOLTIP_STYLE = {
@@ -110,18 +104,31 @@ export function CostTrendSection({
   loading: boolean;
   windowControl?: React.ReactNode;
 }) {
+  const t = useTranslations('ops');
+  const cardTitle = useOpsCardTitle();
+  // The shared formatter, replacing a local copy that returned `$0` for zero where every
+  // other cost surface in the app shows `$0.00`. One less variant to reason about.
+  const fmtUsd = useUsdLabel();
+  const series = {
+    llm: t('cost.series.llm'),
+    measured: t('cost.series.measured'),
+    estimated: t('cost.series.estimated'),
+  };
   const rows = useMemo(() => trendRows(data), [data]);
   const total = rows.reduce((s, r) => s + r.llm + r.measured + r.estimated, 0);
   const empty = !loading && total === 0;
 
   return (
     <SectionCard
-      title="Cost over time"
+      title={cardTitle('cost-trend')}
       action={
         <div className="flex items-center gap-2">
           {!empty && (
             <span className="text-xs tabular-nums text-muted-foreground">
-              <span className="font-medium text-foreground">{fmtUsd(total)}</span> in window
+              {t.rich('cost.totalInWindow', {
+                total: fmtUsd(total),
+                strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+              })}
             </span>
           )}
           {windowControl}
@@ -130,7 +137,7 @@ export function CostTrendSection({
       loading={loading && !data}
       empty={empty}
     >
-      <div className="h-56 w-full min-w-0" aria-label="Cost over time chart">
+      <div className="h-56 w-full min-w-0" aria-label={t('cost.trendChartAria')}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={rows} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -156,7 +163,7 @@ export function CostTrendSection({
             <Area
               type="monotone"
               dataKey="llm"
-              name="Gateway LLM"
+              name={series.llm}
               stackId="cost"
               stroke={LLM_COLOR}
               fill={LLM_COLOR}
@@ -167,7 +174,7 @@ export function CostTrendSection({
             <Area
               type="monotone"
               dataKey="measured"
-              name="Session (measured)"
+              name={series.measured}
               stackId="cost"
               stroke={MEASURED_COLOR}
               fill={MEASURED_COLOR}
@@ -178,7 +185,7 @@ export function CostTrendSection({
             <Area
               type="monotone"
               dataKey="estimated"
-              name="Session (estimated)"
+              name={series.estimated}
               stackId="cost"
               stroke={ESTIMATED_COLOR}
               fill={ESTIMATED_COLOR}
@@ -190,9 +197,9 @@ export function CostTrendSection({
         </ResponsiveContainer>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <Swatch color={LLM_COLOR} label="Gateway LLM" />
-        <Swatch color={MEASURED_COLOR} label="Session (measured)" />
-        <Swatch color={ESTIMATED_COLOR} label="Session (estimated)" />
+        <Swatch color={LLM_COLOR} label={series.llm} />
+        <Swatch color={MEASURED_COLOR} label={series.measured} />
+        <Swatch color={ESTIMATED_COLOR} label={series.estimated} />
       </div>
     </SectionCard>
   );
@@ -250,6 +257,10 @@ export function CostBreakdownSection({
   loading: boolean;
   windowControl?: React.ReactNode;
 }) {
+  const t = useTranslations('ops');
+  const cardTitle = useOpsCardTitle();
+  const fmtUsd = useUsdLabel();
+  const split = { measured: t('cost.split.measured'), estimated: t('cost.split.estimated') };
   const rows = useMemo(
     () => breakdownRows(groupBy, attribution, rollups),
     [groupBy, attribution, rollups],
@@ -260,16 +271,16 @@ export function CostBreakdownSection({
   const selector = (
     <div className="flex items-center gap-2">
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span className="sr-only">Group cost by</span>
+        <span className="sr-only">{t('cost.groupByAria')}</span>
         <select
-          aria-label="Group cost by"
+          aria-label={t('cost.groupByAria')}
           value={groupBy}
           onChange={(e) => onGroupByChange(e.target.value as CostGroupBy)}
           className="rounded-md border bg-background px-2 py-1 text-xs text-foreground"
         >
-          {(Object.keys(GROUP_BY_LABEL) as CostGroupBy[]).map((k) => (
+          {GROUP_BY_OPTIONS.map((k) => (
             <option key={k} value={k}>
-              {GROUP_BY_LABEL[k]}
+              {t(`cost.groupBy.${k}`)}
             </option>
           ))}
         </select>
@@ -279,8 +290,13 @@ export function CostBreakdownSection({
   );
 
   return (
-    <SectionCard title="Cost by dimension" action={selector} loading={loading && !attribution && !rollups} empty={empty}>
-      <div className="h-56 w-full min-w-0" aria-label="Cost by dimension chart">
+    <SectionCard
+      title={cardTitle('cost-breakdown')}
+      action={selector}
+      loading={loading && !attribution && !rollups}
+      empty={empty}
+    >
+      <div className="h-56 w-full min-w-0" aria-label={t('cost.breakdownChartAria')}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -306,7 +322,7 @@ export function CostBreakdownSection({
             />
             <Bar
               dataKey="measured"
-              name="Measured"
+              name={split.measured}
               stackId="cost"
               fill={MEASURED_COLOR}
               radius={[0, 0, 0, 0]}
@@ -314,7 +330,7 @@ export function CostBreakdownSection({
             />
             <Bar
               dataKey="estimated"
-              name="Estimated"
+              name={split.estimated}
               stackId="cost"
               fill={ESTIMATED_COLOR}
               radius={[3, 3, 0, 0]}
@@ -325,13 +341,15 @@ export function CostBreakdownSection({
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-3">
-          <Swatch color={MEASURED_COLOR} label="Measured" />
-          <Swatch color={ESTIMATED_COLOR} label="Estimated" />
+          <Swatch color={MEASURED_COLOR} label={split.measured} />
+          <Swatch color={ESTIMATED_COLOR} label={split.estimated} />
         </span>
         {unpriced > 0 && (
           <span>
-            <span className="font-medium text-foreground">{unpriced}</span> unpriced session
-            {unpriced === 1 ? '' : 's'} (cost unknown)
+            {t.rich('cost.unpriced', {
+              count: unpriced,
+              strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+            })}
           </span>
         )}
       </div>
@@ -343,6 +361,7 @@ export function CostBreakdownSection({
 
 /** Cost-over-time as its own board cell: owns its window + rollups poll. */
 export function CostTrendPanel() {
+  const t = useTranslations('ops');
   const [windowDays, setWindowDays] = useState<WindowDays>(30);
   const from = windowFrom(windowDays);
 
@@ -356,13 +375,14 @@ export function CostTrendPanel() {
     <CostTrendSection
       data={rollups}
       loading={loading}
-      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label="Cost time window" />}
+      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label={t('cost.windowAria')} />}
     />
   );
 }
 
 /** Cost-by-dimension as its own board cell: owns its window + groupBy + attribution poll. */
 export function CostBreakdownPanel() {
+  const t = useTranslations('ops');
   const [windowDays, setWindowDays] = useState<WindowDays>(30);
   const [groupBy, setGroupBy] = useState<CostGroupBy>('repo');
   const from = windowFrom(windowDays);
@@ -388,7 +408,7 @@ export function CostBreakdownPanel() {
       attribution={attribution}
       rollups={rollups}
       loading={groupBy === 'provider' ? rollupsLoading : attrLoading}
-      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label="Cost time window" />}
+      windowControl={<WindowToggle windows={WINDOWS} value={windowDays} onChange={setWindowDays} label={t('cost.windowAria')} />}
     />
   );
 }

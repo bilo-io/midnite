@@ -1,6 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { LLM_FEATURE_LABEL } from '@midnite/shared';
 import type {
+  ApprovalDecidedBy,
+  ApprovalResolution,
   CheckTrigger,
   LlmFeature,
   MediaType,
@@ -223,4 +225,27 @@ export function useLlmFeatureLabel(): (feature: string) => string {
     // recorded before the enum existed.
     return LLM_FEATURE_LABEL[feature as LlmFeature] ?? feature;
   };
+}
+
+/**
+ * Approval-log vocabulary (Phase 82 Theme D, ops slice) — the Decisions card's two
+ * enum columns.
+ *
+ * These replace a pair of hand-written `Record<string, string>` maps in `ops-view.tsx`,
+ * and the resolution one was **stale**: it keyed on `approved` / `denied` / `error`, none
+ * of which appear in `ApprovalResolutionSchema` (`allow`, `allow-session`, `deny`, `ask`,
+ * `timeout`, `expired`, `auto-allow`, `auto-deny`). Only `timeout` ever matched, so seven
+ * of the eight resolutions fell through the `??` and rendered the raw enum value. Typing
+ * the parameter to the shared union is what stops that recurring — a vocabulary change in
+ * `shared` now fails `web`'s typecheck instead of silently degrading the column.
+ */
+export function useApprovalResolutionLabel(): (resolution: ApprovalResolution) => string {
+  const t = useTranslations('ops');
+  return (resolution) => t(`decisions.resolution.${resolution}`);
+}
+
+/** Who resolved an approval (`ops.decisions.decidedBy.*`). */
+export function useApprovalDecidedByLabel(): (decidedBy: ApprovalDecidedBy) => string {
+  const t = useTranslations('ops');
+  return (decidedBy) => t(`decisions.decidedBy.${decidedBy}`);
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Bar,
   BarChart,
@@ -14,6 +15,8 @@ import {
 import type { RunOutcome, RunTimelineEntry, RunTimelineResponse } from '@midnite/shared';
 import { getRunTimeline } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
+import { useLocaleFormat } from '@/lib/use-locale-format';
+import { useUnitFormat } from '@/lib/use-unit-format';
 import { cn } from '@/lib/utils';
 
 const POLL_MS = 10_000;
@@ -28,12 +31,9 @@ const OUTCOME_COLOR: Record<RunOutcome, string> = {
 /** A live (unfinished) run reads in the primary/blue accent with a pulse. */
 const RUNNING_COLOR = 'hsl(217 91% 60%)';
 
-const OUTCOME_LABEL: Record<RunOutcome, string> = {
-  done: 'Done',
-  abandoned: 'Abandoned',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
-};
+/** Outcome order for the legend; the words come from `ops.outcomes.*`, shared with the
+ *  Ops board's outcome breakdown so one edit moves both. */
+const OUTCOMES: readonly RunOutcome[] = ['done', 'abandoned', 'failed', 'cancelled'];
 
 const TOOLTIP_STYLE = {
   background: 'var(--card)',
@@ -43,27 +43,19 @@ const TOOLTIP_STYLE = {
   padding: '6px 10px',
 } as const;
 
-/** Human-readable duration from milliseconds (e.g. `2.5h`, `3m`, `12s`, `—`). */
-function fmtDuration(ms: number | null): string {
-  if (ms === null) return '—';
-  if (ms < 1_000) return `${Math.round(ms)}ms`;
-  const s = ms / 1_000;
-  if (s < 60) return `${s < 10 ? s.toFixed(1) : Math.round(s)}s`;
-  const m = s / 60;
-  if (m < 60) return `${m < 10 ? m.toFixed(1) : Math.round(m)}m`;
-  const h = m / 60;
-  if (h < 24) return `${h < 10 ? h.toFixed(1) : Math.round(h)}h`;
-  return `${(h / 24).toFixed(1)}d`;
-}
-
-function fmtClock(iso: string): string {
-  const ms = Date.parse(iso);
-  if (Number.isNaN(ms)) return iso;
-  try {
-    return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return iso;
-  }
+/** Wall-clock hh:mm in the active locale (was `toLocaleTimeString([])` — the *browser's*
+ *  locale, which could disagree with the app's chosen one). */
+function useClockLabel(): (iso: string) => string {
+  const { dateTime } = useLocaleFormat();
+  return (iso) => {
+    const ms = Date.parse(iso);
+    if (Number.isNaN(ms)) return iso;
+    try {
+      return dateTime(ms, { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return iso;
+    }
+  };
 }
 
 /** One attempt, prepared for the horizontal gantt-style bar. */
@@ -109,17 +101,27 @@ function buildRows(runs: RunTimelineEntry[], now: number): { rows: Row[]; span: 
 }
 
 function RunTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: Row }> }) {
+  const t = useTranslations('ops');
+  const { preciseDuration: runDuration } = useUnitFormat();
+  const clock = useClockLabel();
   if (!active || !payload || payload.length === 0) return null;
   // The transparent offset bar is payload[0]; the coloured length bar carries the row.
   const row = payload[payload.length - 1]!.payload;
-  const label = row.running ? 'Running' : row.outcome ? OUTCOME_LABEL[row.outcome] : 'Unknown';
+  const label = row.running
+    ? t('runTimeline.running')
+    : row.outcome
+      ? t(`outcomes.${row.outcome}`)
+      : t('runTimeline.unknownOutcome');
   return (
     <div style={TOOLTIP_STYLE}>
       <div className="font-medium text-foreground">
         {row.label} · {label}
       </div>
       <div className="text-muted-foreground">
-        {fmtDuration(row.durationMs)} · started {fmtClock(row.startedAt)}
+        {t('runTimeline.tooltipMeta', {
+          duration: runDuration(row.durationMs),
+          time: clock(row.startedAt),
+        })}
       </div>
     </div>
   );
@@ -146,6 +148,9 @@ function Swatch({ color, label, pulse }: { color: string; label: string; pulse?:
  * `GET /metrics/runs?taskId=` on a poll; honest empty state — no zeroed chart.
  */
 export function RunTimeline({ taskId }: { taskId: string }) {
+  const t = useTranslations('ops');
+  const tCommon = useTranslations('common');
+  const { preciseDuration: runDuration } = useUnitFormat();
   const { data, error, loading } = usePolling<RunTimelineResponse>(
     () => getRunTimeline(taskId),
     POLL_MS,
@@ -158,26 +163,26 @@ export function RunTimeline({ taskId }: { taskId: string }) {
 
   const anyRunning = runs.some((r) => r.endedAt === null);
   const presentOutcomes = useMemo(
-    () => (Object.keys(OUTCOME_LABEL) as RunOutcome[]).filter((o) => runs.some((r) => r.outcome === o)),
+    () => OUTCOMES.filter((o) => runs.some((r) => r.outcome === o)),
     [runs],
   );
 
   if (error && !data) {
-    return <p className="text-sm text-destructive">Couldn’t load agent runs.</p>;
+    return <p className="text-sm text-destructive">{t('runTimeline.error')}</p>;
   }
   if (!data && loading) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>;
   }
   if (!data) return null;
   if (runs.length === 0) {
-    return <p className="text-sm text-muted-foreground">No agent runs recorded yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t('runTimeline.noRuns')}</p>;
   }
 
   return (
     <div>
       <div
         role="img"
-        aria-label="Run timeline chart"
+        aria-label={t('runTimeline.chartAria')}
         className="w-full min-w-0"
         style={{ height: rows.length * 30 + 36 }}
       >
@@ -189,7 +194,7 @@ export function RunTimeline({ taskId }: { taskId: string }) {
               domain={[0, span]}
               tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
               tickLine={false}
-              tickFormatter={(v: number) => fmtDuration(v)}
+              tickFormatter={(v: number) => runDuration(v)}
             />
             <YAxis
               type="category"
@@ -216,13 +221,15 @@ export function RunTimeline({ taskId }: { taskId: string }) {
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <span className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{runs.length}</span> run
-          {runs.length === 1 ? '' : 's'}
+          {t.rich('runTimeline.runCount', {
+            count: runs.length,
+            strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+          })}
         </span>
         {presentOutcomes.map((o) => (
-          <Swatch key={o} color={OUTCOME_COLOR[o]} label={OUTCOME_LABEL[o]} />
+          <Swatch key={o} color={OUTCOME_COLOR[o]} label={t(`outcomes.${o}`)} />
         ))}
-        {anyRunning && <Swatch color={RUNNING_COLOR} label="Running" pulse />}
+        {anyRunning && <Swatch color={RUNNING_COLOR} label={t('runTimeline.running')} pulse />}
       </div>
     </div>
   );
