@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { LocaleProvider } from '@midnite/shell';
+import type { Locale } from '@midnite/shared';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { CATALOGS } from '@/i18n/messages';
 
@@ -16,14 +17,19 @@ import { CATALOGS } from '@/i18n/messages';
  * The root is **detached**, so it sits outside the app's provider tree — and
  * `MarkdownPreview` reads `common.editor.taskItem.*` for the accessible name of GFM
  * task-list checkboxes (Phase 82 Theme D). It therefore mounts its own
- * `LocaleProvider`; with no `initialLocale` the provider resolves the persisted
- * preference itself, so an export inherits the reader's language.
+ * `LocaleProvider`.
+ *
+ * `locale` must be passed by the caller (which *is* inside the tree, so it has
+ * `useLocale()`). Letting the provider resolve the preference itself would be a race:
+ * it initialises to `DEFAULT_LOCALE` and applies the stored locale in a mount effect,
+ * but the capture loop below exits on the first non-empty `innerHTML` — usually the
+ * pre-effect commit. Passing it in makes the exported document deterministic.
  */
-export async function captureMarkdownHtml(markdown: string): Promise<string> {
+export async function captureMarkdownHtml(markdown: string, locale?: Locale): Promise<string> {
   const container = document.createElement('div');
   const root = createRoot(container);
   root.render(
-    <LocaleProvider catalogs={CATALOGS}>
+    <LocaleProvider catalogs={CATALOGS} initialLocale={locale}>
       <MarkdownPreview content={markdown} />
     </LocaleProvider>,
   );

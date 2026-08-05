@@ -50,7 +50,9 @@ export function TagColorPicker({
 }: Props) {
   const t = useTranslations('common');
   const tooLong = tag.trim().length > MAX_TAG_LENGTH;
-  const previewTag = tag.trim() || fallbackTag || t('pickers.tagColour.fallbackTag');
+  // `??` on `fallbackTag`, not `||` — the old destructuring default only applied when the
+  // prop was absent, so an intentional `fallbackTag=""` must still win over the catalog.
+  const previewTag = tag.trim() || (fallbackTag ?? t('pickers.tagColour.fallbackTag'));
   return (
     <div className="space-y-1.5">
       {label}

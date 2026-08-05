@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -104,5 +104,29 @@ describe('Phase 82 D — memory i18n keys resolve in en-GB', () => {
         true,
       );
     }
+  });
+
+  /**
+   * The keys existing is not the same as the call sites using them. Three surfaces
+   * rendered `SOURCE_KIND_LABEL` (or react-select's built-in English) straight to the
+   * user in files earlier slices had already marked migrated, and every one of them
+   * passed the `jsx-text-only` lint gate. These two guards fail if any of the three
+   * is reverted — the key sweep above would not.
+   */
+  it('leaves `useSourceKindLabel` as the only consumer of the shared English map', () => {
+    const web = join(__dirname, '..');
+    const offenders = globSync('{app,components,lib}/**/*.{ts,tsx}', { cwd: web })
+      .filter((rel) => !rel.endsWith('.test.ts') && !rel.endsWith('.test.tsx'))
+      // The hook itself owns the fallback; everything else must go through the hook.
+      .filter((rel) => rel !== join('lib', 'i18n-labels.ts'))
+      .filter((rel) => /\bSOURCE_KIND_LABEL\b/.test(readFileSync(join(web, rel), 'utf8')));
+    expect(offenders, 'these render source-kind labels without going through the hook').toEqual([]);
+  });
+
+  it('overrides react-select’s built-in English empty message', () => {
+    // `noOptionsMessage` renders "No options" from the library, so it is unreachable
+    // through a `t()` scan of our own JSX — only its presence can be asserted.
+    const src = readFileSync(join(__dirname, '..', 'components/source-kind-multi-select.tsx'), 'utf8');
+    expect(src).toMatch(/noOptionsMessage=\{/);
   });
 });

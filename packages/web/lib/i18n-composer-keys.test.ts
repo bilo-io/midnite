@@ -59,6 +59,13 @@ const BIND_RE = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*useTranslations\(\s*'(
  *
  * Files that bind more than one namespace under distinct names (`t` + `tCommon`)
  * resolve correctly because the call matcher is built per binding name.
+ *
+ * Two matchers, because a key can reach `t()` two ways:
+ *  - `t('a.b')` — a quote straight after the paren.
+ *  - `t(cond ? 'a' : 'b')` — a conditional first argument, which the first matcher
+ *    cannot see at all. Six keys in this slice are only referenced that way, so
+ *    without the second pass their audit would silently be a no-op.
+ * The conditional form yields *both* branches, which is what we want to check.
  */
 function referencedKeys(src: string): string[] {
   const binds = [...src.matchAll(BIND_RE)].map((m) => ({ name: m[1], ns: m[2] }));
@@ -66,6 +73,13 @@ function referencedKeys(src: string): string[] {
   for (const { name, ns } of binds) {
     const callRe = new RegExp(`\\b${name}(?:\\.(?:rich|has))?\\(\\s*['"]([a-zA-Z][\\w.-]*)['"]`, 'g');
     for (const m of src.matchAll(callRe)) keys.push(`${ns}.${m[1]}`);
+
+    // `t(hasData ? 'hint.withData' : 'hint.noData')` — capture the ternary's arms.
+    const ternaryRe = new RegExp(
+      `\\b${name}(?:\\.(?:rich|has))?\\(\\s*[^'"()]*\\?\\s*['"]([a-zA-Z][\\w.-]*)['"]\\s*:\\s*['"]([a-zA-Z][\\w.-]*)['"]`,
+      'g',
+    );
+    for (const m of src.matchAll(ternaryRe)) keys.push(`${ns}.${m[1]}`, `${ns}.${m[2]}`);
   }
   return keys;
 }
@@ -78,6 +92,10 @@ describe('Phase 82 D — composer/editors/pickers i18n keys resolve in en-GB', (
     const keys = referencedKeys(src);
 
     it(`resolves every t() key referenced in ${rel}`, () => {
+      // Assert we actually extracted something first: `expect([]).toEqual([])` passes
+      // vacuously, so a regex that stops matching would turn this whole suite green
+      // while auditing nothing.
+      expect(keys.length, `extracted no keys from ${rel} — the matcher is broken`).toBeGreaterThan(0);
       const missing = keys.filter((k) => !keyExists(enGB as Record<string, unknown>, k));
       expect(missing, `unresolved keys in ${rel}`).toEqual([]);
     });

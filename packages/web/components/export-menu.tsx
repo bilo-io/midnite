@@ -3,9 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
+import { useLocale } from 'next-intl';
 import { Check, Copy, Download, FileCode2, FileDown, FileText, Loader2 } from 'lucide-react';
+import { LocaleProvider } from '@midnite/shell';
+import type { Locale } from '@midnite/shared';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { useToast } from '@/components/toast';
+import { CATALOGS } from '@/i18n/messages';
 import { cn } from '@/lib/utils';
 
 /**
@@ -85,6 +89,7 @@ function triggerDownload(filename: string, content: string, mimeType: string): v
 
 export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, iconOnly, hoverExpand, className }: Props) {
   const toast = useToast();
+  const locale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | 'html' | null>(null);
   const [copied, setCopied] = useState(false);
@@ -194,10 +199,19 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
       // The page title seeds the default "Save as PDF" filename.
       const previousTitle = document.title;
       document.title = title ?? filename;
+      // This root is **detached** from the app tree, so it carries no intl context of
+      // its own — and `MarkdownPreview` reads `common.editor.taskItem.*` for GFM
+      // checkbox accessible names (Phase 82 Theme D). Without the provider the render
+      // throws *after* the enclosing await, so it escapes this try/catch and the print
+      // dialog opens over an empty container: a silent blank PDF. `locale` comes from
+      // `useLocale()` above rather than the provider's own mount-effect resolution, so
+      // the printed document can't race to en-GB.
       printRootRef.current.render(
-        <div style={{ padding: '2rem', color: '#000', background: '#fff' }}>
-          <MarkdownPreview content={markdown} />
-        </div>,
+        <LocaleProvider catalogs={CATALOGS} initialLocale={locale}>
+          <div style={{ padding: '2rem', color: '#000', background: '#fff' }}>
+            <MarkdownPreview content={markdown} />
+          </div>
+        </LocaleProvider>,
       );
       await new Promise((resolve) => setTimeout(resolve, 50));
       window.print();
@@ -208,7 +222,7 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
     } finally {
       setBusy(null);
     }
-  }, [fetchMarkdown, filename, title, toast]);
+  }, [fetchMarkdown, filename, title, toast, locale]);
 
   const downloadHtml = useCallback(async () => {
     if (!buildHtml) return;

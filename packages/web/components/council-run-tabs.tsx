@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Loader2, RotateCcw, Sparkles, SkipForward } from 'lucide-react';
 import {
   AGENT_CLI_LABEL,
@@ -10,6 +10,7 @@ import {
   type CouncilRun,
   type CouncilRunMember,
   type CouncilSynthesisEntry,
+  type Locale,
 } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,9 @@ export function CouncilRunTabs({
   onReSynthesize?: (format: CouncilFormat) => void;
 }) {
   const t = useTranslations('council');
+  // Passed into `captureMarkdownHtml`'s detached root, which has no intl context of
+  // its own — see that module's note on why the provider must not resolve it itself.
+  const locale = useLocale() as Locale;
   const formats = useCouncilFormatLabels();
   const memberStatusLabel = useCouncilMemberStatusLabel();
   const [active, setActive] = useState<string>(run.members[0]?.id ?? SYNTH_TAB);
@@ -159,7 +163,7 @@ export function CouncilRunTabs({
       syntheses.push({
         format: entry.format,
         label: formats.label(entry.format),
-        bodyHtml: await captureMarkdownHtml(entry.synthesis),
+        bodyHtml: await captureMarkdownHtml(entry.synthesis, locale),
         isActive: entry.format === run.format,
         legend: legendFor(entry),
       });
@@ -176,7 +180,7 @@ export function CouncilRunTabs({
     });
     const date = (run.finishedAt ?? run.startedAt).slice(0, 10);
     return { filename: councilHtmlExportFilename(councilName, run.format, date), html };
-  }, [councilName, formats, memberStatusLabel, run, t]);
+  }, [councilName, formats, memberStatusLabel, run, t, locale]);
 
   return (
     <div className="flex flex-col gap-3">
