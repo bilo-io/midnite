@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Pause, Play } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
 
 type Props = { src: string };
 
 export function WaveSurferPlayer({ src }: Props) {
+  const t = useTranslations('media');
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WaveSurfer | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -56,7 +58,7 @@ export function WaveSurferPlayer({ src }: Props) {
           type="button"
           disabled={!ready}
           onClick={() => wsRef.current?.playPause()}
-          aria-label={playing ? 'Pause' : 'Play'}
+          aria-label={playing ? t('player.pause') : t('player.play')}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-accent disabled:opacity-40"
         >
           {playing ? (

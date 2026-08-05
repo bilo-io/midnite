@@ -8,6 +8,7 @@ import council from './council.json';
 import dashboard from './dashboard.json';
 import digests from './digests.json';
 import guide from './guide.json';
+import media from './media.json';
 import memory from './memory.json';
 import nav from './nav.json';
 import office from './office.json';
@@ -31,6 +32,7 @@ export default {
   dashboard,
   digests,
   guide,
+  media,
   memory,
   nav,
   office,

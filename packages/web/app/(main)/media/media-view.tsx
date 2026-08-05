@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ImageIcon, Images, Layers2, LayoutGrid, List, ListTree, Music2, PanelLeftClose, PanelLeftOpen, Play, Video, type LucideIcon } from 'lucide-react';
 import { Select, type SelectOption } from '@midnite/ui';
 import type { Media, MediaType, Project } from '@midnite/shared';
@@ -20,6 +21,8 @@ import { ProjectSelect } from '@/components/project-select';
 import { ProviderIcon } from '@/components/provider-icon';
 import { mediaFileUrl } from '@/lib/api';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { useMediaTypeLabel } from '@/lib/i18n-labels';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 
@@ -28,18 +31,11 @@ type View = 'list' | 'grid' | 'table';
 const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.media.view';
 // Grid is the masonry gallery; list/table are flat layouts across types.
-const VIEW_OPTIONS: Array<{ value: View; label: string; Icon: LucideIcon }> = [
-  { value: 'list', label: 'List view', Icon: List },
-  { value: 'grid', label: 'Grid view', Icon: LayoutGrid },
-  { value: 'table', label: 'Table view', Icon: ListTree },
+const VIEW_OPTIONS: Array<{ value: View; labelKey: string; Icon: LucideIcon }> = [
+  { value: 'list', labelKey: 'list.listView', Icon: List },
+  { value: 'grid', labelKey: 'list.gridView', Icon: LayoutGrid },
+  { value: 'table', labelKey: 'list.tableView', Icon: ListTree },
 ];
-
-const TYPE_LABELS: Record<TabType, string> = {
-  all: 'All',
-  image: 'Image',
-  video: 'Video',
-  audio: 'Audio',
-};
 
 const TYPE_ICONS: Record<TabType, LucideIcon> = {
   all: Layers2,
@@ -48,16 +44,23 @@ const TYPE_ICONS: Record<TabType, LucideIcon> = {
   audio: Music2,
 };
 
+/** `m:ss` — a media timeline, not prose, so only the digits are locale-formatted. */
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+/** Byte-unit suffixes are catalog copy (Theme E flagged them as a follow-up). */
+function useSizeLabel(): (bytes: number) => string {
+  const t = useTranslations('media');
+  const { number } = useLocaleFormat();
+  const one = (v: number) => number(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return (bytes) => {
+    if (bytes < 1024) return t('size.bytes', { value: number(bytes) });
+    if (bytes < 1024 * 1024) return t('size.kilobytes', { value: one(bytes / 1024) });
+    return t('size.megabytes', { value: one(bytes / (1024 * 1024)) });
+  };
 }
 
 type Props = {
@@ -67,6 +70,11 @@ type Props = {
 };
 
 export function MediaView({ items, projects, error }: Props) {
+  const t = useTranslations('media');
+  const typeLabel = useMediaTypeLabel();
+  const formatSize = useSizeLabel();
+  /** `all` is a UI-only tab, so it isn't in the shared `MediaType` enum. */
+  const tabLabel = (tab: TabType) => (tab === 'all' ? t('types.all') : typeLabel(tab));
   useGatewayErrorToast(error);
   const [sidebarOpen, setSidebarOpen] = useLocalStorage('midnite.media.sidebar', true);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -259,10 +267,10 @@ export function MediaView({ items, projects, error }: Props) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border/60 text-left text-xs text-muted-foreground">
-            <th className="px-3 py-2 font-medium">Title</th>
-            <th className="px-3 py-2 font-medium">Type</th>
-            <th className="px-3 py-2 font-medium">Project</th>
-            <th className="px-3 py-2 text-right font-medium">Size</th>
+            <th className="px-3 py-2 font-medium">{t('list.columns.title')}</th>
+            <th className="px-3 py-2 font-medium">{t('list.columns.type')}</th>
+            <th className="px-3 py-2 font-medium">{t('list.columns.project')}</th>
+            <th className="px-3 py-2 text-right font-medium">{t('list.columns.size')}</th>
           </tr>
         </thead>
         <tbody>
@@ -311,19 +319,25 @@ export function MediaView({ items, projects, error }: Props) {
       <div className="space-y-6">
         {images.length > 0 && (
           <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images</h2>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('list.sections.images')}
+            </h2>
             {renderImages(images)}
           </section>
         )}
         {videos.length > 0 && (
           <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Video</h2>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('list.sections.video')}
+            </h2>
             {renderVideos(videos)}
           </section>
         )}
         {audios.length > 0 && (
           <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audio</h2>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('list.sections.audio')}
+            </h2>
             {renderAudio(audios)}
           </section>
         )}
@@ -346,7 +360,7 @@ export function MediaView({ items, projects, error }: Props) {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              aria-label="Expand media sidebar"
+              aria-label={t('sidebar.expand')}
               className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent"
             >
               <PanelLeftOpen className="h-4 w-4" />
@@ -356,12 +370,12 @@ export function MediaView({ items, projects, error }: Props) {
           <div className="p-3">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Media
+                {t('sidebar.heading')}
               </span>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                aria-label="Collapse media sidebar"
+                aria-label={t('sidebar.collapse')}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent"
               >
                 <PanelLeftClose className="h-4 w-4" />
@@ -371,34 +385,34 @@ export function MediaView({ items, projects, error }: Props) {
             {/* Project selector */}
             <div className="mb-3">
               <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Project
+                {t('sidebar.project')}
               </label>
               <ProjectSelect
                 projects={projects}
                 value={selectedProjectId || null}
                 onChange={(id) => setSelectedProjectId(id ?? '')}
-                placeholder="All projects"
+                placeholder={t('sidebar.allProjects')}
               />
             </div>
 
             {/* Type tabs */}
             <div className="mb-3 flex flex-col gap-0.5">
-              {(['all', ...MEDIA_TYPES] as TabType[]).map((t) => {
-                const Icon = TYPE_ICONS[t];
+              {(['all', ...MEDIA_TYPES] as TabType[]).map((tab) => {
+                const Icon = TYPE_ICONS[tab];
                 return (
                   <button
-                    key={t}
+                    key={tab}
                     type="button"
-                    onClick={() => setSelectedType(t)}
+                    onClick={() => setSelectedType(tab)}
                     className={cn(
                       'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors',
-                      selectedType === t
+                      selectedType === tab
                         ? 'bg-accent text-accent-foreground font-medium'
                         : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    {TYPE_LABELS[t]}
+                    {tabLabel(tab)}
                   </button>
                 );
               })}
@@ -409,7 +423,7 @@ export function MediaView({ items, projects, error }: Props) {
             {/* Per-type provider + model selectors */}
             <div>
               <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Generation models
+                {t('sidebar.generationModels')}
               </p>
               {MEDIA_TYPES.map((type) => {
                 const sel = mediaModels[type];
@@ -426,7 +440,7 @@ export function MediaView({ items, projects, error }: Props) {
                 }));
                 return (
                   <div key={type} className="mb-3">
-                    <p className="mb-1 text-[11px] capitalize text-muted-foreground">{type}</p>
+                    <p className="mb-1 text-[11px] text-muted-foreground">{typeLabel(type)}</p>
                     <Select
                       options={providerOptions}
                       value={sel.provider}
@@ -434,14 +448,14 @@ export function MediaView({ items, projects, error }: Props) {
                         const p = providers.find((x) => x.provider === prov) ?? providers[0]!;
                         setMediaModel(type, { provider: p.provider, model: p.models[0]!.value });
                       }}
-                      aria-label={`${type} provider`}
+                      aria-label={t('sidebar.providerAria', { type: typeLabel(type) })}
                     />
                     <div className="mt-1">
                       <Select
                         options={modelOptions}
                         value={sel.model}
                         onChange={(model) => setMediaModel(type, { provider: sel.provider, model })}
-                        aria-label={`${type} model`}
+                        aria-label={t('sidebar.modelAria', { type: typeLabel(type) })}
                       />
                     </div>
                   </div>
@@ -459,15 +473,15 @@ export function MediaView({ items, projects, error }: Props) {
         <StickyToolbar className="mb-4">
           <CountPill count={filtered.length} />
           <div className="flex shrink-0 items-center gap-2">
-            <SearchBar placeholder="Search media" />
+            <SearchBar placeholder={t('list.search')} />
             <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-              {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+              {VIEW_OPTIONS.map(({ value, labelKey, Icon }) => (
                 <Button
                   key={value}
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={label}
+                  aria-label={t(labelKey)}
                   aria-pressed={view === value}
                   onClick={() => onSetView(value)}
                   className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
@@ -497,11 +511,17 @@ export function MediaView({ items, projects, error }: Props) {
 }
 
 function Empty({ type }: { type: TabType }) {
+  const t = useTranslations('media');
+  const typeLabel = useMediaTypeLabel();
   return (
     <EmptyState
       Icon={Images}
-      title={type === 'all' ? 'No media yet' : `No ${type} items yet`}
-      description="Generate or upload media to build out your library."
+      title={
+        type === 'all'
+          ? t('empty.allTitle')
+          : t('empty.typedTitle', { type: typeLabel(type).toLocaleLowerCase() })
+      }
+      description={t('empty.description')}
       action={<NewMediaButton variant="large" />}
     />
   );
