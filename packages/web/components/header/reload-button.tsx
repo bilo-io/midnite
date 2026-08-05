@@ -31,6 +31,11 @@ export function ReloadButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);
   const [spinning, setSpinning] = useState(false);
+  // The spin-reset timer is tracked so unmount can cancel it. Left uncleared it
+  // fired ~500ms after the component (or a test's environment) had gone away,
+  // setting state on nothing — which surfaced as a post-teardown unhandled error
+  // in CI once this directory entered the affected set.
+  const spinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -59,8 +64,16 @@ export function ReloadButton({ className }: { className?: string }) {
   const doRefresh = () => {
     refresh();
     setSpinning(true);
-    setTimeout(() => setSpinning(false), 500);
+    if (spinTimer.current) clearTimeout(spinTimer.current);
+    spinTimer.current = setTimeout(() => setSpinning(false), 500);
   };
+
+  useEffect(
+    () => () => {
+      if (spinTimer.current) clearTimeout(spinTimer.current);
+    },
+    [],
+  );
 
   return (
     <>
