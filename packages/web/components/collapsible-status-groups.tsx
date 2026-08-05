@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Collapse } from '@/components/ui/collapse';
 import { cn } from '@/lib/utils';
 
@@ -153,6 +154,7 @@ function Group({
   collapsed: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations('common');
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: group.id });
 
@@ -168,7 +170,7 @@ function Group({
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          aria-label="Reorder section"
+          aria-label={t('reorderSection')}
           className="-ml-1 cursor-grab touch-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent/50 hover:text-foreground focus-visible:opacity-100 group-hover/section:opacity-100 active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />

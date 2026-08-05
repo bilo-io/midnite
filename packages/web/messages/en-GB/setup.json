@@ -1,0 +1,161 @@
+{
+  "items": {
+    "provider": {
+      "label": "LLM provider"
+    },
+    "secret-key": {
+      "label": "Secret key"
+    },
+    "agent-cli": {
+      "label": "Agent CLI"
+    },
+    "agent-pool": {
+      "label": "Agent pool"
+    },
+    "repo": {
+      "label": "Repository"
+    }
+  },
+  "wizard": {
+    "title": "Set up Midnite",
+    "dialogLabel": "Setup wizard",
+    "back": "Back",
+    "continue": "Continue",
+    "steps": {
+      "provider": "AI provider",
+      "tools": "System tools",
+      "pool": "Concurrency",
+      "repo": "Repository",
+      "finish": "Ready!"
+    },
+    "stepAria": {
+      "collapsed": "Step {step} of {total}: {label}"
+    },
+    "provider": {
+      "heading": "AI provider",
+      "description": "Midnite uses an LLM to classify tasks, plan, and guide agents. Paste your API key here — it's encrypted at rest.",
+      "providerLabel": "Provider",
+      "apiKeyLabel": "API key",
+      "apiKeyAlreadySet": "(already set — leave blank to keep)",
+      "apiKeyPlaceholder": "sk-…",
+      "apiKeyMaskedPlaceholder": "••••••••",
+      "keepExisting": "Keep existing key",
+      "saveAndContinue": "Save and continue",
+      "saveFailed": "Failed to save"
+    },
+    "tools": {
+      "heading": "System tools",
+      "description": "Midnite runs <cli>claude</cli> to execute tasks and uses <gh>gh</gh> to open pull requests.",
+      "githubCli": "gh (GitHub CLI)",
+      "install": "Install →",
+      "recheck": "Re-check"
+    },
+    "pool": {
+      "heading": "Concurrency",
+      "description": "How many tasks can run in parallel. Start low — you can always increase it in Settings.",
+      "sliderLabel": "Tasks in parallel",
+      "one": "One task at a time (safe default).",
+      "many": "Up to {count} tasks in parallel."
+    },
+    "repo": {
+      "heading": "Repository",
+      "optional": "(optional)",
+      "description": "Add the repository Midnite will work in. You can add more later under Settings → Repos.",
+      "nameLabel": "Name",
+      "namePlaceholder": "my-app",
+      "pathLabel": "Path",
+      "pathPlaceholder": "~/code/my-app",
+      "skip": "Skip — manage repos later",
+      "add": "Add repo",
+      "addFailed": "Failed to add repo"
+    },
+    "finish": {
+      "ready": "You're all set!",
+      "almostHeading": "Almost there",
+      "almostDescription": "A few items still need attention.",
+      "fix": "Fix →",
+      "startBuilding": "Start building",
+      "goToBoard": "Go to board"
+    }
+  },
+  "nudge": {
+    "title": "Finish setting up Midnite",
+    "stepsLeft": "{count, plural, one {# step} other {# steps}} left before agents can run.",
+    "recommendedRemain": "A couple of recommended steps remain.",
+    "openWizard": "Open setup wizard",
+    "setUpItem": "Set up {label}",
+    "openSettings": "Open settings"
+  },
+  "agents": {
+    "expand": "Expand {label}",
+    "collapse": "Collapse {label}",
+    "installed": "installed",
+    "notInstalled": "not installed",
+    "badgeSessions": "Sessions",
+    "badgeAi": "AI",
+    "configurationAria": "{label} configuration",
+    "tabs": {
+      "cli": "CLI",
+      "api": "API"
+    },
+    "cli": {
+      "description": "The {label} CLI is launched in a session terminal to run tasks. Install or update it here, then set it as the CLI used for new sessions.",
+      "docsLink": "{label} docs",
+      "uninstall": "Uninstall",
+      "reinstall": "Reinstall / Update",
+      "install": "Install",
+      "activeForSessions": "Active for sessions",
+      "useForSessions": "Use for sessions"
+    },
+    "api": {
+      "description": "Use your own {label} API key to power Midnite's AI features (task triage, plan drafting, the heartbeat and AI workflow nodes). Stored on the gateway; never shown again after saving.",
+      "apiKeyLabel": "API key",
+      "getKey": "Get a {label} key",
+      "keyPlaceholder": "Paste your API key",
+      "storedKeyPlaceholder": "•••• {hint}",
+      "storedFallback": "stored",
+      "baseUrlLabel": "Base URL",
+      "planModelLabel": "Plan model",
+      "actModelLabel": "Act model",
+      "modelPlaceholder": "default",
+      "save": "Save",
+      "clearKey": "Clear key",
+      "saved": "Saved",
+      "activeForAi": "Active for AI",
+      "useForAi": "Use for AI features",
+      "saveFailed": "Failed to save",
+      "activateFailed": "Failed to activate"
+    }
+  },
+  "cliAction": {
+    "install": "Install",
+    "uninstall": "Uninstall",
+    "dialogLabel": "{verb} {label}",
+    "heading": "{verb} {label}",
+    "terminalAria": "{verb} {label} terminal",
+    "hintInstall": "The install command is typed below",
+    "hintUninstall": "The uninstall command is typed below",
+    "hintSuffix": "{hint} — press <kbd>Enter</kbd> to run it. Close anytime.",
+    "preparingInstall": "Preparing install…",
+    "preparingUninstall": "Preparing uninstall…",
+    "startFailedInstall": "Failed to start install",
+    "startFailedUninstall": "Failed to start uninstall"
+  },
+  "providerSelect": {
+    "listAria": "Provider"
+  },
+  "guardrails": {
+    "changeFailed": "Guardrail change failed",
+    "resumeScheduling": "Resume scheduling",
+    "pauseScheduling": "Pause scheduling",
+    "emergencyStop": "Emergency stop",
+    "resume": "Resume",
+    "resumed": "Scheduling resumed",
+    "paused": "Scheduling paused",
+    "stopped": "Emergency stop — agents aborted",
+    "confirmStopTitle": "Emergency stop?",
+    "confirmStopDescription": "Pauses all scheduling and aborts every in-flight agent. Aborted tasks return to Todo and re-run when you resume.",
+    "bannerGlobal": "Scheduling paused — no new agents will start.",
+    "bannerScoped": "Scheduling paused for {count, plural, one {# scope} other {# scopes}}."
+  }
+}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ProviderOption } from '@/lib/use-media-models';
 import { ProviderIcon } from './provider-icon';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function ProviderSelect({ providers, value, onChange, size = 'default', className }: Props) {
+  const t = useTranslations('setup');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const current = providers.find((p) => p.provider === value) ?? providers[0]!;
@@ -61,7 +63,7 @@ export function ProviderSelect({ providers, value, onChange, size = 'default', c
       {open && (
         <ul
           role="listbox"
-          aria-label="Provider"
+          aria-label={t('providerSelect.listAria')}
           className="absolute left-0 right-0 top-full z-50 mt-1 max-h-52 overflow-auto rounded-md border border-border bg-card shadow-md"
         >
           {providers.map((p) => {

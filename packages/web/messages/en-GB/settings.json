@@ -292,6 +292,25 @@
         "timeout": "Timeout",
         "expired": "Expired"
       }
+    },
+    "inbox": {
+      "trigger": "Approvals",
+      "triggerAria": "Approvals inbox",
+      "triggerAriaPending": "Approvals inbox, {count} pending",
+      "triggerWithCount": "Approvals ({count})",
+      "title": "Approvals inbox",
+      "close": "Close approvals inbox",
+      "empty": "No pending approvals",
+      "manageLink": "Manage autonomy mode & rules →",
+      "expired": "expired",
+      "countdown": "{minutes}m {seconds}s",
+      "countdownSeconds": "{seconds}s",
+      "allow": "Allow",
+      "deny": "Deny",
+      "allowSession": "Allow session",
+      "makeRule": "Make a rule",
+      "requested": "Requested {when}",
+      "taskSuffix": " · task {id}"
     }
   },
   "credentials": {

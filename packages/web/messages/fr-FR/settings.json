@@ -292,6 +292,25 @@
         "timeout": "Délai dépassé",
         "expired": "Expiré"
       }
+    },
+    "inbox": {
+      "trigger": "Approbations",
+      "triggerAria": "Boîte de réception des approbations",
+      "triggerAriaPending": "Boîte de réception des approbations, {count} en attente",
+      "triggerWithCount": "Approbations ({count})",
+      "title": "Boîte de réception des approbations",
+      "close": "Fermer la boîte de réception des approbations",
+      "empty": "Aucune approbation en attente",
+      "manageLink": "Gérer le mode d'autonomie et les règles →",
+      "expired": "expiré",
+      "countdown": "{minutes} min {seconds} s",
+      "countdownSeconds": "{seconds} s",
+      "allow": "Autoriser",
+      "deny": "Refuser",
+      "allowSession": "Autoriser la session",
+      "makeRule": "Créer une règle",
+      "requested": "Demandé {when}",
+      "taskSuffix": " · tâche {id}"
     }
   },
   "credentials": {

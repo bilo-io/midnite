@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { SetupItem, SetupItemState, SetupStatus } from '@midnite/shared';
 
@@ -14,6 +14,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/lib/api', () => ({ getSetupStatus: vi.fn() }));
 import { getSetupStatus } from '@/lib/api';
 import { SetupNudge } from './setup-nudge';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const mockGetSetupStatus = vi.mocked(getSetupStatus);
 
@@ -48,10 +49,16 @@ describe('SetupNudge', () => {
     await screen.findByRole('region', { name: /finish setting up midnite/i });
     expect(screen.getByText('2 steps left before agents can run.')).toBeInTheDocument();
     // First missing item (provider) drives the primary CTA → settings/agents.
-    const cta = screen.getByRole('link', { name: /set up provider/i });
+    // The fixture sends `label: id`, but `useSetupItemLabel()` (Phase 82 D) resolves
+    // the catalog copy for a known item id in preference to the server's label — so
+    // these read the localised wording, not the raw ids.
+    const cta = screen.getByRole('link', { name: /set up LLM provider/i });
     expect(cta).toHaveAttribute('href', '/settings/agents');
     // A missing row deep-links into the right surface.
-    expect(screen.getByRole('link', { name: /secret-key/i })).toHaveAttribute('href', '/settings/system');
+    expect(screen.getByRole('link', { name: /secret key/i })).toHaveAttribute(
+      'href',
+      '/settings/system',
+    );
   });
 
   it('renders nothing once the install is ready', async () => {

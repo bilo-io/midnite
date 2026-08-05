@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createPortal } from 'react-dom';
 import {
   ArrowLeft,
@@ -40,6 +41,7 @@ import {
 } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { SETUP_DOT, SETUP_ITEM_HREF } from '@/lib/setup-items';
+import { useSetupItemLabel } from '@/lib/setup-item-labels';
 import { cn } from '@/lib/utils';
 
 const WIZARD_DISMISS_KEY = 'midnite.setup-wizard.dismissed';
@@ -47,19 +49,11 @@ const WIZARD_DISMISS_KEY = 'midnite.setup-wizard.dismissed';
 // ── step definitions ──────────────────────────────────────────────────────────
 
 const STEPS = ['provider', 'tools', 'pool', 'repo', 'finish'] as const;
-type StepId = (typeof STEPS)[number];
-
-const STEP_LABELS: Record<StepId, string> = {
-  provider: 'AI provider',
-  tools: 'System tools',
-  pool: 'Concurrency',
-  repo: 'Repository',
-  finish: 'Ready!',
-};
 
 // ── step: Provider ─────────────────────────────────────────────────────────────
 
 function ProviderStep({ onDone }: { onDone: () => void }) {
+  const t = useTranslations('setup');
   const [providers, setProviders] = useState<ProvidersResponse | null>(null);
   const [selected, setSelected] = useState<LlmProvider>('anthropic');
   const [key, setKey] = useState('');
@@ -83,7 +77,7 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
       await setActiveProvider(selected);
       onDone();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(e instanceof Error ? e.message : t('wizard.provider.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -95,16 +89,15 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold">AI provider</h3>
-        <p className="text-xs text-muted-foreground">
-          Midnite uses an LLM to classify tasks, plan, and guide agents. Paste your API key here
-          — it's encrypted at rest.
-        </p>
+        <h3 className="text-sm font-semibold">{t('wizard.provider.heading')}</h3>
+        <p className="text-xs text-muted-foreground">{t('wizard.provider.description')}</p>
       </div>
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <label htmlFor="wizard-provider" className="text-xs font-medium">Provider</label>
+          <label htmlFor="wizard-provider" className="text-xs font-medium">
+            {t('wizard.provider.providerLabel')}
+          </label>
           <select
             id="wizard-provider"
             value={selected}
@@ -119,13 +112,20 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
 
         <div className="space-y-1.5">
           <label htmlFor="wizard-key" className="text-xs font-medium">
-            API key {hasKey ? <span className="text-muted-foreground">(already set — leave blank to keep)</span> : null}
+            {t('wizard.provider.apiKeyLabel')}{' '}
+            {hasKey ? (
+              <span className="text-muted-foreground">{t('wizard.provider.apiKeyAlreadySet')}</span>
+            ) : null}
           </label>
           <input
             id="wizard-key"
             type="password"
             autoComplete="off"
-            placeholder={hasKey ? '••••••••' : 'sk-…'}
+            placeholder={
+              hasKey
+                ? t('wizard.provider.apiKeyMaskedPlaceholder')
+                : t('wizard.provider.apiKeyPlaceholder')
+            }
             value={key}
             onChange={(e) => setKey(e.target.value)}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -138,7 +138,9 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving || (!key.trim() && !hasKey)}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {hasKey && !key.trim() ? 'Keep existing key' : 'Save and continue'}
+          {hasKey && !key.trim()
+            ? t('wizard.provider.keepExisting')
+            : t('wizard.provider.saveAndContinue')}
           {!saving ? <ArrowRight className="ml-2 h-4 w-4" /> : null}
         </Button>
       </div>
@@ -149,6 +151,7 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
 // ── step: Tools ────────────────────────────────────────────────────────────────
 
 function ToolsStep({ onDone }: { onDone: () => void }) {
+  const t = useTranslations('setup');
   const [statuses, setStatuses] = useState<Awaited<ReturnType<typeof getCliStatuses>> | null>(null);
 
   useEffect(() => {
@@ -162,9 +165,12 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold">System tools</h3>
+        <h3 className="text-sm font-semibold">{t('wizard.tools.heading')}</h3>
         <p className="text-xs text-muted-foreground">
-          Midnite runs <code className="font-mono text-[11px]">claude</code> to execute tasks and uses <code className="font-mono text-[11px]">gh</code> to open pull requests.
+          {t.rich('wizard.tools.description', {
+            cli: (chunks) => <code className="font-mono text-[11px]">{chunks}</code>,
+            gh: (chunks) => <code className="font-mono text-[11px]">{chunks}</code>,
+          })}
         </p>
       </div>
 
@@ -172,7 +178,10 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
         {REQUIRED.map((id) => {
           const cliStatus = statuses?.find((s) => s.cli === id);
           const ok = cliStatus?.installed === true;
-          const label = id === 'gh' ? 'gh (GitHub CLI)' : (AGENT_CLI_LABEL[id as keyof typeof AGENT_CLI_LABEL] ?? id);
+          const label =
+            id === 'gh'
+              ? t('wizard.tools.githubCli')
+              : (AGENT_CLI_LABEL[id as keyof typeof AGENT_CLI_LABEL] ?? id);
           const href = id === 'gh' ? 'https://cli.github.com' : (AGENT_CLI_HOMEPAGE_URL[id as keyof typeof AGENT_CLI_HOMEPAGE_URL] ?? 'https://claude.ai/code');
           return (
             <div key={id} className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5">
@@ -189,7 +198,7 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
                   rel="noreferrer"
                   className="text-xs text-primary underline-offset-2 hover:underline"
                 >
-                  Install →
+                  {t('wizard.tools.install')}
                 </a>
               ) : null}
             </div>
@@ -199,10 +208,10 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
 
       <div className="flex items-center justify-between">
         <button type="button" onClick={refresh} className="text-xs text-muted-foreground hover:text-foreground">
-          Re-check
+          {t('wizard.tools.recheck')}
         </button>
         <Button onClick={onDone}>
-          Continue <ArrowRight className="ml-2 h-4 w-4" />
+          {t('wizard.continue')} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -212,22 +221,22 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
 // ── step: Pool ─────────────────────────────────────────────────────────────────
 
 function PoolStep({ onDone }: { onDone: () => void }) {
+  const t = useTranslations('setup');
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const poolSize = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize));
 
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold">Concurrency</h3>
-        <p className="text-xs text-muted-foreground">
-          How many tasks can run in parallel. Start low — you can always increase it in Settings.
-        </p>
+        <h3 className="text-sm font-semibold">{t('wizard.pool.heading')}</h3>
+        <p className="text-xs text-muted-foreground">{t('wizard.pool.description')}</p>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <input
             type="range"
+            aria-label={t('wizard.pool.sliderLabel')}
             min={AGENT_POOL_MIN}
             max={AGENT_POOL_MAX}
             value={poolSize}
@@ -239,13 +248,13 @@ function PoolStep({ onDone }: { onDone: () => void }) {
           <span className="w-8 text-center text-sm font-mono font-semibold tabular-nums">{poolSize}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          {poolSize === 1 ? 'One task at a time (safe default).' : `Up to ${poolSize} tasks in parallel.`}
+          {poolSize === 1 ? t('wizard.pool.one') : t('wizard.pool.many', { count: poolSize })}
         </p>
       </div>
 
       <div className="flex justify-end">
         <Button onClick={onDone}>
-          Continue <ArrowRight className="ml-2 h-4 w-4" />
+          {t('wizard.continue')} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -255,6 +264,7 @@ function PoolStep({ onDone }: { onDone: () => void }) {
 // ── step: Repo ─────────────────────────────────────────────────────────────────
 
 function RepoStep({ onDone, onSkip }: { onDone: () => void; onSkip: () => void }) {
+  const t = useTranslations('setup');
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
   const [saving, setSaving] = useState(false);
@@ -268,7 +278,7 @@ function RepoStep({ onDone, onSkip }: { onDone: () => void; onSkip: () => void }
       await createRepo({ name: name.trim(), path: path.trim() });
       onDone();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to add repo');
+      setError(e instanceof Error ? e.message : t('wizard.repo.addFailed'));
     } finally {
       setSaving(false);
     }
@@ -277,28 +287,33 @@ function RepoStep({ onDone, onSkip }: { onDone: () => void; onSkip: () => void }
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold">Repository <span className="font-normal text-muted-foreground">(optional)</span></h3>
-        <p className="text-xs text-muted-foreground">
-          Add the repository Midnite will work in. You can add more later under Settings → Repos.
-        </p>
+        <h3 className="text-sm font-semibold">
+          {t('wizard.repo.heading')}{' '}
+          <span className="font-normal text-muted-foreground">{t('wizard.repo.optional')}</span>
+        </h3>
+        <p className="text-xs text-muted-foreground">{t('wizard.repo.description')}</p>
       </div>
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <label htmlFor="wizard-repo-name" className="text-xs font-medium">Name</label>
+          <label htmlFor="wizard-repo-name" className="text-xs font-medium">
+            {t('wizard.repo.nameLabel')}
+          </label>
           <input
             id="wizard-repo-name"
-            placeholder="my-app"
+            placeholder={t('wizard.repo.namePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="wizard-repo-path" className="text-xs font-medium">Path</label>
+          <label htmlFor="wizard-repo-path" className="text-xs font-medium">
+            {t('wizard.repo.pathLabel')}
+          </label>
           <input
             id="wizard-repo-path"
-            placeholder="~/code/my-app"
+            placeholder={t('wizard.repo.pathPlaceholder')}
             value={path}
             onChange={(e) => setPath(e.target.value)}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -309,11 +324,11 @@ function RepoStep({ onDone, onSkip }: { onDone: () => void; onSkip: () => void }
 
       <div className="flex items-center justify-between">
         <button type="button" onClick={onSkip} className="text-xs text-muted-foreground hover:text-foreground">
-          Skip — manage repos later
+          {t('wizard.repo.skip')}
         </button>
         <Button onClick={save} disabled={saving || !name.trim() || !path.trim()}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Add repo <ArrowRight className="ml-2 h-4 w-4" />
+          {t('wizard.repo.add')} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -323,6 +338,8 @@ function RepoStep({ onDone, onSkip }: { onDone: () => void; onSkip: () => void }
 // ── step: Finish ───────────────────────────────────────────────────────────────
 
 function FinishStep({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('setup');
+  const itemLabel = useSetupItemLabel();
   const router = useRouter();
   const [status, setStatus] = useState<SetupStatus | null>(null);
 
@@ -340,12 +357,14 @@ function FinishStep({ onClose }: { onClose: () => void }) {
       {status?.ready ? (
         <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-4 py-3">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-          <span className="text-sm font-semibold text-green-700 dark:text-green-400">You&apos;re all set!</span>
+          <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+            {t('wizard.finish.ready')}
+          </span>
         </div>
       ) : (
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Almost there</h3>
-          <p className="text-xs text-muted-foreground">A few items still need attention.</p>
+          <h3 className="text-sm font-semibold">{t('wizard.finish.almostHeading')}</h3>
+          <p className="text-xs text-muted-foreground">{t('wizard.finish.almostDescription')}</p>
         </div>
       )}
 
@@ -359,11 +378,13 @@ function FinishStep({ onClose }: { onClose: () => void }) {
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ background: SETUP_DOT[item.state] }}
                 />
-                <span className={done ? 'text-muted-foreground' : 'font-medium'}>{item.label}</span>
+                <span className={done ? 'text-muted-foreground' : 'font-medium'}>
+                  {itemLabel(item)}
+                </span>
                 {item.detail ? <span className="text-muted-foreground">— {item.detail}</span> : null}
                 {!done ? (
                   <a href={SETUP_ITEM_HREF[item.id]} className="ml-auto text-primary hover:underline">
-                    Fix →
+                    {t('wizard.finish.fix')}
                   </a>
                 ) : null}
               </li>
@@ -378,7 +399,7 @@ function FinishStep({ onClose }: { onClose: () => void }) {
 
       <div className="flex justify-end">
         <Button onClick={goToBoard}>
-          {status?.ready ? 'Start building' : 'Go to board'}
+          {status?.ready ? t('wizard.finish.startBuilding') : t('wizard.finish.goToBoard')}
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -394,6 +415,8 @@ type Props = {
 };
 
 export function SetupWizard({ open, onClose }: Props) {
+  const t = useTranslations('setup');
+  const tCommon = useTranslations('common');
   const [stepIndex, setStepIndex] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const step = STEPS[stepIndex];
@@ -417,7 +440,7 @@ export function SetupWizard({ open, onClose }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Setup wizard"
+      aria-label={t('wizard.dialogLabel')}
       className="fixed inset-0 z-50 flex items-center justify-center"
     >
       {/* Backdrop */}
@@ -435,11 +458,11 @@ export function SetupWizard({ open, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
           <Rocket className="h-4 w-4 shrink-0 text-primary" />
-          <span className="flex-1 text-sm font-semibold">Set up Midnite</span>
+          <span className="flex-1 text-sm font-semibold">{t('wizard.title')}</span>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tCommon('close')}
             className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
@@ -470,7 +493,7 @@ export function SetupWizard({ open, onClose }: Props) {
                   ) : (
                     <Circle className={cn('h-3 w-3', active ? 'text-primary fill-primary/20' : '')} />
                   )}
-                  {STEP_LABELS[s]}
+                  {t(`wizard.steps.${s}`)}
                 </button>
               </div>
             );
@@ -500,7 +523,7 @@ export function SetupWizard({ open, onClose }: Props) {
               onClick={back}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Back
+              <ArrowLeft className="h-3.5 w-3.5" /> {t('wizard.back')}
             </button>
           </div>
         ) : null}

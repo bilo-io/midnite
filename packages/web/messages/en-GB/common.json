@@ -134,6 +134,18 @@
       "ariaStock": "Search stocks",
       "ariaCrypto": "Search crypto",
       "placeholder": "Search…"
+    },
+    "export": {
+      "trigger": "Export",
+      "copyMarkdown": "Copy Markdown",
+      "downloadMd": "Download .md",
+      "downloadPdf": "Download PDF",
+      "downloadHtml": "Download HTML",
+      "copied": "Markdown copied to clipboard",
+      "copyFailed": "Could not copy markdown",
+      "downloadFailed": "Could not download markdown",
+      "pdfFailed": "Could not render PDF",
+      "htmlFailed": "Could not export HTML"
     }
   },
   "relativeTime": {

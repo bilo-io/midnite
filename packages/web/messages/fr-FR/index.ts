@@ -21,6 +21,7 @@ import safety from './safety.json';
 import search from './search.json';
 import sessions from './sessions.json';
 import settings from './settings.json';
+import setup from './setup.json';
 import slides from './slides.json';
 import task from './task.json';
 import workflows from './workflows.json';
@@ -47,6 +48,7 @@ export default {
   search,
   sessions,
   settings,
+  setup,
   slides,
   task,
   workflows,

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { OctagonX, Pause, Play } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { GuardrailSettings } from '@midnite/shared';
 import { emergencyStopGuardrails, pauseGuardrails } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -11,8 +12,9 @@ import { useToast } from '@/components/toast';
 
 const GLOBAL = { kind: 'global' } as const;
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Guardrail change failed';
+/** The fallback message needs the catalog, so it binds to the caller's translator. */
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 type Props = {
@@ -27,6 +29,7 @@ type Props = {
  * authorization is enforced server-side (admin-only); a non-admin sees the error.
  */
 export function GuardrailsControl({ guardrails, onChange }: Props) {
+  const t = useTranslations('setup');
   const confirm = useConfirm();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -37,7 +40,7 @@ export function GuardrailsControl({ guardrails, onChange }: Props) {
       onChange(await fn());
       toast.success(ok);
     } catch (e) {
-      toast.error(errMsg(e));
+      toast.error(errMsg(e, t('guardrails.changeFailed')));
     } finally {
       setBusy(false);
     }
@@ -49,10 +52,10 @@ export function GuardrailsControl({ guardrails, onChange }: Props) {
     return (
       <HoverExpandButton
         icon={<Play className="h-3.5 w-3.5" />}
-        label="Resume scheduling"
+        label={t('guardrails.resumeScheduling')}
         variant="secondary"
         disabled={busy}
-        onClick={() => void run(() => pauseGuardrails(GLOBAL, false), 'Scheduling resumed')}
+        onClick={() => void run(() => pauseGuardrails(GLOBAL, false), t('guardrails.resumed'))}
         className="border border-amber-500/40 text-amber-600 dark:text-amber-400"
       />
     );
@@ -63,27 +66,26 @@ export function GuardrailsControl({ guardrails, onChange }: Props) {
   const emergencyStop = () =>
     void (async () => {
       const okd = await confirm({
-        title: 'Emergency stop?',
-        description:
-          'Pauses all scheduling and aborts every in-flight agent. Aborted tasks return to Todo and re-run when you resume.',
-        confirmLabel: 'Emergency stop',
+        title: t('guardrails.confirmStopTitle'),
+        description: t('guardrails.confirmStopDescription'),
+        confirmLabel: t('guardrails.emergencyStop'),
       });
-      if (okd) await run(() => emergencyStopGuardrails(GLOBAL), 'Emergency stop — agents aborted');
+      if (okd) await run(() => emergencyStopGuardrails(GLOBAL), t('guardrails.stopped'));
     })();
 
   return (
     <div className="flex items-center gap-1">
       <HoverExpandButton
         icon={<Pause className="h-3.5 w-3.5" />}
-        label="Pause scheduling"
+        label={t('guardrails.pauseScheduling')}
         variant="ghost"
         disabled={busy}
-        onClick={() => void run(() => pauseGuardrails(GLOBAL, true), 'Scheduling paused')}
+        onClick={() => void run(() => pauseGuardrails(GLOBAL, true), t('guardrails.paused'))}
         className="text-muted-foreground"
       />
       <HoverExpandButton
         icon={<OctagonX className="h-3.5 w-3.5" />}
-        label="Emergency stop"
+        label={t('guardrails.emergencyStop')}
         variant="ghost"
         disabled={busy}
         onClick={emergencyStop}
@@ -98,6 +100,7 @@ export function GuardrailsControl({ guardrails, onChange }: Props) {
  * (global, or any repo/team scope). Resume clears a global pause inline.
  */
 export function GuardrailsBanner({ guardrails, onChange }: Props) {
+  const t = useTranslations('setup');
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const scoped = guardrails.pausedRepos.length + guardrails.pausedTeams.length;
@@ -108,9 +111,9 @@ export function GuardrailsBanner({ guardrails, onChange }: Props) {
     setBusy(true);
     try {
       onChange(await pauseGuardrails(GLOBAL, false));
-      toast.success('Scheduling resumed');
+      toast.success(t('guardrails.resumed'));
     } catch (e) {
-      toast.error(errMsg(e));
+      toast.error(errMsg(e, t('guardrails.changeFailed')));
     } finally {
       setBusy(false);
     }
@@ -124,8 +127,8 @@ export function GuardrailsBanner({ guardrails, onChange }: Props) {
       <Pause className="h-4 w-4 shrink-0" />
       <span className="font-medium">
         {guardrails.pausedGlobal
-          ? 'Scheduling paused — no new agents will start.'
-          : `Scheduling paused for ${scoped} scope${scoped === 1 ? '' : 's'}.`}
+          ? t('guardrails.bannerGlobal')
+          : t('guardrails.bannerScoped', { count: scoped })}
       </span>
       {guardrails.pausedGlobal ? (
         <Button
@@ -136,7 +139,7 @@ export function GuardrailsBanner({ guardrails, onChange }: Props) {
           onClick={() => void resumeGlobal()}
           className="ml-auto h-6 gap-1 px-2 text-[11px]"
         >
-          <Play className="h-3 w-3" /> Resume
+          <Play className="h-3 w-3" /> {t('guardrails.resume')}
         </Button>
       ) : null}
     </div>

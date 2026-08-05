@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { useLocale } from 'next-intl';
 import { Check, Copy, Download, FileCode2, FileDown, FileText, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { LocaleProvider } from '@midnite/shell';
 import type { Locale } from '@midnite/shared';
 import { MarkdownPreview } from '@/components/markdown-preview';
@@ -88,6 +89,7 @@ function triggerDownload(filename: string, content: string, mimeType: string): v
 }
 
 export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, iconOnly, hoverExpand, className }: Props) {
+  const t = useTranslations('common');
   const toast = useToast();
   const locale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
@@ -148,14 +150,14 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
       await navigator.clipboard.writeText(markdown);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-      toast.success('Markdown copied to clipboard');
+      toast.success(t('chrome.export.copied'));
       setOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not copy markdown');
+      toast.error(err instanceof Error ? err.message : t('chrome.export.copyFailed'));
     } finally {
       setBusy(null);
     }
-  }, [fetchMarkdown, toast]);
+  }, [fetchMarkdown, toast, t]);
 
   const downloadMarkdown = useCallback(async () => {
     setBusy('md');
@@ -165,11 +167,11 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
       triggerDownload(name, markdown, 'text/markdown;charset=utf-8');
       setOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not download markdown');
+      toast.error(err instanceof Error ? err.message : t('chrome.export.downloadFailed'));
     } finally {
       setBusy(null);
     }
-  }, [fetchMarkdown, filename, toast]);
+  }, [fetchMarkdown, filename, toast, t]);
 
   const downloadPdf = useCallback(async () => {
     setBusy('pdf');
@@ -218,11 +220,11 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
       document.title = previousTitle;
       setOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not render PDF');
+      toast.error(err instanceof Error ? err.message : t('chrome.export.pdfFailed'));
     } finally {
       setBusy(null);
     }
-  }, [fetchMarkdown, filename, title, toast, locale]);
+  }, [fetchMarkdown, filename, title, toast, locale, t]);
 
   const downloadHtml = useCallback(async () => {
     if (!buildHtml) return;
@@ -232,11 +234,11 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
       triggerDownload(name, html, 'text/html;charset=utf-8');
       setOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not export HTML');
+      toast.error(err instanceof Error ? err.message : t('chrome.export.htmlFailed'));
     } finally {
       setBusy(null);
     }
-  }, [buildHtml, toast]);
+  }, [buildHtml, toast, t]);
 
   const items: {
     key: 'copy' | 'md' | 'pdf' | 'html';
@@ -244,11 +246,11 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
     icon: typeof Copy;
     run: () => void;
   }[] = [
-    { key: 'copy', label: 'Copy Markdown', icon: copied ? Check : Copy, run: () => void copyMarkdown() },
-    { key: 'md', label: 'Download .md', icon: Download, run: () => void downloadMarkdown() },
-    { key: 'pdf', label: 'Download PDF', icon: FileDown, run: () => void downloadPdf() },
+    { key: 'copy', label: t('chrome.export.copyMarkdown'), icon: copied ? Check : Copy, run: () => void copyMarkdown() },
+    { key: 'md', label: t('chrome.export.downloadMd'), icon: Download, run: () => void downloadMarkdown() },
+    { key: 'pdf', label: t('chrome.export.downloadPdf'), icon: FileDown, run: () => void downloadPdf() },
     ...(buildHtml
-      ? [{ key: 'html' as const, label: 'Download HTML', icon: FileCode2, run: () => void downloadHtml() }]
+      ? [{ key: 'html' as const, label: t('chrome.export.downloadHtml'), icon: FileCode2, run: () => void downloadHtml() }]
       : []),
   ];
 
@@ -258,8 +260,8 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
-        aria-label="Export"
-        title={iconOnly && !hoverExpand ? 'Export' : undefined}
+        aria-label={t('chrome.export.trigger')}
+        title={iconOnly && !hoverExpand ? t('chrome.export.trigger') : undefined}
         aria-expanded={open}
         className={
           hoverExpand
@@ -282,7 +284,7 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
                 'group-focus-visible:ml-1.5 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100',
               )}
             >
-              Export
+              {t('chrome.export.trigger')}
             </span>
           </>
         ) : iconOnly ? (
@@ -290,7 +292,7 @@ export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled
         ) : (
           <>
             <FileText className="h-3.5 w-3.5" />
-            Export
+            {t('chrome.export.trigger')}
           </>
         )}
       </button>

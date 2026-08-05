@@ -134,6 +134,18 @@
       "ariaStock": "Rechercher des actions",
       "ariaCrypto": "Rechercher des cryptos",
       "placeholder": "Rechercher…"
+    },
+    "export": {
+      "trigger": "Exporter",
+      "copyMarkdown": "Copier le Markdown",
+      "downloadMd": "Télécharger le .md",
+      "downloadPdf": "Télécharger le PDF",
+      "downloadHtml": "Télécharger le HTML",
+      "copied": "Markdown copié dans le presse-papiers",
+      "copyFailed": "Impossible de copier le Markdown",
+      "downloadFailed": "Impossible de télécharger le Markdown",
+      "pdfFailed": "Impossible de générer le PDF",
+      "htmlFailed": "Impossible d'exporter le HTML"
     }
   },
   "relativeTime": {
