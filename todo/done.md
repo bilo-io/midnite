@@ -4820,7 +4820,7 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] **Gates**: full `moon run :typecheck :lint :test` green — 6,298 tests, **no load-induced flakes** this run. Nine existing widget specs needed re-pointing at `renderWithIntl` (the recurring cost of a component gaining `useTranslations`). The landing shot confirms the Intl-derived date (`mercredi 5 août 2026`) replaced the English month arrays, and the dashboard shot shows every card header, the tab chip (`Tableau de bord`) and the scratchpad (`Bloc-notes`) in French.
 - [x] **Known residue** visible in the fr shot: the prompt composer above the grid is still English — `components/prompt-composer.tsx` is on the exempt tail, not this slice.
 
-## Phase 82 Theme D — ops board i18n (en-GB + fr-FR) — PR #<PR> (2026-08-05)
+## Phase 82 Theme D — ops board i18n (en-GB + fr-FR) — PR #599 (2026-08-05)
 
 - [x] **The ops board** leaves `I18N_EXEMPT` (**73 → 65**): the page + tab strip, the widget grid and its add-widget picker, and all 13 metric panels (fleet gauges, throughput, run outcomes, duration distribution, LLM spend, cost trend, cost breakdown, cycle time, fleet trends, run timeline, runtime health, decisions audit). New `ops` namespace, **141 keys**, both locales at parity.
 - [x] **8 of 8 files carried user-visible English while the gate saw 5.** `ops-add-widget` reported *zero* violations while passing three English prop strings (`triggerLabel`, `searchLabel`, `addedTitle`) **and** rendering an unlocalised registry; the page hid its copy in a tab table plus a `title=`; `ops-grid` in a `Remove ${label}` aria template. Third slice running with the same shape — decision §9's blind spot is the rule, not the exception.
