@@ -99,12 +99,27 @@ Dates, numbers, and currency follow the active locale on the priority surfaces.
 
 ## Verification
 
-- [ ] **Switcher works from both places:** a language control sits in the sidenav footer **just above Settings** (collapsed + expanded) and in Settings → Appearance; picking one changes the app language and persists across reload + syncs to the gateway (Phase 43).
-- [ ] **Four locales load, en-GB is the fallback:** en-GB/de-DE/fr-FR/es-ES all render the priority surfaces; an untranslated key falls back to en-GB rather than showing the raw key or crashing; first-load with no pref resolves via `navigator.language` → nearest supported → en-GB with no flash-of-wrong-language.
-- [ ] **Static export still builds:** `MIDNITE_WEB_TARGET` unset (`output: 'export'`) builds and runs with the provider (no middleware, no server-only next-intl APIs) — verified, not assumed.
-- [ ] **Gate + parity hold in CI:** `moon run web:i18n:validate` fails on catalog key drift and passes when the four catalogs match; the ESLint rule flags a new hardcoded user-facing string and accepts a `t()` call.
-- [ ] **Formatting follows locale:** dates/numbers on the converted surfaces and the finances widget's currency reformat under de-DE vs en-GB.
-- [ ] `moon run web:typecheck && web:test && shared:test && :lint` green; `shell`/`admin`/`ui` boundary tests still pass (provider stays within `{shared, ui}` peers).
+> **All six items were absorbed and discharged by Phase 82 Theme F** (PR #603, 2026-08-06) — see
+> [`phase-82-i18n-full-coverage.md` → Theme F](phase-82-i18n-full-coverage.md#theme-f--close-out--phase-79-absorption--s).
+> In short: **switcher** — both entry points appear in the committed fr-FR walkthrough set (the
+> sidenav-footer control in all 13 shots, Settings → Appearance rendering `Français (fr-FR)`);
+> **fallback** — now a permanent test rather than a one-off pass, `packages/web/lib/i18n-fallback-chain.test.tsx`
+> sweeps *every* namespace (25, derived from the catalog rather than a hand-list) under de-DE and
+> es-ES, asserting the en-GB copy renders instead of a raw key and that nothing is logged, with a
+> fr-FR negative control; **static export** — run for real with `MIDNITE_WEB_TARGET` unset, 58/58
+> pages generated and exported clean; **gate + parity** — the gate now runs with *zero* exemptions
+> (`I18N_EXEMPT` empty, 0 of 429 gated) and its config guard asserts emptiness, so a file cannot be
+> re-exempted without deleting an assertion; **formatting** — every `toLocaleString()` and
+> hand-rolled formatter on the converted surfaces retired onto `useLocaleFormat()`/`useUnitFormat()`
+> across Themes D and E, each with its own spec; **full gate** — green first pass (web 337 files /
+> 2281 tests, gateway 2349, shared 857), with the `ui`/`shell`/`admin` boundary tests untouched.
+
+- [x] **Switcher works from both places:** a language control sits in the sidenav footer **just above Settings** (collapsed + expanded) and in Settings → Appearance; picking one changes the app language and persists across reload + syncs to the gateway (Phase 43).
+- [x] **Four locales load, en-GB is the fallback:** en-GB/de-DE/fr-FR/es-ES all render the priority surfaces; an untranslated key falls back to en-GB rather than showing the raw key or crashing; first-load with no pref resolves via `navigator.language` → nearest supported → en-GB with no flash-of-wrong-language.
+- [x] **Static export still builds:** `MIDNITE_WEB_TARGET` unset (`output: 'export'`) builds and runs with the provider (no middleware, no server-only next-intl APIs) — verified, not assumed.
+- [x] **Gate + parity hold in CI:** `moon run web:i18n:validate` fails on catalog key drift and passes when the four catalogs match; the ESLint rule flags a new hardcoded user-facing string and accepts a `t()` call.
+- [x] **Formatting follows locale:** dates/numbers on the converted surfaces and the finances widget's currency reformat under de-DE vs en-GB.
+- [x] `moon run web:typecheck && web:test && shared:test && :lint` green; `shell`/`admin`/`ui` boundary tests still pass (provider stays within `{shared, ui}` peers).
 
 ---
 
