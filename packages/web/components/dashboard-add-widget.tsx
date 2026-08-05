@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDashboardTabs, widgetsKey } from '@/lib/dashboard-tabs';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   DEFAULT_WIDGETS,
@@ -23,6 +24,7 @@ import { WidgetPickerMenu } from '@/components/widget-picker-menu';
  */
 export function DashboardAddWidget() {
   const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   // Add to whichever dashboard tab is active.
   const { activeId } = useDashboardTabs();
   const [widgets, setWidgets] = useLocalStorage<WidgetInstance[]>(widgetsKey(activeId), DEFAULT_WIDGETS);
@@ -33,14 +35,14 @@ export function DashboardAddWidget() {
   const groups = useMemo(() => {
     const entries = widgetCatalog(widgets).map((entry) => ({
       ...entry,
-      label: t(`catalog.${entry.type}.label`),
-      description: t(`catalog.${entry.type}.description`),
+      label: widgetLabels.label(entry.type),
+      description: widgetLabels.description(entry.type),
     }));
     return groupWidgetCatalog(entries, query).map((group) => ({
       ...group,
-      label: t(`categories.${group.category}`),
+      label: widgetLabels.category(group.category),
     }));
-  }, [widgets, query, t]);
+  }, [widgets, query, widgetLabels]);
 
   return (
     <WidgetPickerMenu

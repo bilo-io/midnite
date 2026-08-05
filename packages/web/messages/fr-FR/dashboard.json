@@ -101,6 +101,355 @@
     "addStock": "Ajouter une action…",
     "remove": "Supprimer {name}"
   },
+  "page": {
+    "title": "Tableau de bord",
+    "description": "Une vue d’ensemble de votre backlog. Rédigez une liste de fonctionnalités ci-dessous — une tâche par ligne — puis transformez-la en Backlog ou À faire quand vous êtes prêt."
+  },
+  "tabs": {
+    "add": "Ajouter un tableau de bord",
+    "newName": "Tableau {n}",
+    "rename": "Renommer {name}",
+    "defaultHint": "{name} — double-cliquez pour renommer",
+    "dragHint": "{name} — glissez pour réordonner, double-cliquez pour renommer",
+    "pin": "Épingler",
+    "unpin": "Désépingler",
+    "pinNamed": "Épingler {name}",
+    "unpinNamed": "Désépingler {name}",
+    "closeNamed": "Fermer {name}"
+  },
+  "tiles": {
+    "backlog": {
+      "hint": "En attente ou à clarifier"
+    },
+    "todo": {
+      "hint": "En file, prêtes à démarrer"
+    },
+    "inProgress": {
+      "hint": "En cours ou en attente d’une réponse"
+    },
+    "done": {
+      "hint": "Terminées"
+    }
+  },
+  "timeframe": {
+    "aria": "Période du marché"
+  },
+  "activity": {
+    "refresh": "Actualiser l’activité",
+    "error": "Impossible de charger l’activité.",
+    "empty": "Aucune activité pour l’instant.",
+    "kinds": {
+      "agentStarted": "Agent démarré",
+      "agentDone": "Agent terminé",
+      "agentFailed": "Agent en échec",
+      "agentRetried": "Agent relancé",
+      "agentRequeued": "Agent remis en file",
+      "agentResumed": "Agent repris",
+      "agentWaiting": "Agent en attente",
+      "agentEscalated": "Agent escaladé",
+      "statusChanged": "Statut modifié",
+      "linkAdded": "Lien ajouté",
+      "taskCreated": "Tâche créée",
+      "taskArchived": "Tâche archivée",
+      "taskUnarchived": "Tâche restaurée",
+      "taskReopened": "Tâche réouverte",
+      "taskReplanned": "Tâche replanifiée",
+      "taskDetailsChanged": "Détails modifiés",
+      "taskPriorityChanged": "Priorité modifiée",
+      "taskProjectChanged": "Projet modifié",
+      "taskMilestoneChanged": "Jalon modifié",
+      "taskRepoChanged": "Dépôt modifié",
+      "taskTagsChanged": "Étiquettes modifiées",
+      "created": "Créée",
+      "moved": "Déplacée",
+      "commented": "Commentée"
+    }
+  },
+  "agents": {
+    "refresh": "Actualiser l’état des agents",
+    "error": "Impossible de charger les agents.",
+    "primaryFallback": "Agent principal",
+    "heartbeatOn": "Signal toutes les {hours} h",
+    "heartbeatOnWithLast": "Signal toutes les {hours} h · dernier {when}",
+    "heartbeatOff": "Signal désactivé",
+    "subAgents": "Sous-agents ({count})",
+    "noSubAgents": "Aucun configuré.",
+    "unnamed": "Sans nom"
+  },
+  "health": {
+    "refresh": "Revérifier l’état",
+    "gateway": "Passerelle",
+    "reachable": "Joignable",
+    "unreachable": "Injoignable",
+    "checking": "Vérification…",
+    "unknown": "Inconnu",
+    "installed": "Installé",
+    "notInstalled": "Non installé",
+    "active": "actif"
+  },
+  "disk": {
+    "unavailable": "L’utilisation du disque est indisponible."
+  },
+  "storage": {
+    "refresh": "Actualiser l’estimation du cache",
+    "unsupported": "Les estimations de cache ne sont pas disponibles dans ce navigateur.",
+    "error": "Impossible de lire l’utilisation du cache."
+  },
+  "systemMonitor": {
+    "cpu": "Proc.",
+    "ram": "RAM",
+    "unavailable": "Les métriques de l’hôte sont indisponibles."
+  },
+  "memories": {
+    "refresh": "Actualiser les mémoires",
+    "error": "Impossible de charger les mémoires.",
+    "empty": "Aucune mémoire pour l’instant.",
+    "scopeGlobal": "Globale",
+    "scopeProject": "Projet",
+    "updated": "Modifiée {when}"
+  },
+  "shipped": {
+    "refresh": "Actualiser le travail livré",
+    "error": "Impossible de charger le travail livré.",
+    "empty": "Rien de livré pour l’instant.",
+    "noPr": "aucune PR liée"
+  },
+  "repoStatus": {
+    "refresh": "Actualiser l’état des dépôts",
+    "error": "Impossible de charger l’état des dépôts.",
+    "empty": "Aucun dépôt enregistré — ajoutez-en un dans Réglages → Dépôts.",
+    "running": "{count, plural, one {# en cours} other {# en cours}}",
+    "queued": "{count, plural, one {# en file} other {# en file}}",
+    "done": "{count, plural, one {# terminée} other {# terminées}}"
+  },
+  "links": {
+    "edit": "Modifier les liens",
+    "doneEditing": "Terminer la modification",
+    "empty": "Aucun lien — ajoutez-en avec l’engrenage.",
+    "labelPlaceholder": "Libellé (rempli depuis le lien)",
+    "urlPlaceholder": "URL",
+    "add": "Ajouter un lien"
+  },
+  "news": {
+    "refresh": "Actualiser les articles",
+    "count": "Nombre d’articles",
+    "error": "Impossible de charger les articles.",
+    "layout": {
+      "list": "vue liste",
+      "grid": "vue grille"
+    }
+  },
+  "quote": {
+    "openSettings": "Réglages des citations",
+    "closeSettings": "Fermer les réglages",
+    "size": "Taille",
+    "font": "Police",
+    "system": "Système",
+    "systemFont": "Police système",
+    "typingSpeed": "Vitesse de frappe",
+    "cycleSeconds": "Cycle (secondes)"
+  },
+  "quickCapture": {
+    "bulk": "En lot",
+    "ariaSingle": "Tâche",
+    "ariaBulk": "Tâches (une par ligne)",
+    "placeholder": "Ajouter une tâche…",
+    "placeholderBulk": "Une tâche par ligne…\ncorriger le bug de connexion\nrédiger la documentation",
+    "hint": "⌘↵ pour ajouter",
+    "hintBulk": "Une tâche par ligne",
+    "added": "{count, plural, one {# tâche ajoutée} other {# tâches ajoutées}}",
+    "addedWithFailures": "{count, plural, one {# tâche ajoutée} other {# tâches ajoutées}} · {failed} en échec",
+    "addedOne": "« {title} » ajoutée",
+    "error": "Échec de l’ajout de la tâche"
+  },
+  "scratchpad": {
+    "titleAria": "Titre du bloc-notes",
+    "renameHint": "Double-cliquez pour renommer",
+    "edit": "Éditer",
+    "preview": "Aperçu",
+    "placeholder": "Notez quelque chose… (Markdown, enregistré sur cet appareil)",
+    "contentAria": "Contenu du bloc-notes",
+    "emptyPreview": "Rien à prévisualiser pour l’instant."
+  },
+  "throughput": {
+    "refresh": "Actualiser le débit",
+    "error": "Impossible de charger les tâches.",
+    "doneThisWeek": "terminées cette semaine",
+    "barTooltip": "{day} : {count}"
+  },
+  "usage": {
+    "refresh": "Actualiser la consommation",
+    "error": "Impossible de charger la consommation.",
+    "empty": "Aucun appel LLM enregistré pour l’instant. Les dépenses apparaîtront dès que les fonctions IA de la passerelle tourneront.",
+    "estOverWindow": "est. sur {days} j · {count, plural, one {# appel} other {# appels}}",
+    "barTooltip": "{day} : {cost}",
+    "byProvider": "Par fournisseur",
+    "byFeature": "Par fonction",
+    "estimateNote": "Les coûts sont estimés à partir d’une grille tarifaire statique.",
+    "features": {
+      "classifier": "Tri des tâches",
+      "planner": "Planificateur",
+      "project": "Projets",
+      "agent": "Agents",
+      "council": "Conseils",
+      "workflow": "Workflows",
+      "chat": "Chat vers tableau",
+      "memory": "Studio de mémoire",
+      "memory-chat": "Chat mémoire",
+      "retro": "Rétrospectives",
+      "digest": "Résumés",
+      "assistant": "Assistant",
+      "unknown": "Autre"
+    }
+  },
+  "costByRepo": {
+    "refresh": "Actualiser le coût par dépôt",
+    "windowAria": "Fenêtre de coût",
+    "windowDays": "{days} j",
+    "error": "Impossible de charger les données de coût.",
+    "empty": "Aucun coût de session enregistré — les dépenses apparaissent dès que des sessions d’agent tournent.",
+    "estOverWindow": "est. sur {days} j · {count, plural, one {# session} other {# sessions}}",
+    "chartAria": "Graphique du coût par dépôt",
+    "series": {
+      "measured": "mesuré",
+      "estimated": "estimé"
+    },
+    "unpriced": "{count, plural, one {# session} other {# sessions}} sur un modèle sans tarif — coût non compté."
+  },
+  "cycleTime": {
+    "refresh": "Actualiser le temps de cycle",
+    "groupByAria": "Grouper le temps de cycle par",
+    "windowAria": "Fenêtre du temps de cycle",
+    "windowDays": "{days} j",
+    "error": "Impossible de charger le temps de cycle.",
+    "empty": "Aucune tâche terminée sur cette période.",
+    "chartAria": "Graphique du temps de cycle",
+    "groupBy": {
+      "none": "Flotte",
+      "repo": "Par dépôt",
+      "project": "Par projet",
+      "priority": "Par priorité"
+    },
+    "segments": {
+      "wait": "Attente",
+      "work": "Travail",
+      "endToEnd": "De bout en bout"
+    },
+    "series": {
+      "p50": "p50",
+      "p90": "p90"
+    },
+    "completedInWindow": "<strong>{count}</strong> terminées en {days} j",
+    "retryOverhead": "Surcoût des relances <strong>{duration}</strong> · {count, plural, one {# tâche} other {# tâches}}"
+  },
+  "fleetTrend": {
+    "refresh": "Actualiser la tendance de la flotte",
+    "seriesAria": "Série de la flotte",
+    "error": "Impossible de charger la tendance de la flotte.",
+    "empty": "Aucun historique de jauge — les tendances apparaissent au fil des relevés.",
+    "chartAria": "Graphique : {series}",
+    "series": {
+      "queueDepth": "Profondeur de file",
+      "slotsUsed": "Emplacements utilisés",
+      "tickLatencyMs": "Latence du tick"
+    }
+  },
+  "weather": {
+    "error": "Impossible de charger la météo.",
+    "useMyLocation": "Utiliser ma position à la place",
+    "precipitation": "Probabilité de précipitations",
+    "locationUnavailable": "Position indisponible — saisissez des coordonnées.",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "labelOptional": "Libellé (facultatif)",
+    "saveLocation": "Enregistrer la position",
+    "codes": {
+      "clear": "Dégagé",
+      "partlyCloudy": "Partiellement nuageux",
+      "overcast": "Couvert",
+      "fog": "Brouillard",
+      "drizzle": "Bruine",
+      "rain": "Pluie",
+      "snow": "Neige",
+      "rainShowers": "Averses de pluie",
+      "snowShowers": "Averses de neige",
+      "thunderstorm": "Orage"
+    }
+  },
+  "landing": {
+    "clock": {
+      "switchTo": "Passer à l’horloge {mode}"
+    },
+    "weather": {
+      "aria": "Météo : {conditions}, {temperature}",
+      "precipitation": "Probabilité de précipitations"
+    },
+    "greetings": {
+      "midnight": "lève-tôt ? ou couche-tard ?",
+      "dawn": "on se lève avec le soleil ?",
+      "morning": "bonjour",
+      "midMorning": "déjà lancé ? la matinée est bien entamée",
+      "forenoon": "quelques sessions avant le déjeuner ?",
+      "noon": "milieu de journée ! salut !",
+      "afternoon": "bon après-midi",
+      "dusk": "dernier effort de la journée... vous y êtes presque !",
+      "earlyEvening": "bonne fin d’après-midi",
+      "evening": "bonsoir",
+      "night": "salut, oiseau de nuit"
+    },
+    "subgreetings": {
+      "0": "on écrase tout aujourd’hui",
+      "1": "vos agents sont prêts",
+      "2": "laissez l’essaim mijoter",
+      "3": "l’heure de livrer un truc dingue",
+      "4": "on avance, une tâche à la fois",
+      "5": "orchestrez le chaos",
+      "6": "mille agents vous attendent",
+      "7": "veille tardive, zéro burn-out",
+      "8": "laissez les machines faire le sale boulot",
+      "9": "tout en parallèle",
+      "10": "faites gagner leur croûte aux robots",
+      "11": "aujourd’hui on automatise l’impossible",
+      "12": "on démarre, on livre",
+      "13": "votre flotte a fait le plein",
+      "14": "moins de frappe, plus de livraisons",
+      "15": "agentique et inarrêtable",
+      "16": "mettez en file, regardez décoller",
+      "17": "l’avenir tourne en parallèle",
+      "18": "déléguez au silicium",
+      "19": "petites tâches, grande vitesse",
+      "20": "laissez l’intelligence composer",
+      "21": "aucune tâche trop petite, aucun essaim trop grand",
+      "22": "codez comme s’il était minuit",
+      "23": "l’autonomie au bout des doigts",
+      "24": "chaque agent porte sa part",
+      "25": "livrez pendant votre sommeil",
+      "26": "transformez l’intention en résultat",
+      "27": "les agents vous couvrent",
+      "28": "ici l’élan est un réglage",
+      "29": "rêvez-le, mettez-le en file, c’est fait",
+      "30": "débit maximum, tracas minimum",
+      "31": "la concurrence est un art de vivre",
+      "32": "que cent agents s’épanouissent",
+      "33": "état de flow, entièrement automatisé",
+      "34": "on vide le backlog ce soir",
+      "35": "votre second cerveau a des mains",
+      "36": "des tâches en entrée, de la magie en sortie",
+      "37": "l’orchestre s’accorde",
+      "38": "un clic et vous déployez une armée",
+      "39": "travaillez plus finement, essaimez plus fort",
+      "40": "un agent inactif est un agent gaspillé",
+      "41": "vitesse débloquée",
+      "42": "lâchez le pipeline",
+      "43": "une façon plus calme d’être occupé",
+      "44": "donnez le tempo, les agents suivent",
+      "45": "productivité en pilote automatique",
+      "46": "ce soir on avance vite",
+      "47": "le labeur devient optionnel",
+      "48": "des efforts qui composent, sans transpirer",
+      "49": "prêt quand vous l’êtes"
+    }
+  },
   "picker": {
     "add": "Ajouter un widget",
     "search": "Rechercher des widgets",

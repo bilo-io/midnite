@@ -23,8 +23,14 @@ function formatBytes(bytes: number): string {
  */
 /**
  * Copy overrides for the gauge's rendered strings — all optional, defaulting
- * to the current English so non-i18n consumers are unaffected. Formatted byte
- * figures are passed in pre-formatted so callers only template the phrase.
+ * to the current English so non-i18n consumers are unaffected.
+ *
+ * `bytes` is the odd one out: it overrides the *number* formatting rather than a
+ * phrase. The gauge renders three byte figures itself (used, total, free), and the
+ * built-in {@link formatBytes} pins both the unit suffix (`GB`) and the decimal
+ * separator to English — so a translated consumer could localise every phrase around
+ * the figures and still show `42.0 GB` on a French dashboard. Pass a locale-aware
+ * formatter to fix that; the phrase overrides still receive an already-formatted string.
  */
 export type RadialGaugeLabels = {
   /** SVG accessible name (default `${pct}% used`). */
@@ -35,6 +41,8 @@ export type RadialGaugeLabels = {
   used?: (pct: number) => string;
   /** Footer free phrase (default `${free} free`). */
   free?: (free: string) => string;
+  /** Byte-figure formatter (default {@link formatBytes} — English units, `.` decimals). */
+  bytes?: (bytes: number) => string;
 };
 
 export function RadialGauge({
@@ -50,6 +58,7 @@ export function RadialGauge({
   const pct = Math.round(fraction * 100);
   const free = Math.max(totalBytes - usedBytes, 0);
   const dashOffset = CIRCUMFERENCE * (1 - fraction);
+  const fmtBytes = labels?.bytes ?? formatBytes;
 
   return (
     <>
@@ -83,9 +92,9 @@ export function RadialGauge({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-base font-semibold tabular-nums">{formatBytes(usedBytes)}</span>
+          <span className="text-base font-semibold tabular-nums">{fmtBytes(usedBytes)}</span>
           <span className="text-[11px] tabular-nums text-muted-foreground">
-            {labels?.of ? labels.of(formatBytes(totalBytes)) : `of ${formatBytes(totalBytes)}`}
+            {labels?.of ? labels.of(fmtBytes(totalBytes)) : `of ${fmtBytes(totalBytes)}`}
           </span>
         </div>
       </div>
@@ -93,7 +102,7 @@ export function RadialGauge({
         <span className="tabular-nums">{labels?.used ? labels.used(pct) : `${pct}% used`}</span>
         <span aria-hidden> · </span>
         <span className="tabular-nums">
-          {labels?.free ? labels.free(formatBytes(free)) : `${formatBytes(free)} free`}
+          {labels?.free ? labels.free(fmtBytes(free)) : `${fmtBytes(free)} free`}
         </span>
       </div>
     </>

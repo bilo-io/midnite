@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { WeatherResponse } from '@midnite/shared';
 import { DASHBOARD_WIDGETS_STORAGE_KEY } from '@/lib/dashboard-widgets';
 import { withQueryClient } from '@/lib/test-query-wrapper';

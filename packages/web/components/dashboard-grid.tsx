@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
@@ -8,7 +9,6 @@ import type { Note, Project, Routine, RoutineProgress, TaskSummary, TaskCounts }
 import {
   COST_BY_REPO_DEFAULTS,
   CYCLE_TIME_WIDGET_DEFAULTS,
-  DASHBOARD_WIDGETS,
   DEFAULT_WIDGETS,
   FLEET_TREND_DEFAULTS,
   QUOTE_DEFAULTS,
@@ -19,6 +19,7 @@ import {
   type WidgetInstance,
   type WidgetType,
 } from '@/lib/dashboard-widgets';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { layoutKey, useDashboardTabs, widgetsKey } from '@/lib/dashboard-tabs';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
@@ -191,6 +192,8 @@ export function DashboardGrid({
   error,
 }: DashboardGridProps) {
   useGatewayErrorToast(error);
+  const tCommon = useTranslations('common');
+  const widgetLabels = useWidgetLabels();
   const { width, mounted, containerRef } = useContainerWidth({ measureBeforeMount: true });
 
   // The active dashboard tab — its id keys this board's widget list and layout,
@@ -548,17 +551,22 @@ export function DashboardGrid({
     }
   };
 
+  // The panel's close button names what it removes. The widget name comes from the
+  // catalog seam rather than `DASHBOARD_WIDGETS[...].label`, so the aria-label matches
+  // the header the user is looking at; a multi-instance Finances card prefers its own
+  // user-typed title.
   const removeLabel = (key: string): string => {
     const inst = parseInstanceKey(key);
     if (inst) {
       if (inst.type === 'finances') {
         const w = widgets.find((x) => x.type === 'finances' && x.id === inst.id);
-        return `Remove ${(w?.type === 'finances' && w.config.title) || 'Finances'}`;
+        const named = w?.type === 'finances' ? w.config.title : undefined;
+        return tCommon('removeNamed', { name: named || widgetLabels.label('finances') });
       }
-      return `Remove ${DASHBOARD_WIDGETS[inst.type]?.label ?? 'widget'}`;
+      return tCommon('removeNamed', { name: widgetLabels.label(inst.type) });
     }
     const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
-    return `Remove ${DASHBOARD_WIDGETS[type]?.label ?? 'widget'}`;
+    return tCommon('removeNamed', { name: widgetLabels.label(type) });
   };
 
   return (

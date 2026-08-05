@@ -101,6 +101,355 @@
     "addStock": "Add a stock…",
     "remove": "Remove {name}"
   },
+  "page": {
+    "title": "Dashboard",
+    "description": "An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."
+  },
+  "tabs": {
+    "add": "Add dashboard",
+    "newName": "Dashboard {n}",
+    "rename": "Rename {name}",
+    "defaultHint": "{name} — double-click to rename",
+    "dragHint": "{name} — drag to reorder, double-click to rename",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinNamed": "Pin {name}",
+    "unpinNamed": "Unpin {name}",
+    "closeNamed": "Close {name}"
+  },
+  "tiles": {
+    "backlog": {
+      "hint": "Parked or ambiguous"
+    },
+    "todo": {
+      "hint": "Queued, ready to start"
+    },
+    "inProgress": {
+      "hint": "Running or waiting on input"
+    },
+    "done": {
+      "hint": "Completed"
+    }
+  },
+  "timeframe": {
+    "aria": "Market timeframe"
+  },
+  "activity": {
+    "refresh": "Refresh activity",
+    "error": "Couldn’t load activity.",
+    "empty": "No activity yet.",
+    "kinds": {
+      "agentStarted": "Agent started",
+      "agentDone": "Agent finished",
+      "agentFailed": "Agent failed",
+      "agentRetried": "Agent retried",
+      "agentRequeued": "Agent requeued",
+      "agentResumed": "Agent resumed",
+      "agentWaiting": "Agent waiting",
+      "agentEscalated": "Agent escalated",
+      "statusChanged": "Status changed",
+      "linkAdded": "Link added",
+      "taskCreated": "Task created",
+      "taskArchived": "Task archived",
+      "taskUnarchived": "Task restored",
+      "taskReopened": "Task reopened",
+      "taskReplanned": "Task replanned",
+      "taskDetailsChanged": "Details changed",
+      "taskPriorityChanged": "Priority changed",
+      "taskProjectChanged": "Project changed",
+      "taskMilestoneChanged": "Milestone changed",
+      "taskRepoChanged": "Repo changed",
+      "taskTagsChanged": "Tags changed",
+      "created": "Created",
+      "moved": "Moved",
+      "commented": "Commented"
+    }
+  },
+  "agents": {
+    "refresh": "Refresh agent status",
+    "error": "Couldn’t load agents.",
+    "primaryFallback": "Primary agent",
+    "heartbeatOn": "Heartbeat every {hours}h",
+    "heartbeatOnWithLast": "Heartbeat every {hours}h · last {when}",
+    "heartbeatOff": "Heartbeat off",
+    "subAgents": "Sub-agents ({count})",
+    "noSubAgents": "None configured.",
+    "unnamed": "Unnamed"
+  },
+  "health": {
+    "refresh": "Re-check health",
+    "gateway": "Gateway",
+    "reachable": "Reachable",
+    "unreachable": "Unreachable",
+    "checking": "Checking…",
+    "unknown": "Unknown",
+    "installed": "Installed",
+    "notInstalled": "Not installed",
+    "active": "active"
+  },
+  "disk": {
+    "unavailable": "Disk usage is unavailable."
+  },
+  "storage": {
+    "refresh": "Refresh cache estimate",
+    "unsupported": "Cache estimates aren’t available in this browser.",
+    "error": "Couldn’t read cache usage."
+  },
+  "systemMonitor": {
+    "cpu": "CPU",
+    "ram": "RAM",
+    "unavailable": "Host metrics are unavailable."
+  },
+  "memories": {
+    "refresh": "Refresh memories",
+    "error": "Couldn’t load memories.",
+    "empty": "No memories yet.",
+    "scopeGlobal": "Global",
+    "scopeProject": "Project",
+    "updated": "Updated {when}"
+  },
+  "shipped": {
+    "refresh": "Refresh shipped work",
+    "error": "Couldn’t load shipped work.",
+    "empty": "Nothing shipped yet.",
+    "noPr": "no PR linked"
+  },
+  "repoStatus": {
+    "refresh": "Refresh repo status",
+    "error": "Couldn’t load repo status.",
+    "empty": "No repos registered — add one in Settings → Repos.",
+    "running": "{count, plural, one {# running} other {# running}}",
+    "queued": "{count, plural, one {# queued} other {# queued}}",
+    "done": "{count, plural, one {# done} other {# done}}"
+  },
+  "links": {
+    "edit": "Edit links",
+    "doneEditing": "Done editing",
+    "empty": "No links — add some with the gear.",
+    "labelPlaceholder": "Label (auto-fills from the link)",
+    "urlPlaceholder": "URL",
+    "add": "Add link"
+  },
+  "news": {
+    "refresh": "Refresh stories",
+    "count": "Number of stories",
+    "error": "Couldn’t load stories.",
+    "layout": {
+      "list": "list view",
+      "grid": "grid view"
+    }
+  },
+  "quote": {
+    "openSettings": "Quote settings",
+    "closeSettings": "Close settings",
+    "size": "Size",
+    "font": "Font",
+    "system": "System",
+    "systemFont": "System font",
+    "typingSpeed": "Typing speed",
+    "cycleSeconds": "Cycle (seconds)"
+  },
+  "quickCapture": {
+    "bulk": "Bulk",
+    "ariaSingle": "Task",
+    "ariaBulk": "Tasks (one per line)",
+    "placeholder": "Add a task…",
+    "placeholderBulk": "One task per line…\nfix the login bug\nwrite the docs",
+    "hint": "⌘↵ to add",
+    "hintBulk": "One task per line",
+    "added": "{count, plural, one {Added # task} other {Added # tasks}}",
+    "addedWithFailures": "{count, plural, one {Added # task} other {Added # tasks}} · {failed} failed",
+    "addedOne": "Added “{title}”",
+    "error": "Failed to add task"
+  },
+  "scratchpad": {
+    "titleAria": "Scratchpad title",
+    "renameHint": "Double-click to rename",
+    "edit": "Edit",
+    "preview": "Preview",
+    "placeholder": "Jot something down… (Markdown, saved on this device)",
+    "contentAria": "Scratchpad content",
+    "emptyPreview": "Nothing to preview yet."
+  },
+  "throughput": {
+    "refresh": "Refresh throughput",
+    "error": "Couldn’t load tasks.",
+    "doneThisWeek": "done this week",
+    "barTooltip": "{day}: {count}"
+  },
+  "usage": {
+    "refresh": "Refresh usage",
+    "error": "Couldn’t load usage.",
+    "empty": "No LLM calls recorded yet. Spend appears here once the gateway’s AI features run.",
+    "estOverWindow": "est. over {days}d · {count, plural, one {# call} other {# calls}}",
+    "barTooltip": "{day}: {cost}",
+    "byProvider": "By provider",
+    "byFeature": "By feature",
+    "estimateNote": "Costs are estimates from a static price table.",
+    "features": {
+      "classifier": "Task triage",
+      "planner": "Planner",
+      "project": "Projects",
+      "agent": "Agents",
+      "council": "Councils",
+      "workflow": "Workflows",
+      "chat": "Chat to board",
+      "memory": "Memory Studio",
+      "memory-chat": "Memory chat",
+      "retro": "Retrospectives",
+      "digest": "Digests",
+      "assistant": "Assistant",
+      "unknown": "Other"
+    }
+  },
+  "costByRepo": {
+    "refresh": "Refresh cost by repo",
+    "windowAria": "Cost window",
+    "windowDays": "{days}d",
+    "error": "Couldn’t load cost data.",
+    "empty": "No session cost recorded yet — spend appears once agent sessions run.",
+    "estOverWindow": "est over {days}d · {count, plural, one {# session} other {# sessions}}",
+    "chartAria": "Cost by repo chart",
+    "series": {
+      "measured": "measured",
+      "estimated": "estimated"
+    },
+    "unpriced": "{count, plural, one {# session} other {# sessions}} on an unpriced model — cost not counted."
+  },
+  "cycleTime": {
+    "refresh": "Refresh cycle time",
+    "groupByAria": "Group cycle-time by",
+    "windowAria": "Cycle-time window",
+    "windowDays": "{days}d",
+    "error": "Couldn’t load cycle time.",
+    "empty": "No completed tasks in this window yet.",
+    "chartAria": "Cycle-time chart",
+    "groupBy": {
+      "none": "Fleet",
+      "repo": "By repo",
+      "project": "By project",
+      "priority": "By priority"
+    },
+    "segments": {
+      "wait": "Wait",
+      "work": "Work",
+      "endToEnd": "End-to-end"
+    },
+    "series": {
+      "p50": "p50",
+      "p90": "p90"
+    },
+    "completedInWindow": "<strong>{count}</strong> completed in {days}d",
+    "retryOverhead": "Retry overhead <strong>{duration}</strong> · {count, plural, one {# task} other {# tasks}}"
+  },
+  "fleetTrend": {
+    "refresh": "Refresh fleet trend",
+    "seriesAria": "Fleet series",
+    "error": "Couldn’t load fleet trend.",
+    "empty": "No gauge history yet — trends appear as the sampler records.",
+    "chartAria": "{series} chart",
+    "series": {
+      "queueDepth": "Queue depth",
+      "slotsUsed": "Slots used",
+      "tickLatencyMs": "Tick latency"
+    }
+  },
+  "weather": {
+    "error": "Couldn’t load weather.",
+    "useMyLocation": "Use my location instead",
+    "precipitation": "Chance of precipitation",
+    "locationUnavailable": "Location unavailable — enter coordinates.",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "labelOptional": "Label (optional)",
+    "saveLocation": "Save location",
+    "codes": {
+      "clear": "Clear",
+      "partlyCloudy": "Partly cloudy",
+      "overcast": "Overcast",
+      "fog": "Fog",
+      "drizzle": "Drizzle",
+      "rain": "Rain",
+      "snow": "Snow",
+      "rainShowers": "Rain showers",
+      "snowShowers": "Snow showers",
+      "thunderstorm": "Thunderstorm"
+    }
+  },
+  "landing": {
+    "clock": {
+      "switchTo": "Switch to {mode} clock"
+    },
+    "weather": {
+      "aria": "Weather: {conditions}, {temperature}",
+      "precipitation": "Chance of precipitation"
+    },
+    "greetings": {
+      "midnight": "early bird? or night owl?",
+      "dawn": "rising to the occasion?",
+      "morning": "good morning",
+      "midMorning": "vibing yet? its past morning",
+      "forenoon": "vibe some sessions before lunch",
+      "noon": "middle of the day! hello!",
+      "afternoon": "good afternoon",
+      "dusk": "final push for the day... you got this!",
+      "earlyEvening": "good early evening",
+      "evening": "good evening",
+      "night": "howzit nightowl"
+    },
+    "subgreetings": {
+      "0": "go smash it today",
+      "1": "your agents are ready",
+      "2": "let the swarm cook",
+      "3": "time to ship something wild",
+      "4": "crushing it, one task at a time",
+      "5": "orchestrate the chaos",
+      "6": "a thousand agents await",
+      "7": "midnight oil, zero burnout",
+      "8": "let the machines do the grind",
+      "9": "parallel everything",
+      "10": "make the robots earn their keep",
+      "11": "today we automate the impossible",
+      "12": "spin up, ship out",
+      "13": "your fleet is fuelled and waiting",
+      "14": "less typing, more shipping",
+      "15": "agentic and unstoppable",
+      "16": "queue it, watch it fly",
+      "17": "the future runs in parallel",
+      "18": "delegate to the silicon",
+      "19": "small tasks, big velocity",
+      "20": "let intelligence compound",
+      "21": "no task too small, no swarm too big",
+      "22": "build like it is midnight",
+      "23": "autonomy at your fingertips",
+      "24": "every agent pulling its weight",
+      "25": "ship while you sleep",
+      "26": "turn intent into output",
+      "27": "the agents have your back",
+      "28": "momentum is a setting here",
+      "29": "dream it, queue it, done",
+      "30": "maximum throughput, minimum fuss",
+      "31": "concurrency is a lifestyle",
+      "32": "let a hundred agents bloom",
+      "33": "flow state, fully automated",
+      "34": "crush the backlog tonight",
+      "35": "your second brain has hands",
+      "36": "tasks in, magic out",
+      "37": "the orchestra is tuning up",
+      "38": "point, click, deploy an army",
+      "39": "work smarter, swarm harder",
+      "40": "idle agents are wasted agents",
+      "41": "velocity unlocked",
+      "42": "let the pipeline rip",
+      "43": "a calmer kind of busy",
+      "44": "set the pace, agents follow",
+      "45": "productivity on autopilot",
+      "46": "tonight we move fast",
+      "47": "the grind is now optional",
+      "48": "compounding effort, zero sweat",
+      "49": "ready when you are"
+    }
+  },
   "picker": {
     "add": "Add widget",
     "search": "Search widgets",

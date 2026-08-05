@@ -3,20 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { getUsageAttribution } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
-import { useLocaleFormat } from '@/lib/use-locale-format';
+import { useUsdLabel } from '@/lib/use-locale-format';
 import { cn } from '@/lib/utils';
-
-/**
- * Sub-cent spend still reads rather than rounding away to nothing. `narrowSymbol`
- * keeps en-GB at `$2.50` (Intl would otherwise write `US$2.50`) while fr-FR gets
- * `2,50 $` — matching the project cost card.
- */
-function useUsdLabel(): (n: number) => string {
-  const { number } = useLocaleFormat();
-  const usd = (v: number) =>
-    number(v, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol' });
-  return (n) => (n > 0 && n < 0.01 ? `<${usd(0.01)}` : usd(n));
-}
 
 /**
  * Session cockpit cost line (Phase 61 H / P51): this session's harvested

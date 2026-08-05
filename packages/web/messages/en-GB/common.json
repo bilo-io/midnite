@@ -12,6 +12,7 @@
   "edit": "Edit",
   "delete": "Delete",
   "remove": "Remove",
+  "removeNamed": "Remove {name}",
   "back": "Back",
   "none": "None",
   "selectedCount": "{count, plural, one {# selected} other {# selected}}",
@@ -139,5 +140,22 @@
     "minutesAgo": "{count}m ago",
     "hoursAgo": "{count}h ago",
     "daysAgo": "{count}d ago"
+  },
+  "units": {
+    "emDash": "—",
+    "bytes": {
+      "b": "{value} B",
+      "kb": "{value} KB",
+      "mb": "{value} MB",
+      "gb": "{value} GB",
+      "tb": "{value} TB",
+      "pb": "{value} PB"
+    },
+    "duration": {
+      "seconds": "{value}s",
+      "minutes": "{value}m",
+      "hours": "{value}h",
+      "days": "{value}d"
+    }
   }
 }

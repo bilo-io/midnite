@@ -1,8 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { HeartPulse, RefreshCw } from 'lucide-react';
 import { AGENT_CLIS, AGENT_CLI_LABEL, type AgentCli, type AgentCliStatus } from '@midnite/shared';
 import { getAgentsConfig, getCliStatuses, getHealth } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
 import { WidgetCard } from './widget-card';
@@ -14,6 +16,8 @@ const HEALTH_REFRESH_MS = 30_000;
 const CLI_REFRESH_MS = 2 * 60_000;
 
 export function HealthWidget() {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const health = usePolling((signal) => getHealth(signal), HEALTH_REFRESH_MS);
   const clis = usePolling(() => getCliStatuses(), CLI_REFRESH_MS);
   const agents = usePolling(() => getAgentsConfig(), CLI_REFRESH_MS);
@@ -32,13 +36,13 @@ export function HealthWidget() {
 
   return (
     <WidgetCard
-      title="System health"
+      title={widgetLabels.label('health')}
       icon={HeartPulse}
       actions={
         <button
           type="button"
           onClick={refresh}
-          aria-label="Re-check health"
+          aria-label={t('health.refresh')}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <RefreshCw
@@ -49,9 +53,16 @@ export function HealthWidget() {
       bodyClassName="flex flex-col gap-2.5 overflow-auto p-4"
     >
       <StatusRow
-        label="Gateway"
+        label={t('health.gateway')}
+        activeLabel={t('health.active')}
         ok={health.loading && !health.data ? null : gatewayUp}
-        detail={gatewayUp ? 'Reachable' : health.loading && !health.data ? 'Checking…' : 'Unreachable'}
+        detail={
+          gatewayUp
+            ? t('health.reachable')
+            : health.loading && !health.data
+              ? t('health.checking')
+              : t('health.unreachable')
+        }
       />
       {AGENT_CLIS.map((cli) => {
         const status = statusFor(cli);
@@ -61,17 +72,20 @@ export function HealthWidget() {
             key={cli}
             label={AGENT_CLI_LABEL[cli]}
             active={active}
+            activeLabel={t('health.active')}
             // green when installed; a missing *active* agent is a real fault (red),
             // but any other absent CLI is simply not set up (neutral grey).
             ok={cliPending || !status ? null : status.installed ? true : active ? false : null}
             detail={
               cliPending
-                ? 'Checking…'
+                ? t('health.checking')
                 : !status
-                  ? 'Unknown'
+                  ? t('health.unknown')
                   : status.installed
-                    ? status.version ?? 'Installed'
-                    : 'Not installed'
+                    ? // A reported version string is the most useful detail; fall back to the
+                      // generic phrasing only when the CLI reports none.
+                      status.version ?? t('health.installed')
+                    : t('health.notInstalled')
             }
           />
         );
@@ -85,11 +99,14 @@ function StatusRow({
   ok,
   detail,
   active = false,
+  activeLabel,
 }: {
   label: string;
   ok: boolean | null;
   detail: string;
   active?: boolean;
+  /** Copy for the "this is the selected agent" badge; passed in so the row stays presentational. */
+  activeLabel: string;
 }) {
   // Halo colour tracks the dot: green (up), red (fault), muted (unknown).
   const glow =
@@ -112,7 +129,7 @@ function StatusRow({
       <span className="text-sm font-medium">{label}</span>
       {active && (
         <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          active
+          {activeLabel}
         </span>
       )}
       <span className="ml-auto truncate pl-2 text-[11px] text-muted-foreground">{detail}</span>

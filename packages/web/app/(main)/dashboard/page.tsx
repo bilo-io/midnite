@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { TaskCounts } from '@midnite/shared';
 import dynamic from 'next/dynamic';
 
@@ -15,6 +16,7 @@ import { useApiData } from '@/lib/use-api-data';
 const ZERO_COUNTS: TaskCounts = { backlog: 0, todo: 0, inProgress: 0, done: 0 };
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
   const { data, error } = useApiData(async () => {
     const today = new Date().toISOString().slice(0, 10);
     const [counts, projects, tasks, notes, routines] = await Promise.all([
@@ -37,10 +39,10 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title={t('page.title')}
         icon="LayoutDashboard"
         size="lg"
-        description="An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."
+        description={t('page.description')}
       />
 
       <div data-tour="dashboard">

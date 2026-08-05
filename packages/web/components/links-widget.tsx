@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link as LinkIcon, Settings2, Trash2, X } from 'lucide-react';
 import { detectSourceKind } from '@midnite/shared';
 import type { QuickLink, WidgetConfig } from '@/lib/dashboard-widgets';
 import { getLinkMetadata } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { SourceIcon } from './source-icon';
 import { WidgetCard } from './widget-card';
 
@@ -27,6 +29,8 @@ function normalizeUrl(raw: string): string | null {
 }
 
 export function LinksWidget({ config, onConfigChange }: LinksWidgetProps) {
+  const t = useTranslations('dashboard');
+  const widgetLabels = useWidgetLabels();
   const [editing, setEditing] = useState(false);
   const { links } = config;
 
@@ -35,13 +39,13 @@ export function LinksWidget({ config, onConfigChange }: LinksWidgetProps) {
 
   return (
     <WidgetCard
-      title="Quick links"
+      title={widgetLabels.label('links')}
       icon={LinkIcon}
       actions={
         <button
           type="button"
           onClick={() => setEditing((e) => !e)}
-          aria-label={editing ? 'Done editing' : 'Edit links'}
+          aria-label={editing ? t('links.doneEditing') : t('links.edit')}
           aria-pressed={editing}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
@@ -53,7 +57,7 @@ export function LinksWidget({ config, onConfigChange }: LinksWidgetProps) {
       {editing ? (
         <LinksEditor links={links} onAdd={addLink} onRemove={removeLink} />
       ) : links.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No links — add some with the gear.</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('links.empty')}</p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {links.map((link, i) => (
@@ -88,6 +92,8 @@ function LinksEditor({
   onAdd: (link: QuickLink) => void;
   onRemove: (index: number) => void;
 }) {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   const [label, setLabel] = useState('');
   const [url, setUrl] = useState('');
   const [faviconUrl, setFaviconUrl] = useState<string | undefined>(undefined);
@@ -139,7 +145,7 @@ function LinksEditor({
               <button
                 type="button"
                 onClick={() => onRemove(i)}
-                aria-label={`Remove ${link.label}`}
+                aria-label={tCommon('removeNamed', { name: link.label })}
                 className="rounded p-1 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="h-3 w-3" />
@@ -155,14 +161,14 @@ function LinksEditor({
             setLabel(e.target.value);
             setLabelTouched(true);
           }}
-          placeholder="Label (auto-fills from the link)"
+          placeholder={t('links.labelPlaceholder')}
           className="rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          placeholder="URL"
+          placeholder={t('links.urlPlaceholder')}
           inputMode="url"
           className="rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
@@ -172,7 +178,7 @@ function LinksEditor({
           disabled={!valid}
           className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
         >
-          Add link
+          {t('links.add')}
         </button>
       </div>
     </div>

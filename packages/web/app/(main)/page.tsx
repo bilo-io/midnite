@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
 import { LandingClock } from '@/components/landing-clock';
 import { LandingWeather } from '@/components/landing-weather';
+import { SUBGREETINGS, windowForTime } from '@/lib/landing-greetings';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   CYCLE_MAX_S,
@@ -14,108 +16,8 @@ import {
   type AppSettings,
 } from '@/lib/app-settings';
 
-type TimeOfDay =
-  | 'midnight'
-  | 'dawn'
-  | 'morning'
-  | 'midMorning'
-  | 'forenoon'
-  | 'noon'
-  | 'afternoon'
-  | 'dusk'
-  | 'earlyEvening'
-  | 'evening'
-  | 'night';
-
-type GreetingWindow = {
-  startHour: number; // inclusive, in decimal hours (e.g. 12 + 1/60 === 12:01)
-  endHour: number; // exclusive; an entry where endHour < startHour wraps past midnight
-  timeOfDay: TimeOfDay;
-  greeting: string;
-};
-
-// Windows run earliest→latest and are matched in order, so the instant-wide noon
-// window wins over the afternoon range that surrounds it. Decimal hours let us pin
-// minute-level boundaries (the noon window ends at 12:01), and the trailing night
-// window wraps past midnight.
-const GREETING_WINDOWS: readonly GreetingWindow[] = [
-  { startHour: 0, endHour: 4, timeOfDay: 'midnight', greeting: 'early bird? or night owl?' },
-  { startHour: 4, endHour: 6, timeOfDay: 'dawn', greeting: 'rising to the occasion?' },
-  { startHour: 6, endHour: 8, timeOfDay: 'morning', greeting: 'good morning' },
-  { startHour: 8, endHour: 11, timeOfDay: 'midMorning', greeting: 'vibing yet? its past morning' },
-  { startHour: 10, endHour: 12, timeOfDay: 'forenoon', greeting: 'vibe some sessions before lunch' },
-  { startHour: 12, endHour: 13, timeOfDay: 'noon', greeting: 'middle of the day! hello!' },
-  { startHour: 13, endHour: 16, timeOfDay: 'afternoon', greeting: 'good afternoon' },
-  { startHour: 16, endHour: 18, timeOfDay: 'dusk', greeting: 'final push for the day... you got this!' },
-  { startHour: 17, endHour: 19, timeOfDay: 'earlyEvening', greeting: 'good early evening' },
-  { startHour: 19, endHour: 21, timeOfDay: 'evening', greeting: 'good evening' },
-  { startHour: 21, endHour: 1, timeOfDay: 'night', greeting: 'howzit nightowl' },
-];
-
-// Greeting depends on the viewer's local time, so resolve it on the client after
-// mount to avoid a server/client hydration mismatch.
-function greetingForTime(hour: number, minute: number): string {
-  const t = hour + minute / 60;
-  const match = GREETING_WINDOWS.find(({ startHour, endHour }) =>
-    startHour <= endHour ? t >= startHour && t < endHour : t >= startHour || t < endHour,
-  );
-  return (match ?? GREETING_WINDOWS[GREETING_WINDOWS.length - 1]!).greeting;
-}
-
-const SUBGREETINGS = [
-  'go smash it today',
-  'your agents are ready',
-  'let the swarm cook',
-  'time to ship something wild',
-  'crushing it, one task at a time',
-  'orchestrate the chaos',
-  'a thousand agents await',
-  'midnight oil, zero burnout',
-  'let the machines do the grind',
-  'parallel everything',
-  'make the robots earn their keep',
-  'today we automate the impossible',
-  'spin up, ship out',
-  'your fleet is fuelled and waiting',
-  'less typing, more shipping',
-  'agentic and unstoppable',
-  'queue it, watch it fly',
-  'the future runs in parallel',
-  'delegate to the silicon',
-  'small tasks, big velocity',
-  'let intelligence compound',
-  'no task too small, no swarm too big',
-  'build like it is midnight',
-  'autonomy at your fingertips',
-  'every agent pulling its weight',
-  'ship while you sleep',
-  'turn intent into output',
-  'the agents have your back',
-  'momentum is a setting here',
-  'dream it, queue it, done',
-  'maximum throughput, minimum fuss',
-  'concurrency is a lifestyle',
-  'let a hundred agents bloom',
-  'flow state, fully automated',
-  'crush the backlog tonight',
-  'your second brain has hands',
-  'tasks in, magic out',
-  'the orchestra is tuning up',
-  'point, click, deploy an army',
-  'work smarter, swarm harder',
-  'idle agents are wasted agents',
-  'velocity unlocked',
-  'let the pipeline rip',
-  'a calmer kind of busy',
-  'set the pace, agents follow',
-  'productivity on autopilot',
-  'tonight we move fast',
-  'the grind is now optional',
-  'compounding effort, zero sweat',
-  'ready when you are',
-];
-
 export default function HomePage() {
+  const t = useTranslations('dashboard');
   const [greeting, setGreeting] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
   const [subgreeting, setSubgreeting] = useState<string | null>(null);
@@ -128,10 +30,16 @@ export default function HomePage() {
   // Resolve client-only state after mount.
   useEffect(() => {
     const nowDate = new Date();
-    setGreeting(greetingForTime(nowDate.getHours(), nowDate.getMinutes()));
-    const pick = SUBGREETINGS[Math.floor(Math.random() * SUBGREETINGS.length)];
-    setSubgreeting(pick ?? 'ready when you are');
+    const window = windowForTime(nowDate.getHours(), nowDate.getMinutes());
+    const greetingKey = `landing.greetings.${window.timeOfDay}`;
+    setGreeting(t.has(greetingKey) ? t(greetingKey) : window.greeting);
+    const index = Math.floor(Math.random() * SUBGREETINGS.length);
+    const subKey = `landing.subgreetings.${index}`;
+    setSubgreeting(t.has(subKey) ? t(subKey) : SUBGREETINGS[index] ?? SUBGREETINGS[0]!);
     setNow(new Date());
+    // `t` is stable for a given locale; re-running on a language change would restart the
+    // typing animation mid-flight, so the greeting is resolved once per mount on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Tick the clock every second.

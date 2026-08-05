@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, type KeyboardEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { createBulk, createTask } from '@/lib/api';
+import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import { invalidateData } from '@/lib/data-refresh';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +23,9 @@ type Feedback = { kind: 'ok' | 'err'; message: string };
  * for immediacy. `⌘/Ctrl+↵` submits.
  */
 export function QuickCaptureWidget() {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
+  const widgetLabels = useWidgetLabels();
   const [text, setText] = useState('');
   const [bulk, setBulk] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -38,9 +43,13 @@ export function QuickCaptureWidget() {
         const { counts } = await createBulk({ raw: text });
         setFeedback({
           kind: counts.created > 0 ? 'ok' : 'err',
+          // Two whole messages rather than a base plus an appended failure clause: the
+          // plural rule for `created` and where the failure count sits are both the
+          // translator's call, and ICU can only decide that inside one message.
           message:
-            `Added ${counts.created} task${counts.created === 1 ? '' : 's'}` +
-            (counts.failed > 0 ? ` · ${counts.failed} failed` : ''),
+            counts.failed > 0
+              ? t('quickCapture.addedWithFailures', { count: counts.created, failed: counts.failed })
+              : t('quickCapture.added', { count: counts.created }),
         });
       } else {
         const form = new FormData();
@@ -48,14 +57,14 @@ export function QuickCaptureWidget() {
         form.append('status', 'todo');
         form.append('priority', '1');
         const { task } = await createTask(form);
-        setFeedback({ kind: 'ok', message: `Added “${task.title}”` });
+        setFeedback({ kind: 'ok', message: t('quickCapture.addedOne', { title: task.title }) });
       }
       setText('');
       invalidateData();
     } catch (err) {
       setFeedback({
         kind: 'err',
-        message: err instanceof Error ? err.message : 'Failed to add task',
+        message: err instanceof Error ? err.message : t('quickCapture.error'),
       });
     } finally {
       setBusy(false);
@@ -71,7 +80,7 @@ export function QuickCaptureWidget() {
 
   return (
     <WidgetCard
-      title="Quick capture"
+      title={widgetLabels.label('quick-capture')}
       icon={PlusCircle}
       actions={
         <button
@@ -85,16 +94,14 @@ export function QuickCaptureWidget() {
               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
           )}
         >
-          Bulk
+          {t('quickCapture.bulk')}
         </button>
       }
       bodyClassName="flex flex-col gap-2 p-3"
     >
       <Textarea
-        aria-label={bulk ? 'Tasks (one per line)' : 'Task'}
-        placeholder={
-          bulk ? 'One task per line…\nfix the login bug\nwrite the docs' : 'Add a task…'
-        }
+        aria-label={bulk ? t('quickCapture.ariaBulk') : t('quickCapture.ariaSingle')}
+        placeholder={bulk ? t('quickCapture.placeholderBulk') : t('quickCapture.placeholder')}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
@@ -110,12 +117,12 @@ export function QuickCaptureWidget() {
         >
           {feedback?.message ?? (
             <span className="hidden sm:inline">
-              {bulk ? 'One task per line' : '⌘↵ to add'}
+              {bulk ? t('quickCapture.hintBulk') : t('quickCapture.hint')}
             </span>
           )}
         </span>
         <Button type="button" size="sm" onClick={() => void submit()} disabled={!canSubmit}>
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : 'Add'}
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : tCommon('add')}
         </Button>
       </div>
     </WidgetCard>

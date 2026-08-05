@@ -1,6 +1,8 @@
 import { useTranslations } from 'next-intl';
+import { LLM_FEATURE_LABEL } from '@midnite/shared';
 import type {
   CheckTrigger,
+  LlmFeature,
   MediaType,
   CouncilMemberRunStatus,
   CouncilRunStatus,
@@ -199,4 +201,26 @@ export function useSessionStatusLabel(): (status: SessionStatus) => string {
 export function useMediaTypeLabel(): (type: MediaType) => string {
   const t = useTranslations('media');
   return (type) => t(`types.${type}`);
+}
+
+/**
+ * LLM **feature** attribution (Phase 82 Theme D, dashboard round 2).
+ *
+ * `LLM_FEATURE_LABEL` in `@midnite/shared` names the gateway subsystem a call is billed
+ * to ("Task triage", "Chat to board", "Other") — reader-facing wording, so the usage
+ * widget's breakdown resolves it here with the shared English as the per-key fallback.
+ *
+ * Its sibling `LLM_PROVIDER_LABEL` deliberately gets **no** seam: `Anthropic`, `OpenAI`,
+ * `Google Gemini` are brand names, and translating them would be wrong rather than
+ * incomplete.
+ */
+export function useLlmFeatureLabel(): (feature: string) => string {
+  const t = useTranslations('dashboard');
+  return (feature) => {
+    const key = `usage.features.${feature}`;
+    if (t.has(key)) return t(key);
+    // An `LlmFeature` the catalog hasn't caught up with, or a raw key the gateway
+    // recorded before the enum existed.
+    return LLM_FEATURE_LABEL[feature as LlmFeature] ?? feature;
+  };
 }

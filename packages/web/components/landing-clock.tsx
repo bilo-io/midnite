@@ -1,28 +1,14 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Clock3 } from 'lucide-react';
 import type { ClockMode } from '@/lib/dashboard-widgets';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { AnalogClockFace } from '@/components/analog-clock-face';
 
 /** localStorage key for the landing-page clock's digital/analogue preference. */
 export const LANDING_CLOCK_MODE_KEY = 'midnite.landing.clockMode';
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
 
 function pad(n: number): string {
   return n.toString().padStart(2, '0');
@@ -37,8 +23,13 @@ function pad(n: number): string {
  * `now` is ticked by the parent page so there's a single interval on the screen.
  */
 export function LandingClock({ now }: { now: Date | null }) {
+  const t = useTranslations('dashboard');
+  const { dateTime } = useLocaleFormat();
   const [mode, setMode] = useLocalStorage<ClockMode>(LANDING_CLOCK_MODE_KEY, 'digital');
   const next: ClockMode = mode === 'digital' ? 'analogue' : 'digital';
+  // The mode *noun* reuses the widget's existing keys — one spelling of
+  // "analogue"/"digital" across the app — inside the landing page's own phrasing.
+  const switchLabel = t('landing.clock.switchTo', { mode: t(`clockMode.${next}`) });
 
   // Before the client clock resolves, hold the vertical space so nothing jumps.
   if (now === null) {
@@ -50,8 +41,11 @@ export function LandingClock({ now }: { now: Date | null }) {
     );
   }
 
+  // A fixed 24-hour readout in a monospace face — deliberately not locale-formatted, so
+  // the digits never reflow the centred hero. The *date* was the real leak: hand-rolled
+  // English weekday/month arrays, now Intl-derived like the calendar widget's weekdays.
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const date = `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  const date = dateTime(now, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="group absolute left-1/2 top-6 z-10 flex -translate-x-1/2 flex-col items-center text-center">
@@ -71,8 +65,8 @@ export function LandingClock({ now }: { now: Date | null }) {
         <button
           type="button"
           onClick={() => setMode(next)}
-          aria-label={`Switch to ${next} clock`}
-          title={`Switch to ${next} clock`}
+          aria-label={switchLabel}
+          title={switchLabel}
           className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity duration-200 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100 motion-reduce:transition-none"
         >
           <Clock3 className="h-4 w-4" />
