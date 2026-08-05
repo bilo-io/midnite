@@ -1,1 +1,0 @@
-import{aQ as a,aG as s}from"./iframe-C0EziqGE.js";function i(){const o=a(),n=s(),m=Intl.DateTimeFormat().resolvedOptions().timeZone;return{locale:n,number:(e,t)=>o.number(e,t),money:(e,t,r)=>o.number(e,{style:"currency",currency:t,...r}),dateTime:(e,t)=>o.dateTime(e,{timeZone:m,...t})}}export{i as u};
