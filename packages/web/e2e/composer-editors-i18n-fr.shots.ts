@@ -62,8 +62,10 @@ test('folder picker over settings → personalisation — fr-FR', async ({ page 
   await page.getByText('Répertoire de travail', { exact: true }).first().waitFor({ state: 'visible' });
 
   await page.getByRole('button', { name: 'Parcourir' }).click();
-  // The dialog title is the picker's own key, so it proves the modal (not the page) is fr.
-  await page.getByText('Choisir un dossier', { exact: true }).waitFor({ state: 'visible' });
+  // The picker's title is its dialog *accessible name*, not visible text — which is
+  // exactly the class of string the jsx-text-only lint gate can't see, so asserting on
+  // it here is the point.
+  await page.getByRole('dialog', { name: 'Choisir un dossier' }).waitFor({ state: 'visible' });
   // The listing is a gateway round-trip; let it land so the shot shows real rows.
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${OUT}/folder-picker-fr.png` });
