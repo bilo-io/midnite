@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 import { PwaInstall } from './pwa-install';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 /** Build a `beforeinstallprompt`-shaped event with a controllable prompt. */
 function installEvent() {

@@ -96,7 +96,11 @@ export function NotificationsPanel({
     <div aria-label={t('header.notificationsAndApprovals')} className={className}>
       <div className="rounded-xl accent-gradient-border accent-gradient-border--lit">
         <div className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl bg-popover shadow-2xl">
-          <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+          {/* `flex-wrap` because the actions are longer than English in most
+              locales — fr-FR's "Tout marquer comme lu" overflowed this row and the
+              panel's `overflow-hidden` clipped "Effacer" off the right edge. The
+              sidebar panel's own header already wraps for the same reason. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border/60 px-3 py-2">
             <div role="tablist" aria-label={t('header.notificationsAndApprovals')} className="flex items-center gap-3">
               <TabButton active={tab === 'notifications'} onClick={() => setTab('notifications')}>
                 {t('header.notifications')}

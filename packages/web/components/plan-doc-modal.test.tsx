@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ProjectDoc } from '@midnite/shared';
 
 afterEach(cleanup);
@@ -13,6 +13,7 @@ vi.mock('@/components/markdown-editor', () => ({
 }));
 
 import { PlanDocModal } from './plan-doc-modal';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 function makeDoc(overrides: Partial<ProjectDoc> = {}): ProjectDoc {
   return {

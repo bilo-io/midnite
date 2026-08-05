@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { Notification, NotificationSeverity } from '@midnite/shared';
+import { useTranslations } from 'next-intl';
 import { cn, relativeTime } from '@/lib/utils';
 import { useNotifications } from '@/components/notifications-provider';
 
@@ -44,6 +45,7 @@ const DONE_ICON: LucideIcon = CircleCheck;
  * a corner badge + a hover tooltip — the same shape as {@link NavBar}'s links.
  */
 export function NotificationCenter({ expanded }: { expanded?: boolean }) {
+  const t = useTranslations('common');
   const { unread } = useNotifications();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -84,7 +86,9 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
         )}
       >
         <Bell className="h-4 w-4 shrink-0" />
-        {expanded ? <span className="truncate text-sm">Notifications</span> : null}
+        {expanded ? (
+          <span className="truncate text-sm">{t('chrome.notifications.title')}</span>
+        ) : null}
         {unread > 0 ? (
           // Same pill in both states: a trailing count when expanded, a corner
           // badge on the icon when collapsed.
@@ -106,7 +110,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
           role="tooltip"
           className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-100 group-hover:opacity-100"
         >
-          Notifications
+          {t('chrome.notifications.title')}
         </span>
       ) : null}
 
@@ -133,6 +137,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
  * header's tabbed panel can render them on the notifications tab only.
  */
 export function NotificationFeedActions() {
+  const t = useTranslations('common');
   const { feed, unread, markAllRead, clear } = useNotifications();
   return (
     <div className="flex items-center gap-1">
@@ -140,21 +145,21 @@ export function NotificationFeedActions() {
         type="button"
         onClick={markAllRead}
         disabled={unread === 0}
-        aria-label="Mark all read"
+        aria-label={t('chrome.notifications.markAllRead')}
         className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
       >
         <CheckCheck className="h-3.5 w-3.5" />
-        Mark all read
+        {t('chrome.notifications.markAllRead')}
       </button>
       <button
         type="button"
         onClick={clear}
         disabled={feed.length === 0}
-        aria-label="Clear notifications"
+        aria-label={t('chrome.notifications.clearAria')}
         className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
       >
         <Trash2 className="h-3.5 w-3.5" />
-        Clear
+        {t('chrome.notifications.clear')}
       </button>
     </div>
   );
@@ -167,6 +172,7 @@ export function NotificationFeedActions() {
  * own tab header. `onClose` dismisses the containing dropdown after navigating.
  */
 export function NotificationFeedList({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('common');
   const router = useRouter();
   const { feed, loading, markRead, dismiss } = useNotifications();
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
@@ -194,13 +200,16 @@ export function NotificationFeedList({ onClose }: { onClose: () => void }) {
     <div className="max-h-[60vh] overflow-auto">
       {loading ? (
           <div className="flex items-center justify-center gap-2 px-3 py-8 text-sm text-muted-foreground">
-            <LoaderCircle className="h-4 w-4 animate-spin" aria-label="Loading" />
-            Loading…
+            <LoaderCircle
+              className="h-4 w-4 animate-spin"
+              aria-label={t('chrome.notifications.loading')}
+            />
+            {t('chrome.notifications.loading')}
           </div>
         ) : feed.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-3 py-10 text-center text-sm text-muted-foreground">
             <Inbox className="h-6 w-6" aria-hidden />
-            You&rsquo;re all caught up.
+            {t('chrome.notifications.caughtUp')}
           </div>
         ) : (
           <ul>
@@ -265,7 +274,7 @@ export function NotificationFeedList({ onClose }: { onClose: () => void }) {
                       className="ml-[2.375rem] mb-2 inline-flex items-center gap-1 rounded px-0.5 text-[11px] font-medium text-primary hover:underline"
                     >
                       <SquareArrowOutUpRight className="h-3 w-3" aria-hidden />
-                      Open
+                      {t('chrome.notifications.open')}
                     </button>
                   ) : null}
                   {/* Trailing controls — outside the row button (no nested
@@ -319,17 +328,18 @@ export function NotificationFeedPanel({
   onClose: () => void;
   className?: string;
 }) {
+  const t = useTranslations('common');
   return (
     <div
       role="menu"
-      aria-label="Notifications"
+      aria-label={t('chrome.notifications.title')}
       className={cn(
         'overflow-hidden rounded-xl border border-border bg-popover shadow-2xl',
         className,
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border/60 px-3 py-2">
-        <p className="text-sm font-semibold">Notifications</p>
+        <p className="text-sm font-semibold">{t('chrome.notifications.title')}</p>
         <NotificationFeedActions />
       </div>
       <NotificationFeedList onClose={onClose} />

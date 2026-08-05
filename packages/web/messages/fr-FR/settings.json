@@ -814,5 +814,18 @@
       "deleting": "Suppression…",
       "confirmDelete": "Oui, supprimer"
     }
+  },
+  "heartbeat": {
+    "presets": {
+      "h1": "Toutes les heures",
+      "h4": "Toutes les 4 heures",
+      "h8": "Toutes les 8 heures",
+      "h12": "Toutes les 12 heures",
+      "h24": "Une fois par jour",
+      "h168": "Une fois par semaine",
+      "h720": "Une fois par mois"
+    },
+    "everyHours": "Toutes les {count} h",
+    "everyDays": "Tous les {count} j"
   }
 }

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 
 import { AUTH_HERO_COPY, AuthHero, pickAuthHeroCopy } from './auth-hero';
 import { SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 // The hero is text-only now — the starfield moved to the layout as a
 // full-viewport backdrop, so there's no canvas to stub here.

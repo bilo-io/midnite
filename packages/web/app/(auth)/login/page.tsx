@@ -10,7 +10,7 @@ import { Collapse } from '@/components/ui/collapse';
 import { FloatingLabelInput } from '@/components/auth/floating-label-input';
 import { LastUsedTag, SsoButtons } from '@/components/auth/sso-buttons';
 import { useAuth } from '@/contexts/auth-context';
-import { ssoErrorMessage } from '@/lib/api';
+import { useSsoErrorMessage } from '@/lib/ts-module-labels';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
 import { ReleaseNotesPopover } from '@/components/update/release-notes-popover';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [ssoError, setSsoError] = useState<string | null>(null);
+  const ssoErrorMessage = useSsoErrorMessage();
   const [pending, setPending] = useState(false);
   // The email/password form is tucked behind a "Continue with email" button.
   const [emailOpen, setEmailOpen] = useState(false);
@@ -39,7 +40,7 @@ export default function LoginPage() {
     const code = new URLSearchParams(window.location.search).get('sso_error');
     setSsoError(ssoErrorMessage(code));
     setEmailLastUsed(readLastLoginMethod() === 'email');
-  }, []);
+  }, [ssoErrorMessage]);
 
   // Move focus into the form the moment it expands.
   useEffect(() => {

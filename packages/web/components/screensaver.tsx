@@ -358,6 +358,7 @@ export function Screensaver({
   locked?: boolean;
 }) {
   const tNav = useTranslations('nav');
+  const t = useTranslations('common');
   const passcodeLabels = usePasscodeDialogLabels();
   const [index, setIndex] = useState(() => Math.floor(Math.random() * ACTIVE_WORDS.length));
   const [typed, setTyped] = useState('');
@@ -499,7 +500,7 @@ export function Screensaver({
               {time}
             </div>
             <div className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              local time
+              {t('chrome.screensaver.localTime')}
             </div>
           </div>
 

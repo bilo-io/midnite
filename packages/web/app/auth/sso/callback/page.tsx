@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SsoRedirectPathSchema } from '@midnite/shared';
 import { exchangeSsoCode } from '@/lib/auth-transport';
+import { useTranslations } from 'next-intl';
 
 // Browser landing for the SSO callback (client half — see the BFF route at
 // app/api/auth/sso/callback/route.ts). The gateway 302s here with a one-time
@@ -23,6 +24,7 @@ function safeRedirect(raw: string | null): string {
 }
 
 function SsoCallbackInner() {
+  const t = useTranslations('common');
   const router = useRouter();
   const params = useSearchParams();
   // The exchange code is single-use; guard against a double-invoke (React strict
@@ -54,17 +56,18 @@ function SsoCallbackInner() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <p className="text-sm text-muted-foreground">Signing you in…</p>
+      <p className="text-sm text-muted-foreground">{t('chrome.signingIn')}</p>
     </div>
   );
 }
 
 export default function SsoCallbackPage() {
+  const t = useTranslations('common');
   return (
     <Suspense
       fallback={
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="text-sm text-muted-foreground">Signing you in…</p>
+          <p className="text-sm text-muted-foreground">{t('chrome.signingIn')}</p>
         </div>
       }
     >

@@ -175,6 +175,12 @@
     "toasts": {
       "addDependencyFailed": "Échec de l'ajout de la dépendance",
       "removeDependencyFailed": "Échec de la suppression de la dépendance"
-    }
+    },
+    "pageTitle": "Graphe de dépendances",
+    "pageDescription": "Ce qui bloque quoi — les tâches disposées de gauche à droite selon leur ordre d'achèvement. Glissez entre deux tâches pour ajouter un bloqueur, ou sélectionnez une arête et appuyez sur Suppr pour en retirer un."
+  },
+  "page": {
+    "title": "Tâches",
+    "description": "Tâches regroupées par statut. Basculez entre la liste, le tableau et le graphe, et filtrez par statut ou par projet."
   }
 }

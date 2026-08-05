@@ -146,7 +146,42 @@
       "downloadFailed": "Impossible de télécharger le Markdown",
       "pdfFailed": "Impossible de générer le PDF",
       "htmlFailed": "Impossible d'exporter le HTML"
-    }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Tout marquer comme lu",
+      "clear": "Effacer",
+      "clearAria": "Effacer les notifications",
+      "loading": "Chargement…",
+      "caughtUp": "Vous êtes à jour.",
+      "open": "Ouvrir"
+    },
+    "connection": {
+      "live": "En direct",
+      "reconnecting": "Reconnexion…",
+      "reconnectingStale": "Reconnexion — les données peuvent être en retard",
+      "reconnected": "Reconnecté",
+      "aria": "Connexion : {status}"
+    },
+    "keymap": {
+      "createTask": "Créer une tâche…",
+      "toggleTheme": "Basculer le thème clair / sombre",
+      "lockScreen": "Verrouiller l'écran",
+      "goHome": "Aller à l'accueil",
+      "goOffice": "Aller au bureau",
+      "goSettings": "Aller aux réglages"
+    },
+    "pwa": {
+      "installed": "Installé — vous utilisez Midnite comme application.",
+      "install": "Installer l'application",
+      "installHint": "Lance Midnite dans sa propre fenêtre. Une connexion active à la passerelle reste nécessaire — c'est une coque rapide, pas une copie hors ligne.",
+      "iosHint": "Pour installer : appuyez sur <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.",
+      "browserHint": "Votre navigateur proposera <b>Installer</b> / <b>Ajouter à l'écran d'accueil</b> lorsque cette application sera installable."
+    },
+    "screensaver": {
+      "localTime": "heure locale"
+    },
+    "signingIn": "Connexion en cours…"
   },
   "relativeTime": {
     "justNow": "à l’instant",

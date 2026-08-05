@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { PageHeader } from '@/components/page-header';
 import { TasksView, type TaskView } from '@/components/tasks-view';
 import { getProjects, getRepos, getTasks } from '@/lib/api';
@@ -9,6 +10,7 @@ import { useApiData } from '@/lib/use-api-data';
 // Client-fetched so the app can be statically exported (output: 'export').
 // Filters and the active view live in the URL query string (read client-side).
 export default function TasksPage() {
+  const t = useTranslations('board');
   const { data, error } = useApiData(() => Promise.all([getTasks(), getProjects(), getRepos()]));
   const tasks = data?.[0] ?? [];
   const projects = data?.[1] ?? [];
@@ -34,9 +36,9 @@ export default function TasksPage() {
       }
     >
       <PageHeader
-        title="Tasks"
+        title={t('page.title')}
         icon="ListChecks"
-        description="Tasks grouped by status. Switch between list, board, and graph, and filter by status or project."
+        description={t('page.description')}
         // The graph view is overflow-hidden (no page scroll), so `useScrolled`
         // can never fire on its own — force the tucked header so the sticky
         // toolbar still sits flush under it/the title bar, not below a full
