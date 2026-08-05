@@ -78,8 +78,12 @@
     "addFailed": "Failed to add link",
     "removeFailed": "Failed to remove link"
   },
-  "prompt": { "title": "Prompt" },
-  "attachments": { "title": "Attachments" },
+  "prompt": {
+    "title": "Prompt"
+  },
+  "attachments": {
+    "title": "Attachments"
+  },
   "pr": {
     "title": "Pull request",
     "refresh": "Refresh PR status",
@@ -108,7 +112,9 @@
     "changesRequested": "Changes requested",
     "reviewed": "Reviewed"
   },
-  "runs": { "title": "Agent runs" },
+  "runs": {
+    "title": "Agent runs"
+  },
   "activity": {
     "title": "Activity",
     "none": "No activity recorded yet.",
@@ -172,5 +178,32 @@
     "agedTodo": "Aged to-do",
     "recentFailures": "Recent failures by class ({count})",
     "none": "none"
+  },
+  "retro": {
+    "empty": "No retrospective yet — it’s built when the task finishes.",
+    "aiSummary": "AI summary",
+    "outcome": {
+      "done": "Shipped",
+      "abandoned": "Abandoned",
+      "needs-attention": "Needs attention"
+    },
+    "timing": "Timing",
+    "wait": "Wait",
+    "work": "Work",
+    "total": "Total",
+    "summary": "Summary",
+    "whatTrippedItInline": "What tripped it: ",
+    "whatTrippedIt": "What tripped it",
+    "aiReview": "AI review",
+    "checks": "Checks",
+    "checksTally": " · {passed} passed · {failed} failed",
+    "pullRequest": "Pull request",
+    "attempts": "Attempts",
+    "noAttempts": "No agent runs recorded.",
+    "firstAttempt": "Attempt 1",
+    "retryN": "Retry {index}",
+    "unresolved": "unresolved",
+    "timeline": "Timeline",
+    "noActivity": "No activity recorded."
   }
 }

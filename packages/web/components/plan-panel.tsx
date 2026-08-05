@@ -11,6 +11,7 @@ import {
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
+import { useTranslations } from 'next-intl';
 import { ProjectTag } from '@/components/project-tag';
 import { BreakdownEditor } from '@/components/breakdown-editor';
 import { PlanOverviewStep } from '@/components/plan-overview-step';
@@ -24,8 +25,8 @@ import {
 
 type PlanMode = 'checklist' | 'breakdown';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 type Props = {
@@ -36,6 +37,8 @@ type Props = {
 };
 
 export function PlanPanel({ project, onClose, onChanged }: Props) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const [markdown, setMarkdown] = useState(project.plan ?? '');
   const [sections, setSections] = useState<ChecklistSection[]>(() =>
     project.plan ? parsePlanChecklist(project.plan) : [],
@@ -77,7 +80,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
       setSections(parsePlanChecklist(plan));
       onChanged();
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setDrafting(false);
     }
@@ -91,10 +94,10 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
       const updated = applyChecklistState(markdown, allItems);
       await updateProjectPlan(project.id, updated);
       setMarkdown(updated);
-      setNotice('Saved.');
+      setNotice(t('plan.savedNotice'));
       onChanged();
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setSaving(false);
     }
@@ -111,10 +114,10 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
       const updated = applyChecklistState(markdown, allItems);
       await updateProjectPlan(project.id, updated);
       setMarkdown(updated);
-      setNotice(`Created ${titles.length} task${titles.length === 1 ? '' : 's'} on the board.`);
+      setNotice(t('plan.createdOnBoard', { count: titles.length }));
       onChanged();
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setCreating(false);
     }
@@ -129,7 +132,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
       setBreakdown(res.breakdown);
       setBreakdownFallback(res.isFallback);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setBreakingDown(false);
     }
@@ -142,13 +145,11 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
     setNotice(null);
     try {
       const created = await createTasksFromBreakdown(project.id, breakdown);
-      setNotice(
-        `Created ${created.length} task${created.length === 1 ? '' : 's'}, sequenced by dependencies.`,
-      );
+      setNotice(t('plan.createdSequenced', { count: created.length }));
       setBreakdown(null);
       onChanged();
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setCreatingBoard(false);
     }
@@ -167,37 +168,49 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Plan for ${project.name}`}
+          aria-label={t('plan.dialogLabel', { name: project.name })}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <ProjectTag tag={project.tag} color={project.color} />
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-sm font-semibold">{project.name} — plan</h2>
-              <p className="text-xs text-muted-foreground">
-                Drafted from the project description and its knowledge.
-              </p>
+              <h2 className="truncate text-sm font-semibold">
+                {t('plan.heading', { name: project.name })}
+              </h2>
+              <p className="text-xs text-muted-foreground">{t('plan.subheading')}</p>
             </div>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
 
           <div className="flex items-center gap-2 border-b border-border/60 px-5 py-2.5">
             <Tabs<PlanMode>
-              ariaLabel="Plan view"
+              ariaLabel={t('plan.viewAria')}
               value={mode}
               onChange={setMode}
               options={[
-                { value: 'checklist', label: 'Checklist', icon: <ListChecks className="h-3.5 w-3.5" /> },
-                { value: 'breakdown', label: 'Breakdown', icon: <GitBranch className="h-3.5 w-3.5" /> },
+                {
+                  value: 'checklist',
+                  label: t('plan.checklist'),
+                  icon: <ListChecks className="h-3.5 w-3.5" />,
+                },
+                {
+                  value: 'breakdown',
+                  label: t('plan.breakdown'),
+                  icon: <GitBranch className="h-3.5 w-3.5" />,
+                },
               ]}
             />
             <span className="text-xs text-muted-foreground">
-              {mode === 'checklist'
-                ? 'The readable markdown plan.'
-                : 'A typed, dependency-sequenced board.'}
+              {mode === 'checklist' ? t('plan.checklistHint') : t('plan.breakdownHint')}
             </span>
           </div>
 
@@ -207,19 +220,14 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                 <div className="space-y-4">
                   {breakdownFallback ? (
                     <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-                      AI planning was unavailable — this is a flat fallback list with no
-                      dependencies. You can still edit and create it.
+                      {t('plan.fallbackWarning')}
                     </p>
                   ) : null}
                   <BreakdownEditor breakdown={breakdown} onChange={setBreakdown} />
                 </div>
               ) : overviewApproved !== null ? (
                 <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-10 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Generate a structured, dependency-ordered breakdown from this
-                    project&apos;s description/plan and the approved overview. Review and
-                    edit it before creating the board.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t('plan.breakdownPrompt')}</p>
                   <Button
                     type="button"
                     onClick={() => void generateBreakdown()}
@@ -230,7 +238,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                     ) : (
                       <GitBranch className="h-4 w-4" />
                     )}
-                    Generate breakdown
+                    {t('plan.generateBreakdown')}
                   </Button>
                   <Button
                     type="button"
@@ -238,7 +246,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                     size="sm"
                     onClick={() => setOverviewApproved(null)}
                   >
-                    Redo the overview
+                    {t('plan.redoOverview')}
                   </Button>
                 </div>
               ) : (
@@ -249,17 +257,14 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
               )
             ) : !hasPlan ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-10 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No plan yet. Draft a comprehensive checklist from this project&apos;s
-                  description and sources.
-                </p>
+                <p className="text-sm text-muted-foreground">{t('plan.noPlan')}</p>
                 <Button type="button" onClick={() => void draft()} disabled={drafting}>
                   {drafting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Sparkles className="h-4 w-4" />
                   )}
-                  Draft plan
+                  {t('plan.draftPlan')}
                 </Button>
               </div>
             ) : (
@@ -289,9 +294,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                   </section>
                 ))}
                 {sections.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    The plan has no checkbox items to show.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t('plan.noItems')}</p>
                 ) : null}
               </div>
             )}
@@ -314,7 +317,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                 ) : (
                   <GitBranch className="h-4 w-4" />
                 )}
-                Regenerate
+                {t('plan.regenerate')}
               </Button>
               <Button
                 type="button"
@@ -327,8 +330,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                 ) : (
                   <ListChecks className="h-4 w-4" />
                 )}
-                Create {breakdown.tasks.length > 0 ? breakdown.tasks.length : ''} task
-                {breakdown.tasks.length === 1 ? '' : 's'}
+                {t('plan.createTasks', { count: breakdown.tasks.length })}
               </Button>
             </footer>
           ) : mode === 'checklist' && hasPlan ? (
@@ -345,7 +347,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                 ) : (
                   <Sparkles className="h-4 w-4" />
                 )}
-                Regenerate
+                {t('plan.regenerate')}
               </Button>
               <div className="flex items-center gap-2">
                 <Button
@@ -356,7 +358,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                   disabled={saving}
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save
+                  {tCommon('save')}
                 </Button>
                 <Button
                   type="button"
@@ -369,7 +371,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
                   ) : (
                     <ListChecks className="h-4 w-4" />
                   )}
-                  Create {checkedCount > 0 ? checkedCount : ''} task{checkedCount === 1 ? '' : 's'}
+                  {t('plan.createTasks', { count: checkedCount })}
                 </Button>
               </div>
             </footer>

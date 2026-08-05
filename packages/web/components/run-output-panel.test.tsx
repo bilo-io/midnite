@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-
-// `ExportMenu` reads the active locale (it seeds the detached print root's provider),
-// so this panel needs the intl provider even though its own copy is not migrated yet.
-import { renderWithIntl as render } from '@/vitest.render-intl';
 import { WorkflowSchema, type WorkflowRun } from '@midnite/shared';
 
 import { RunOutputPanel } from './run-output-panel';
 import { ToastProvider } from './toast';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
+// The panel's own copy now comes from the `routines` namespace, and `ExportMenu`
+// reads the active locale to seed the detached print root — either way it needs
+// the intl provider.
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 function renderPanel(run: WorkflowRun | null) {
   const workflow = WorkflowSchema.parse({

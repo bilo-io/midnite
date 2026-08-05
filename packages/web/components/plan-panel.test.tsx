@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { Project } from '@midnite/shared';
 
 const draftProjectPlan = vi.fn();
@@ -27,6 +27,7 @@ vi.mock('@/components/plan-overview-step', () => ({
 }));
 
 import { PlanPanel } from './plan-panel';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());

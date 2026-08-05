@@ -14,6 +14,7 @@ import type { NodeRun, WorkflowRun } from '@midnite/shared';
 import { getWorkflowRun, listWorkflowRuns } from '@/lib/api';
 import { VirtualList } from '@/components/ui/virtual-list';
 import { useWorkflowStore } from '@/lib/workflow-store';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 const RUN_STATUS_HUE: Record<WorkflowRun['status'], string> = {
@@ -35,6 +36,7 @@ export function RunHistoryPanel({
   workflowId: string;
   onClose: () => void;
 }) {
+  const t = useTranslations('routines');
   const applyRunState = useWorkflowStore((s) => s.applyRunState);
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export function RunHistoryPanel({
     setError(null);
     listWorkflowRuns(workflowId)
       .then((r) => { if (!cancelled) setRuns(r); })
-      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load runs'); })
+      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : t('runs.loadFailed')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [workflowId]);
@@ -101,11 +103,11 @@ export function RunHistoryPanel({
   return (
     <div className="flex h-full w-80 shrink-0 flex-col overflow-hidden border-l border-border/60 surface-glass">
       <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2">
-        <span className="text-xs font-semibold text-foreground">Run history</span>
+        <span className="text-xs font-semibold text-foreground">{t('runs.historyTitle')}</span>
         <button
           type="button"
           onClick={exitReplay}
-          aria-label="Close run history"
+          aria-label={t('runs.closeHistory')}
           className="ml-auto flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
@@ -142,13 +144,12 @@ function RunList({
   error: string | null;
   onSelect: (run: WorkflowRun) => void;
 }) {
-  if (loading) return <p className="px-4 py-3 text-xs text-muted-foreground">Loading runs…</p>;
+  const t = useTranslations('routines');
+  if (loading) return <p className="px-4 py-3 text-xs text-muted-foreground">{t('runs.loading')}</p>;
   if (error) return <p className="px-4 py-3 text-xs text-destructive">{error}</p>;
   if (runs.length === 0) {
     return (
-      <p className="px-4 py-3 text-xs text-muted-foreground">
-        No runs yet — press Run to execute this workflow.
-      </p>
+      <p className="px-4 py-3 text-xs text-muted-foreground">{t('runs.empty')}</p>
     );
   }
   return (
@@ -203,6 +204,7 @@ function ReplayPlayer({
   onPause: () => void;
   onBack: () => void;
 }) {
+  const t = useTranslations('routines');
   const pct = maxStep > 0 ? (step / maxStep) * 100 : 0;
   const current = sorted[step - 1];
 
@@ -226,13 +228,13 @@ function ReplayPlayer({
           </span>
         </div>
         <p className="mt-0.5 text-[11px] capitalize text-muted-foreground">
-          {run.triggerSource} trigger
+          {t('runs.triggerSource', { source: run.triggerSource })}
         </p>
       </div>
 
       {/* Step counter */}
       <div className="text-center text-xs font-medium text-muted-foreground tabular-nums">
-        Step {step} / {maxStep}
+        {t('runs.stepOf', { step, max: maxStep })}
       </div>
 
       {/* Progress bar */}
@@ -254,32 +256,32 @@ function ReplayPlayer({
           </span>
         ) : (
           <span className="text-muted-foreground">
-            {step === 0 ? 'Press ▶ or step forward' : null}
+            {step === 0 ? t('runs.pressPlay') : null}
           </span>
         )}
       </div>
 
       {/* Playback controls */}
       <div className="flex items-center justify-center gap-1">
-        <IconBtn label="First step" onClick={() => onStep(0)}>
+        <IconBtn label={t('runs.firstStep')} onClick={() => onStep(0)}>
           <ChevronFirst className="h-4 w-4" />
         </IconBtn>
-        <IconBtn label="Previous step" onClick={() => onStep(Math.max(0, step - 1))}>
+        <IconBtn label={t('runs.previousStep')} onClick={() => onStep(Math.max(0, step - 1))}>
           <ChevronLeft className="h-4 w-4" />
         </IconBtn>
         {playing ? (
-          <IconBtn label="Pause" onClick={onPause}>
+          <IconBtn label={t('runs.pause')} onClick={onPause}>
             <Pause className="h-4 w-4" />
           </IconBtn>
         ) : (
-          <IconBtn label="Play" onClick={onPlay}>
+          <IconBtn label={t('runs.play')} onClick={onPlay}>
             <Play className="h-4 w-4" />
           </IconBtn>
         )}
-        <IconBtn label="Next step" onClick={() => onStep(Math.min(maxStep, step + 1))}>
+        <IconBtn label={t('runs.nextStep')} onClick={() => onStep(Math.min(maxStep, step + 1))}>
           <ChevronRight className="h-4 w-4" />
         </IconBtn>
-        <IconBtn label="Last step" onClick={() => onStep(maxStep)}>
+        <IconBtn label={t('runs.lastStep')} onClick={() => onStep(maxStep)}>
           <ChevronLast className="h-4 w-4" />
         </IconBtn>
       </div>
@@ -291,7 +293,7 @@ function ReplayPlayer({
           'mt-auto text-[11px] text-muted-foreground transition-colors hover:text-foreground',
         )}
       >
-        ← Back to run list
+        {t('runs.backToList')}
       </button>
     </div>
   );

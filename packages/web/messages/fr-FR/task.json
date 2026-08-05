@@ -78,8 +78,12 @@
     "addFailed": "Échec de l'ajout du lien",
     "removeFailed": "Échec du retrait du lien"
   },
-  "prompt": { "title": "Prompt" },
-  "attachments": { "title": "Pièces jointes" },
+  "prompt": {
+    "title": "Prompt"
+  },
+  "attachments": {
+    "title": "Pièces jointes"
+  },
   "pr": {
     "title": "Pull request",
     "refresh": "Actualiser le statut de la PR",
@@ -108,7 +112,9 @@
     "changesRequested": "Modifications demandées",
     "reviewed": "Relu"
   },
-  "runs": { "title": "Exécutions de l'agent" },
+  "runs": {
+    "title": "Exécutions de l'agent"
+  },
   "activity": {
     "title": "Activité",
     "none": "Aucune activité enregistrée pour l'instant.",
@@ -172,5 +178,32 @@
     "agedTodo": "À faire depuis longtemps",
     "recentFailures": "Échecs récents par catégorie ({count})",
     "none": "aucun"
+  },
+  "retro": {
+    "empty": "Pas encore de rétrospective — elle est créée à la fin de la tâche.",
+    "aiSummary": "Résumé IA",
+    "outcome": {
+      "done": "Livrée",
+      "abandoned": "Abandonnée",
+      "needs-attention": "Attention requise"
+    },
+    "timing": "Durées",
+    "wait": "Attente",
+    "work": "Travail",
+    "total": "Total",
+    "summary": "Résumé",
+    "whatTrippedItInline": "Ce qui a bloqué : ",
+    "whatTrippedIt": "Ce qui a bloqué",
+    "aiReview": "Revue IA",
+    "checks": "Vérifications",
+    "checksTally": " · {passed} réussies · {failed} échouées",
+    "pullRequest": "Pull request",
+    "attempts": "Tentatives",
+    "noAttempts": "Aucune exécution d'agent enregistrée.",
+    "firstAttempt": "Tentative 1",
+    "retryN": "Reprise {index}",
+    "unresolved": "non résolu",
+    "timeline": "Chronologie",
+    "noActivity": "Aucune activité enregistrée."
   }
 }

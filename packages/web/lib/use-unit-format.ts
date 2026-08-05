@@ -51,6 +51,16 @@ export type UnitFormat = {
    * that wants the finer step asks for it.
    */
   age: (value: number, step: 'milliseconds' | 'seconds' | 'minutes' | 'hours' | 'days') => string;
+  /**
+   * A **two-unit** elapsed time — `2h 5m`, `3m 12s`, `8s`. Distinct from
+   * {@link UnitFormat.duration}, which collapses to a single unit with a decimal
+   * (`2.1h`): the task retro reports how long a task waited versus worked, where the
+   * minor unit is the point, so rounding it away would lose the information.
+   *
+   * The pair is joined through `units.duration.compound` (`"{major} {minor}"`) rather
+   * than a hardcoded space, so a locale can change the separator without touching code.
+   */
+  compoundDuration: (ms: number | null) => string;
 };
 
 /** Ordered smallest-first; the index into this array is the `1024**i` step. */
@@ -94,6 +104,23 @@ export function useUnitFormat(): UnitFormat {
       if (ms === null) return t('units.emDash');
       if (ms < 1_000) return unit(Math.round(ms), 0, 'units.duration.milliseconds');
       return durationFrom(ms);
+    },
+    compoundDuration: (ms) => {
+      if (ms === null) return t('units.emDash');
+      // The step boundaries and integer rounding are the retro helper's originals, so
+      // en-GB output is byte-identical to the `formatMs` this replaces.
+      const pair = (major: number, majorKey: string, minor: number, minorKey: string) =>
+        t('units.duration.compound', {
+          major: unit(major, 0, `units.duration.${majorKey}`),
+          minor: unit(minor, 0, `units.duration.${minorKey}`),
+        });
+      const totalSec = Math.round(ms / 1_000);
+      if (totalSec < 60) return unit(totalSec, 0, 'units.duration.seconds');
+      const totalMin = Math.floor(totalSec / 60);
+      if (totalMin < 60) return pair(totalMin, 'minutes', totalSec % 60, 'seconds');
+      const hr = Math.floor(totalMin / 60);
+      if (hr < 24) return pair(hr, 'hours', totalMin % 60, 'minutes');
+      return pair(Math.floor(hr / 24), 'days', hr % 24, 'hours');
     },
   };
 }

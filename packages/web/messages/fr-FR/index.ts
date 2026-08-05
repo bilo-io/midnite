@@ -17,6 +17,7 @@ import plan from './plan.json';
 import prReview from './prReview.json';
 import projects from './projects.json';
 import roadmap from './roadmap.json';
+import routines from './routines.json';
 import safety from './safety.json';
 import search from './search.json';
 import sessions from './sessions.json';
@@ -44,6 +45,7 @@ export default {
   prReview,
   projects,
   roadmap,
+  routines,
   safety,
   search,
   sessions,

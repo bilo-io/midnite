@@ -169,7 +169,8 @@
       "seconds": "{value} s",
       "minutes": "{value} min",
       "hours": "{value} h",
-      "days": "{value} j"
+      "days": "{value} j",
+      "compound": "{major} {minor}"
     }
   },
   "editor": {

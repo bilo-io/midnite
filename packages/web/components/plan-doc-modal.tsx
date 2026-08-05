@@ -5,10 +5,11 @@ import { Check, Copy, Loader2, Save, Sparkles, Trash2, X } from 'lucide-react';
 import type { ProjectDoc } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor } from '@/components/markdown-editor';
+import { useTranslations } from 'next-intl';
 import { ProjectTag } from '@/components/project-tag';
 
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong';
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 type Props = {
@@ -26,6 +27,8 @@ type Props = {
  * saved back to the project's own document set (persisted by the gateway).
  */
 export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Props) {
+  const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const [content, setContent] = useState(doc.content);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -51,7 +54,7 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setSaving(false);
     }
@@ -64,7 +67,7 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
       const updated = await onGenerate();
       setContent(updated.content);
     } catch (e) {
-      setError(errMsg(e));
+      setError(errMsg(e, t('plan.genericError')));
     } finally {
       setGenerating(false);
     }
@@ -91,14 +94,20 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`${doc.name} document`}
+          aria-label={t('plan.doc.dialogLabel', { name: doc.name })}
           className="pointer-events-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <ProjectTag tag={doc.tag} color={doc.color} />
             <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{doc.name}</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -108,7 +117,11 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
               value={content}
               onChange={setContent}
               minHeight={320}
-              label={<span className="text-xs font-medium text-muted-foreground">Document</span>}
+              label={
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t('plan.doc.editorLabel')}
+                </span>
+              }
             />
           </div>
 
@@ -123,7 +136,7 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
-              Delete
+              {tCommon('delete')}
             </Button>
             <div className="flex items-center gap-2">
               <Button
@@ -134,11 +147,11 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
                 disabled={generating || saving}
               >
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {generating ? 'Generating…' : 'Generate'}
+                {generating ? t('plan.doc.generating') : t('plan.doc.generate')}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => void copy()}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'Copied' : 'Copy markdown'}
+                {copied ? t('plan.doc.copied') : t('plan.doc.copyMarkdown')}
               </Button>
               <Button
                 type="button"
@@ -153,7 +166,7 @@ export function PlanDocModal({ doc, onSave, onDelete, onClose, onGenerate }: Pro
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                {saving ? 'Saving…' : saved ? 'Saved' : 'Save'}
+                {saving ? tCommon('saving') : saved ? tCommon('saved') : tCommon('save')}
               </Button>
             </div>
           </footer>
