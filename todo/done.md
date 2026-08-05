@@ -4804,7 +4804,7 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] Documented in `docs/LIFECYCLE.md` (§2 signal table row + "runTimeoutMs is a stall deadline" verdict table).
 - [x] Gates: shared + gateway 2345 (4 new runner tests: healthy run survives 5 windows · `waiting` never times out · silent `wip` still fails · `runTimeoutMs: 0` arms nothing; 1 new config test) · `:typecheck` + `:lint` green.
 
-## Phase 82 Theme D — dashboard widgets round 2 i18n (en-GB + fr-FR) — PR #<PR> (2026-08-05)
+## Phase 82 Theme D — dashboard widgets round 2 i18n (en-GB + fr-FR) — PR #598 (2026-08-05)
 
 - [x] **28 files** the first dashboard slice (PR #580) didn't cover leave `I18N_EXEMPT` (**101 → 73**): 20 widgets (activity, agents, health, repo-status, throughput, cycle-time, cost-by-repo, fleet-trend, usage, disk, storage, system-monitor, memories, shipped, quick-capture, links, news, quote, scratchpad, weather), the tab strip / grid / tiles / timeframe chrome, the dashboard page header, and the landing hero.
 - [x] **20 of 28 failed the gate — but all 28 carried user-visible English.** The eight that lint called clean hid it in aria templates (`Rename ${tab.name}`), prop strings (`title="Dashboard"`), a registry table (the tile labels + hints) and hand-rolled English `DAYS`/`MONTHS` arrays in the landing clock. Decision §9's blind spot again; the exempt count remains a floor, not a measure.
