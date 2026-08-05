@@ -9,13 +9,21 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { type PendingApproval } from '@midnite/shared';
-import { cn, relativeTime } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useRelativeTimeLabel } from '@/lib/i18n-labels';
 import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
 
 // ---- countdown helpers ----
 
-function useCountdown(deadlineAt: string | null): string | null {
+/**
+ * The countdown returns `{ label, expired }` rather than a bare string: the row
+ * styles the expired state by comparing against it, and a translated label would
+ * have silently broken that branch in every non-English locale.
+ */
+function useCountdown(deadlineAt: string | null): { label: string; expired: boolean } | null {
+  const t = useTranslations('settings');
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -26,10 +34,20 @@ function useCountdown(deadlineAt: string | null): string | null {
 
   if (!deadlineAt) return null;
   const secs = Math.max(0, Math.floor((new Date(deadlineAt).getTime() - now) / 1000));
-  if (secs === 0) return 'expired';
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  if (secs === 0) return { label: t('approvals.inbox.expired'), expired: true };
+  // The unit spacing *is* the translation (en-GB `2m 5s`, fr-FR `2 min 5 s`), so the
+  // whole rendering is a message rather than a formatter call — the same call the
+  // dashboard's byte units made. `useUnitFormat().duration()` is the wrong seam here:
+  // it collapses to `1.5m` and a countdown ticking per second needs the seconds.
+  const minutes = Math.floor(secs / 60);
+  const seconds = secs % 60;
+  return {
+    label:
+      minutes > 0
+        ? t('approvals.inbox.countdown', { minutes, seconds })
+        : t('approvals.inbox.countdownSeconds', { seconds }),
+    expired: false,
+  };
 }
 
 // ---- single pending request row ----
@@ -43,6 +61,8 @@ export function PendingRow({
   onDecide: (id: string, sessionId: string, decision: 'allow' | 'deny' | 'allow_session') => void;
   onMakeRule: (approval: PendingApproval) => void;
 }) {
+  const t = useTranslations('settings');
+  const relativeTime = useRelativeTimeLabel();
   const countdown = useCountdown(approval.deadlineAt);
 
   return (
@@ -56,13 +76,13 @@ export function PendingRow({
           <span
             className={cn(
               'flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs tabular-nums',
-              countdown === 'expired'
+              countdown.expired
                 ? 'bg-destructive/10 text-destructive'
                 : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
             )}
           >
             <Clock className="h-3 w-3" />
-            {countdown}
+            {countdown.label}
           </span>
         )}
       </div>
@@ -76,7 +96,7 @@ export function PendingRow({
           className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
         >
           <CheckCircle className="h-3.5 w-3.5" />
-          Allow
+          {t('approvals.inbox.allow')}
         </button>
         <button
           type="button"
@@ -84,27 +104,29 @@ export function PendingRow({
           className="flex items-center gap-1.5 rounded-md bg-destructive px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-destructive/90"
         >
           <XCircle className="h-3.5 w-3.5" />
-          Deny
+          {t('approvals.inbox.deny')}
         </button>
         <button
           type="button"
           onClick={() => onDecide(approval.id, approval.sessionId, 'allow_session')}
           className="flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
         >
-          Allow session
+          {t('approvals.inbox.allowSession')}
         </button>
         <button
           type="button"
           onClick={() => onMakeRule(approval)}
           className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
-          Make a rule
+          {t('approvals.inbox.makeRule')}
         </button>
       </div>
 
       <p className="mt-2 text-[10px] text-muted-foreground">
-        Requested {relativeTime(approval.requestedAt)}
-        {approval.taskId && ` · task ${approval.taskId.slice(0, 8)}`}
+        {t('approvals.inbox.requested', { when: relativeTime(approval.requestedAt) })}
+        {approval.taskId
+          ? t('approvals.inbox.taskSuffix', { id: approval.taskId.slice(0, 8) })
+          : null}
       </p>
     </div>
   );
@@ -118,6 +140,7 @@ export function PendingRow({
  * updates. Replays the pending snapshot on connect so a fresh load is correct.
  */
 export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
+  const t = useTranslations('settings');
   const [open, setOpen] = useState(false);
   const { pending, decide } = useApprovalsSocket();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -152,7 +175,11 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={count > 0 ? `Approvals inbox, ${count} pending` : 'Approvals inbox'}
+        aria-label={
+          count > 0
+            ? t('approvals.inbox.triggerAriaPending', { count })
+            : t('approvals.inbox.triggerAria')
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         className={cn(
@@ -178,7 +205,7 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
         </span>
         {expanded && (
           <>
-            <span className="flex-1 text-left">Approvals</span>
+            <span className="flex-1 text-left">{t('approvals.inbox.trigger')}</span>
             {count > 0 && (
               <span className="flex h-5 items-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
                 {badge}
@@ -194,7 +221,9 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
           role="tooltip"
           className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
         >
-          Approvals {count > 0 && `(${badge})`}
+          {count > 0
+            ? t('approvals.inbox.triggerWithCount', { count: badge })
+            : t('approvals.inbox.trigger')}
         </span>
       )}
 
@@ -205,13 +234,13 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Approvals inbox"
+            aria-label={t('approvals.inbox.triggerAria')}
             className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l bg-background shadow-xl"
           >
             <div className="flex items-center justify-between border-b px-4 py-3">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-amber-500" />
-                <h2 className="text-sm font-semibold">Approvals inbox</h2>
+                <h2 className="text-sm font-semibold">{t('approvals.inbox.title')}</h2>
                 {count > 0 && (
                   <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
                     {badge}
@@ -221,7 +250,7 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Close approvals inbox"
+                aria-label={t('approvals.inbox.close')}
                 className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -232,7 +261,7 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
               {pending.length === 0 ? (
                 <div className="flex h-32 flex-col items-center justify-center gap-2 text-center">
                   <RefreshCw className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No pending approvals</p>
+                  <p className="text-sm text-muted-foreground">{t('approvals.inbox.empty')}</p>
                 </div>
               ) : (
                 <ul className="space-y-3">
@@ -254,7 +283,7 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
                 href="/settings/security"
                 className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
-                Manage autonomy mode & rules →
+                {t('approvals.inbox.manageLink')}
               </a>
             </div>
           </div>

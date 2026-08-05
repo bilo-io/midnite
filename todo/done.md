@@ -4,6 +4,82 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-05 — feat: Phase 82 Theme D — setup / routines / infra-chrome residue 🟢
+
+Took Theme D's residue from 49 files to **6** in one XL slice, disjoint by
+agreement from the parallel composer/editors loop (PR #601). Three separately-green
+commits: setup/agents/approvals, routines/runs/retro/plan, app-infra/chrome.
+
+Only **two** new namespaces (`setup`, `routines`); everything else reused a
+namespace that already owned its vocabulary — `task.retro.*` for the retro tab
+(*task detail* mounts it, which is why the ops slice deferred it here),
+`projects.plan.*` for the plan panels (PR #595's subtree),
+`settings.approvals.inbox.*` for the drawer, `common.chrome.*` for the infra tail.
+
+**The gate is not the measure.** It called 22 of the 29 infra files clean; four
+weren't, and those four held the highest-traffic copy in the slice:
+`tasks/page.tsx` + `tasks/graph/page.tsx` passed English `title=`/`description=`
+**props** above a board that has read French since Theme B; `connection-status`'
+`META` table held the live-status pill's wording beside its Tailwind classes;
+`auth-hero` held seven marketing pairs in a `const` array; `global-keymap` held
+six command labels in a registry. Plus five hand-rolled English pluralisers in
+template literals and three `toLocaleString()` calls pinned to the *browser's*
+locale rather than the app's.
+
+**`.ts` modules swept** (a decision taken upfront, motivated by PR #599's toast
+find): following each file's imports one hop turned up the ten
+`SSO_ERROR_MESSAGES` the login page renders after a failed sign-in, and the
+heartbeat cadence dropdown in Settings → Agents — both English from plain `.ts`,
+invisible to the gate twice over. Now behind `lib/ts-module-labels.ts`.
+
+- [x] `setup` namespace — wizard (5 steps), nudge, agent-config card (CLI + API
+      tabs), install/uninstall terminal modal, provider select, guardrails
+      pause/emergency-stop
+- [x] `routines` namespace — routine panel, config + 30-day history modals,
+      workflow run-history/replay/output panels
+- [x] `retro-tab` → `task.retro.*`; `plan-panel` + `plan-doc-modal` →
+      `projects.plan.*`; approvals drawer → `settings.approvals.inbox.*`
+- [x] Infra + chrome tail → `common.chrome.*` — notification centre, connection
+      pill, PWA install, global keymap, screensaver, login hero, SSO callback,
+      both layouts, the task + graph pages
+- [x] **6th registry seam** `lib/setup-item-labels.ts` — `GET /setup/status`
+      renders each checklist label server-side and `midnite doctor` reads the same
+      rows, so the web resolves `setup.items.<id>.label` with the server's English
+      as fallback. `item.detail` deliberately unseamed: free-form text from live
+      state, no closed set, no key to author
+- [x] `useConnectionStatusLabel()` joins the label hooks; `META` becomes
+      colour-only
+- [x] `auth-hero` picking becomes **index-based** so copy resolves from
+      `auth.hero.pair<i>.*` (PR #598's landing-greeting shape); the English array
+      stays as per-key fallback and as what the specs assert membership against
+- [x] `useUnitFormat().compoundDuration()` for the retro's `2h 5m` — the existing
+      single-unit `duration()` collapses it to `2.1h`, losing the minor unit that
+      *is* the point; joined via `units.duration.compound` so a locale can move
+      the separator. en-GB output byte-identical to the `formatMs` it replaces
+- [x] The two Vitest wrappers leave the **gate**, not just the exempt list —
+      spec-only fixtures belong in `I18N_NON_COPY`; `eslint.config.mjs` and
+      `scripts/i18n-exempt.mjs` both learn them or `--check` re-adds them
+- [x] `app/layout.tsx` `metadata` documented as deliberately English — Next
+      resolves it at build time under `output: 'export'` and the locale is a
+      client preference by Phase 79's design, so there is no request to read one
+      from
+- [x] **Two bugs only the fr screenshots caught**: the English board header above
+      a fully French board, and the header notification panel clipping "Effacer"
+      off its right edge (actions row couldn't wrap; French is longer)
+- [x] Tests — 37-case static key audit (sweeping the setup-item enum, wizard
+      steps, hero pair count, the retro-outcome **zod enum**, every heartbeat
+      preset and every `sso_error` code), 8 fr-FR RTL renders, 4 fr Playwright
+      shots
+- [x] Reconciled with PR #601 where it did the same job first
+      (`folder-picker`, `memories-tree`, `export-menu` — kept both sides on the
+      last one, since main wraps the print root in a `LocaleProvider`)
+
+Full gate green: 331 web files / 2215+ tests, 294 gateway, 0 failures.
+Exempt meter **49 → 6** (`breakdown-editor`, both `feature-list-*`, `notes-panel`,
+`report-issue-dialog`, `work-item-modal`). PR #602.
+
+---
+
 ## 2026-08-05 — feat: Phase 82 Theme D — composer / editors / pickers residue 🟢
 
 PR #601. The twelve controls that are either always on screen or sit in front of every other flow. **16 files leave `I18N_EXEMPT` (65 → 49)**, landed as five separately-green commits so each cluster reviews on its own.

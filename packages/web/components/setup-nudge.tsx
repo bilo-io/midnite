@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, Check, Rocket, X } from 'lucide-react';
 import type { SetupStatus } from '@midnite/shared';
 import { buttonVariants } from '@/components/ui/button';
 import { getSetupStatus } from '@/lib/api';
 import { SETUP_DOT, SETUP_ITEM_HREF } from '@/lib/setup-items';
+import { useSetupItemLabel } from '@/lib/setup-item-labels';
 
 // Session-scoped so a dismiss lasts the browsing session and the nudge returns
 // in a fresh session while setup is still incomplete (Decision §4 — the
@@ -24,6 +26,9 @@ const DISMISS_KEY = 'midnite.setup-nudge.dismissed';
  * every primary surface.
  */
 export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
+  const t = useTranslations('setup');
+  const tCommon = useTranslations('common');
+  const itemLabel = useSetupItemLabel();
   const pathname = usePathname();
   const [status, setStatus] = useState<SetupStatus | null>(null);
   // Assume dismissed until the session flag is read, so a prior dismiss never
@@ -72,7 +77,7 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
   return (
     <div
       role="region"
-      aria-label="Finish setting up Midnite"
+      aria-label={t('nudge.title')}
       className="animate-dialog-in fixed bottom-4 right-4 z-40 w-[calc(100%-2rem)] max-w-sm rounded-xl border border-border bg-card p-4 shadow-2xl"
     >
       <div className="flex items-start gap-3">
@@ -80,17 +85,17 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
           <Rocket className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold leading-snug">Finish setting up Midnite</h2>
+          <h2 className="text-sm font-semibold leading-snug">{t('nudge.title')}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {blockers.length > 0
-              ? `${blockers.length} step${blockers.length === 1 ? '' : 's'} left before agents can run.`
-              : 'A couple of recommended steps remain.'}
+              ? t('nudge.stepsLeft', { count: blockers.length })
+              : t('nudge.recommendedRemain')}
           </p>
         </div>
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Dismiss"
+          aria-label={tCommon('chrome.dismiss')}
           className="-mr-1 -mt-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <X className="h-4 w-4" />
@@ -112,7 +117,7 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
                 />
               )}
               <span className={done ? 'text-muted-foreground line-through' : 'font-medium'}>
-                {item.label}
+                {itemLabel(item)}
               </span>
               {!done && item.detail ? (
                 <span className="truncate text-muted-foreground">— {item.detail}</span>
@@ -143,11 +148,11 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
             onClick={onOpenWizard}
             className={buttonVariants({ variant: 'default', size: 'sm' })}
           >
-            Open setup wizard <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            {t('nudge.openWizard')} <ArrowRight className="ml-1 h-3.5 w-3.5" />
           </button>
         ) : (
           <Link href={primaryHref} className={buttonVariants({ variant: 'default', size: 'sm' })}>
-            {primary ? `Set up ${primary.label}` : 'Open settings'}
+            {primary ? t('nudge.setUpItem', { label: itemLabel(primary) }) : t('nudge.openSettings')}
             <ArrowRight className="ml-1 h-3.5 w-3.5" />
           </Link>
         )}

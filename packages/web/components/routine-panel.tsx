@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { BarChart2, Settings } from 'lucide-react';
 import type { Routine, RoutineProgress, RoutineProgressSnapshot } from '@midnite/shared';
+import { useTranslations } from 'next-intl';
 import { recordRoutineProgress } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { RoutineConfigModal } from './routine-config-modal';
@@ -41,6 +42,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
   routines: Routine[];
   progress: RoutineProgress[];
 }) {
+  const t = useTranslations('routines');
   const [routines, setRoutines] = useState<Routine[]>(initial);
   const [configRoutineId, setConfigRoutineId] = useState<string | null>(null);
   const [historyRoutineId, setHistoryRoutineId] = useState<string | null>(null);
@@ -70,9 +72,9 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
         className="cascade-item flex h-full items-center justify-center rounded-xl border bg-card px-5 py-10 text-center shadow-sm"
         style={{ animationDelay: `${SETTLE_MS + 8 * 70}ms` }}
       >
-        <p className="text-sm text-muted-foreground">No routines yet.</p>
+        <p className="text-sm text-muted-foreground">{t('panel.empty')}</p>
         <button type="button" onClick={() => setConfigRoutineId('__new__')} className="mt-2 text-sm text-primary hover:underline">
-          Create your first routine
+          {t('panel.createFirst')}
         </button>
         {configRoutineId === '__new__' && (
           <RoutineConfigModal
@@ -115,19 +117,21 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                       'flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-all duration-500',
                       overallComplete ? 'bg-emerald-500/15 text-emerald-500' : 'bg-muted text-muted-foreground',
                     )}>
-                      {overallComplete ? '✓ All done' : `${totalDone}/${totalAll}`}
+                      {overallComplete
+                        ? t('panel.allDone')
+                        : t('panel.progress', { done: totalDone, total: totalAll })}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-0.5">
                   <button type="button" onClick={() => setHistoryRoutineId(routine.id)}
                     className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                    aria-label="View history">
+                    aria-label={t('panel.viewHistory')}>
                     <BarChart2 className="h-3.5 w-3.5" />
                   </button>
                   <button type="button" onClick={() => setConfigRoutineId(routine.id)}
                     className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                    aria-label="Configure routine">
+                    aria-label={t('panel.configure')}>
                     <Settings className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -180,7 +184,9 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                             }} />
                           </div>
                         )}
-                        <span className="text-[10px] tabular-nums text-muted-foreground flex-shrink-0">{done}/{total}</span>
+                        <span className="text-[10px] tabular-nums text-muted-foreground flex-shrink-0">
+                          {t('panel.progress', { done, total })}
+                        </span>
                       </div>
 
                       {/* Item cards grid */}
@@ -225,7 +231,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                         })}
                         {group.items.length === 0 && (
                           <p className="col-span-full py-1 text-xs text-muted-foreground">
-                            No items — configure to add some.
+                            {t('panel.noItems')}
                           </p>
                         )}
                       </div>
@@ -235,9 +241,9 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
 
                 {routine.groups.length === 0 && (
                   <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    No groups yet.{' '}
+                    {t('panel.noGroups')}{' '}
                     <button type="button" onClick={() => setConfigRoutineId(routine.id)} className="text-primary hover:underline">
-                      Configure
+                      {t('panel.configureLink')}
                     </button>
                   </div>
                 )}

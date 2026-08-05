@@ -101,6 +101,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   // The active locale (pref → browser → default, resolved by the shell provider).
   const locale = useLocale() as Locale;
   const tNav = useTranslations('nav');
+  const t = useTranslations('common');
   const passcodeCopy = usePasscodeDialogLabels();
 
   // FEATURES → the shell's injected nav config (pinned home + collapsible sections),
@@ -159,7 +160,7 @@ export function AppShellClient({ children }: { children: ReactNode }) {
           priority
           className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
         />
-        {expanded ? <Wordmark /> : <RailTooltip>Midnite</RailTooltip>}
+        {expanded ? <Wordmark /> : <RailTooltip>{t('appName')}</RailTooltip>}
       </Link>
       {expanded ? (
         <div className="flex items-center gap-1.5">

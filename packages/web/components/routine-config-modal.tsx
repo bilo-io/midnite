@@ -14,6 +14,7 @@ import {
   updateRoutineGroup,
   updateRoutineItem,
 } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
 
@@ -25,9 +26,11 @@ interface RoutineConfigModalProps {
 }
 
 export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: RoutineConfigModalProps) {
+  const t = useTranslations('routines');
+  const tCommon = useTranslations('common');
   const confirm = useConfirm();
   const [current, setCurrent] = useState<Routine | null>(routine);
-  const [newRoutineName, setNewRoutineName] = useState('My Routine');
+  const [newRoutineName, setNewRoutineName] = useState(t('config.defaultName'));
   const [creating, setCreating] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [addingItemGroupId, setAddingItemGroupId] = useState<string | null>(null);
@@ -77,7 +80,11 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
 
   const handleDeleteGroup = async (gid: string, name: string) => {
     if (!current) return;
-    const ok = await confirm({ title: `Delete group "${name}"?`, description: 'All items in this group will be deleted.', confirmLabel: 'Delete' });
+    const ok = await confirm({
+      title: t('config.confirmDeleteGroupTitle', { name }),
+      description: t('config.confirmDeleteGroupDescription'),
+      confirmLabel: tCommon('delete'),
+    });
     if (!ok) return;
     const updated = await deleteRoutineGroup(current.id, gid);
     setCurrent(updated);
@@ -115,7 +122,10 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
 
   const handleDeleteItem = async (iid: string, title: string) => {
     if (!current) return;
-    const ok = await confirm({ title: `Delete "${title}"?`, confirmLabel: 'Delete' });
+    const ok = await confirm({
+      title: t('config.confirmDeleteItemTitle', { title }),
+      confirmLabel: tCommon('delete'),
+    });
     if (!ok) return;
     const updated = await deleteRoutineItem(current.id, iid);
     setCurrent(updated);
@@ -126,8 +136,8 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
     if (!current) return;
     const ok = await confirm({
       title: `Delete routine "${current.name}"?`,
-      description: 'All groups, items, and progress history will be permanently deleted.',
-      confirmLabel: 'Delete routine',
+      description: t('config.confirmDeleteRoutineDescription'),
+      confirmLabel: t('config.deleteRoutine'),
     });
     if (!ok) return;
     await deleteRoutine(current.id);
@@ -149,16 +159,22 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Configure routine"
+          aria-label={t('config.dialogLabel')}
           className="pointer-events-auto flex w-full max-w-lg flex-col rounded-xl border border-border bg-card shadow-2xl max-h-[85vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
             <h2 className="text-sm font-semibold">
-              {current ? `Configure: ${current.name}` : 'New routine'}
+              {current ? t('config.titleEdit', { name: current.name }) : t('config.titleNew')}
             </h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={handleClose}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={handleClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -167,7 +183,9 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
             {/* Create new routine form */}
             {!current && (
               <div className="space-y-3">
-                <label className="text-xs font-medium text-muted-foreground">Routine name</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  {t('config.nameLabel')}
+                </label>
                 <div className="flex gap-2">
                   <input
                     autoFocus
@@ -175,10 +193,10 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                     value={newRoutineName}
                     onChange={(e) => setNewRoutineName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                    placeholder="e.g. Daily Routine"
+                    placeholder={t('config.namePlaceholder')}
                   />
                   <Button onClick={handleCreate} disabled={creating || !newRoutineName.trim()} size="sm">
-                    Create
+                    {t('config.createButton')}
                   </Button>
                 </div>
               </div>
@@ -221,7 +239,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           onClick={() => moveGroup(group.id, -1)}
                           disabled={gi === 0}
                           className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                          aria-label="Move up"
+                          aria-label={t('config.moveUp')}
                         >
                           <ChevronUp className="h-3.5 w-3.5" />
                         </button>
@@ -230,7 +248,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           onClick={() => moveGroup(group.id, 1)}
                           disabled={gi === sortedGroups.length - 1}
                           className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                          aria-label="Move down"
+                          aria-label={t('config.moveDown')}
                         >
                           <ChevronDown className="h-3.5 w-3.5" />
                         </button>
@@ -238,7 +256,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           type="button"
                           onClick={() => handleDeleteGroup(group.id, group.name)}
                           className="rounded p-0.5 text-muted-foreground hover:text-destructive"
-                          aria-label="Delete group"
+                          aria-label={t('config.deleteGroup')}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -276,7 +294,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                             type="button"
                             onClick={() => handleDeleteItem(item.id, item.title)}
                             className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                            aria-label="Delete item"
+                            aria-label={t('config.deleteItem')}
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -293,14 +311,14 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                             className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             value={newItemTitle}
                             onChange={(e) => setNewItemTitle(e.target.value)}
-                            placeholder="Item title…"
+                            placeholder={t('config.itemPlaceholder')}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleAddItem(group.id);
                               if (e.key === 'Escape') { setAddingItemGroupId(null); setNewItemTitle(''); }
                             }}
                           />
                           <Button size="sm" onClick={() => handleAddItem(group.id)} disabled={!newItemTitle.trim()}>
-                            Add
+                            {t('config.add')}
                           </Button>
                         </div>
                       ) : (
@@ -309,7 +327,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           onClick={() => { setAddingItemGroupId(group.id); setNewItemTitle(''); }}
                           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <Plus className="h-3 w-3" /> Add item
+                          <Plus className="h-3 w-3" /> {t('config.addItem')}
                         </button>
                       )}
                     </div>
@@ -322,11 +340,11 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                     className="flex h-8 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
-                    placeholder="New group name…"
+                    placeholder={t('config.groupPlaceholder')}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddGroup()}
                   />
                   <Button size="sm" variant="outline" onClick={handleAddGroup} disabled={!newGroupName.trim()}>
-                    <Plus className="h-3.5 w-3.5" /> Group
+                    <Plus className="h-3.5 w-3.5" /> {t('config.group')}
                   </Button>
                 </div>
               </div>
@@ -342,9 +360,11 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleDeleteRoutine}
               >
-                Delete routine
+                {t('config.deleteRoutine')}
               </Button>
-              <Button size="sm" onClick={handleClose}>Done</Button>
+              <Button size="sm" onClick={handleClose}>
+                {t('config.done')}
+              </Button>
             </footer>
           )}
         </div>

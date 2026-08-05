@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useTypewriter } from '@/lib/use-typewriter';
 import { introAtLeast, type AuthIntroStage } from '@/components/auth/use-auth-intro';
@@ -29,7 +30,15 @@ import { cn } from '@/lib/utils';
 
 export type AuthHeroCopy = { title: string; subtitle: string };
 
-/** Curated, offline copy set — reviewable, fast, no per-load LLM. */
+/**
+ * Curated, offline copy set — reviewable, fast, no per-load LLM.
+ *
+ * This stays the **English** source: it is the per-key fallback for
+ * `auth.hero.pair<i>.*`, and the specs/stories import it to assert set
+ * membership. Picking is **index-based** (see {@link pickAuthHeroIndex}) so the
+ * rendered copy comes from the catalog — the same shape PR #598 used for the
+ * landing greetings, and the reason the pair is not carried around by value.
+ */
 export const AUTH_HERO_COPY: readonly AuthHeroCopy[] = [
   {
     title: 'Your fleet, one board.',
@@ -61,23 +70,39 @@ export const AUTH_HERO_COPY: readonly AuthHeroCopy[] = [
   },
 ] as const;
 
-/** Pick one copy pair at random. Exposed so tests can assert the set membership. */
-export function pickAuthHeroCopy(rnd: () => number = Math.random): AuthHeroCopy {
-  return AUTH_HERO_COPY[Math.floor(rnd() * AUTH_HERO_COPY.length)]!;
+/** Pick one pair *index* at random — the index is what the catalog is keyed by. */
+export function pickAuthHeroIndex(rnd: () => number = Math.random): number {
+  return Math.floor(rnd() * AUTH_HERO_COPY.length);
 }
 
-/** Pick a pair that differs from `prev` (so a cycle never repeats the same line). */
-function pickDifferentCopy(prev: AuthHeroCopy, rnd: () => number = Math.random): AuthHeroCopy {
+/** Pick one copy pair at random. Exposed so tests can assert the set membership. */
+export function pickAuthHeroCopy(rnd: () => number = Math.random): AuthHeroCopy {
+  return AUTH_HERO_COPY[pickAuthHeroIndex(rnd)]!;
+}
+
+/** Pick an index that differs from `prev` (so a cycle never repeats the same line). */
+function pickDifferentIndex(prev: number, rnd: () => number = Math.random): number {
   if (AUTH_HERO_COPY.length <= 1) return prev;
   let next = prev;
-  while (next === prev) next = pickAuthHeroCopy(rnd);
+  while (next === prev) next = pickAuthHeroIndex(rnd);
   return next;
 }
 
 export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
+  const t = useTranslations('auth');
   const { animate, typewriter } = useAnimationPrefs();
   // Chosen once per mount (client-only — the layout mounts this after hydration).
-  const [copy, setCopy] = useState<AuthHeroCopy>(() => pickAuthHeroCopy());
+  const [pairIndex, setPairIndex] = useState<number>(() => pickAuthHeroIndex());
+  // Resolved from the catalog by index, with the curated English as the per-key
+  // fallback so an un-authored locale still reads a real line, never a raw key.
+  const copy: AuthHeroCopy = {
+    title: t.has(`hero.pair${pairIndex}.title`)
+      ? t(`hero.pair${pairIndex}.title`)
+      : AUTH_HERO_COPY[pairIndex]!.title,
+    subtitle: t.has(`hero.pair${pairIndex}.subtitle`)
+      ? t(`hero.pair${pairIndex}.subtitle`)
+      : AUTH_HERO_COPY[pairIndex]!.subtitle,
+  };
 
   const heroRef = useRef<HTMLDivElement>(null);
   const brandRef = useRef<HTMLDivElement>(null);
@@ -138,7 +163,7 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
     const schedule = () => {
       const delay = 7000 + Math.random() * 3000; // 7–10s
       timer = setTimeout(() => {
-        setCopy((prev) => pickDifferentCopy(prev));
+        setPairIndex((prev) => pickDifferentIndex(prev));
         schedule();
       }, delay);
     };
@@ -224,7 +249,7 @@ export function AuthHero({ intro = 'done' }: { intro?: AuthIntroStage }) {
           </span>
         </div>
 
-        <div key={copy.title}>
+        <div key={pairIndex}>
           <div className="flex min-h-[2.5em] items-baseline">
             <h2 className="auth-hero-title text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">
               {typedTitle}

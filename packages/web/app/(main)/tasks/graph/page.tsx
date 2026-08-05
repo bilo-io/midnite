@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { PageHeader } from '@/components/page-header';
 import { TaskGraphView } from '@/components/task-graph/task-graph-view';
@@ -12,6 +13,7 @@ import { useApiData } from '@/lib/use-api-data';
 // are read client-side, like the other cockpits. useSearchParams (inside the
 // view) needs a Suspense boundary.
 function TaskGraphContainer() {
+  const t = useTranslations('board');
   const { data } = useApiData(() => Promise.all([getTasks(), getProjects()]));
   const tasks = data?.[0] ?? [];
   const projects = data?.[1] ?? [];
@@ -19,9 +21,9 @@ function TaskGraphContainer() {
   return (
     <div className="flex h-[calc(100dvh_-_var(--titlebar-h,0px))] flex-col overflow-hidden">
       <PageHeader
-        title="Dependency graph"
+        title={t('graph.pageTitle')}
         icon="Workflow"
-        description="What blocks what — tasks laid out left-to-right by completion order. Drag between two tasks to add a blocker, or select an edge and press Delete to remove one."
+        description={t('graph.pageDescription')}
       />
       <div className="min-h-0 flex-1">
         <TaskGraphView tasks={tasks} projects={projects} />

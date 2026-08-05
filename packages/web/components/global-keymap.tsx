@@ -5,6 +5,7 @@ import { Lock, PlusCircle, Sun } from 'lucide-react';
 import { THEME_STORAGE_KEY } from '@midnite/ui/theme';
 import { useGlobalKeymap } from '@/hooks/use-global-keymap';
 import { useRegisterPaletteCommands } from '@/lib/palette-commands';
+import { useTranslations } from 'next-intl';
 
 function toggleTheme() {
   const isDark = document.documentElement.classList.contains('dark');
@@ -20,6 +21,7 @@ function toggleTheme() {
  * layout — inside `PaletteCommandsProvider`.
  */
 export function GlobalKeymap() {
+  const t = useTranslations('common');
   const router = useRouter();
 
   useGlobalKeymap({
@@ -35,40 +37,40 @@ export function GlobalKeymap() {
   useRegisterPaletteCommands('global', [
     {
       id: 'global:new-task',
-      label: 'Create task…',
+      label: t('chrome.keymap.createTask'),
       Icon: PlusCircle,
       keywords: ['add', 'create', 'new', 'task'],
       action: () => window.dispatchEvent(new CustomEvent('midnite:new-task')),
     },
     {
       id: 'global:toggle-theme',
-      label: 'Toggle light / dark theme',
+      label: t('chrome.keymap.toggleTheme'),
       Icon: Sun,
       keywords: ['dark', 'light', 'theme', 'mode', 'color'],
       action: toggleTheme,
     },
     {
       id: 'global:lock-screen',
-      label: 'Lock screen',
+      label: t('chrome.keymap.lockScreen'),
       Icon: Lock,
       keywords: ['lock', 'screen', 'screensaver'],
       action: () => window.dispatchEvent(new CustomEvent('midnite:lock-screen')),
     },
     {
       id: 'global:go-home',
-      label: 'Go to Home',
+      label: t('chrome.keymap.goHome'),
       keywords: ['home', 'dashboard', 'board'],
       action: () => router.push('/'),
     },
     {
       id: 'global:go-office',
-      label: 'Go to Office',
+      label: t('chrome.keymap.goOffice'),
       keywords: ['office', 'agents', 'room'],
       action: () => router.push('/office'),
     },
     {
       id: 'global:go-settings',
-      label: 'Go to Settings',
+      label: t('chrome.keymap.goSettings'),
       keywords: ['settings', 'preferences', 'config'],
       action: () => router.push('/settings'),
     },

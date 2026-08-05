@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import type { Routine, RoutineProgress } from '@midnite/shared';
 import { getRoutineProgress } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +15,8 @@ interface RoutineHistoryModalProps {
 }
 
 export function RoutineHistoryModal({ routine, onClose }: RoutineHistoryModalProps) {
+  const t = useTranslations('routines');
+  const tCommon = useTranslations('common');
   const [progress, setProgress] = useState<RoutineProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,13 +40,21 @@ export function RoutineHistoryModal({ routine, onClose }: RoutineHistoryModalPro
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Routine history"
+          aria-label={t('history.dialogLabel')}
           className="pointer-events-auto flex w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl max-h-[80vh]"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
-            <h2 className="text-sm font-semibold">{routine.name} — Last 30 days</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <h2 className="text-sm font-semibold">
+              {t('history.title', { name: routine.name })}
+            </h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={tCommon('close')}
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </header>
@@ -51,12 +62,12 @@ export function RoutineHistoryModal({ routine, onClose }: RoutineHistoryModalPro
           <div className="flex-1 overflow-y-auto px-5 py-6">
             {loading ? (
               <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-                Loading…
+                {t('history.loading')}
               </div>
             ) : progress.length === 0 ? (
               <div className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                <p>No data yet.</p>
-                <p className="text-xs">Check off items on the dashboard to start tracking.</p>
+                <p>{t('history.noData')}</p>
+                <p className="text-xs">{t('history.noDataHint')}</p>
               </div>
             ) : (
               <CompletionChart progress={progress} />
@@ -70,6 +81,7 @@ export function RoutineHistoryModal({ routine, onClose }: RoutineHistoryModalPro
 }
 
 function CompletionChart({ progress }: { progress: RoutineProgress[] }) {
+  const t = useTranslations('routines');
   // Build last-30-day date array
   const days: string[] = [];
   for (let i = 29; i >= 0; i--) {
@@ -98,7 +110,7 @@ function CompletionChart({ progress }: { progress: RoutineProgress[] }) {
           width={TOTAL_W}
           height={H + LABEL_H}
           className="min-w-full"
-          aria-label="30-day completion chart"
+          aria-label={t('history.chartAria')}
         >
           {/* Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((v) => (
@@ -165,19 +177,24 @@ function CompletionChart({ progress }: { progress: RoutineProgress[] }) {
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-green-500" /> 100%
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-green-500" />{' '}
+          {t('history.legendFull')}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" /> ≥50%
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" />{' '}
+          {t('history.legendHalf')}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted-foreground/40" /> &lt;50%
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted-foreground/40" />{' '}
+          {t('history.legendLow')}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted" /> No data
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted" />{' '}
+          {t('history.legendNone')}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-1 w-2.5 rounded-sm bg-primary" /> Today
+          <span className="inline-block h-1 w-2.5 rounded-sm bg-primary" />{' '}
+          {t('history.legendToday')}
         </span>
       </div>
 
@@ -195,6 +212,7 @@ function SummaryStats({
   days: string[];
   progressByDate: Map<string, number>;
 }) {
+  const t = useTranslations('routines');
   const logged = days.filter((d) => progressByDate.has(d)).length;
   const perfects = days.filter((d) => (progressByDate.get(d) ?? 0) >= 1).length;
   const avg =
@@ -214,10 +232,10 @@ function SummaryStats({
   return (
     <div className="grid grid-cols-4 gap-3">
       {[
-        { label: 'Days logged', value: logged },
-        { label: 'Perfect days', value: perfects },
-        { label: 'Avg completion', value: `${avg}%` },
-        { label: 'Current streak', value: `${streak}d` },
+        { label: t('history.daysLogged'), value: logged },
+        { label: t('history.perfectDays'), value: perfects },
+        { label: t('history.avgCompletion'), value: t('history.percent', { value: avg }) },
+        { label: t('history.currentStreak'), value: t('history.streakDays', { count: streak }) },
       ].map((stat) => (
         <div key={stat.label} className="rounded-lg border border-border/60 bg-background/50 px-3 py-2.5 text-center">
           <div className="text-lg font-semibold tabular-nums">{stat.value}</div>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { WorkflowSchema, type NodeRun, type WorkflowRun } from '@midnite/shared';
 
 import { RunHistoryPanel } from './run-history-panel';
@@ -12,6 +12,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { listWorkflowRuns, getWorkflowRun } from '@/lib/api';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const WORKFLOW = WorkflowSchema.parse({
   id: 'wf-1',

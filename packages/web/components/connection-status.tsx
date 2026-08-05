@@ -1,25 +1,21 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useConnectionStore, worstStatus, type ChannelStatus } from '@/lib/connection-store';
+import { useConnectionStatusLabel } from '@/lib/i18n-labels';
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
 
 // `token` is the CSS custom-property name for the status colour; the dot class is
 // a literal so Tailwind can see it, while the token drives inline glow/tint/ring
 // colours (which Tailwind can't build from an interpolated name).
-const META: Record<ChannelStatus, { label: string; dot: string; token: string }> = {
-  live: { label: 'Live', dot: 'bg-[hsl(var(--status-done))]', token: '--status-done' },
-  reconnecting: {
-    label: 'Reconnecting…',
-    dot: 'bg-[hsl(var(--status-waiting))]',
-    token: '--status-waiting',
-  },
-  stale: {
-    label: 'Reconnecting — data may be behind',
-    dot: 'bg-[hsl(var(--status-abandoned))]',
-    token: '--status-abandoned',
-  },
+// Colour only — the wording moved to `useConnectionStatusLabel()` so it lives in
+// the catalog rather than in a lookup table the i18n gate cannot read.
+const META: Record<ChannelStatus, { dot: string; token: string }> = {
+  live: { dot: 'bg-[hsl(var(--status-done))]', token: '--status-done' },
+  reconnecting: { dot: 'bg-[hsl(var(--status-waiting))]', token: '--status-waiting' },
+  stale: { dot: 'bg-[hsl(var(--status-abandoned))]', token: '--status-abandoned' },
 };
 
 /**
@@ -61,13 +57,15 @@ export function ConnectionStatus({
 }) {
   const status = useConnectionStore((s) => worstStatus(s.statuses));
   const meta = META[status];
+  const t = useTranslations('common');
+  const label = useConnectionStatusLabel()(status);
 
   if (variant === 'compact') {
     return (
       <span
         role="status"
-        aria-label={`Connection: ${meta.label}`}
-        title={meta.label}
+        aria-label={t('chrome.connection.aria', { status: label })}
+        title={label}
         className={cn('inline-flex items-center justify-center', className)}
       >
         <StatusDot dot={meta.dot} token={meta.token} />
@@ -80,13 +78,13 @@ export function ConnectionStatus({
   return (
     <span
       role="status"
-      aria-label={`Connection: ${meta.label}`}
+      aria-label={t('chrome.connection.aria', { status: label })}
       className={cn('flex h-9 w-full items-center gap-3 px-2.5 text-sm text-muted-foreground', className)}
     >
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         <StatusDot dot={meta.dot} token={meta.token} />
       </span>
-      <span className="min-w-0 truncate leading-tight">{meta.label}</span>
+      <span className="min-w-0 truncate leading-tight">{label}</span>
     </span>
   );
 }
@@ -106,6 +104,8 @@ export function ConnectionStatus({
 export function ConnectionStatusPill({ className }: { className?: string }) {
   const status = useConnectionStore((s) => worstStatus(s.statuses));
   const meta = META[status];
+  const t = useTranslations('common');
+  const label = useConnectionStatusLabel()(status);
   const tint = `hsl(var(${meta.token}) / 0.1)`;
   const orbiting = status !== 'live';
 
@@ -123,7 +123,7 @@ export function ConnectionStatusPill({ className }: { className?: string }) {
   return (
     <div
       role="status"
-      aria-label={`Connection: ${meta.label}`}
+      aria-label={t('chrome.connection.aria', { status: label })}
       className={cn('group', className)}
     >
       {/* h-7 + symmetric px keeps the collapsed state a perfect circle (28×28):
@@ -146,7 +146,7 @@ export function ConnectionStatusPill({ className }: { className?: string }) {
             revealed && 'mr-2 max-w-[16rem] pl-1 opacity-100',
           )}
         >
-          {meta.label}
+          {label}
         </span>
         <StatusDot dot={meta.dot} token={meta.token} />
       </div>
@@ -170,12 +170,13 @@ export function ConnectionStatusFloat({ className }: { className?: string }) {
  * resync-required signal lands.)
  */
 export function ConnectionToaster(): null {
+  const t = useTranslations('common');
   const status = useConnectionStore((s) => worstStatus(s.statuses));
   const toast = useToast();
   const prev = useRef<ChannelStatus>(status);
 
   useEffect(() => {
-    if (prev.current !== 'live' && status === 'live') toast.success('Reconnected');
+    if (prev.current !== 'live' && status === 'live') toast.success(t('chrome.connection.reconnected'));
     prev.current = status;
   }, [status, toast]);
 

@@ -13,7 +13,17 @@ import { I18N_EXEMPT } from './eslint.i18n-exempt.mjs';
 // born enforced, and each migration slice shrinks the list toward zero. Test/story
 // fixtures are excluded below (they carry deliberate literal strings for assertions).
 const I18N_GATED = ['packages/web/**/*.tsx', 'packages/shell/src/**/*.tsx'];
-const I18N_NON_COPY = ['**/*.test.tsx', '**/*.spec.tsx', '**/*.stories.tsx'];
+// Test/story fixtures carry deliberate literal strings for assertions. The two
+// `test-*-wrapper.tsx` helpers are the same thing without the `.test.` infix —
+// they exist only to wrap specs — so they belong here permanently rather than on
+// an exempt list that is meant to reach zero (Phase 82 D).
+const I18N_NON_COPY = [
+  '**/*.test.tsx',
+  '**/*.spec.tsx',
+  '**/*.stories.tsx',
+  'packages/web/lib/test-locale-wrapper.tsx',
+  'packages/web/lib/test-query-wrapper.tsx',
+];
 // Next.js dynamic-route dirs contain `[param]`; as a glob pattern the brackets read
 // as a character class, so a raw exempt path would never match its own file. Escape
 // them (the exempt list stays real, readable paths — escaping happens only here).

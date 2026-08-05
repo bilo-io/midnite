@@ -104,6 +104,19 @@ const fontVariables = [
   .map((f) => f.variable)
   .join(' ');
 
+/**
+ * **Not localised, by design** (Phase 82 D — a documented gap alongside the Phaser
+ * canvas and xterm stream text). Next resolves `metadata` at *build* time, and web
+ * defaults to `output: 'export'`, so these strings are baked into the emitted HTML
+ * once — there is no request to read a locale from. The app's locale is a
+ * *client* preference (Phase 79's decision: no middleware, no URL segment), which
+ * by construction isn't known when this runs.
+ *
+ * `title` / `applicationName` / `appleWebApp.title` are the brand name and stay
+ * "Midnite" in every locale regardless. Only `description` is translatable copy;
+ * localising it would need either a server target or a per-locale export, both
+ * outside this phase. `public/site.webmanifest` has the same constraint.
+ */
 export const metadata: Metadata = {
   title: 'Midnite',
   description: 'Multitask coding agents',

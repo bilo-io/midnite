@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SetupWizard } from './SetupWizard';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 // Stub the API calls used in wizard steps.
 vi.mock('@/lib/api', () => ({

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Check, Download, Share } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 /**
  * The `beforeinstallprompt` event (Chromium) — not in the DOM lib types. We stash
@@ -31,6 +32,7 @@ function isStandalone(): boolean {
  * browser chrome.
  */
 export function PwaInstall() {
+  const t = useTranslations('common');
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
@@ -74,7 +76,7 @@ export function PwaInstall() {
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Check className="h-4 w-4 text-primary" />
-        Installed — you’re running Midnite as an app.
+        {t('chrome.pwa.installed')}
       </p>
     );
   }
@@ -88,12 +90,9 @@ export function PwaInstall() {
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Download className="h-4 w-4" />
-          Install app
+          {t('chrome.pwa.install')}
         </button>
-        <p className="text-xs text-muted-foreground">
-          Launches Midnite in its own window. It still needs a live gateway connection — this is a
-          fast shell, not an offline copy.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('chrome.pwa.installHint')}</p>
       </div>
     );
   }
@@ -103,8 +102,9 @@ export function PwaInstall() {
       <p className="flex items-start gap-2 text-sm text-muted-foreground">
         <Share className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
-          To install: tap <span className="font-medium text-foreground">Share</span>, then{' '}
-          <span className="font-medium text-foreground">Add to Home Screen</span>.
+          {t.rich('chrome.pwa.iosHint', {
+            b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+          })}
         </span>
       </p>
     );
@@ -112,9 +112,9 @@ export function PwaInstall() {
 
   return (
     <p className="text-sm text-muted-foreground">
-      Your browser will offer <span className="font-medium text-foreground">Install</span> /{' '}
-      <span className="font-medium text-foreground">Add to Home Screen</span> when this app is
-      installable.
+      {t.rich('chrome.pwa.browserHint', {
+        b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+      })}
     </p>
   );
 }

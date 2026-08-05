@@ -65,11 +65,12 @@ import {
   DEFAULT_SETTINGS,
   HEARTBEAT_PRESETS,
   SETTINGS_STORAGE_KEY,
-  formatHeartbeatInterval,
+
   type AppSettings,
 } from '@/lib/app-settings';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
+import { useHeartbeatIntervalLabel } from '@/lib/ts-module-labels';
 
 const SAVE_DEBOUNCE_MS = 600;
 
@@ -90,6 +91,7 @@ function errMsg(e: unknown, fallback: string): string {
 
 export function AgentsView() {
   const t = useTranslations('settings');
+  const heartbeatLabel = useHeartbeatIntervalLabel();
   const tc = useTranslations('common');
   const [agents, setAgents] = useState<AgentsConfig | null>(null);
   const [statuses, setStatuses] = useState<AgentCliStatus[]>([]);
@@ -412,12 +414,12 @@ export function AgentsView() {
                   >
                     {HEARTBEAT_PRESETS.some((p) => p.hours === primary.heartbeatIntervalH) ? null : (
                       <option value={primary.heartbeatIntervalH}>
-                        {formatHeartbeatInterval(primary.heartbeatIntervalH)}
+                        {heartbeatLabel(primary.heartbeatIntervalH)}
                       </option>
                     )}
                     {HEARTBEAT_PRESETS.map((p) => (
                       <option key={p.hours} value={p.hours}>
-                        {p.label}
+                        {heartbeatLabel(p.hours)}
                       </option>
                     ))}
                   </select>

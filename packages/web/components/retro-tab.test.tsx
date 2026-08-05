@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import type { Task, TaskRetro } from '@midnite/shared';
 
 import { RetroBody } from './retro-tab';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 // ExportMenu pulls in clipboard/toast plumbing; stub it to a marker.
 vi.mock('@/components/export-menu', () => ({

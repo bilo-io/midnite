@@ -292,6 +292,25 @@
         "timeout": "Timeout",
         "expired": "Expired"
       }
+    },
+    "inbox": {
+      "trigger": "Approvals",
+      "triggerAria": "Approvals inbox",
+      "triggerAriaPending": "Approvals inbox, {count} pending",
+      "triggerWithCount": "Approvals ({count})",
+      "title": "Approvals inbox",
+      "close": "Close approvals inbox",
+      "empty": "No pending approvals",
+      "manageLink": "Manage autonomy mode & rules →",
+      "expired": "expired",
+      "countdown": "{minutes}m {seconds}s",
+      "countdownSeconds": "{seconds}s",
+      "allow": "Allow",
+      "deny": "Deny",
+      "allowSession": "Allow session",
+      "makeRule": "Make a rule",
+      "requested": "Requested {when}",
+      "taskSuffix": " · task {id}"
     }
   },
   "credentials": {
@@ -795,5 +814,18 @@
       "deleting": "Deleting…",
       "confirmDelete": "Yes, delete"
     }
+  },
+  "heartbeat": {
+    "presets": {
+      "h1": "Every hour",
+      "h4": "Every 4 hours",
+      "h8": "Every 8 hours",
+      "h12": "Every 12 hours",
+      "h24": "Once a day",
+      "h168": "Once a week",
+      "h720": "Once a month"
+    },
+    "everyHours": "Every {count}h",
+    "everyDays": "Every {count}d"
   }
 }

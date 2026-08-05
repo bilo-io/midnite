@@ -21,6 +21,7 @@ import type {
   TaskSummary,
   WaitReason,
 } from '@midnite/shared';
+import type { ChannelStatus } from './connection-store';
 
 /**
  * Translated label lookups for the task domain enums (Phase 82 Theme B).
@@ -268,4 +269,14 @@ export function useApprovalResolutionLabel(): (resolution: ApprovalResolution) =
 export function useApprovalDecidedByLabel(): (decidedBy: ApprovalDecidedBy) => string {
   const t = useTranslations('ops');
   return (decidedBy) => t(`decisions.decidedBy.${decidedBy}`);
+}
+
+/**
+ * WS channel health (Phase 82 D). `connection-status`' `META` table carried these
+ * three strings alongside its Tailwind classes, so the gate — which only reads JSX
+ * text — never saw the copy on the live-status pill every page renders.
+ */
+export function useConnectionStatusLabel(): (status: ChannelStatus) => string {
+  const t = useTranslations('common');
+  return (status) => t(`chrome.connection.${status === 'stale' ? 'reconnectingStale' : status}`);
 }

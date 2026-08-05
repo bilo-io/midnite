@@ -6,6 +6,7 @@ import type { NodeRunLog, NodeRunStatus, WorkflowRun } from '@midnite/shared';
 import { ExportMenu } from '@/components/export-menu';
 import { exportWorkflowRunMarkdown } from '@/lib/api';
 import { useWorkflowStore } from '@/lib/workflow-store';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 const STATUS_HUE: Record<NodeRunStatus, string> = {
@@ -26,6 +27,7 @@ const LOG_LEVEL_HUE: Record<NodeRunLog['level'], string> = {
 type Tab = 'nodes' | 'logs';
 
 export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
+  const t = useTranslations('routines');
   const [open, setOpen] = useState(true);
   const [tab, setTab] = useState<Tab>('nodes');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -47,25 +49,31 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
           className="flex items-center gap-2 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <ChevronUp className={cn('h-3.5 w-3.5 transition-transform', open ? 'rotate-180' : '')} />
-          Run output
-          {run ? <span className="capitalize text-foreground">· {run.status}</span> : null}
+          {t('runs.panelTitle')}
+          {run ? (
+            <span className="capitalize text-foreground">
+              {t('runs.panelStatus', { status: run.status })}
+            </span>
+          ) : null}
         </button>
 
         <div className="ml-auto flex items-center gap-1">
-          {(['nodes', 'logs'] as const).map((t) => (
+          {(['nodes', 'logs'] as const).map((paneKey) => (
             <button
-              key={t}
+              key={paneKey}
               type="button"
               onClick={() => {
-                setTab(t);
+                setTab(paneKey);
                 setOpen(true);
               }}
               className={cn(
                 'rounded px-2 py-1 text-xs font-medium capitalize transition-colors',
-                tab === t ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+                tab === paneKey
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              {t}
+              {paneKey === 'nodes' ? t('runs.tabNodes') : t('runs.tabLogs')}
             </button>
           ))}
           {run ? (
@@ -87,9 +95,9 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
         {tab === 'nodes' ? (
           <div className="max-h-56 space-y-1 overflow-y-auto px-4 pb-3">
             {!run ? (
-              <p className="text-xs text-muted-foreground">Press Run to execute this workflow.</p>
+              <p className="text-xs text-muted-foreground">{t('runs.pressRun')}</p>
             ) : run.nodeRuns.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No node activity yet.</p>
+              <p className="text-xs text-muted-foreground">{t('runs.noNodeActivity')}</p>
             ) : (
               run.nodeRuns.map((nr) => (
                 <div key={nr.id} className="overflow-hidden rounded-md border border-border/50 surface-glass">
@@ -107,19 +115,19 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
                   </button>
                   {expanded === nr.id ? (
                     <div className="space-y-2 border-t border-border/40 px-2.5 py-2">
-                      {nr.error ? <DataBlock label="Error" value={nr.error} tone="error" /> : null}
-                      {nr.input !== undefined ? <DataBlock label="Input" value={nr.input} /> : null}
+                      {nr.error ? <DataBlock label={t('runs.output.error')} value={nr.error} tone="error" /> : null}
+                      {nr.input !== undefined ? <DataBlock label={t('runs.output.input')} value={nr.input} /> : null}
                       {/* Params after {{expr}} resolution — what the executor actually
                           received. Absent for trigger nodes (no resolution). */}
                       {nr.resolvedParams !== undefined ? (
-                        <DataBlock label="Resolved params" value={nr.resolvedParams} />
+                        <DataBlock label={t('runs.output.resolvedParams')} value={nr.resolvedParams} />
                       ) : null}
-                      {nr.output !== undefined ? <DataBlock label="Output" value={nr.output} /> : null}
+                      {nr.output !== undefined ? <DataBlock label={t('runs.output.output')} value={nr.output} /> : null}
                       {!nr.error &&
                       nr.input === undefined &&
                       nr.resolvedParams === undefined &&
                       nr.output === undefined ? (
-                        <p className="text-[11px] text-muted-foreground">No data.</p>
+                        <p className="text-[11px] text-muted-foreground">{t('runs.noNodeData')}</p>
                       ) : null}
                     </div>
                   ) : null}
@@ -130,7 +138,7 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
         ) : (
           <div className="max-h-56 overflow-y-auto px-4 pb-3">
             {logs.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No logs yet.</p>
+              <p className="text-xs text-muted-foreground">{t('runs.noLogs')}</p>
             ) : (
               <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
                 {logs.map((log) => (

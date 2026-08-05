@@ -1,33 +1,16 @@
 'use client';
 
 import { ExternalLink, Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Task, TaskRetro } from '@midnite/shared';
 
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/lib/use-locale-format';
+import { useUnitFormat } from '@/lib/use-unit-format';
 import { exportTaskRetro, getTaskRetro } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { WidgetLoader } from '@/components/spinner';
 import { ExportMenu } from '@/components/export-menu';
-
-/** Human-readable elapsed time from milliseconds (e.g. `2h 5m`, `3m 12s`, `8s`, `—`). */
-function formatMs(ms: number | null): string {
-  if (ms === null) return '—';
-  const totalSec = Math.round(ms / 1000);
-  if (totalSec < 60) return `${totalSec}s`;
-  const totalMin = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  if (totalMin < 60) return `${totalMin}m ${sec}s`;
-  const hr = Math.floor(totalMin / 60);
-  const min = totalMin % 60;
-  if (hr < 24) return `${hr}h ${min}m`;
-  const days = Math.floor(hr / 24);
-  return `${days}d ${hr % 24}h`;
-}
-
-function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
-}
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -46,13 +29,8 @@ function StatChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-const OUTCOME_LABEL: Record<TaskRetro['outcome'], string> = {
-  done: 'Shipped',
-  abandoned: 'Abandoned',
-  'needs-attention': 'Needs attention',
-};
-
 function OutcomeBadge({ outcome }: { outcome: TaskRetro['outcome'] }) {
+  const t = useTranslations('task');
   return (
     <span
       className={cn(
@@ -64,12 +42,21 @@ function OutcomeBadge({ outcome }: { outcome: TaskRetro['outcome'] }) {
             : 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
       )}
     >
-      {OUTCOME_LABEL[outcome]}
+      {t(`retro.outcome.${outcome}`)}
     </span>
   );
 }
 
 export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
+  const t = useTranslations('task');
+  const { dateTime } = useLocaleFormat();
+  const { compoundDuration } = useUnitFormat();
+  // The retro's clock was pinned to the *browser's* locale via `toLocaleString()`,
+  // so a French UI still read dates in the OS language.
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : dateTime(d, { dateStyle: 'short', timeStyle: 'medium' });
+  };
   const exportFilename = `retro-${(task.title.trim() || 'task')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -85,7 +72,7 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
           {retro.narrative && (
             <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-medium text-violet-600 dark:text-violet-400">
               <Sparkles className="h-3 w-3" />
-              AI summary
+              {t('retro.aiSummary')}
             </span>
           )}
         </div>
@@ -94,23 +81,25 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
 
       {/* Durations */}
       <section>
-        <SectionTitle>Timing</SectionTitle>
+        <SectionTitle>{t('retro.timing')}</SectionTitle>
         <div className="grid grid-cols-3 gap-2">
-          <StatChip label="Wait" value={formatMs(retro.durations.waitMs)} />
-          <StatChip label="Work" value={formatMs(retro.durations.workMs)} />
-          <StatChip label="Total" value={formatMs(retro.durations.totalMs)} />
+          <StatChip label={t('retro.wait')} value={compoundDuration(retro.durations.waitMs)} />
+          <StatChip label={t('retro.work')} value={compoundDuration(retro.durations.workMs)} />
+          <StatChip label={t('retro.total')} value={compoundDuration(retro.durations.totalMs)} />
         </div>
       </section>
 
       {/* Narrative (AI, honesty-labeled) — absent in a deterministic skeleton */}
       {retro.narrative && (
         <section>
-          <SectionTitle>Summary</SectionTitle>
+          <SectionTitle>{t('retro.summary')}</SectionTitle>
           <div className="space-y-2 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3 text-sm">
             <p className="whitespace-pre-wrap text-foreground">{retro.narrative.whatHappened}</p>
             {retro.narrative.whatTrippedIt && (
               <p className="text-muted-foreground">
-                <span className="font-medium text-foreground">What tripped it: </span>
+                <span className="font-medium text-foreground">
+                  {t('retro.whatTrippedItInline')}
+                </span>
                 {retro.narrative.whatTrippedIt}
               </p>
             )}
@@ -128,7 +117,7 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
       {/* Failure story */}
       {retro.failures.length > 0 && (
         <section>
-          <SectionTitle>What tripped it</SectionTitle>
+          <SectionTitle>{t('retro.whatTrippedIt')}</SectionTitle>
           <ul className="space-y-1.5">
             {retro.failures.map((f) => (
               <li key={f.id} className="rounded-lg border bg-card px-3 py-2 text-sm">
@@ -145,7 +134,7 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
         <section className="grid gap-4 sm:grid-cols-2">
           {retro.review && (
             <div>
-              <SectionTitle>AI review</SectionTitle>
+              <SectionTitle>{t('retro.aiReview')}</SectionTitle>
               <div className="rounded-lg border bg-card px-3 py-2 text-sm">
                 <div className="font-medium text-foreground">{retro.review.verdict}</div>
                 <p className="mt-1 text-muted-foreground">{retro.review.summary}</p>
@@ -154,12 +143,14 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
           )}
           {retro.checks && (
             <div>
-              <SectionTitle>Checks</SectionTitle>
+              <SectionTitle>{t('retro.checks')}</SectionTitle>
               <div className="rounded-lg border bg-card px-3 py-2 text-sm">
                 <span className="font-medium text-foreground">{retro.checks.status}</span>
                 <span className="text-muted-foreground">
-                  {' '}
-                  · {retro.checks.passed} passed · {retro.checks.failed} failed
+                  {t('retro.checksTally', {
+                    passed: retro.checks.passed,
+                    failed: retro.checks.failed,
+                  })}
                 </span>
               </div>
             </div>
@@ -170,7 +161,7 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
       {/* PR link */}
       {retro.prUrl && (
         <section>
-          <SectionTitle>Pull request</SectionTitle>
+          <SectionTitle>{t('retro.pullRequest')}</SectionTitle>
           <a
             href={retro.prUrl}
             target="_blank"
@@ -185,20 +176,22 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
 
       {/* Attempts */}
       <section>
-        <SectionTitle>Attempts</SectionTitle>
+        <SectionTitle>{t('retro.attempts')}</SectionTitle>
         {retro.attempts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No agent runs recorded.</p>
+          <p className="text-sm text-muted-foreground">{t('retro.noAttempts')}</p>
         ) : (
           <ol className="space-y-1.5">
             {retro.attempts.map((a, i) => (
               <li key={i} className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm">
                 <span className="text-foreground">
-                  {a.retryIndex === 0 ? 'Attempt 1' : `Retry ${a.retryIndex}`}
+                  {a.retryIndex === 0
+                    ? t('retro.firstAttempt')
+                    : t('retro.retryN', { index: a.retryIndex })}
                   <span className="ml-2 text-xs text-muted-foreground">{fmtTime(a.startedAt)}</span>
                 </span>
                 <span className="flex items-center gap-3 text-muted-foreground">
-                  <span>{a.outcome ?? 'unresolved'}</span>
-                  <span className="tabular-nums">{formatMs(a.durationMs)}</span>
+                  <span>{a.outcome ?? t('retro.unresolved')}</span>
+                  <span className="tabular-nums">{compoundDuration(a.durationMs)}</span>
                 </span>
               </li>
             ))}
@@ -208,9 +201,9 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
 
       {/* Timeline */}
       <section>
-        <SectionTitle>Timeline</SectionTitle>
+        <SectionTitle>{t('retro.timeline')}</SectionTitle>
         {retro.timeline.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No activity recorded.</p>
+          <p className="text-sm text-muted-foreground">{t('retro.noActivity')}</p>
         ) : (
           <ol className="space-y-2">
             {retro.timeline.map((e, i) => (
@@ -240,6 +233,7 @@ export function RetroBody({ task, retro }: { task: Task; retro: TaskRetro }) {
  * built (or if it 404s).
  */
 export function RetroTab({ task }: { task: Task }) {
+  const t = useTranslations('task');
   const { data: retro, loading } = useApiData<TaskRetro | null>(
     (signal) => getTaskRetro(task.id, signal),
     [task.id],
@@ -255,9 +249,7 @@ export function RetroTab({ task }: { task: Task }) {
 
   if (!retro) {
     return (
-      <p className="py-10 text-center text-sm text-muted-foreground">
-        No retrospective yet — it&rsquo;s built when the task finishes.
-      </p>
+      <p className="py-10 text-center text-sm text-muted-foreground">{t('retro.empty')}</p>
     );
   }
 

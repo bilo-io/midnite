@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import type { Notification } from '@midnite/shared';
 
 // next/navigation's useRouter throws outside the App Router runtime, so stub it.
@@ -23,6 +23,7 @@ vi.mock('@/components/notifications-provider', () => ({
 }));
 
 import { NotificationCenter } from './notification-center';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 
 const notification = (over: Partial<Notification> = {}): Notification => ({
   id: 'n1',

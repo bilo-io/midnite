@@ -17,10 +17,12 @@ import plan from './plan.json';
 import prReview from './prReview.json';
 import projects from './projects.json';
 import roadmap from './roadmap.json';
+import routines from './routines.json';
 import safety from './safety.json';
 import search from './search.json';
 import sessions from './sessions.json';
 import settings from './settings.json';
+import setup from './setup.json';
 import slides from './slides.json';
 import task from './task.json';
 import workflows from './workflows.json';
@@ -43,10 +45,12 @@ export default {
   prReview,
   projects,
   roadmap,
+  routines,
   safety,
   search,
   sessions,
   settings,
+  setup,
   slides,
   task,
   workflows,

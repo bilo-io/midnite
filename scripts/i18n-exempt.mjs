@@ -24,7 +24,10 @@ const EXEMPT_PATH = join(ROOT_DIR, 'eslint.i18n-exempt.mjs');
 // The gate covers these globs; a file matching one is enforced unless exempt.
 const GATED_GLOBS = ['packages/web/**/*.tsx', 'packages/shell/src/**/*.tsx'];
 // Test/story fixtures carry deliberate literal strings for assertions — not user copy.
-const NON_COPY = /\.(test|spec|stories)\.tsx$/;
+// Mirrors `I18N_NON_COPY` in eslint.config.mjs — the gate's permanent exclusions.
+// `test-*-wrapper.tsx` are spec-only helpers with no product copy, so they are
+// excluded outright rather than parked on the exempt list (Phase 82 D).
+const NON_COPY = /(\.(test|spec|stories)\.tsx|\/test-(locale|query)-wrapper\.tsx)$/;
 const EXCLUDE_DIRS = /(^|\/)(node_modules|dist|\.next|out|build|build-staging|storybook-static|coverage)(\/|$)/;
 // Surfaces Phase 79 already migrated — seeded as enforced (never on the exempt list).
 const ALREADY_MIGRATED = new Set([

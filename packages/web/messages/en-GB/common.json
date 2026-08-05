@@ -134,7 +134,54 @@
       "ariaStock": "Search stocks",
       "ariaCrypto": "Search crypto",
       "placeholder": "Search…"
-    }
+    },
+    "export": {
+      "trigger": "Export",
+      "copyMarkdown": "Copy Markdown",
+      "downloadMd": "Download .md",
+      "downloadPdf": "Download PDF",
+      "downloadHtml": "Download HTML",
+      "copied": "Markdown copied to clipboard",
+      "copyFailed": "Could not copy markdown",
+      "downloadFailed": "Could not download markdown",
+      "pdfFailed": "Could not render PDF",
+      "htmlFailed": "Could not export HTML"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Mark all read",
+      "clear": "Clear",
+      "clearAria": "Clear notifications",
+      "loading": "Loading…",
+      "caughtUp": "You’re all caught up.",
+      "open": "Open"
+    },
+    "connection": {
+      "live": "Live",
+      "reconnecting": "Reconnecting…",
+      "reconnectingStale": "Reconnecting — data may be behind",
+      "reconnected": "Reconnected",
+      "aria": "Connection: {status}"
+    },
+    "keymap": {
+      "createTask": "Create task…",
+      "toggleTheme": "Toggle light / dark theme",
+      "lockScreen": "Lock screen",
+      "goHome": "Go to Home",
+      "goOffice": "Go to Office",
+      "goSettings": "Go to Settings"
+    },
+    "pwa": {
+      "installed": "Installed — you’re running Midnite as an app.",
+      "install": "Install app",
+      "installHint": "Launches Midnite in its own window. It still needs a live gateway connection — this is a fast shell, not an offline copy.",
+      "iosHint": "To install: tap <b>Share</b>, then <b>Add to Home Screen</b>.",
+      "browserHint": "Your browser will offer <b>Install</b> / <b>Add to Home Screen</b> when this app is installable."
+    },
+    "screensaver": {
+      "localTime": "local time"
+    },
+    "signingIn": "Signing you in…"
   },
   "relativeTime": {
     "justNow": "just now",
@@ -157,7 +204,8 @@
       "seconds": "{value}s",
       "minutes": "{value}m",
       "hours": "{value}h",
-      "days": "{value}d"
+      "days": "{value}d",
+      "compound": "{major} {minor}"
     }
   },
   "editor": {

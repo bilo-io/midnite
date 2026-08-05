@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Check,
   ChevronDown,
@@ -57,6 +58,7 @@ export function AgentCard({
   onSaveProvider: (body: UpdateProviderCredentialRequest) => Promise<void>;
   onSetActiveProvider: () => Promise<void>;
 }) {
+  const t = useTranslations('setup');
   const label = AGENT_CLI_LABEL[cli];
   const provider = CLI_PROVIDER_MAP[cli];
   const installed = status?.installed ?? false;
@@ -65,8 +67,8 @@ export function AgentCard({
   const [tab, setTab] = useState<AgentTab>('cli');
 
   const tabOptions: TabOption<AgentTab>[] = [
-    { value: 'cli', label: 'CLI' },
-    ...(provider ? [{ value: 'api' as const, label: 'API' }] : []),
+    { value: 'cli', label: t('agents.tabs.cli') },
+    ...(provider ? [{ value: 'api' as const, label: t('agents.tabs.api') }] : []),
   ];
 
   return (
@@ -76,7 +78,9 @@ export function AgentCard({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
+          aria-label={
+            open ? t('agents.collapse', { label }) : t('agents.expand', { label })
+          }
           className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronDown className={cn('h-4 w-4 transition-transform', !open && '-rotate-90')} />
@@ -90,24 +94,33 @@ export function AgentCard({
         ) : installed ? (
           <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(142 71% 45%)' }} />
-            {status?.version ? <span className="truncate font-mono">{status.version}</span> : 'installed'}
+            {status?.version ? (
+              <span className="truncate font-mono">{status.version}</span>
+            ) : (
+              t('agents.installed')
+            )}
           </span>
         ) : (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(0 72% 55%)' }} />
-            not installed
+            {t('agents.notInstalled')}
           </span>
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
-          {isActiveCli ? <Badge>Sessions</Badge> : null}
-          {isActiveProvider ? <Badge tone="ai">AI</Badge> : null}
+          {isActiveCli ? <Badge>{t('agents.badgeSessions')}</Badge> : null}
+          {isActiveProvider ? <Badge tone="ai">{t('agents.badgeAi')}</Badge> : null}
         </div>
       </div>
 
       <Collapse open={open}>
         <div className="space-y-4 border-t border-border/60 p-4">
-          <Tabs options={tabOptions} value={tab} onChange={setTab} ariaLabel={`${label} configuration`} />
+          <Tabs
+            options={tabOptions}
+            value={tab}
+            onChange={setTab}
+            ariaLabel={t('agents.configurationAria', { label })}
+          />
 
           {tab === 'cli' ? (
             <CliTab
@@ -151,21 +164,21 @@ function CliTab({
   onAction: (action: CliTerminalAction) => void;
   onSetActiveCli: () => void;
 }) {
+  const t = useTranslations('setup');
   const label = AGENT_CLI_LABEL[cli];
   const installed = status?.installed ?? false;
 
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        The {label} CLI is launched in a session terminal to run tasks. Install or update it here,
-        then set it as the CLI used for new sessions.{' '}
+        {t('agents.cli.description', { label })}{' '}
         <a
           href={AGENT_CLI_HOMEPAGE_URL[cli]}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-0.5 underline underline-offset-2 hover:text-foreground"
         >
-          {label} docs
+          {t('agents.cli.docsLink', { label })}
           <ExternalLink className="h-3 w-3" />
         </a>
       </p>
@@ -181,7 +194,7 @@ function CliTab({
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Uninstall
+              {t('agents.cli.uninstall')}
             </Button>
           ) : null}
           <Button
@@ -194,12 +207,12 @@ function CliTab({
             {installed ? (
               <>
                 <RefreshCw className="h-3.5 w-3.5" />
-                Reinstall / Update
+                {t('agents.cli.reinstall')}
               </>
             ) : (
               <>
                 <Download className="h-3.5 w-3.5" />
-                Install
+                {t('agents.cli.install')}
               </>
             )}
           </Button>
@@ -207,11 +220,11 @@ function CliTab({
         {isActiveCli ? (
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <Check className="h-3.5 w-3.5" />
-            Active for sessions
+            {t('agents.cli.activeForSessions')}
           </span>
         ) : (
           <Button type="button" variant="secondary" size="sm" onClick={onSetActiveCli}>
-            Use for sessions
+            {t('agents.cli.useForSessions')}
           </Button>
         )}
       </div>
@@ -238,6 +251,7 @@ function ApiTab({
   onSave: (body: UpdateProviderCredentialRequest) => Promise<void>;
   onSetActive: () => Promise<void>;
 }) {
+  const t = useTranslations('setup');
   const modelsListId = `models-${provider}`;
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState(cred?.baseUrl ?? '');
@@ -275,7 +289,7 @@ function ApiTab({
       setApiKey('');
       flash();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(e instanceof Error ? e.message : t('agents.api.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -287,7 +301,7 @@ function ApiTab({
     try {
       await onSetActive();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to activate');
+      setError(e instanceof Error ? e.message : t('agents.api.activateFailed'));
     } finally {
       setBusy(false);
     }
@@ -296,21 +310,21 @@ function ApiTab({
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Use your own {providerLabel} API key to power Midnite&apos;s AI features (task triage, plan
-        drafting, the heartbeat and AI workflow nodes). Stored on the gateway; never shown again
-        after saving.
+        {t('agents.api.description', { label: providerLabel })}
       </p>
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
-          <label className="text-xs font-medium text-muted-foreground">API key</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            {t('agents.api.apiKeyLabel')}
+          </label>
           <a
             href={LLM_PROVIDER_API_KEY_URL[provider]}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-0.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            Get a {providerLabel} key
+            {t('agents.api.getKey', { label: providerLabel })}
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>
@@ -318,7 +332,13 @@ function ApiTab({
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder={cred?.hasKey ? `•••• ${cred.keyHint ?? 'stored'}` : 'Paste your API key'}
+          placeholder={
+            cred?.hasKey
+              ? t('agents.api.storedKeyPlaceholder', {
+                  hint: cred.keyHint ?? t('agents.api.storedFallback'),
+                })
+              : t('agents.api.keyPlaceholder')
+          }
           autoComplete="off"
           className="font-mono text-xs"
         />
@@ -326,7 +346,9 @@ function ApiTab({
 
       {supportsBaseUrl ? (
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Base URL</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            {t('agents.api.baseUrlLabel')}
+          </label>
           <Input
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
@@ -343,22 +365,26 @@ function ApiTab({
       </datalist>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Plan model</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            {t('agents.api.planModelLabel')}
+          </label>
           <Input
             list={modelsListId}
             value={planModel}
             onChange={(e) => setPlanModel(e.target.value)}
-            placeholder="default"
+            placeholder={t('agents.api.modelPlaceholder')}
             className="font-mono text-xs"
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Act model</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            {t('agents.api.actModelLabel')}
+          </label>
           <Input
             list={modelsListId}
             value={actModel}
             onChange={(e) => setActModel(e.target.value)}
-            placeholder="default"
+            placeholder={t('agents.api.modelPlaceholder')}
             className="font-mono text-xs"
           />
         </div>
@@ -370,7 +396,7 @@ function ApiTab({
         <div className="flex items-center gap-2">
           <Button type="button" size="sm" onClick={() => void save()} disabled={busy}>
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-            Save
+            {t('agents.api.save')}
           </Button>
           {cred?.hasKey ? (
             <Button
@@ -381,24 +407,24 @@ function ApiTab({
               disabled={busy}
               className="text-muted-foreground hover:text-destructive"
             >
-              Clear key
+              {t('agents.api.clearKey')}
             </Button>
           ) : null}
           {saved ? (
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               <Check className="h-3.5 w-3.5" />
-              Saved
+              {t('agents.api.saved')}
             </span>
           ) : null}
         </div>
         {isActiveProvider ? (
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <Check className="h-3.5 w-3.5" />
-            Active for AI
+            {t('agents.api.activeForAi')}
           </span>
         ) : (
           <Button type="button" variant="secondary" size="sm" onClick={() => void setActive()} disabled={busy}>
-            Use for AI features
+            {t('agents.api.useForAi')}
           </Button>
         )}
       </div>
