@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { test, type Page } from '@playwright/test';
 
 import { SCREENSHOTS_DIR } from './config';
+import { seedTask } from './helpers/gateway';
 
 /**
  * Phase 82 Theme F — the full fr-FR walkthrough, as a spec rather than a one-off session.
@@ -50,7 +51,11 @@ function seedFrench(): void {
  */
 const SURFACES: { name: string; path: string; expect: string; settle?: number }[] = [
   { name: 'dashboard', path: '/dashboard', expect: 'Tableau de bord', settle: 1500 },
-  { name: 'board', path: '/tasks', expect: 'À faire' },
+  // The page *description*, not a board column. Waiting on a column ("À faire") let an
+  // English page header through: the columns come from `board.columns.*` (Theme B) while
+  // the title/description/toolbar come from `board.page.*` and `setup.guardrails.*`, so a
+  // column being French says nothing about the chrome above it.
+  { name: 'board', path: '/tasks', expect: 'Tâches regroupées par statut' },
   { name: 'sessions', path: '/sessions', expect: 'Sessions' },
   { name: 'projects', path: '/projects', expect: 'Projets' },
   { name: 'workflows', path: '/workflows', expect: 'Flux de travail' },
@@ -61,8 +66,10 @@ const SURFACES: { name: string; path: string; expect: string; settle?: number }[
   { name: 'digests', path: '/digests', expect: 'Aucun digest' },
   { name: 'ops', path: '/ops', expect: 'Exploitation', settle: 2500 },
   // Appearance is a *section* of the settings index (`appearance-section.tsx`), not its
-  // own route — and its Language heading is where the switcher's second entry point lives.
-  { name: 'settings-appearance', path: '/settings', expect: 'Langue' },
+  // own route. Signal on a **newly-seamed option label**, not the "Langue" heading:
+  // that heading was already French before this slice, so it would have passed happily
+  // over the ten English registry strings the walkthrough actually found here.
+  { name: 'settings-appearance', path: '/settings', expect: 'Révélation de page' },
   { name: 'settings-agents', path: '/settings/agents', expect: 'Agents' },
 ];
 
@@ -88,6 +95,34 @@ test.describe('fr-FR walkthrough', () => {
       await shoot(page, surface);
     });
   }
+
+  /**
+   * The board again, but **seeded**. An empty board renders none of the toolbar chrome, so
+   * the plain `board` shot above can't show the item-count pill, the progress bar or the
+   * guardrail buttons — precisely the strings a stale build was reported as showing in
+   * English. Seeding a task makes them render, and the assertions below pin each one.
+   */
+  test('board with tasks — toolbar chrome', async ({ page }) => {
+    await seedTask('Créer le monde 3D', 'todo');
+    await page.goto('/tasks');
+    await page
+      .getByText('Tâches regroupées par statut', { exact: false })
+      .filter({ visible: true })
+      .first()
+      .waitFor({ state: 'visible' });
+    // Each of these was reported as English on a build predating PRs #596/#602:
+    // the count pill (`common.chrome.itemCount`), the progress label
+    // (`projects.progress.label`) and the two guardrail buttons (`setup.guardrails.*`).
+    await page
+      .getByText('1 élément', { exact: false })
+      .filter({ visible: true })
+      .first()
+      .waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: /Suspendre la planification/ }).waitFor();
+    await page.getByRole('button', { name: /Arrêt d.urgence/ }).waitFor();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `${OUT}/fr-board-seeded.png`, fullPage: true });
+  });
 
   test('login (unauthenticated chrome)', async ({ page }) => {
     // The auth surfaces render outside the app shell, so they miss every in-app check.

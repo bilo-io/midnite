@@ -14,6 +14,7 @@ import {
   type AccentValue,
   type GradientType,
 } from '@/lib/app-settings';
+import { useAppearanceOptionLabels } from '@/lib/appearance-option-labels';
 import { accentGradientCss } from '@midnite/shell';
 import { cn } from '@/lib/utils';
 
@@ -105,6 +106,8 @@ export function AccentBuilder({
   hydrated: boolean;
 }) {
   const t = useTranslations('settings');
+  // `GRADIENT_TYPE_OPTIONS` is a `.ts` registry the jsx-text-only gate can't see.
+  const gradientTypeLabels = useAppearanceOptionLabels('gradientType');
   const isDark = useIsDark();
   const isGradient = isGradientAccent(value);
   const isCustom = isGradient && value.preset === 'custom';
@@ -266,7 +269,10 @@ export function AccentBuilder({
               <PillGroup
                 label={t('appearance.accentBuilder.type')}
                 value={draft.type}
-                options={GRADIENT_TYPE_OPTIONS}
+                options={GRADIENT_TYPE_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: gradientTypeLabels.label(o.value),
+                }))}
                 onChange={(v) => setType(v as GradientType)}
               />
               <PillGroup

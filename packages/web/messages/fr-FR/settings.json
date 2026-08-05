@@ -166,6 +166,61 @@
           "label": "Droite d’abord",
           "hint": "Le balayage va de droite à gauche"
         }
+      },
+      "uiFont": {
+        "system": {
+          "label": "Système",
+          "hint": "Police sans empattement par défaut de votre plateforme"
+        },
+        "grotesk": {
+          "label": "Grotesque",
+          "hint": "Néo-grotesque sobre"
+        },
+        "humanist": {
+          "label": "Humaniste",
+          "hint": "Sans empattement humaniste, plus chaleureuse"
+        },
+        "serif": {
+          "label": "Avec empattement",
+          "hint": "Empattement classique"
+        },
+        "mono": {
+          "label": "Monospace",
+          "hint": "À largeur fixe"
+        }
+      },
+      "bgIntensity": {
+        "subtle": {
+          "label": "Discrète"
+        },
+        "balanced": {
+          "label": "Équilibrée"
+        },
+        "bold": {
+          "label": "Marquée"
+        }
+      },
+      "gradientType": {
+        "linear": {
+          "label": "Linéaire"
+        },
+        "conic": {
+          "label": "Conique"
+        }
+      },
+      "editorAutosave": {
+        "0": {
+          "label": "Désactivé"
+        },
+        "10": {
+          "label": "Toutes les 10 s"
+        },
+        "30": {
+          "label": "Toutes les 30 s"
+        },
+        "60": {
+          "label": "Toutes les 60 s"
+        }
       }
     }
   },

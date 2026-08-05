@@ -10,6 +10,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
+import { useAppearanceOptionLabels } from '@/lib/appearance-option-labels';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,6 +19,8 @@ import { cn } from '@/lib/utils';
  */
 export function EditorSection() {
   const t = useTranslations('settings');
+  // `EDITOR_AUTOSAVE_OPTIONS` is a `.ts` registry the jsx-text-only gate can't see.
+  const autosaveLabels = useAppearanceOptionLabels('editorAutosave');
   const [settings, setSettings] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -54,7 +57,7 @@ export function EditorSection() {
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {opt.label}
+                {autosaveLabels.label(String(opt.value))}
               </button>
             ))}
           </div>

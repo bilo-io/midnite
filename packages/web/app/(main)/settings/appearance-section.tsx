@@ -118,6 +118,8 @@ export function AppearanceSection() {
   const motionLabels = useAppearanceOptionLabels('motion');
   const effectLabels = useAppearanceOptionLabels('effects');
   const shimmerLabels = useAppearanceOptionLabels('shimmer');
+  const uiFontLabels = useAppearanceOptionLabels('uiFont');
+  const bgIntensityLabels = useAppearanceOptionLabels('bgIntensity');
 
   const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [
     { value: 'light', label: t('appearance.themeOptions.light'), Icon: Sun },
@@ -253,7 +255,11 @@ export function AppearanceSection() {
                 ariaLabel={t('appearance.interfaceFont')}
                 value={uiFont}
                 onChange={setUiFont}
-                options={UI_FONT_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+                options={UI_FONT_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: uiFontLabels.label(o.value),
+                  title: uiFontLabels.hint(o.value),
+                }))}
                 hydrated={hydrated}
               />
             </SettingRow>
@@ -369,7 +375,10 @@ export function AppearanceSection() {
                 ariaLabel={t('appearance.gradientIntensity')}
                 value={bgIntensity}
                 onChange={setBgIntensity}
-                options={BG_INTENSITY_OPTIONS}
+                options={BG_INTENSITY_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: bgIntensityLabels.label(o.value),
+                }))}
                 hydrated={hydrated}
               />
             </SettingRow>

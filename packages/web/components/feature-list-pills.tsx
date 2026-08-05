@@ -54,6 +54,9 @@ export function FeatureListPills({ drafts, onOpen }: Props) {
     <div
       ref={ref}
       onScroll={recompute}
+      // `aria-label` is only exposed on elements with a role, so a bare <div> would have
+      // dropped this name entirely. `role="group"` makes it reach assistive tech.
+      role="group"
       aria-label={t('pills.rowAria')}
       className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-2"
       style={{ maskImage, WebkitMaskImage: maskImage }}

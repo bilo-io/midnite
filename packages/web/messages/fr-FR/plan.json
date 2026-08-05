@@ -15,7 +15,6 @@
     "heading": "Demande de liste de fonctionnalités",
     "nameLabel": "Nom",
     "namePlaceholder": "ex. Refonte de la facturation",
-    "untitledName": "Idée sans titre",
     "tasksLabel": "Tâches",
     "tasksPlaceholder": "Décrivez le travail — une tâche par ligne.",
     "tasksHint": "Chaque ligne non vide devient sa propre tâche lorsque vous créez cette liste.",

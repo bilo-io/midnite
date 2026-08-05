@@ -43,6 +43,20 @@ describe('i18next no-literal-string gate config (Phase 82 A)', () => {
     expect(I18N_EXEMPT).not.toContain('packages/web/components/confirm-dialog.tsx');
   });
 
+  it('the global ignores do not exclude the gated tree', () => {
+    // The block-level assertions above can all pass while the rule is dead: adding
+    // `packages/web/components/**` to eslint.config.mjs's *top-level* `ignores` removes
+    // those files from linting entirely, and `i18n-exempt --check` wouldn't notice either
+    // because it globs the filesystem rather than the effective ESLint config.
+    const globalIgnores = (eslintConfig as { ignores?: string[]; files?: string[] }[])
+      .filter((b) => b.ignores && !b.files)
+      .flatMap((b) => b.ignores ?? []);
+    const swallowsGatedTree = globalIgnores.filter(
+      (g) => /^packages\/(web|shell)\//.test(g) && !/\.(test|spec|stories)\.tsx?$/.test(g),
+    );
+    expect(swallowsGatedTree, 'global ignores exclude part of the gated tree').toEqual([]);
+  });
+
   it('exempt list is EMPTY — Phase 82 Theme F drove the gate to full coverage', () => {
     // Phase 82's closing invariant, and the reason this is an assertion rather than a
     // note in a doc: re-exempting a file now means deleting this line, which shows up in

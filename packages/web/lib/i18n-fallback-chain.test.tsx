@@ -70,9 +70,9 @@ const PROBES = Object.entries(enGB as Node)
   .filter((p): p is { ns: string; key: string; english: string } => p !== null)
   .filter((p) => !/[{}]/.test(p.english));
 
-function Probe({ ns, k }: { ns: string; k: string }) {
+function Probe({ ns, k, testId }: { ns: string; k: string; testId?: string }) {
   const t = useTranslations(ns);
-  return <li data-testid={ns}>{t(k)}</li>;
+  return <li data-testid={testId ?? ns}>{t(k)}</li>;
 }
 
 function renderAll(locale: Locale) {
@@ -140,6 +140,38 @@ describe('Phase 82 F — en-GB is the fallback for every declared locale', () =>
       expect(warn.mock.calls, `console.warn during ${locale} fallback`).toEqual([]);
     });
   }
+
+  it('falls back PER KEY for a partially-authored locale', () => {
+    // The sweeps above can't actually fail on the mechanism they describe: `messages/de-DE`
+    // and `messages/es-ES` are empty, so merging them over en-GB is indistinguishable from
+    // `{...enGB}` — a shallow merge would satisfy every assertion. Per-key fallback only
+    // gets exercised by a catalog that has *some* of a namespace, which is what a real
+    // machine-translation seed will look like. So build one synthetically.
+    const enCommon = (enGB as Record<string, Record<string, unknown>>)['common'] ?? {};
+    const key = Object.keys(enCommon).find((k) => typeof enCommon[k] === 'string') ?? '';
+    expect(key, 'no string leaf in common to test with').toBeTruthy();
+    const partial = { common: { [key]: 'ÜBERSETZT' } };
+
+    render(
+      <LocaleProvider
+        catalogs={{ 'en-GB': enGB as never, 'de-DE': partial as never }}
+        initialLocale="de-DE"
+      >
+        <ul>
+          {/* The one authored key, plus a sibling the partial catalog omits. */}
+          <Probe ns="common" k={key} testId="authored" />
+          <Probe ns="common" k="cancel" testId="sibling" />
+        </ul>
+      </LocaleProvider>,
+    );
+    // Authored key wins…
+    expect(screen.getByTestId('authored').textContent).toBe('ÜBERSETZT');
+    // …and the *unauthored sibling in the same namespace* still resolves to English,
+    // which a shallow `{...base, ...active}` merge would have replaced with nothing.
+    expect(screen.getByTestId('sibling').textContent).toBe(
+      typeof enCommon['cancel'] === 'string' ? enCommon['cancel'] : 'Cancel',
+    );
+  });
 
   it('still renders fr-FR in French rather than falling back', () => {
     // The negative control: if `renderAll` were somehow always serving en-GB, every

@@ -15,7 +15,6 @@
     "heading": "Feature list request",
     "nameLabel": "Name",
     "namePlaceholder": "e.g. Billing revamp",
-    "untitledName": "Untitled idea",
     "tasksLabel": "Tasks",
     "tasksPlaceholder": "Describe the work — one task per line.",
     "tasksHint": "Each non-empty line becomes its own task when you craft this list.",

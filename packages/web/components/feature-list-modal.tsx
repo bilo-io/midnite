@@ -8,7 +8,7 @@ import type { Status } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createTask } from '@/lib/api';
-import { draftTasks, type FeatureDraft } from '@/lib/feature-drafts';
+import { draftTasks, type FeatureDraft , UNTITLED_DRAFT_NAME } from '@/lib/feature-drafts';
 import { useConfirm } from '@/components/confirm-dialog';
 import { useStatusLabel } from '@/lib/i18n-labels';
 import { cn } from '@/lib/utils';
@@ -86,7 +86,14 @@ export function FeatureListModal({
   // overkill here — the store is cheap, so mirror on every change).
   const setNameAndStore = (v: string) => {
     setName(v);
-    onChange({ name: v.trim() || t('featureList.untitledName') });
+    // Deliberately the **English** literal, matching `deriveDraftName()` in
+    // lib/feature-drafts.ts. This value is *persisted*, and storing a localised
+    // placeholder would mean the same unnamed draft reads "Untitled idea" or "Idée sans
+    // titre" depending on which path created it — and would pin one language into a user's
+    // stored data (the trap Theme D hit with the dashboard's anchor tab + scratchpad).
+    // Localising it properly means moving `feature-drafts.ts` to store an empty name and
+    // resolve the placeholder at render, which is the logged follow-up for that lib.
+    onChange({ name: v.trim() || UNTITLED_DRAFT_NAME });
   };
   const setTextAndStore = (v: string) => {
     setText(v);

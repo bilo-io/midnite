@@ -129,7 +129,7 @@ tasks:
 
   # Guards the generated ESLint exempt tail — fails CI if a listed file was renamed or
   # deleted (stale entry) or the list drifts out of sorted/deduped order. New files are
-  # born enforced (never auto-added). `moon run web:i18n-exempt` prunes + re-sorts.
+  # born enforced (never auto-added). `moon run web:i18n-exempt` verifies (run it without --check to prune + re-sort).
   i18n-exempt:
     command: 'node ../../scripts/i18n-exempt.mjs --check'
     inputs:

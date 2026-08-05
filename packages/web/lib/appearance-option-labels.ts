@@ -1,10 +1,14 @@
 import { useTranslations } from 'next-intl';
 
 import {
+  BG_INTENSITY_OPTIONS,
   DENSITY_OPTIONS,
+  EDITOR_AUTOSAVE_OPTIONS,
   EFFECT_OPTIONS,
+  GRADIENT_TYPE_OPTIONS,
   MOTION_OPTIONS,
   SHIMMER_DIRECTION_OPTIONS,
+  UI_FONT_OPTIONS,
 } from '@/lib/app-settings';
 
 /**
@@ -26,15 +30,55 @@ import {
 
 type Resolver = { label: (id: string) => string; hint: (id: string) => string };
 
-/** The four option groups, keyed the way their catalog subtrees are. */
+/**
+ * Every `{ label, hint }` option group these settings surfaces render, keyed the way its
+ * catalog subtree is. **All eight.** The first pass covered only the motion/effects block
+ * and left `uiFont`/`bgIntensity` rendering English two accordions up; adding the
+ * registry↔seam cross-check in `i18n-appearance-registry.test.ts` then immediately turned
+ * up `gradientType` (the accent builder) and `editorAutosave` (Settings → Editor) too.
+ * That guard reads `app-settings.ts` itself, so a ninth registry can't be missed the same
+ * way — which is the only reliable defence, since none of this is visible to a
+ * `jsx-text-only` lint gate or to a `t()`-call audit.
+ *
+ * `bgIntensity` has labels but no hints (its registry carries none), so its hint resolver
+ * returns `''` — the section doesn't render one.
+ */
 const GROUPS = {
   density: DENSITY_OPTIONS.map((o) => ({ id: o.value, label: o.label, hint: o.hint })),
   motion: MOTION_OPTIONS.map((o) => ({ id: o.value, label: o.label, hint: o.hint })),
   effects: EFFECT_OPTIONS.map((o) => ({ id: o.key, label: o.label, hint: o.hint })),
   shimmer: SHIMMER_DIRECTION_OPTIONS.map((o) => ({ id: o.value, label: o.label, hint: o.hint })),
+  uiFont: UI_FONT_OPTIONS.map((o) => ({ id: o.value, label: o.label, hint: o.hint })),
+  bgIntensity: BG_INTENSITY_OPTIONS.map((o) => ({ id: o.value, label: o.label, hint: '' })),
+  gradientType: GRADIENT_TYPE_OPTIONS.map((o) => ({ id: o.value, label: o.label, hint: '' })),
+  // Keyed by the numeric autosave interval; rendered by Settings → Editor, not Appearance,
+  // but it is the same `.ts` registry class and the same blind spot.
+  editorAutosave: EDITOR_AUTOSAVE_OPTIONS.map((o) => ({
+    id: String(o.value),
+    label: o.label,
+    hint: '',
+  })),
 } as const;
 
 export type AppearanceOptionGroup = keyof typeof GROUPS;
+
+/**
+ * Which `app-settings.ts` export each group comes from. Declared explicitly rather than
+ * derived by mangling the identifier — `SHIMMER_DIRECTION_OPTIONS` → `shimmer` doesn't
+ * follow from any rule, and a heuristic that guesses wrong either false-positives (as it
+ * did) or, worse, silently passes a group that isn't really wired. The registry-coverage
+ * test compares this against the exports it finds in the source, in both directions.
+ */
+export const APPEARANCE_REGISTRY_EXPORTS: Record<AppearanceOptionGroup, string> = {
+  density: 'DENSITY_OPTIONS',
+  motion: 'MOTION_OPTIONS',
+  effects: 'EFFECT_OPTIONS',
+  shimmer: 'SHIMMER_DIRECTION_OPTIONS',
+  uiFont: 'UI_FONT_OPTIONS',
+  bgIntensity: 'BG_INTENSITY_OPTIONS',
+  gradientType: 'GRADIENT_TYPE_OPTIONS',
+  editorAutosave: 'EDITOR_AUTOSAVE_OPTIONS',
+};
 
 /** Every `{ group, id, label, hint }` the section renders — the registry test's input. */
 export const APPEARANCE_OPTION_ENTRIES = Object.entries(GROUPS).flatMap(([group, entries]) =>
