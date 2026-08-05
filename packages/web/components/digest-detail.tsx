@@ -1,32 +1,47 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import type { Digest } from '@midnite/shared';
 
 import { cn } from '@/lib/utils';
 import { exportDigest } from '@/lib/api';
 import { ExportMenu } from '@/components/export-menu';
+import { useLocaleFormat } from '@/lib/use-locale-format';
 
-function fmtDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { dateStyle: 'medium' });
+/** A digest's from/to dates in the active locale's medium date style. */
+function useDateLabel(): (iso: string) => string {
+  const { dateTime } = useLocaleFormat();
+  return (iso) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : dateTime(d, { dateStyle: 'medium' });
+  };
 }
 
-/** `2h 5m` / `3m` / `8s` / `—` from milliseconds. */
-function formatMs(ms: number | null): string {
-  if (ms === null) return '—';
-  const totalSec = Math.round(ms / 1000);
-  if (totalSec < 60) return `${totalSec}s`;
-  const totalMin = Math.floor(totalSec / 60);
-  if (totalMin < 60) return `${totalMin}m`;
-  const hr = Math.floor(totalMin / 60);
-  const min = totalMin % 60;
-  if (hr < 24) return `${hr}h ${min}m`;
-  return `${Math.floor(hr / 24)}d ${hr % 24}h`;
+/** `2h 5m` / `3m` / `8s` / `—` from milliseconds, unit suffixes translated. */
+function useMsLabel(): (ms: number | null) => string {
+  const t = useTranslations('digests');
+  const { number } = useLocaleFormat();
+  return (ms) => {
+    if (ms === null) return t('detail.noValue');
+    const totalSec = Math.round(ms / 1000);
+    if (totalSec < 60) return t('detail.duration.seconds', { value: number(totalSec) });
+    const totalMin = Math.floor(totalSec / 60);
+    if (totalMin < 60) return t('detail.duration.minutes', { value: number(totalMin) });
+    const hr = Math.floor(totalMin / 60);
+    if (hr < 24) {
+      return t('detail.duration.hoursMinutes', { hours: number(hr), minutes: number(totalMin % 60) });
+    }
+    return t('detail.duration.daysHours', { days: number(Math.floor(hr / 24)), hours: number(hr % 24) });
+  };
 }
 
-const usd = (n: number): string => `$${n.toFixed(2)}`;
+/** Digest spend is harvested in USD; only the locale's formatting is dynamic. */
+function useUsdLabel(): (n: number) => string {
+  const { number } = useLocaleFormat();
+  return (n) => number(n, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol' });
+}
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -56,6 +71,7 @@ function StatChip({ label, value, tone }: { label: string; value: string; tone?:
 }
 
 function OutcomeBadge({ outcome }: { outcome: Digest['highlights'][number]['outcome'] }) {
+  const t = useTranslations('digests');
   return (
     <span
       className={cn(
@@ -65,7 +81,7 @@ function OutcomeBadge({ outcome }: { outcome: Digest['highlights'][number]['outc
           : 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
       )}
     >
-      {outcome === 'done' ? 'Shipped' : 'Abandoned'}
+      {outcome === 'done' ? t('detail.shipped') : t('detail.abandoned')}
     </span>
   );
 }
@@ -77,6 +93,10 @@ function OutcomeBadge({ outcome }: { outcome: Digest['highlights'][number]['outc
  * The pre-rendered markdown backs the ExportMenu only.
  */
 export function DigestDetail({ digest }: { digest: Digest }) {
+  const t = useTranslations('digests');
+  const fmtDate = useDateLabel();
+  const formatMs = useMsLabel();
+  const usd = useUsdLabel();
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -84,7 +104,7 @@ export function DigestDetail({ digest }: { digest: Digest }) {
         <div>
           <h2 className="text-lg font-semibold text-foreground">{digest.headline}</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {fmtDate(digest.from)} – {fmtDate(digest.to)}
+            {t('detail.dateRange', { from: fmtDate(digest.from), to: fmtDate(digest.to) })}
           </p>
         </div>
         <ExportMenu fetchMarkdown={() => exportDigest(digest.id)} filename={`digest-${digest.id}`} iconOnly />
@@ -92,22 +112,26 @@ export function DigestDetail({ digest }: { digest: Digest }) {
 
       {/* Outcome tallies */}
       <section>
-        <SectionTitle>Outcomes</SectionTitle>
+        <SectionTitle>{t('detail.outcomes')}</SectionTitle>
         <div className="grid grid-cols-3 gap-2">
-          <StatChip label="Shipped" value={String(digest.counts.shipped)} tone="good" />
-          <StatChip label="Failed" value={String(digest.counts.failed)} tone="bad" />
-          <StatChip label="Needs attention" value={String(digest.counts.needsAttention)} tone="warn" />
+          <StatChip label={t('detail.shipped')} value={String(digest.counts.shipped)} tone="good" />
+          <StatChip label={t('detail.failed')} value={String(digest.counts.failed)} tone="bad" />
+          <StatChip
+            label={t('detail.needsAttention')}
+            value={String(digest.counts.needsAttention)}
+            tone="warn"
+          />
         </div>
       </section>
 
       {/* Spend (best-effort) */}
       {digest.spend && (
         <section>
-          <SectionTitle>Spend</SectionTitle>
+          <SectionTitle>{t('detail.spend')}</SectionTitle>
           <div className="grid grid-cols-3 gap-2">
-            <StatChip label="Total" value={usd(digest.spend.totalUsd)} />
-            <StatChip label="Measured" value={usd(digest.spend.measuredUsd)} />
-            <StatChip label="Sessions" value={String(digest.spend.sessions)} />
+            <StatChip label={t('detail.total')} value={usd(digest.spend.totalUsd)} />
+            <StatChip label={t('detail.measured')} value={usd(digest.spend.measuredUsd)} />
+            <StatChip label={t('detail.sessions')} value={String(digest.spend.sessions)} />
           </div>
         </section>
       )}
@@ -115,11 +139,11 @@ export function DigestDetail({ digest }: { digest: Digest }) {
       {/* Cycle time (best-effort) */}
       {digest.cycle && (
         <section>
-          <SectionTitle>Cycle time</SectionTitle>
+          <SectionTitle>{t('detail.cycleTime')}</SectionTitle>
           <div className="grid grid-cols-3 gap-2">
-            <StatChip label="Tasks" value={String(digest.cycle.tasks)} />
-            <StatChip label="p50" value={formatMs(digest.cycle.p50Ms)} />
-            <StatChip label="p90" value={formatMs(digest.cycle.p90Ms)} />
+            <StatChip label={t('detail.tasks')} value={String(digest.cycle.tasks)} />
+            <StatChip label={t('detail.p50')} value={formatMs(digest.cycle.p50Ms)} />
+            <StatChip label={t('detail.p90')} value={formatMs(digest.cycle.p90Ms)} />
           </div>
         </section>
       )}
@@ -127,15 +151,19 @@ export function DigestDetail({ digest }: { digest: Digest }) {
       {/* Per-repo/project sections */}
       {digest.sections.length > 0 && (
         <section>
-          <SectionTitle>By repo / project</SectionTitle>
+          <SectionTitle>{t('detail.bySection')}</SectionTitle>
           <ul className="divide-y rounded-lg border surface-glass">
             {digest.sections.map((s) => (
               <li key={s.name} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <span className="truncate font-medium text-foreground">{s.name}</span>
                 <span className="shrink-0 tabular-nums text-muted-foreground">
-                  <span className="text-emerald-600 dark:text-emerald-400">{s.shipped} shipped</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {t('feed.shipped', { count: s.shipped })}
+                  </span>
                   {' · '}
-                  <span className="text-rose-600 dark:text-rose-400">{s.failed} failed</span>
+                  <span className="text-rose-600 dark:text-rose-400">
+                    {t('feed.failed', { count: s.failed })}
+                  </span>
                 </span>
               </li>
             ))}
@@ -146,7 +174,7 @@ export function DigestDetail({ digest }: { digest: Digest }) {
       {/* Highlights — deep-link into the called-out task */}
       {digest.highlights.length > 0 && (
         <section>
-          <SectionTitle>Highlights</SectionTitle>
+          <SectionTitle>{t('detail.highlights')}</SectionTitle>
           <ul className="space-y-1.5">
             {digest.highlights.map((h) => (
               <li key={h.taskId}>

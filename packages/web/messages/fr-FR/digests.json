@@ -1,0 +1,37 @@
+{
+  "feed": {
+    "navAria": "Digests",
+    "emptyTitle": "Aucun digest",
+    "emptyDescription": "Les digests sont produits par le workflow daily-digest. Activez-le dans Workflows pour obtenir ici un récapitulatif périodique de la flotte.",
+    "notFound": "Digest introuvable.",
+    "selectPrompt": "Sélectionnez un digest pour l’afficher.",
+    "shipped": "{count} livrées",
+    "failed": "{count} en échec",
+    "attention": "{count} à voir"
+  },
+  "detail": {
+    "dateRange": "{from} – {to}",
+    "outcomes": "Résultats",
+    "shipped": "Livrées",
+    "abandoned": "Abandonnée",
+    "failed": "En échec",
+    "needsAttention": "À examiner",
+    "spend": "Dépense",
+    "total": "Total",
+    "measured": "Mesuré",
+    "sessions": "Sessions",
+    "cycleTime": "Temps de cycle",
+    "tasks": "Tâches",
+    "p50": "p50",
+    "p90": "p90",
+    "bySection": "Par dépôt / projet",
+    "highlights": "Faits marquants",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "daysHours": "{days} j {hours} h"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithIntl as render } from '@/vitest.render-intl';
 import type { Digest } from '@midnite/shared';
 
 // ExportMenu pulls in clipboard/toast plumbing; stub it. next/link → plain anchor.

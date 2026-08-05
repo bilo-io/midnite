@@ -6,6 +6,7 @@ import board from './board.json';
 import common from './common.json';
 import council from './council.json';
 import dashboard from './dashboard.json';
+import digests from './digests.json';
 import guide from './guide.json';
 import memory from './memory.json';
 import nav from './nav.json';
@@ -28,6 +29,7 @@ export default {
   common,
   council,
   dashboard,
+  digests,
   guide,
   memory,
   nav,

@@ -6,7 +6,6 @@
 export const I18N_EXEMPT = [
   "packages/web/app/(main)/councils/view/page.tsx",
   "packages/web/app/(main)/dashboard/page.tsx",
-  "packages/web/app/(main)/digests/page.tsx",
   "packages/web/app/(main)/layout.tsx",
   "packages/web/app/(main)/media/[id]/media-detail-view.tsx",
   "packages/web/app/(main)/media/[id]/wavesurfer-player.tsx",
@@ -51,8 +50,6 @@ export const I18N_EXEMPT = [
   "packages/web/components/dashboard-tabs.tsx",
   "packages/web/components/dashboard-tiles.tsx",
   "packages/web/components/dashboard-timeframe.tsx",
-  "packages/web/components/digest-detail.tsx",
-  "packages/web/components/digests-feed.tsx",
   "packages/web/components/disk-widget.tsx",
   "packages/web/components/edit-details-modal.tsx",
   "packages/web/components/export-menu.tsx",
