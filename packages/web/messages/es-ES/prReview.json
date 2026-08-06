@@ -1,0 +1,113 @@
+{
+  "panel": {
+    "loading": "Cargando el diff…",
+    "loadFailed": "No se ha podido cargar el diff: {message}",
+    "loadFailedFallback": "No se ha podido cargar el diff",
+    "retry": "Reintentar",
+    "openOnGithub": "Abrir en GitHub"
+  },
+  "modal": {
+    "title": "Revisar los cambios",
+    "ariaLabel": "Diff del pull request",
+    "openPr": "Abrir el PR",
+    "close": "Cerrar"
+  },
+  "viewer": {
+    "filesChanged": "{count, plural, one {<c>{count}</c> archivo modificado} other {<c>{count}</c> archivos modificados}}",
+    "additions": "+{count}",
+    "deletions": "−{count}",
+    "collapseAll": "Contraer todo",
+    "expandAll": "Expandir todo",
+    "layoutGroup": "Disposición del diff",
+    "unifiedView": "Vista unificada",
+    "splitView": "Vista dividida",
+    "truncated": "El diff se ha recortado para que quepa: {count, plural, one {# archivo no se muestra} other {# archivos no se muestran}}. Abre el PR en GitHub para verlo todo.",
+    "noFiles": "No hay archivos en este diff.",
+    "editComment": "Editar",
+    "deleteComment": "Eliminar el comentario"
+  },
+  "composer": {
+    "placeholder": "Añade un comentario en línea…",
+    "cancel": "Cancelar",
+    "save": "Guardar el comentario"
+  },
+  "aiVerdict": {
+    "approved": "IA: LGTM",
+    "changes-requested": "IA: cambios solicitados",
+    "commented": "IA: revisado"
+  },
+  "events": {
+    "approve": "Aprobar",
+    "request-changes": "Solicitar cambios",
+    "comment": "Comentar"
+  },
+  "mergeMethods": {
+    "squash": "squash",
+    "merge": "merge",
+    "rebase": "rebase"
+  },
+  "actions": {
+    "eventGroup": "Evento de revisión",
+    "pendingComments": "{count, plural, one {# comentario en línea pendiente} other {# comentarios en línea pendientes}}",
+    "mergeMethod": "Método de fusión",
+    "merge": "Fusionar",
+    "mergeConfirmTitle": "¿Fusionar este PR ({method})?",
+    "mergeConfirmDescription": "Fusiona en GitHub respetando la protección de ramas. Esto no se puede deshacer desde midnite.",
+    "submitReview": "Enviar la revisión",
+    "approvalNotePlaceholder": "Nota de aprobación opcional…",
+    "commentPlaceholder": "Deja un comentario de revisión…",
+    "toastApproved": "PR aprobado",
+    "toastChangesRequested": "Cambios solicitados",
+    "toastSubmitted": "Revisión enviada",
+    "toastMerged": "PR fusionado",
+    "requestFailed": "La petición a GitHub ha fallado"
+  },
+  "diffStatus": {
+    "add": "Añadido",
+    "delete": "Eliminado",
+    "modify": "Modificado",
+    "rename": "Renombrado",
+    "copy": "Copiado"
+  },
+  "file": {
+    "renamedPath": "<old>{oldPath}</old> → {path}",
+    "binary": "Archivo binario: no se muestra.",
+    "noTextualChanges": "Sin cambios de texto (solo modo o metadatos)."
+  },
+  "tree": {
+    "files": "{count, plural, one {# archivo} other {# archivos}}",
+    "layoutGroup": "Disposición de la lista de archivos",
+    "treeView": "Vista de árbol",
+    "listView": "Vista de lista plana",
+    "hiddenFiles": "{count, plural, one {# archivo oculto (diff recortado)} other {# archivos ocultos (diff recortado)}}"
+  },
+  "checks": {
+    "title": "Puerta de calidad",
+    "rerun": "Volver a ejecutar las comprobaciones",
+    "running": "En marcha…",
+    "loading": "Cargando las comprobaciones…",
+    "loadFailed": "No se han podido cargar las comprobaciones",
+    "runFailed": "No se han podido ejecutar las comprobaciones",
+    "notConfigured": "Esta tarea no tiene comprobaciones configuradas: no hay nada que ejecutar.",
+    "empty": "Todavía no se ha ejecutado ninguna comprobación para esta tarea.",
+    "latestRun": "Última ejecución",
+    "olderRuns": "{count, plural, one {# ejecución anterior} other {# ejecuciones anteriores}}",
+    "noResults": "No se ha registrado ninguna comprobación individual.",
+    "passed": "Correctas",
+    "failed": "Fallidas",
+    "exitCode": "salida {code}",
+    "hideOutput": "ocultar",
+    "showOutput": "salida",
+    "triggers": {
+      "gate": "Puerta",
+      "manual": "Manual",
+      "auto-fix": "Corrección automática"
+    },
+    "duration": {
+      "ms": "{value} ms",
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "minutesSeconds": "{minutes} min {seconds} s"
+    }
+  }
+}

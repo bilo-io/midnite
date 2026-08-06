@@ -1,0 +1,83 @@
+{
+  "title": "Asistente",
+  "open": "Abrir el asistente",
+  "close": "Cerrar el asistente",
+  "back": "Volver al menú del asistente",
+  "views": {
+    "chat": "Chat",
+    "guides": "Guías"
+  },
+  "beta": "Beta",
+  "soon": "Pronto",
+  "entries": {
+    "docs": {
+      "label": "Documentación",
+      "description": "La documentación de esta página"
+    },
+    "guide": {
+      "label": "Guía",
+      "description": "Reproduce esta página, o explóralas todas"
+    },
+    "chat": {
+      "label": "Chat",
+      "description": "Cambia el tablero con palabras"
+    },
+    "agent": {
+      "label": "Agente",
+      "description": "Pregunta por tu flota"
+    },
+    "report": {
+      "label": "Informar de un problema",
+      "description": "¿Algo roto? Cuéntanoslo"
+    }
+  },
+  "guides": {
+    "browseAll": "Explorar todas las guías",
+    "thisPage": "Esta página",
+    "stepCount": "{count, plural, one {# paso} other {# pasos}}",
+    "notSeen": "Todavía sin ver"
+  },
+  "chatToBoard": {
+    "placeholder": "Dile al tablero qué hacer…",
+    "label": "Chatear con el tablero"
+  },
+  "agent": {
+    "label": "Asistente de la flota",
+    "empty": "Pregunta por tu flota: <em>“¿en qué debería centrarme?”</em>, <em>“¿qué tareas están bloqueadas?”</em>, <em>“¿cómo van las sesiones activas?”</em>",
+    "thinking": "Pensando…",
+    "placeholder": "Pregúntale a tu flota…",
+    "inputLabel": "Preguntar al asistente de la flota",
+    "ask": "Preguntar",
+    "failed": "La petición al asistente ha fallado.",
+    "path": {
+      "deterministic": "respondido desde el estado de la flota, sin usar IA",
+      "provider": "con tu proveedor de IA"
+    }
+  },
+  "blocks": {
+    "unsupported": "Componente no admitido.",
+    "loadingTask": "Cargando la tarea…",
+    "taskGone": "La tarea {taskId} ya no está en el tablero.",
+    "loadingCounts": "Cargando los recuentos…",
+    "countsUnavailable": "Recuentos no disponibles.",
+    "countsLabel": "Recuentos de tareas de la flota",
+    "counts": {
+      "backlog": "Backlog",
+      "todo": "Por hacer",
+      "inProgress": "En curso",
+      "done": "Hecho"
+    },
+    "loadingSessions": "Cargando las sesiones…",
+    "noSessions": "No hay sesiones activas.",
+    "sessionsLabel": "Sesiones activas",
+    "metrics": {
+      "cycle-time": "Tiempo de ciclo (espera · trabajo · entrega, p50)",
+      "throughput": "Rendimiento (ejecuciones/día)",
+      "queue-depth": "Longitud de la cola",
+      "cost": "Gasto por dimensión (USD)"
+    },
+    "loadingMetric": "Cargando {metric}…",
+    "notEnoughData": "Todavía no hay datos suficientes para dibujar una tendencia.",
+    "trend": "tendencia"
+  }
+}

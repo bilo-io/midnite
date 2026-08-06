@@ -1,0 +1,90 @@
+{
+  "categories": {
+    "app": "Aplicación",
+    "agents": "Agentes",
+    "overview": "Resumen"
+  },
+  "features": {
+    "dashboard": "Panel",
+    "projects": "Proyectos",
+    "tasks": "Tareas",
+    "slides": "Diapositivas",
+    "workflows": "Flujos de trabajo",
+    "memory": "Memoria",
+    "sessions": "Sesiones",
+    "office": "Oficina",
+    "councils": "Consejos",
+    "media": "Medios",
+    "ops": "Operaciones"
+  },
+  "featureDescriptions": {
+    "dashboard": "Tu inicio de un vistazo: widgets, relojes y estado en directo.",
+    "tasks": "El tablero kanban para orquestar el trabajo de los agentes.",
+    "slides": "Crea presentaciones desde Markdown y muéstralas con efecto de máquina de escribir.",
+    "workflows": "Crea y ejecuta flujos de trabajo de agentes de varios pasos.",
+    "memory": "Recuerdos a largo plazo que se inyectan en los prompts de tus agentes.",
+    "sessions": "Sesiones de agentes activas y pasadas con terminales integrados.",
+    "councils": "Reúne a varios agentes y sintetiza el resultado en cualquier formato: lluvia de ideas, debate, análisis y más.",
+    "office": "Una planta en pixel art con tus agentes: acércate a un escritorio para llamar o escribir.",
+    "ops": "Salud de la flota: uso de espacios en directo, rendimiento de ejecuciones, distribución de duraciones y gasto en LLM."
+  },
+  "footer": {
+    "settings": "Ajustes",
+    "lock": "Bloquear",
+    "language": "Idioma",
+    "changelog": "Ver el registro de cambios"
+  },
+  "header": {
+    "notifications": "Notificaciones",
+    "approvals": "Aprobaciones",
+    "notificationsAndApprovals": "Notificaciones y aprobaciones",
+    "noPendingApprovals": "No hay aprobaciones pendientes",
+    "manageAutonomy": "Gestionar el modo de autonomía y las reglas →",
+    "labelWithCount": "{label}, {count}",
+    "theme": "Tema",
+    "toggleTheme": "Cambiar de tema",
+    "themeOptions": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema",
+      "time": "Hora"
+    },
+    "account": {
+      "menuLabel": "Menú de la cuenta",
+      "menu": "Cuenta",
+      "notSignedIn": "Sin sesión iniciada",
+      "signInHint": "Inicia sesión para sincronizar tu espacio de trabajo.",
+      "logIn": "Iniciar sesión",
+      "createAccount": "Crear una cuenta",
+      "profile": "Perfil",
+      "personalization": "Personalización",
+      "team": "Equipo",
+      "workspace": "Espacio de trabajo",
+      "signOut": "Cerrar sesión"
+    }
+  },
+  "rail": {
+    "label": "Principal",
+    "sectionToggle": "Sección {label}",
+    "unlockNav": "Desbloquear la navegación",
+    "keepNavExpanded": "Mantener la navegación expandida"
+  },
+  "mobile": {
+    "label": "Navegación móvil",
+    "menu": "Menú",
+    "closeMenu": "Cerrar el menú"
+  },
+  "titleBar": {
+    "label": "Barra de título de la ventana",
+    "back": "Atrás",
+    "forward": "Adelante",
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar en Midnite…"
+  },
+  "lockScreen": {
+    "locked": "Salvapantallas bloqueado",
+    "screensaver": "Salvapantallas",
+    "unlockHint": "pulsa cualquier tecla para desbloquear",
+    "wakeHint": "pulsa cualquier tecla para despertar"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "caps": {
+    "loading": "Cargando los límites…",
+    "loadError": "No se han podido cargar los límites configurados.",
+    "unset": "sin definir",
+    "unlimited": "sin límite",
+    "perHour": "{count}/hora",
+    "spendRateHeading": "Límites de gasto y de tasa",
+    "hardDailyCap": "Límite diario estricto (bloquea los arranques)",
+    "hardMonthlyCap": "Límite mensual estricto (bloquea los arranques)",
+    "softDailyBudget": "Presupuesto diario flexible (solo avisa)",
+    "softMonthlyBudget": "Presupuesto mensual flexible (solo avisa)",
+    "maxSpawnsPerHour": "Arranques máximos / hora",
+    "footnote": "Los límites y las acciones protegidas se configuran en <code>midnite.json</code> y aquí se muestran en modo solo lectura."
+  },
+  "blastRadius": {
+    "heading": "Radio de impacto (mínimo para acciones destructivas)",
+    "enabledLabel": "Activado (vigilado / autónomo)",
+    "on": "sí",
+    "off": "no",
+    "protectedBranches": "Ramas protegidas",
+    "protectedPathGlobs": "Globs de rutas protegidas",
+    "none": "ninguno",
+    "scrubSpawnEnv": "Eliminar los secretos de la pasarela del entorno del agente"
+  },
+  "decisions": {
+    "loading": "Cargando las decisiones…",
+    "loadError": "No se han podido cargar las decisiones recientes.",
+    "empty": "Todavía no se ha registrado ninguna decisión."
+  }
+}

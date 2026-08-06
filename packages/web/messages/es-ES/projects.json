@@ -1,0 +1,259 @@
+{
+  "page": {
+    "title": "Proyectos",
+    "description": "Agrupa trabajo relacionado, adjunta fuentes y redacta un plan que se convierta en tareas."
+  },
+  "list": {
+    "tabs": {
+      "projects": "Proyectos",
+      "templates": "Plantillas"
+    },
+    "listView": "Vista de lista",
+    "gridView": "Vista de cuadrícula",
+    "treeView": "Vista de árbol",
+    "newTemplate": "Nueva plantilla",
+    "emptyProjectsTitle": "Todavía no hay proyectos",
+    "emptyProjectsDescription": "Crea uno para agrupar tareas, adjuntar fuentes y redactar un plan.",
+    "emptyTemplatesTitle": "Todavía no hay plantillas",
+    "emptyTemplatesDescription": "Crea una para redactar planes y especificaciones a partir de un documento reutilizable.",
+    "noProjectsMatch": "Ningún proyecto coincide con “{query}”",
+    "noTemplatesMatch": "Ninguna plantilla coincide con “{query}”"
+  },
+  "bulk": {
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "delete": "Eliminar",
+    "deleteConfirmTitle": "{count, plural, one {¿Eliminar # proyecto?} other {¿Eliminar # proyectos?}}",
+    "deleteConfirmDescription": "Sus tareas se conservan, pero quedan sin asignar. Esto no se puede deshacer.",
+    "deleteOneTitle": "¿Eliminar “{name}”?",
+    "deleteOneDescription": "Sus tareas se conservan, pero quedan sin asignar. Esto no se puede deshacer."
+  },
+  "card": {
+    "archived": "Archivado",
+    "plan": "Plan",
+    "draftPlan": "Redactar un plan",
+    "taskCount": "{count, plural, one {# tarea} other {# tareas}}",
+    "noDescription": "Sin descripción",
+    "noTasksYet": "Todavía no hay tareas",
+    "updated": "Actualizado {time}",
+    "noProjectSelected": "Ningún proyecto seleccionado",
+    "chooseProject": "Elegir un proyecto",
+    "noProjects": "No hay proyectos"
+  },
+  "widget": {
+    "allProjects": "Todos los proyectos",
+    "refresh": "Actualizar los proyectos",
+    "loadFailed": "No se han podido cargar los proyectos.",
+    "empty": "Todavía no hay proyectos.",
+    "recentHeading": "Proyecto"
+  },
+  "progress": {
+    "label": "Progreso",
+    "summary": "{done}/{total} · {pct} %",
+    "aria": "{pct} % completado ({done} de {total} tareas hechas)"
+  },
+  "requirements": {
+    "name": "un nombre",
+    "tag": "una etiqueta",
+    "folder": "una carpeta de proyecto"
+  },
+  "statusBadge": {
+    "incomplete": "Incompleto: todavía necesita {missing}",
+    "separator": ", "
+  },
+  "select": {
+    "noProject": "Sin proyecto"
+  },
+  "tree": {
+    "unassigned": "Sin asignar",
+    "unassignedOptions": "Opciones de “Sin asignar”",
+    "projectOptions": "Opciones de {name}",
+    "addTask": "Añadir una tarea",
+    "plan": "Plan",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "detail": {
+    "loading": "Cargando…",
+    "tabs": {
+      "details": "Detalles",
+      "docs": "Documentos",
+      "tasks": "Tareas",
+      "roadmap": "Hoja de ruta"
+    },
+    "sectionsAria": "Secciones del proyecto",
+    "statsRail": "Estadísticas y acciones",
+    "knowledgeRail": "Conocimiento y actividad",
+    "roadmapBoardView": "Vista de tablero",
+    "roadmapGraphView": "Vista de grafo"
+  },
+  "stats": {
+    "tasks": "Tareas",
+    "doneSuffix": "· {count} hechas",
+    "noTasks": "Todavía no hay tareas asignadas a este proyecto.",
+    "actions": "Acciones",
+    "preview": "Previsualizar",
+    "build": "Compilar",
+    "archive": "Archivar el proyecto",
+    "unarchive": "Desarchivar el proyecto",
+    "deleteProject": "Eliminar el proyecto",
+    "deleteConfirmTitle": "¿Eliminar este proyecto?",
+    "deleteConfirmDescription": "“{name}” y sus fuentes se eliminarán de forma permanente. Sus tareas se conservan, pero quedan sin asignar. Esto no se puede deshacer.",
+    "noTasksInProject": "Todavía no hay tareas en este proyecto."
+  },
+  "info": {
+    "knowledge": "Conocimiento",
+    "manageInMemory": "Gestionar el conocimiento en Memoria",
+    "knowledgeHint": "Las fuentes y las notas de este proyecto viven en sus recuerdos con ámbito de proyecto, que se inyectan en los prompts de los agentes.",
+    "activity": "Actividad",
+    "noActivity": "Todavía no hay actividad de tareas."
+  },
+  "cost": {
+    "title": "Coste y rendimiento",
+    "empty": "Todavía no se ha registrado ningún coste de sesiones de agente.",
+    "spend": "Gasto",
+    "measuredEstimated": "Medido · estimado",
+    "measuredEstimatedValue": "{measured} · {estimated}",
+    "sessions": "Sesiones",
+    "p50EndToEnd": "p50 de principio a fin",
+    "unpriced": "{count, plural, one {# con un modelo sin precio: el coste no se cuenta.} other {# con un modelo sin precio: el coste no se cuenta.}}",
+    "subCent": "<{value}",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hours": "{value} h",
+      "days": "{value} d"
+    }
+  },
+  "form": {
+    "title": "Título",
+    "titlePlaceholder": "p. ej. Renovación de la facturación",
+    "description": "Descripción",
+    "descriptionPlaceholder": "¿De qué trata este proyecto?",
+    "improveWithAi": "Mejorar con IA",
+    "writeDescriptionFirst": "Escribe primero una descripción breve y luego mejórala con IA",
+    "tagAndColour": "Etiqueta y color",
+    "tagHint": "Máximo {max} caracteres. Las tareas de este proyecto llevan esta etiqueta.",
+    "workDir": "Directorio de trabajo",
+    "workDirPlaceholder": "~/Dev/mi-proyecto",
+    "clearWorkDir": "Borrar el directorio de trabajo",
+    "browse": "Examinar",
+    "workDirHint": "Dónde se crean las sesiones de agente de este proyecto. Déjalo vacío para usar el predeterminado.",
+    "startCommand": "Comando de inicio",
+    "startCommandPlaceholder": "pnpm dev",
+    "startCommandHint": "Lo ejecuta la acción <b>Previsualizar</b>, en el directorio de trabajo de arriba.",
+    "buildCommand": "Comando de compilación",
+    "buildCommandPlaceholder": "pnpm build",
+    "buildCommandHint": "Lo ejecuta la acción <b>Compilar</b>, en el directorio de trabajo de arriba.",
+    "projectMemory": "Memoria del proyecto",
+    "viewMemories": "{count, plural, one {Ver # recuerdo} other {Ver # recuerdos}}",
+    "createMemory": "Crear un recuerdo para este proyecto",
+    "memoryHint": "Entradas de conocimiento con ámbito de este proyecto, que se inyectan en los prompts de los agentes."
+  },
+  "modal": {
+    "editTitle": "Editar el proyecto",
+    "newTitle": "Nuevo proyecto",
+    "createProject": "Crear el proyecto",
+    "deleteConfirmTitle": "¿Eliminar este proyecto?",
+    "deleteConfirmDescription": "“{name}” se eliminará de forma permanente. Esto no se puede deshacer.",
+    "deleteConfirmLabel": "Eliminar el proyecto",
+    "tabs": {
+      "details": "Detalles",
+      "plan": "Plan",
+      "tasks": "Tareas"
+    }
+  },
+  "repoStatus": {
+    "noFolder": "Sin carpeta definida",
+    "checking": "Comprobando el estado del repo…",
+    "folderNotFound": "Carpeta no encontrada",
+    "notARepo": "No es un repo de git",
+    "initRepo": "Iniciar el repo",
+    "unavailable": "Estado del repo no disponible: {message}",
+    "uncommitted": "· cambios sin confirmar",
+    "clean": "· limpio"
+  },
+  "plan": {
+    "documents": "Documentos",
+    "docCount": "{count, plural, one {# documento} other {# documentos}}",
+    "loading": "Cargando los documentos…",
+    "empty": "Todavía no hay documentos de planificación. Añade uno de la biblioteca de plantillas para redactar una especificación o un plan de este proyecto.",
+    "removeDoc": "Quitar el documento",
+    "removeConfirmTitle": "¿Quitar este documento?",
+    "removeConfirmDescription": "Se eliminará de este proyecto. La plantilla de origen no cambia.",
+    "addDocument": "Añadir un documento",
+    "allTemplatesUsed": "Todas las plantillas ya tienen un documento en este proyecto.",
+    "addHint": "Los documentos se copian de la biblioteca de plantillas y se titulan para este proyecto.",
+    "templatesListAria": "Plantillas",
+    "dialogLabel": "Plan de {name}",
+    "heading": "{name} — plan",
+    "subheading": "Redactado a partir de la descripción del proyecto y de su conocimiento.",
+    "viewAria": "Vista del plan",
+    "checklist": "Lista de comprobación",
+    "breakdown": "Desglose",
+    "checklistHint": "El plan legible en markdown.",
+    "breakdownHint": "Un tablero tipado y secuenciado por dependencias.",
+    "fallbackWarning": "La planificación con IA no estaba disponible: esta es una lista plana de reserva sin dependencias. Puedes editarla y crearla igualmente.",
+    "breakdownPrompt": "Genera un desglose estructurado y ordenado por dependencias a partir de la descripción o el plan de este proyecto y del resumen aprobado. Revísalo y edítalo antes de crear el tablero.",
+    "generateBreakdown": "Generar el desglose",
+    "redoOverview": "Rehacer el resumen",
+    "noPlan": "Todavía no hay plan. Redacta una lista de comprobación completa a partir de la descripción y las fuentes de este proyecto.",
+    "draftPlan": "Redactar un plan",
+    "noItems": "El plan no tiene elementos con casilla que mostrar.",
+    "regenerate": "Regenerar",
+    "createTasks": "{count, plural, =0 {Crear tareas} one {Crear # tarea} other {Crear # tareas}}",
+    "savedNotice": "Guardado.",
+    "createdOnBoard": "{count, plural, one {# tarea creada en el tablero.} other {# tareas creadas en el tablero.}}",
+    "createdSequenced": "{count, plural, one {# tarea creada, secuenciada por dependencias.} other {# tareas creadas, secuenciadas por dependencias.}}",
+    "genericError": "Algo ha ido mal",
+    "doc": {
+      "dialogLabel": "Documento de {name}",
+      "editorLabel": "Documento",
+      "generating": "Generando…",
+      "generate": "Generar",
+      "copied": "Copiado",
+      "copyMarkdown": "Copiar el markdown"
+    }
+  },
+  "councilRuns": {
+    "label": "Ejecuciones del consejo",
+    "runCount": "{count, plural, one {# ejecución} other {# ejecuciones}}",
+    "loading": "Cargando las ejecuciones del consejo…",
+    "empty": "Todavía no hay ejecuciones del consejo vinculadas a este proyecto."
+  },
+  "templates": {
+    "prd": {
+      "name": "Documento de requisitos de producto",
+      "description": "Define el problema, los objetivos, los requisitos y las métricas de éxito de un producto."
+    },
+    "tech-spec": {
+      "name": "Especificación técnica",
+      "description": "Especifica la solución, las API, el modelo de datos, el despliegue y la estrategia de pruebas."
+    },
+    "tech-design": {
+      "name": "Documento de diseño técnico",
+      "description": "Expón la arquitectura, los componentes, el flujo de datos y las concesiones de un sistema."
+    },
+    "game-design": {
+      "name": "Documento de diseño de juego",
+      "description": "Recoge el concepto, el bucle principal, las mecánicas, la progresión y el mundo de un juego."
+    },
+    "editor": {
+      "untitled": "Plantilla sin título",
+      "titleAria": "Título de la plantilla",
+      "dialogAria": "Plantilla de {name}",
+      "fallbackTag": "etiqueta",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Para qué sirve esta plantilla…",
+      "tagAndColour": "Etiqueta y color",
+      "document": "Documento",
+      "copyMarkdown": "Copiar el markdown",
+      "copied": "Copiado",
+      "saved": "Guardado",
+      "collapse": "Contraer {name}",
+      "expand": "Expandir {name}",
+      "deleteTemplate": "Eliminar {name}"
+    }
+  }
+}

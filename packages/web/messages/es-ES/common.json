@@ -1,0 +1,256 @@
+{
+  "appName": "Midnite",
+  "loading": "Cargando…",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "close": "Cerrar",
+  "confirm": "Confirmar",
+  "retry": "Reintentar",
+  "search": "Buscar",
+  "settings": "Ajustes",
+  "add": "Añadir",
+  "edit": "Editar",
+  "delete": "Eliminar",
+  "remove": "Quitar",
+  "removeNamed": "Quitar {name}",
+  "none": "Ninguno",
+  "selectedCount": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+  "item": "elemento",
+  "deleteNounTitle": "¿Eliminar este {noun}?",
+  "deletePermanent": "Esto es permanente y no se puede deshacer.",
+  "reorderSection": "Reordenar sección",
+  "switchToLightTheme": "Cambiar al tema claro",
+  "switchToDarkTheme": "Cambiar al tema oscuro",
+  "errorTitle": "Algo ha ido mal",
+  "gatewayUnreachable": "No se ha podido contactar con la pasarela: {error}",
+  "emptyTitle": "Aquí todavía no hay nada",
+  "saving": "Guardando…",
+  "saved": "Guardado",
+  "reload": "Recargar",
+  "reloadHint": "Recargar (clic derecho para más opciones)",
+  "refresh": "Actualizar",
+  "hardReload": "Recarga forzada",
+  "allProjects": "Todos los proyectos",
+  "filterByProject": "Filtrar por proyecto",
+  "searchProjects": "Buscar proyectos…",
+  "noProjectsMatch": "Ningún proyecto coincide",
+  "newProject": "Nuevo proyecto",
+  "startingTerminal": "Iniciando el terminal…",
+  "startingLabel": "Iniciando {label}…",
+  "back": "Atrás",
+  "update": {
+    "action": "Actualizar",
+    "newVersionAvailable": "Hay una nueva versión disponible",
+    "updateRequired": "Se requiere actualizar para seguir usando Midnite",
+    "latestVersionFallback": "la última versión",
+    "unsupported": "esta versión ya no tiene soporte, actualiza para continuar",
+    "downloadingHeadline": "Descargando la actualización…",
+    "downloadingPercent": "Descargando {percent} %",
+    "downloadingAction": "Descargando…",
+    "readyHeadline": "Hay una actualización lista para instalar",
+    "restartToInstall": "Reiniciar para instalar",
+    "failedHeadline": "La actualización ha fallado",
+    "checkFailed": "La comprobación de actualizaciones ha fallado",
+    "dismiss": "Descartar el aviso de actualización",
+    "downloadProgress": "Descargando la actualización",
+    "copyInstallCommand": "Copiar el comando de instalación",
+    "copied": "¡Copiado!",
+    "versionAvailableToast": "La versión {version} está disponible",
+    "whatsNew": "Novedades de la v{version}",
+    "releaseNotesLabel": "Notas de la versión v{version}",
+    "loadingNotes": "Cargando las notas de la versión…",
+    "notesUnavailable": "Las notas de la versión no están disponibles ahora mismo: consulta el registro de cambios completo o la página de la versión más abajo.",
+    "fullChangelog": "Registro de cambios completo",
+    "releasePage": "Página de la versión"
+  },
+  "ui": {
+    "passcode": {
+      "unlockTitle": "Introduce el código",
+      "setTitle": "Define un código",
+      "confirmTitle": "Confirma el código",
+      "unlockSubtitle": "Introduce tu código para desbloquear.",
+      "chooseSubtitle": "Elige un código de {length} dígitos.",
+      "confirmSubtitle": "Introdúcelo de nuevo para confirmar.",
+      "incorrect": "Código incorrecto.",
+      "mismatch": "No coinciden. Inténtalo de nuevo.",
+      "digitAria": "Dígito {index} del código",
+      "setupDialogLabel": "Definir el código del salvapantallas",
+      "unlockDialogLabel": "Introduce el código para desbloquear"
+    },
+    "rail": {
+      "collapse": "Contraer {title}",
+      "expand": "Expandir {title}",
+      "toggleLeftPanel": "Mostrar u ocultar el panel izquierdo",
+      "toggleRightPanel": "Mostrar u ocultar el panel derecho"
+    },
+    "gauge": {
+      "pctUsed": "{pct} % usado",
+      "ofTotal": "de {total}",
+      "free": "{free} libre"
+    },
+    "contextRing": {
+      "aria": "Ventana de contexto al {pct} %",
+      "tooltip": "Ventana de contexto · {pct} % · ~{tokens} / {limit} tokens"
+    },
+    "modelSelect": {
+      "useCustom": "Usar “{input}”",
+      "noOptions": "Sin opciones"
+    }
+  },
+  "chrome": {
+    "itemCount": "{count, plural, one {# elemento} other {# elementos}}",
+    "taskCount": "{count, plural, one {# tarea} other {# tareas}}",
+    "tasksByStatus": "{count, plural, one {# tarea} other {# tareas}} por estado",
+    "select": "Seleccionar",
+    "deselect": "Anular la selección",
+    "working": "Trabajando",
+    "dismiss": "Descartar",
+    "sessionPill": {
+      "actioning": "actuando",
+      "awaiting": "esperando",
+      "complete": "completada",
+      "aria": "{count} {label}: ver sesiones"
+    },
+    "notFound": {
+      "title": "No se ha encontrado el {noun}",
+      "body": "No se ha podido encontrar este {noun}. Puede que se haya eliminado o que el enlace sea incorrecto.",
+      "goDashboard": "Ir al panel",
+      "viewCollection": "Ver {collection}",
+      "fallbackCollection": "elementos"
+    },
+    "desktopOnly": {
+      "title": "{label} se ve mejor en el escritorio",
+      "body": "Esta vista necesita una pantalla más grande que la de tu teléfono. Abre Midnite en un escritorio o en una tableta en horizontal para usarla."
+    },
+    "featureGate": {
+      "title": "{feature} está desactivado",
+      "body": "{description} Esta función está apagada ahora mismo: actívala para ver esta página.",
+      "openSettings": "Abrir los ajustes",
+      "enable": "Activar {feature}"
+    },
+    "assetSearch": {
+      "noMatches": "Sin coincidencias",
+      "typeToSearch": "Escribe para buscar…",
+      "ariaStock": "Buscar acciones",
+      "ariaCrypto": "Buscar criptomonedas",
+      "placeholder": "Buscar…"
+    },
+    "export": {
+      "trigger": "Exportar",
+      "copyMarkdown": "Copiar Markdown",
+      "downloadMd": "Descargar .md",
+      "downloadPdf": "Descargar PDF",
+      "downloadHtml": "Descargar HTML",
+      "copied": "Markdown copiado al portapapeles",
+      "copyFailed": "No se ha podido copiar el markdown",
+      "downloadFailed": "No se ha podido descargar el markdown",
+      "pdfFailed": "No se ha podido generar el PDF",
+      "htmlFailed": "No se ha podido exportar el HTML"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "markAllRead": "Marcar todo como leído",
+      "clear": "Vaciar",
+      "clearAria": "Vaciar las notificaciones",
+      "loading": "Cargando…",
+      "caughtUp": "Estás al día.",
+      "open": "Abrir"
+    },
+    "connection": {
+      "live": "En directo",
+      "reconnecting": "Reconectando…",
+      "reconnectingStale": "Reconectando: los datos pueden estar desactualizados",
+      "reconnected": "Reconectado",
+      "aria": "Conexión: {status}"
+    },
+    "keymap": {
+      "createTask": "Crear tarea…",
+      "toggleTheme": "Alternar entre tema claro y oscuro",
+      "lockScreen": "Bloquear la pantalla",
+      "goHome": "Ir al inicio",
+      "goOffice": "Ir a la oficina",
+      "goSettings": "Ir a los ajustes"
+    },
+    "pwa": {
+      "installed": "Instalada: estás usando Midnite como aplicación.",
+      "install": "Instalar la aplicación",
+      "installHint": "Abre Midnite en su propia ventana. Sigue necesitando una conexión activa con la pasarela: es una carcasa rápida, no una copia sin conexión.",
+      "iosHint": "Para instalarla: toca <b>Compartir</b> y luego <b>Añadir a la pantalla de inicio</b>.",
+      "browserHint": "Tu navegador ofrecerá <b>Instalar</b> / <b>Añadir a la pantalla de inicio</b> cuando esta aplicación sea instalable."
+    },
+    "screensaver": {
+      "localTime": "hora local"
+    },
+    "signingIn": "Iniciando tu sesión…"
+  },
+  "relativeTime": {
+    "justNow": "ahora mismo",
+    "minutesAgo": "hace {count} min",
+    "hoursAgo": "hace {count} h",
+    "daysAgo": "hace {count} d"
+  },
+  "units": {
+    "emDash": "—",
+    "bytes": {
+      "b": "{value} B",
+      "kb": "{value} KB",
+      "mb": "{value} MB",
+      "gb": "{value} GB",
+      "tb": "{value} TB",
+      "pb": "{value} PB"
+    },
+    "duration": {
+      "milliseconds": "{value} ms",
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hours": "{value} h",
+      "days": "{value} d",
+      "compound": "{major} {minor}"
+    }
+  },
+  "editor": {
+    "previewTab": "Vista previa",
+    "contentAria": "Contenido en Markdown",
+    "nothingToPreview": "Todavía no hay nada que previsualizar.",
+    "taskItem": {
+      "completed": "Tarea completada",
+      "incomplete": "Tarea pendiente"
+    }
+  },
+  "pickers": {
+    "folder": {
+      "title": "Elige una carpeta",
+      "goHome": "Ir al directorio personal",
+      "openFailed": "No se puede abrir esa carpeta",
+      "createFailed": "No se puede crear esa carpeta",
+      "missingPrompt": "Esta carpeta todavía no existe. ¿La creamos?",
+      "createPath": "Crear {path}",
+      "empty": "Aquí no hay subcarpetas.",
+      "hint": "Las sesiones de este proyecto se ejecutarán aquí.",
+      "use": "Usar esta carpeta"
+    },
+    "tagColour": {
+      "tagPlaceholder": "etiqueta-corta",
+      "tagAria": "Etiqueta",
+      "colourAria": "Color de la etiqueta",
+      "swatchAria": "Usar el color {hex}",
+      "fallbackTag": "etiqueta"
+    },
+    "editDetails": {
+      "nameLabel": "Título",
+      "descriptionLabel": "Descripción",
+      "nameRequired": "Indica un valor para {label}."
+    }
+  },
+  "reportIssue": {
+    "title": "Informar de un problema",
+    "description": "Esto abre una incidencia <strong>pública</strong> en GitHub. Todo lo que aparece abajo es editable: quita lo que prefieras no compartir antes de abrirla.",
+    "titleLabel": "Título",
+    "detailsLabel": "Detalles",
+    "tooLong": "Este informe es demasiado largo para un enlace de GitHub: se abrirá recortado. Usa “Copiar el contenido” para llevarte el texto completo y pegarlo en la incidencia.",
+    "environmentTrimmed": "Los detalles del entorno capturados se han recortado para respetar el límite de URL de GitHub.",
+    "copyBody": "Copiar el contenido",
+    "copied": "Copiado",
+    "openOnGitHub": "Abrir en GitHub"
+  }
+}

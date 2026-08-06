@@ -1,0 +1,37 @@
+{
+  "feed": {
+    "navAria": "Resúmenes",
+    "emptyTitle": "Todavía no hay resúmenes",
+    "emptyDescription": "Los resúmenes los produce el flujo de trabajo del resumen diario. Actívalo en “Flujos de trabajo” para tener aquí una recopilación periódica de la flota.",
+    "notFound": "No se ha encontrado el resumen.",
+    "selectPrompt": "Selecciona un resumen para verlo.",
+    "shipped": "{count} entregadas",
+    "failed": "{count} fallidas",
+    "attention": "{count} con atención"
+  },
+  "detail": {
+    "dateRange": "{from} – {to}",
+    "outcomes": "Resultados",
+    "shipped": "Entregadas",
+    "abandoned": "Abandonadas",
+    "failed": "Fallidas",
+    "needsAttention": "Necesitan atención",
+    "spend": "Gasto",
+    "total": "Total",
+    "measured": "Medido",
+    "sessions": "Sesiones",
+    "cycleTime": "Tiempo de ciclo",
+    "tasks": "Tareas",
+    "p50": "p50",
+    "p90": "p90",
+    "bySection": "Por repo / proyecto",
+    "highlights": "Destacados",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "daysHours": "{days} d {hours} h"
+    }
+  }
+}

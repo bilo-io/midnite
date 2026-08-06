@@ -1,0 +1,114 @@
+{
+  "list": {
+    "title": "Diapositivas",
+    "description": "Pega Markdown para crear una presentación y muéstrala con efecto de máquina de escribir: se guarda en este navegador.",
+    "newDeck": "Nueva presentación",
+    "searchPlaceholder": "Buscar presentaciones",
+    "sortLabel": "Ordenar las presentaciones",
+    "view": {
+      "grid": "Vista de cuadrícula",
+      "list": "Vista de lista"
+    },
+    "sort": {
+      "recent": "Más recientes",
+      "oldest": "Más antiguas primero",
+      "title": "Título A–Z",
+      "title-desc": "Título Z–A",
+      "updated": "Actualizadas recientemente",
+      "count": "Más diapositivas"
+    },
+    "matching": "{count} coincidentes",
+    "noMatches": "Ninguna presentación coincide con los filtros actuales.",
+    "empty": {
+      "title": "Todavía no hay presentaciones",
+      "description": "Crea una presentación pegando Markdown: los encabezados se convierten en diapositivas y cada punto se escribe solo mientras presentas."
+    },
+    "bulk": {
+      "duplicate": "Duplicar",
+      "duplicated": "{count, plural, one {# presentación duplicada} other {# presentaciones duplicadas}}",
+      "deleted": "{count, plural, one {# presentación eliminada} other {# presentaciones eliminadas}}",
+      "deleteTitle": "{count, plural, one {¿Eliminar # presentación?} other {¿Eliminar # presentaciones?}}",
+      "deleteDescription": "Esto elimina de forma permanente las presentaciones y todas sus diapositivas. No se puede deshacer."
+    },
+    "unassigned": "Sin asignar",
+    "groupSummary": "{count, plural, one {# presentación} other {# presentaciones}}"
+  },
+  "new": {
+    "title": "Nueva presentación",
+    "description": "Pega Markdown: el primer # es la portada, cada ## empieza una diapositiva y cada punto se convierte en una aparición."
+  },
+  "edit": {
+    "title": "Editar la presentación",
+    "description": "Actualiza el Markdown: el enlace de la presentación no cambia."
+  },
+  "notFound": {
+    "message": "No se ha encontrado la presentación en este navegador.",
+    "back": "Volver a las presentaciones"
+  },
+  "card": {
+    "slideCount": "{count, plural, one {# diapositiva} other {# diapositivas}}",
+    "present": "Presentar {title}",
+    "edit": "Editar “{title}”",
+    "editTitle": "Editar la presentación",
+    "duplicate": "Duplicar “{title}”",
+    "duplicateTitle": "Duplicar la presentación",
+    "copyLink": "Copiar el enlace a “{title}”",
+    "copyLinkTitle": "Copiar el enlace de la presentación",
+    "linkCopied": "Enlace copiado",
+    "download": "Descargar “{title}” como archivo HTML sin conexión",
+    "downloadTitle": "Descargar una copia sin conexión (.html)",
+    "delete": "Eliminar “{title}”",
+    "deleteTitle": "Eliminar la presentación",
+    "deleteConfirmTitle": "¿Eliminar “{title}”?",
+    "deleteConfirmDescription": "Esto elimina de forma permanente la presentación y todas sus diapositivas. No se puede deshacer.",
+    "duplicated": "Presentación duplicada",
+    "deleted": "Presentación eliminada"
+  },
+  "editor": {
+    "titlePlaceholder": "Título de la presentación (opcional: por defecto, el primer encabezado #)",
+    "titleLabel": "Título de la presentación",
+    "noProject": "Sin proyecto",
+    "markdown": "Markdown",
+    "upload": "Subir .md",
+    "sourceLabel": "Código markdown de la presentación",
+    "emptyPreview": "Todavía no hay nada que previsualizar.",
+    "slideWord": "{count, plural, one {diapositiva} other {diapositivas}}",
+    "creating": "Creando…",
+    "saveChanges": "Guardar los cambios",
+    "createDeck": "Crear la presentación",
+    "saveFailed": "No se ha podido guardar la presentación",
+    "resizePanels": "Redimensionar los paneles del editor"
+  },
+  "rail": {
+    "navLabel": "Navegación por las diapositivas",
+    "slideLabel": "Diapositiva {number}: {title}",
+    "stepLabel": "Diapositiva {number}, paso {step}",
+    "moreBefore": "{count} más antes",
+    "moreAfter": "{count} más después"
+  },
+  "present": {
+    "documentTitle": "{title} · Diapositivas",
+    "fullscreen": "Alternar la pantalla completa",
+    "fullscreenTitle": "Pantalla completa (F)",
+    "exit": "Salir de la presentación",
+    "exitTitle": "Salir (Esc)",
+    "hint": "Pulsa <kbd>→</kbd> / <kbd>Espacio</kbd> para avanzar · <kbd>←</kbd> para volver · <kbd>F</kbd> pantalla completa · <kbd>?</kbd> atajos",
+    "help": {
+      "title": "Atajos de teclado",
+      "keys": {
+        "next": "→ / Espacio / Intro",
+        "prev": "← / Retroceso",
+        "firstLast": "Inicio / Fin",
+        "fullscreen": "F",
+        "exit": "Esc",
+        "help": "?"
+      },
+      "next": "Paso o diapositiva siguiente",
+      "prev": "Paso o diapositiva anterior",
+      "firstLast": "Primera / última diapositiva",
+      "fullscreen": "Alternar la pantalla completa",
+      "exit": "Volver a todas las presentaciones",
+      "help": "Alternar esta ayuda"
+    }
+  }
+}

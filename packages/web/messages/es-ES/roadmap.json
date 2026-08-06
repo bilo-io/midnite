@@ -1,0 +1,46 @@
+{
+  "board": {
+    "loading": "Cargando la hoja de ruta…",
+    "empty": "Todavía no hay hoja de ruta.",
+    "noMilestones": "Todavía no hay hitos: añade uno para agrupar las tareas de este proyecto en un plan.",
+    "backlog": "Backlog",
+    "addMilestone": "Añadir un hito",
+    "milestoneNamePlaceholder": "Nombre del hito…",
+    "newMilestoneNameAria": "Nombre del hito nuevo",
+    "seededToast": "{count, plural, one {# tarea creada} other {# tareas creadas}} en {name}",
+    "confirmDelete": {
+      "title": "¿Eliminar el hito?",
+      "description": "Sus tareas vuelven al backlog: no se eliminan.",
+      "confirm": "Eliminar"
+    },
+    "toasts": {
+      "reorderMilestonesFailed": "No se han podido reordenar los hitos",
+      "assignFailed": "No se ha podido asignar la tarea",
+      "reorderTasksFailed": "No se han podido reordenar las tareas",
+      "createFailed": "No se ha podido crear el hito",
+      "renameFailed": "No se ha podido renombrar el hito",
+      "deleteFailed": "No se ha podido eliminar el hito"
+    }
+  },
+  "lane": {
+    "reorderAria": "Reordenar {name}",
+    "renameAria": "Renombrar {name}",
+    "optionsAria": "Opciones de {name}",
+    "rename": "Renombrar",
+    "generateTasks": "Generar tareas…",
+    "viewInGraph": "Ver en el grafo",
+    "delete": "Eliminar",
+    "noUnassignedTasks": "No hay tareas sin asignar",
+    "dragTasksHere": "Arrastra tareas aquí"
+  },
+  "breakdown": {
+    "dialogAria": "Generar tareas para {name}",
+    "title": "Generar tareas — {name}",
+    "goalLabel": "Describe qué debería lograr este hito: el planificador redactará una lista de tareas con conciencia de dependencias que puedes editar antes de que se cree.",
+    "goalPlaceholder": "p. ej. Publicar la API pública: autenticación, límite de tasa, documentación y un SDK de cliente",
+    "fallbackNotice": "Redactado sin el modelo de planificación: edítalo con libertad antes de crearlo.",
+    "draftTasks": "Redactar las tareas",
+    "createTasks": "Crear {count, plural, one {# tarea} other {# tareas}}",
+    "genericError": "Algo ha ido mal"
+  }
+}

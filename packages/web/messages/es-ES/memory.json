@@ -1,0 +1,217 @@
+{
+  "kinds": {
+    "brief": "Resumen ejecutivo",
+    "faq": "Preguntas frecuentes",
+    "study-guide": "Guía de estudio",
+    "timeline": "Cronología",
+    "infographic": "Infografía",
+    "audio-overview": "Resumen en audio",
+    "video-overview": "Vídeo"
+  },
+  "artifactStatus": {
+    "pending": "Generando",
+    "ready": "Listo",
+    "failed": "Fallido"
+  },
+  "sourceState": {
+    "pending": "Leyendo",
+    "ready": "Leída",
+    "failed": "Fallida"
+  },
+  "sourceKinds": {
+    "github": "GitHub",
+    "figma": "Figma",
+    "google-docs": "Google Docs",
+    "google-sheets": "Google Sheets",
+    "google-slides": "Google Slides",
+    "google-drive": "Google Drive",
+    "notion": "Notion",
+    "youtube": "YouTube",
+    "x": "X",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "reddit": "Reddit",
+    "medium": "Medium",
+    "substack": "Substack",
+    "link": "Enlace",
+    "file": "Archivo"
+  },
+  "list": {
+    "title": "Memoria",
+    "description": "Conocimiento que tus agentes llevan a cada sesión: global o con ámbito de un proyecto.",
+    "searchPlaceholder": "Buscar recuerdos",
+    "newMemory": "Nuevo recuerdo",
+    "view": {
+      "list": "Vista de lista",
+      "grid": "Vista de cuadrícula",
+      "table": "Vista de tabla"
+    },
+    "empty": {
+      "title": "Todavía no hay recuerdos",
+      "description": "Anota las convenciones, el contexto y las decisiones que tus agentes no deberían olvidar nunca."
+    },
+    "noMatchesQuery": "Ningún recuerdo coincide con “{query}”",
+    "noMatches": "Ningún recuerdo coincide con los filtros actuales",
+    "bulk": {
+      "archive": "Archivar",
+      "unarchive": "Desarchivar",
+      "archiveTitle": "{count, plural, one {¿Archivar # recuerdo?} other {¿Archivar # recuerdos?}}",
+      "unarchiveTitle": "{count, plural, one {¿Desarchivar # recuerdo?} other {¿Desarchivar # recuerdos?}}",
+      "archiveDescription": "Se ocultarán de tus recuerdos activos: puedes desarchivarlos cuando quieras.",
+      "unarchiveDescription": "Volverán a tus recuerdos activos.",
+      "deleteTitle": "{count, plural, one {¿Eliminar # recuerdo?} other {¿Eliminar # recuerdos?}}",
+      "deleteDescription": "Esto no se puede deshacer."
+    },
+    "card": {
+      "archived": "Archivado"
+    },
+    "modal": {
+      "titleLabel": "Título del recuerdo",
+      "titlePlaceholder": "Recuerdo sin título",
+      "titleRequired": "Ponle un título a este recuerdo.",
+      "scope": "Ámbito",
+      "content": "Contenido",
+      "contentLabel": "Contenido del recuerdo",
+      "sources": "Fuentes",
+      "sourcePlaceholder": "Pega un documento, un repo o cualquier enlace de referencia",
+      "create": "Crear"
+    }
+  },
+  "detail": {
+    "documentTitle": "{title} · Midnite",
+    "backToList": "Todos los recuerdos",
+    "notFound": "No se ha encontrado el recuerdo.",
+    "editMetadata": "Editar los metadatos del recuerdo",
+    "editMemory": "Editar el recuerdo",
+    "sources": "Fuentes",
+    "studio": "Estudio"
+  },
+  "sources": {
+    "heading": "Fuentes",
+    "count": "{count}/{max}",
+    "add": "Añadir fuentes",
+    "searchLabel": "Buscar fuentes",
+    "searchPlaceholder": "Buscar fuentes…",
+    "noMatch": "Ninguna fuente coincide con tu filtro.",
+    "reorderPaused": "El reordenado está en pausa mientras filtras.",
+    "removeTitle": "¿Quitar esta fuente?",
+    "removeDescription": "Se desvinculará de este recuerdo.",
+    "reingestError": "No se ha podido volver a leer esa fuente",
+    "removeError": "No se ha podido quitar esa fuente",
+    "reorderError": "No se han podido reordenar las fuentes",
+    "filterPlaceholder": "Filtrar por tipo…",
+    "filterLabel": "Filtrar las fuentes por tipo",
+    "filterNoOptions": "Ningún tipo coincide"
+  },
+  "sourceEditor": {
+    "urlPlaceholder": "Pega un enlace de GitHub, Notion, Google Docs o cualquier otro",
+    "addSource": "Añadir una fuente",
+    "uploadTitle": "Subir un archivo (PDF, Markdown, texto)",
+    "uploadLabel": "Subir un archivo como fuente",
+    "atLimit": "{count, plural, one {Hasta # fuente} other {Hasta # fuentes}}",
+    "invalidUrl": "Introduce una URL completa, incluido https://",
+    "reorder": "Reordenar la fuente",
+    "openInNewTab": "Abrir la fuente en una pestaña nueva",
+    "remove": "Quitar la fuente",
+    "reading": "Leyendo la fuente",
+    "read": "Fuente leída",
+    "readSource": "Leer la fuente",
+    "retryRead": "Reintentar la lectura de la fuente",
+    "readFailedTitle": "No se ha podido leer: reintentar",
+    "readFailedTitleWithError": "No se ha podido leer: {error} — reintentar"
+  },
+  "tree": {
+    "empty": "No hay recuerdos",
+    "memoryCount": "{count, plural, one {# recuerdo} other {# recuerdos}}",
+    "sourceCount": "{count, plural, one {# fuente} other {# fuentes}}"
+  },
+  "studio": {
+    "intro": "Genera artefactos a partir de este recuerdo y sus fuentes.",
+    "groups": {
+      "documents": "Documentos",
+      "visual": "Visual",
+      "audioVideo": "Audio y vídeo"
+    },
+    "generate": "Generar",
+    "generateLabel": "Generar {label}",
+    "viewLabel": "Ver {label}",
+    "retryLabel": "Reintentar {label}",
+    "degradedAudio": "Solo el guion: no hay proveedor de síntesis de voz",
+    "degradedVideo": "Solo el esquema: no hay proveedor de vídeo"
+  },
+  "chat": {
+    "heading": "Chatear con este recuerdo",
+    "noProvider": "Añade un proveedor de IA en los ajustes para chatear con este recuerdo.",
+    "inputLabel": "Hazle una pregunta a este recuerdo",
+    "placeholder": "Pregúntale lo que quieras a este recuerdo… · ⌘/Ctrl + ⏎",
+    "dictate": "Dictar la pregunta",
+    "dictateStop": "Detener el dictado",
+    "send": "Enviar",
+    "thinking": "Pensando…",
+    "emptyHint": "Haz una pregunta sobre este recuerdo y sus fuentes: las respuestas citan aquello en lo que se basan.",
+    "citations": "Fuentes",
+    "sourceFallback": "Fuente",
+    "sendFailed": "No se ha podido enviar"
+  },
+  "doc": {
+    "titleLabel": "Título del recuerdo",
+    "titlePlaceholder": "Recuerdo sin título",
+    "scopeLabel": "Ámbito",
+    "contentLabel": "Contenido",
+    "contentAriaLabel": "Contenido del recuerdo",
+    "titleRequired": "Ponle un título a este recuerdo.",
+    "deleteTitle": "¿Eliminar este recuerdo?",
+    "deleteDescription": "“{title}” dejará de estar disponible para tus agentes."
+  },
+  "scope": {
+    "global": "Global",
+    "globalOption": "Global: todos los proyectos",
+    "selectLabel": "Ámbito del recuerdo"
+  },
+  "addSource": {
+    "title": "Añadir fuentes",
+    "remaining": "quedan {count}",
+    "dropTitle": "Suelta aquí tus archivos",
+    "dropHint": "PDF, Markdown o texto plano",
+    "upload": "Subir archivos",
+    "pasteLink": "Pegar un enlace",
+    "linkPlaceholder": "https://…  (GitHub, Notion, Google Docs, YouTube, cualquier URL)",
+    "addLink": "Añadir el enlace",
+    "pasteText": "Pegar texto",
+    "textPlaceholder": "Pega notas o texto copiado: se guarda como fuente de texto",
+    "addText": "Añadir el texto",
+    "atLimit": "Este recuerdo ha alcanzado su límite de fuentes.",
+    "invalidUrl": "Introduce una URL completa, incluido https://"
+  },
+  "sourceDetail": {
+    "fallbackLabel": "Fuente",
+    "tabsLabel": "Vista de detalle de la fuente",
+    "tabSource": "Fuente",
+    "tabText": "Texto",
+    "openOriginal": "Abrir el original",
+    "youtubePreview": "Vista previa de YouTube",
+    "websitePreview": "Vista previa del sitio web",
+    "embedBlocked": "Algunos sitios bloquean la incrustación: si esto se queda en blanco, <link>abre el original ↗</link>.",
+    "typeLabel": "Tipo",
+    "fileLabel": "Archivo",
+    "statusLabel": "Estado",
+    "textTabHint": "El texto extraído está en la pestaña “Texto”.",
+    "loadingText": "Cargando el texto…",
+    "loadError": "No se ha podido cargar el texto de la fuente",
+    "stillReading": "Todavía se está leyendo esta fuente…",
+    "readFailed": "No se ha podido leer esta fuente.",
+    "readFailedWithError": "No se ha podido leer esta fuente: {error}.",
+    "noText": "No se ha extraído texto de esta fuente."
+  },
+  "artifact": {
+    "regenerate": "Regenerar",
+    "download": "Descargar",
+    "audioLabel": "Audio de {title}",
+    "videoLabel": "Vídeo de {title}",
+    "degradedAudio": "No hay configurado ningún proveedor de síntesis de voz, así que esto es solo el guion. Añade una clave de OpenAI en los ajustes para generar audio hablado.",
+    "degradedVideo": "No hay ningún proveedor de ffmpeg ni de síntesis de voz disponible, así que esto es solo el esquema de las diapositivas. Configura el vídeo del estudio de memoria para componer un MP4 narrado."
+  },
+  "metadata": {
+    "title": "Editar el recuerdo"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "items": {
+    "provider": {
+      "label": "Proveedor de LLM"
+    },
+    "secret-key": {
+      "label": "Clave secreta"
+    },
+    "agent-cli": {
+      "label": "CLI del agente"
+    },
+    "agent-pool": {
+      "label": "Grupo de agentes"
+    },
+    "repo": {
+      "label": "Repositorio"
+    }
+  },
+  "wizard": {
+    "title": "Configurar Midnite",
+    "dialogLabel": "Asistente de configuración",
+    "back": "Atrás",
+    "continue": "Continuar",
+    "steps": {
+      "provider": "Proveedor de IA",
+      "tools": "Herramientas del sistema",
+      "pool": "Concurrencia",
+      "repo": "Repositorio",
+      "finish": "¡Listo!"
+    },
+    "stepAria": {
+      "collapsed": "Paso {step} de {total}: {label}"
+    },
+    "provider": {
+      "heading": "Proveedor de IA",
+      "description": "Midnite usa un LLM para clasificar tareas, planificar y guiar a los agentes. Pega aquí tu clave de API: se almacena cifrada.",
+      "providerLabel": "Proveedor",
+      "apiKeyLabel": "Clave de API",
+      "apiKeyAlreadySet": "(ya definida: déjala vacía para conservarla)",
+      "apiKeyPlaceholder": "sk-…",
+      "apiKeyMaskedPlaceholder": "••••••••",
+      "keepExisting": "Conservar la clave existente",
+      "saveAndContinue": "Guardar y continuar",
+      "saveFailed": "No se ha podido guardar"
+    },
+    "tools": {
+      "heading": "Herramientas del sistema",
+      "description": "Midnite ejecuta <cli>claude</cli> para realizar las tareas y usa <gh>gh</gh> para abrir pull requests.",
+      "githubCli": "gh (CLI de GitHub)",
+      "install": "Instalar →",
+      "recheck": "Volver a comprobar"
+    },
+    "pool": {
+      "heading": "Concurrencia",
+      "description": "Cuántas tareas pueden ejecutarse en paralelo. Empieza con pocas: siempre puedes subirlo en los ajustes.",
+      "sliderLabel": "Tareas en paralelo",
+      "one": "Una tarea a la vez (valor seguro por defecto).",
+      "many": "Hasta {count} tareas en paralelo."
+    },
+    "repo": {
+      "heading": "Repositorio",
+      "optional": "(opcional)",
+      "description": "Añade el repositorio en el que trabajará Midnite. Puedes añadir más después en Ajustes → Repos.",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "mi-app",
+      "pathLabel": "Ruta",
+      "pathPlaceholder": "~/code/mi-app",
+      "skip": "Omitir: gestionar los repos más tarde",
+      "add": "Añadir el repo",
+      "addFailed": "No se ha podido añadir el repo"
+    },
+    "finish": {
+      "ready": "¡Todo listo!",
+      "almostHeading": "Casi está",
+      "almostDescription": "Aún quedan algunos puntos por atender.",
+      "fix": "Arreglar →",
+      "startBuilding": "Empezar a construir",
+      "goToBoard": "Ir al tablero"
+    }
+  },
+  "nudge": {
+    "title": "Termina de configurar Midnite",
+    "stepsLeft": "{count, plural, one {Queda # paso} other {Quedan # pasos}} para que los agentes puedan ejecutarse.",
+    "recommendedRemain": "Quedan un par de pasos recomendados.",
+    "openWizard": "Abrir el asistente de configuración",
+    "setUpItem": "Configurar {label}",
+    "openSettings": "Abrir los ajustes"
+  },
+  "agents": {
+    "expand": "Expandir {label}",
+    "collapse": "Contraer {label}",
+    "installed": "instalado",
+    "notInstalled": "no instalado",
+    "badgeSessions": "Sesiones",
+    "badgeAi": "IA",
+    "configurationAria": "Configuración de {label}",
+    "tabs": {
+      "cli": "CLI",
+      "api": "API"
+    },
+    "cli": {
+      "description": "La CLI de {label} se lanza en el terminal de una sesión para ejecutar tareas. Instálala o actualízala aquí y después defínela como la CLI que se usa en las sesiones nuevas.",
+      "docsLink": "Documentación de {label}",
+      "uninstall": "Desinstalar",
+      "reinstall": "Reinstalar / actualizar",
+      "install": "Instalar",
+      "activeForSessions": "Activa para las sesiones",
+      "useForSessions": "Usar para las sesiones"
+    },
+    "api": {
+      "description": "Usa tu propia clave de API de {label} para impulsar las funciones de IA de Midnite (triaje de tareas, borradores de planes, el latido y los nodos de IA de los flujos de trabajo). Se guarda en la pasarela y no se vuelve a mostrar después de guardarla.",
+      "apiKeyLabel": "Clave de API",
+      "getKey": "Conseguir una clave de {label}",
+      "keyPlaceholder": "Pega tu clave de API",
+      "storedKeyPlaceholder": "•••• {hint}",
+      "storedFallback": "guardada",
+      "baseUrlLabel": "URL base",
+      "planModelLabel": "Modelo de planificación",
+      "actModelLabel": "Modelo de acción",
+      "modelPlaceholder": "predeterminado",
+      "save": "Guardar",
+      "clearKey": "Borrar la clave",
+      "saved": "Guardada",
+      "activeForAi": "Activo para la IA",
+      "useForAi": "Usar para las funciones de IA",
+      "saveFailed": "No se ha podido guardar",
+      "activateFailed": "No se ha podido activar"
+    }
+  },
+  "cliAction": {
+    "install": "Instalar",
+    "uninstall": "Desinstalar",
+    "dialogLabel": "{verb} {label}",
+    "heading": "{verb} {label}",
+    "terminalAria": "Terminal para {verb} {label}",
+    "hintInstall": "El comando de instalación está escrito abajo",
+    "hintUninstall": "El comando de desinstalación está escrito abajo",
+    "hintSuffix": "{hint}: pulsa <kbd>Intro</kbd> para ejecutarlo. Puedes cerrar cuando quieras.",
+    "preparingInstall": "Preparando la instalación…",
+    "preparingUninstall": "Preparando la desinstalación…",
+    "startFailedInstall": "No se ha podido iniciar la instalación",
+    "startFailedUninstall": "No se ha podido iniciar la desinstalación"
+  },
+  "providerSelect": {
+    "listAria": "Proveedor"
+  },
+  "guardrails": {
+    "changeFailed": "El cambio de la salvaguarda ha fallado",
+    "resumeScheduling": "Reanudar la planificación",
+    "pauseScheduling": "Pausar la planificación",
+    "emergencyStop": "Parada de emergencia",
+    "resume": "Reanudar",
+    "resumed": "Planificación reanudada",
+    "paused": "Planificación en pausa",
+    "stopped": "Parada de emergencia: agentes abortados",
+    "confirmStopTitle": "¿Parada de emergencia?",
+    "confirmStopDescription": "Pausa toda la planificación y aborta todos los agentes en vuelo. Las tareas abortadas vuelven a “Por hacer” y se reejecutan cuando reanudes.",
+    "bannerGlobal": "Planificación en pausa: no se iniciará ningún agente nuevo.",
+    "bannerScoped": "Planificación en pausa en {count, plural, one {# ámbito} other {# ámbitos}}."
+  }
+}

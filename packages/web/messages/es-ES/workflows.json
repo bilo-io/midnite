@@ -1,0 +1,713 @@
+{
+  "editor": {
+    "canvas": {
+      "loading": "Cargando el lienzo…",
+      "a11y": {
+        "controls": "Controles del lienzo",
+        "zoomIn": "Acercar",
+        "zoomOut": "Alejar",
+        "fitView": "Ajustar la vista",
+        "toggleInteractive": "Activar o desactivar la interactividad",
+        "minimap": "Minimapa del flujo de trabajo",
+        "handle": "Punto de conexión",
+        "node": "Pulsa Intro o la barra espaciadora para seleccionar un nodo. Pulsa Supr para quitarlo y Esc para cancelar.",
+        "nodeKeyboardDisabled": "Pulsa Intro o la barra espaciadora para seleccionar un nodo. Después puedes moverlo con las flechas. Pulsa Supr para quitarlo y Esc para cancelar.",
+        "edge": "Pulsa Intro o la barra espaciadora para seleccionar una conexión. Después puedes pulsar Supr para quitarla o Esc para cancelar."
+      }
+    },
+    "panels": {
+      "showPalette": "Mostrar la paleta de nodos",
+      "hidePalette": "Ocultar la paleta de nodos",
+      "showConfig": "Mostrar el panel de configuración",
+      "hideConfig": "Ocultar el panel de configuración"
+    },
+    "controls": {
+      "enabledLabel": "Activado",
+      "neverRun": "Nunca ejecutado",
+      "status": {
+        "queued": "En cola",
+        "running": "En marcha",
+        "succeeded": "Correcto",
+        "failed": "Fallido",
+        "canceled": "Cancelado"
+      }
+    },
+    "header": {
+      "untitled": "Flujo de trabajo sin título",
+      "descriptionPlaceholder": "Describe qué hace este flujo de trabajo…",
+      "changeTrigger": "Cambiar el disparador",
+      "trigger": {
+        "webhook": "Se ejecuta con un webhook",
+        "taskEvent": "Se ejecuta con un evento de tarea",
+        "manual": "Se ejecuta a demanda"
+      },
+      "editDetails": "Editar los detalles",
+      "runHistory": "Historial de ejecuciones",
+      "enabled": "Activado",
+      "disabled": "Desactivado",
+      "run": "Ejecutar",
+      "editHeading": "Editar el flujo de trabajo",
+      "nameLabel": "Nombre"
+    },
+    "saveAsTemplate": {
+      "title": "Guardar como plantilla",
+      "nameLabel": "Nombre de la plantilla",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "¿Qué hace esta plantilla?",
+      "categoryLabel": "Categoría",
+      "categories": {
+        "monitoring": "Supervisión",
+        "notifications": "Notificaciones",
+        "scheduling": "Programación",
+        "github": "GitHub",
+        "ai": "IA",
+        "data": "Datos"
+      },
+      "tagsLabel": "Etiquetas",
+      "tagsHint": "(separadas por comas)",
+      "tagsPlaceholder": "p. ej. slack, tareas, diario",
+      "publish": "Publicar (visible para el equipo)",
+      "submit": "Guardar la plantilla",
+      "failed": "No se ha podido guardar la plantilla"
+    },
+    "errors": {
+      "saveWorkflow": "No se ha podido guardar el flujo de trabajo"
+    },
+    "node": {
+      "noUrl": "Sin URL definida",
+      "noPrompt": "Sin prompt definido",
+      "inputFallback": "entrada",
+      "operators": {
+        "isTruthy": "es verdadero",
+        "isFalsy": "es falso",
+        "contains": "contiene"
+      },
+      "status": {
+        "running": "En marcha",
+        "succeeded": "Correcto",
+        "failed": "Fallido"
+      }
+    }
+  },
+  "list": {
+    "title": "Flujos de trabajo",
+    "description": "Crea automatizaciones que se ejecuten según un horario, con un webhook o a demanda.",
+    "newWorkflow": "Nuevo flujo de trabajo",
+    "templates": "Plantillas",
+    "searchPlaceholder": "Buscar flujos de trabajo",
+    "view": {
+      "list": "Vista de lista",
+      "grid": "Vista de cuadrícula",
+      "table": "Vista de tabla"
+    },
+    "triggers": {
+      "manual": "Manual",
+      "schedule": "Programado",
+      "webhook": "Webhook",
+      "task-event": "Evento de tarea"
+    },
+    "noneForTrigger": "No hay flujos de trabajo de tipo {trigger}",
+    "section": {
+      "empty": "Vacío",
+      "count": "{count, plural, one {# flujo de trabajo} other {# flujos de trabajo}}",
+      "mostFrequentFirst": "{count} · los más frecuentes primero"
+    },
+    "archived": "Archivado",
+    "nodeCount": "{count, plural, one {# nodo} other {# nodos}}",
+    "duplicateWorkflow": "Duplicar {name}",
+    "cronTooltip": "{frequency} — {schedule}",
+    "empty": {
+      "title": "Todavía no hay flujos de trabajo",
+      "description": "Crea una automatización que se ejecute con un webhook, con un evento de tarea o a demanda."
+    },
+    "noMatches": "Ningún flujo de trabajo coincide con “{query}”",
+    "bulk": {
+      "archive": "Archivar",
+      "unarchive": "Desarchivar",
+      "deleteTitle": "{count, plural, one {¿Eliminar # flujo de trabajo?} other {¿Eliminar # flujos de trabajo?}}",
+      "deleteDescription": "Esto no se puede deshacer."
+    },
+    "widget": {
+      "title": "Flujos de trabajo",
+      "refresh": "Actualizar los flujos de trabajo",
+      "error": "No se han podido cargar los flujos de trabajo.",
+      "empty": "Todavía no hay flujos de trabajo.",
+      "enabled": "Activado",
+      "disabled": "Desactivado"
+    },
+    "create": {
+      "dialogLabel": "Nuevo flujo de trabajo",
+      "startFrom": "Empezar desde",
+      "blankTitle": "Flujo de trabajo vacío",
+      "blankDescription": "Empieza con un lienzo vacío y solo un disparador.",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "p. ej. Resumen de la reunión diaria",
+      "triggerLabel": "Disparador",
+      "triggerFromTemplate": "Disparador: <strong>{trigger}</strong>: lo define la plantilla y se puede editar después de crearlo.",
+      "triggerHints": {
+        "manual": "Ejecutar a demanda",
+        "schedule": "Ejecutar con un cron",
+        "webhook": "Ejecutar con una petición",
+        "task-event": "Ejecutar cuando termine una tarea"
+      },
+      "submit": "Crear el flujo de trabajo",
+      "submitFromTemplate": "Crear desde la plantilla",
+      "failed": "No se ha podido crear el flujo de trabajo"
+    },
+    "editor": {
+      "desktopOnlyLabel": "El editor de flujos de trabajo",
+      "notFoundSingular": "flujo de trabajo"
+    }
+  },
+  "templates": {
+    "title": "Plantillas de flujos de trabajo",
+    "description": "Explora plantillas de flujos de trabajo ya hechas e instálalas con un clic.",
+    "searchPlaceholder": "Buscar plantillas…",
+    "categories": {
+      "all": "Todas",
+      "monitoring": "Supervisión",
+      "notifications": "Notificaciones",
+      "scheduling": "Programación",
+      "github": "GitHub",
+      "ai": "IA",
+      "data": "Datos"
+    },
+    "requires": "Requiere: {slots}",
+    "use": "Usar la plantilla",
+    "loading": "Cargando las plantillas…",
+    "noMatches": "Ninguna plantilla coincide con tu filtro.",
+    "clearFilters": "Quitar los filtros",
+    "install": {
+      "slotsFailed": "No se han podido cargar los espacios",
+      "failed": "La instalación ha fallado",
+      "noneRequired": "No se necesitan credenciales",
+      "connectCredentials": "Conectar las credenciales",
+      "noCredentialsOfType": "No se han encontrado credenciales de tipo {type}.",
+      "addCredential": "Añadir una",
+      "credentialForSlot": "Credencial para {key}",
+      "submit": "Instalar"
+    }
+  },
+  "nodes": {
+    "trigger_manual": {
+      "title": "Disparador manual",
+      "description": "Ejecutar a demanda con el botón de reproducción."
+    },
+    "trigger_schedule": {
+      "title": "Programación",
+      "description": "Ejecutar automáticamente según una programación cron."
+    },
+    "trigger_webhook": {
+      "title": "Webhook",
+      "description": "Ejecutar cuando llegue una petición HTTP entrante."
+    },
+    "trigger_task-event": {
+      "title": "Evento de tarea",
+      "description": "Ejecutar cuando una tarea termine, se abandone o necesite atención."
+    },
+    "http_request": {
+      "title": "Petición HTTP",
+      "description": "Hacer una llamada HTTP de salida.",
+      "fields": {
+        "method": {
+          "label": "Método",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "URL",
+          "placeholder": "https://api.github.com/repos/owner/repo"
+        },
+        "headers": {
+          "label": "Cabeceras",
+          "help": "Objeto JSON de nombre de cabecera → valor."
+        },
+        "body": {
+          "label": "Cuerpo",
+          "placeholder": "Cuerpo de la petición en bruto"
+        },
+        "credentialId": {
+          "label": "Credencial",
+          "help": "Opcional: inyectar la autenticación de una credencial guardada (bearer / basic / cabecera)."
+        }
+      }
+    },
+    "ai_claude": {
+      "title": "IA",
+      "description": "Ejecutar una respuesta de IA con el proveedor activo, o fijar uno.",
+      "fields": {
+        "provider": {
+          "label": "Proveedor",
+          "help": "Déjalo en “Proveedor activo” para seguir la selección de la página de agentes.",
+          "options": {
+            "_empty": "Proveedor activo",
+            "anthropic": "Anthropic",
+            "openai": "OpenAI",
+            "google": "Google Gemini",
+            "openai-compatible": "Compatible con OpenAI"
+          }
+        },
+        "model": {
+          "label": "Modelo",
+          "placeholder": "sonnet4.6"
+        },
+        "system": {
+          "label": "Prompt de sistema"
+        },
+        "prompt": {
+          "label": "Prompt"
+        },
+        "maxTokens": {
+          "label": "Tokens máximos"
+        }
+      }
+    },
+    "task_create": {
+      "title": "Crear una tarea",
+      "description": "Crear una tarea en el tablero de Midnite; p. ej. encolar una tarea recurrente según un horario.",
+      "fields": {
+        "prompt": {
+          "label": "Prompt de la tarea",
+          "placeholder": "¿Qué debería hacer el agente?"
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Opcional: el nombre de un repo registrado."
+        },
+        "projectId": {
+          "label": "Proyecto",
+          "help": "Opcional: el ID del proyecto en el que archivar la tarea."
+        },
+        "priority": {
+          "label": "Prioridad",
+          "help": "0–3 (los valores más altos van primero); por defecto Normal (1)."
+        }
+      }
+    },
+    "midnite_generate-retro": {
+      "title": "Generar la retrospectiva",
+      "description": "Añadir una narrativa de IA a la retrospectiva de una tarea completada.",
+      "fields": {
+        "taskId": {
+          "label": "ID de la tarea",
+          "placeholder": "Déjalo vacío para usar la tarea entrante",
+          "help": "Opcional: la tarea que se va a resumir. Por defecto, la tarea previa (p. ej. de un disparador de evento de tarea)."
+        }
+      }
+    },
+    "midnite_list-completed-tasks": {
+      "title": "Listar las tareas completadas",
+      "description": "Listar las tareas que han terminado o se han abandonado en un periodo reciente.",
+      "fields": {
+        "sinceHours": {
+          "label": "Desde (horas)",
+          "help": "Cuánto tiempo atrás hay que mirar. Por defecto 24."
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Opcional: solo este repo."
+        },
+        "projectId": {
+          "label": "Proyecto",
+          "help": "Opcional: solo este proyecto."
+        }
+      }
+    },
+    "midnite_build-digest": {
+      "title": "Crear un resumen",
+      "description": "Condensar las tareas completadas en un resumen de la flota (recuentos, secciones, destacados).",
+      "fields": {
+        "sinceHours": {
+          "label": "Desde (horas)",
+          "help": "Duración del periodo. Se ignora si Desde y Hasta están definidos. Por defecto 24."
+        },
+        "from": {
+          "label": "Desde (ISO)",
+          "help": "Inicio explícito del periodo, opcional."
+        },
+        "to": {
+          "label": "Hasta (ISO)",
+          "help": "Fin explícito del periodo, opcional."
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Opcional: solo este repo."
+        },
+        "projectId": {
+          "label": "Proyecto",
+          "help": "Opcional: solo este proyecto."
+        }
+      }
+    },
+    "midnite_notify": {
+      "title": "Notificar",
+      "description": "Publicar una notificación en la aplicación (p. ej. un resumen está listo, una retrospectiva es destacable).",
+      "fields": {
+        "kind": {
+          "label": "Tipo",
+          "options": {
+            "digest_generated": "Resumen generado",
+            "retro_notable": "Retrospectiva destacable"
+          }
+        },
+        "severity": {
+          "label": "Gravedad",
+          "options": {
+            "info": "Información",
+            "warn": "Advertencia",
+            "urgent": "Urgente"
+          }
+        },
+        "title": {
+          "label": "Título"
+        },
+        "body": {
+          "label": "Cuerpo"
+        },
+        "entityId": {
+          "label": "ID de la entidad",
+          "help": "Opcional: el ID de la tarea o del resumen al que enlazar."
+        },
+        "route": {
+          "label": "Ruta",
+          "help": "Opcional: la ruta del cliente que se debe abrir."
+        }
+      }
+    },
+    "logic_branch": {
+      "title": "Bifurcación",
+      "description": "Dividir el flujo en una rama verdadera y otra falsa según una condición.",
+      "ports": {
+        "true": "Verdadero",
+        "false": "Falso"
+      },
+      "fields": {
+        "left": {
+          "label": "Valor (ruta)",
+          "placeholder": "body.ok",
+          "help": "Ruta con puntos dentro de los datos entrantes. Déjalo vacío para evaluar toda la entrada."
+        },
+        "operator": {
+          "label": "Condición",
+          "options": {
+            "isTruthy": "es verdadero",
+            "isFalsy": "es falso",
+            "equals": "= igual a",
+            "notEquals": "≠ distinto de",
+            "contains": "contiene",
+            "gt": "> mayor que",
+            "gte": "≥ mayor o igual",
+            "lt": "< menor que",
+            "lte": "≤ menor o igual"
+          }
+        },
+        "right": {
+          "label": "Comparar con",
+          "placeholder": "ok",
+          "help": "Se compara con el valor. Se ignora con “es verdadero/falso”."
+        }
+      }
+    },
+    "logic_setData": {
+      "title": "Definir datos",
+      "description": "Construir una carga a partir de campos, usando '{{ }}' para tomar valores de los nodos anteriores.",
+      "fields": {
+        "mode": {
+          "label": "Modo",
+          "options": {
+            "replace": "Reemplazar: emitir solo los campos definidos",
+            "merge": "Fusionar: superponer los campos definidos sobre la entrada"
+          }
+        },
+        "fields": {
+          "label": "Campos",
+          "help": "Objeto JSON de clave → valor. Los valores pueden usar expresiones '{{ }}'."
+        }
+      }
+    },
+    "logic_merge": {
+      "title": "Fusionar",
+      "description": "Combinar las salidas de varias ramas anteriores en una sola carga.",
+      "fields": {
+        "mode": {
+          "label": "Modo",
+          "options": {
+            "shallowMerge": "Fusión superficial de objetos",
+            "array": "Recopilar en un array",
+            "concat": "Concatenar arrays"
+          }
+        }
+      }
+    },
+    "data_filter": {
+      "title": "Filtrar campos",
+      "description": "Conservar o descartar un conjunto de campos de primer nivel de la carga.",
+      "fields": {
+        "mode": {
+          "label": "Modo",
+          "options": {
+            "pick": "Conservar: mantener solo estos campos",
+            "omit": "Omitir: descartar estos campos"
+          }
+        },
+        "fields": {
+          "label": "Campos",
+          "help": "Array JSON con nombres de campos de primer nivel."
+        }
+      }
+    },
+    "storage_set": {
+      "title": "Guardar un valor",
+      "description": "Guardar un valor con una clave, legible más adelante en esta ejecución o en una futura.",
+      "fields": {
+        "key": {
+          "label": "Clave",
+          "placeholder": "lastSeenId"
+        },
+        "value": {
+          "label": "Valor",
+          "help": "El valor que se va a guardar. Usa '{{ }}' para tomar valores de los nodos anteriores."
+        }
+      }
+    },
+    "slack_message": {
+      "title": "Mensaje de Slack",
+      "description": "Publicar un mensaje en un canal de Slack.",
+      "fields": {
+        "credentialId": {
+          "label": "Credencial de Slack"
+        },
+        "channel": {
+          "label": "Canal",
+          "placeholder": "#general o el ID del canal"
+        },
+        "text": {
+          "label": "Texto del mensaje"
+        },
+        "blocks": {
+          "label": "Bloques (Block Kit)",
+          "help": "Array opcional de Slack Block Kit (normalmente una expresión, p. ej. '{{ $json.blocks }}'). El texto es la alternativa."
+        }
+      }
+    },
+    "email_send": {
+      "title": "Enviar un correo",
+      "description": "Enviar un correo electrónico por SMTP.",
+      "fields": {
+        "credentialId": {
+          "label": "Credencial SMTP"
+        },
+        "to": {
+          "label": "Para",
+          "placeholder": "destinatario@ejemplo.com"
+        },
+        "subject": {
+          "label": "Asunto"
+        },
+        "text": {
+          "label": "Cuerpo (texto plano)"
+        },
+        "html": {
+          "label": "Cuerpo (HTML)"
+        }
+      }
+    },
+    "storage_get": {
+      "title": "Leer un valor",
+      "description": "Leer un valor guardado por su clave (de esta ejecución o de una anterior).",
+      "fields": {
+        "key": {
+          "label": "Clave",
+          "placeholder": "lastSeenId"
+        },
+        "defaultValue": {
+          "label": "Predeterminado",
+          "help": "Se devuelve cuando la clave nunca se ha definido. Por defecto es null."
+        }
+      }
+    },
+    "github_get-pr": {
+      "title": "Obtener el PR",
+      "description": "Obtener los metadatos de un pull request de GitHub (título, estado, autor, etiquetas, head/base).",
+      "fields": {
+        "credentialId": {
+          "label": "Credencial de GitHub"
+        },
+        "prUrl": {
+          "label": "URL del PR",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        }
+      }
+    },
+    "github_get-diff": {
+      "title": "Obtener el diff del PR",
+      "description": "Obtener el diff unificado de un pull request (recortado a maxTokens).",
+      "fields": {
+        "credentialId": {
+          "label": "Credencial de GitHub"
+        },
+        "prUrl": {
+          "label": "URL del PR",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "maxTokens": {
+          "label": "Tokens máximos",
+          "help": "El diff se recorta en esta estimación de tokens (1 token ≈ 4 caracteres). Por defecto: 8000."
+        }
+      }
+    },
+    "github_post-review": {
+      "title": "Publicar una revisión del PR",
+      "description": "Enviar un comentario de revisión (o una aprobación / solicitud de cambios) en un pull request de GitHub.",
+      "fields": {
+        "credentialId": {
+          "label": "Credencial de GitHub"
+        },
+        "prUrl": {
+          "label": "URL del PR",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "body": {
+          "label": "Cuerpo de la revisión"
+        },
+        "event": {
+          "label": "Evento",
+          "options": {
+            "COMMENT": "Comentar",
+            "APPROVE": "Aprobar",
+            "REQUEST_CHANGES": "Solicitar cambios"
+          }
+        }
+      }
+    }
+  },
+  "palette": {
+    "search": "Buscar nodos",
+    "hint": "Arrastra al lienzo, o haz clic para añadir.",
+    "empty": "Ningún nodo coincide con “{query}”.",
+    "categories": {
+      "action": "Acciones",
+      "logic": "Lógica",
+      "data": "Datos",
+      "storage": "Almacenamiento"
+    }
+  },
+  "config": {
+    "empty": "Selecciona un nodo para configurarlo.",
+    "noConfig": "Este nodo no tiene configuración.",
+    "nodeLabel": "Etiqueta del nodo",
+    "close": "Cerrar",
+    "delete": {
+      "action": "Eliminar el nodo",
+      "title": "¿Eliminar este nodo?",
+      "description": "“{label}” se quitará del flujo de trabajo.",
+      "confirm": "Eliminar el nodo"
+    },
+    "json": {
+      "invalid": "JSON no válido"
+    },
+    "credential": {
+      "none": "— selecciona una credencial —"
+    },
+    "fx": {
+      "toggle": "Alternar el modo de expresión para {field}",
+      "useLiteral": "Usar un valor literal",
+      "useExpression": "Usar una expresión"
+    },
+    "ai": {
+      "modelPlaceholder": "Selecciona o escribe el ID de un modelo"
+    },
+    "trigger": {
+      "tabs": {
+        "manual": "Manual",
+        "schedule": "Programado",
+        "webhook": "Webhook",
+        "task-event": "Evento de tarea"
+      },
+      "manual": {
+        "hint": "Se ejecuta solo cuando pulsas “Ejecutar”. El botón de ejecutar funciona con cualquier tipo de disparador, así que siempre puedes probarlo a mano."
+      },
+      "schedule": {
+        "repeats": "Se repite",
+        "recurrence": "Recurrencia",
+        "presets": {
+          "daily": "Todos los días",
+          "weekdays": "Días laborables (lun–vie)",
+          "weekly": "Cada semana",
+          "monthly": "Cada mes",
+          "custom": "Personalizado (cron)"
+        },
+        "day": "Día",
+        "dayOfWeek": "Día de la semana",
+        "days": {
+          "0": "Domingo",
+          "1": "Lunes",
+          "2": "Martes",
+          "3": "Miércoles",
+          "4": "Jueves",
+          "5": "Viernes",
+          "6": "Sábado"
+        },
+        "dayOfMonth": "Día del mes",
+        "time": "Hora",
+        "cron": "Expresión cron",
+        "timezone": "Zona horaria",
+        "nextRuns": "Próximas ejecuciones",
+        "invalidCron": "Cron no válido: no hay ejecuciones próximas."
+      },
+      "webhook": {
+        "hint": "Envía una petición a la URL del flujo de trabajo para lanzar una ejecución. La URL incluye un token secreto que se muestra una sola vez al generarla.",
+        "url": "URL del webhook",
+        "copyUrl": "Copiar la URL",
+        "copied": "Copiada.",
+        "tokenExists": "Ya existe un token. Regenéralo para ver una URL nueva.",
+        "noUrlYet": "Todavía no se ha generado ninguna URL.",
+        "regenerate": "Regenerar la URL",
+        "generate": "Generar la URL"
+      },
+      "taskEvent": {
+        "fireOn": "Disparar con",
+        "events": {
+          "task_done": "Tarea hecha",
+          "task_abandoned": "Tarea abandonada",
+          "task_needs-attention": "Tarea que necesita atención"
+        },
+        "repoFilterLabel": "Filtro de repo (opcional)",
+        "repoFilter": "Filtro de repo",
+        "projectFilterLabel": "Filtro de proyecto (opcional)",
+        "projectFilter": "Filtro de proyecto",
+        "projectPlaceholder": "ID del proyecto",
+        "priorityFilterLabel": "Filtro de prioridad (opcional)",
+        "priorityFilter": "Filtro de prioridad",
+        "anyPriority": "Cualquier prioridad"
+      }
+    }
+  },
+  "expression": {
+    "fieldAria": "Expresión para {field}",
+    "placeholder": "'{{ $json.field }}'",
+    "suggestionsAria": "Sugerencias de expresión para {field}",
+    "dataPicker": {
+      "toggle": "Alternar el selector de datos para {field}",
+      "insertTooltip": "Insertar una referencia de los datos de la ejecución",
+      "groupAria": "Selector de datos para {field}",
+      "empty": "Todavía no hay datos de ejecución: ejecuta el flujo de trabajo una vez para explorar sus datos aquí.",
+      "insertRef": "Insertar {ref}",
+      "expand": "Expandir {key}",
+      "collapse": "Contraer {key}"
+    },
+    "preview": {
+      "emptyValue": "(vacío)",
+      "unresolved": "no se puede resolver"
+    },
+    "hint": {
+      "noData": "Referencia los datos de la ejecución, p. ej. <code>'{{ $json.field }}'</code>. Ejecútalo una vez para previsualizar los valores.",
+      "withData": "Referencia los datos de la ejecución con <code>'{{ }}'</code>: elige un campo con el botón de datos."
+    }
+  }
+}

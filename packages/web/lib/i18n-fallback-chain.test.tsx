@@ -20,18 +20,25 @@ const META: Partial<Record<Locale, { complete?: boolean }>> = {
  * Phase 82 Theme F — Phase 79's "four locales load, en-GB is the fallback" check,
  * absorbed and made permanent.
  *
- * `i18n-surfaces.test.tsx` already spot-checks the fallback on five hand-picked keys
- * (against es-ES since de-DE was authored). That was right for Phase 79's five
- * namespaces; there are now twenty-six. So this sweep is **derived from the catalog** rather
- * than from a list: it picks a representative leaf out of every en-GB namespace, so a
- * namespace added by a future slice is covered the day it lands and cannot silently
- * escape the fallback guarantee.
+ * The sweep is **derived from the catalog** rather than from a list: it picks a
+ * representative leaf out of every en-GB namespace, so a namespace added by a future
+ * slice is covered the day it lands and cannot silently escape the fallback guarantee.
  *
  * What "fallback works" has to mean, concretely:
  *  - the rendered text equals the **en-GB copy**, not the raw dotted key (next-intl's
  *    failure mode is to render the key, which looks like a typo rather than a bug), and
  *  - nothing is logged — a missing message is a `console.error`, so a silent-but-wrong
  *    render and a noisy-but-right one are different failures and both matter.
+ *
+ * **The sweep is synthetic now, and that is the point** (2026-08-06). It used to run
+ * against whichever shipping locales were still stubs — de-DE and es-ES. Both are since
+ * authored to full parity, so *every* declared locale is `complete` and there is no
+ * shipping locale left whose catalog is missing keys. Rather than delete the guarantee
+ * along with its last real subject, the sweep now mounts the probes against a catalog
+ * set built in the test (`{}` for the active locale, merged over the real en-GB): the
+ * day a fifth locale is declared it is born a stub, and this is the check that says its
+ * screens read English instead of dotted key paths. Deleting it would mean discovering
+ * that on the new locale's first screenshot instead.
  */
 
 type Node = Record<string, unknown>;
@@ -75,9 +82,9 @@ function Probe({ ns, k, testId }: { ns: string; k: string; testId?: string }) {
   return <li data-testid={testId ?? ns}>{t(k)}</li>;
 }
 
-function renderAll(locale: Locale) {
+function renderAll(locale: Locale, catalogs: typeof CATALOGS = CATALOGS) {
   return render(
-    <LocaleProvider catalogs={CATALOGS} initialLocale={locale}>
+    <LocaleProvider catalogs={catalogs} initialLocale={locale}>
       <ul>
         {PROBES.map((p) => (
           <Probe key={p.ns} ns={p.ns} k={p.key} />
@@ -88,9 +95,18 @@ function renderAll(locale: Locale) {
 }
 
 /**
+ * A catalog set where `locale` is declared but carries **no** messages — what a newly
+ * declared locale looks like before anyone translates it. en-GB is the real catalog, so
+ * the fallback has something to fall back *to*.
+ */
+function stubbedCatalogs(locale: Locale): typeof CATALOGS {
+  return { 'en-GB': enGB as never, [locale]: {} as never };
+}
+
+/**
  * The declared-but-unauthored locales, derived from the meta sidecars' `complete` flag
- * rather than hardcoded — so if de-DE is ever authored (or a fifth locale is declared),
- * this set follows automatically instead of quietly testing the wrong thing.
+ * rather than hardcoded. Now empty — every declared locale is authored — which is
+ * exactly why the sweeps below use `stubbedCatalogs()` instead of iterating this.
  */
 const FALLBACK_LOCALES: Locale[] = SUPPORTED_LOCALES.map((l) => l.code)
   .filter((code) => code !== DEFAULT_LOCALE)
@@ -98,6 +114,11 @@ const FALLBACK_LOCALES: Locale[] = SUPPORTED_LOCALES.map((l) => l.code)
     const meta = META[code];
     return meta ? meta.complete !== true : true;
   });
+
+/** Every non-canonical locale that IS authored — each gets a negative control below. */
+const AUTHORED_LOCALES: Locale[] = SUPPORTED_LOCALES.map((l) => l.code)
+  .filter((code) => code !== DEFAULT_LOCALE)
+  .filter((code) => META[code]?.complete === true);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -113,42 +134,46 @@ describe('Phase 82 F — en-GB is the fallback for every declared locale', () =>
     expect(PROBES.length).toBeGreaterThanOrEqual(namespaces.length - 3);
   });
 
-  it('covers every declared-but-unauthored locale', () => {
-    // Pins today's reality so that authoring the next locale has to come here and say
-    // so, rather than silently shrinking the sweep to nothing. de-DE left this list
-    // when it was hand-translated to full parity (it is `complete` in its meta
-    // sidecar); es-ES is the remaining stub.
-    expect(FALLBACK_LOCALES).toEqual(['es-ES']);
+  it('has no declared-but-unauthored locale left, and every declared locale is authored', () => {
+    // Pins today's reality from both directions, so that DECLARING a fifth locale has to
+    // come here and say so rather than quietly slipping in untranslated. es-ES was the
+    // last stub; it is now `complete` like de-DE and fr-FR.
+    expect(FALLBACK_LOCALES).toEqual([]);
+    expect(AUTHORED_LOCALES).toEqual(['de-DE', 'fr-FR', 'es-ES']);
   });
 
-  for (const locale of FALLBACK_LOCALES) {
-    it(`renders en-GB copy — never a raw key — for every namespace under ${locale}`, () => {
-      renderAll(locale);
-      const wrong: string[] = [];
-      for (const p of PROBES) {
-        const text = screen.getByTestId(p.ns).textContent;
-        if (text !== p.english) wrong.push(`${p.ns}.${p.key}: got "${text}", want "${p.english}"`);
-      }
-      expect(wrong, `namespaces not falling back to en-GB under ${locale}`).toEqual([]);
-    });
+  // Run the namespace sweep against a SYNTHETIC stub locale (see the file header): no
+  // shipping locale is a stub any more, but the guarantee has to outlive that fact for
+  // whenever a fifth locale is declared. es-ES is the stand-in purely because it was the
+  // most recent stub; any declared locale would do, since its catalog is replaced by `{}`.
+  const SYNTHETIC_STUB: Locale = 'es-ES';
 
-    it(`logs nothing while falling back under ${locale}`, () => {
-      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      renderAll(locale);
-      // A missing message surfaces as a console error in next-intl, so an empty log is
-      // part of the guarantee — not just the rendered output being right.
-      expect(error.mock.calls, `console.error during ${locale} fallback`).toEqual([]);
-      expect(warn.mock.calls, `console.warn during ${locale} fallback`).toEqual([]);
-    });
-  }
+  it(`renders en-GB copy — never a raw key — for every namespace under a stub locale`, () => {
+    renderAll(SYNTHETIC_STUB, stubbedCatalogs(SYNTHETIC_STUB));
+    const wrong: string[] = [];
+    for (const p of PROBES) {
+      const text = screen.getByTestId(p.ns).textContent;
+      if (text !== p.english) wrong.push(`${p.ns}.${p.key}: got "${text}", want "${p.english}"`);
+    }
+    expect(wrong, 'namespaces not falling back to en-GB under a stub locale').toEqual([]);
+  });
+
+  it('logs nothing while falling back under a stub locale', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderAll(SYNTHETIC_STUB, stubbedCatalogs(SYNTHETIC_STUB));
+    // A missing message surfaces as a console error in next-intl, so an empty log is
+    // part of the guarantee — not just the rendered output being right.
+    expect(error.mock.calls, 'console.error during stub-locale fallback').toEqual([]);
+    expect(warn.mock.calls, 'console.warn during stub-locale fallback').toEqual([]);
+  });
 
   it('falls back PER KEY for a partially-authored locale', () => {
-    // The sweeps above can't actually fail on the mechanism they describe: `messages/es-ES`
-    // is empty, so merging it over en-GB is indistinguishable from
-    // `{...enGB}` — a shallow merge would satisfy every assertion. Per-key fallback only
-    // gets exercised by a catalog that has *some* of a namespace, which is what a real
-    // machine-translation seed will look like. So build one synthetically.
+    // The sweeps above can't actually fail on the mechanism they describe: their stub
+    // catalog is empty, so merging it over en-GB is indistinguishable from `{...enGB}` —
+    // a shallow merge would satisfy every assertion. Per-key fallback only gets exercised
+    // by a catalog that has *some* of a namespace, which is what a half-finished
+    // translation pass looks like. So build one synthetically.
     const enCommon = (enGB as Record<string, Record<string, unknown>>)['common'] ?? {};
     const key = Object.keys(enCommon).find((k) => typeof enCommon[k] === 'string') ?? '';
     expect(key, 'no string leaf in common to test with').toBeTruthy();
@@ -175,19 +200,18 @@ describe('Phase 82 F — en-GB is the fallback for every declared locale', () =>
     );
   });
 
-  it('still renders fr-FR in French rather than falling back', () => {
-    // The negative control: if `renderAll` were somehow always serving en-GB, every
-    // assertion above would pass for the wrong reason.
-    renderAll('fr-FR');
-    const french = PROBES.filter((p) => screen.getByTestId(p.ns).textContent !== p.english);
-    expect(french.length, 'fr-FR served en-GB copy for every namespace').toBeGreaterThan(0);
-  });
-
-  it('still renders de-DE in German rather than falling back', () => {
-    // The same control for the second authored locale — de-DE is `complete`, so a
-    // regression that emptied its fragments would show up here rather than as silence.
-    renderAll('de-DE');
-    const german = PROBES.filter((p) => screen.getByTestId(p.ns).textContent !== p.english);
-    expect(german.length, 'de-DE served en-GB copy for every namespace').toBeGreaterThan(0);
-  });
+  // The negative controls, one per authored locale and derived from the same sidecars: if
+  // `renderAll` were somehow always serving en-GB, every assertion above would pass for
+  // the wrong reason. Each also catches a regression that emptied a locale's fragments —
+  // that would otherwise show up as silence, since the real CATALOGS are used here.
+  for (const locale of AUTHORED_LOCALES) {
+    it(`still renders ${locale} in its own language rather than falling back`, () => {
+      renderAll(locale);
+      const translated = PROBES.filter((p) => screen.getByTestId(p.ns).textContent !== p.english);
+      expect(
+        translated.length,
+        `${locale} served en-GB copy for every namespace`,
+      ).toBeGreaterThan(0);
+    });
+  }
 });

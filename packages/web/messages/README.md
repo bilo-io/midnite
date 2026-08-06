@@ -18,11 +18,9 @@ messages/
   fr-FR/                # fully hand-translated; kept at FULL key parity with en-GB
     common.json … settings.json
     index.ts            # GENERATED
-  de-DE/                # fully translated too; also at FULL key parity with en-GB
+  de-DE/  es-ES/        # fully translated too; also at FULL key parity with en-GB
     common.json … settings.json
     index.ts            # GENERATED
-  es-ES/                # intentionally EMPTY (no fragments) — falls back to en-GB
-    index.ts            # GENERATED → `export default {}`
   meta/
     <locale>.json       # sidecar metadata (one file per locale, NOT split)
 ```
@@ -34,9 +32,13 @@ messages/
   barrels, so the whole catalog still bundles under `output: 'export'` (no server,
   no request-time resolution). **Never hand-edit a barrel** — add/remove a fragment
   and run `moon run web:i18n-barrels`.
-- `es-ES` is intentionally **empty** for now; it falls back to en-GB until translated.
-  `de-DE` was authored to full parity (2026-08-06, the Phase 79 Theme E follow-up), so
-  **two locales are `complete`** and the parity gate enforces both.
+- **All four locales are authored** as of 2026-08-06 (the Phase 79 Theme E follow-up):
+  `de-DE` and `es-ES` joined `fr-FR` at full parity, so **three locales are `complete`**
+  and the parity gate enforces all of them. There is no stub locale left — a **newly
+  declared** locale would be one, so the en-GB fallback chain is still guaranteed and
+  still tested, against a stub catalog built inside
+  [`i18n-fallback-chain.test.tsx`](../lib/i18n-fallback-chain.test.tsx) rather than one
+  that ships.
 - `meta/<locale>.json` — sidecar metadata (kept as one file per locale, not split):
   `{ "complete": boolean, "needsReview": string[] }`. `complete: true` opts a locale
   into the parity gate; `needsReview` flags machine/placeholder strings a human
@@ -91,7 +93,7 @@ and [`lib/project-template-labels.ts`](../lib/project-template-labels.ts).
 - **`moon run web:i18n-validate`** ([`scripts/i18n-validate.mjs`](../../../scripts/i18n-validate.mjs)) —
   the key-parity gate + progress meter, run in `moon ci`. Fails on **orphan keys** (a
   key in a locale not in en-GB) and on **missing keys in a `complete` locale**
-  (fr-FR + de-DE). Prints per-namespace key totals + the exempt-file count.
+  (fr-FR + de-DE + es-ES). Prints per-namespace key totals + the exempt-file count.
 - **`moon run web:i18n-barrels`** (`--check` in CI) — regenerates / verifies the
   per-locale barrels against the fragments on disk.
 - **`moon run web:i18n-exempt`** (`--check` in CI) — prunes / verifies the exempt
@@ -103,7 +105,7 @@ and [`lib/project-template-labels.ts`](../lib/project-template-labels.ts).
 
 1. Add or edit the key in `en-GB/<namespace>.json` (create the namespace file if new,
    then `moon run web:i18n-barrels`).
-2. Mirror it in `fr-FR/<namespace>.json` **and** `de-DE/<namespace>.json` (both are
+2. Mirror it in `fr-FR/`, `de-DE/` **and** `es-ES/<namespace>.json` (all three are
    `complete` — the gate enforces parity, and a test blocks demoting a locale to skip
    the check).
 3. Use it via `useTranslations('<namespace>')` → `t('<key>')`; dynamic values use ICU
