@@ -14,6 +14,23 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.11.1] - 2026-08-06
+
+_Patch release — `midnite` and `@midnite/site` move to 0.11.1; every other package
+stays at 0.11.0. The desktop app is unchanged, so v0.11.0 remains the current
+download._
+
+### Fixed
+
+- **The macOS install one-liner works again.** Renaming the app bundle to
+  `Midnite.app` in 0.11.0 meant the installer's clean-up of the old
+  `midnite.app` deleted the copy it had just installed — on a case-insensitive
+  disk (the macOS default) those are the same folder. Installs ended with
+  "✓ Midnite installed." followed immediately by
+  "The file /Applications/Midnite.app does not exist." **This already took
+  effect** — `install.sh` is served from the site and was fixed on merge, so
+  re-running the one-liner works whether or not you take this release.
+
 ## [0.11.0] - 2026-08-06
 
 _Minor release — every package moves in lockstep to 0.11.0._
@@ -650,6 +667,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.11.1]: https://github.com/bilo-io/midnite-app/releases
 [0.11.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.11.0
 [0.10.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.10.0
 [0.9.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.1
