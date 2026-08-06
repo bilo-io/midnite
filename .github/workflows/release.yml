@@ -146,16 +146,32 @@ jobs:
         with:
           path: artifacts
 
-      # A partial matrix (e.g. macOS flaked) still publishes, but an empty artifact
-      # set must NOT create an assetless release — fail the job so the problem is
-      # visible instead of silently shipping nothing.
-      - name: Ensure at least one installer was produced
+      # Release assets live in one flat namespace keyed by basename, but the
+      # artifacts arrive under a per-platform directory — so two legs shipping the
+      # same filename collide on upload, and the loser 404s on update-a-release-asset.
+      # Guard both ways the publishable set can be wrong before we start uploading:
+      # empty (nothing built at all) and duplicated (the collision described below).
+      - name: Check the publishable asset set
         shell: bash
         run: |
-          count=$(find artifacts -type f 2>/dev/null | wc -l | tr -d ' ')
-          echo "Downloaded $count artifact file(s) across all platform legs."
+          find artifacts -type f \
+            \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' -o -name '*.AppImage' \
+               -o -name '*.blockmap' -o -name 'latest*.yml' \) | sort > publishable.txt
+          count=$(wc -l < publishable.txt | tr -d ' ')
+          echo "Publishable assets ($count):"
+          sed 's/^/  /' publishable.txt
+
+          # A partial matrix (e.g. macOS flaked) still publishes, but an empty set
+          # must NOT create an assetless release — fail so the problem is visible
+          # instead of silently shipping nothing.
           if [ "$count" -eq 0 ]; then
             echo "::error::No installers were built on any platform — refusing to publish an empty release."
+            exit 1
+          fi
+
+          dupes=$(xargs -n1 basename < publishable.txt | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "::error::Duplicate asset basename(s) would collide on upload: $(echo "$dupes" | tr '\n' ' ')"
             exit 1
           fi
 
@@ -165,6 +181,16 @@ jobs:
       # Contents:write on bilo-io/midnite-app, stored as the RELEASES_REPO_TOKEN
       # secret. Published (not draft) so `releases/latest` resolves; the same-named
       # tag is auto-created in the public repo on its default branch.
+      #
+      # `files` is an ALLOWLIST, not `artifacts/**/*`. Every platform leg emits its
+      # own `builder-debug.yml`, and the wildcard uploaded all three under that one
+      # basename — the 2nd and 3rd raced on update-a-release-asset. The action retries
+      # such a collision once, so it was nondeterministic: absorbed on v0.9.0, fatal on
+      # v0.9.1/v0.10.0/v0.11.0, where the failed job left the release an UNTAGGED DRAFT
+      # (installers all uploaded fine) needing `gh release edit --tag --draft=false` by
+      # hand. builder-debug.yml is a build-time diagnostic nobody downloads — it stays
+      # in the CI artifacts for troubleshooting and is simply not a release asset.
+      # Keep this list in sync with the find(1) filters in the guard step above.
       - name: Publish release to public downloads repo
         uses: softprops/action-gh-release@v2
         with:
@@ -172,4 +198,10 @@ jobs:
           token: ${{ secrets.RELEASES_REPO_TOKEN }}
           draft: false
           generate_release_notes: true
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
+            artifacts/**/*.exe
+            artifacts/**/*.AppImage
+            artifacts/**/*.blockmap
+            artifacts/**/latest*.yml
