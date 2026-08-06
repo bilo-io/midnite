@@ -63,17 +63,19 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
    * single probe so a burst of requests can't spawn a burst of `vm_stat`s.
    */
   private sampleMemory(): Promise<MemorySample> {
-    this.memoryInFlight ??= readMemory((err) =>
-      this.logger.debug({ err }, 'memory probe degraded to os.freemem()'),
-    )
-      .then((sample) => {
-        this.memory = sample;
-        return sample;
-      })
-      .finally(() => {
-        this.memoryInFlight = null;
-      });
+    this.memoryInFlight ??= this.probeMemory();
     return this.memoryInFlight;
+  }
+
+  private async probeMemory(): Promise<MemorySample> {
+    try {
+      this.memory = await readMemory((err) =>
+        this.logger.debug({ err }, 'memory probe degraded to os.freemem()'),
+      );
+      return this.memory;
+    } finally {
+      this.memoryInFlight = null;
+    }
   }
 
   async getStats(): Promise<SystemStats> {
@@ -84,15 +86,13 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
       this.memory ?? this.sampleMemory(),
       this.readDisks(),
     ]);
-    // `os.loadavg()` is unimplemented on Windows and returns a hard-coded 0 —
-    // omit it there rather than publishing a plausible-looking zero.
-    const loadAvg1 = process.platform === 'win32' ? undefined : round(os.loadavg()[0] ?? 0, 2);
-
     return {
       cpu: {
         usagePct: round(this.cpuUsage),
         cores: cpus.length,
-        ...(loadAvg1 === undefined ? {} : { loadAvg1 }),
+        // `os.loadavg()` is unimplemented on Windows and returns a hard-coded
+        // 0 — omit it there rather than publishing a plausible-looking zero.
+        loadAvg1: process.platform === 'win32' ? undefined : round(os.loadavg()[0] ?? 0, 2),
         model: cpus[0]?.model?.trim() || undefined,
       },
       memory: {

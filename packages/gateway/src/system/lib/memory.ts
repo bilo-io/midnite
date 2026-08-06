@@ -18,6 +18,9 @@ import { promisify } from 'node:util';
 // `MEMORYSTATUSEX.ullAvailPhys` (available, not free), so `os.freemem()` is
 // correct and is used directly.
 
+// Absolute path on purpose: a packaged Electron app launched from Finder
+// inherits a minimal environment, so never rely on PATH resolution here.
+const VM_STAT_BIN = '/usr/bin/vm_stat';
 const VM_STAT_TIMEOUT_MS = 2_000;
 
 const execFileAsync = promisify(execFile);
@@ -119,7 +122,7 @@ export async function readMemory(onDegrade?: (err: unknown) => void): Promise<Me
   const totalBytes = os.totalmem();
   try {
     if (process.platform === 'darwin') {
-      const { stdout } = await execFileAsync('vm_stat', [], { timeout: VM_STAT_TIMEOUT_MS });
+      const { stdout } = await execFileAsync(VM_STAT_BIN, [], { timeout: VM_STAT_TIMEOUT_MS });
       const sample = parseVmStat(stdout, totalBytes);
       if (sample) return sample;
       onDegrade?.(new Error('vm_stat output not recognised'));
