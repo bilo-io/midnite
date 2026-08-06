@@ -1,0 +1,46 @@
+{
+  "board": {
+    "loading": "Roadmap wird geladen …",
+    "empty": "Noch keine Roadmap.",
+    "noMilestones": "Noch keine Meilensteine — füge einen hinzu, um die Aufgaben dieses Projekts zu einem Plan zu bündeln.",
+    "backlog": "Backlog",
+    "addMilestone": "Meilenstein hinzufügen",
+    "milestoneNamePlaceholder": "Name des Meilensteins …",
+    "newMilestoneNameAria": "Name des neuen Meilensteins",
+    "seededToast": "{count, plural, one {# Aufgabe} other {# Aufgaben}} in {name} erstellt",
+    "confirmDelete": {
+      "title": "Meilenstein löschen?",
+      "description": "Seine Aufgaben wandern zurück ins Backlog — sie werden nicht gelöscht.",
+      "confirm": "Löschen"
+    },
+    "toasts": {
+      "reorderMilestonesFailed": "Meilensteine konnten nicht umsortiert werden",
+      "assignFailed": "Aufgabe konnte nicht zugewiesen werden",
+      "reorderTasksFailed": "Aufgaben konnten nicht umsortiert werden",
+      "createFailed": "Meilenstein konnte nicht erstellt werden",
+      "renameFailed": "Meilenstein konnte nicht umbenannt werden",
+      "deleteFailed": "Meilenstein konnte nicht gelöscht werden"
+    }
+  },
+  "lane": {
+    "reorderAria": "{name} umsortieren",
+    "renameAria": "{name} umbenennen",
+    "optionsAria": "Optionen für {name}",
+    "rename": "Umbenennen",
+    "generateTasks": "Aufgaben erzeugen …",
+    "viewInGraph": "Im Graph ansehen",
+    "delete": "Löschen",
+    "noUnassignedTasks": "Keine nicht zugewiesenen Aufgaben",
+    "dragTasksHere": "Aufgaben hierher ziehen"
+  },
+  "breakdown": {
+    "dialogAria": "Aufgaben für {name} erzeugen",
+    "title": "Aufgaben erzeugen — {name}",
+    "goalLabel": "Beschreibe, was dieser Meilenstein erreichen soll — der Planer entwirft eine abhängigkeitsbewusste Aufgabenliste, die du vor dem Anlegen bearbeiten kannst.",
+    "goalPlaceholder": "z. B. Die öffentliche API ausliefern: Auth, Ratenlimit, Doku und ein Client-SDK",
+    "fallbackNotice": "Ohne das Planungsmodell entworfen — bearbeite frei, bevor du anlegst.",
+    "draftTasks": "Aufgaben entwerfen",
+    "createTasks": "{count, plural, one {# Aufgabe} other {# Aufgaben}} erstellen",
+    "genericError": "Etwas ist schiefgelaufen"
+  }
+}

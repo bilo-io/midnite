@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 import { LocaleProvider, type LocaleMessages } from './locale-provider';
 
-// A minimal two-locale catalog set: en-GB canonical, fr-FR fully translated,
-// de-DE intentionally empty (must fall back to en-GB), mirroring the A+B shipping
-// state (only en-GB + fr-FR populated).
+// A minimal three-locale catalog set: en-GB canonical, fr-FR fully translated,
+// de-DE intentionally empty here (must fall back to en-GB). The empty entry is a
+// *fixture* for the fallback mechanism, not a claim about the app's real catalogs —
+// `web`'s de-DE is authored to full parity; es-ES is the shipping stub.
 const CATALOGS: Record<string, LocaleMessages> = {
   'en-GB': { common: { save: 'Save', cancel: 'Cancel' } },
   'fr-FR': { common: { save: 'Enregistrer', cancel: 'Annuler' } },

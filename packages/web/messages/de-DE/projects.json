@@ -1,0 +1,259 @@
+{
+  "page": {
+    "title": "Projekte",
+    "description": "Bündle verwandte Arbeit, hänge Quellen an und entwirf einen Plan, aus dem Aufgaben werden."
+  },
+  "list": {
+    "tabs": {
+      "projects": "Projekte",
+      "templates": "Vorlagen"
+    },
+    "listView": "Listenansicht",
+    "gridView": "Rasteransicht",
+    "treeView": "Baumansicht",
+    "newTemplate": "Neue Vorlage",
+    "emptyProjectsTitle": "Noch keine Projekte",
+    "emptyProjectsDescription": "Erstelle eines, um Aufgaben zu bündeln, Quellen anzuhängen und einen Plan zu entwerfen.",
+    "emptyTemplatesTitle": "Noch keine Vorlagen",
+    "emptyTemplatesDescription": "Erstelle eine, um Pläne und Spezifikationen aus einem wiederverwendbaren Dokument zu entwerfen.",
+    "noProjectsMatch": "Keine Projekte passen zu „{query}“",
+    "noTemplatesMatch": "Keine Vorlagen passen zu „{query}“"
+  },
+  "bulk": {
+    "archive": "Archivieren",
+    "unarchive": "Aus dem Archiv holen",
+    "delete": "Löschen",
+    "deleteConfirmTitle": "{count, plural, one {# Projekt löschen?} other {# Projekte löschen?}}",
+    "deleteConfirmDescription": "Die Aufgaben bleiben erhalten, sind dann aber nicht zugewiesen. Das kann nicht rückgängig gemacht werden.",
+    "deleteOneTitle": "„{name}“ löschen?",
+    "deleteOneDescription": "Die Aufgaben bleiben erhalten, sind dann aber nicht zugewiesen. Das kann nicht rückgängig gemacht werden."
+  },
+  "card": {
+    "archived": "Archiviert",
+    "plan": "Plan",
+    "draftPlan": "Plan entwerfen",
+    "taskCount": "{count, plural, one {# Aufgabe} other {# Aufgaben}}",
+    "noDescription": "Keine Beschreibung",
+    "noTasksYet": "Noch keine Aufgaben",
+    "updated": "Aktualisiert {time}",
+    "noProjectSelected": "Kein Projekt ausgewählt",
+    "chooseProject": "Projekt auswählen",
+    "noProjects": "Keine Projekte"
+  },
+  "widget": {
+    "allProjects": "Alle Projekte",
+    "refresh": "Projekte aktualisieren",
+    "loadFailed": "Projekte konnten nicht geladen werden.",
+    "empty": "Noch keine Projekte.",
+    "recentHeading": "Projekt"
+  },
+  "progress": {
+    "label": "Fortschritt",
+    "summary": "{done}/{total} · {pct} %",
+    "aria": "{pct} % abgeschlossen ({done} von {total} Aufgaben fertig)"
+  },
+  "requirements": {
+    "name": "einen Namen",
+    "tag": "ein Tag",
+    "folder": "einen Projektordner"
+  },
+  "statusBadge": {
+    "incomplete": "Unvollständig — es fehlt noch {missing}",
+    "separator": ", "
+  },
+  "select": {
+    "noProject": "Kein Projekt"
+  },
+  "tree": {
+    "unassigned": "Nicht zugewiesen",
+    "unassignedOptions": "Optionen für „Nicht zugewiesen“",
+    "projectOptions": "Optionen für {name}",
+    "addTask": "Aufgabe hinzufügen",
+    "plan": "Plan",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  "detail": {
+    "loading": "Wird geladen …",
+    "tabs": {
+      "details": "Details",
+      "docs": "Dokumente",
+      "tasks": "Aufgaben",
+      "roadmap": "Roadmap"
+    },
+    "sectionsAria": "Projektabschnitte",
+    "statsRail": "Kennzahlen & Aktionen",
+    "knowledgeRail": "Wissen & Aktivität",
+    "roadmapBoardView": "Board-Ansicht",
+    "roadmapGraphView": "Graph-Ansicht"
+  },
+  "stats": {
+    "tasks": "Aufgaben",
+    "doneSuffix": "· {count} fertig",
+    "noTasks": "Diesem Projekt sind noch keine Aufgaben zugewiesen.",
+    "actions": "Aktionen",
+    "preview": "Vorschau",
+    "build": "Build",
+    "archive": "Projekt archivieren",
+    "unarchive": "Projekt aus dem Archiv holen",
+    "deleteProject": "Projekt löschen",
+    "deleteConfirmTitle": "Dieses Projekt löschen?",
+    "deleteConfirmDescription": "„{name}“ und seine Quellen werden endgültig gelöscht. Die Aufgaben bleiben erhalten, sind dann aber nicht zugewiesen. Das kann nicht rückgängig gemacht werden.",
+    "noTasksInProject": "Noch keine Aufgaben in diesem Projekt."
+  },
+  "info": {
+    "knowledge": "Wissen",
+    "manageInMemory": "Wissen im Gedächtnis verwalten",
+    "knowledgeHint": "Quellen und Notizen zu diesem Projekt liegen in seinen projektbezogenen Erinnerungen und fließen in Agenten-Prompts ein.",
+    "activity": "Aktivität",
+    "noActivity": "Noch keine Aufgabenaktivität."
+  },
+  "cost": {
+    "title": "Kosten & Durchsatz",
+    "empty": "Noch keine Kosten aus Agentensitzungen erfasst.",
+    "spend": "Kosten",
+    "measuredEstimated": "Gemessen · geschätzt",
+    "measuredEstimatedValue": "{measured} · {estimated}",
+    "sessions": "Sitzungen",
+    "p50EndToEnd": "p50 Ende zu Ende",
+    "unpriced": "{count, plural, one {# auf einem Modell ohne Preis — Kosten nicht gezählt.} other {# auf einem Modell ohne Preis — Kosten nicht gezählt.}}",
+    "subCent": "<{value}",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hours": "{value} Std.",
+      "days": "{value} T."
+    }
+  },
+  "form": {
+    "title": "Titel",
+    "titlePlaceholder": "z. B. Abrechnung überarbeiten",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Worum geht es in diesem Projekt?",
+    "improveWithAi": "Mit KI verbessern",
+    "writeDescriptionFirst": "Schreibe zuerst eine kurze Beschreibung, dann verbessere sie mit KI",
+    "tagAndColour": "Tag & Farbe",
+    "tagHint": "Maximal {max} Zeichen. Aufgaben in diesem Projekt tragen dieses Tag.",
+    "workDir": "Arbeitsverzeichnis",
+    "workDirPlaceholder": "~/Dev/mein-projekt",
+    "clearWorkDir": "Arbeitsverzeichnis leeren",
+    "browse": "Durchsuchen",
+    "workDirHint": "Wo die Agentensitzungen dieses Projekts starten. Leer lassen, um den Standard zu nutzen.",
+    "startCommand": "Startbefehl",
+    "startCommandPlaceholder": "pnpm dev",
+    "startCommandHint": "Wird von der Aktion <b>Vorschau</b> im Arbeitsverzeichnis oben ausgeführt.",
+    "buildCommand": "Build-Befehl",
+    "buildCommandPlaceholder": "pnpm build",
+    "buildCommandHint": "Wird von der Aktion <b>Build</b> im Arbeitsverzeichnis oben ausgeführt.",
+    "projectMemory": "Projekt-Gedächtnis",
+    "viewMemories": "{count, plural, one {# Erinnerung ansehen} other {# Erinnerungen ansehen}}",
+    "createMemory": "Eine Erinnerung für dieses Projekt erstellen",
+    "memoryHint": "Wissenseinträge mit Bezug zu diesem Projekt, die in Agenten-Prompts einfließen."
+  },
+  "modal": {
+    "editTitle": "Projekt bearbeiten",
+    "newTitle": "Neues Projekt",
+    "createProject": "Projekt erstellen",
+    "deleteConfirmTitle": "Dieses Projekt löschen?",
+    "deleteConfirmDescription": "„{name}“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.",
+    "deleteConfirmLabel": "Projekt löschen",
+    "tabs": {
+      "details": "Details",
+      "plan": "Plan",
+      "tasks": "Aufgaben"
+    }
+  },
+  "repoStatus": {
+    "noFolder": "Kein Ordner gesetzt",
+    "checking": "Repo-Status wird geprüft …",
+    "folderNotFound": "Ordner nicht gefunden",
+    "notARepo": "Kein Git-Repo",
+    "initRepo": "Repo initialisieren",
+    "unavailable": "Repo-Status nicht verfügbar: {message}",
+    "uncommitted": "· nicht committete Änderungen",
+    "clean": "· sauber"
+  },
+  "plan": {
+    "documents": "Dokumente",
+    "docCount": "{count, plural, one {# Dokument} other {# Dokumente}}",
+    "loading": "Dokumente werden geladen …",
+    "empty": "Noch keine Planungsdokumente. Füge eines aus der Vorlagenbibliothek hinzu, um eine Spezifikation oder einen Plan für dieses Projekt zu entwerfen.",
+    "removeDoc": "Dokument entfernen",
+    "removeConfirmTitle": "Dieses Dokument entfernen?",
+    "removeConfirmDescription": "Es wird aus diesem Projekt gelöscht. Die Quellvorlage bleibt unverändert.",
+    "addDocument": "Dokument hinzufügen",
+    "allTemplatesUsed": "Zu jeder Vorlage gibt es in diesem Projekt schon ein Dokument.",
+    "addHint": "Dokumente werden aus der Vorlagenbibliothek kopiert und für dieses Projekt benannt.",
+    "templatesListAria": "Vorlagen",
+    "dialogLabel": "Plan für {name}",
+    "heading": "{name} — Plan",
+    "subheading": "Entworfen aus der Projektbeschreibung und ihrem Wissen.",
+    "viewAria": "Planansicht",
+    "checklist": "Checkliste",
+    "breakdown": "Aufschlüsselung",
+    "checklistHint": "Der lesbare Markdown-Plan.",
+    "breakdownHint": "Ein typisiertes, nach Abhängigkeiten sortiertes Board.",
+    "fallbackWarning": "Die KI-Planung war nicht verfügbar — das ist eine flache Ersatzliste ohne Abhängigkeiten. Du kannst sie trotzdem bearbeiten und anlegen.",
+    "breakdownPrompt": "Erzeuge aus der Beschreibung bzw. dem Plan dieses Projekts und der freigegebenen Übersicht eine strukturierte, nach Abhängigkeiten geordnete Aufschlüsselung. Prüfe und bearbeite sie, bevor du das Board anlegst.",
+    "generateBreakdown": "Aufschlüsselung erzeugen",
+    "redoOverview": "Übersicht neu machen",
+    "noPlan": "Noch kein Plan. Entwirf aus der Beschreibung und den Quellen dieses Projekts eine umfassende Checkliste.",
+    "draftPlan": "Plan entwerfen",
+    "noItems": "Der Plan hat keine Checkbox-Punkte, die gezeigt werden könnten.",
+    "regenerate": "Neu erzeugen",
+    "createTasks": "{count, plural, =0 {Aufgaben erstellen} one {# Aufgabe erstellen} other {# Aufgaben erstellen}}",
+    "savedNotice": "Gespeichert.",
+    "createdOnBoard": "{count, plural, one {# Aufgabe auf dem Board erstellt.} other {# Aufgaben auf dem Board erstellt.}}",
+    "createdSequenced": "{count, plural, one {# Aufgabe erstellt, nach Abhängigkeiten sortiert.} other {# Aufgaben erstellt, nach Abhängigkeiten sortiert.}}",
+    "genericError": "Etwas ist schiefgelaufen",
+    "doc": {
+      "dialogLabel": "Dokument {name}",
+      "editorLabel": "Dokument",
+      "generating": "Wird erzeugt …",
+      "generate": "Erzeugen",
+      "copied": "Kopiert",
+      "copyMarkdown": "Markdown kopieren"
+    }
+  },
+  "councilRuns": {
+    "label": "Rats-Läufe",
+    "runCount": "{count, plural, one {# Lauf} other {# Läufe}}",
+    "loading": "Rats-Läufe werden geladen …",
+    "empty": "Noch keine Rats-Läufe mit diesem Projekt verknüpft."
+  },
+  "templates": {
+    "prd": {
+      "name": "Produktanforderungsdokument",
+      "description": "Definiere Problem, Ziele, Anforderungen und Erfolgskennzahlen eines Produkts."
+    },
+    "tech-spec": {
+      "name": "Technische Spezifikation",
+      "description": "Beschreibe Lösung, APIs, Datenmodell, Einführung und Teststrategie."
+    },
+    "tech-design": {
+      "name": "Technisches Designdokument",
+      "description": "Lege Architektur, Komponenten, Datenfluss und Abwägungen eines Systems dar."
+    },
+    "game-design": {
+      "name": "Game-Design-Dokument",
+      "description": "Halte Konzept, Kernschleife, Mechaniken, Progression und Welt eines Spiels fest."
+    },
+    "editor": {
+      "untitled": "Unbenannte Vorlage",
+      "titleAria": "Vorlagentitel",
+      "dialogAria": "Vorlage {name}",
+      "fallbackTag": "Tag",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Wofür diese Vorlage gedacht ist …",
+      "tagAndColour": "Tag & Farbe",
+      "document": "Dokument",
+      "copyMarkdown": "Markdown kopieren",
+      "copied": "Kopiert",
+      "saved": "Gespeichert",
+      "collapse": "{name} einklappen",
+      "expand": "{name} ausklappen",
+      "deleteTemplate": "{name} löschen"
+    }
+  }
+}

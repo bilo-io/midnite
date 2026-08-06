@@ -1,0 +1,83 @@
+{
+  "title": "Assistent",
+  "open": "Assistent öffnen",
+  "close": "Assistent schließen",
+  "back": "Zurück zum Assistenzmenü",
+  "views": {
+    "chat": "Chat",
+    "guides": "Guides"
+  },
+  "beta": "Beta",
+  "soon": "Bald",
+  "entries": {
+    "docs": {
+      "label": "Doku",
+      "description": "Die Dokumentation dieser Seite"
+    },
+    "guide": {
+      "label": "Guide",
+      "description": "Diese Seite abspielen — oder alle durchsuchen"
+    },
+    "chat": {
+      "label": "Chat",
+      "description": "Das Board in Worten ändern"
+    },
+    "agent": {
+      "label": "Agent",
+      "description": "Frag nach deiner Flotte"
+    },
+    "report": {
+      "label": "Problem melden",
+      "description": "Etwas kaputt? Sag es uns"
+    }
+  },
+  "guides": {
+    "browseAll": "Alle Guides durchsuchen",
+    "thisPage": "Diese Seite",
+    "stepCount": "{count, plural, one {# Schritt} other {# Schritte}}",
+    "notSeen": "Noch nicht gesehen"
+  },
+  "chatToBoard": {
+    "placeholder": "Sag dem Board, was zu tun ist …",
+    "label": "Mit dem Board chatten"
+  },
+  "agent": {
+    "label": "Flotten-Assistent",
+    "empty": "Frag nach deiner Flotte — <em>„worauf soll ich mich konzentrieren?“</em>, <em>„welche Aufgaben sind blockiert?“</em>, <em>„wie läuft es in den aktiven Sitzungen?“</em>",
+    "thinking": "Denkt nach …",
+    "placeholder": "Frag deine Flotte …",
+    "inputLabel": "Den Flotten-Assistenten fragen",
+    "ask": "Fragen",
+    "failed": "Die Anfrage an den Assistenten ist fehlgeschlagen.",
+    "path": {
+      "deterministic": "aus dem Flottenzustand beantwortet — keine KI genutzt",
+      "provider": "über deinen KI-Anbieter"
+    }
+  },
+  "blocks": {
+    "unsupported": "Nicht unterstützte Komponente.",
+    "loadingTask": "Aufgabe wird geladen …",
+    "taskGone": "Aufgabe {taskId} ist nicht mehr auf dem Board.",
+    "loadingCounts": "Zählwerte werden geladen …",
+    "countsUnavailable": "Zählwerte nicht verfügbar.",
+    "countsLabel": "Aufgabenzahlen der Flotte",
+    "counts": {
+      "backlog": "Backlog",
+      "todo": "Zu tun",
+      "inProgress": "In Arbeit",
+      "done": "Fertig"
+    },
+    "loadingSessions": "Sitzungen werden geladen …",
+    "noSessions": "Keine aktiven Sitzungen.",
+    "sessionsLabel": "Aktive Sitzungen",
+    "metrics": {
+      "cycle-time": "Durchlaufzeit (Warten · Arbeit · Vorlauf, p50)",
+      "throughput": "Durchsatz (Läufe/Tag)",
+      "queue-depth": "Warteschlangenlänge",
+      "cost": "Kosten nach Dimension (USD)"
+    },
+    "loadingMetric": "{metric} wird geladen …",
+    "notEnoughData": "Noch nicht genug Daten für einen Trend.",
+    "trend": "Trend"
+  }
+}

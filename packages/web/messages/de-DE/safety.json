@@ -1,0 +1,31 @@
+{
+  "caps": {
+    "loading": "Obergrenzen werden geladen …",
+    "loadError": "Die konfigurierten Obergrenzen konnten nicht geladen werden.",
+    "unset": "nicht gesetzt",
+    "unlimited": "unbegrenzt",
+    "perHour": "{count}/Stunde",
+    "spendRateHeading": "Kosten- & Ratengrenzen",
+    "hardDailyCap": "Harte Tagesgrenze (blockiert Starts)",
+    "hardMonthlyCap": "Harte Monatsgrenze (blockiert Starts)",
+    "softDailyBudget": "Weiches Tagesbudget (nur Warnung)",
+    "softMonthlyBudget": "Weiches Monatsbudget (nur Warnung)",
+    "maxSpawnsPerHour": "Max. Starts / Stunde",
+    "footnote": "Obergrenzen & geschützte Aktionen werden in <code>midnite.json</code> konfiguriert und hier nur lesbar angezeigt."
+  },
+  "blastRadius": {
+    "heading": "Auswirkungsradius (Untergrenze für destruktive Aktionen)",
+    "enabledLabel": "Aktiviert (bewacht / autonom)",
+    "on": "an",
+    "off": "aus",
+    "protectedBranches": "Geschützte Branches",
+    "protectedPathGlobs": "Geschützte Pfad-Globs",
+    "none": "keine",
+    "scrubSpawnEnv": "Gateway-Geheimnisse aus der Agenten-Umgebung entfernen"
+  },
+  "decisions": {
+    "loading": "Entscheidungen werden geladen …",
+    "loadError": "Die letzten Entscheidungen konnten nicht geladen werden.",
+    "empty": "Noch keine Entscheidungen erfasst."
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "page": {
+    "title": "Betrieb",
+    "description": "Flottenzustand — Live-Slot-Auslastung, Lauf-Durchsatz, Laufzeitverteilung, Wiederholungs-/Verwurfsquoten und LLM-Kosten."
+  },
+  "tabsAria": "Betriebsabschnitte",
+  "tabs": {
+    "metrics": "Metriken",
+    "decisions": "Entscheidungen",
+    "digest": "Zusammenfassung"
+  },
+  "noData": "Noch keine Daten",
+  "windowAria": "Zeitfenster",
+  "windowDays": "{days} T.",
+  "picker": {
+    "add": "Betriebs-Widget hinzufügen",
+    "search": "Betriebs-Widgets suchen",
+    "added": "Schon auf diesem Board"
+  },
+  "categories": {
+    "fleet": "Flotte",
+    "runs": "Läufe & Durchsatz",
+    "cost": "Kosten & Ausgaben",
+    "health": "Zustand & Audit"
+  },
+  "catalog": {
+    "gauges": {
+      "label": "Live-Flottenzustand",
+      "description": "Slot-Auslastung, Warteschlangenlänge und Tick-Latenz des Schedulers"
+    },
+    "throughput": {
+      "label": "Durchsatz",
+      "description": "Serverseitig erfasste, pro Tag abgeschlossene Läufe"
+    },
+    "outcomes": {
+      "label": "Lauf-Ergebnisse",
+      "description": "Aufteilung fertig / verworfen / fehlgeschlagen / abgebrochen"
+    },
+    "duration": {
+      "label": "Laufdauer",
+      "description": "Verteilung der Laufdauern über Zeitklassen"
+    },
+    "spend": {
+      "label": "LLM-Kosten",
+      "description": "Geschätzte LLM-Kosten der letzten 30 Tage"
+    },
+    "cost-trend": {
+      "label": "Kosten im Zeitverlauf",
+      "description": "Kostentrend der Agentensitzungen (gemessen/geschätzt/LLM) über das Zeitfenster"
+    },
+    "cost-breakdown": {
+      "label": "Kosten nach Dimension",
+      "description": "Kostenaufteilung pro Repo / Projekt / Anbieter"
+    },
+    "cycle-time": {
+      "label": "Durchlaufzeit",
+      "description": "Perzentile Warten vs. Arbeit für abgeschlossene Aufgaben"
+    },
+    "fleet-trend": {
+      "label": "Flottentrends",
+      "description": "Warteschlangenlänge, Slot-Auslastung und Tick-Latenz über die Zeit"
+    },
+    "run-timeline": {
+      "label": "Lauf-Zeitleiste",
+      "description": "Den Lauf-Streifen einer einzelnen Aufgabe per ID untersuchen"
+    },
+    "task-health": {
+      "label": "Aufgabenzustand",
+      "description": "Was hängt — feststeckende, überalterte, wartende und kürzlich fehlgeschlagene Aufgaben"
+    },
+    "runtime-health": {
+      "label": "Laufzeit-Zustand",
+      "description": "Preflight-Prüfungen und Betriebszeit des Gateways"
+    },
+    "decisions": {
+      "label": "Entscheidungen",
+      "description": "Freigabe-Audit-Log — Werkzeug, Ergebnis und wer entschieden hat"
+    }
+  },
+  "cards": {
+    "gauges": {
+      "title": "Live-Flottenzustand"
+    },
+    "throughput": {
+      "title": "Durchsatz (serverseitig erfasst)"
+    },
+    "outcomes": {
+      "title": "Lauf-Ergebnisse"
+    },
+    "duration": {
+      "title": "Verteilung der Laufdauer"
+    },
+    "spend": {
+      "title": "LLM-Kosten (letzte 30 T.)"
+    },
+    "cost-trend": {
+      "title": "Kosten im Zeitverlauf"
+    },
+    "cost-breakdown": {
+      "title": "Kosten nach Dimension"
+    },
+    "cycle-time": {
+      "title": "Durchlaufzeit (Warten vs. Arbeit)"
+    },
+    "fleet-trend": {
+      "title": "Flottentrends"
+    },
+    "run-timeline": {
+      "title": "Lauf-Zeitleiste"
+    },
+    "task-health": {
+      "title": "Aufgabenzustand"
+    },
+    "runtime-health": {
+      "title": "Laufzeit-Zustand"
+    },
+    "decisions": {
+      "title": "Entscheidungen"
+    }
+  },
+  "gauges": {
+    "slotUtilization": "Slot-Auslastung",
+    "slotsUsedAria": "{used} von {total} Slots belegt",
+    "running": "Laufend",
+    "ofSlots": "von {total, plural, one {# Slot} other {# Slots}}",
+    "queuedTodo": "Eingereihte To-dos",
+    "queueDepth": "Warteschlangenlänge",
+    "fromGauges": "aus den Messwerten",
+    "lastTick": "Letzter Tick",
+    "tickMs": "{ms} ms",
+    "schedulerLatency": "Scheduler-Latenz"
+  },
+  "throughput": {
+    "runsInWindow": "Läufe im Zeitfenster",
+    "chartAria": "Balkendiagramm des Durchsatzes",
+    "barTooltip": "{day}: {count}"
+  },
+  "duration": {
+    "barTooltip": "{bucket}: {count}",
+    "buckets": {
+      "lt1s": "<1 s",
+      "lt5s": "<5 s",
+      "lt30s": "<30 s",
+      "lt2m": "<2 min",
+      "gte2m": "≥2 min"
+    }
+  },
+  "outcomes": {
+    "done": "Fertig",
+    "abandoned": "Verworfen",
+    "failed": "Fehlgeschlagen",
+    "cancelled": "Abgebrochen",
+    "barAria": "{outcome}: {count}"
+  },
+  "spend": {
+    "total": "gesamt",
+    "chartAria": "Balkendiagramm der LLM-Kosten",
+    "barTooltip": "{day}: {cost}"
+  },
+  "cost": {
+    "windowAria": "Zeitfenster der Kosten",
+    "groupByAria": "Kosten gruppieren nach",
+    "groupBy": {
+      "repo": "Nach Repo",
+      "project": "Nach Projekt",
+      "provider": "Nach Anbieter"
+    },
+    "totalInWindow": "<strong>{total}</strong> im Zeitfenster",
+    "trendChartAria": "Diagramm der Kosten im Zeitverlauf",
+    "breakdownChartAria": "Diagramm der Kosten nach Dimension",
+    "series": {
+      "llm": "Gateway-LLM",
+      "measured": "Sitzung (gemessen)",
+      "estimated": "Sitzung (geschätzt)"
+    },
+    "split": {
+      "measured": "Gemessen",
+      "estimated": "Geschätzt"
+    },
+    "unpriced": "<strong>{count}</strong> {count, plural, one {Sitzung ohne Preis} other {Sitzungen ohne Preis}} (Kosten unbekannt)"
+  },
+  "cycleTime": {
+    "completedInWindow": "<strong>{count}</strong> {count, plural, one {abgeschlossene Aufgabe} other {abgeschlossene Aufgaben}} im Zeitfenster",
+    "retryOverhead": "Zusatzaufwand durch Wiederholungen: <strong>{duration}</strong> über {count, plural, one {# Aufgabe} other {# Aufgaben}}"
+  },
+  "fleetTrend": {
+    "truncated": "zeigt die neuesten Messpunkte",
+    "queueDepth": "Warteschlangenlänge",
+    "slotsUsedTotal": "Belegte Slots / gesamt",
+    "tickLatency": "Tick-Latenz (ms)"
+  },
+  "runTimeline": {
+    "placeholder": "Gib eine Aufgaben-ID ein, um ihre Agentenläufe zu prüfen",
+    "taskIdAria": "Aufgaben-ID",
+    "show": "Zeigen",
+    "empty": "Gib oben eine Aufgaben-ID ein, um ihren Lauf-Streifen zu sehen.",
+    "error": "Agentenläufe konnten nicht geladen werden.",
+    "noRuns": "Noch keine Agentenläufe erfasst.",
+    "chartAria": "Diagramm der Lauf-Zeitleiste",
+    "running": "Laufend",
+    "unknownOutcome": "Unbekannt",
+    "tooltipMeta": "{duration} · gestartet {time}",
+    "runCount": "<strong>{count}</strong> {count, plural, one {Lauf} other {Läufe}}"
+  },
+  "runtimeHealth": {
+    "ready": "Bereit",
+    "notReady": "Nicht bereit",
+    "unreachable": "Gateway nicht erreichbar — Zustand nicht lesbar.",
+    "uptime": "Betriebszeit",
+    "spawner": "Spawner",
+    "noPreflight": "Preflight-Bericht nicht verfügbar.",
+    "status": {
+      "ok": "OK",
+      "warn": "Warnung",
+      "fail": "Fehler"
+    }
+  },
+  "decisions": {
+    "columns": {
+      "tool": "Werkzeug / Zusammenfassung",
+      "resolution": "Ergebnis",
+      "decidedBy": "Entschieden von",
+      "when": "Wann"
+    },
+    "range": "{from}–{to} von {total}",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "resolution": {
+      "allow": "Erlaubt",
+      "allow-session": "Erlaubt (Sitzung)",
+      "deny": "Verweigert",
+      "ask": "Gefragt",
+      "timeout": "Zeitüberschreitung",
+      "expired": "Abgelaufen",
+      "auto-allow": "Automatisch erlaubt",
+      "auto-deny": "Automatisch verweigert"
+    },
+    "decidedBy": {
+      "user": "Nutzer",
+      "policy": "Richtlinie",
+      "timeout": "Zeitüberschreitung",
+      "system": "System"
+    }
+  }
+}

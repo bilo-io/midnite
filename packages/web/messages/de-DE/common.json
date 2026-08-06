@@ -1,0 +1,256 @@
+{
+  "appName": "Midnite",
+  "loading": "Wird geladen …",
+  "save": "Speichern",
+  "cancel": "Abbrechen",
+  "close": "Schließen",
+  "confirm": "Bestätigen",
+  "retry": "Erneut versuchen",
+  "search": "Suchen",
+  "settings": "Einstellungen",
+  "add": "Hinzufügen",
+  "edit": "Bearbeiten",
+  "delete": "Löschen",
+  "remove": "Entfernen",
+  "removeNamed": "{name} entfernen",
+  "none": "Keine",
+  "selectedCount": "{count, plural, one {# ausgewählt} other {# ausgewählt}}",
+  "item": "Element",
+  "deleteNounTitle": "Diesen Eintrag ({noun}) löschen?",
+  "deletePermanent": "Das ist endgültig und kann nicht rückgängig gemacht werden.",
+  "reorderSection": "Abschnitt neu anordnen",
+  "switchToLightTheme": "Zum hellen Design wechseln",
+  "switchToDarkTheme": "Zum dunklen Design wechseln",
+  "errorTitle": "Etwas ist schiefgelaufen",
+  "gatewayUnreachable": "Gateway nicht erreichbar: {error}",
+  "emptyTitle": "Hier ist noch nichts",
+  "saving": "Wird gespeichert …",
+  "saved": "Gespeichert",
+  "reload": "Neu laden",
+  "reloadHint": "Neu laden (Rechtsklick für weitere Optionen)",
+  "refresh": "Aktualisieren",
+  "hardReload": "Vollständig neu laden",
+  "allProjects": "Alle Projekte",
+  "filterByProject": "Nach Projekt filtern",
+  "searchProjects": "Projekte suchen …",
+  "noProjectsMatch": "Keine passenden Projekte",
+  "newProject": "Neues Projekt",
+  "startingTerminal": "Terminal wird gestartet …",
+  "startingLabel": "{label} wird gestartet …",
+  "back": "Zurück",
+  "update": {
+    "action": "Aktualisieren",
+    "newVersionAvailable": "Eine neue Version ist verfügbar",
+    "updateRequired": "Update erforderlich, um Midnite weiter zu nutzen",
+    "latestVersionFallback": "die neueste Version",
+    "unsupported": "diese Version wird nicht mehr unterstützt, bitte aktualisieren, um fortzufahren",
+    "downloadingHeadline": "Update wird heruntergeladen …",
+    "downloadingPercent": "{percent} % werden heruntergeladen",
+    "downloadingAction": "Wird heruntergeladen …",
+    "readyHeadline": "Ein Update ist installationsbereit",
+    "restartToInstall": "Zum Installieren neu starten",
+    "failedHeadline": "Update fehlgeschlagen",
+    "checkFailed": "Update-Prüfung fehlgeschlagen",
+    "dismiss": "Update-Hinweis ausblenden",
+    "downloadProgress": "Update wird heruntergeladen",
+    "copyInstallCommand": "Installationsbefehl kopieren",
+    "copied": "Kopiert!",
+    "versionAvailableToast": "Version {version} ist verfügbar",
+    "whatsNew": "Neu in v{version}",
+    "releaseNotesLabel": "Release-Notes zu v{version}",
+    "loadingNotes": "Release-Notes werden geladen …",
+    "notesUnavailable": "Die Release-Notes sind derzeit nicht verfügbar — siehe das vollständige Changelog oder die Release-Seite unten.",
+    "fullChangelog": "Vollständiges Changelog",
+    "releasePage": "Release-Seite"
+  },
+  "ui": {
+    "passcode": {
+      "unlockTitle": "Code eingeben",
+      "setTitle": "Code festlegen",
+      "confirmTitle": "Code bestätigen",
+      "unlockSubtitle": "Gib deinen Code ein, um zu entsperren.",
+      "chooseSubtitle": "Wähle einen {length}-stelligen Code.",
+      "confirmSubtitle": "Gib ihn zur Bestätigung erneut ein.",
+      "incorrect": "Falscher Code.",
+      "mismatch": "Die Codes stimmen nicht überein. Versuche es erneut.",
+      "digitAria": "Code-Ziffer {index}",
+      "setupDialogLabel": "Bildschirmschoner-Code festlegen",
+      "unlockDialogLabel": "Code zum Entsperren eingeben"
+    },
+    "rail": {
+      "collapse": "{title} einklappen",
+      "expand": "{title} ausklappen",
+      "toggleLeftPanel": "Linkes Panel ein-/ausblenden",
+      "toggleRightPanel": "Rechtes Panel ein-/ausblenden"
+    },
+    "gauge": {
+      "pctUsed": "{pct} % belegt",
+      "ofTotal": "von {total}",
+      "free": "{free} frei"
+    },
+    "contextRing": {
+      "aria": "Kontextfenster {pct} % belegt",
+      "tooltip": "Kontextfenster · {pct} % · ~{tokens} / {limit} Token"
+    },
+    "modelSelect": {
+      "useCustom": "„{input}“ verwenden",
+      "noOptions": "Keine Optionen"
+    }
+  },
+  "chrome": {
+    "itemCount": "{count, plural, one {# Element} other {# Elemente}}",
+    "taskCount": "{count, plural, one {# Aufgabe} other {# Aufgaben}}",
+    "tasksByStatus": "{count, plural, one {# Aufgabe} other {# Aufgaben}} nach Status",
+    "select": "Auswählen",
+    "deselect": "Auswahl aufheben",
+    "working": "Arbeitet",
+    "dismiss": "Ausblenden",
+    "sessionPill": {
+      "actioning": "aktiv",
+      "awaiting": "wartend",
+      "complete": "fertig",
+      "aria": "{count} {label} — Sitzungen ansehen"
+    },
+    "notFound": {
+      "title": "{noun} nicht gefunden",
+      "body": "Dieser Eintrag ({noun}) wurde nicht gefunden. Er wurde möglicherweise gelöscht, oder der Link ist falsch.",
+      "goDashboard": "Zum Dashboard",
+      "viewCollection": "{collection} ansehen",
+      "fallbackCollection": "Elemente"
+    },
+    "desktopOnly": {
+      "title": "{label} lässt sich am Desktop am besten nutzen",
+      "body": "Diese Ansicht braucht einen größeren Bildschirm als dein Telefon bietet. Öffne Midnite auf einem Desktop oder einem Tablet im Querformat, um sie zu nutzen."
+    },
+    "featureGate": {
+      "title": "{feature} ist deaktiviert",
+      "body": "{description} Diese Funktion ist derzeit ausgeschaltet — aktiviere sie, um diese Seite zu sehen.",
+      "openSettings": "Einstellungen öffnen",
+      "enable": "{feature} aktivieren"
+    },
+    "assetSearch": {
+      "noMatches": "Keine Treffer",
+      "typeToSearch": "Zum Suchen tippen …",
+      "ariaStock": "Aktien suchen",
+      "ariaCrypto": "Krypto suchen",
+      "placeholder": "Suchen …"
+    },
+    "export": {
+      "trigger": "Exportieren",
+      "copyMarkdown": "Markdown kopieren",
+      "downloadMd": ".md herunterladen",
+      "downloadPdf": "PDF herunterladen",
+      "downloadHtml": "HTML herunterladen",
+      "copied": "Markdown in die Zwischenablage kopiert",
+      "copyFailed": "Markdown konnte nicht kopiert werden",
+      "downloadFailed": "Markdown konnte nicht heruntergeladen werden",
+      "pdfFailed": "PDF konnte nicht erzeugt werden",
+      "htmlFailed": "HTML konnte nicht exportiert werden"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "markAllRead": "Alle als gelesen markieren",
+      "clear": "Leeren",
+      "clearAria": "Benachrichtigungen leeren",
+      "loading": "Wird geladen …",
+      "caughtUp": "Du bist auf dem neuesten Stand.",
+      "open": "Öffnen"
+    },
+    "connection": {
+      "live": "Live",
+      "reconnecting": "Verbindung wird wiederhergestellt …",
+      "reconnectingStale": "Verbindung wird wiederhergestellt — Daten sind evtl. veraltet",
+      "reconnected": "Wieder verbunden",
+      "aria": "Verbindung: {status}"
+    },
+    "keymap": {
+      "createTask": "Aufgabe erstellen …",
+      "toggleTheme": "Zwischen hellem und dunklem Design wechseln",
+      "lockScreen": "Bildschirm sperren",
+      "goHome": "Zur Startseite",
+      "goOffice": "Zum Büro",
+      "goSettings": "Zu den Einstellungen"
+    },
+    "pwa": {
+      "installed": "Installiert — du nutzt Midnite als App.",
+      "install": "App installieren",
+      "installHint": "Startet Midnite in einem eigenen Fenster. Eine aktive Gateway-Verbindung bleibt nötig — das ist eine schnelle Hülle, keine Offline-Kopie.",
+      "iosHint": "Zum Installieren: auf <b>Teilen</b> tippen, dann <b>Zum Home-Bildschirm</b>.",
+      "browserHint": "Dein Browser bietet <b>Installieren</b> / <b>Zum Startbildschirm hinzufügen</b> an, sobald diese App installierbar ist."
+    },
+    "screensaver": {
+      "localTime": "Ortszeit"
+    },
+    "signingIn": "Du wirst angemeldet …"
+  },
+  "relativeTime": {
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {count} Min.",
+    "hoursAgo": "vor {count} Std.",
+    "daysAgo": "vor {count} T."
+  },
+  "units": {
+    "emDash": "—",
+    "bytes": {
+      "b": "{value} B",
+      "kb": "{value} KB",
+      "mb": "{value} MB",
+      "gb": "{value} GB",
+      "tb": "{value} TB",
+      "pb": "{value} PB"
+    },
+    "duration": {
+      "milliseconds": "{value} ms",
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hours": "{value} Std.",
+      "days": "{value} T.",
+      "compound": "{major} {minor}"
+    }
+  },
+  "editor": {
+    "previewTab": "Vorschau",
+    "contentAria": "Markdown-Inhalt",
+    "nothingToPreview": "Noch nichts für die Vorschau.",
+    "taskItem": {
+      "completed": "Erledigte Aufgabe",
+      "incomplete": "Offene Aufgabe"
+    }
+  },
+  "pickers": {
+    "folder": {
+      "title": "Ordner auswählen",
+      "goHome": "Zum Benutzerverzeichnis",
+      "openFailed": "Dieser Ordner kann nicht geöffnet werden",
+      "createFailed": "Dieser Ordner kann nicht erstellt werden",
+      "missingPrompt": "Dieser Ordner existiert noch nicht. Erstellen?",
+      "createPath": "{path} erstellen",
+      "empty": "Keine Unterordner hier.",
+      "hint": "Sitzungen in diesem Projekt laufen hier.",
+      "use": "Diesen Ordner verwenden"
+    },
+    "tagColour": {
+      "tagPlaceholder": "kurz-tag",
+      "tagAria": "Tag",
+      "colourAria": "Tag-Farbe",
+      "swatchAria": "Farbe {hex} verwenden",
+      "fallbackTag": "Tag"
+    },
+    "editDetails": {
+      "nameLabel": "Titel",
+      "descriptionLabel": "Beschreibung",
+      "nameRequired": "Gib einen Wert für {label} an."
+    }
+  },
+  "reportIssue": {
+    "title": "Problem melden",
+    "description": "Damit wird ein <strong>öffentliches</strong> Issue auf GitHub geöffnet. Alles unten ist bearbeitbar — entferne vorher, was du nicht teilen möchtest.",
+    "titleLabel": "Titel",
+    "detailsLabel": "Details",
+    "tooLong": "Dieser Bericht ist zu lang für einen GitHub-Link — er wird gekürzt geöffnet. Nutze „Text kopieren“, um den vollständigen Text zu übernehmen und ins Issue einzufügen.",
+    "environmentTrimmed": "Die erfassten Umgebungsdetails wurden gekürzt, um GitHubs URL-Grenze einzuhalten.",
+    "copyBody": "Text kopieren",
+    "copied": "Kopiert",
+    "openOnGitHub": "Auf GitHub öffnen"
+  }
+}

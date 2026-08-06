@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Medien"
+  },
+  "types": {
+    "all": "Alle",
+    "image": "Bild",
+    "video": "Video",
+    "audio": "Audio"
+  },
+  "sidebar": {
+    "heading": "Medien",
+    "expand": "Medien-Seitenleiste ausklappen",
+    "collapse": "Medien-Seitenleiste einklappen",
+    "project": "Projekt",
+    "allProjects": "Alle Projekte",
+    "generationModels": "Erzeugungsmodelle",
+    "providerAria": "Anbieter für {type}",
+    "modelAria": "Modell für {type}"
+  },
+  "list": {
+    "listView": "Listenansicht",
+    "gridView": "Rasteransicht",
+    "tableView": "Tabellenansicht",
+    "search": "Medien suchen",
+    "columns": {
+      "title": "Titel",
+      "type": "Typ",
+      "project": "Projekt",
+      "size": "Größe"
+    },
+    "sections": {
+      "images": "Bilder",
+      "video": "Video",
+      "audio": "Audio"
+    }
+  },
+  "empty": {
+    "allTitle": "Noch keine Medien",
+    "typedTitle": "Noch keine Einträge vom Typ {type}",
+    "description": "Erzeuge oder lade Medien hoch, um deine Bibliothek aufzubauen."
+  },
+  "newButton": {
+    "label": "Neue Medien"
+  },
+  "typePicker": {
+    "dialogAria": "Medientyp auswählen",
+    "title": "Welche Art von Medien?",
+    "image": "Ein Standbild erzeugen oder hochladen",
+    "video": "Einen Videoclip erzeugen oder hochladen",
+    "audio": "Eine Audiodatei erzeugen oder hochladen"
+  },
+  "detail": {
+    "newTitle": "Neu: {type}",
+    "fallbackTitle": "Medien",
+    "propertiesRail": "Eigenschaften",
+    "promptRail": "Prompt / Erzeugen",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Unbenannt",
+    "descriptionLabel": "Beschreibung",
+    "descriptionPlaceholder": "Optionale Beschreibung",
+    "projectLabel": "Projekt",
+    "noProject": "Kein Projekt",
+    "tagsLabel": "Tags",
+    "tagsPlaceholder": "tag1, tag2",
+    "type": "Typ",
+    "size": "Größe",
+    "dimensions": "Abmessungen",
+    "duration": "Dauer",
+    "mime": "MIME",
+    "noValue": "—",
+    "unknownDimension": "?",
+    "dimensionsValue": "{width} × {height}",
+    "createHintLine1": "Fülle die Details aus und füge einen Prompt hinzu,",
+    "createHintLine2": "dann klicke auf „Erzeugen“ — oder speichere einen Platzhalter.",
+    "saving": "Wird gespeichert …",
+    "savePlaceholder": "Platzhalter speichern",
+    "providerLabel": "Anbieter",
+    "modelLabel": "Modell",
+    "promptLabel": "Prompt",
+    "promptPlaceholder": "Beschreibe, was erzeugt werden soll …",
+    "generationUnavailable": "Erzeugung noch nicht verfügbar.",
+    "noGenerationHistory": "Kein Erzeugungsverlauf.",
+    "openLightbox": "Bild in der Lightbox öffnen",
+    "generate": "Erzeugen"
+  },
+  "size": {
+    "bytes": "{value} B",
+    "kilobytes": "{value} KB",
+    "megabytes": "{value} MB"
+  },
+  "player": {
+    "play": "Abspielen",
+    "pause": "Pause"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "feed": {
+    "navAria": "Zusammenfassungen",
+    "emptyTitle": "Noch keine Zusammenfassungen",
+    "emptyDescription": "Zusammenfassungen werden vom Tages-Digest-Workflow erzeugt. Aktiviere ihn unter „Workflows“, um hier einen periodischen Flottenüberblick zu erhalten.",
+    "notFound": "Zusammenfassung nicht gefunden.",
+    "selectPrompt": "Wähle eine Zusammenfassung, um sie anzusehen.",
+    "shipped": "{count} geliefert",
+    "failed": "{count} fehlgeschlagen",
+    "attention": "{count} Achtung"
+  },
+  "detail": {
+    "dateRange": "{from} – {to}",
+    "outcomes": "Ergebnisse",
+    "shipped": "Geliefert",
+    "abandoned": "Verworfen",
+    "failed": "Fehlgeschlagen",
+    "needsAttention": "Braucht Aufmerksamkeit",
+    "spend": "Kosten",
+    "total": "Gesamt",
+    "measured": "Gemessen",
+    "sessions": "Sitzungen",
+    "cycleTime": "Durchlaufzeit",
+    "tasks": "Aufgaben",
+    "p50": "p50",
+    "p90": "p90",
+    "bySection": "Nach Repo / Projekt",
+    "highlights": "Highlights",
+    "noValue": "—",
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hoursMinutes": "{hours} Std. {minutes} min",
+      "daysHours": "{days} T. {hours} Std."
+    }
+  }
+}

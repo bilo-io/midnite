@@ -1,0 +1,186 @@
+{
+  "title": "Aufgaben-Board",
+  "nothingHere": "Nichts hier",
+  "addTask": "Aufgabe zu {column} hinzufügen",
+  "dragTask": "{title} in einen anderen Status ziehen",
+  "collapseColumn": "Spalte {column} einklappen",
+  "expandColumn": "Spalte {column} ausklappen",
+  "columns": {
+    "backlog": "Backlog",
+    "todo": "Zu tun",
+    "wip": "In Arbeit",
+    "waiting": "Wartend",
+    "done": "Fertig",
+    "abandoned": "Verworfen"
+  },
+  "kinds": {
+    "bug": "Bugfix",
+    "feature": "Feature",
+    "question": "Frage",
+    "chore": "Routinearbeit",
+    "unknown": "Aufgabe"
+  },
+  "priority": {
+    "low": "Niedrig",
+    "normal": "Normal",
+    "high": "Hoch",
+    "urgent": "Dringend"
+  },
+  "waitReasons": {
+    "needs-input": "Eingabe nötig",
+    "no-pr": "Kein PR eröffnet",
+    "agent-failed": "Agent fehlgeschlagen",
+    "timed-out": "Zeitüberschreitung",
+    "gate-failed": "Gate fehlgeschlagen",
+    "retries-exhausted": "Versuche aufgebraucht"
+  },
+  "heldReasons": {
+    "over-budget": "über dem Budget",
+    "rate-limited": "durch Ratenlimit gebremst"
+  },
+  "aiReview": {
+    "approved": "KI: LGTM",
+    "commented": "KI: Geprüft",
+    "changes-requested": "KI: Änderungen"
+  },
+  "card": {
+    "answered": "Beantwortet",
+    "checksFailing": "Checks fehlgeschlagen",
+    "held": "Zurückgehalten: {reason}",
+    "heldTitle": "Zurückgehalten: der Scheduler startet keinen Agenten, bis das Limit frei ist",
+    "needsAttentionTitle": "Braucht Aufmerksamkeit — ein Fehler hat diese Aufgabe geparkt; erneut einreihen, neu planen oder verwerfen",
+    "blocked": "Blockiert",
+    "blockedBy": "Blockiert durch {count, plural, one {# Aufgabe} other {# Aufgaben}}",
+    "start": "Starten",
+    "startTask": "Aufgabe starten",
+    "stop": "Stoppen",
+    "stopTask": "Aufgabe stoppen",
+    "reopen": "Wieder öffnen",
+    "reopenTask": "Aufgabe wieder öffnen",
+    "moveTo": "Verschieben nach …",
+    "moveToColumn": "In Spalte verschieben",
+    "taskOptions": "Aufgabenoptionen"
+  },
+  "confirm": {
+    "reopenTitle": "Diese Aufgabe wieder öffnen?",
+    "reopenDescription": "Sie geht zurück nach „Zu tun“, ihre Agentensitzung wird geleert und alle abhängigen Aufgaben werden wieder blockiert.",
+    "reopenConfirm": "Wieder öffnen",
+    "doneAgainTitle": "Diese Aufgabe erneut als fertig markieren?",
+    "doneAgainDescription": "Sie ist bereits in „Fertig“.",
+    "doneAgainConfirm": "Als fertig markieren",
+    "abandonTitle": "Diese Aufgabe verwerfen?",
+    "abandonDescription": "Sie wandert nach „Verworfen“ und ihre Sitzung (falls vorhanden) wird archiviert.",
+    "abandonConfirm": "Verwerfen",
+    "startBlockedTitle": "Eine blockierte Aufgabe starten?",
+    "startBlockedDescription": "{count, plural, one {# Blocker ist} other {# Blocker sind}} noch nicht fertig. Der Scheduler überspringt blockierte Aufgaben; ein manueller Start führt sie trotzdem aus.",
+    "startBlockedConfirm": "Trotzdem starten",
+    "deleteTasksTitle": "{count, plural, one {# Aufgabe} other {# Aufgaben}} löschen?",
+    "deleteTasksDescription": "Das kann nicht rückgängig gemacht werden.",
+    "deleteTasksConfirm": "Löschen"
+  },
+  "bulk": {
+    "abandon": "Verwerfen",
+    "restore": "Wiederherstellen",
+    "delete": "Löschen",
+    "markDone": "Als fertig markieren",
+    "moveTo": "Verschieben nach"
+  },
+  "toolbar": {
+    "newTask": "Neue Aufgabe",
+    "searchPlaceholder": "Aufgaben suchen",
+    "graph": "Graph",
+    "allStatuses": "Alle Status",
+    "allTags": "Alle Tags",
+    "views": {
+      "list": "Listenansicht",
+      "board": "Board-Ansicht",
+      "table": "Tabellenansicht",
+      "graph": "Graph-Ansicht"
+    },
+    "boardStyles": {
+      "unified": "Alles in einem",
+      "project": "Pro Projekt"
+    }
+  },
+  "sections": {
+    "empty": "Leer",
+    "summary": "{tasks, plural, one {# Aufgabe} other {# Aufgaben}} · {projects, plural, one {# Projekt} other {# Projekte}}"
+  },
+  "unassigned": "Nicht zugewiesen",
+  "newTask": {
+    "title": "Neue Aufgabe",
+    "addModeAria": "Hinzufügemodus",
+    "single": "Einzeln",
+    "bulk": "Sammel-Einfügen",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Was ist zu tun?",
+    "descriptionLabel": "Beschreibung",
+    "optional": "(optional)",
+    "descriptionPlaceholder": "Details, Kontext oder Abnahmekriterien ergänzen — fließt in den Prompt des Agenten ein.",
+    "tasksLabel": "Aufgaben",
+    "bulkPlaceholder": "Eine Aufgabe pro Zeile …\nLeerzeilen, #-Kommentare und Aufzählungsstriche (-) werden ignoriert.",
+    "bulkEmptyHint": "Füge eine Liste ein, um pro Zeile eine Aufgabe zu erstellen.",
+    "bulkDetected": "{count, plural, one {# Aufgabe} other {# Aufgaben}} erkannt.",
+    "bulkOverLimit": "{count, plural, one {# Aufgabe} other {# Aufgaben}} erkannt — über der Grenze von {limit} Zeilen.",
+    "projectLabel": "Projekt",
+    "noProject": "Kein Projekt",
+    "repoLabel": "Repo",
+    "statusLabel": "Status",
+    "priorityLabel": "Priorität",
+    "blockedByLabel": "Blockiert durch",
+    "createFailed": "Aufgabe konnte nicht erstellt werden",
+    "createBulkFailed": "Aufgaben konnten nicht erstellt werden",
+    "createdCount": "{count} erstellt",
+    "skippedCount": "{count} übersprungen",
+    "failedCount": "{count} fehlgeschlagen",
+    "createTask": "Aufgabe erstellen",
+    "createTasks": "Aufgaben erstellen",
+    "createN": "{count, plural, one {# Aufgabe} other {# Aufgaben}} erstellen",
+    "done": "Fertig"
+  },
+  "toasts": {
+    "taskCreated": "Aufgabe erstellt",
+    "tasksCreated": "{count, plural, one {# Aufgabe erstellt} other {# Aufgaben erstellt}}",
+    "moveFailed": "Aufgabe konnte nicht verschoben werden",
+    "movesFailed": "Aufgaben konnten nicht verschoben werden",
+    "reorderFailed": "Aufgaben konnten nicht neu angeordnet werden",
+    "reopenFailed": "Aufgabe konnte nicht wieder geöffnet werden",
+    "deleteFailed": "Aufgaben konnten nicht gelöscht werden"
+  },
+  "roadmapGraph": {
+    "loading": "Roadmap wird geladen …",
+    "noMilestones": "Noch keine Meilensteine — füge auf dem Board einen hinzu, um ihn hier zu sehen.",
+    "noTasks": "Noch keine Aufgaben",
+    "renameAria": "{name} umbenennen",
+    "removeTaskAria": "{task} aus {name} entfernen",
+    "addTaskPlaceholder": "+ Aufgabe hinzufügen …",
+    "addTaskAria": "Aufgabe zu {name} hinzufügen",
+    "toasts": {
+      "renameFailed": "Meilenstein konnte nicht umbenannt werden",
+      "removeTaskFailed": "Aufgabe konnte nicht entfernt werden",
+      "addTaskFailed": "Aufgabe konnte nicht hinzugefügt werden"
+    }
+  },
+  "graph": {
+    "ready": "Bereit",
+    "otherProject": "Anderes Projekt",
+    "blockedBy": "Blockiert durch {count}",
+    "filterByProject": "Graph nach Projekt filtern",
+    "summary": "{tasks, plural, one {# Aufgabe} other {# Aufgaben}} · {dependencies, plural, one {# Abhängigkeit} other {# Abhängigkeiten}}",
+    "milestoneFilter": "Meilenstein-Filter",
+    "clearMilestoneFilter": "Meilenstein-Filter zurücksetzen",
+    "truncated": "Es werden die ersten {shown} von {total} Aufgaben gezeigt. Wähle oben ein Projekt, um den Graph einzugrenzen.",
+    "empty": "Noch keine Aufgaben für den Graph.",
+    "emptyScoped": "Für diesen Bereich gibt es noch keine Aufgaben im Graph.",
+    "toasts": {
+      "addDependencyFailed": "Abhängigkeit konnte nicht hinzugefügt werden",
+      "removeDependencyFailed": "Abhängigkeit konnte nicht entfernt werden"
+    },
+    "pageTitle": "Abhängigkeitsgraph",
+    "pageDescription": "Was blockiert was — Aufgaben von links nach rechts in Abschlussreihenfolge angeordnet. Zieh zwischen zwei Aufgaben, um einen Blocker hinzuzufügen, oder wähle eine Kante und drücke Entf, um einen zu entfernen."
+  },
+  "page": {
+    "title": "Aufgaben",
+    "description": "Aufgaben nach Status gruppiert. Wechsle zwischen Liste, Board und Graph und filtere nach Status oder Projekt."
+  }
+}

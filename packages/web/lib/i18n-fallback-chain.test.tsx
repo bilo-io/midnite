@@ -20,9 +20,9 @@ const META: Partial<Record<Locale, { complete?: boolean }>> = {
  * Phase 82 Theme F — Phase 79's "four locales load, en-GB is the fallback" check,
  * absorbed and made permanent.
  *
- * `i18n-surfaces.test.tsx` already spot-checks the de-DE fallback on five hand-picked
- * keys. That was right for Phase 79's five namespaces; there are now twenty-five, and
- * es-ES was never covered at all. So this sweep is **derived from the catalog** rather
+ * `i18n-surfaces.test.tsx` already spot-checks the fallback on five hand-picked keys
+ * (against es-ES since de-DE was authored). That was right for Phase 79's five
+ * namespaces; there are now twenty-six. So this sweep is **derived from the catalog** rather
  * than from a list: it picks a representative leaf out of every en-GB namespace, so a
  * namespace added by a future slice is covered the day it lands and cannot silently
  * escape the fallback guarantee.
@@ -113,10 +113,12 @@ describe('Phase 82 F — en-GB is the fallback for every declared locale', () =>
     expect(PROBES.length).toBeGreaterThanOrEqual(namespaces.length - 3);
   });
 
-  it('covers both declared-but-unauthored locales', () => {
-    // Pins today's reality so that authoring de-DE has to come here and say so,
-    // rather than silently shrinking the sweep to one locale.
-    expect(FALLBACK_LOCALES).toEqual(['de-DE', 'es-ES']);
+  it('covers every declared-but-unauthored locale', () => {
+    // Pins today's reality so that authoring the next locale has to come here and say
+    // so, rather than silently shrinking the sweep to nothing. de-DE left this list
+    // when it was hand-translated to full parity (it is `complete` in its meta
+    // sidecar); es-ES is the remaining stub.
+    expect(FALLBACK_LOCALES).toEqual(['es-ES']);
   });
 
   for (const locale of FALLBACK_LOCALES) {
@@ -142,8 +144,8 @@ describe('Phase 82 F — en-GB is the fallback for every declared locale', () =>
   }
 
   it('falls back PER KEY for a partially-authored locale', () => {
-    // The sweeps above can't actually fail on the mechanism they describe: `messages/de-DE`
-    // and `messages/es-ES` are empty, so merging them over en-GB is indistinguishable from
+    // The sweeps above can't actually fail on the mechanism they describe: `messages/es-ES`
+    // is empty, so merging it over en-GB is indistinguishable from
     // `{...enGB}` — a shallow merge would satisfy every assertion. Per-key fallback only
     // gets exercised by a catalog that has *some* of a namespace, which is what a real
     // machine-translation seed will look like. So build one synthetically.
@@ -179,5 +181,13 @@ describe('Phase 82 F — en-GB is the fallback for every declared locale', () =>
     renderAll('fr-FR');
     const french = PROBES.filter((p) => screen.getByTestId(p.ns).textContent !== p.english);
     expect(french.length, 'fr-FR served en-GB copy for every namespace').toBeGreaterThan(0);
+  });
+
+  it('still renders de-DE in German rather than falling back', () => {
+    // The same control for the second authored locale — de-DE is `complete`, so a
+    // regression that emptied its fragments would show up here rather than as silence.
+    renderAll('de-DE');
+    const german = PROBES.filter((p) => screen.getByTestId(p.ns).textContent !== p.english);
+    expect(german.length, 'de-DE served en-GB copy for every namespace').toBeGreaterThan(0);
   });
 });

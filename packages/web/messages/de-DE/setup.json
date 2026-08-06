@@ -1,0 +1,161 @@
+{
+  "items": {
+    "provider": {
+      "label": "LLM-Anbieter"
+    },
+    "secret-key": {
+      "label": "Geheimschlüssel"
+    },
+    "agent-cli": {
+      "label": "Agenten-CLI"
+    },
+    "agent-pool": {
+      "label": "Agenten-Pool"
+    },
+    "repo": {
+      "label": "Repository"
+    }
+  },
+  "wizard": {
+    "title": "Midnite einrichten",
+    "dialogLabel": "Einrichtungsassistent",
+    "back": "Zurück",
+    "continue": "Weiter",
+    "steps": {
+      "provider": "KI-Anbieter",
+      "tools": "Systemwerkzeuge",
+      "pool": "Parallelität",
+      "repo": "Repository",
+      "finish": "Fertig!"
+    },
+    "stepAria": {
+      "collapsed": "Schritt {step} von {total}: {label}"
+    },
+    "provider": {
+      "heading": "KI-Anbieter",
+      "description": "Midnite nutzt ein LLM, um Aufgaben zu klassifizieren, zu planen und Agenten zu führen. Füge hier deinen API-Schlüssel ein — er wird verschlüsselt gespeichert.",
+      "providerLabel": "Anbieter",
+      "apiKeyLabel": "API-Schlüssel",
+      "apiKeyAlreadySet": "(bereits gesetzt — leer lassen, um ihn zu behalten)",
+      "apiKeyPlaceholder": "sk-…",
+      "apiKeyMaskedPlaceholder": "••••••••",
+      "keepExisting": "Vorhandenen Schlüssel behalten",
+      "saveAndContinue": "Speichern und weiter",
+      "saveFailed": "Speichern fehlgeschlagen"
+    },
+    "tools": {
+      "heading": "Systemwerkzeuge",
+      "description": "Midnite führt <cli>claude</cli> aus, um Aufgaben zu erledigen, und nutzt <gh>gh</gh>, um Pull Requests zu eröffnen.",
+      "githubCli": "gh (GitHub CLI)",
+      "install": "Installieren →",
+      "recheck": "Erneut prüfen"
+    },
+    "pool": {
+      "heading": "Parallelität",
+      "description": "Wie viele Aufgaben parallel laufen dürfen. Fang niedrig an — du kannst den Wert jederzeit in den Einstellungen erhöhen.",
+      "sliderLabel": "Aufgaben parallel",
+      "one": "Eine Aufgabe zur Zeit (sicherer Standard).",
+      "many": "Bis zu {count} Aufgaben parallel."
+    },
+    "repo": {
+      "heading": "Repository",
+      "optional": "(optional)",
+      "description": "Füge das Repository hinzu, in dem Midnite arbeiten soll. Weitere kannst du später unter Einstellungen → Repos ergänzen.",
+      "nameLabel": "Name",
+      "namePlaceholder": "meine-app",
+      "pathLabel": "Pfad",
+      "pathPlaceholder": "~/code/meine-app",
+      "skip": "Überspringen — Repos später verwalten",
+      "add": "Repo hinzufügen",
+      "addFailed": "Repo konnte nicht hinzugefügt werden"
+    },
+    "finish": {
+      "ready": "Alles bereit!",
+      "almostHeading": "Fast geschafft",
+      "almostDescription": "Ein paar Punkte brauchen noch Aufmerksamkeit.",
+      "fix": "Beheben →",
+      "startBuilding": "Los geht's",
+      "goToBoard": "Zum Board"
+    }
+  },
+  "nudge": {
+    "title": "Einrichtung von Midnite abschließen",
+    "stepsLeft": "Noch {count, plural, one {# Schritt} other {# Schritte}}, bevor Agenten laufen können.",
+    "recommendedRemain": "Ein paar empfohlene Schritte fehlen noch.",
+    "openWizard": "Einrichtungsassistent öffnen",
+    "setUpItem": "{label} einrichten",
+    "openSettings": "Einstellungen öffnen"
+  },
+  "agents": {
+    "expand": "{label} ausklappen",
+    "collapse": "{label} einklappen",
+    "installed": "installiert",
+    "notInstalled": "nicht installiert",
+    "badgeSessions": "Sitzungen",
+    "badgeAi": "KI",
+    "configurationAria": "Konfiguration von {label}",
+    "tabs": {
+      "cli": "CLI",
+      "api": "API"
+    },
+    "cli": {
+      "description": "Das {label}-CLI wird in einem Sitzungsterminal gestartet, um Aufgaben auszuführen. Installiere oder aktualisiere es hier und lege es dann als CLI für neue Sitzungen fest.",
+      "docsLink": "{label}-Doku",
+      "uninstall": "Deinstallieren",
+      "reinstall": "Neu installieren / aktualisieren",
+      "install": "Installieren",
+      "activeForSessions": "Aktiv für Sitzungen",
+      "useForSessions": "Für Sitzungen nutzen"
+    },
+    "api": {
+      "description": "Nutze deinen eigenen {label}-API-Schlüssel, um Midnites KI-Funktionen anzutreiben (Aufgaben-Triage, Planentwürfe, den Heartbeat und KI-Workflow-Knoten). Wird auf dem Gateway gespeichert und nach dem Speichern nie wieder angezeigt.",
+      "apiKeyLabel": "API-Schlüssel",
+      "getKey": "Einen {label}-Schlüssel holen",
+      "keyPlaceholder": "Füge deinen API-Schlüssel ein",
+      "storedKeyPlaceholder": "•••• {hint}",
+      "storedFallback": "gespeichert",
+      "baseUrlLabel": "Basis-URL",
+      "planModelLabel": "Planungsmodell",
+      "actModelLabel": "Handlungsmodell",
+      "modelPlaceholder": "Standard",
+      "save": "Speichern",
+      "clearKey": "Schlüssel löschen",
+      "saved": "Gespeichert",
+      "activeForAi": "Aktiv für KI",
+      "useForAi": "Für KI-Funktionen nutzen",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "activateFailed": "Aktivieren fehlgeschlagen"
+    }
+  },
+  "cliAction": {
+    "install": "Installieren",
+    "uninstall": "Deinstallieren",
+    "dialogLabel": "{verb}: {label}",
+    "heading": "{verb}: {label}",
+    "terminalAria": "Terminal — {verb}: {label}",
+    "hintInstall": "Der Installationsbefehl steht unten",
+    "hintUninstall": "Der Deinstallationsbefehl steht unten",
+    "hintSuffix": "{hint} — drücke <kbd>Enter</kbd>, um ihn auszuführen. Jederzeit schließbar.",
+    "preparingInstall": "Installation wird vorbereitet …",
+    "preparingUninstall": "Deinstallation wird vorbereitet …",
+    "startFailedInstall": "Installation konnte nicht gestartet werden",
+    "startFailedUninstall": "Deinstallation konnte nicht gestartet werden"
+  },
+  "providerSelect": {
+    "listAria": "Anbieter"
+  },
+  "guardrails": {
+    "changeFailed": "Änderung des Schutzmechanismus fehlgeschlagen",
+    "resumeScheduling": "Planung fortsetzen",
+    "pauseScheduling": "Planung pausieren",
+    "emergencyStop": "Notstopp",
+    "resume": "Fortsetzen",
+    "resumed": "Planung fortgesetzt",
+    "paused": "Planung pausiert",
+    "stopped": "Notstopp — Agenten abgebrochen",
+    "confirmStopTitle": "Notstopp?",
+    "confirmStopDescription": "Pausiert die gesamte Planung und bricht jeden laufenden Agenten ab. Abgebrochene Aufgaben gehen zurück nach „Zu tun“ und laufen beim Fortsetzen erneut.",
+    "bannerGlobal": "Planung pausiert — es werden keine neuen Agenten gestartet.",
+    "bannerScoped": "Planung für {count, plural, one {# Bereich} other {# Bereiche}} pausiert."
+  }
+}

@@ -64,19 +64,24 @@ describe('AgentChat', () => {
 
   // Phase 82 D — the answer's prose is generated copy, so the active locale rides on
   // the request and the gateway tells the model which language to write in. That must
-  // hold for a locale whose *UI* catalog is still a stub: de-DE renders English chrome
-  // (fallback) but the user is typing German, so the model is still asked for German.
-  // No clamping to a "complete" locale.
+  // hold for a locale whose *UI* catalog is still a stub: es-ES renders English chrome
+  // (fallback) but the user is typing Spanish, so the model is still asked for Spanish.
+  // No clamping to a "complete" locale. (es-ES is the stub locale since de-DE was
+  // authored — see messages/meta/.)
   it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
     answer({ blocks: [{ kind: 'markdown', text: 'ok' }], inferencePath: 'provider' });
-    render(withQueryClient(<AgentChat />), { locale: 'de-DE' });
+    render(withQueryClient(<AgentChat />), { locale: 'es-ES' });
     fireEvent.change(screen.getByLabelText(/ask the fleet assistant/i), {
-      target: { value: 'was ist blockiert?' },
+      target: { value: '¿qué está bloqueado?' },
     });
     fireEvent.click(screen.getByRole('button', { name: /ask/i }));
 
     await waitFor(() =>
-      expect(assistantQuery).toHaveBeenCalledWith('was ist blockiert?', 'de-DE', expect.anything()),
+      expect(assistantQuery).toHaveBeenCalledWith(
+        '¿qué está bloqueado?',
+        'es-ES',
+        expect.anything(),
+      ),
     );
   });
 

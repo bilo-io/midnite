@@ -107,7 +107,7 @@ tasks:
 
   # i18n catalog key-parity gate (Phase 79 E; split-catalog layout in Phase 82 A).
   # Fails on orphan/drift keys in any locale and on missing keys in a locale declared
-  # `complete` (fr-FR); de-DE/es-ES are intentionally-incomplete fallbacks and only
+  # `complete` (fr-FR + de-DE); es-ES is an intentionally-incomplete fallback and only
   # reported for coverage. Also prints the progress meter (per-namespace key totals +
   # exempt-list count). Runs in `moon ci` (runInCI default) so a drifted catalog can't merge.
   i18n-validate:

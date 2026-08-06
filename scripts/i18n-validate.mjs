@@ -4,11 +4,10 @@
 // Canonical locale is en-GB. The gate fails on:
 //   • orphan keys — a key present in a non-canonical catalog but NOT in en-GB
 //     (a typo or a stale key left after an en-GB rename); catches drift both ways.
-//   • missing keys in a locale declared `complete` in its sidecar meta (fr-FR).
+//   • missing keys in a locale declared `complete` in its sidecar meta (fr-FR, de-DE).
 //   • stale needs-review entries — a meta key that no longer exists in en-GB.
-// Locales left intentionally incomplete (de-DE, es-ES — empty, they fall back to
-// en-GB via the provider until Theme E's follow-up seeds them) are reported for
-// coverage but never fail the build.
+// Locales left intentionally incomplete (es-ES — empty, it falls back to en-GB via the
+// provider until translated) are reported for coverage but never fail the build.
 //
 // The pure helpers are exported for the unit test (see the sibling .d.mts);
 // `main()` runs only when invoked directly.

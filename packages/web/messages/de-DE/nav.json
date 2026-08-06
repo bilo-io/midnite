@@ -1,0 +1,90 @@
+{
+  "categories": {
+    "app": "App",
+    "agents": "Agenten",
+    "overview": "Übersicht"
+  },
+  "features": {
+    "dashboard": "Dashboard",
+    "projects": "Projekte",
+    "tasks": "Aufgaben",
+    "slides": "Folien",
+    "workflows": "Workflows",
+    "memory": "Gedächtnis",
+    "sessions": "Sitzungen",
+    "office": "Büro",
+    "councils": "Räte",
+    "media": "Medien",
+    "ops": "Betrieb"
+  },
+  "featureDescriptions": {
+    "dashboard": "Deine Startseite auf einen Blick — Widgets, Uhren und Live-Status.",
+    "tasks": "Das Kanban-Board zum Orchestrieren der Agentenarbeit.",
+    "slides": "Decks aus Markdown erstellen und mit Schreibmaschinen-Effekt präsentieren.",
+    "workflows": "Mehrstufige Agenten-Workflows erstellen und ausführen.",
+    "memory": "Langzeit-Erinnerungen, die in die Prompts deiner Agenten einfließen.",
+    "sessions": "Laufende und vergangene Agentensitzungen mit eingebetteten Terminals.",
+    "councils": "Mehrere Agenten zusammenrufen und das Ergebnis in jedem Format zusammenfassen — Brainstorming, Debatte, Analyse und mehr.",
+    "office": "Eine Pixel-Art-Etage deiner Agenten — geh an einen Schreibtisch, um anzurufen oder zu schreiben.",
+    "ops": "Flottenzustand — Live-Slot-Auslastung, Durchsatz, Laufzeitverteilung und LLM-Kosten."
+  },
+  "footer": {
+    "settings": "Einstellungen",
+    "lock": "Sperren",
+    "language": "Sprache",
+    "changelog": "Changelog ansehen"
+  },
+  "header": {
+    "notifications": "Benachrichtigungen",
+    "approvals": "Freigaben",
+    "notificationsAndApprovals": "Benachrichtigungen und Freigaben",
+    "noPendingApprovals": "Keine offenen Freigaben",
+    "manageAutonomy": "Autonomiemodus & Regeln verwalten →",
+    "labelWithCount": "{label}, {count}",
+    "theme": "Design",
+    "toggleTheme": "Design wechseln",
+    "themeOptions": {
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "System",
+      "time": "Uhrzeit"
+    },
+    "account": {
+      "menuLabel": "Kontomenü",
+      "menu": "Konto",
+      "notSignedIn": "Nicht angemeldet",
+      "signInHint": "Melde dich an, um deinen Workspace zu synchronisieren.",
+      "logIn": "Anmelden",
+      "createAccount": "Konto erstellen",
+      "profile": "Profil",
+      "personalization": "Personalisierung",
+      "team": "Team",
+      "workspace": "Workspace",
+      "signOut": "Abmelden"
+    }
+  },
+  "rail": {
+    "label": "Hauptnavigation",
+    "sectionToggle": "Abschnitt {label}",
+    "unlockNav": "Navigation entsperren",
+    "keepNavExpanded": "Navigation ausgeklappt lassen"
+  },
+  "mobile": {
+    "label": "Mobile Navigation",
+    "menu": "Menü",
+    "closeMenu": "Menü schließen"
+  },
+  "titleBar": {
+    "label": "Fenstertitelleiste",
+    "back": "Zurück",
+    "forward": "Vor",
+    "search": "Suchen",
+    "searchPlaceholder": "Midnite durchsuchen …"
+  },
+  "lockScreen": {
+    "locked": "Gesperrter Bildschirmschoner",
+    "screensaver": "Bildschirmschoner",
+    "unlockHint": "beliebige Taste drücken, um zu entsperren",
+    "wakeHint": "beliebige Taste drücken, um aufzuwachen"
+  }
+}

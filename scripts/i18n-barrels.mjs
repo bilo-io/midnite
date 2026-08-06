@@ -54,7 +54,7 @@ export function renderBarrel(localeDir) {
     '',
   ];
   if (ns.length === 0) {
-    // Intentionally-empty locale (de-DE / es-ES fall back to en-GB via the provider).
+    // Intentionally-empty locale (es-ES falls back to en-GB via the provider).
     return `${header.join('\n')}export default {};\n`;
   }
   const imports = ns.map((n) => `import ${ident(n)} from './${n}.json';`);

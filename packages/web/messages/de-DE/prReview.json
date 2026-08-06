@@ -1,0 +1,113 @@
+{
+  "panel": {
+    "loading": "Diff wird geladen …",
+    "loadFailed": "Das Diff konnte nicht geladen werden: {message}",
+    "loadFailedFallback": "Das Diff konnte nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "openOnGithub": "Auf GitHub öffnen"
+  },
+  "modal": {
+    "title": "Änderungen prüfen",
+    "ariaLabel": "Diff des Pull Requests",
+    "openPr": "PR öffnen",
+    "close": "Schließen"
+  },
+  "viewer": {
+    "filesChanged": "{count, plural, one {<c>{count}</c> Datei geändert} other {<c>{count}</c> Dateien geändert}}",
+    "additions": "+{count}",
+    "deletions": "−{count}",
+    "collapseAll": "Alle einklappen",
+    "expandAll": "Alle ausklappen",
+    "layoutGroup": "Diff-Layout",
+    "unifiedView": "Vereinheitlichte Ansicht",
+    "splitView": "Geteilte Ansicht",
+    "truncated": "Diff wurde gekürzt — {count, plural, one {# Datei} other {# Dateien}} nicht gezeigt. Öffne den PR auf GitHub, um alles zu sehen.",
+    "noFiles": "Keine Dateien in diesem Diff.",
+    "editComment": "Bearbeiten",
+    "deleteComment": "Kommentar löschen"
+  },
+  "composer": {
+    "placeholder": "Inline-Kommentar hinzufügen …",
+    "cancel": "Abbrechen",
+    "save": "Kommentar speichern"
+  },
+  "aiVerdict": {
+    "approved": "KI: LGTM",
+    "changes-requested": "KI: Änderungen angefordert",
+    "commented": "KI: geprüft"
+  },
+  "events": {
+    "approve": "Freigeben",
+    "request-changes": "Änderungen anfordern",
+    "comment": "Kommentieren"
+  },
+  "mergeMethods": {
+    "squash": "Squash",
+    "merge": "Merge",
+    "rebase": "Rebase"
+  },
+  "actions": {
+    "eventGroup": "Review-Ereignis",
+    "pendingComments": "{count, plural, one {# Inline-Kommentar offen} other {# Inline-Kommentare offen}}",
+    "mergeMethod": "Merge-Methode",
+    "merge": "Mergen",
+    "mergeConfirmTitle": "Diesen PR mergen ({method})?",
+    "mergeConfirmDescription": "Mergt auf GitHub und respektiert den Branch-Schutz. Das kann in midnite nicht rückgängig gemacht werden.",
+    "submitReview": "Review abschicken",
+    "approvalNotePlaceholder": "Optionale Anmerkung zur Freigabe …",
+    "commentPlaceholder": "Einen Review-Kommentar hinterlassen …",
+    "toastApproved": "PR freigegeben",
+    "toastChangesRequested": "Änderungen angefordert",
+    "toastSubmitted": "Review abgeschickt",
+    "toastMerged": "PR gemergt",
+    "requestFailed": "GitHub-Anfrage fehlgeschlagen"
+  },
+  "diffStatus": {
+    "add": "Hinzugefügt",
+    "delete": "Gelöscht",
+    "modify": "Geändert",
+    "rename": "Umbenannt",
+    "copy": "Kopiert"
+  },
+  "file": {
+    "renamedPath": "<old>{oldPath}</old> → {path}",
+    "binary": "Binärdatei — nicht angezeigt.",
+    "noTextualChanges": "Keine Textänderungen (nur Modus oder Metadaten)."
+  },
+  "tree": {
+    "files": "{count, plural, one {# Datei} other {# Dateien}}",
+    "layoutGroup": "Layout der Dateiliste",
+    "treeView": "Baumansicht",
+    "listView": "Flache Listenansicht",
+    "hiddenFiles": "{count, plural, one {# Datei verborgen (Diff gekürzt)} other {# Dateien verborgen (Diff gekürzt)}}"
+  },
+  "checks": {
+    "title": "Qualitäts-Gate",
+    "rerun": "Checks erneut ausführen",
+    "running": "Läuft …",
+    "loading": "Checks werden geladen …",
+    "loadFailed": "Checks konnten nicht geladen werden",
+    "runFailed": "Checks konnten nicht ausgeführt werden",
+    "notConfigured": "Für diese Aufgabe sind keine Checks konfiguriert — es gibt nichts auszuführen.",
+    "empty": "Für diese Aufgabe wurden noch keine Checks ausgeführt.",
+    "latestRun": "Letzter Lauf",
+    "olderRuns": "{count, plural, one {# älterer Lauf} other {# ältere Läufe}}",
+    "noResults": "Keine einzelnen Checks erfasst.",
+    "passed": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "exitCode": "Exit {code}",
+    "hideOutput": "verbergen",
+    "showOutput": "Ausgabe",
+    "triggers": {
+      "gate": "Gate",
+      "manual": "Manuell",
+      "auto-fix": "Auto-Fix"
+    },
+    "duration": {
+      "ms": "{value} ms",
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "minutesSeconds": "{minutes} min {seconds} s"
+    }
+  }
+}

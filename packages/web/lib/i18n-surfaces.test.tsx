@@ -4,6 +4,7 @@ import type { Locale } from '@midnite/shared';
 import { useTranslations } from 'next-intl';
 import { describe, expect, it } from 'vitest';
 
+import deDE from '@/messages/de-DE';
 import enGB from '@/messages/en-GB';
 import frFR from '@/messages/fr-FR';
 import { CATALOGS } from '@/i18n/messages';
@@ -60,13 +61,31 @@ describe('Phase 79 D — surface translation', () => {
     expect(screen.getByTestId('interp').textContent).toBe('Continuer avec GitHub');
   });
 
-  it('falls back to en-GB for a locale with no catalog yet (de-DE, seeded in Theme E)', () => {
+  it('renders the de-DE strings across every converted namespace', () => {
     renderAt('de-DE');
+    expect(screen.getByTestId('nav').textContent).toBe('Aufgaben');
+    expect(screen.getByTestId('auth').textContent).toBe('Anmelden');
+    expect(screen.getByTestId('board').textContent).toBe('In Arbeit');
+    expect(screen.getByTestId('settings').textContent).toBe('Allgemein');
+    expect(screen.getByTestId('common').textContent).toBe('Abbrechen');
+  });
+
+  it('interpolates ICU args under de-DE (provider name is not translated)', () => {
+    renderAt('de-DE');
+    expect(screen.getByTestId('interp').textContent).toBe('Mit GitHub fortfahren');
+  });
+
+  it('falls back to en-GB for a locale with no catalog yet (es-ES)', () => {
+    renderAt('es-ES');
     expect(screen.getByTestId('board').textContent).toBe('In progress');
     expect(screen.getByTestId('nav').textContent).toBe('Tasks');
   });
 
   it('keeps fr-FR at full key parity with the canonical en-GB catalog', () => {
     expect(new Set(keyPaths(frFR))).toEqual(new Set(keyPaths(enGB)));
+  });
+
+  it('keeps de-DE at full key parity with the canonical en-GB catalog', () => {
+    expect(new Set(keyPaths(deDE))).toEqual(new Set(keyPaths(enGB)));
   });
 });

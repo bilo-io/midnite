@@ -1,0 +1,114 @@
+{
+  "list": {
+    "title": "Folien",
+    "description": "Füge Markdown ein, um ein Deck zu bauen, und präsentiere es mit Schreibmaschinen-Effekt — gespeichert in diesem Browser.",
+    "newDeck": "Neues Deck",
+    "searchPlaceholder": "Decks suchen",
+    "sortLabel": "Decks sortieren",
+    "view": {
+      "grid": "Rasteransicht",
+      "list": "Listenansicht"
+    },
+    "sort": {
+      "recent": "Neueste",
+      "oldest": "Älteste zuerst",
+      "title": "Titel A–Z",
+      "title-desc": "Titel Z–A",
+      "updated": "Kürzlich aktualisiert",
+      "count": "Meiste Folien"
+    },
+    "matching": "{count} passend",
+    "noMatches": "Keine Decks passen zu den aktuellen Filtern.",
+    "empty": {
+      "title": "Noch keine Decks",
+      "description": "Erstelle ein Deck, indem du Markdown einfügst — Überschriften werden Folien, und jeder Punkt tippt sich beim Präsentieren selbst ein."
+    },
+    "bulk": {
+      "duplicate": "Duplizieren",
+      "duplicated": "{count, plural, one {# Deck dupliziert} other {# Decks dupliziert}}",
+      "deleted": "{count, plural, one {# Deck gelöscht} other {# Decks gelöscht}}",
+      "deleteTitle": "{count, plural, one {# Deck löschen?} other {# Decks löschen?}}",
+      "deleteDescription": "Damit werden die Decks und alle ihre Folien endgültig gelöscht. Das kann nicht rückgängig gemacht werden."
+    },
+    "unassigned": "Nicht zugewiesen",
+    "groupSummary": "{count, plural, one {# Deck} other {# Decks}}"
+  },
+  "new": {
+    "title": "Neues Deck",
+    "description": "Füge Markdown ein — das erste # ist ein Deckblatt, jedes ## beginnt eine Folie, und jeder Punkt wird eine Einblendung."
+  },
+  "edit": {
+    "title": "Deck bearbeiten",
+    "description": "Aktualisiere das Markdown — der Link des Decks bleibt gleich."
+  },
+  "notFound": {
+    "message": "Deck in diesem Browser nicht gefunden.",
+    "back": "Zurück zu den Decks"
+  },
+  "card": {
+    "slideCount": "{count, plural, one {# Folie} other {# Folien}}",
+    "present": "{title} präsentieren",
+    "edit": "„{title}“ bearbeiten",
+    "editTitle": "Deck bearbeiten",
+    "duplicate": "„{title}“ duplizieren",
+    "duplicateTitle": "Deck duplizieren",
+    "copyLink": "Link zu „{title}“ kopieren",
+    "copyLinkTitle": "Deck-Link kopieren",
+    "linkCopied": "Link kopiert",
+    "download": "„{title}“ als Offline-HTML-Datei herunterladen",
+    "downloadTitle": "Offline-Kopie herunterladen (.html)",
+    "delete": "„{title}“ löschen",
+    "deleteTitle": "Deck löschen",
+    "deleteConfirmTitle": "„{title}“ löschen?",
+    "deleteConfirmDescription": "Damit werden das Deck und alle seine Folien endgültig gelöscht. Das kann nicht rückgängig gemacht werden.",
+    "duplicated": "Deck dupliziert",
+    "deleted": "Deck gelöscht"
+  },
+  "editor": {
+    "titlePlaceholder": "Deck-Titel (optional — standardmäßig die erste #-Überschrift)",
+    "titleLabel": "Deck-Titel",
+    "noProject": "Kein Projekt",
+    "markdown": "Markdown",
+    "upload": ".md hochladen",
+    "sourceLabel": "Markdown-Quelle des Decks",
+    "emptyPreview": "Noch nichts für die Vorschau.",
+    "slideWord": "{count, plural, one {Folie} other {Folien}}",
+    "creating": "Wird erstellt …",
+    "saveChanges": "Änderungen speichern",
+    "createDeck": "Deck erstellen",
+    "saveFailed": "Deck konnte nicht gespeichert werden",
+    "resizePanels": "Größe der Editor-Panels ändern"
+  },
+  "rail": {
+    "navLabel": "Foliennavigation",
+    "slideLabel": "Folie {number}: {title}",
+    "stepLabel": "Folie {number}, Schritt {step}",
+    "moreBefore": "{count} weitere davor",
+    "moreAfter": "{count} weitere danach"
+  },
+  "present": {
+    "documentTitle": "{title} · Folien",
+    "fullscreen": "Vollbild umschalten",
+    "fullscreenTitle": "Vollbild (F)",
+    "exit": "Präsentation beenden",
+    "exitTitle": "Beenden (Esc)",
+    "hint": "<kbd>→</kbd> / <kbd>Leertaste</kbd> zum Weiterblättern · <kbd>←</kbd> zurück · <kbd>F</kbd> Vollbild · <kbd>?</kbd> Kurzbefehle",
+    "help": {
+      "title": "Tastaturkürzel",
+      "keys": {
+        "next": "→ / Leertaste / Enter",
+        "prev": "← / Rücktaste",
+        "firstLast": "Pos1 / Ende",
+        "fullscreen": "F",
+        "exit": "Esc",
+        "help": "?"
+      },
+      "next": "Nächster Schritt oder nächste Folie",
+      "prev": "Voriger Schritt oder vorige Folie",
+      "firstLast": "Erste / letzte Folie",
+      "fullscreen": "Vollbild umschalten",
+      "exit": "Zurück zu allen Decks",
+      "help": "Diese Hilfe umschalten"
+    }
+  }
+}

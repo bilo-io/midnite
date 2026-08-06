@@ -76,17 +76,18 @@ describe('MemoryStudioRail', () => {
   });
 
   // Phase 82 D — an artifact's body is generated copy, so the active locale has to
-  // reach the gateway. de-DE's UI catalog is only a stub (labels below fall back to
-  // en-GB), and it must still be sent unclamped.
+  // reach the gateway. es-ES's UI catalog is only a stub (labels below fall back to
+  // en-GB), and it must still be sent unclamped. (es-ES is the stub locale since de-DE
+  // was authored — see messages/meta/.)
   it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
     api.getMemoryArtifacts.mockResolvedValue([]);
     api.generateMemoryArtifact.mockResolvedValue(artifact({ status: 'pending', content: '' }));
-    render(<MemoryStudioRail memoryId="m1" />, { locale: 'de-DE' });
+    render(<MemoryStudioRail memoryId="m1" />, { locale: 'es-ES' });
     await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
 
     fireEvent.click(screen.getByLabelText('Generate Executive brief'));
     await waitFor(() =>
-      expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief', 'de-DE'),
+      expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief', 'es-ES'),
     );
   });
 
