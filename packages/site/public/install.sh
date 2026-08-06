@@ -52,6 +52,25 @@ case "$OS" in
   *) fail "this installer supports macOS and Linux only. Windows: irm https://midnite-app.vercel.app/install.ps1 | iex" ;;
 esac
 
+# Do two paths name the SAME directory entry?
+#
+# On a case-INSENSITIVE volume (the macOS default) /Applications/midnite.app and
+# /Applications/Midnite.app are one entry under two spellings. String comparison
+# obviously can't tell them apart — and neither can `pwd -P`, which resolves
+# symlinks but NOT case: under `sh` and bash (the installer runs as
+# `curl … | sh`) it echoes back whatever casing it was handed, so the two paths
+# compare unequal. Only zsh and dash canonicalise, which is why this reads as
+# correct when spot-checked in an interactive zsh.
+#
+# device+inode is the real identity test. Returns 0 (same) when either stat
+# fails, so a caller gating a delete keeps a stray copy rather than risking the
+# live one.
+same_entry() {
+  _a=$(stat -f '%d:%i' "$1" 2>/dev/null) || _a=""
+  _b=$(stat -f '%d:%i' "$2" 2>/dev/null) || _b=""
+  [ -z "$_a" ] || [ -z "$_b" ] || [ "$_a" = "$_b" ]
+}
+
 # Verify a .app bundle is structurally complete.
 #   $1 = bundle path
 #   $2 = expected executable name (optional)
@@ -248,11 +267,11 @@ run rm -rf "$backup"
 
 # On a case-SENSITIVE volume the pre-rename /Applications/midnite.app is a
 # separate entry that the swap above left behind, so the user would end up with
-# two copies. Drop it — it is this app's own previous install. (On the default
-# case-insensitive volume the paths are the same entry and this is a no-op.)
+# two copies. Drop it — it is this app's own previous install. On the default
+# case-insensitive volume it is the app we just installed, under its old
+# spelling, and `same_entry` is what keeps us from deleting it.
 legacy="$DEST/midnite.app"
-if [ "$APP" != "midnite.app" ] && [ -d "$legacy" ] &&
-  [ "$(cd "$legacy" && pwd -P)" != "$(cd "$DEST/$APP" && pwd -P)" ]; then
+if [ "$APP" != "midnite.app" ] && [ -d "$legacy" ] && ! same_entry "$legacy" "$DEST/$APP"; then
   say "Removing the pre-rename $legacy …"
   run rm -rf "$legacy"
 fi
