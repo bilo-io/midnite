@@ -1,0 +1,172 @@
+{
+  "board": {
+    "label": "Board-Tour",
+    "steps": {
+      "board": {
+        "title": "Dein Board",
+        "body": "Aufgaben laufen von links nach rechts durch die Spalten. Zieh eine Karte, um sie zwischen Status zu verschieben."
+      },
+      "board-column-todo": {
+        "title": "Startbereite Arbeit",
+        "body": "Der Scheduler nimmt zuerst das oberste Element aus **Zu tun** — nach Priorität, dann nach Alter. Blockierte Aufgaben warten hier, bis ihre Blocker fertig sind."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diesen Guide (oder chatte mit deinem Board oder frag den Agenten) von hier aus, wann du willst."
+      }
+    }
+  },
+  "workflow": {
+    "label": "Tour durch den Workflow-Baukasten",
+    "steps": {
+      "workflow-canvas": {
+        "title": "Die Arbeitsfläche",
+        "body": "Baue eine Automatisierung, indem du hier Knoten verdrahtest — ein Trigger und dann die Schritte, in die er sich verzweigt."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Diese Tour liegt im Assistenzmenü — öffne sie von hier, wann du eine Auffrischung brauchst."
+      }
+    }
+  },
+  "sessions": {
+    "label": "Sitzungs-Tour",
+    "steps": {
+      "sessions-list": {
+        "title": "Laufende Sitzungen",
+        "body": "Jede Agentensitzung erscheint hier. Öffne eine für ihr Cockpit — Transkript, Terminal und die Aufgabe, die sie antreibt."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "memory": {
+    "label": "Tour durch den Gedächtnis-Arbeitsbereich",
+    "steps": {
+      "memory-workspace": {
+        "title": "Wissensbasis",
+        "body": "Sammle Quellen, chatte mit deinem Wissen und erzeuge Artefakte — alles aus einem Arbeitsbereich."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "dashboard": {
+    "label": "Dashboard-Tour",
+    "steps": {
+      "dashboard": {
+        "title": "Deine Homebase",
+        "body": "Das Dashboard verdichtet Backlog, Projekte und die letzte Aktivität — eine Momentaufnahme der ganzen Flotte."
+      },
+      "dashboard-composer": {
+        "title": "Aufgaben schnell entwerfen",
+        "body": "Tippe hier eine Funktionsliste — **eine Aufgabe pro Zeile** — und schicke sie dann ins Backlog oder nach „Zu tun“."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne jeden Guide von hier. Tipp: Drücke überall **⌘K** (Strg+K), um zu suchen und Befehle über die Tastatur auszuführen."
+      }
+    }
+  },
+  "office": {
+    "label": "Büro-Tour",
+    "steps": {
+      "office": {
+        "title": "Die Büroetage",
+        "body": "Sieh deinen Agenten in einer lebendigen Szene bei der Arbeit zu — geh an einen Schreibtisch, um den dort arbeitenden Agenten anzurufen oder anzuschreiben."
+      },
+      "office-view-toggle": {
+        "title": "2D oder 3D",
+        "body": "Wechsle zwischen der **2D**-Draufsicht und einem **3D**-Rundgang aus der Ich-Perspektive. Deine Wahl wird gespeichert."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "projects": {
+    "label": "Projekt-Tour",
+    "steps": {
+      "projects": {
+        "title": "Deine Projekte",
+        "body": "Bündle verwandte Arbeit in Projekten — jedes sammelt seine Aufgaben, einen strukturierten Plan und eine Wissensbasis."
+      },
+      "projects-new": {
+        "title": "Leg eines an",
+        "body": "Starte ein Projekt von null oder aus einer Vorlage. Aus einem Ziel kann Midnite sogar die gesamte Aufgabenaufschlüsselung entwerfen."
+      },
+      "project-detail": {
+        "title": "Das Cockpit",
+        "body": "Öffne ein Projekt für sein Cockpit — **Details, Dokumente, Aufgaben, Roadmap**, alles an einem Ort."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "digests": {
+    "label": "Tour durch die Zusammenfassungen",
+    "steps": {
+      "digests": {
+        "title": "Flotten-Zusammenfassungen",
+        "body": "Der periodische Überblick darüber, was deine Flotte **geliefert, verfehlt und markiert** hat — erzeugt von der Fable-Pipeline."
+      },
+      "digests-content": {
+        "title": "Lies die Geschichte",
+        "body": "Wähle eine Zusammenfassung, um ihren strukturierten Bericht zu lesen — mit Direktlinks zu den Aufgaben hinter jeder Zeile."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "search": {
+    "label": "Such-Tour",
+    "steps": {
+      "search": {
+        "title": "Alles durchsuchen",
+        "body": "Eine Volltextsuche über Aufgaben, Projekte, Gedächtnis, Notizen, Räte und Workflows."
+      },
+      "search-input": {
+        "title": "Probier es aus",
+        "body": "Tippe hier eine Anfrage, um alle Typen gleichzeitig zu durchsuchen. **Klicke ins Feld**, um fortzufahren."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "settings": {
+    "label": "Einstellungs-Tour",
+    "steps": {
+      "settings": {
+        "title": "Mach es zu deinem",
+        "body": "Stelle ein, wie Midnite aussieht, sperrt und deine Agenten betreibt — Erscheinungsbild, Sicherheitsnetz, Integrationen und mehr."
+      },
+      "settings-nav": {
+        "title": "Kategorien durchsuchen",
+        "body": "Springe hier zwischen den Einstellungskategorien. Unter „Erscheinungsbild“ liegen Designs, Dichte und das Verhalten der Produkt-Guides."
+      },
+      "assistant": {
+        "title": "Jederzeit wiederholen",
+        "body": "Öffne diese Tour im Assistenzmenü, wann du willst."
+      }
+    }
+  },
+  "chrome": {
+    "noGuide": "Für diese Seite gibt es noch keine geführte Tour.",
+    "stepCount": "{current} von {total}",
+    "skip": "Überspringen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "done": "Fertig"
+  }
+}

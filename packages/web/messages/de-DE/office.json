@@ -1,0 +1,145 @@
+{
+  "page": {
+    "title": "Büro",
+    "description": "Geh durch die Etage und sieh, was deine Agenten treiben — tritt an einen Schreibtisch, um anzurufen oder zu schreiben.",
+    "desktopLabel": "Das Büro"
+  },
+  "surface": {
+    "viewLabel": "Büroansicht",
+    "view2d": "2D",
+    "view3d": "3D"
+  },
+  "hud": {
+    "controls": "<k>WASD</k> / Pfeiltasten zum Bewegen · <k>E</k> zum Interagieren",
+    "avatar": "👤 Avatar",
+    "backToOffice": "Zurück zum Büro",
+    "attention": "🙋 {count, plural, one {# Agent braucht dich} other {# Agenten brauchen dich}}",
+    "attentionAria": "{count, plural, one {# Agent braucht dich — zum Öffnen klicken} other {# Agenten brauchen dich — zum Öffnen klicken}}",
+    "onBreak": "☕ In der Pause",
+    "online": "{count, plural, one {# Agent online} other {# Agenten online}}",
+    "empty": "Keine aktiven Agenten — starte eine Aufgabe, um das Büro zu füllen.",
+    "prompts": {
+      "mainOffice": "Drücke <k>E</k>, um ins <b>Hauptbüro</b> zurückzukehren",
+      "customiseDesk": "Drücke <k>E</k> am Schreibtisch, um ihn <b>anzupassen</b>",
+      "board": "Drücke <k>E</k>, um den <b>Besprechungsraum</b> zu öffnen",
+      "kitchenBreak": "Drücke <k>E</k>, um <b>eine Kaffeepause zu machen</b>",
+      "kitchenBack": "Drücke <k>E</k>, um <b>zurück an die Arbeit zu gehen</b>",
+      "library": "Drücke <k>E</k>, um die <b>Bibliothek</b> zu durchsuchen",
+      "games": "Drücke <k>E</k>, um die <b>Spielebibliothek</b> zu öffnen",
+      "corner": "Drücke <k>E</k>, um das <b>Eckbüro</b> zu betreten",
+      "agent": "Drücke <k>E</k>, um die Sitzung von <b>{name}</b> zu öffnen"
+    },
+    "archiveConfirm": {
+      "title": "Diese Sitzung archivieren?",
+      "description": "Sie verlässt das aktive Board. Du kannst sie später zurückholen.",
+      "confirm": "Archivieren"
+    }
+  },
+  "boardroom": {
+    "label": "Besprechungsraum",
+    "title": "Besprechungsraum",
+    "error": "Projekte konnten nicht geladen werden — {error}",
+    "empty": "Noch keine Projekte.",
+    "taskCount": "{count, plural, one {# Aufgabe} other {# Aufgaben}}"
+  },
+  "library": {
+    "title": "Bibliothek",
+    "searchPlaceholder": "Nach Titel oder Autor suchen …",
+    "searchAria": "Bücher suchen",
+    "all": "Alle",
+    "empty": "Keine Bücher passen zu deiner Suche."
+  },
+  "desk": {
+    "title": "Schreibtisch anpassen",
+    "instructions": "Wähle bis zu {max} Gegenstände für deinen Schreibtisch. Änderungen werden automatisch gespeichert.",
+    "onDesk": "Auf dem Schreibtisch"
+  },
+  "character": {
+    "title": "Wähle deinen Avatar",
+    "human": "Mensch",
+    "tintTitle": "Farbton",
+    "robots": {
+      "0": "Rod",
+      "1": "Twin",
+      "2": "Bulb",
+      "3": "Dish",
+      "4": "Sensor",
+      "5": "Fins"
+    },
+    "tints": {
+      "0": "Natürlich",
+      "1": "Blau",
+      "2": "Grün",
+      "3": "Pink",
+      "4": "Amber",
+      "5": "Violett",
+      "6": "Rot"
+    }
+  },
+  "games": {
+    "label": "Retro-Spiele",
+    "title": "Spielebibliothek",
+    "play": "SPIELEN",
+    "comingSoon": "Kommt bald — die Spielhalle ist noch im Bau.",
+    "back": "← Zurück zu den Spielen",
+    "genres": {
+      "arcade": "Arcade",
+      "puzzle": "Puzzle",
+      "shooter": "Shooter",
+      "platform": "Jump ’n’ Run",
+      "sports": "Sport",
+      "fighting": "Beat ’em up"
+    },
+    "taglines": {
+      "pac-man": "Waka waka waka.",
+      "tetris": "Reihen. Für immer.",
+      "space-invaders": "Sie werden immer schneller.",
+      "donkey-kong": "Spring über die Fässer.",
+      "pong": "Das Spiel, mit dem alles begann.",
+      "frogger": "Einfach die Straße überqueren.",
+      "galaga": "Lass dich erst einfangen.",
+      "street-fighter-2": "Hadouken."
+    }
+  },
+  "presence": {
+    "widgetTitle": "Im Büro",
+    "widgetEmpty": "Noch niemand da — schau im Büro vorbei →",
+    "roster": "Im Büro · {count}",
+    "you": "Du",
+    "youGhost": "Du (Geist)",
+    "walkTo": "Zu {name} gehen",
+    "chat": "Chat",
+    "chatTitle": "Sag etwas (T)",
+    "chatPlaceholder": "Sag etwas …",
+    "chatMessage": "Chat-Nachricht",
+    "emote": "Emote",
+    "sendEmote": "{emoji} senden",
+    "ghostMode": "Geistmodus",
+    "ghostOn": "Geistmodus an — niemand sieht dich",
+    "ghostOff": "Geistmodus aus",
+    "navPill": "{count} im Büro",
+    "selfChatYou": "Du:",
+    "nameDialog": {
+      "label": "Wähle deinen Büronamen",
+      "title": "Dem Büro beitreten",
+      "body": "Wie sollen dich Teammitglieder nennen? Das erscheint über deinem Avatar.",
+      "nameLabel": "Anzeigename",
+      "useDefault": "Standard verwenden",
+      "join": "Beitreten"
+    }
+  },
+  "scenes": {
+    "office": "Büro",
+    "corner": "Eckbüro",
+    "arcade": "Spielhalle"
+  },
+  "threeD": {
+    "controls": "Klicken, um umzusehen · <k>WASD</k> zum Bewegen · <k>E</k> zum Interagieren · <k>Esc</k> zum Freigeben",
+    "prompts": {
+      "backToOffice": "E — zurück ins Büro",
+      "playBreakout": "E — Breakout spielen",
+      "browseGames": "E — Spiele durchsuchen",
+      "customiseDesk": "E — Schreibtisch anpassen"
+    }
+  }
+}

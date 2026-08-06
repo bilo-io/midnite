@@ -15,10 +15,10 @@ import frFR from '../messages/fr-FR';
  * (`messages/<locale>/index.ts`, from `scripts/i18n-barrels.mjs`) statically imports
  * its fragments and default-exports the merged tree. Imported here at module scope so
  * the whole catalog still bundles cleanly under `output: 'export'` — there's no server
- * and no request-time catalog resolution. `en-GB` is the canonical source; `fr-FR` is
- * hand-translated. `de-DE`/`es-ES` are intentionally empty for now (deferred MT-seed) —
- * the `LocaleProvider` merges each locale over `en-GB`, so their keys fall back to
- * English until then.
+ * and no request-time catalog resolution. `en-GB` is the canonical source; `fr-FR` and
+ * `de-DE` are translated to full parity. `es-ES` is intentionally empty for now — the
+ * `LocaleProvider` merges each locale over `en-GB`, so its keys fall back to English
+ * until it is translated.
  */
 export const CATALOGS: Partial<Record<Locale, LocaleMessages>> = {
   'en-GB': enGB,

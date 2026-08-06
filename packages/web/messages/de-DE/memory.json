@@ -1,0 +1,217 @@
+{
+  "kinds": {
+    "brief": "Management-Kurzfassung",
+    "faq": "FAQ",
+    "study-guide": "Lernleitfaden",
+    "timeline": "Zeitleiste",
+    "infographic": "Infografik",
+    "audio-overview": "Audio-Überblick",
+    "video-overview": "Video"
+  },
+  "artifactStatus": {
+    "pending": "Wird erzeugt",
+    "ready": "Bereit",
+    "failed": "Fehlgeschlagen"
+  },
+  "sourceState": {
+    "pending": "Wird gelesen",
+    "ready": "Gelesen",
+    "failed": "Fehlgeschlagen"
+  },
+  "sourceKinds": {
+    "github": "GitHub",
+    "figma": "Figma",
+    "google-docs": "Google Docs",
+    "google-sheets": "Google Sheets",
+    "google-slides": "Google Slides",
+    "google-drive": "Google Drive",
+    "notion": "Notion",
+    "youtube": "YouTube",
+    "x": "X",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "reddit": "Reddit",
+    "medium": "Medium",
+    "substack": "Substack",
+    "link": "Link",
+    "file": "Datei"
+  },
+  "list": {
+    "title": "Gedächtnis",
+    "description": "Wissen, das deine Agenten in jede Sitzung mitnehmen — global oder auf ein Projekt bezogen.",
+    "searchPlaceholder": "Erinnerungen suchen",
+    "newMemory": "Neue Erinnerung",
+    "view": {
+      "list": "Listenansicht",
+      "grid": "Rasteransicht",
+      "table": "Tabellenansicht"
+    },
+    "empty": {
+      "title": "Noch keine Erinnerungen",
+      "description": "Schreibe Konventionen, Kontext und Entscheidungen auf, die deine Agenten nie vergessen sollen."
+    },
+    "noMatchesQuery": "Keine Erinnerungen passen zu „{query}“",
+    "noMatches": "Keine Erinnerungen passen zu den aktuellen Filtern",
+    "bulk": {
+      "archive": "Archivieren",
+      "unarchive": "Aus dem Archiv holen",
+      "archiveTitle": "{count, plural, one {# Erinnerung archivieren?} other {# Erinnerungen archivieren?}}",
+      "unarchiveTitle": "{count, plural, one {# Erinnerung aus dem Archiv holen?} other {# Erinnerungen aus dem Archiv holen?}}",
+      "archiveDescription": "Sie werden aus deinen aktiven Erinnerungen ausgeblendet — du kannst sie jederzeit zurückholen.",
+      "unarchiveDescription": "Sie kehren zu deinen aktiven Erinnerungen zurück.",
+      "deleteTitle": "{count, plural, one {# Erinnerung löschen?} other {# Erinnerungen löschen?}}",
+      "deleteDescription": "Das kann nicht rückgängig gemacht werden."
+    },
+    "card": {
+      "archived": "Archiviert"
+    },
+    "modal": {
+      "titleLabel": "Titel der Erinnerung",
+      "titlePlaceholder": "Unbenannte Erinnerung",
+      "titleRequired": "Gib dieser Erinnerung einen Titel.",
+      "scope": "Geltungsbereich",
+      "content": "Inhalt",
+      "contentLabel": "Inhalt der Erinnerung",
+      "sources": "Quellen",
+      "sourcePlaceholder": "Füge ein Dokument, ein Repo oder einen beliebigen Referenzlink ein",
+      "create": "Erstellen"
+    }
+  },
+  "detail": {
+    "documentTitle": "{title} · Midnite",
+    "backToList": "Alle Erinnerungen",
+    "notFound": "Erinnerung nicht gefunden.",
+    "editMetadata": "Metadaten der Erinnerung bearbeiten",
+    "editMemory": "Erinnerung bearbeiten",
+    "sources": "Quellen",
+    "studio": "Studio"
+  },
+  "sources": {
+    "heading": "Quellen",
+    "count": "{count}/{max}",
+    "add": "Quellen hinzufügen",
+    "searchLabel": "Quellen suchen",
+    "searchPlaceholder": "Quellen suchen …",
+    "noMatch": "Keine Quellen passen zu deinem Filter.",
+    "reorderPaused": "Das Umsortieren ist während des Filterns ausgesetzt.",
+    "removeTitle": "Diese Quelle entfernen?",
+    "removeDescription": "Sie wird von dieser Erinnerung gelöst.",
+    "reingestError": "Diese Quelle konnte nicht erneut gelesen werden",
+    "removeError": "Diese Quelle konnte nicht entfernt werden",
+    "reorderError": "Die Quellen konnten nicht umsortiert werden",
+    "filterPlaceholder": "Nach Typ filtern …",
+    "filterLabel": "Quellen nach Typ filtern",
+    "filterNoOptions": "Keine passenden Typen"
+  },
+  "sourceEditor": {
+    "urlPlaceholder": "Füge einen GitHub-, Notion-, Google-Docs- oder beliebigen Link ein",
+    "addSource": "Quelle hinzufügen",
+    "uploadTitle": "Eine Datei hochladen (PDF, Markdown, Text)",
+    "uploadLabel": "Eine Dateiquelle hochladen",
+    "atLimit": "{count, plural, one {Bis zu # Quelle} other {Bis zu # Quellen}}",
+    "invalidUrl": "Gib eine vollständige URL an, inklusive https://",
+    "reorder": "Quelle umsortieren",
+    "openInNewTab": "Quelle in neuem Tab öffnen",
+    "remove": "Quelle entfernen",
+    "reading": "Quelle wird gelesen",
+    "read": "Quelle gelesen",
+    "readSource": "Quelle lesen",
+    "retryRead": "Lesen der Quelle erneut versuchen",
+    "readFailedTitle": "Lesen fehlgeschlagen — erneut versuchen",
+    "readFailedTitleWithError": "Lesen fehlgeschlagen: {error} — erneut versuchen"
+  },
+  "tree": {
+    "empty": "Keine Erinnerungen",
+    "memoryCount": "{count, plural, one {# Erinnerung} other {# Erinnerungen}}",
+    "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}"
+  },
+  "studio": {
+    "intro": "Erzeuge Artefakte aus dieser Erinnerung und ihren Quellen.",
+    "groups": {
+      "documents": "Dokumente",
+      "visual": "Visuell",
+      "audioVideo": "Audio & Video"
+    },
+    "generate": "Erzeugen",
+    "generateLabel": "{label} erzeugen",
+    "viewLabel": "{label} ansehen",
+    "retryLabel": "{label} erneut versuchen",
+    "degradedAudio": "Nur Skript — kein TTS-Anbieter",
+    "degradedVideo": "Nur Gliederung — kein Video-Anbieter"
+  },
+  "chat": {
+    "heading": "Mit dieser Erinnerung chatten",
+    "noProvider": "Füge in den Einstellungen einen KI-Anbieter hinzu, um mit dieser Erinnerung zu chatten.",
+    "inputLabel": "Dieser Erinnerung eine Frage stellen",
+    "placeholder": "Frage diese Erinnerung alles … · ⌘/Strg + ⏎",
+    "dictate": "Frage diktieren",
+    "dictateStop": "Diktat beenden",
+    "send": "Senden",
+    "thinking": "Denkt nach …",
+    "emptyHint": "Stelle eine Frage zu dieser Erinnerung und ihren Quellen — die Antworten geben an, worauf sie sich stützen.",
+    "citations": "Quellen",
+    "sourceFallback": "Quelle",
+    "sendFailed": "Senden fehlgeschlagen"
+  },
+  "doc": {
+    "titleLabel": "Titel der Erinnerung",
+    "titlePlaceholder": "Unbenannte Erinnerung",
+    "scopeLabel": "Geltungsbereich",
+    "contentLabel": "Inhalt",
+    "contentAriaLabel": "Inhalt der Erinnerung",
+    "titleRequired": "Gib dieser Erinnerung einen Titel.",
+    "deleteTitle": "Diese Erinnerung löschen?",
+    "deleteDescription": "„{title}“ steht deinen Agenten dann nicht mehr zur Verfügung."
+  },
+  "scope": {
+    "global": "Global",
+    "globalOption": "Global — jedes Projekt",
+    "selectLabel": "Geltungsbereich der Erinnerung"
+  },
+  "addSource": {
+    "title": "Quellen hinzufügen",
+    "remaining": "{count} übrig",
+    "dropTitle": "Lege deine Dateien hier ab",
+    "dropHint": "PDF, Markdown oder reiner Text",
+    "upload": "Dateien hochladen",
+    "pasteLink": "Link einfügen",
+    "linkPlaceholder": "https://…  (GitHub, Notion, Google Docs, YouTube, beliebige URL)",
+    "addLink": "Link hinzufügen",
+    "pasteText": "Text einfügen",
+    "textPlaceholder": "Notizen oder kopierten Text einfügen — wird als Textquelle gespeichert",
+    "addText": "Text hinzufügen",
+    "atLimit": "Diese Erinnerung hat ihr Quellenlimit erreicht.",
+    "invalidUrl": "Gib eine vollständige URL an, inklusive https://"
+  },
+  "sourceDetail": {
+    "fallbackLabel": "Quelle",
+    "tabsLabel": "Detailansicht der Quelle",
+    "tabSource": "Quelle",
+    "tabText": "Text",
+    "openOriginal": "Original öffnen",
+    "youtubePreview": "YouTube-Vorschau",
+    "websitePreview": "Website-Vorschau",
+    "embedBlocked": "Manche Seiten blockieren das Einbetten — bleibt das hier leer, <link>öffne das Original ↗</link>.",
+    "typeLabel": "Typ",
+    "fileLabel": "Datei",
+    "statusLabel": "Status",
+    "textTabHint": "Der extrahierte Text steht im Tab „Text“.",
+    "loadingText": "Text wird geladen …",
+    "loadError": "Der Quelltext konnte nicht geladen werden",
+    "stillReading": "Diese Quelle wird noch gelesen …",
+    "readFailed": "Diese Quelle konnte nicht gelesen werden.",
+    "readFailedWithError": "Diese Quelle konnte nicht gelesen werden: {error}.",
+    "noText": "Aus dieser Quelle wurde kein Text extrahiert."
+  },
+  "artifact": {
+    "regenerate": "Neu erzeugen",
+    "download": "Herunterladen",
+    "audioLabel": "Audio zu {title}",
+    "videoLabel": "Video zu {title}",
+    "degradedAudio": "Es ist kein Text-zu-Sprache-Anbieter konfiguriert, daher ist das nur das Skript. Füge in den Einstellungen einen OpenAI-Schlüssel hinzu, um gesprochenes Audio zu erzeugen.",
+    "degradedVideo": "Es ist kein ffmpeg-/TTS-Anbieter verfügbar, daher ist das nur die Foliengliederung. Konfiguriere das Video des Gedächtnis-Studios, um ein erzähltes MP4 zu erstellen."
+  },
+  "metadata": {
+    "title": "Erinnerung bearbeiten"
+  }
+}

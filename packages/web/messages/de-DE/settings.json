@@ -1,0 +1,936 @@
+{
+  "reset": "Auf Standard zurücksetzen",
+  "syncedToAccount": "Mit deinem Konto synchronisiert",
+  "signInToSync": "Anmelden, um geräteübergreifend zu synchronisieren",
+  "hub": {
+    "title": "Einstellungen",
+    "description": "Stelle ein, wie Midnite aussieht, sperrt und deine Agenten betreibt."
+  },
+  "groups": {
+    "general": "Allgemein",
+    "workspace": "Workspace",
+    "security": "Sicherheit"
+  },
+  "items": {
+    "appearance": "Erscheinungsbild",
+    "system": "System",
+    "features": "Funktionen",
+    "agents": "Agenten",
+    "apiTokens": "API-Tokens",
+    "data": "Daten",
+    "editor": "Editor",
+    "integrations": "Integrationen",
+    "repos": "Repos",
+    "safety": "Sicherheitsnetz",
+    "credentials": "Zugangsdaten",
+    "screenLock": "Bildschirmsperre",
+    "security": "Sicherheit"
+  },
+  "appearance": {
+    "language": "Sprache",
+    "languageDescription": "Die in der App verwendete Sprache. Wird mit deinem Konto synchronisiert, wenn du angemeldet bist.",
+    "theme": "Design",
+    "navigation": "Navigation",
+    "accent": "Akzent",
+    "motionEffects": "Bewegung & Effekte",
+    "themeOptions": {
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "System",
+      "time": "Uhrzeit"
+    },
+    "navModeOptions": {
+      "auto": {
+        "label": "Automatisch",
+        "hint": "Eingeklappt; klappt beim Überfahren auf"
+      },
+      "expanded": {
+        "label": "Offen fixiert",
+        "hint": "Immer ausgeklappt"
+      },
+      "collapsed": {
+        "label": "Geschlossen fixiert",
+        "hint": "Immer nur die Symbolleiste"
+      }
+    },
+    "colourTheme": "Farbdesign",
+    "colourThemeDescription": "Hell, dunkel, dem System folgen oder automatisch nach Tageszeit wechseln.",
+    "interfaceFont": "Oberflächenschrift",
+    "interfaceFontDescription": "Die Schrift für Fließtext in der ganzen App. Nur Systemschriften — kein Download, wirkt sofort. Code, Terminals und die Wortmarke behalten ihre eigene Schrift.",
+    "fontPreview": "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern — 0123456789",
+    "sideNavigation": "Seitennavigation",
+    "sideNavigationDescription": "Die Navigation offen oder geschlossen fixieren — oder eingeklappt lassen und beim Überfahren aufklappen.",
+    "backgroundPattern": "Hintergrundmuster",
+    "backgroundPatternDescription": "Der dekorative Hintergrund hinter jeder Seite — dazu der Dashboard-Header, der Startbildschirm und der Bildschirmschoner. Das Sternenfeld passt sich Design und Akzentfarbe an.",
+    "intensity": "Intensität",
+    "intensityDescription": "Wie sichtbar der animierte Farbverlauf im Hintergrund ist.",
+    "gradientIntensity": "Verlaufsintensität",
+    "dynamicMotion": "Dynamische Bewegung",
+    "dynamicMotionDescription": "Das Muster dezent animieren und auf den Cursor reagieren lassen — das Sternenfeld wirbelt und zündet, Punkte streuen, Linien folgen, Verläufe ziehen wie Wolken.",
+    "motionReducedNotice": "Deine Bewegungseinstellung steht auf „Reduziert“, daher wird das statische Muster gezeigt, bis Bewegung wieder erlaubt ist.",
+    "accentDescription": "Färbt Buttons, Links und Fokusringe in der ganzen App neu. Wähle den Marken-Verlauf, eine Verlaufsvorlage oder eine Volltonfarbe — oder baue dir eine eigene. Passt sich hell und dunkel an.",
+    "density": "Dichte",
+    "densityDescription": "„Komfortabel“ nutzt die Standardabstände; „Kompakt“ zeigt mehr auf dem Bildschirm.",
+    "motion": "Bewegung",
+    "motionDescription": "Der System-Einstellung für reduzierte Bewegung folgen, Animationen minimieren oder immer animieren.",
+    "shimmerCascade": "Schimmer-Kaskade",
+    "shimmerCascadeDescription": "In welche Richtung der Schimmer der Live-Status-Pillen über Startbildschirm und Bildschirmschoner läuft.",
+    "shimmerCascadeDirection": "Richtung der Schimmer-Kaskade",
+    "productGuides": "Produkt-Guides",
+    "autoShowGuides": "Guides automatisch zeigen",
+    "autoShowGuidesDescription": "Den Produkt-Guide einer Seite einmal beim ersten Besuch zeigen. Schalte das aus, um Guides nur auf Abruf im Assistenzmenü zu behalten.",
+    "installApp": "App installieren",
+    "logo": "Logo",
+    "capitalisation": "Groß-/Kleinschreibung",
+    "capitalisationDescription": "Wie die Wortmarke überall geschrieben wird. Probiere jede Form mit der Schrift unten aus.",
+    "wordmarkCapitalisation": "Schreibweise der Wortmarke",
+    "size": "Größe",
+    "sizeDescription": "Wie groß die Wortmarke überall dargestellt wird.",
+    "wordmarkSize": "Größe der Wortmarke",
+    "wordmarkFontDescription": "Die Schrift, in der die Midnite-Wortmarke in der App gesetzt ist.",
+    "showIcon": "Symbol anzeigen",
+    "active": "Aktiv",
+    "accentBuilder": {
+      "button": "Button",
+      "badge": "Badge",
+      "secondaryAccent": "Zweiter Akzent",
+      "secondaryShort": "2.",
+      "secondaryAccentDescription": "Eine unabhängige zweite Farbe für sekundäre UI-Akzente. Standardmäßig aus.",
+      "animateGradient": "Verlauf animieren",
+      "respectsMotion": "(berücksichtigt deine Bewegungseinstellung)",
+      "gradients": "Verläufe",
+      "gradientPresets": "Verlaufsvorlagen",
+      "solids": "Volltonfarben",
+      "solidAccent": "Vollton-Akzent",
+      "customGradient": "Eigener Verlauf",
+      "customGradientDescription": "Baue deinen eigenen Verlauf — linear oder konisch, eine Farbe (Mono-Abstufung) oder bis zu drei, plus Winkel.",
+      "editing": "Bearbeiten",
+      "customise": "Anpassen",
+      "type": "Typ",
+      "style": "Stil",
+      "mono": "Mono",
+      "multi": "Multi",
+      "colour": "Farbe",
+      "stops": "Stopps",
+      "addStop": "+ Stopp",
+      "removeStop": "– Stopp",
+      "hue": "Farbton",
+      "gradientStop": "Verlaufsstopp {number}",
+      "angle": "Winkel"
+    },
+    "options": {
+      "density": {
+        "comfortable": {
+          "label": "Komfortabel",
+          "hint": "Standardabstände und Schriftgrößen"
+        },
+        "compact": {
+          "label": "Kompakt",
+          "hint": "Engere Abstände — mehr passt auf den Bildschirm"
+        }
+      },
+      "motion": {
+        "system": {
+          "label": "System",
+          "hint": "Der Betriebssystem-Einstellung für reduzierte Bewegung folgen"
+        },
+        "reduced": {
+          "label": "Reduziert",
+          "hint": "Animationen überall minimieren"
+        },
+        "full": {
+          "label": "Voll",
+          "hint": "Immer animieren, auch wenn das System Reduzierung verlangt"
+        }
+      },
+      "effects": {
+        "pageReveal": {
+          "label": "Seiteneinblendung",
+          "hint": "Gestaffeltes Einblenden der Seiteninhalte"
+        },
+        "typewriter": {
+          "label": "Schreibmaschinen-Titel",
+          "hint": "Seitentitel Zeichen für Zeichen tippen"
+        },
+        "glass": {
+          "label": "Milchglas",
+          "hint": "Hintergrund-Weichzeichnung auf Overlays und Panels"
+        }
+      },
+      "shimmer": {
+        "ltr": {
+          "label": "Links zuerst",
+          "hint": "Kaskade läuft links → rechts"
+        },
+        "rtl": {
+          "label": "Rechts zuerst",
+          "hint": "Kaskade läuft rechts → links"
+        }
+      },
+      "uiFont": {
+        "system": {
+          "label": "System",
+          "hint": "Die Standard-Serifenlose deiner Plattform"
+        },
+        "grotesk": {
+          "label": "Grotesk",
+          "hint": "Klare neo-groteske Serifenlose"
+        },
+        "humanist": {
+          "label": "Humanistisch",
+          "hint": "Wärmere humanistische Serifenlose"
+        },
+        "serif": {
+          "label": "Serif",
+          "hint": "Klassische Serifenschrift"
+        },
+        "mono": {
+          "label": "Mono",
+          "hint": "Nichtproportional"
+        }
+      },
+      "bgIntensity": {
+        "subtle": {
+          "label": "Dezent"
+        },
+        "balanced": {
+          "label": "Ausgewogen"
+        },
+        "bold": {
+          "label": "Kräftig"
+        }
+      },
+      "gradientType": {
+        "linear": {
+          "label": "Linear"
+        },
+        "conic": {
+          "label": "Konisch"
+        }
+      },
+      "editorAutosave": {
+        "0": {
+          "label": "Aus"
+        },
+        "10": {
+          "label": "Alle 10 s"
+        },
+        "30": {
+          "label": "Alle 30 s"
+        },
+        "60": {
+          "label": "Alle 60 s"
+        }
+      }
+    }
+  },
+  "profile": {
+    "genericError": "Etwas ist schiefgelaufen",
+    "passwordsNoMatch": "Die neuen Passwörter stimmen nicht überein",
+    "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen haben",
+    "displayName": "Anzeigename",
+    "displayNameHint": "So erscheinst du für Teammitglieder.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Dein Name",
+    "email": "E-Mail",
+    "emailHint": "Deine Anmeldeadresse. Nicht bearbeitbar.",
+    "changePassword": "Passwort ändern",
+    "changePasswordHint": "Wähle ein neues Passwort für dein Konto.",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Neues Passwort bestätigen",
+    "updating": "Wird aktualisiert …",
+    "updatePassword": "Passwort aktualisieren",
+    "passwordUpdated": "Passwort aktualisiert",
+    "linkedAccounts": "Verknüpfte Konten",
+    "linkedAccountsHint": "Drittanbieter, mit denen du dich anmelden kannst. Werden beim ersten „Mit Google / GitHub fortfahren“ automatisch verknüpft.",
+    "noLinkedAccounts": "Noch keine verknüpften Konten.",
+    "couldNotSaveName": "Name konnte nicht gespeichert werden",
+    "emailReadonly": "Die E-Mail-Adresse kann nicht geändert werden.",
+    "couldNotUpdatePassword": "Passwort konnte nicht aktualisiert werden",
+    "minChars": "Mindestens 8 Zeichen.",
+    "passwordsMismatch": "Die Passwörter stimmen nicht überein.",
+    "account": "Konto"
+  },
+  "agents": {
+    "genericError": "Etwas ist schiefgelaufen",
+    "loadFailed": "Agenten konnten nicht geladen werden: {error}",
+    "providerUnconfigured": "<b>{name}</b> ist als KI-Anbieter eingestellt, hat aber keinen API-Schlüssel — KI-Funktionen (Aufgaben-Triage, Planentwürfe, Heartbeat) werden daher übersprungen. Füge unten im Tab <b>API</b> einen Schlüssel hinzu oder wechsle den aktiven Anbieter.",
+    "theActiveProvider": "Der aktive Anbieter",
+    "primaryAgent": "Hauptagent",
+    "showAdvanced": "Erweitert anzeigen",
+    "hideAdvanced": "Erweitert ausblenden",
+    "name": "Name",
+    "orchestratorPlaceholder": "Orchestrator",
+    "descriptionPrompt": "Beschreibung / Prompt",
+    "primaryDescriptionHint": "Der System-Prompt des Orchestrators — wie er planen, delegieren und entscheiden soll, woran gearbeitet wird.",
+    "primaryDescriptionPlaceholder": "Du bist der Orchestrator. Du sichtest eingehende Arbeit und zerlegst sie in Aufgaben …",
+    "heartbeat": "Heartbeat",
+    "heartbeatHint": "Ein Prompt, den der Orchestrator planmäßig ausführt — für Durchläufe, Check-ins oder jede wiederkehrende Aufgabe.",
+    "enableHeartbeat": "Heartbeat aktivieren",
+    "interval": "Intervall",
+    "intervalHint": "Wie oft der Heartbeat-Prompt läuft — von jede Stunde bis einmal im Monat.",
+    "heartbeatInterval": "Heartbeat-Intervall",
+    "heartbeatPrompt": "Heartbeat-Prompt",
+    "heartbeatPromptPlaceholder": "Prüfe offene Aufgaben und zeige alles, was feststeckt oder eine Entscheidung braucht …",
+    "agentPool": "Agenten-Pool",
+    "parallelAgents": "Parallele Agenten",
+    "parallelAgentsHint": "Wie viele Agentensitzungen gleichzeitig laufen dürfen. Weitere Aufgaben warten, bis ein Slot frei wird.",
+    "poolDefault": "Standard {default} · Maximum {max}.",
+    "agentsTitle": "Agenten",
+    "agentsIntro": "Jeder Coding-Agent, den Midnite kennt. Klappe einen auf, um sein CLI zu installieren oder zu aktualisieren (damit laufen Aufgabensitzungen) oder füge im Tab „API“ deinen eigenen Schlüssel hinzu, damit dieser Anbieter Midnites eigene KI-Funktionen antreiben kann.",
+    "subAgents": "Subagenten",
+    "noSubagents": "Noch keine Subagenten",
+    "noSubagentsHint": "Füge fokussierte Arbeiter hinzu, an die der Orchestrator delegieren kann.",
+    "addSubagent": "Subagent hinzufügen",
+    "removeSubagentTitle": "Diesen Subagenten entfernen?",
+    "removeSubagentDescription": "{name} wird gelöscht und der Orchestrator kann nicht mehr an ihn delegieren.",
+    "thisSubagent": "Dieser Subagent",
+    "cliTab": "CLI",
+    "apiTab": "API",
+    "primaryAgentRouting": "Routing des Hauptagenten",
+    "sessionCli": "Sitzungs-CLI",
+    "sessionCliHint": "Der Coding-Agent, der im Sitzungsterminal gestartet wird, um Aufgaben auszuführen.",
+    "sessionAgentCli": "CLI des Sitzungsagenten",
+    "aiProvider": "KI-Anbieter",
+    "aiProviderHint": "Treibt Midnites eigene KI an (Triage, Planentwürfe, Heartbeat). Füge den Schlüssel jedes Anbieters in seiner Karte unten hinzu.",
+    "activeAiProvider": "Aktiver KI-Anbieter",
+    "collapseSubagent": "Subagent einklappen",
+    "expandSubagent": "Subagent ausklappen",
+    "subagentNumber": "Subagent {number}",
+    "subagentName": "Name des Subagenten",
+    "removeSubagent": "Subagent entfernen",
+    "role": "Rolle",
+    "rolePlaceholder": "Verdichtet lange Threads zu einer Kurzfassung",
+    "description": "Beschreibung",
+    "subDescriptionHint": "Der vollständige System-Prompt für diesen Subagenten.",
+    "subDescriptionPlaceholder": "Du bist ein Zusammenfasser. Erstelle aus einem Transkript eine knappe, treue Zusammenfassung …",
+    "markdown": "Markdown",
+    "markdownHint": "Markdown-Modus — wird als Prompt-Dokument des Agenten geschrieben."
+  },
+  "apiTokens": {
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {count} Min.",
+    "hoursAgo": "vor {count} Std.",
+    "daysAgo": "vor {count} T.",
+    "genericError": "Etwas ist schiefgelaufen",
+    "createTitle": "API-Token erstellen",
+    "nameLabel": "Name",
+    "namePlaceholder": "z. B. CI/CD-Pipeline",
+    "expiresLabel": "Läuft ab (optional)",
+    "creating": "Wird erstellt …",
+    "createButton": "Token erstellen",
+    "secretTitle": "Token erstellt: {name}",
+    "secretWarning": "Kopiere dieses Token jetzt — es wird nicht erneut angezeigt.",
+    "copied": "✓ Kopiert",
+    "copy": "Kopieren",
+    "secretUsage": "Bei API-Anfragen als <code>Authorization: Bearer {token}</code> übergeben.",
+    "done": "Fertig",
+    "title": "API-Tokens",
+    "description": "Maschinenlesbare Tokens für CI/CD-Pipelines und skriptgesteuerte Integrationen.",
+    "newToken": "Neues Token",
+    "empty": "Noch keine API-Tokens. Erstelle eines, um Skripte und CI/CD-Pipelines zu authentifizieren.",
+    "colPrefix": "Präfix",
+    "colLastUsed": "Zuletzt genutzt",
+    "colExpires": "Läuft ab",
+    "never": "Nie",
+    "revoking": "Wird widerrufen …",
+    "revoke": "Widerrufen"
+  },
+  "approvals": {
+    "errorFallback": "Etwas ist schiefgelaufen",
+    "mode": {
+      "title": "Autonomiemodus",
+      "description": "Steuert, wie Midnite Freigaben für Werkzeugaufrufe während Agentensitzungen behandelt.",
+      "active": "Aktiv",
+      "options": {
+        "manual": {
+          "label": "Manuell",
+          "description": "Vor jedem Werkzeugaufruf fragen. Keine automatischen Entscheidungen."
+        },
+        "guarded": {
+          "label": "Bewacht",
+          "description": "Nur lesende Werkzeuge automatisch erlauben (Read, Grep, Glob, LS). Für alles andere fragen."
+        },
+        "autonomous": {
+          "label": "Autonom",
+          "description": "Regeln entscheiden. Nur eskalieren, wenn keine Regel passt."
+        }
+      }
+    },
+    "safeTools": {
+      "title": "Im bewachten Modus immer automatisch erlaubt"
+    },
+    "rules": {
+      "title": "Regeln",
+      "description": "Dauerhafte Erlauben-/Verweigern-Regeln, ausgewertet im <em>bewachten</em> und <em>autonomen</em> Modus.",
+      "add": "Regel hinzufügen",
+      "empty": "Noch keine Regeln. Füge oben eine hinzu, um das Werkzeugverhalten anzupassen.",
+      "enable": "Regel aktivieren",
+      "disable": "Regel deaktivieren",
+      "delete": "Regel löschen",
+      "form": {
+        "toolName": "Werkzeugname",
+        "toolNamePlaceholder": "z. B. Bash, Read, * (alle)",
+        "toolNameRequired": "Der Werkzeugname ist erforderlich",
+        "effect": "Wirkung",
+        "effectAllow": "Erlauben",
+        "effectDeny": "Verweigern",
+        "note": "Notiz (optional)",
+        "notePlaceholder": "Warum diese Regel existiert",
+        "submit": "Regel speichern"
+      }
+    },
+    "history": {
+      "title": "Verlauf",
+      "description": "Jede Entscheidung zur Werkzeugnutzung — von dir oder der Policy-Engine.",
+      "empty": "Noch keine Entscheidungen erfasst.",
+      "range": "{from}–{to} von {total}",
+      "prev": "← Zurück",
+      "next": "Weiter →",
+      "resolution": {
+        "allow": "Erlauben",
+        "allow-session": "Erlauben (Sitzung)",
+        "deny": "Verweigern",
+        "auto-allow": "Auto-Erlauben",
+        "auto-deny": "Auto-Verweigern",
+        "timeout": "Zeitüberschreitung",
+        "expired": "Abgelaufen"
+      }
+    },
+    "inbox": {
+      "trigger": "Freigaben",
+      "triggerAria": "Freigaben-Eingang",
+      "triggerAriaPending": "Freigaben-Eingang, {count} offen",
+      "triggerWithCount": "Freigaben ({count})",
+      "title": "Freigaben-Eingang",
+      "close": "Freigaben-Eingang schließen",
+      "empty": "Keine offenen Freigaben",
+      "manageLink": "Autonomiemodus & Regeln verwalten →",
+      "expired": "abgelaufen",
+      "countdown": "{minutes} Min. {seconds} s",
+      "countdownSeconds": "{seconds} s",
+      "allow": "Erlauben",
+      "deny": "Verweigern",
+      "allowSession": "Sitzung erlauben",
+      "makeRule": "Regel erstellen",
+      "requested": "Angefragt {when}",
+      "taskSuffix": " · Aufgabe {id}"
+    }
+  },
+  "credentials": {
+    "title": "Workflow-Zugangsdaten",
+    "description": "Geheimnisse, die von Workflow-Integrationsknoten genutzt werden (Slack, SMTP, HTTP-Auth). Geheimes Material wird verschlüsselt gespeichert und nie von der API zurückgegeben — hier sind nur Name und Typ sichtbar.",
+    "empty": "Noch keine Zugangsdaten gespeichert.",
+    "add": "Zugangsdaten hinzufügen",
+    "deleteNamed": "{name} löschen",
+    "types": {
+      "httpBearer": "HTTP-Bearer-Token",
+      "httpBasic": "HTTP-Basic-Auth",
+      "httpHeader": "HTTP-Custom-Header",
+      "slack": "Slack",
+      "smtp": "SMTP (E-Mail)",
+      "github": "GitHub (PAT)",
+      "googleOauth": "Google (OAuth)",
+      "slackOauth": "Slack (OAuth)"
+    },
+    "fields": {
+      "bearerToken": "Bearer-Token",
+      "username": "Benutzername",
+      "password": "Passwort",
+      "headerName": "Header-Name",
+      "headerNamePlaceholder": "X-API-Key",
+      "headerValue": "Header-Wert",
+      "botToken": "Bot-Token",
+      "botTokenPlaceholder": "xoxb-…",
+      "smtpHost": "SMTP-Host",
+      "smtpHostPlaceholder": "smtp.example.com",
+      "port": "Port",
+      "portPlaceholder": "587",
+      "usernameEmail": "Benutzername / E-Mail",
+      "fromAddress": "Absenderadresse (optional)",
+      "fromAddressPlaceholder": "absender@beispiel.de",
+      "pat": "Persönliches Zugangstoken",
+      "patPlaceholder": "ghp_…"
+    },
+    "form": {
+      "title": "Neue Zugangsdaten",
+      "name": "Name",
+      "namePlaceholder": "Mein Slack-Bot",
+      "type": "Typ",
+      "oauthNote": "Ein Klick auf „Autorisieren“ leitet dich zur Zustimmungsseite des Anbieters weiter. Die Zugangsdaten werden bei der Rückkehr automatisch gespeichert.",
+      "authorize": "Autorisieren"
+    },
+    "delete": {
+      "title": "Zugangsdaten löschen?",
+      "description": "„{name}“ wird endgültig entfernt. Jeder Workflow-Knoten, der darauf verweist, schlägt fehl, bis er angepasst ist."
+    },
+    "toast": {
+      "saved": "Zugangsdaten gespeichert",
+      "saveError": "Zugangsdaten konnten nicht gespeichert werden",
+      "deleted": "Zugangsdaten gelöscht",
+      "deleteError": "Zugangsdaten konnten nicht gelöscht werden"
+    }
+  },
+  "data": {
+    "errorFallback": "Backup fehlgeschlagen",
+    "title": "Daten",
+    "description": "Sichere und stelle deinen gesamten Midnite-Datenbestand wieder her — für Notfälle oder den Umzug zwischen Instanzen.",
+    "tabs": {
+      "ariaLabel": "Sichern oder wiederherstellen",
+      "backup": "Backup",
+      "restore": "Wiederherstellen"
+    },
+    "download": {
+      "title": "Backup herunterladen",
+      "description": "Ein portables <code>.zip</code>-Archiv jeder Arbeitsdomäne, wiederherstellbar auf dieser oder einer neuen Instanz.",
+      "includeSecrets": "Geheimnisse einschließen",
+      "includeSecretsDesc": "— API-Schlüssel, Webhook-Signaturgeheimnisse & Workflow-Zugangsdaten, neu verschlüsselt mit einer Passphrase.",
+      "passphraseLabel": "Passphrase (du brauchst sie zum Wiederherstellen — sie wird nie gespeichert)",
+      "passphrasePlaceholder": "Eine starke Passphrase",
+      "passphraseRequired": "Für das Einschließen von Geheimnissen ist eine Passphrase erforderlich.",
+      "preparing": "Wird vorbereitet …",
+      "button": "Backup herunterladen",
+      "included": "In einem Backup enthalten",
+      "lockNoteIncluded": "Geheimnisse werden mit deiner Passphrase neu verschlüsselt — der rohe Instanzschlüssel verlässt diesen Rechner nie.",
+      "lockNoteExcluded": "Geheimnisse (API-Schlüssel, Tokens) sind ausgeschlossen — aktiviere „Geheimnisse einschließen“, um sie mitzunehmen, oder richte Integrationen nach der Wiederherstellung neu ein.",
+      "lastBackup": "Letztes Backup: Schema v{version} · {count} Datensätze über {domains} Domänen.",
+      "toastSuccess": "Backup heruntergeladen — {filename}"
+    },
+    "autoBackup": {
+      "title": "Geplantes Auto-Backup",
+      "description": "Automatische, zeitgestempelte Backups in einem Intervall, begrenzt auf eine Aufbewahrungsanzahl.",
+      "loading": "Status des Auto-Backups wird geladen …",
+      "error": "Status des Auto-Backups konnte nicht geladen werden.",
+      "disabled": "Das geplante Auto-Backup ist <strong>aus</strong>. Aktiviere es, indem du <code>backup.enabled</code> in <code>midnite.json</code> setzt.",
+      "schedule": "Alle {hours} h → <code>{dir}</code> ({retention} behalten)",
+      "last": "Zuletzt: {when}",
+      "never": "nie",
+      "next": " · nächstes ~{when}",
+      "noArchives": "Noch keine Archive geschrieben.",
+      "enableLabel": "Geplante Backups aktivieren",
+      "enableHint": "Ein automatisches Backup in der unten gewählten Häufigkeit ausführen.",
+      "frequencyLabel": "Häufigkeit",
+      "directoryLabel": "Verzeichnis",
+      "frequency": {
+        "hourly": "Stündlich",
+        "daily": "Täglich",
+        "weekly": "Wöchentlich",
+        "monthly": "Monatlich"
+      },
+      "save": "Speichern",
+      "saving": "Wird gespeichert …",
+      "toastSaved": "Einstellungen für geplante Backups gespeichert"
+    },
+    "restore": {
+      "title": "Aus einem Backup wiederherstellen",
+      "description": "Lade ein Archiv hoch, um es zu prüfen, und stelle es dann wieder her — <strong>zusammenführen</strong> behält bestehende Datensätze, <strong>ersetzen</strong> löscht sie zuerst.",
+      "chooseAria": "Backup-Archiv auswählen",
+      "choose": "Archiv auswählen …",
+      "reading": "Archiv wird gelesen …",
+      "blocked": "Dieses Archiv wurde von einem neueren Midnite erstellt (Schema v{schemaVersion}, {compat}), als diese Instanz versteht. Aktualisiere Midnite und versuche es erneut — es kann nicht sicher importiert werden.",
+      "previewLabel": "Vorschau — Schema v{version} ({compat}): {count, plural, one {# Datensatz} other {# Datensätze}}",
+      "conflicts": "· {count} vorhanden",
+      "passphraseLabel": "Passphrase (um die Geheimnisse dieses Archivs wiederherzustellen — leer lassen, um sie zu überspringen)",
+      "passphrasePlaceholder": "Export-Passphrase",
+      "modeLegend": "Wiederherstellungsmodus",
+      "merge": "Zusammenführen",
+      "replace": "Ersetzen",
+      "mergeDesc": "— neue Datensätze einfügen, bestehende behalten.",
+      "replaceDesc": "— die aufgeführten Domänen löschen, dann wiederherstellen. Destruktiv.",
+      "confirmLabel": "Tippe <code>replace</code>, um das Löschen bestehender Daten zu bestätigen:",
+      "restoring": "Wird wiederhergestellt …",
+      "restoreMode": "Wiederherstellen ({mode})",
+      "toastRestored": "{count, plural, one {# Datensatz} other {# Datensätze}} wiederhergestellt ({mode}).",
+      "stage": {
+        "uploading": "Archiv wird hochgeladen …",
+        "restoring": "Datensätze werden wiederhergestellt …",
+        "reindexing": "Suchindex wird neu aufgebaut …",
+        "done": "Fertig"
+      },
+      "result": {
+        "summary": "Wiederhergestellt ({mode}): {inserted} eingefügt, {skipped} übersprungen",
+        "secrets": " · Geheimnisse: {restored} wiederhergestellt",
+        "secretsSkipped": ", {skipped} übersprungen",
+        "reindexWarned": " · Suchindex mit Warnung"
+      }
+    }
+  },
+  "editor": {
+    "autosave": {
+      "title": "Automatisches Speichern",
+      "description": "Wie oft Editoren deine Arbeit automatisch speichern. Der Speichern-Button bleibt immer verfügbar und ist nur bei ungespeicherten Änderungen aktiv. Wähle <strong>Aus</strong>, um manuell zu speichern.",
+      "intervalAria": "Intervall für automatisches Speichern"
+    }
+  },
+  "features": {
+    "title": "Funktionen",
+    "description": "Bereiche der App ein- oder ausschalten. Deaktivierte Funktionen sind in der Seitenleiste verborgen; öffnest du eine direkt, wirst du gefragt, ob du sie hier wieder aktivieren willst. Diese Gruppen spiegeln die Abschnitte der Seitenleiste.",
+    "enableAria": "{feature} aktivieren"
+  },
+  "integrations": {
+    "title": "Integrationen",
+    "description": "Ausgehende Webhooks — Aufgaben-Ereignisse an Slack, Discord oder einen beliebigen Empfänger senden.",
+    "addEndpoint": "Endpunkt hinzufügen",
+    "empty": "Noch keine Webhook-Endpunkte. Füge einen hinzu, um Aufgaben-Ereignisse an einen Kanal oder Dienst zu senden.",
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen"
+    },
+    "columns": {
+      "provider": "Anbieter",
+      "target": "Ziel",
+      "events": "Ereignisse",
+      "enabled": "Aktiv"
+    },
+    "toggleAria": "{host} ein-/ausschalten",
+    "testSent": "✓ Test gesendet",
+    "testFailed": "✗ Test fehlgeschlagen",
+    "sendTest": "Test senden",
+    "hideLog": "Log ausblenden",
+    "deliveries": "Auslieferungen",
+    "rotateSecret": "Geheimnis erneuern",
+    "deliveriesPanel": {
+      "loading": "Auslieferungen werden geladen …",
+      "empty": "Noch keine Auslieferungen. Verschiebe eine passende Aufgabe — oder klicke auf „Test senden“.",
+      "redelivering": "Wird erneut ausgeliefert …",
+      "redeliver": "Erneut ausliefern"
+    },
+    "create": {
+      "title": "Webhook-Endpunkt hinzufügen",
+      "payloadUrl": "Payload-URL",
+      "payloadUrlPlaceholder": "https://hooks.slack.com/services/…",
+      "provider": "Anbieter",
+      "events": "Ereignisse",
+      "statuses": "Nur bei diesen Status",
+      "statusesHint": "(optional, für Aktualisierungen)",
+      "creating": "Wird erstellt …",
+      "addEndpoint": "Endpunkt hinzufügen"
+    },
+    "secret": {
+      "title": "Signaturgeheimnis",
+      "description": "Kopiere es jetzt — es wird nicht erneut angezeigt. Nutze es, um den Header <code>X-Midnite-Signature</code> zu prüfen.",
+      "copied": "✓ Kopiert",
+      "copy": "Kopieren",
+      "done": "Fertig"
+    },
+    "inbound": {
+      "title": "Eingehende Quellen",
+      "subtitle": "Lass GitHub, Linear oder jeden signierten Absender Aufgaben auf deinem Board eröffnen.",
+      "addSource": "Quelle hinzufügen",
+      "empty": "Noch keine eingehenden Quellen. Füge eine hinzu, um externe Ereignisse zu empfangen.",
+      "allEvents": "alle Ereignisse",
+      "columns": {
+        "provider": "Anbieter",
+        "receiverUrl": "Empfänger-URL",
+        "events": "Ereignisse",
+        "defaultRouting": "Standard-Routing",
+        "enabled": "Aktiv"
+      },
+      "hideDeliveries": "Auslieferungen ausblenden",
+      "deliveries": "Auslieferungen",
+      "rotateSecret": "Geheimnis erneuern",
+      "deliveriesLog": {
+        "loading": "Auslieferungen werden geladen …",
+        "empty": "Noch keine Auslieferungen empfangen.",
+        "result": "Ergebnis",
+        "event": "Ereignis",
+        "task": "Aufgabe",
+        "when": "Wann",
+        "viewTask": "Aufgabe ansehen"
+      },
+      "created": {
+        "title": "Quelle erstellt",
+        "description": "Füge das Signaturgeheimnis in die Webhook-Konfiguration des Absenders ein. Es wird <strong>einmal</strong> angezeigt — erneuere es, wenn du es verlierst.",
+        "receiverUrl": "Empfänger-URL",
+        "signingSecret": "Signaturgeheimnis",
+        "copied": "Kopiert",
+        "copy": "Kopieren",
+        "done": "Fertig"
+      },
+      "add": {
+        "title": "Eingehende Quelle hinzufügen",
+        "provider": "Anbieter",
+        "events": "Ereignisse",
+        "eventsHint": "(nichts ausgewählt = alle annehmen)",
+        "genericPlaceholder": "kommagetrennte Ereignisschlüssel (leer = alle annehmen)",
+        "defaultRepo": "Standard-Repo",
+        "defaultProjectId": "Standard-Projekt-ID",
+        "optional": "optional",
+        "creating": "Wird erstellt …",
+        "createSource": "Quelle erstellen"
+      }
+    }
+  },
+  "repos": {
+    "title": "Repos",
+    "description": "Benannte Checkouts, gegen die der Orchestrator Agenten laufen lässt. Das Repo einer Aufgabe wird beim Öffnen ihrer Sitzung auf den Ordner des Checkouts aufgelöst. Pfade dürfen <home>~</home> für dein Benutzerverzeichnis verwenden. Setze <ownerRepo>owner/repo</ownerRepo>, um die GitHub-Webhook-Verdrahtung zu aktivieren.",
+    "nameAndPathRequired": "Name und Pfad sind beide erforderlich.",
+    "empty": "Noch keine Repos — füge unten eines hinzu.",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copyLabel": "{label} kopieren",
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen"
+    },
+    "remove": {
+      "title": "„{name}“ entfernen?",
+      "description": "Aufgaben, die darauf verweisen, fallen auf das Standard-Arbeitsverzeichnis zurück."
+    },
+    "fields": {
+      "name": "Name",
+      "path": "Pfad",
+      "ownerRepo": "GitHub owner/repo",
+      "branchPrefix": "Branch-Präfix",
+      "prTemplate": "PR-Vorlage",
+      "optional": "(optional)"
+    },
+    "placeholders": {
+      "name": "api",
+      "path": "~/Dev/api",
+      "ownerRepo": "owner/repo",
+      "ownerRepoExample": "owner/repo (z. B. bilo-io/midnite)",
+      "branchPrefixExample": "Branch-Präfix (z. B. feature/)",
+      "prTemplateOptional": "Vorlage für den PR-Text (optional)",
+      "prTemplate": "## Zusammenfassung\n\n## Tests",
+      "branchPrefix": "feature/"
+    },
+    "addRepo": "Repo hinzufügen",
+    "aria": {
+      "name": "Repo-Name",
+      "path": "Repo-Pfad",
+      "ownerRepo": "GitHub owner/repo",
+      "branchPrefix": "Branch-Präfix",
+      "prTemplate": "PR-Vorlage",
+      "edit": "{name} bearbeiten",
+      "remove": "{name} entfernen"
+    },
+    "prTemplateBadge": "· PR-Vorlage",
+    "webhook": {
+      "title": "GitHub-Webhook",
+      "description": "Verknüpfe einen Workflow mit Webhook-Trigger, um GitHub-<code>pull_request</code>-Ereignisse zu empfangen und PRs automatisch mit Claude zu prüfen.",
+      "setOwnerRepo": "Setze <strong>owner/repo</strong> auf diesem Repo, um die Payload-Filterung zu aktivieren.",
+      "workflow": "Workflow",
+      "selectWorkflow": "Workflow auswählen",
+      "noWorkflows": "Keine Workflows mit Webhook-Trigger gefunden. Installiere die Vorlage <strong>AI Code Review</strong> aus <link>Workflows → Vorlagen</link>.",
+      "regenerate": "Neu erzeugen",
+      "getUrl": "URL holen",
+      "saveSecret": "Speichere das Geheimnis jetzt — es wird nicht erneut angezeigt.",
+      "webhookUrl": "Webhook-URL",
+      "urlLabel": "Webhook-URL",
+      "secret": "Geheimnis",
+      "secretLabel": "Webhook-Geheimnis",
+      "setupInstructions": "Einrichtungsanleitung",
+      "yourRepo": "dein GitHub-Repo",
+      "steps": {
+        "step1": "Gehe zu <target></target> → Settings → Webhooks → Add webhook.",
+        "step2": "Füge die obige URL in das Feld „Payload URL“ ein.",
+        "step3": "Setze <strong>Content type</strong> auf <code>application/json</code>.",
+        "step4": "Füge das obige Geheimnis in das Feld „Secret“ ein.",
+        "step5": "Wähle unter „Which events …“ die Option <selectEvents>Let me select individual events</selectEvents> und hake nur <pullRequests>Pull requests</pullRequests> an.",
+        "step6": "Klicke auf „Add webhook“."
+      }
+    }
+  },
+  "safety": {
+    "title": "Sicherheitsnetz",
+    "description": "Schutzmechanismen für autonome Agenten — Pause, Richtlinien, Obergrenzen und Begrenzung der Auswirkungen.",
+    "killSwitch": {
+      "title": "Notabschaltung & Pause",
+      "description": "Planung pausieren (laufende Agenten arbeiten zu Ende) oder Notstopp (laufende Agenten abbrechen, werden neu eingereiht)."
+    },
+    "spend": {
+      "title": "Kosten, Rate & Auswirkungsradius",
+      "description": "Was Agentenarbeit blockiert oder verweigert — konfiguriert, hier nur lesbar."
+    },
+    "recentDecisions": {
+      "title": "Letzte Entscheidungen",
+      "description": "Die neuesten Entscheidungen erlauben / verweigern / eskalieren auf dem Handlungspfad."
+    }
+  },
+  "screenLock": {
+    "screensaver": "Bildschirmschoner",
+    "inactivityTimeout": "Inaktivitäts-Zeitlimit",
+    "inactivityTimeoutDescription": "Wie lange ohne Eingabe, bis der Bildschirmschoner erscheint. Jede Aktivität weckt ihn.",
+    "inactivityRange": "Standard {default} · Bereich {min}–{max}.",
+    "cycleDuration": "Zyklusdauer",
+    "cycleDurationDescription": "Wie lange jeder Satz gezeigt wird, bevor der nächste getippt wird — im Bildschirmschoner und auf dem Startbildschirm.",
+    "cycleRange": "Standard {default} s · Bereich {min}–{max} s.",
+    "screenLock": "Bildschirmsperre",
+    "requirePasscode": "Code verlangen",
+    "requirePasscodeDescription": "Für das Aufwecken aus dem Bildschirmschoner einen {length}-stelligen Code verlangen. Er wird nur auf diesem Gerät gespeichert — lösche ihn jederzeit, wenn du ihn vergisst.",
+    "onlyWhenLocked": "Nur wenn gesperrt",
+    "onlyWhenLockedDescription": "Beim Bildschirmschoner nach Untätigkeit keinen Code verlangen — nur beim manuellen Sperren über den Ein-/Aus-Knopf.",
+    "onlyWhenLockedAriaLabel": "Code nur verlangen, wenn gesperrt",
+    "passcodeSet": "Code festgelegt",
+    "noPasscodeSet": "Kein Code festgelegt",
+    "change": "Ändern",
+    "setPasscode": "Code festlegen",
+    "clear": "Löschen",
+    "secondsShort": "{value} s"
+  },
+  "security": {
+    "modes": {
+      "manual": {
+        "label": "Manuell",
+        "description": "Claude fragt vor jedem Werkzeugaufruf nach Freigabe."
+      },
+      "guarded": {
+        "label": "Bewacht",
+        "description": "Freigaberegeln bestimmen, welche Werkzeuge automatisch erlaubt sind; alles andere wartet."
+      },
+      "autonomous": {
+        "label": "Autonom",
+        "description": "Alle Werkzeugaufrufe laufen ohne Freigabe. Mit Vorsicht verwenden."
+      }
+    },
+    "disabled": "deaktiviert",
+    "prefix": "Präfix: {values}",
+    "glob": "Glob: {values}",
+    "deleteRuleAriaLabel": "Regel für {toolName} löschen",
+    "newRule": "Neue Regel",
+    "toolNamePlaceholder": "Werkzeugname (z. B. Bash, Write, *)",
+    "allow": "Erlauben",
+    "deny": "Verweigern",
+    "notePlaceholder": "Notiz (optional)",
+    "autonomyMode": "Autonomiemodus",
+    "autonomyModeDescription": "Bestimmt, wie viel Claude ohne deine ausdrückliche Freigabe tut.",
+    "approvalRules": "Freigaberegeln",
+    "approvalRulesDescription": "Regeln werden in Reihenfolge ausgewertet; der erste Treffer gewinnt. Aktiv im bewachten Modus.",
+    "viewDecisionsLog": "Entscheidungsprotokoll ansehen →",
+    "noRulesYet": "Noch keine Regeln."
+  },
+  "personalization": {
+    "couldNotSave": "Konnte nicht gespeichert werden",
+    "aboutYou": "Über dich",
+    "aboutYouDescription": "Erzähl Midnite, wer du bist — deine Rolle, wie du arbeitest, was du baust. Agenten können das als Kontext nutzen.",
+    "aboutPlaceholder": "z. B. Ich bin Backend-Entwickler und lege Wert auf kleine, gut getestete Commits …",
+    "workingDirectory": "Arbeitsverzeichnis",
+    "workingDirectoryDescription": "Der Ordner, auf den Sitzungsterminals zurückfallen, wenn eine Aufgabe kein eigenes Projektverzeichnis hat. Leer lassen, um das Verzeichnis des Gateways zu nutzen.",
+    "notSet": "Nicht gesetzt — nutzt das Verzeichnis des Gateways",
+    "browse": "Durchsuchen",
+    "clear": "Leeren",
+    "agentGuidelines": "Agenten-Richtlinien",
+    "agentGuidelinesDescription": "Vorgaben für jede Sitzung, zusätzlich zu den Richtlinien jedes Projekts. Gut für dauerhafte Präferenzen — Tonfall, Konventionen, Dinge, die immer oder nie getan werden sollen.",
+    "guidelinesPlaceholder": "z. B. Funktionalen Stil bevorzugen. Vor dem Abschluss immer den Linter ausführen. PRs fokussiert halten …"
+  },
+  "system": {
+    "env": {
+      "title": "Umgebung",
+      "description": "Die lokale Toolchain, die Midnite braucht, erkannt auf dem Gateway-Host.",
+      "osAriaLabel": "Betriebssystem",
+      "detectedSystem": "Erkanntes System: {os}.",
+      "notConfigured": "{os}-Werkzeuge sind noch nicht konfiguriert.",
+      "referenceDetected": "Erkanntes System ist {host} — diese {tab}-Werkzeuge werden nur zur Referenz gezeigt.",
+      "referenceNoDetect": "Zur Referenz gezeigt — das Host-Betriebssystem konnte nicht erkannt werden.",
+      "checking": "wird geprüft …",
+      "installed": "installiert",
+      "notInstalled": "nicht installiert",
+      "updateNeeded": "· Update nötig",
+      "installedVia": " · installiert über {via}",
+      "docs": "Doku",
+      "verbInstall": "Installieren",
+      "verbUpdate": "Aktualisieren",
+      "verbUninstall": "Deinstallieren",
+      "startingTerminal": "Terminal wird gestartet …",
+      "startFailed": "{action} konnte nicht gestartet werden",
+      "actionTitle": "{verb}: {label}",
+      "runHint": "Der Befehl für „{action}“ steht unten — drücke <kbd>Enter</kbd>, um ihn auszuführen. Jederzeit schließbar.",
+      "terminalLabel": "Terminal — {verb}: {label}",
+      "preparing": "{action} wird vorbereitet …"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "taskUpdates": "Aufgaben-Updates",
+      "taskUpdatesDescription": "Erhalte eine Desktop-Benachrichtigung, wenn eine Aufgabe deine Eingabe braucht oder fertig ist. Funktioniert im Browser und in der Desktop-App.",
+      "blockedHint": "Benachrichtigungen sind in deinem Browser blockiert — erlaube sie in den Website-Einstellungen, um das zu aktivieren.",
+      "notifyAria": "Bei Aufgaben-Updates benachrichtigen"
+    },
+    "realtime": {
+      "title": "Echtzeit",
+      "bufferSize": "Größe des Ereignispuffers",
+      "bufferDescription": "Wie viele der letzten Live-Ereignisse das Gateway pro Kanal behält, damit ein kurz getrennter Client aufholen kann statt Updates zu verpassen. Größer = längeres Aufholfenster, mehr Speicher. Wird live angewendet (nur Admin); fällt beim Neustart auf den konfigurierten Standard zurück.",
+      "eventsCount": "{count, plural, one {# Ereignis} other {# Ereignisse}}",
+      "updateError": "Konnte nicht aktualisiert werden — nur Admin"
+    },
+    "setup": {
+      "title": "Einrichtungsstand",
+      "ready": "Bereit",
+      "incomplete": "Einrichtung unvollständig",
+      "description": "Ob diese Installation Agenten ausführen kann — Anbieter, Geheimschlüssel, Agenten-CLI, Pool und Repo-Zustand. Dieselbe Checkliste steuert die Abfrage beim ersten Start.",
+      "loadError": "Einrichtungsstatus konnte nicht geladen werden — läuft das Gateway?",
+      "checking": "wird geprüft …",
+      "manage": "Verwalten",
+      "fix": "Beheben",
+      "recheck": "Erneut prüfen"
+    },
+    "updates": {
+      "title": "Updates",
+      "releaseChannel": "Release-Kanal",
+      "channelStable": "Stabil",
+      "channelBeta": "Beta",
+      "channelDescription": "<strong>Stabil</strong> folgt getaggten Releases. <strong>Beta</strong> nimmt Vorab-Builds mit, um neue Funktionen früh zu testen — rechne mit Ecken und Kanten. Das Update-Banner und der Auto-Updater der Desktop-App folgen dieser Wahl.",
+      "status": "Update-Status",
+      "statusUpToDate": "Dieser Build ist aktuell.",
+      "statusAvailable": "Version {version} ist verfügbar.",
+      "statusFailed": "Die letzte Update-Prüfung ist fehlgeschlagen: {error}"
+    }
+  },
+  "team": {
+    "title": "Teams",
+    "subtitle": "Arbeite mit anderen zusammen, indem du einem Team beitrittst oder eines erstellst.",
+    "new": "Neues Team",
+    "empty": "Du bist noch in keinem Team.",
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen"
+    },
+    "create": {
+      "heading": "Team erstellen",
+      "namePlaceholder": "Teamname",
+      "slugPlaceholder": "Slug (URL-sicher)",
+      "creating": "Wird erstellt …",
+      "submit": "Erstellen"
+    },
+    "roles": {
+      "owner": "Inhaber",
+      "admin": "Admin",
+      "member": "Mitglied",
+      "viewer": "Betrachter"
+    },
+    "members": {
+      "heading": "Mitglieder",
+      "you": "{name} (du)",
+      "removeAria": "Mitglied entfernen"
+    },
+    "invite": {
+      "heading": "Einladungslink",
+      "linkLabel": "Einladungslink",
+      "copyAria": "{label} kopieren",
+      "copied": "Kopiert",
+      "copyLink": "Link kopieren",
+      "generating": "Wird erzeugt …",
+      "generate": "Link erzeugen",
+      "roleExpires": "{role} · läuft ab am {date}",
+      "revokeAria": "Einladung widerrufen"
+    },
+    "danger": {
+      "heading": "Gefahrenzone",
+      "delete": "Team löschen",
+      "confirm": "Damit wird <strong>{name}</strong> endgültig gelöscht und alle Mitglieder werden entfernt. Bist du sicher?",
+      "deleting": "Wird gelöscht …",
+      "confirmDelete": "Ja, löschen"
+    }
+  },
+  "heartbeat": {
+    "presets": {
+      "h1": "Jede Stunde",
+      "h4": "Alle 4 Stunden",
+      "h8": "Alle 8 Stunden",
+      "h12": "Alle 12 Stunden",
+      "h24": "Einmal täglich",
+      "h168": "Einmal wöchentlich",
+      "h720": "Einmal monatlich"
+    },
+    "everyHours": "Alle {count} h",
+    "everyDays": "Alle {count} T."
+  }
+}

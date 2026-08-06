@@ -1,0 +1,636 @@
+{
+  "clockMode": {
+    "digital": "digital",
+    "analogue": "analog"
+  },
+  "clock": {
+    "title": "Uhr",
+    "analogueClock": "Analoguhr"
+  },
+  "date": {
+    "title": "Datum"
+  },
+  "calendar": {
+    "title": "Kalender",
+    "today": "Heute",
+    "prevMonth": "Vorheriger Monat",
+    "nextMonth": "Nächster Monat"
+  },
+  "digest": {
+    "title": "Neueste Zusammenfassung",
+    "refresh": "Zusammenfassung aktualisieren",
+    "error": "Zusammenfassungen konnten nicht geladen werden.",
+    "loading": "Wird geladen …",
+    "empty": "Noch keine Zusammenfassungen — aktiviere den Tages-Digest-Workflow für einen Flottenüberblick.",
+    "shipped": "Geliefert",
+    "failed": "Fehlgeschlagen",
+    "attention": "Achtung"
+  },
+  "timer": {
+    "title": "Fokus-Timer",
+    "openSettings": "Timer-Einstellungen",
+    "closeSettings": "Einstellungen schließen",
+    "workMin": "Arbeit (Min.)",
+    "breakMin": "Pause (Min.)",
+    "phase": {
+      "work": "Arbeit",
+      "break": "Pause"
+    },
+    "start": "Start",
+    "pause": "Pause",
+    "reset": "Zurücksetzen"
+  },
+  "worldClocks": {
+    "title": "Weltzeituhren",
+    "edit": "Zeitzonen bearbeiten",
+    "doneEditing": "Bearbeitung beenden",
+    "empty": "Keine Zeitzonen — füge über das Zahnrad eine hinzu.",
+    "same": "gleich",
+    "reorder": "{label} neu anordnen",
+    "remove": "{label} entfernen",
+    "labelPlaceholder": "Bezeichnung (z. B. Berlin)",
+    "tzPlaceholder": "IANA-Zone (z. B. Europe/Berlin)",
+    "add": "Zeitzone hinzufügen"
+  },
+  "finances": {
+    "title": "Finanzen",
+    "income": "Einnahmen",
+    "expenses": "Ausgaben",
+    "leftover": "Rest",
+    "none": "Noch nichts.",
+    "cardName": "Kartenname",
+    "cardNamePlaceholder": "z. B. Festkosten",
+    "labelPlaceholder": "Bezeichnung",
+    "showTotals": "Nur Summen zeigen",
+    "showItems": "Einzelposten zeigen",
+    "edit": "Finanzen bearbeiten",
+    "doneEditing": "Bearbeitung beenden",
+    "itemName": "Postenname ({group})",
+    "itemAmount": "Postenbetrag ({group})",
+    "removeItem": "{label} entfernen",
+    "addItem": "Posten zu {group} hinzufügen",
+    "add": "Hinzufügen"
+  },
+  "market": {
+    "unconfiguredTitle": "Aktien / Krypto",
+    "crypto": "Krypto",
+    "stocks": "Aktien",
+    "searchCoins": "Coins suchen …",
+    "searchStocks": "Aktien suchen …",
+    "stocksNote": "Für Aktien braucht das Gateway einen kostenlosen Twelve-Data-API-Schlüssel.",
+    "error": "Marktdaten konnten nicht geladen werden.",
+    "cancel": "Abbrechen",
+    "changeAsset": "Wert wechseln",
+    "timeframeChart": "Diagramm {timeframe}",
+    "ohlc": {
+      "open": "E",
+      "high": "H",
+      "low": "T",
+      "close": "S"
+    }
+  },
+  "watchlist": {
+    "title": "Beobachtungsliste",
+    "empty": "Noch keine Werte — öffne die Einstellungen, um welche hinzuzufügen.",
+    "edit": "Beobachtungsliste bearbeiten",
+    "doneEditing": "Bearbeitung beenden",
+    "cardName": "Kartenname",
+    "cardNamePlaceholder": "z. B. Meine Coins",
+    "atCap": "Grenze von {max} Werten erreicht — entferne einen, um einen weiteren hinzuzufügen.",
+    "addCoin": "Coin hinzufügen …",
+    "addStock": "Aktie hinzufügen …",
+    "remove": "{name} entfernen"
+  },
+  "page": {
+    "title": "Dashboard",
+    "description": "Ein Überblick über dein Aufgaben-Backlog. Entwirf unten eine Funktionsliste — eine Aufgabe pro Zeile — und übertrage sie dann ins Backlog oder nach „Zu tun“."
+  },
+  "tabs": {
+    "add": "Dashboard hinzufügen",
+    "newName": "Dashboard {n}",
+    "rename": "{name} umbenennen",
+    "defaultHint": "{name} — Doppelklick zum Umbenennen",
+    "dragHint": "{name} — ziehen zum Umsortieren, Doppelklick zum Umbenennen",
+    "pin": "Anpinnen",
+    "unpin": "Losmachen",
+    "pinNamed": "{name} anpinnen",
+    "unpinNamed": "{name} losmachen",
+    "closeNamed": "{name} schließen"
+  },
+  "tiles": {
+    "backlog": {
+      "hint": "Geparkt oder unklar"
+    },
+    "todo": {
+      "hint": "Eingereiht, startbereit"
+    },
+    "inProgress": {
+      "hint": "Läuft oder wartet auf Eingabe"
+    },
+    "done": {
+      "hint": "Abgeschlossen"
+    }
+  },
+  "timeframe": {
+    "aria": "Marktzeitraum"
+  },
+  "activity": {
+    "refresh": "Aktivität aktualisieren",
+    "error": "Aktivität konnte nicht geladen werden.",
+    "empty": "Noch keine Aktivität.",
+    "kinds": {
+      "agentStarted": "Agent gestartet",
+      "agentDone": "Agent fertig",
+      "agentFailed": "Agent fehlgeschlagen",
+      "agentRetried": "Agent erneut versucht",
+      "agentRequeued": "Agent neu eingereiht",
+      "agentResumed": "Agent fortgesetzt",
+      "agentWaiting": "Agent wartet",
+      "agentEscalated": "Agent eskaliert",
+      "statusChanged": "Status geändert",
+      "linkAdded": "Link hinzugefügt",
+      "taskCreated": "Aufgabe erstellt",
+      "taskArchived": "Aufgabe archiviert",
+      "taskUnarchived": "Aufgabe wiederhergestellt",
+      "taskReopened": "Aufgabe wieder geöffnet",
+      "taskReplanned": "Aufgabe neu geplant",
+      "taskDetailsChanged": "Details geändert",
+      "taskPriorityChanged": "Priorität geändert",
+      "taskProjectChanged": "Projekt geändert",
+      "taskMilestoneChanged": "Meilenstein geändert",
+      "taskRepoChanged": "Repo geändert",
+      "taskTagsChanged": "Tags geändert",
+      "created": "Erstellt",
+      "moved": "Verschoben",
+      "commented": "Kommentiert"
+    }
+  },
+  "agents": {
+    "refresh": "Agentenstatus aktualisieren",
+    "error": "Agenten konnten nicht geladen werden.",
+    "primaryFallback": "Hauptagent",
+    "heartbeatOn": "Heartbeat alle {hours} h",
+    "heartbeatOnWithLast": "Heartbeat alle {hours} h · zuletzt {when}",
+    "heartbeatOff": "Heartbeat aus",
+    "subAgents": "Subagenten ({count})",
+    "noSubAgents": "Keine konfiguriert.",
+    "unnamed": "Unbenannt"
+  },
+  "health": {
+    "refresh": "Zustand erneut prüfen",
+    "gateway": "Gateway",
+    "reachable": "Erreichbar",
+    "unreachable": "Nicht erreichbar",
+    "checking": "Wird geprüft …",
+    "unknown": "Unbekannt",
+    "installed": "Installiert",
+    "notInstalled": "Nicht installiert",
+    "active": "aktiv"
+  },
+  "disk": {
+    "unavailable": "Die Festplattenbelegung ist nicht verfügbar."
+  },
+  "storage": {
+    "refresh": "Cache-Schätzung aktualisieren",
+    "unsupported": "Cache-Schätzungen sind in diesem Browser nicht verfügbar.",
+    "error": "Cache-Nutzung konnte nicht gelesen werden."
+  },
+  "systemMonitor": {
+    "cpu": "CPU",
+    "ram": "RAM",
+    "unavailable": "Host-Metriken sind nicht verfügbar."
+  },
+  "memories": {
+    "refresh": "Erinnerungen aktualisieren",
+    "error": "Erinnerungen konnten nicht geladen werden.",
+    "empty": "Noch keine Erinnerungen.",
+    "scopeGlobal": "Global",
+    "scopeProject": "Projekt",
+    "updated": "Aktualisiert {when}"
+  },
+  "shipped": {
+    "refresh": "Gelieferte Arbeit aktualisieren",
+    "error": "Gelieferte Arbeit konnte nicht geladen werden.",
+    "empty": "Noch nichts geliefert.",
+    "noPr": "kein PR verknüpft"
+  },
+  "repoStatus": {
+    "refresh": "Repo-Status aktualisieren",
+    "error": "Repo-Status konnte nicht geladen werden.",
+    "empty": "Keine Repos registriert — füge eines unter Einstellungen → Repos hinzu.",
+    "running": "{count, plural, one {# läuft} other {# laufen}}",
+    "queued": "{count, plural, one {# eingereiht} other {# eingereiht}}",
+    "done": "{count, plural, one {# fertig} other {# fertig}}"
+  },
+  "links": {
+    "edit": "Links bearbeiten",
+    "doneEditing": "Bearbeitung beenden",
+    "empty": "Keine Links — füge über das Zahnrad welche hinzu.",
+    "labelPlaceholder": "Bezeichnung (wird aus dem Link ergänzt)",
+    "urlPlaceholder": "URL",
+    "add": "Link hinzufügen"
+  },
+  "news": {
+    "refresh": "Meldungen aktualisieren",
+    "count": "Anzahl der Meldungen",
+    "error": "Meldungen konnten nicht geladen werden.",
+    "layout": {
+      "list": "Listenansicht",
+      "grid": "Rasteransicht"
+    }
+  },
+  "quote": {
+    "openSettings": "Zitat-Einstellungen",
+    "closeSettings": "Einstellungen schließen",
+    "size": "Größe",
+    "font": "Schrift",
+    "system": "System",
+    "systemFont": "Systemschrift",
+    "typingSpeed": "Tippgeschwindigkeit",
+    "cycleSeconds": "Zyklus (Sekunden)"
+  },
+  "quickCapture": {
+    "bulk": "Sammel",
+    "ariaSingle": "Aufgabe",
+    "ariaBulk": "Aufgaben (eine pro Zeile)",
+    "placeholder": "Aufgabe hinzufügen …",
+    "placeholderBulk": "Eine Aufgabe pro Zeile …\nden Login-Bug beheben\ndie Doku schreiben",
+    "hint": "⌘↵ zum Hinzufügen",
+    "hintBulk": "Eine Aufgabe pro Zeile",
+    "added": "{count, plural, one {# Aufgabe hinzugefügt} other {# Aufgaben hinzugefügt}}",
+    "addedWithFailures": "{count, plural, one {# Aufgabe hinzugefügt} other {# Aufgaben hinzugefügt}} · {failed} fehlgeschlagen",
+    "addedOne": "„{title}“ hinzugefügt",
+    "error": "Aufgabe konnte nicht hinzugefügt werden"
+  },
+  "scratchpad": {
+    "titleAria": "Titel des Notizblocks",
+    "renameHint": "Doppelklick zum Umbenennen",
+    "edit": "Bearbeiten",
+    "preview": "Vorschau",
+    "placeholder": "Notiere etwas … (Markdown, auf diesem Gerät gespeichert)",
+    "contentAria": "Inhalt des Notizblocks",
+    "emptyPreview": "Noch nichts für die Vorschau."
+  },
+  "throughput": {
+    "refresh": "Durchsatz aktualisieren",
+    "error": "Aufgaben konnten nicht geladen werden.",
+    "doneThisWeek": "diese Woche fertig",
+    "barTooltip": "{day}: {count}"
+  },
+  "usage": {
+    "refresh": "Nutzung aktualisieren",
+    "error": "Nutzung konnte nicht geladen werden.",
+    "empty": "Noch keine LLM-Aufrufe erfasst. Kosten erscheinen hier, sobald die KI-Funktionen des Gateways laufen.",
+    "estOverWindow": "geschätzt über {days} T. · {count, plural, one {# Aufruf} other {# Aufrufe}}",
+    "barTooltip": "{day}: {cost}",
+    "byProvider": "Nach Anbieter",
+    "byFeature": "Nach Funktion",
+    "estimateNote": "Die Kosten sind Schätzungen aus einer statischen Preistabelle.",
+    "features": {
+      "classifier": "Aufgaben-Triage",
+      "planner": "Planer",
+      "project": "Projekte",
+      "agent": "Agenten",
+      "council": "Räte",
+      "workflow": "Workflows",
+      "chat": "Chat zum Board",
+      "memory": "Gedächtnis-Studio",
+      "memory-chat": "Gedächtnis-Chat",
+      "retro": "Retrospektiven",
+      "digest": "Zusammenfassungen",
+      "assistant": "Assistent",
+      "unknown": "Sonstige"
+    }
+  },
+  "costByRepo": {
+    "refresh": "Kosten pro Repo aktualisieren",
+    "windowAria": "Kostenzeitraum",
+    "windowDays": "{days} T.",
+    "error": "Kostendaten konnten nicht geladen werden.",
+    "empty": "Noch keine Sitzungskosten erfasst — Kosten erscheinen, sobald Agentensitzungen laufen.",
+    "estOverWindow": "geschätzt über {days} T. · {count, plural, one {# Sitzung} other {# Sitzungen}}",
+    "chartAria": "Diagramm der Kosten pro Repo",
+    "series": {
+      "measured": "gemessen",
+      "estimated": "geschätzt"
+    },
+    "unpriced": "{count, plural, one {# Sitzung} other {# Sitzungen}} auf einem Modell ohne Preis — Kosten nicht gezählt."
+  },
+  "cycleTime": {
+    "refresh": "Durchlaufzeit aktualisieren",
+    "groupByAria": "Durchlaufzeit gruppieren nach",
+    "windowAria": "Zeitraum der Durchlaufzeit",
+    "windowDays": "{days} T.",
+    "error": "Durchlaufzeit konnte nicht geladen werden.",
+    "empty": "In diesem Zeitraum noch keine abgeschlossenen Aufgaben.",
+    "chartAria": "Diagramm der Durchlaufzeit",
+    "groupBy": {
+      "none": "Flotte",
+      "repo": "Nach Repo",
+      "project": "Nach Projekt",
+      "priority": "Nach Priorität"
+    },
+    "segments": {
+      "wait": "Warten",
+      "work": "Arbeit",
+      "endToEnd": "Ende zu Ende"
+    },
+    "series": {
+      "p50": "p50",
+      "p90": "p90"
+    },
+    "completedInWindow": "<strong>{count}</strong> in {days} T. abgeschlossen",
+    "retryOverhead": "Zusatzaufwand durch Wiederholungen <strong>{duration}</strong> · {count, plural, one {# Aufgabe} other {# Aufgaben}}"
+  },
+  "fleetTrend": {
+    "refresh": "Flottentrend aktualisieren",
+    "seriesAria": "Flotten-Datenreihe",
+    "error": "Flottentrend konnte nicht geladen werden.",
+    "empty": "Noch kein Messverlauf — Trends erscheinen, sobald der Sampler aufzeichnet.",
+    "chartAria": "Diagramm {series}",
+    "series": {
+      "queueDepth": "Warteschlangenlänge",
+      "slotsUsed": "Belegte Slots",
+      "tickLatencyMs": "Tick-Latenz"
+    }
+  },
+  "weather": {
+    "error": "Wetter konnte nicht geladen werden.",
+    "useMyLocation": "Stattdessen meinen Standort verwenden",
+    "precipitation": "Niederschlagswahrscheinlichkeit",
+    "locationUnavailable": "Standort nicht verfügbar — Koordinaten eingeben.",
+    "latitude": "Breitengrad",
+    "longitude": "Längengrad",
+    "labelOptional": "Bezeichnung (optional)",
+    "saveLocation": "Standort speichern",
+    "codes": {
+      "clear": "Klar",
+      "partlyCloudy": "Teilweise bewölkt",
+      "overcast": "Bedeckt",
+      "fog": "Nebel",
+      "drizzle": "Nieselregen",
+      "rain": "Regen",
+      "snow": "Schnee",
+      "rainShowers": "Regenschauer",
+      "snowShowers": "Schneeschauer",
+      "thunderstorm": "Gewitter"
+    }
+  },
+  "landing": {
+    "clock": {
+      "switchTo": "Zur {mode}en Uhr wechseln"
+    },
+    "weather": {
+      "aria": "Wetter: {conditions}, {temperature}",
+      "precipitation": "Niederschlagswahrscheinlichkeit"
+    },
+    "greetings": {
+      "midnight": "frühaufsteher? oder nachteule?",
+      "dawn": "schon in den startlöchern?",
+      "morning": "guten morgen",
+      "midMorning": "schon im flow? der morgen ist rum",
+      "forenoon": "noch ein paar sessions vor dem mittag",
+      "noon": "mitten am tag! hallo!",
+      "afternoon": "guten nachmittag",
+      "dusk": "der letzte schub für heute … du schaffst das!",
+      "earlyEvening": "einen schönen frühen abend",
+      "evening": "guten abend",
+      "night": "na, nachteule"
+    },
+    "subgreetings": {
+      "0": "hau heute richtig rein",
+      "1": "deine agenten sind bereit",
+      "2": "lass den schwarm kochen",
+      "3": "zeit, etwas wildes zu liefern",
+      "4": "eine aufgabe nach der anderen, aber richtig",
+      "5": "orchestriere das chaos",
+      "6": "tausend agenten warten",
+      "7": "nachtschicht ohne burnout",
+      "8": "lass die maschinen schuften",
+      "9": "alles parallel",
+      "10": "lass die roboter ihr futter verdienen",
+      "11": "heute automatisieren wir das unmögliche",
+      "12": "hochfahren, ausliefern",
+      "13": "deine flotte ist getankt und wartet",
+      "14": "weniger tippen, mehr liefern",
+      "15": "agentisch und unaufhaltsam",
+      "16": "einreihen und fliegen lassen",
+      "17": "die zukunft läuft parallel",
+      "18": "delegiere an das silizium",
+      "19": "kleine aufgaben, großes tempo",
+      "20": "lass intelligenz sich verzinsen",
+      "21": "keine aufgabe zu klein, kein schwarm zu groß",
+      "22": "bau, als wäre es mitternacht",
+      "23": "autonomie auf knopfdruck",
+      "24": "jeder agent zieht mit",
+      "25": "liefern, während du schläfst",
+      "26": "aus absicht wird ergebnis",
+      "27": "die agenten haben deinen rücken",
+      "28": "hier ist schwung eine einstellung",
+      "29": "träum es, reih es ein, fertig",
+      "30": "maximaler durchsatz, minimaler aufwand",
+      "31": "parallelität als lebensstil",
+      "32": "lass hundert agenten blühen",
+      "33": "flow-zustand, voll automatisiert",
+      "34": "räum heute nacht das backlog ab",
+      "35": "dein zweites gehirn hat hände",
+      "36": "aufgaben rein, magie raus",
+      "37": "das orchester stimmt sich ein",
+      "38": "klicken und eine armee starten",
+      "39": "klüger arbeiten, härter schwärmen",
+      "40": "untätige agenten sind verschwendete agenten",
+      "41": "tempo entsperrt",
+      "42": "lass die pipeline laufen",
+      "43": "eine ruhigere art von beschäftigt",
+      "44": "du gibst das tempo vor, die agenten folgen",
+      "45": "produktivität im autopilot",
+      "46": "heute nacht wird es schnell",
+      "47": "die schufterei ist jetzt optional",
+      "48": "kumulierter einsatz, kein schweiß",
+      "49": "bereit, wenn du es bist"
+    }
+  },
+  "picker": {
+    "add": "Widget hinzufügen",
+    "search": "Widgets suchen",
+    "searchPlaceholder": "Widgets suchen …",
+    "noMatch": "Keine Widgets passen zu „{query}“.",
+    "added": "Schon auf diesem Dashboard"
+  },
+  "categories": {
+    "tasks": "Aufgaben & Projekte",
+    "agents": "Agenten",
+    "activity": "Aktivität",
+    "system": "System",
+    "datetime": "Datum & Uhrzeit",
+    "finance": "Finanzen & Märkte",
+    "info": "News & Wetter",
+    "productivity": "Produktivität"
+  },
+  "catalog": {
+    "tile-backlog": {
+      "label": "Backlog",
+      "description": "Anzahl geparkter oder unklarer Aufgaben"
+    },
+    "tile-todo": {
+      "label": "Zu tun",
+      "description": "Anzahl eingereihter, startbereiter Aufgaben"
+    },
+    "tile-inProgress": {
+      "label": "In Arbeit",
+      "description": "Anzahl laufender oder wartender Aufgaben"
+    },
+    "tile-done": {
+      "label": "Fertig",
+      "description": "Anzahl abgeschlossener Aufgaben"
+    },
+    "quick-capture": {
+      "label": "Schnellerfassung",
+      "description": "Eine Aufgabe (oder eine Liste) hinzufügen, ohne das Dashboard zu verlassen"
+    },
+    "projects": {
+      "label": "Projekt",
+      "description": "Eine Karte für ein einzelnes Projekt (standardmäßig das zuletzt aktualisierte)"
+    },
+    "notes": {
+      "label": "Handlungspunkte",
+      "description": "Schnelle Handlungspunkte mit Spracherkennung"
+    },
+    "routines": {
+      "label": "Routinen",
+      "description": "Verfolge deine täglichen Routinen"
+    },
+    "news": {
+      "label": "Hacker News",
+      "description": "Top-Meldungen von Hacker News"
+    },
+    "weather": {
+      "label": "Wetter",
+      "description": "Aktuelle Bedingungen und die Aussichten für heute"
+    },
+    "clock": {
+      "label": "Uhr",
+      "description": "Digitale oder analoge Uhr"
+    },
+    "date": {
+      "label": "Datum",
+      "description": "Das heutige Datum"
+    },
+    "sessions": {
+      "label": "Laufende Sitzungen",
+      "description": "Aktive Agentensitzungen und ihr Status"
+    },
+    "workflows": {
+      "label": "Workflows",
+      "description": "Workflow-Definitionen und Status des letzten Laufs"
+    },
+    "memories": {
+      "label": "Neueste Erinnerungen",
+      "description": "Die zuletzt aktualisierten Agenten-Erinnerungen"
+    },
+    "agents": {
+      "label": "Agenten-Pool",
+      "description": "Hauptagent, Modell und Subagenten"
+    },
+    "councils": {
+      "label": "Räte",
+      "description": "Deine Räte und ihre Teilnehmer"
+    },
+    "repo-status": {
+      "label": "Status pro Repo",
+      "description": "Laufende Agenten und Warteschlangenlänge pro Repo"
+    },
+    "activity": {
+      "label": "Aktivitätsverlauf",
+      "description": "Kürzliche Statusänderungen von Aufgaben"
+    },
+    "who-in-office": {
+      "label": "Wer ist im Büro",
+      "description": "Teammitglieder, die aktuell im Mehrspieler-Büro sind"
+    },
+    "throughput": {
+      "label": "Durchsatz",
+      "description": "In den letzten zwei Wochen abgeschlossene Aufgaben"
+    },
+    "health": {
+      "label": "Systemzustand",
+      "description": "Erreichbarkeit des Gateways und Agentenstatus"
+    },
+    "usage": {
+      "label": "LLM-Kosten & -Nutzung",
+      "description": "Geschätzte Kosten nach Tag, Anbieter und Funktion"
+    },
+    "cost-by-repo": {
+      "label": "Kosten pro Repo",
+      "description": "Kosten der Agentensitzungen pro Repo, gemessen vs. geschätzt"
+    },
+    "cycle-time": {
+      "label": "Durchlaufzeit",
+      "description": "Warten vs. Arbeit, p50/p90 über abgeschlossene Aufgaben"
+    },
+    "fleet-trend": {
+      "label": "Flottentrend",
+      "description": "Eine Messreihe (Warteschlangenlänge, Slots, Tick-Latenz) über die Zeit"
+    },
+    "digest": {
+      "label": "Neueste Zusammenfassung",
+      "description": "Die neueste Flotten-Zusammenfassung — Schlagzeile + Zählwerte geliefert/fehlgeschlagen/Achtung"
+    },
+    "shipped": {
+      "label": "Geliefert",
+      "description": "Kürzlich abgeschlossene Aufgaben mit ihren PR-Links"
+    },
+    "system-monitor": {
+      "label": "Systemmonitor",
+      "description": "Live-Auslastung von CPU und Speicher"
+    },
+    "disk": {
+      "label": "Festplatte",
+      "description": "Echter Gerätespeicher — belegt vs. frei auf der Platte des Gateways"
+    },
+    "storage": {
+      "label": "App-Cache",
+      "description": "Browser-Speicher, den diese App zwischengespeichert hat (Kontingent pro Origin)"
+    },
+    "world-clocks": {
+      "label": "Weltzeituhren",
+      "description": "Aktuelle Zeit in mehreren Zeitzonen"
+    },
+    "all-projects": {
+      "label": "Alle Projekte",
+      "description": "Jedes Projekt mit seiner Aufgabenaufteilung"
+    },
+    "quote": {
+      "label": "Zitat",
+      "description": "Ein Zitat, das täglich wechselt"
+    },
+    "timer": {
+      "label": "Fokus-Timer",
+      "description": "Arbeits-/Pausen-Countdown im Pomodoro-Stil"
+    },
+    "calendar": {
+      "label": "Kalender",
+      "description": "Kleiner Monatskalender"
+    },
+    "scratchpad": {
+      "label": "Notizblock",
+      "description": "Freier Notizblock, auf diesem Gerät gespeichert"
+    },
+    "links": {
+      "label": "Schnellzugriffe",
+      "description": "Dein eigenes Raster von Lesezeichen"
+    },
+    "finances": {
+      "label": "Finanzen",
+      "description": "Einnahmen vs. Ausgaben mit dem Rest — eine Karte pro Budget"
+    },
+    "market-asset": {
+      "label": "Aktien / Krypto",
+      "description": "Live-Kurs, OHLC und ein historisches Flächendiagramm für einen Wert"
+    },
+    "market-watchlist": {
+      "label": "Beobachtungsliste",
+      "description": "Eine Handvoll Aktien oder Coins mit Kurs und Gewinn/Verlust"
+    }
+  }
+}

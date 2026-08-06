@@ -1,0 +1,713 @@
+{
+  "editor": {
+    "canvas": {
+      "loading": "Arbeitsfläche wird geladen …",
+      "a11y": {
+        "controls": "Steuerung der Arbeitsfläche",
+        "zoomIn": "Vergrößern",
+        "zoomOut": "Verkleinern",
+        "fitView": "Ansicht einpassen",
+        "toggleInteractive": "Interaktivität umschalten",
+        "minimap": "Workflow-Übersichtskarte",
+        "handle": "Verbindungspunkt",
+        "node": "Drücke Enter oder Leertaste, um einen Knoten auszuwählen. Drücke Entf, um ihn zu entfernen, und Esc zum Abbrechen.",
+        "nodeKeyboardDisabled": "Drücke Enter oder Leertaste, um einen Knoten auszuwählen. Danach kannst du ihn mit den Pfeiltasten bewegen. Drücke Entf, um ihn zu entfernen, und Esc zum Abbrechen.",
+        "edge": "Drücke Enter oder Leertaste, um eine Verbindung auszuwählen. Danach kannst du sie mit Entf entfernen oder mit Esc abbrechen."
+      }
+    },
+    "panels": {
+      "showPalette": "Knotenpalette anzeigen",
+      "hidePalette": "Knotenpalette ausblenden",
+      "showConfig": "Konfigurationspanel anzeigen",
+      "hideConfig": "Konfigurationspanel ausblenden"
+    },
+    "controls": {
+      "enabledLabel": "Aktiviert",
+      "neverRun": "Nie gelaufen",
+      "status": {
+        "queued": "Eingereiht",
+        "running": "Läuft",
+        "succeeded": "Erfolgreich",
+        "failed": "Fehlgeschlagen",
+        "canceled": "Abgebrochen"
+      }
+    },
+    "header": {
+      "untitled": "Unbenannter Workflow",
+      "descriptionPlaceholder": "Beschreibe, was dieser Workflow tut …",
+      "changeTrigger": "Trigger ändern",
+      "trigger": {
+        "webhook": "Läuft über einen Webhook",
+        "taskEvent": "Läuft bei einem Aufgaben-Ereignis",
+        "manual": "Läuft auf Abruf"
+      },
+      "editDetails": "Details bearbeiten",
+      "runHistory": "Laufverlauf",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert",
+      "run": "Ausführen",
+      "editHeading": "Workflow bearbeiten",
+      "nameLabel": "Name"
+    },
+    "saveAsTemplate": {
+      "title": "Als Vorlage speichern",
+      "nameLabel": "Vorlagenname",
+      "descriptionLabel": "Beschreibung",
+      "descriptionPlaceholder": "Was macht diese Vorlage?",
+      "categoryLabel": "Kategorie",
+      "categories": {
+        "monitoring": "Überwachung",
+        "notifications": "Benachrichtigungen",
+        "scheduling": "Zeitplanung",
+        "github": "GitHub",
+        "ai": "KI",
+        "data": "Daten"
+      },
+      "tagsLabel": "Tags",
+      "tagsHint": "(kommagetrennt)",
+      "tagsPlaceholder": "z. B. slack, tasks, daily",
+      "publish": "Veröffentlichen (für das Team sichtbar)",
+      "submit": "Vorlage speichern",
+      "failed": "Vorlage konnte nicht gespeichert werden"
+    },
+    "errors": {
+      "saveWorkflow": "Workflow konnte nicht gespeichert werden"
+    },
+    "node": {
+      "noUrl": "Keine URL gesetzt",
+      "noPrompt": "Kein Prompt gesetzt",
+      "inputFallback": "Eingabe",
+      "operators": {
+        "isTruthy": "ist wahr",
+        "isFalsy": "ist falsch",
+        "contains": "enthält"
+      },
+      "status": {
+        "running": "Läuft",
+        "succeeded": "Erfolgreich",
+        "failed": "Fehlgeschlagen"
+      }
+    }
+  },
+  "list": {
+    "title": "Workflows",
+    "description": "Baue Automatisierungen, die nach Zeitplan, über einen Webhook oder auf Abruf laufen.",
+    "newWorkflow": "Neuer Workflow",
+    "templates": "Vorlagen",
+    "searchPlaceholder": "Workflows suchen",
+    "view": {
+      "list": "Listenansicht",
+      "grid": "Rasteransicht",
+      "table": "Tabellenansicht"
+    },
+    "triggers": {
+      "manual": "Manuell",
+      "schedule": "Zeitplan",
+      "webhook": "Webhook",
+      "task-event": "Aufgaben-Ereignis"
+    },
+    "noneForTrigger": "Keine Workflows vom Typ {trigger}",
+    "section": {
+      "empty": "Leer",
+      "count": "{count, plural, one {# Workflow} other {# Workflows}}",
+      "mostFrequentFirst": "{count} · häufigste zuerst"
+    },
+    "archived": "Archiviert",
+    "nodeCount": "{count, plural, one {# Knoten} other {# Knoten}}",
+    "duplicateWorkflow": "{name} duplizieren",
+    "cronTooltip": "{frequency} — {schedule}",
+    "empty": {
+      "title": "Noch keine Workflows",
+      "description": "Baue eine Automatisierung, die über einen Webhook, ein Aufgaben-Ereignis oder auf Abruf läuft."
+    },
+    "noMatches": "Keine Workflows passen zu „{query}“",
+    "bulk": {
+      "archive": "Archivieren",
+      "unarchive": "Aus dem Archiv holen",
+      "deleteTitle": "{count, plural, one {# Workflow löschen?} other {# Workflows löschen?}}",
+      "deleteDescription": "Das kann nicht rückgängig gemacht werden."
+    },
+    "widget": {
+      "title": "Workflows",
+      "refresh": "Workflows aktualisieren",
+      "error": "Workflows konnten nicht geladen werden.",
+      "empty": "Noch keine Workflows.",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert"
+    },
+    "create": {
+      "dialogLabel": "Neuer Workflow",
+      "startFrom": "Starten mit",
+      "blankTitle": "Leerer Workflow",
+      "blankDescription": "Beginne mit einer leeren Arbeitsfläche und nur einem Trigger.",
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Zusammenfassung des täglichen Standups",
+      "triggerLabel": "Trigger",
+      "triggerFromTemplate": "Trigger: <strong>{trigger}</strong> — von der Vorlage gesetzt, nach dem Erstellen bearbeitbar.",
+      "triggerHints": {
+        "manual": "Auf Abruf ausführen",
+        "schedule": "Per Cron ausführen",
+        "webhook": "Bei einer Anfrage ausführen",
+        "task-event": "Ausführen, wenn eine Aufgabe fertig ist"
+      },
+      "submit": "Workflow erstellen",
+      "submitFromTemplate": "Aus Vorlage erstellen",
+      "failed": "Workflow konnte nicht erstellt werden"
+    },
+    "editor": {
+      "desktopOnlyLabel": "Der Workflow-Editor",
+      "notFoundSingular": "Workflow"
+    }
+  },
+  "templates": {
+    "title": "Workflow-Vorlagen",
+    "description": "Durchsuche fertige Workflow-Vorlagen und installiere sie mit einem Klick.",
+    "searchPlaceholder": "Vorlagen suchen …",
+    "categories": {
+      "all": "Alle",
+      "monitoring": "Überwachung",
+      "notifications": "Benachrichtigungen",
+      "scheduling": "Zeitplanung",
+      "github": "GitHub",
+      "ai": "KI",
+      "data": "Daten"
+    },
+    "requires": "Benötigt: {slots}",
+    "use": "Vorlage verwenden",
+    "loading": "Vorlagen werden geladen …",
+    "noMatches": "Keine Vorlagen passen zu deinem Filter.",
+    "clearFilters": "Filter zurücksetzen",
+    "install": {
+      "slotsFailed": "Slots konnten nicht geladen werden",
+      "failed": "Installation fehlgeschlagen",
+      "noneRequired": "Keine Zugangsdaten erforderlich",
+      "connectCredentials": "Zugangsdaten verbinden",
+      "noCredentialsOfType": "Keine Zugangsdaten vom Typ {type} gefunden.",
+      "addCredential": "Welche hinzufügen",
+      "credentialForSlot": "Zugangsdaten für {key}",
+      "submit": "Installieren"
+    }
+  },
+  "nodes": {
+    "trigger_manual": {
+      "title": "Manueller Trigger",
+      "description": "Auf Abruf über den Play-Button ausführen."
+    },
+    "trigger_schedule": {
+      "title": "Zeitplan",
+      "description": "Automatisch nach einem Cron-Zeitplan ausführen."
+    },
+    "trigger_webhook": {
+      "title": "Webhook",
+      "description": "Ausführen, wenn eine eingehende HTTP-Anfrage eintrifft."
+    },
+    "trigger_task-event": {
+      "title": "Aufgaben-Ereignis",
+      "description": "Ausführen, wenn eine Aufgabe fertig ist, verworfen wird oder Aufmerksamkeit braucht."
+    },
+    "http_request": {
+      "title": "HTTP-Anfrage",
+      "description": "Einen ausgehenden HTTP-Aufruf machen.",
+      "fields": {
+        "method": {
+          "label": "Methode",
+          "options": {
+            "GET": "GET",
+            "POST": "POST",
+            "PUT": "PUT",
+            "PATCH": "PATCH",
+            "DELETE": "DELETE"
+          }
+        },
+        "url": {
+          "label": "URL",
+          "placeholder": "https://api.github.com/repos/owner/repo"
+        },
+        "headers": {
+          "label": "Header",
+          "help": "JSON-Objekt aus Header-Name → Wert."
+        },
+        "body": {
+          "label": "Inhalt",
+          "placeholder": "Roher Anfrageinhalt"
+        },
+        "credentialId": {
+          "label": "Zugangsdaten",
+          "help": "Optional: Authentifizierung aus gespeicherten Zugangsdaten einfügen (Bearer / Basic / Header)."
+        }
+      }
+    },
+    "ai_claude": {
+      "title": "KI",
+      "description": "Eine KI-Vervollständigung über den aktiven Anbieter ausführen — oder einen festlegen.",
+      "fields": {
+        "provider": {
+          "label": "Anbieter",
+          "help": "Auf „Aktiver Anbieter“ stehen lassen, um der Auswahl auf der Agenten-Seite zu folgen.",
+          "options": {
+            "_empty": "Aktiver Anbieter",
+            "anthropic": "Anthropic",
+            "openai": "OpenAI",
+            "google": "Google Gemini",
+            "openai-compatible": "OpenAI-kompatibel"
+          }
+        },
+        "model": {
+          "label": "Modell",
+          "placeholder": "sonnet4.6"
+        },
+        "system": {
+          "label": "System-Prompt"
+        },
+        "prompt": {
+          "label": "Prompt"
+        },
+        "maxTokens": {
+          "label": "Max. Token"
+        }
+      }
+    },
+    "task_create": {
+      "title": "Aufgabe erstellen",
+      "description": "Eine Midnite-Board-Aufgabe erstellen — z. B. eine wiederkehrende Aufgabe nach Zeitplan einreihen.",
+      "fields": {
+        "prompt": {
+          "label": "Aufgaben-Prompt",
+          "placeholder": "Was soll der Agent tun?"
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Optional: der Name eines registrierten Repos."
+        },
+        "projectId": {
+          "label": "Projekt",
+          "help": "Optional: Projekt-ID, unter der die Aufgabe einsortiert wird."
+        },
+        "priority": {
+          "label": "Priorität",
+          "help": "0–3 (höher läuft zuerst); Standard ist Normal (1)."
+        }
+      }
+    },
+    "midnite_generate-retro": {
+      "title": "Retro erzeugen",
+      "description": "Der Retrospektive einer abgeschlossenen Aufgabe eine KI-Erzählung anhängen.",
+      "fields": {
+        "taskId": {
+          "label": "Aufgaben-ID",
+          "placeholder": "Leer lassen, um die eingehende Aufgabe zu nutzen",
+          "help": "Optional: die zusammenzufassende Aufgabe. Standard ist die vorgelagerte Aufgabe (z. B. aus einem Aufgaben-Ereignis-Trigger)."
+        }
+      }
+    },
+    "midnite_list-completed-tasks": {
+      "title": "Abgeschlossene Aufgaben auflisten",
+      "description": "Aufgaben auflisten, die in einem zurückliegenden Zeitraum fertig wurden oder verworfen wurden.",
+      "fields": {
+        "sinceHours": {
+          "label": "Seit (Stunden)",
+          "help": "Wie weit zurückgeschaut wird. Standard 24."
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Optional: nur dieses Repo."
+        },
+        "projectId": {
+          "label": "Projekt",
+          "help": "Optional: nur dieses Projekt."
+        }
+      }
+    },
+    "midnite_build-digest": {
+      "title": "Zusammenfassung erstellen",
+      "description": "Abgeschlossene Aufgaben zu einer Flotten-Zusammenfassung verdichten (Zählwerte, Abschnitte, Highlights).",
+      "fields": {
+        "sinceHours": {
+          "label": "Seit (Stunden)",
+          "help": "Länge des Zeitraums. Wird ignoriert, wenn Von/Bis beide gesetzt sind. Standard 24."
+        },
+        "from": {
+          "label": "Von (ISO)",
+          "help": "Optionaler expliziter Beginn des Zeitraums."
+        },
+        "to": {
+          "label": "Bis (ISO)",
+          "help": "Optionales explizites Ende des Zeitraums."
+        },
+        "repo": {
+          "label": "Repo",
+          "help": "Optional: nur dieses Repo."
+        },
+        "projectId": {
+          "label": "Projekt",
+          "help": "Optional: nur dieses Projekt."
+        }
+      }
+    },
+    "midnite_notify": {
+      "title": "Benachrichtigen",
+      "description": "Eine In-App-Benachrichtigung senden (z. B. eine Zusammenfassung ist fertig, eine Retro ist bemerkenswert).",
+      "fields": {
+        "kind": {
+          "label": "Art",
+          "options": {
+            "digest_generated": "Zusammenfassung erzeugt",
+            "retro_notable": "Bemerkenswerte Retro"
+          }
+        },
+        "severity": {
+          "label": "Dringlichkeit",
+          "options": {
+            "info": "Info",
+            "warn": "Warnung",
+            "urgent": "Dringend"
+          }
+        },
+        "title": {
+          "label": "Titel"
+        },
+        "body": {
+          "label": "Inhalt"
+        },
+        "entityId": {
+          "label": "Entitäts-ID",
+          "help": "Optional: die ID der Aufgabe/Zusammenfassung, auf die verlinkt wird."
+        },
+        "route": {
+          "label": "Route",
+          "help": "Optional: die zu öffnende Client-Route."
+        }
+      }
+    },
+    "logic_branch": {
+      "title": "Verzweigung",
+      "description": "Den Ablauf anhand einer Bedingung in einen Wahr- und einen Falsch-Pfad teilen.",
+      "ports": {
+        "true": "Wahr",
+        "false": "Falsch"
+      },
+      "fields": {
+        "left": {
+          "label": "Wert (Pfad)",
+          "placeholder": "body.ok",
+          "help": "Punktpfad in die eingehenden Daten. Leer lassen, um die ganze Eingabe zu prüfen."
+        },
+        "operator": {
+          "label": "Bedingung",
+          "options": {
+            "isTruthy": "ist wahr",
+            "isFalsy": "ist falsch",
+            "equals": "= gleich",
+            "notEquals": "≠ ungleich",
+            "contains": "enthält",
+            "gt": "> größer als",
+            "gte": "≥ größer oder gleich",
+            "lt": "< kleiner als",
+            "lte": "≤ kleiner oder gleich"
+          }
+        },
+        "right": {
+          "label": "Vergleichen mit",
+          "placeholder": "ok",
+          "help": "Wird mit dem Wert verglichen. Bei „ist wahr/falsch“ ignoriert."
+        }
+      }
+    },
+    "logic_setData": {
+      "title": "Daten setzen",
+      "description": "Aus Feldern eine Nutzlast bauen und mit '{{ }}' Werte aus vorgelagerten Knoten holen.",
+      "fields": {
+        "mode": {
+          "label": "Modus",
+          "options": {
+            "replace": "Ersetzen — nur die gesetzten Felder ausgeben",
+            "merge": "Zusammenführen — die gesetzten Felder über die Eingabe legen"
+          }
+        },
+        "fields": {
+          "label": "Felder",
+          "help": "JSON-Objekt aus Schlüssel → Wert. Werte dürfen '{{ }}'-Ausdrücke nutzen."
+        }
+      }
+    },
+    "logic_merge": {
+      "title": "Zusammenführen",
+      "description": "Die Ausgaben mehrerer vorgelagerter Zweige zu einer Nutzlast verbinden.",
+      "fields": {
+        "mode": {
+          "label": "Modus",
+          "options": {
+            "shallowMerge": "Objekte flach zusammenführen",
+            "array": "In ein Array sammeln",
+            "concat": "Arrays aneinanderhängen"
+          }
+        }
+      }
+    },
+    "data_filter": {
+      "title": "Felder filtern",
+      "description": "Eine Menge von Feldern der obersten Ebene aus der Nutzlast behalten oder entfernen.",
+      "fields": {
+        "mode": {
+          "label": "Modus",
+          "options": {
+            "pick": "Behalten — nur diese Felder bewahren",
+            "omit": "Auslassen — diese Felder entfernen"
+          }
+        },
+        "fields": {
+          "label": "Felder",
+          "help": "JSON-Array mit Feldnamen der obersten Ebene."
+        }
+      }
+    },
+    "storage_set": {
+      "title": "Wert speichern",
+      "description": "Einen Wert unter einem Schlüssel speichern — später in diesem oder einem künftigen Lauf lesbar.",
+      "fields": {
+        "key": {
+          "label": "Schlüssel",
+          "placeholder": "lastSeenId"
+        },
+        "value": {
+          "label": "Wert",
+          "help": "Der zu speichernde Wert. Nutze '{{ }}', um Werte aus vorgelagerten Knoten zu holen."
+        }
+      }
+    },
+    "slack_message": {
+      "title": "Slack-Nachricht",
+      "description": "Eine Nachricht in einen Slack-Kanal senden.",
+      "fields": {
+        "credentialId": {
+          "label": "Slack-Zugangsdaten"
+        },
+        "channel": {
+          "label": "Kanal",
+          "placeholder": "#general oder Kanal-ID"
+        },
+        "text": {
+          "label": "Nachrichtentext"
+        },
+        "blocks": {
+          "label": "Blocks (Block Kit)",
+          "help": "Optionales Slack-Block-Kit-Array (meist ein Ausdruck, z. B. '{{ $json.blocks }}'). Der Text ist der Rückfall."
+        }
+      }
+    },
+    "email_send": {
+      "title": "E-Mail senden",
+      "description": "Eine E-Mail über SMTP senden.",
+      "fields": {
+        "credentialId": {
+          "label": "SMTP-Zugangsdaten"
+        },
+        "to": {
+          "label": "An",
+          "placeholder": "empfaenger@beispiel.de"
+        },
+        "subject": {
+          "label": "Betreff"
+        },
+        "text": {
+          "label": "Inhalt (reiner Text)"
+        },
+        "html": {
+          "label": "Inhalt (HTML)"
+        }
+      }
+    },
+    "storage_get": {
+      "title": "Wert lesen",
+      "description": "Einen gespeicherten Wert per Schlüssel lesen (aus diesem oder einem früheren Lauf).",
+      "fields": {
+        "key": {
+          "label": "Schlüssel",
+          "placeholder": "lastSeenId"
+        },
+        "defaultValue": {
+          "label": "Standard",
+          "help": "Wird zurückgegeben, wenn der Schlüssel noch nie gesetzt wurde. Standard ist null."
+        }
+      }
+    },
+    "github_get-pr": {
+      "title": "PR abrufen",
+      "description": "Metadaten eines Pull Requests von GitHub holen (Titel, Zustand, Autor, Labels, Head/Base).",
+      "fields": {
+        "credentialId": {
+          "label": "GitHub-Zugangsdaten"
+        },
+        "prUrl": {
+          "label": "PR-URL",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        }
+      }
+    },
+    "github_get-diff": {
+      "title": "PR-Diff abrufen",
+      "description": "Das vereinheitlichte Diff eines Pull Requests holen (auf maxTokens gekürzt).",
+      "fields": {
+        "credentialId": {
+          "label": "GitHub-Zugangsdaten"
+        },
+        "prUrl": {
+          "label": "PR-URL",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "maxTokens": {
+          "label": "Max. Token",
+          "help": "Das Diff wird bei dieser Token-Schätzung gekürzt (1 Token ≈ 4 Zeichen). Standard: 8000."
+        }
+      }
+    },
+    "github_post-review": {
+      "title": "PR-Review veröffentlichen",
+      "description": "Einen Review-Kommentar (oder eine Freigabe / Änderungsanforderung) zu einem GitHub-Pull-Request abgeben.",
+      "fields": {
+        "credentialId": {
+          "label": "GitHub-Zugangsdaten"
+        },
+        "prUrl": {
+          "label": "PR-URL",
+          "placeholder": "https://github.com/owner/repo/pull/42"
+        },
+        "body": {
+          "label": "Review-Text"
+        },
+        "event": {
+          "label": "Ereignis",
+          "options": {
+            "COMMENT": "Kommentieren",
+            "APPROVE": "Freigeben",
+            "REQUEST_CHANGES": "Änderungen anfordern"
+          }
+        }
+      }
+    }
+  },
+  "palette": {
+    "search": "Knoten suchen",
+    "hint": "Auf die Arbeitsfläche ziehen oder zum Hinzufügen klicken.",
+    "empty": "Keine Knoten passen zu „{query}“.",
+    "categories": {
+      "action": "Aktionen",
+      "logic": "Logik",
+      "data": "Daten",
+      "storage": "Speicher"
+    }
+  },
+  "config": {
+    "empty": "Wähle einen Knoten, um ihn zu konfigurieren.",
+    "noConfig": "Dieser Knoten hat keine Konfiguration.",
+    "nodeLabel": "Knotenbezeichnung",
+    "close": "Schließen",
+    "delete": {
+      "action": "Knoten löschen",
+      "title": "Diesen Knoten löschen?",
+      "description": "„{label}“ wird aus dem Workflow entfernt.",
+      "confirm": "Knoten löschen"
+    },
+    "json": {
+      "invalid": "Ungültiges JSON"
+    },
+    "credential": {
+      "none": "— Zugangsdaten auswählen —"
+    },
+    "fx": {
+      "toggle": "Ausdrucksmodus für {field} umschalten",
+      "useLiteral": "Einen festen Wert verwenden",
+      "useExpression": "Einen Ausdruck verwenden"
+    },
+    "ai": {
+      "modelPlaceholder": "Modell-ID auswählen oder eingeben"
+    },
+    "trigger": {
+      "tabs": {
+        "manual": "Manuell",
+        "schedule": "Zeitplan",
+        "webhook": "Webhook",
+        "task-event": "Aufgaben-Ereignis"
+      },
+      "manual": {
+        "hint": "Läuft nur, wenn du auf „Ausführen“ drückst. Der Ausführen-Button funktioniert bei jedem Trigger-Typ, du kannst also immer manuell testen."
+      },
+      "schedule": {
+        "repeats": "Wiederholt sich",
+        "recurrence": "Wiederholung",
+        "presets": {
+          "daily": "Jeden Tag",
+          "weekdays": "Wochentags (Mo–Fr)",
+          "weekly": "Wöchentlich",
+          "monthly": "Monatlich",
+          "custom": "Eigene (Cron)"
+        },
+        "day": "Tag",
+        "dayOfWeek": "Wochentag",
+        "days": {
+          "0": "Sonntag",
+          "1": "Montag",
+          "2": "Dienstag",
+          "3": "Mittwoch",
+          "4": "Donnerstag",
+          "5": "Freitag",
+          "6": "Samstag"
+        },
+        "dayOfMonth": "Tag des Monats",
+        "time": "Uhrzeit",
+        "cron": "Cron-Ausdruck",
+        "timezone": "Zeitzone",
+        "nextRuns": "Nächste Läufe",
+        "invalidCron": "Ungültiger Cron — keine anstehenden Läufe."
+      },
+      "webhook": {
+        "hint": "Sende eine Anfrage an die URL des Workflows, um einen Lauf auszulösen. Die URL enthält ein geheimes Token, das beim Erzeugen einmal angezeigt wird.",
+        "url": "Webhook-URL",
+        "copyUrl": "URL kopieren",
+        "copied": "Kopiert.",
+        "tokenExists": "Es existiert schon ein Token. Erzeuge es neu, um eine frische URL zu sehen.",
+        "noUrlYet": "Noch keine URL erzeugt.",
+        "regenerate": "URL neu erzeugen",
+        "generate": "URL erzeugen"
+      },
+      "taskEvent": {
+        "fireOn": "Auslösen bei",
+        "events": {
+          "task_done": "Aufgabe fertig",
+          "task_abandoned": "Aufgabe verworfen",
+          "task_needs-attention": "Aufgabe braucht Aufmerksamkeit"
+        },
+        "repoFilterLabel": "Repo-Filter (optional)",
+        "repoFilter": "Repo-Filter",
+        "projectFilterLabel": "Projekt-Filter (optional)",
+        "projectFilter": "Projekt-Filter",
+        "projectPlaceholder": "Projekt-ID",
+        "priorityFilterLabel": "Prioritäts-Filter (optional)",
+        "priorityFilter": "Prioritäts-Filter",
+        "anyPriority": "Beliebige Priorität"
+      }
+    }
+  },
+  "expression": {
+    "fieldAria": "Ausdruck für {field}",
+    "placeholder": "'{{ $json.field }}'",
+    "suggestionsAria": "Ausdrucksvorschläge für {field}",
+    "dataPicker": {
+      "toggle": "Datenauswahl für {field} umschalten",
+      "insertTooltip": "Einen Verweis aus den Laufdaten einfügen",
+      "groupAria": "Datenauswahl für {field}",
+      "empty": "Noch keine Laufdaten — führe den Workflow einmal aus, um seine Daten hier zu erkunden.",
+      "insertRef": "{ref} einfügen",
+      "expand": "{key} ausklappen",
+      "collapse": "{key} einklappen"
+    },
+    "preview": {
+      "emptyValue": "(leer)",
+      "unresolved": "nicht auflösbar"
+    },
+    "hint": {
+      "noData": "Verweise auf Laufdaten, z. B. <code>'{{ $json.field }}'</code>. Führe einmal aus, um Werte vorzuschauen.",
+      "withData": "Verweise mit <code>'{{ }}'</code> auf Laufdaten — wähle ein Feld über den Daten-Button."
+    }
+  }
+}

@@ -36,6 +36,13 @@ describe('FinancesWidget locale-aware formatting (Phase 79 F)', () => {
     expect(screen.getByText('1.034,50')).toBeInTheDocument();
   });
 
+  it('renders the German copy under de-DE', () => {
+    renderAt('de-DE');
+    expect(screen.getAllByText('Einnahmen').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Ausgaben').length).toBeGreaterThan(0);
+    expect(screen.getByText('Rest')).toBeInTheDocument();
+  });
+
   it('renders the French copy under fr-FR (Phase 82 D)', () => {
     renderAt('fr-FR');
     expect(screen.getAllByText('Revenus').length).toBeGreaterThan(0);

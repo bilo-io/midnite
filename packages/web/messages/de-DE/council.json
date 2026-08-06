@@ -1,0 +1,172 @@
+{
+  "title": "Räte",
+  "description": "Gremien aus KI-Mitgliedern, die aus festen Rollen auf einen Prompt antworten — ein Synthesizer verdichtet sie danach in jedem Format: Brainstorming, Debatte, Analyse und mehr.",
+  "new": "Neuer Rat",
+  "searchPlaceholder": "Räte suchen",
+  "archived": "Archiviert",
+  "views": {
+    "list": "Listenansicht",
+    "grid": "Rasteransicht",
+    "table": "Tabellenansicht"
+  },
+  "empty": {
+    "title": "Noch keine Räte",
+    "description": "Erstelle einen, füge Mitglieder mit klaren Rollen hinzu und stelle ihnen einen Prompt.",
+    "noMatch": "Keine Räte passen zu „{query}“"
+  },
+  "bulk": {
+    "archive": "Archivieren",
+    "unarchive": "Aus dem Archiv holen",
+    "deleteTitle": "{count, plural, one {# Rat} other {# Räte}} löschen?",
+    "deleteDescription": "Das kann nicht rückgängig gemacht werden."
+  },
+  "table": {
+    "name": "Name",
+    "description": "Beschreibung",
+    "providers": "Anbieter",
+    "activity": "Aktivität",
+    "none": "—"
+  },
+  "stats": {
+    "members": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "consultations": "{count, plural, one {# Beratung} other {# Beratungen}}"
+  },
+  "widget": {
+    "title": "Räte",
+    "refresh": "Räte aktualisieren",
+    "error": "Räte konnten nicht geladen werden.",
+    "empty": "Noch keine Räte.",
+    "noMembers": "Keine Mitglieder"
+  },
+  "create": {
+    "title": "Neuer Rat",
+    "name": "Name",
+    "namePlaceholder": "z. B. Architektur-Review-Gremium",
+    "description": "Beschreibung",
+    "optional": "(optional)",
+    "descriptionPlaceholder": "Worüber dieser Rat urteilt",
+    "submit": "Rat erstellen",
+    "creating": "Wird erstellt …",
+    "failed": "Rat konnte nicht erstellt werden"
+  },
+  "custom": {
+    "title": "Eigener Synthese-Prompt",
+    "blurb": "Dieser Prompt wird als Synthese-Aufgabe verwendet, wann immer das Format eines Laufs „Eigen“ ist.",
+    "promptFor": "Prompt für {name}"
+  },
+  "detail": {
+    "thread": "Verlauf",
+    "members": "Mitglieder",
+    "noRun": "Sende unten einen Prompt, und jedes Mitglied antwortet aus seiner Rolle in seinem eigenen Terminal. Die Antworten gehen anschließend an den Synthesizer und werden im gewählten Format verdichtet.",
+    "liveHint": "Ein Lauf ist in Arbeit — warte auf die Synthese.",
+    "noMembersHint": "Füge im Panel mindestens 1 Mitglied hinzu, um zu starten."
+  },
+  "thread": {
+    "title": "Verlauf",
+    "empty": "Noch keine Läufe — sende unten den ersten Prompt.",
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {count} Min.",
+    "hoursAgo": "vor {count} Std.",
+    "daysAgo": "vor {count} T."
+  },
+  "runStatus": {
+    "running": "Läuft",
+    "synthesizing": "Synthetisiert",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen"
+  },
+  "composer": {
+    "label": "Prompt für den Rat",
+    "placeholder": "Frage den Rat alles · ⌘/Strg + ⏎",
+    "formatLabel": "Syntheseformat",
+    "dictate": "Prompt diktieren",
+    "stopDictation": "Diktat beenden",
+    "editCustom": "Eigenen Synthese-Prompt bearbeiten",
+    "editCustomTitle": "Den eigenen Synthese-Prompt bearbeiten",
+    "start": "Starten"
+  },
+  "members": {
+    "title": "Mitglieder",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "synthesizeWith": "Synthetisieren mit",
+    "synthProvider": "Anbieter des Synthesizers",
+    "defaultFormat": "Standardformat",
+    "defaultFormatLabel": "Standard-Syntheseformat",
+    "editCustomPrompt": "Eigenen Prompt bearbeiten",
+    "synthBlurb": "Verdichtet die gesammelten Antworten. Das Format ist für neue Läufe vorausgewählt, kann pro Lauf gewechselt und über dieselben Antworten erneut ausgeführt werden.",
+    "empty": "Füge mindestens 1 Mitglied hinzu — jedes antwortet aus seiner eigenen Rolle auf den Prompt.",
+    "fallbackName": "Mitglied {index}",
+    "reorder": "{name} umsortieren",
+    "remove": "{name} entfernen",
+    "collapse": "{name} einklappen",
+    "expand": "{name} ausklappen",
+    "nameField": "Name von {name}",
+    "providerField": "Anbieter von {name}",
+    "roleField": "Rolle von {name}",
+    "rolePlaceholder": "Rolle, aus der geantwortet wird — z. B. „Vertritt die Gegenposition.“"
+  },
+  "run": {
+    "tablist": "Rats-Lauf",
+    "prompt": "Prompt:",
+    "synthesis": "Synthese",
+    "memberStatus": {
+      "running": "Läuft",
+      "succeeded": "Fertig",
+      "failed": "Fehlgeschlagen",
+      "timeout": "Zeitüberschreitung",
+      "skipped": "Übersprungen"
+    },
+    "skipMember": "Mitglied überspringen",
+    "skip": "Überspringen",
+    "skipTitle": "Nicht länger auf dieses Mitglied warten — die Synthese läuft ohne es weiter",
+    "rerun": "Neu ausführen",
+    "rerunTitle": "Dieses Mitglied neu ausführen und dann erneut synthetisieren",
+    "noOutput": "Keine Ausgabe erfasst.",
+    "memberTerminal": "Terminal von {name}",
+    "waiting": "Warten auf {count, plural, one {# Mitglied} other {# Mitglieder}} …",
+    "synthesizing": "Synthese läuft ({format}) — {provider} verdichtet die Antworten …",
+    "synthesizerFallback": "Der Synthesizer",
+    "synthesisTerminalLabel": "Synthese · {provider}",
+    "synthesisTerminal": "Synthese-Terminal",
+    "reSynthesize": "Erneut synthetisieren",
+    "reSynthesizeBlurb": "Führt nur die Synthese über die erfassten Antworten erneut aus — Formate frei wechselbar; die Mitglieder laufen nicht erneut.",
+    "failed": "Der Lauf ist fehlgeschlagen.",
+    "noSynthesis": "Keine Synthese erfasst.",
+    "memberLabel": "Mitglied {label}"
+  },
+  "errors": {
+    "poll": "Der Lauf konnte nicht abgefragt werden",
+    "start": "Der Lauf konnte nicht gestartet werden",
+    "resynthesize": "Die erneute Synthese ist fehlgeschlagen"
+  },
+  "formats": {
+    "brainstorm": {
+      "label": "Brainstorming",
+      "description": "Ideen erzeugen, dann bündeln und die stärksten auswählen."
+    },
+    "debate": {
+      "label": "Debatte",
+      "description": "Anonymisierte Positionen zu einem einzigen Urteil abwägen."
+    },
+    "analyse": {
+      "label": "Analysieren",
+      "description": "Neutrale Analyse von Themen, Übereinstimmungen und Spannungen."
+    },
+    "critique": {
+      "label": "Kritisieren",
+      "description": "Jede Position unparteiisch auf Härte prüfen — Stärken und Risiken."
+    },
+    "motivate": {
+      "label": "Motivieren",
+      "description": "Den stärksten optimistischen Fall und einen Weg nach vorn bauen."
+    },
+    "demotivate": {
+      "label": "Demotivieren",
+      "description": "Ein skeptisches Pre-mortem — jeden Grund für ein Scheitern aufzeigen."
+    },
+    "custom": {
+      "label": "Eigen",
+      "description": "Schreibe deinen eigenen Synthese-Prompt."
+    }
+  }
+}

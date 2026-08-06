@@ -1,0 +1,75 @@
+{
+  "typeAtLeast": "Tippe mindestens {count, plural, one {# Zeichen} other {# Zeichen}}, um zu suchen.",
+  "typeMeta": {
+    "task": "Aufgaben",
+    "project": "Projekte",
+    "memory": "Gedächtnis",
+    "note": "Notizen",
+    "council": "Räte",
+    "workflow": "Workflows",
+    "milestone": "Meilensteine",
+    "digest": "Zusammenfassungen"
+  },
+  "palette": {
+    "ariaLabel": "Befehlspalette",
+    "placeholder": "Springen, suchen oder einen Befehl ausführen …",
+    "chatPlaceholder": "Sag dem Board, was zu tun ist …",
+    "inputAriaLabel": "Befehle und Inhalte suchen",
+    "chatInputAriaLabel": "Mit dem Board chatten",
+    "searchingAriaLabel": "Sucht",
+    "shortcutsButtonTitle": "Tastaturkürzel (?)",
+    "resultsAriaLabel": "Ergebnisse",
+    "noMatches": "Keine Treffer.",
+    "seeAllIn": "+{count} weitere {label} — alle in der Suche ansehen",
+    "sections": {
+      "recent": "Kürzlich",
+      "commands": "Befehle",
+      "navigation": "Navigation"
+    },
+    "always": {
+      "agents": "Agenten",
+      "personalization": "Personalisierung",
+      "settings": "Einstellungen"
+    }
+  },
+  "page": {
+    "title": "Suche",
+    "description": "Volltextsuche über Aufgaben, Projekte, Gedächtnis, Notizen, Räte & Workflows.",
+    "placeholder": "Alles durchsuchen",
+    "clearAriaLabel": "Suche leeren"
+  },
+  "results": {
+    "emptyPrompt": "Suche über Aufgaben, Projekte, Gedächtnis, Notizen, Räte & Workflows.",
+    "searching": "Sucht …",
+    "failed": "Suche fehlgeschlagen — versuche es erneut.",
+    "noResultsFor": "Keine Ergebnisse für „{query}“.",
+    "resultCountFor": "{count, plural, one {# Ergebnis} other {# Ergebnisse}} für",
+    "allTypes": "Alle Typen"
+  },
+  "shortcuts": {
+    "ariaLabel": "Tastaturkürzel",
+    "title": "Tastaturkürzel",
+    "then": "dann",
+    "closeHint": "Esc drücken, um zu schließen",
+    "groups": {
+      "general": "Allgemein",
+      "navigation": "Navigation",
+      "board": "Board"
+    },
+    "items": {
+      "openPalette": "Befehlspalette öffnen",
+      "shortcutsHelp": "Tastaturkürzel",
+      "newTask": "Neue Aufgabe (außerhalb eines Eingabefelds)",
+      "closeModal": "Dialog / Schublade schließen",
+      "goHome": "Zur Startseite",
+      "goBoard": "Zum Board",
+      "goOffice": "Zum Büro",
+      "goSettings": "Zu den Einstellungen",
+      "moveFocusCards": "Fokus zwischen Karten bewegen",
+      "moveFocusColumns": "Fokus zwischen Spalten bewegen",
+      "openCard": "Fokussierte Karte öffnen",
+      "markDone": "Fokussierte Karte als fertig markieren",
+      "abandonCard": "Fokussierte Karte verwerfen"
+    }
+  }
+}

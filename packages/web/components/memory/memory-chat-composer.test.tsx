@@ -82,29 +82,30 @@ it('disables the composer with a hint when no AI provider is configured', async 
 });
 
 // Phase 82 D — the model can only answer in the user's language if the request says
-// so, and that must hold for a locale whose UI catalog is still a stub: de-DE renders
+// so, and that must hold for a locale whose UI catalog is still a stub: es-ES renders
 // the en-GB fallback copy (hence the English labels below) yet still asks the gateway
-// for a German answer. No clamping to a "complete" locale.
+// for a Spanish answer. No clamping to a "complete" locale. (es-ES is the stub locale
+// since de-DE was authored — see messages/meta/.)
 it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
   aiReady();
   getMemoryChat.mockResolvedValue([]);
   postMemoryChat.mockResolvedValue({
-    userMessage: { id: 'u1', memoryId: 'm1', role: 'user', content: 'warum?', citations: [], createdAt: 't1' },
+    userMessage: { id: 'u1', memoryId: 'm1', role: 'user', content: '¿por qué?', citations: [], createdAt: 't1' },
     assistantMessage: {
       id: 'a1',
       memoryId: 'm1',
       role: 'assistant',
-      content: 'Weil der Leitfaden es sagt.',
+      content: 'Porque lo dice la guía.',
       citations: [],
       createdAt: 't2',
     },
   });
 
-  render(<MemoryChatComposer memory={memory} />, { locale: 'de-DE' });
+  render(<MemoryChatComposer memory={memory} />, { locale: 'es-ES' });
   const input = await screen.findByLabelText('Ask this memory a question');
-  fireEvent.change(input, { target: { value: 'warum?' } });
+  fireEvent.change(input, { target: { value: '¿por qué?' } });
   fireEvent.click(screen.getByLabelText('Send'));
 
-  expect(await screen.findByText('Weil der Leitfaden es sagt.')).toBeInTheDocument();
-  expect(postMemoryChat).toHaveBeenCalledWith('m1', 'warum?', 'de-DE');
+  expect(await screen.findByText('Porque lo dice la guía.')).toBeInTheDocument();
+  expect(postMemoryChat).toHaveBeenCalledWith('m1', '¿por qué?', 'es-ES');
 });

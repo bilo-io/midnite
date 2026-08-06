@@ -1,0 +1,195 @@
+{
+  "page": {
+    "title": "Sitzungen",
+    "description": "Eine Sitzung pro Aufgabe — ihr Status folgt der Aufgabe (in Arbeit, wartet auf Eingabe, abgeschlossen oder untätig)."
+  },
+  "status": {
+    "running": "Läuft",
+    "waiting": "Wartet",
+    "completed": "Abgeschlossen",
+    "idle": "Untätig",
+    "endedPill": "beendet"
+  },
+  "filters": {
+    "awaitingInput": "Wartet auf Eingabe",
+    "allStatuses": "Alle Status",
+    "archived": "Archiviert",
+    "active": "Aktiv"
+  },
+  "list": {
+    "listView": "Listenansicht",
+    "gridView": "Rasteransicht",
+    "tableView": "Tabellenansicht",
+    "search": "Sitzungen suchen",
+    "emptyTitle": "Noch keine Sitzungen",
+    "emptyDescription": "Erstelle eine Aufgabe, und ihre Agentensitzung erscheint hier.",
+    "noMatch": "Keine Sitzungen passen zu diesem Filter",
+    "sectionEmpty": "Leer",
+    "sectionNothing": "Nichts hier",
+    "sessionCount": "{count, plural, one {# Sitzung} other {# Sitzungen}}",
+    "projectCount": "{count, plural, one {# Projekt} other {# Projekte}}",
+    "sectionSummary": "{sessions} · {projects}"
+  },
+  "card": {
+    "openPage": "Sitzungsseite öffnen"
+  },
+  "bulk": {
+    "archive": "Archivieren",
+    "unarchive": "Aus dem Archiv holen",
+    "delete": "Löschen",
+    "archiveConfirmTitle": "Diese Sitzung archivieren?",
+    "archiveConfirmDescription": "Sie verlässt das aktive Board. Du kannst sie später zurückholen.",
+    "deleteConfirmTitle": "{count, plural, one {# Sitzung löschen?} other {# Sitzungen löschen?}}",
+    "deleteConfirmDescription": "Damit wird das Transkript endgültig entfernt. Das kann nicht rückgängig gemacht werden."
+  },
+  "detail": {
+    "loading": "Wird geladen …",
+    "allSessions": "Alle Sitzungen",
+    "viewTask": "Aufgabe ansehen",
+    "approvalsRail": "Freigaben & Kontext",
+    "infoRail": "Sitzungsinfo"
+  },
+  "left": {
+    "agentWaiting": "Der Agent wartet auf dich",
+    "pendingApprovals": "Offene Freigaben",
+    "nothingPending": "Nichts wartet auf eine Entscheidung.",
+    "allow": "Erlauben",
+    "allowSession": "Sitzung erlauben",
+    "deny": "Verweigern",
+    "decisionHistory": "Entscheidungsverlauf",
+    "noDecisions": "Noch keine Entscheidungen erfasst.",
+    "task": "Aufgabe",
+    "status": "Status",
+    "priority": "Priorität",
+    "retries": "Wiederholungen",
+    "created": "Erstellt",
+    "viewRetro": "Retrospektive ansehen",
+    "project": "Projekt"
+  },
+  "info": {
+    "status": "Status",
+    "provider": "Anbieter",
+    "agentCli": "Agenten-CLI",
+    "ranFor": "Laufzeit",
+    "uptime": "Betriebszeit",
+    "lastActivity": "Letzte Aktivität",
+    "workingDir": "Arbeitsverz.",
+    "retries": "Wiederholungen",
+    "archived": "Archiviert",
+    "context": "Kontext",
+    "estBadge": "gesch.",
+    "estTitle": "Ungefähr — Hash-basiert, keine gemessene Token-Zahl",
+    "startedTitle": "Gestartet {when}",
+    "contextValue": "{tokens} / {limit}",
+    "contextValueEstimate": "{tokens} / {limit} (gesch.)",
+    "tokens": {
+      "millions": "{value} Mio.",
+      "thousands": "{value} Tsd."
+    },
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hoursMinutes": "{hours} Std. {minutes} min",
+      "daysHours": "{days} T. {hours} Std."
+    }
+  },
+  "cost": {
+    "label": "Kosten",
+    "noValue": "—",
+    "unpriced": "ohne Preis",
+    "unpricedTitle": "Modell nicht in der Preistabelle — Kosten nicht gezählt",
+    "measured": " (gemessen)",
+    "measuredEstimated": " (gemessen + gesch.)",
+    "breakdownTitle": "gemessen {measured} · geschätzt {estimated}"
+  },
+  "pane": {
+    "transcriptFailed": "Transkript konnte nicht geladen werden",
+    "loadingSession": "Sitzung wird geladen …",
+    "noSessionTitle": "Noch keine Sitzung",
+    "noSessionHint": "Diese Aufgabe hat noch keine Sitzung gestartet. Starte sie, um einen Agenten zu erzeugen.",
+    "loadingTranscript": "Transkript wird geladen …"
+  },
+  "terminal": {
+    "label": "Terminal",
+    "ariaLabel": "Sitzungsterminal",
+    "starting": "Terminal wird gestartet …",
+    "loadingTranscript": "Transkript wird geladen …",
+    "noTranscript": "Kein Transkript verfügbar.",
+    "noMessages": "Keine Nachrichten in dieser Sitzung.",
+    "taskEvents": "Aufgaben-Ereignisse ({count})",
+    "noText": "(kein Text)",
+    "connecting": "Verbindet …",
+    "disconnected": "Getrennt",
+    "connectionError": "Verbindungsfehler",
+    "sessionEnded": "Sitzung beendet",
+    "readOnly": "Nur lesen",
+    "approvalNeeded": "Freigabe nötig",
+    "accept": "Annehmen",
+    "acceptForSession": "Für die Sitzung annehmen",
+    "live": "Live",
+    "deny": "Verweigern",
+    "endedBadge": "beendet · nur lesen",
+    "liveBadge": "live"
+  },
+  "widget": {
+    "title": "Laufende Sitzungen",
+    "refresh": "Sitzungen aktualisieren",
+    "loadFailed": "Sitzungen konnten nicht geladen werden.",
+    "empty": "Keine aktiven Sitzungen."
+  },
+  "launch": {
+    "failedToStart": "Sitzung konnte nicht gestartet werden",
+    "dialogTitle": "{cli}-Sitzung",
+    "blurb": "Ein laufendes {cli}-Terminal. Jederzeit schließbar — es läuft weiter, bis es untätig wird.",
+    "terminalAria": "Terminal der {cli}-Sitzung",
+    "starting": "{cli} wird gestartet …"
+  },
+  "newButton": {
+    "label": "Neue Sitzung",
+    "codingAgent": "Coding-Agent"
+  },
+  "reply": {
+    "placeholder": "Dem Agenten antworten …",
+    "noLiveSession": "Keine laufende Sitzung — diese Aufgabe braucht eine Auflösung, keine Antwort.",
+    "sendFailed": "Antwort konnte nicht gesendet werden.",
+    "ariaLabel": "Dem Agenten antworten",
+    "sendAria": "Antwort senden",
+    "send": "Senden"
+  },
+  "composer": {
+    "placeholder": "Aufgaben hinzufügen, eine pro Zeile · ⌘/Strg + ⏎",
+    "attachImage": "Bild anhängen",
+    "startDictation": "Diktat starten",
+    "stopDictation": "Diktat beenden",
+    "taskCount": "{count, plural, one {# Aufgabe} other {# Aufgaben}}",
+    "pingAria": "Die KI anpingen",
+    "pingTitle": "Prüfen, ob die KI erreichbar ist",
+    "ping": "Ping",
+    "pinging": "Pingt …",
+    "pingFailed": "Ping fehlgeschlagen",
+    "addCount": "{count} hinzufügen",
+    "requestFailed": "Anfrage fehlgeschlagen",
+    "expandDetails": "Details ausklappen",
+    "collapseDetails": "Details einklappen",
+    "dockInput": "Eingabe andocken",
+    "expandFullscreen": "Eingabe auf Vollbild vergrößern",
+    "fullScreen": "Vollbild"
+  },
+  "chatBar": {
+    "title": "Chat zum Board",
+    "pressEnterToPreview": "<kbd>Enter</kbd> drücken für die Vorschau",
+    "quotedCommand": "„{command}“",
+    "examplesIntro": "Gib einen Befehl in natürlicher Sprache ein. Beispiele:",
+    "exampleItem": "› {example}",
+    "working": "Arbeitet …",
+    "appliesTo": "{count, plural, one {Gilt für # Aufgabe} other {Gilt für # Aufgaben}} (aus deinem letzten Ergebnis).",
+    "enterToConfirm": "Enter zum Bestätigen",
+    "undo": "Rückgängig",
+    "lowConfidence": "Geringe Zuversicht — bitte prüfen.",
+    "inferencePath": {
+      "deterministic": "lokal geparst — keine KI genutzt",
+      "local": "über lokales Modell",
+      "provider": "über Anbieter"
+    }
+  }
+}

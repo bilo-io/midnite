@@ -1,0 +1,69 @@
+{
+  "overview": {
+    "contextDocsHeading": "Kontextdokumente",
+    "contextDocsHint": "Wähle, welche Dokumente dieses Projekts Claude beim Entwerfen der Übersicht lesen soll. Lasse alle unmarkiert, um allein aus Beschreibung und Plan zu entwerfen.",
+    "docsLoading": "Dokumente werden geladen …",
+    "noDocsYet": "Dieses Projekt hat noch keine Dokumente.",
+    "draftOverview": "Übersicht entwerfen",
+    "drafting": "Die Übersicht wird entworfen …",
+    "draftFailed": "Der Entwurf der Übersicht ist fehlgeschlagen.",
+    "regenerate": "Neu erzeugen",
+    "approve": "Freigeben"
+  },
+  "featureList": {
+    "dialogAria": "Anfrage für Funktionsliste bearbeiten",
+    "heading": "Anfrage für Funktionsliste",
+    "nameLabel": "Name",
+    "namePlaceholder": "z. B. Abrechnung überarbeiten",
+    "tasksLabel": "Aufgaben",
+    "tasksPlaceholder": "Beschreibe die Arbeit — eine Aufgabe pro Zeile.",
+    "tasksHint": "Jede nicht leere Zeile wird beim Anlegen dieser Liste zu einer eigenen Aufgabe.",
+    "discard": "Verwerfen",
+    "discardTitle": "Diese Funktionsliste verwerfen?",
+    "discardDescription": "Der Entwurf und alles darin Getippte werden entfernt.",
+    "craft": "{count, plural, =0 {Aufgabe anlegen} one {Aufgabe anlegen} other {# Aufgaben anlegen}}",
+    "destinationHeading": "Wohin sollen diese?",
+    "destinationSubtitle": "{count, plural, one {# Aufgabe} other {# Aufgaben}} aus „{name}“.",
+    "todoDetail": "Jetzt einreihen — Agenten übernehmen sie, sobald Slots frei sind.",
+    "backlogDetail": "Für später parken — es startet nichts, bis du sie verschiebst."
+  },
+  "pills": {
+    "rowAria": "Anfragen für Funktionslisten",
+    "openAria": "Funktionsliste {name} öffnen"
+  },
+  "workItem": {
+    "fallbackTitle": "Arbeitspaket",
+    "archive": "Archivieren",
+    "unarchive": "Aus dem Archiv holen",
+    "sessionNoun": "Sitzung"
+  },
+  "notes": {
+    "heading": "Handlungspunkte",
+    "doneCount": "{count, plural, one {# erledigt} other {# erledigt}}",
+    "showCompletedAria": "Erledigte anzeigen",
+    "hideCompletedAria": "Erledigte ausblenden",
+    "showDone": "Erledigte anzeigen",
+    "hideDone": "Erledigte ausblenden",
+    "markComplete": "Als erledigt markieren",
+    "markIncomplete": "Als offen markieren",
+    "deleteNote": "Notiz löschen",
+    "emptyAll": "Noch keine Notizen — füge unten eine hinzu.",
+    "emptyActive": "Keine offenen Notizen.",
+    "listening": "Hört zu …",
+    "addPlaceholder": "Notiz hinzufügen …",
+    "dictate": "Notiz diktieren",
+    "stopDictation": "Diktat beenden"
+  },
+  "breakdown": {
+    "empty": "Noch keine Aufgaben in dieser Aufschlüsselung.",
+    "listAria": "Aufgaben der Aufschlüsselung",
+    "titleAria": "Titel für {ref}",
+    "kindAria": "Art von {title}",
+    "priorityAria": "Priorität von {title}",
+    "blockedByLabel": "Blockiert durch:",
+    "noBlockers": "nichts",
+    "removeBlockerAria": "Blocker {blocker} von {title} entfernen",
+    "addBlockerAria": "Blocker für {title} hinzufügen",
+    "addBlockerOption": "Blocker hinzufügen …"
+  }
+}

@@ -1,0 +1,209 @@
+{
+  "tabs": {
+    "details": "Details",
+    "session": "Sitzung",
+    "review": "Review",
+    "retro": "Retro",
+    "sectionsAria": "Abschnitte der Aufgabendetails"
+  },
+  "openPage": "Seite öffnen",
+  "allTasks": "Alle Aufgaben",
+  "title": {
+    "editAria": "Aufgabentitel bearbeiten",
+    "editHint": "Zum Bearbeiten klicken",
+    "saveFailed": "Titel konnte nicht aktualisiert werden"
+  },
+  "waiting": {
+    "banner": "Der Agent wartet auf dich",
+    "reply": "Antworten",
+    "replyToAgent": "Dem Agenten antworten",
+    "cancelReply": "Antwort abbrechen"
+  },
+  "tags": {
+    "title": "Tags",
+    "addPlaceholder": "Tag hinzufügen …",
+    "addAria": "Ein Tag hinzufügen",
+    "remove": "Tag {tag} entfernen"
+  },
+  "description": {
+    "title": "Beschreibung",
+    "placeholder": "Beschreibung hinzufügen …",
+    "saveFailed": "Beschreibung konnte nicht aktualisiert werden"
+  },
+  "priority": {
+    "saveFailed": "Priorität konnte nicht aktualisiert werden"
+  },
+  "status": {
+    "saveFailed": "Status konnte nicht aktualisiert werden"
+  },
+  "milestone": {
+    "title": "Meilenstein",
+    "none": "Kein Meilenstein",
+    "pickerAria": "Meilenstein der Aufgabe",
+    "needsProject": "Weise diese Aufgabe einem Projekt zu, um Meilensteine zu nutzen.",
+    "noMilestones": "Dieses Projekt hat noch keine Meilensteine.",
+    "assignFailed": "Meilenstein konnte nicht zugewiesen werden"
+  },
+  "dependencies": {
+    "title": "Abhängigkeiten",
+    "blockedBy": "Blockiert durch",
+    "blocks": "Blockiert",
+    "none": "Keine Blocker.",
+    "unknown": "(unbekannt)",
+    "done": "fertig",
+    "pending": "offen",
+    "removeBlocker": "Blocker {title} entfernen",
+    "searchLabel": "Aufgaben suchen, auf die gewartet werden soll",
+    "searchPlaceholder": "Blockierende Aufgabe hinzufügen …",
+    "addFailed": "Abhängigkeit konnte nicht hinzugefügt werden",
+    "removeFailed": "Abhängigkeit konnte nicht entfernt werden"
+  },
+  "picker": {
+    "searchAria": "Aufgaben suchen",
+    "searchPlaceholder": "Aufgaben suchen …"
+  },
+  "project": {
+    "changeFailed": "Projekt konnte nicht gewechselt werden"
+  },
+  "links": {
+    "title": "Review & Links",
+    "none": "Noch keine Links.",
+    "add": "Link hinzufügen",
+    "remove": "Link entfernen",
+    "removeTitle": "Diesen Link entfernen?",
+    "removeDescription": "Er wird von dieser Aufgabe gelöst.",
+    "removeConfirm": "Entfernen",
+    "placeholder": "Füge einen GitHub-PR-, Figma-, Google-Docs- oder Notion-Link ein",
+    "urlError": "Gib eine vollständige URL an, inklusive https://",
+    "addFailed": "Link konnte nicht hinzugefügt werden",
+    "removeFailed": "Link konnte nicht entfernt werden"
+  },
+  "prompt": {
+    "title": "Prompt"
+  },
+  "attachments": {
+    "title": "Anhänge"
+  },
+  "pr": {
+    "title": "Pull Request",
+    "refresh": "PR-Status aktualisieren",
+    "statusUnknown": "Status unbekannt",
+    "viewDiff": "Diff ansehen",
+    "reviewPage": "Review-Seite",
+    "open": "PR öffnen",
+    "review": "Review",
+    "chip": "PR #{number} — {state}",
+    "chipChecks": " · CI {checks}",
+    "states": {
+      "open": "Offen",
+      "draft": "Entwurf",
+      "merged": "Gemergt",
+      "closed": "Geschlossen"
+    },
+    "checks": {
+      "passing": "erfolgreich",
+      "failing": "fehlgeschlagen",
+      "pending": "offen"
+    }
+  },
+  "aiReview": {
+    "title": "KI-Review",
+    "lgtm": "LGTM",
+    "changesRequested": "Änderungen angefordert",
+    "reviewed": "Geprüft"
+  },
+  "runs": {
+    "title": "Agentenläufe"
+  },
+  "activity": {
+    "title": "Aktivität",
+    "none": "Noch keine Aktivität erfasst.",
+    "answer": "Antworten"
+  },
+  "events": {
+    "agentStarted": "Agent gestartet",
+    "agentWaiting": "Agent wartet auf Eingabe",
+    "agentResumed": "Durch Antwort / Freigabe fortgesetzt",
+    "agentEscalated": "Eskaliert — braucht Aufmerksamkeit",
+    "agentRequeued": "Neu eingereiht",
+    "agentRetried": "Erneut versucht",
+    "agentDone": "Agent fertig",
+    "taskReopened": "Wieder geöffnet",
+    "taskReplanned": "Neu geplant"
+  },
+  "actions": {
+    "start": "Starten",
+    "edit": "Bearbeiten",
+    "reopen": "Wieder öffnen",
+    "session": "Sitzung",
+    "markDone": "Als fertig markieren",
+    "abandon": "Verwerfen",
+    "delete": "Löschen",
+    "abandonTitle": "Diese Aufgabe verwerfen?",
+    "abandonDescription": "Sie wird archiviert und ihre Sitzung gestoppt. Danach kannst du sie endgültig löschen.",
+    "abandonConfirm": "Verwerfen",
+    "markDoneTitle": "Diese Aufgabe als fertig markieren?",
+    "markDoneDescription": "Sie wandert direkt nach „Fertig“ und überspringt jeden Agenten, der noch daran arbeitet.",
+    "markDoneConfirm": "Als fertig markieren",
+    "deleteTitle": "Diese Aufgabe löschen?",
+    "deleteDescription": "Das ist endgültig und kann nicht rückgängig gemacht werden.",
+    "deleteConfirm": "Löschen",
+    "startFailed": "Aufgabe konnte nicht gestartet werden",
+    "abandonFailed": "Aufgabe konnte nicht verworfen werden",
+    "markDoneFailed": "Aufgabe konnte nicht als fertig markiert werden",
+    "reopenFailed": "Aufgabe konnte nicht wieder geöffnet werden",
+    "deleteFailed": "Aufgabe konnte nicht gelöscht werden"
+  },
+  "failures": {
+    "title": "Fehlerverlauf ({count})",
+    "attempt": "Versuch {index}",
+    "exit": "· Exit {code}",
+    "classes": {
+      "crash": "Abgestürzt",
+      "timeout": "Zeitüberschreitung",
+      "no-pr": "Kein PR eröffnet",
+      "gate-failed": "Gate fehlgeschlagen",
+      "tool-denied": "Werkzeug verweigert",
+      "inactivity": "Verstummt",
+      "retries-exhausted": "Versuche aufgebraucht",
+      "unknown": "Unbekannt"
+    }
+  },
+  "health": {
+    "title": "Aufgabenzustand",
+    "empty": "Nichts hängt — keine Fehler oder feststeckenden Aufgaben.",
+    "needsAttention": "Braucht Aufmerksamkeit",
+    "waitingTooLong": "Wartet zu lange",
+    "stuckWip": "Steckt fest (still) in Arbeit",
+    "agedTodo": "Überaltertes To-do",
+    "recentFailures": "Letzte Fehler nach Klasse ({count})",
+    "none": "keine"
+  },
+  "retro": {
+    "empty": "Noch keine Retrospektive — sie entsteht, wenn die Aufgabe fertig ist.",
+    "aiSummary": "KI-Zusammenfassung",
+    "outcome": {
+      "done": "Geliefert",
+      "abandoned": "Verworfen",
+      "needs-attention": "Braucht Aufmerksamkeit"
+    },
+    "timing": "Zeiten",
+    "wait": "Warten",
+    "work": "Arbeit",
+    "total": "Gesamt",
+    "summary": "Zusammenfassung",
+    "whatTrippedItInline": "Woran es hing: ",
+    "whatTrippedIt": "Woran es hing",
+    "aiReview": "KI-Review",
+    "checks": "Checks",
+    "checksTally": " · {passed} erfolgreich · {failed} fehlgeschlagen",
+    "pullRequest": "Pull Request",
+    "attempts": "Versuche",
+    "noAttempts": "Keine Agentenläufe erfasst.",
+    "firstAttempt": "Versuch 1",
+    "retryN": "Wiederholung {index}",
+    "unresolved": "ungelöst",
+    "timeline": "Zeitleiste",
+    "noActivity": "Keine Aktivität erfasst."
+  }
+}
