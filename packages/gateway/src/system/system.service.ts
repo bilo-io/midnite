@@ -5,11 +5,14 @@ import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@ne
 import type { DiskStats, SystemStats } from '@midnite/shared';
 
 import { aggregateCpuTimes, cpuUsagePct, type CpuTimes } from './lib/cpu';
+import { type MemorySample, readMemory } from './lib/memory';
 
-// How often the background CPU sampler recomputes utilization. `os.cpus()` gives
-// cumulative counters, so we hold the previous sample and diff against it — a
-// single reading can't yield an instantaneous percentage.
-const CPU_SAMPLE_INTERVAL_MS = 1_000;
+// How often the background sampler runs. `os.cpus()` gives cumulative counters,
+// so we hold the previous sample and diff against it — a single reading can't
+// yield an instantaneous percentage. Memory rides the same tick because probing
+// it spawns `vm_stat`: one subprocess a second, regardless of how many clients
+// are polling `GET /system/stats`.
+const SAMPLE_INTERVAL_MS = 1_000;
 
 const round = (n: number, dp = 1): number => {
   const f = 10 ** dp;
@@ -17,23 +20,31 @@ const round = (n: number, dp = 1): number => {
 };
 
 /**
- * Real host telemetry from `node:os` + `node:fs.statfs` (the gateway runs on the
- * host, so it can read them). A background interval keeps a rolling CPU-usage
- * figure; memory and disk are read on demand. All values are best-effort — disk
- * reads that fail (permissions, exotic FS) degrade to an empty list rather than
- * failing the whole response.
+ * Real host telemetry from `node:os`, `vm_stat`/`/proc/meminfo` and
+ * `node:fs.statfs` (the gateway runs on the host, so it can read them). A
+ * background interval keeps rolling CPU-usage and memory figures; disk is read
+ * on demand. All values are best-effort — a memory probe that fails degrades to
+ * `os.freemem()`, and disk reads that fail (permissions, exotic FS) degrade to
+ * an empty list rather than failing the whole response.
  */
 @Injectable()
 export class SystemService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SystemService.name);
   private prevCpu: CpuTimes = aggregateCpuTimes(os.cpus());
   private cpuUsage = 0;
+  private memory: MemorySample | null = null;
+  private memoryInFlight: Promise<MemorySample> | null = null;
   private timer: NodeJS.Timeout | null = null;
 
   onModuleInit(): void {
-    this.timer = setInterval(() => this.sampleCpu(), CPU_SAMPLE_INTERVAL_MS);
+    this.timer = setInterval(() => {
+      this.sampleCpu();
+      void this.sampleMemory();
+    }, SAMPLE_INTERVAL_MS);
     // Don't keep the event loop alive on shutdown.
     this.timer.unref?.();
+    // Prime the cache so the first request isn't a cold read.
+    void this.sampleMemory();
   }
 
   onModuleDestroy(): void {
@@ -47,26 +58,51 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
     this.prevCpu = cur;
   }
 
+  /**
+   * Refresh the cached memory sample, collapsing concurrent callers onto a
+   * single probe so a burst of requests can't spawn a burst of `vm_stat`s.
+   */
+  private sampleMemory(): Promise<MemorySample> {
+    this.memoryInFlight ??= readMemory((err) =>
+      this.logger.debug({ err }, 'memory probe degraded to os.freemem()'),
+    )
+      .then((sample) => {
+        this.memory = sample;
+        return sample;
+      })
+      .finally(() => {
+        this.memoryInFlight = null;
+      });
+    return this.memoryInFlight;
+  }
+
   async getStats(): Promise<SystemStats> {
     const cpus = os.cpus();
-    const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const usedMem = Math.max(totalMem - freeMem, 0);
+    // Under Nest the sampler has primed this; a bare service (specs, scripts)
+    // takes the probe on its first call.
+    const [memory, disks] = await Promise.all([
+      this.memory ?? this.sampleMemory(),
+      this.readDisks(),
+    ]);
+    // `os.loadavg()` is unimplemented on Windows and returns a hard-coded 0 —
+    // omit it there rather than publishing a plausible-looking zero.
+    const loadAvg1 = process.platform === 'win32' ? undefined : round(os.loadavg()[0] ?? 0, 2);
 
     return {
       cpu: {
         usagePct: round(this.cpuUsage),
         cores: cpus.length,
-        loadAvg1: round(os.loadavg()[0] ?? 0, 2),
+        ...(loadAvg1 === undefined ? {} : { loadAvg1 }),
         model: cpus[0]?.model?.trim() || undefined,
       },
       memory: {
-        totalBytes: totalMem,
-        usedBytes: usedMem,
-        freeBytes: freeMem,
-        usagePct: totalMem > 0 ? round((usedMem / totalMem) * 100) : 0,
+        totalBytes: memory.totalBytes,
+        usedBytes: memory.usedBytes,
+        // The contract's "free" is available memory — see MemoryStatsSchema.
+        freeBytes: memory.availableBytes,
+        usagePct: memory.usagePct,
       },
-      disks: await this.readDisks(),
+      disks,
       platform: os.platform(),
       hostname: os.hostname() || undefined,
       uptimeSec: Math.round(os.uptime()),

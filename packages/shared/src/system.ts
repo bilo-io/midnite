@@ -17,8 +17,12 @@ export const CpuStatsSchema = z.object({
   usagePct: z.number().min(0).max(100),
   /** Logical core count (`os.cpus().length`). */
   cores: z.number().int().positive(),
-  /** 1-minute load average (`os.loadavg()[0]`; 0 on platforms without it). */
-  loadAvg1: z.number().nonnegative(),
+  /**
+   * 1-minute load average (`os.loadavg()[0]`). Absent on platforms that don't
+   * implement it — Windows, where `os.loadavg()` returns a hard-coded `[0,0,0]`.
+   * Treat absence as "unavailable"; don't render it as a zero load.
+   */
+  loadAvg1: z.number().nonnegative().optional(),
   /** CPU model string, when the platform reports one. */
   model: z.string().optional(),
 });
@@ -26,7 +30,16 @@ export type CpuStats = z.infer<typeof CpuStatsSchema>;
 
 export const MemoryStatsSchema = z.object({
   totalBytes: z.number().nonnegative(),
+  /**
+   * Memory genuinely committed — the figure Activity Monitor labels "Memory
+   * Used" (app + wired + compressed) and `free` labels "used".
+   */
   usedBytes: z.number().nonnegative(),
+  /**
+   * Memory the OS can hand out without paging — i.e. *available*, not merely
+   * unallocated: it counts the reclaimable page cache that `os.freemem()`
+   * excludes. `usedBytes + freeBytes === totalBytes`.
+   */
   freeBytes: z.number().nonnegative(),
   usagePct: z.number().min(0).max(100),
 });
