@@ -43,6 +43,13 @@ describe('FinancesWidget locale-aware formatting (Phase 79 F)', () => {
     expect(screen.getByText('Rest')).toBeInTheDocument();
   });
 
+  it('renders the Spanish copy under es-ES', () => {
+    renderAt('es-ES');
+    expect(screen.getAllByText('Ingresos').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Gastos').length).toBeGreaterThan(0);
+    expect(screen.getByText('Restante')).toBeInTheDocument();
+  });
+
   it('renders the French copy under fr-FR (Phase 82 D)', () => {
     renderAt('fr-FR');
     expect(screen.getAllByText('Revenus').length).toBeGreaterThan(0);

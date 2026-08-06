@@ -81,12 +81,13 @@ it('disables the composer with a hint when no AI provider is configured', async 
   expect(screen.queryByLabelText('Ask this memory a question')).toBeNull();
 });
 
-// Phase 82 D — the model can only answer in the user's language if the request says
-// so, and that must hold for a locale whose UI catalog is still a stub: es-ES renders
-// the en-GB fallback copy (hence the English labels below) yet still asks the gateway
-// for a Spanish answer. No clamping to a "complete" locale. (es-ES is the stub locale
-// since de-DE was authored — see messages/meta/.)
-it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
+// Phase 82 D — the model can only answer in the user's language if the request says so.
+//
+// This was originally framed around a locale whose UI catalog was still a stub (first
+// de-DE, then es-ES). Every declared locale is authored now, so the surviving guarantee is
+// that a **non-default** locale reaches the gateway unchanged rather than being normalised
+// to en-GB in the request path. The labels below are Spanish because es-ES is translated.
+it('sends the active locale unchanged for a non-default locale (Phase 82 D)', async () => {
   aiReady();
   getMemoryChat.mockResolvedValue([]);
   postMemoryChat.mockResolvedValue({
@@ -102,9 +103,9 @@ it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', as
   });
 
   render(<MemoryChatComposer memory={memory} />, { locale: 'es-ES' });
-  const input = await screen.findByLabelText('Ask this memory a question');
+  const input = await screen.findByLabelText('Hazle una pregunta a este recuerdo');
   fireEvent.change(input, { target: { value: '¿por qué?' } });
-  fireEvent.click(screen.getByLabelText('Send'));
+  fireEvent.click(screen.getByLabelText('Enviar'));
 
   expect(await screen.findByText('Porque lo dice la guía.')).toBeInTheDocument();
   expect(postMemoryChat).toHaveBeenCalledWith('m1', '¿por qué?', 'es-ES');

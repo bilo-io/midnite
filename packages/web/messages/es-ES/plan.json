@@ -1,0 +1,69 @@
+{
+  "overview": {
+    "contextDocsHeading": "Documentos de contexto",
+    "contextDocsHint": "Elige cuáles de los documentos de este proyecto debería leer Claude mientras redacta el resumen. Déjalos todos sin marcar para redactarlo solo a partir de la descripción y del plan.",
+    "docsLoading": "Cargando los documentos…",
+    "noDocsYet": "Este proyecto todavía no tiene documentos.",
+    "draftOverview": "Redactar el resumen",
+    "drafting": "Redactando el resumen…",
+    "draftFailed": "La redacción del resumen ha fallado.",
+    "regenerate": "Regenerar",
+    "approve": "Aprobar"
+  },
+  "featureList": {
+    "dialogAria": "Editar la petición de lista de funcionalidades",
+    "heading": "Petición de lista de funcionalidades",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "p. ej. Renovación de la facturación",
+    "tasksLabel": "Tareas",
+    "tasksPlaceholder": "Describe el trabajo: una tarea por línea.",
+    "tasksHint": "Cada línea no vacía se convierte en su propia tarea cuando compongas esta lista.",
+    "discard": "Descartar",
+    "discardTitle": "¿Descartar esta lista de funcionalidades?",
+    "discardDescription": "Se eliminarán el borrador y todo lo que hayas escrito en él.",
+    "craft": "{count, plural, =0 {Componer la tarea} one {Componer la tarea} other {Componer # tareas}}",
+    "destinationHeading": "¿Dónde deberían ir?",
+    "destinationSubtitle": "{count, plural, one {# tarea} other {# tareas}} de “{name}”.",
+    "todoDetail": "Encolar ahora: los agentes las cogerán cuando se liberen espacios.",
+    "backlogDetail": "Aparcar para después: no empieza nada hasta que las muevas."
+  },
+  "pills": {
+    "rowAria": "Peticiones de listas de funcionalidades",
+    "openAria": "Abrir la lista de funcionalidades {name}"
+  },
+  "workItem": {
+    "fallbackTitle": "Unidad de trabajo",
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "sessionNoun": "sesión"
+  },
+  "notes": {
+    "heading": "Acciones pendientes",
+    "doneCount": "{count, plural, one {# hecha} other {# hechas}}",
+    "showCompletedAria": "Mostrar las completadas",
+    "hideCompletedAria": "Ocultar las completadas",
+    "showDone": "Mostrar las hechas",
+    "hideDone": "Ocultar las hechas",
+    "markComplete": "Marcar como completada",
+    "markIncomplete": "Marcar como pendiente",
+    "deleteNote": "Eliminar la nota",
+    "emptyAll": "Todavía no hay notas: añade una abajo.",
+    "emptyActive": "No hay notas activas.",
+    "listening": "Escuchando…",
+    "addPlaceholder": "Añadir una nota…",
+    "dictate": "Dictar la nota",
+    "stopDictation": "Detener el dictado"
+  },
+  "breakdown": {
+    "empty": "Todavía no hay tareas en este desglose.",
+    "listAria": "Tareas del desglose",
+    "titleAria": "Título de {ref}",
+    "kindAria": "Tipo de {title}",
+    "priorityAria": "Prioridad de {title}",
+    "blockedByLabel": "Bloqueada por:",
+    "noBlockers": "nada",
+    "removeBlockerAria": "Quitar el bloqueante {blocker} de {title}",
+    "addBlockerAria": "Añadir un bloqueante a {title}",
+    "addBlockerOption": "Añadir un bloqueante…"
+  }
+}

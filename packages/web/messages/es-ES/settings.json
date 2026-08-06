@@ -1,0 +1,936 @@
+{
+  "reset": "Restablecer los valores predeterminados",
+  "syncedToAccount": "Sincronizado con tu cuenta",
+  "signInToSync": "Inicia sesión para sincronizar entre dispositivos",
+  "hub": {
+    "title": "Ajustes",
+    "description": "Ajusta cómo se ve Midnite, cómo se bloquea y cómo ejecuta tus agentes."
+  },
+  "groups": {
+    "general": "General",
+    "workspace": "Espacio de trabajo",
+    "security": "Seguridad"
+  },
+  "items": {
+    "appearance": "Apariencia",
+    "system": "Sistema",
+    "features": "Funciones",
+    "agents": "Agentes",
+    "apiTokens": "Tokens de API",
+    "data": "Datos",
+    "editor": "Editor",
+    "integrations": "Integraciones",
+    "repos": "Repos",
+    "safety": "Salvaguardas",
+    "credentials": "Credenciales",
+    "screenLock": "Bloqueo de pantalla",
+    "security": "Seguridad"
+  },
+  "appearance": {
+    "language": "Idioma",
+    "languageDescription": "El idioma que se usa en toda la aplicación. Se sincroniza con tu cuenta cuando has iniciado sesión.",
+    "theme": "Tema",
+    "navigation": "Navegación",
+    "accent": "Color de acento",
+    "motionEffects": "Movimiento y efectos",
+    "themeOptions": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema",
+      "time": "Hora"
+    },
+    "navModeOptions": {
+      "auto": {
+        "label": "Automática",
+        "hint": "Contraída; se expande al pasar el cursor"
+      },
+      "expanded": {
+        "label": "Fijada abierta",
+        "hint": "Siempre expandida"
+      },
+      "collapsed": {
+        "label": "Fijada cerrada",
+        "hint": "Siempre la barra de iconos"
+      }
+    },
+    "colourTheme": "Tema de color",
+    "colourThemeDescription": "Claro, oscuro, seguir al sistema o cambiar automáticamente según la hora del día.",
+    "interfaceFont": "Tipografía de la interfaz",
+    "interfaceFontDescription": "La tipografía del texto corrido en toda la aplicación. Solo tipografías del sistema: sin descargas, se aplica al instante. El código, los terminales y el logotipo conservan la suya.",
+    "fontPreview": "El veloz murciélago hindú comía feliz cardillo y kiwi — 0123456789",
+    "sideNavigation": "Navegación lateral",
+    "sideNavigationDescription": "Fija la navegación abierta o cerrada, o déjala contraída para que se expanda al pasar el cursor.",
+    "backgroundPattern": "Patrón de fondo",
+    "backgroundPatternDescription": "El fondo decorativo que se dibuja detrás de cada página, además de la cabecera del panel, la pantalla de inicio y el salvapantallas. El campo de estrellas se adapta a tu tema y a tu color de acento.",
+    "intensity": "Intensidad",
+    "intensityDescription": "Cuánto se nota el degradado animado del fondo.",
+    "gradientIntensity": "Intensidad del degradado",
+    "dynamicMotion": "Movimiento dinámico",
+    "dynamicMotionDescription": "Animar el patrón con sutileza y dejar que reaccione al cursor: el campo de estrellas gira y se enciende, los puntos se dispersan, las guías siguen el cursor y los degradados van a la deriva como nubes.",
+    "motionReducedNotice": "Tu ajuste de movimiento está en “Reducido”, así que se muestra el patrón estático hasta que se permita el movimiento otra vez.",
+    "accentDescription": "Retiñe los botones, los enlaces y los anillos de foco en toda la aplicación. Elige el degradado de marca, un degradado predefinido o un color plano, o crea el tuyo. Se adapta al modo claro y al oscuro.",
+    "density": "Densidad",
+    "densityDescription": "“Cómoda” usa el espaciado predeterminado; “compacta” muestra más en pantalla.",
+    "motion": "Movimiento",
+    "motionDescription": "Seguir el ajuste de movimiento reducido de tu sistema, minimizar la animación o animar siempre.",
+    "shimmerCascade": "Cascada de brillo",
+    "shimmerCascadeDescription": "En qué dirección recorre el brillo de las píldoras de estado la pantalla de inicio y el salvapantallas.",
+    "shimmerCascadeDirection": "Dirección de la cascada de brillo",
+    "productGuides": "Guías del producto",
+    "autoShowGuides": "Mostrar las guías automáticamente",
+    "autoShowGuidesDescription": "Mostrar la guía de una página una vez, la primera vez que la visitas. Desactívalo para tener las guías solo a demanda desde el menú del asistente.",
+    "installApp": "Instalar la aplicación",
+    "logo": "Logotipo",
+    "capitalisation": "Uso de mayúsculas",
+    "capitalisationDescription": "Cómo se escribe el logotipo en todos los sitios donde aparece. Prueba cada forma con la tipografía de abajo.",
+    "wordmarkCapitalisation": "Mayúsculas del logotipo",
+    "size": "Tamaño",
+    "sizeDescription": "Con qué tamaño se muestra el logotipo en todos los sitios donde aparece.",
+    "wordmarkSize": "Tamaño del logotipo",
+    "wordmarkFontDescription": "La tipografía con la que se compone el logotipo de Midnite en toda la aplicación.",
+    "showIcon": "Mostrar el icono",
+    "active": "Activo",
+    "accentBuilder": {
+      "button": "Botón",
+      "badge": "Distintivo",
+      "secondaryAccent": "Acento secundario",
+      "secondaryShort": "2.º",
+      "secondaryAccentDescription": "Un segundo color independiente para los acentos secundarios de la interfaz. Desactivado por defecto.",
+      "animateGradient": "Animar el degradado",
+      "respectsMotion": "(respeta tu ajuste de movimiento)",
+      "gradients": "Degradados",
+      "gradientPresets": "Degradados predefinidos",
+      "solids": "Colores planos",
+      "solidAccent": "Acento plano",
+      "customGradient": "Degradado personalizado",
+      "customGradientDescription": "Crea tu propio degradado: elige lineal o cónico, un color (monocromo) o hasta tres, y un ángulo.",
+      "editing": "Editando",
+      "customise": "Personalizar",
+      "type": "Tipo",
+      "style": "Estilo",
+      "mono": "Mono",
+      "multi": "Multi",
+      "colour": "Color",
+      "stops": "Paradas",
+      "addStop": "+ parada",
+      "removeStop": "– parada",
+      "hue": "Tono",
+      "gradientStop": "Parada {number} del degradado",
+      "angle": "Ángulo"
+    },
+    "options": {
+      "density": {
+        "comfortable": {
+          "label": "Cómoda",
+          "hint": "Espaciado y escala tipográfica predeterminados"
+        },
+        "compact": {
+          "label": "Compacta",
+          "hint": "Espaciado más ajustado: más contenido en pantalla"
+        }
+      },
+      "motion": {
+        "system": {
+          "label": "Sistema",
+          "hint": "Seguir el ajuste de movimiento reducido del sistema operativo"
+        },
+        "reduced": {
+          "label": "Reducido",
+          "hint": "Minimizar la animación en todas partes"
+        },
+        "full": {
+          "label": "Completo",
+          "hint": "Animar siempre, aunque el sistema pida reducirlo"
+        }
+      },
+      "effects": {
+        "pageReveal": {
+          "label": "Aparición de la página",
+          "hint": "Aparición escalonada del contenido de la página"
+        },
+        "typewriter": {
+          "label": "Títulos con máquina de escribir",
+          "hint": "Escribir los títulos de página carácter a carácter"
+        },
+        "glass": {
+          "label": "Cristal esmerilado",
+          "hint": "Desenfoque del fondo en superposiciones y paneles"
+        }
+      },
+      "shimmer": {
+        "ltr": {
+          "label": "Izquierda primero",
+          "hint": "La cascada va de izquierda → derecha"
+        },
+        "rtl": {
+          "label": "Derecha primero",
+          "hint": "La cascada va de derecha → izquierda"
+        }
+      },
+      "uiFont": {
+        "system": {
+          "label": "Sistema",
+          "hint": "La sans-serif predeterminada de tu plataforma"
+        },
+        "grotesk": {
+          "label": "Grotesk",
+          "hint": "Sans neogrotesca y limpia"
+        },
+        "humanist": {
+          "label": "Humanista",
+          "hint": "Sans humanista, más cálida"
+        },
+        "serif": {
+          "label": "Serif",
+          "hint": "Serif clásica"
+        },
+        "mono": {
+          "label": "Mono",
+          "hint": "Monoespaciada"
+        }
+      },
+      "bgIntensity": {
+        "subtle": {
+          "label": "Sutil"
+        },
+        "balanced": {
+          "label": "Equilibrada"
+        },
+        "bold": {
+          "label": "Intensa"
+        }
+      },
+      "gradientType": {
+        "linear": {
+          "label": "Lineal"
+        },
+        "conic": {
+          "label": "Cónico"
+        }
+      },
+      "editorAutosave": {
+        "0": {
+          "label": "Desactivado"
+        },
+        "10": {
+          "label": "Cada 10 s"
+        },
+        "30": {
+          "label": "Cada 30 s"
+        },
+        "60": {
+          "label": "Cada 60 s"
+        }
+      }
+    }
+  },
+  "profile": {
+    "genericError": "Algo ha ido mal",
+    "passwordsNoMatch": "Las contraseñas nuevas no coinciden",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+    "displayName": "Nombre visible",
+    "displayNameHint": "Cómo te ven tus compañeros de equipo.",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "email": "Correo electrónico",
+    "emailHint": "Tu dirección de inicio de sesión. No se puede editar.",
+    "changePassword": "Cambiar la contraseña",
+    "changePasswordHint": "Elige una contraseña nueva para tu cuenta.",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Contraseña nueva",
+    "confirmPassword": "Confirmar la contraseña nueva",
+    "updating": "Actualizando…",
+    "updatePassword": "Actualizar la contraseña",
+    "passwordUpdated": "Contraseña actualizada",
+    "linkedAccounts": "Cuentas vinculadas",
+    "linkedAccountsHint": "Proveedores externos con los que puedes iniciar sesión. Se vinculan automáticamente la primera vez que usas “Continuar con Google / GitHub”.",
+    "noLinkedAccounts": "Todavía no hay cuentas vinculadas.",
+    "couldNotSaveName": "No se ha podido guardar el nombre",
+    "emailReadonly": "El correo electrónico no se puede cambiar.",
+    "couldNotUpdatePassword": "No se ha podido actualizar la contraseña",
+    "minChars": "Mínimo 8 caracteres.",
+    "passwordsMismatch": "Las contraseñas no coinciden.",
+    "account": "Cuenta"
+  },
+  "agents": {
+    "genericError": "Algo ha ido mal",
+    "loadFailed": "No se han podido cargar los agentes: {error}",
+    "providerUnconfigured": "<b>{name}</b> está configurado como tu proveedor de IA, pero no tiene clave de API, así que las funciones de IA (triaje de tareas, borradores de planes, el latido) se omitirán. Añade una clave en su pestaña <b>API</b> más abajo, o cambia el proveedor activo.",
+    "theActiveProvider": "El proveedor activo",
+    "primaryAgent": "Agente principal",
+    "showAdvanced": "Mostrar las opciones avanzadas",
+    "hideAdvanced": "Ocultar las opciones avanzadas",
+    "name": "Nombre",
+    "orchestratorPlaceholder": "Orquestador",
+    "descriptionPrompt": "Descripción / prompt",
+    "primaryDescriptionHint": "El prompt de sistema del orquestador: cómo debe planificar, delegar y decidir en qué trabajar.",
+    "primaryDescriptionPlaceholder": "Eres el orquestador. Clasificas el trabajo que llega y lo divides en tareas…",
+    "heartbeat": "Latido",
+    "heartbeatHint": "Un prompt que el orquestador ejecuta de forma programada: para repasos, seguimientos o cualquier tarea recurrente.",
+    "enableHeartbeat": "Activar el latido",
+    "interval": "Intervalo",
+    "intervalHint": "Con qué frecuencia se ejecuta el prompt del latido: desde cada hora hasta una vez al mes.",
+    "heartbeatInterval": "Intervalo del latido",
+    "heartbeatPrompt": "Prompt del latido",
+    "heartbeatPromptPlaceholder": "Revisa las tareas abiertas y señala todo lo que esté parado o necesite una decisión…",
+    "agentPool": "Grupo de agentes",
+    "parallelAgents": "Agentes en paralelo",
+    "parallelAgentsHint": "Cuántas sesiones de agente pueden ejecutarse a la vez. Las tareas de más esperan hasta que se libere un espacio.",
+    "poolDefault": "Predeterminado {default} · máximo {max}.",
+    "agentsTitle": "Agentes",
+    "agentsIntro": "Todos los agentes de código que Midnite conoce. Expande uno para instalar o actualizar su CLI (con el que se ejecutan las sesiones de tareas) o, en la pestaña API, añade tu propia clave para que ese proveedor impulse las funciones de IA de Midnite.",
+    "subAgents": "Subagentes",
+    "noSubagents": "Todavía no hay subagentes",
+    "noSubagentsHint": "Añade trabajadores especializados a los que el orquestador pueda delegar.",
+    "addSubagent": "Añadir un subagente",
+    "removeSubagentTitle": "¿Quitar este subagente?",
+    "removeSubagentDescription": "{name} se eliminará y el orquestador ya no podrá delegarle trabajo.",
+    "thisSubagent": "Este subagente",
+    "cliTab": "CLI",
+    "apiTab": "API",
+    "primaryAgentRouting": "Enrutado del agente principal",
+    "sessionCli": "CLI de la sesión",
+    "sessionCliHint": "El agente de código que se lanza en el terminal de una sesión para ejecutar tareas.",
+    "sessionAgentCli": "CLI del agente de sesión",
+    "aiProvider": "Proveedor de IA",
+    "aiProviderHint": "Impulsa la IA propia de Midnite (triaje, borradores de planes, latido). Añade la clave de cada proveedor en su tarjeta, más abajo.",
+    "activeAiProvider": "Proveedor de IA activo",
+    "collapseSubagent": "Contraer el subagente",
+    "expandSubagent": "Expandir el subagente",
+    "subagentNumber": "Subagente {number}",
+    "subagentName": "Nombre del subagente",
+    "removeSubagent": "Quitar el subagente",
+    "role": "Rol",
+    "rolePlaceholder": "Condensa hilos largos en un resumen",
+    "description": "Descripción",
+    "subDescriptionHint": "El prompt de sistema completo de este subagente.",
+    "subDescriptionPlaceholder": "Eres un resumidor. Dada una transcripción, produce un resumen breve y fiel…",
+    "markdown": "Markdown",
+    "markdownHint": "Modo Markdown: se escribe como el documento de prompt del agente."
+  },
+  "apiTokens": {
+    "justNow": "ahora mismo",
+    "minutesAgo": "hace {count} min",
+    "hoursAgo": "hace {count} h",
+    "daysAgo": "hace {count} d",
+    "genericError": "Algo ha ido mal",
+    "createTitle": "Crear un token de API",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "p. ej. canalización de CI/CD",
+    "expiresLabel": "Caduca (opcional)",
+    "creating": "Creando…",
+    "createButton": "Crear el token",
+    "secretTitle": "Token creado: {name}",
+    "secretWarning": "Copia este token ahora: no se volverá a mostrar.",
+    "copied": "✓ Copiado",
+    "copy": "Copiar",
+    "secretUsage": "Pásalo como <code>Authorization: Bearer {token}</code> en las peticiones a la API.",
+    "done": "Hecho",
+    "title": "Tokens de API",
+    "description": "Tokens legibles por máquinas para canalizaciones de CI/CD e integraciones automatizadas.",
+    "newToken": "Nuevo token",
+    "empty": "Todavía no hay tokens de API. Crea uno para autenticar scripts y canalizaciones de CI/CD.",
+    "colPrefix": "Prefijo",
+    "colLastUsed": "Usado por última vez",
+    "colExpires": "Caduca",
+    "never": "Nunca",
+    "revoking": "Revocando…",
+    "revoke": "Revocar"
+  },
+  "approvals": {
+    "errorFallback": "Algo ha ido mal",
+    "mode": {
+      "title": "Modo de autonomía",
+      "description": "Controla cómo gestiona Midnite las aprobaciones de uso de herramientas durante las sesiones de agente.",
+      "active": "Activo",
+      "options": {
+        "manual": {
+          "label": "Manual",
+          "description": "Preguntar antes de cada llamada a una herramienta. Sin decisiones automáticas."
+        },
+        "guarded": {
+          "label": "Vigilado",
+          "description": "Permitir automáticamente las herramientas de solo lectura (Read, Grep, Glob, LS). Preguntar para todo lo demás."
+        },
+        "autonomous": {
+          "label": "Autónomo",
+          "description": "Deciden las reglas. Escalar solo cuando no coincida ninguna."
+        }
+      }
+    },
+    "safeTools": {
+      "title": "Siempre permitidas automáticamente en modo vigilado"
+    },
+    "rules": {
+      "title": "Reglas",
+      "description": "Reglas duraderas de permitir/denegar que se evalúan en los modos <em>vigilado</em> y <em>autónomo</em>.",
+      "add": "Añadir una regla",
+      "empty": "Todavía no hay reglas. Añade una arriba para empezar a personalizar el comportamiento de las herramientas.",
+      "enable": "Activar la regla",
+      "disable": "Desactivar la regla",
+      "delete": "Eliminar la regla",
+      "form": {
+        "toolName": "Nombre de la herramienta",
+        "toolNamePlaceholder": "p. ej. Bash, Read, * (todas)",
+        "toolNameRequired": "El nombre de la herramienta es obligatorio",
+        "effect": "Efecto",
+        "effectAllow": "Permitir",
+        "effectDeny": "Denegar",
+        "note": "Nota (opcional)",
+        "notePlaceholder": "Por qué existe esta regla",
+        "submit": "Guardar la regla"
+      }
+    },
+    "history": {
+      "title": "Historial",
+      "description": "Todas las decisiones sobre el uso de herramientas, tomadas por ti o por el motor de políticas.",
+      "empty": "Todavía no se ha registrado ninguna decisión.",
+      "range": "{from}–{to} de {total}",
+      "prev": "← Anterior",
+      "next": "Siguiente →",
+      "resolution": {
+        "allow": "Permitir",
+        "allow-session": "Permitir (sesión)",
+        "deny": "Denegar",
+        "auto-allow": "Permitir automáticamente",
+        "auto-deny": "Denegar automáticamente",
+        "timeout": "Tiempo agotado",
+        "expired": "Caducada"
+      }
+    },
+    "inbox": {
+      "trigger": "Aprobaciones",
+      "triggerAria": "Bandeja de aprobaciones",
+      "triggerAriaPending": "Bandeja de aprobaciones, {count} pendientes",
+      "triggerWithCount": "Aprobaciones ({count})",
+      "title": "Bandeja de aprobaciones",
+      "close": "Cerrar la bandeja de aprobaciones",
+      "empty": "No hay aprobaciones pendientes",
+      "manageLink": "Gestionar el modo de autonomía y las reglas →",
+      "expired": "caducada",
+      "countdown": "{minutes} min {seconds} s",
+      "countdownSeconds": "{seconds} s",
+      "allow": "Permitir",
+      "deny": "Denegar",
+      "allowSession": "Permitir la sesión",
+      "makeRule": "Crear una regla",
+      "requested": "Solicitada {when}",
+      "taskSuffix": " · tarea {id}"
+    }
+  },
+  "credentials": {
+    "title": "Credenciales de los flujos de trabajo",
+    "description": "Secretos que usan los nodos de integración de los flujos de trabajo (Slack, SMTP, autenticación HTTP). El material secreto se almacena cifrado y la API nunca lo devuelve: aquí solo se ven el nombre y el tipo.",
+    "empty": "Todavía no hay credenciales guardadas.",
+    "add": "Añadir una credencial",
+    "deleteNamed": "Eliminar {name}",
+    "types": {
+      "httpBearer": "Token Bearer HTTP",
+      "httpBasic": "Autenticación básica HTTP",
+      "httpHeader": "Cabecera HTTP personalizada",
+      "slack": "Slack",
+      "smtp": "SMTP (correo)",
+      "github": "GitHub (PAT)",
+      "googleOauth": "Google (OAuth)",
+      "slackOauth": "Slack (OAuth)"
+    },
+    "fields": {
+      "bearerToken": "Token Bearer",
+      "username": "Usuario",
+      "password": "Contraseña",
+      "headerName": "Nombre de la cabecera",
+      "headerNamePlaceholder": "X-API-Key",
+      "headerValue": "Valor de la cabecera",
+      "botToken": "Token del bot",
+      "botTokenPlaceholder": "xoxb-…",
+      "smtpHost": "Servidor SMTP",
+      "smtpHostPlaceholder": "smtp.ejemplo.com",
+      "port": "Puerto",
+      "portPlaceholder": "587",
+      "usernameEmail": "Usuario / correo",
+      "fromAddress": "Dirección de remitente (opcional)",
+      "fromAddressPlaceholder": "remitente@ejemplo.com",
+      "pat": "Token de acceso personal",
+      "patPlaceholder": "ghp_…"
+    },
+    "form": {
+      "title": "Nueva credencial",
+      "name": "Nombre",
+      "namePlaceholder": "Mi bot de Slack",
+      "type": "Tipo",
+      "oauthNote": "Al pulsar “Autorizar” te llevaremos a la página de consentimiento del proveedor. La credencial se guardará automáticamente al volver.",
+      "authorize": "Autorizar"
+    },
+    "delete": {
+      "title": "¿Eliminar la credencial?",
+      "description": "“{name}” se eliminará de forma permanente. Cualquier nodo de flujo de trabajo que la use fallará hasta que se actualice."
+    },
+    "toast": {
+      "saved": "Credencial guardada",
+      "saveError": "No se ha podido guardar la credencial",
+      "deleted": "Credencial eliminada",
+      "deleteError": "No se ha podido eliminar la credencial"
+    }
+  },
+  "data": {
+    "errorFallback": "La copia de seguridad ha fallado",
+    "title": "Datos",
+    "description": "Haz copias de seguridad de todo tu almacén de Midnite y restáuralas: para recuperación ante desastres o para mudarte de instancia.",
+    "tabs": {
+      "ariaLabel": "Copia de seguridad o restauración",
+      "backup": "Copia de seguridad",
+      "restore": "Restaurar"
+    },
+    "download": {
+      "title": "Descargar una copia de seguridad",
+      "description": "Un archivo <code>.zip</code> portable con todos los dominios de trabajo, restaurable en esta instancia o en una nueva.",
+      "includeSecrets": "Incluir los secretos",
+      "includeSecretsDesc": "— claves de API, secretos de firma de webhooks y credenciales de flujos de trabajo, vueltos a cifrar con una frase de contraseña.",
+      "passphraseLabel": "Frase de contraseña (la necesitarás para restaurar; no se guarda nunca)",
+      "passphrasePlaceholder": "Una frase de contraseña robusta",
+      "passphraseRequired": "Hace falta una frase de contraseña para incluir los secretos.",
+      "preparing": "Preparando…",
+      "button": "Descargar la copia de seguridad",
+      "included": "Incluido en una copia de seguridad",
+      "lockNoteIncluded": "Los secretos se vuelven a cifrar con tu frase de contraseña: la clave de la instancia nunca sale de este equipo.",
+      "lockNoteExcluded": "Los secretos (claves de API, tokens) quedan excluidos: activa “Incluir los secretos” para llevártelos, o vuelve a configurar las integraciones después de restaurar.",
+      "lastBackup": "Última copia: esquema v{version} · {count} registros en {domains} dominios.",
+      "toastSuccess": "Copia de seguridad descargada: {filename}"
+    },
+    "autoBackup": {
+      "title": "Copia de seguridad automática programada",
+      "description": "Copias de seguridad automáticas con marca de tiempo cada cierto intervalo, recortadas a un número de retención.",
+      "loading": "Cargando el estado de la copia automática…",
+      "error": "No se ha podido cargar el estado de la copia automática.",
+      "disabled": "La copia de seguridad automática programada está <strong>desactivada</strong>. Actívala definiendo <code>backup.enabled</code> en <code>midnite.json</code>.",
+      "schedule": "Cada {hours} h → <code>{dir}</code> (conservar {retention})",
+      "last": "Última: {when}",
+      "never": "nunca",
+      "next": " · siguiente ~{when}",
+      "noArchives": "Todavía no se ha escrito ningún archivo.",
+      "enableLabel": "Activar las copias de seguridad programadas",
+      "enableHint": "Ejecutar una copia de seguridad automática con la frecuencia de abajo.",
+      "frequencyLabel": "Frecuencia",
+      "directoryLabel": "Directorio",
+      "frequency": {
+        "hourly": "Cada hora",
+        "daily": "Cada día",
+        "weekly": "Cada semana",
+        "monthly": "Cada mes"
+      },
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "toastSaved": "Ajustes de copia de seguridad programada guardados"
+    },
+    "restore": {
+      "title": "Restaurar desde una copia de seguridad",
+      "description": "Sube un archivo para previsualizarlo y luego restaura: <strong>fusionar</strong> conserva los registros existentes, <strong>reemplazar</strong> los borra primero.",
+      "chooseAria": "Elegir el archivo de copia de seguridad",
+      "choose": "Elegir un archivo…",
+      "reading": "Leyendo el archivo…",
+      "blocked": "Este archivo se creó con un Midnite más nuevo (esquema v{schemaVersion}, {compat}) del que entiende esta instancia. Actualiza Midnite y vuelve a intentarlo: no se puede importar con seguridad.",
+      "previewLabel": "Vista previa — esquema v{version} ({compat}): {count, plural, one {# registro} other {# registros}}",
+      "conflicts": "· {count} existentes",
+      "passphraseLabel": "Frase de contraseña (para restaurar los secretos de este archivo; déjala vacía para omitirlos)",
+      "passphrasePlaceholder": "Frase de contraseña de la exportación",
+      "modeLegend": "Modo de restauración",
+      "merge": "Fusionar",
+      "replace": "Reemplazar",
+      "mergeDesc": "— insertar los registros nuevos y conservar los existentes.",
+      "replaceDesc": "— borrar los dominios listados y luego restaurar. Destructivo.",
+      "confirmLabel": "Escribe <code>replace</code> para confirmar el borrado de los datos existentes:",
+      "restoring": "Restaurando…",
+      "restoreMode": "Restaurar ({mode})",
+      "toastRestored": "{count, plural, one {# registro restaurado} other {# registros restaurados}} ({mode}).",
+      "stage": {
+        "uploading": "Subiendo el archivo…",
+        "restoring": "Restaurando los registros…",
+        "reindexing": "Reconstruyendo el índice de búsqueda…",
+        "done": "Hecho"
+      },
+      "result": {
+        "summary": "Restaurado ({mode}): {inserted} insertados, {skipped} omitidos",
+        "secrets": " · secretos: {restored} restaurados",
+        "secretsSkipped": ", {skipped} omitidos",
+        "reindexWarned": " · el reindexado de la búsqueda ha avisado"
+      }
+    }
+  },
+  "editor": {
+    "autosave": {
+      "title": "Guardado automático",
+      "description": "Con qué frecuencia guardan los editores tu trabajo automáticamente. El botón Guardar siempre está disponible y se activa solo cuando hay cambios sin guardar. Elige <strong>Desactivado</strong> para guardar a mano.",
+      "intervalAria": "Intervalo de guardado automático"
+    }
+  },
+  "features": {
+    "title": "Funciones",
+    "description": "Activa o desactiva secciones de la aplicación. Las funciones desactivadas se ocultan de la barra lateral; si abres una directamente, te propondremos volver a activarla aquí. Estos grupos reflejan las secciones de la barra lateral.",
+    "enableAria": "Activar {feature}"
+  },
+  "integrations": {
+    "title": "Integraciones",
+    "description": "Webhooks de salida: envía eventos de tareas a Slack, Discord o a cualquier receptor.",
+    "addEndpoint": "Añadir un punto de destino",
+    "empty": "Todavía no hay puntos de destino de webhook. Añade uno para enviar eventos de tareas a un canal o servicio.",
+    "errors": {
+      "generic": "Algo ha ido mal"
+    },
+    "columns": {
+      "provider": "Proveedor",
+      "target": "Destino",
+      "events": "Eventos",
+      "enabled": "Activado"
+    },
+    "toggleAria": "Activar o desactivar {host}",
+    "testSent": "✓ prueba enviada",
+    "testFailed": "✗ la prueba ha fallado",
+    "sendTest": "Enviar una prueba",
+    "hideLog": "Ocultar el registro",
+    "deliveries": "Entregas",
+    "rotateSecret": "Rotar el secreto",
+    "deliveriesPanel": {
+      "loading": "Cargando las entregas…",
+      "empty": "Todavía no hay entregas. Mueve una tarea que coincida o pulsa “Enviar una prueba”.",
+      "redelivering": "Reenviando…",
+      "redeliver": "Reenviar"
+    },
+    "create": {
+      "title": "Añadir un punto de destino de webhook",
+      "payloadUrl": "URL de la carga",
+      "payloadUrlPlaceholder": "https://hooks.slack.com/services/…",
+      "provider": "Proveedor",
+      "events": "Eventos",
+      "statuses": "Solo en estos estados",
+      "statusesHint": "(opcional, para las actualizaciones)",
+      "creating": "Creando…",
+      "addEndpoint": "Añadir el punto de destino"
+    },
+    "secret": {
+      "title": "Secreto de firma",
+      "description": "Cópialo ahora: no se volverá a mostrar. Úsalo para verificar la cabecera <code>X-Midnite-Signature</code>.",
+      "copied": "✓ Copiado",
+      "copy": "Copiar",
+      "done": "Hecho"
+    },
+    "inbound": {
+      "title": "Fuentes de entrada",
+      "subtitle": "Deja que GitHub, Linear o cualquier remitente firmado abra tareas en tu tablero.",
+      "addSource": "Añadir una fuente",
+      "empty": "Todavía no hay fuentes de entrada. Añade una para recibir eventos externos.",
+      "allEvents": "todos los eventos",
+      "columns": {
+        "provider": "Proveedor",
+        "receiverUrl": "URL receptora",
+        "events": "Eventos",
+        "defaultRouting": "Enrutado predeterminado",
+        "enabled": "Activada"
+      },
+      "hideDeliveries": "Ocultar las entregas",
+      "deliveries": "Entregas",
+      "rotateSecret": "Rotar el secreto",
+      "deliveriesLog": {
+        "loading": "Cargando las entregas…",
+        "empty": "Todavía no se ha recibido ninguna entrega.",
+        "result": "Resultado",
+        "event": "Evento",
+        "task": "Tarea",
+        "when": "Cuándo",
+        "viewTask": "ver la tarea"
+      },
+      "created": {
+        "title": "Fuente creada",
+        "description": "Pega el secreto de firma en la configuración de webhook del remitente. Se muestra <strong>una sola vez</strong>: rótalo si lo pierdes.",
+        "receiverUrl": "URL receptora",
+        "signingSecret": "Secreto de firma",
+        "copied": "Copiado",
+        "copy": "Copiar",
+        "done": "Hecho"
+      },
+      "add": {
+        "title": "Añadir una fuente de entrada",
+        "provider": "Proveedor",
+        "events": "Eventos",
+        "eventsHint": "(ninguno seleccionado = aceptar todos)",
+        "genericPlaceholder": "claves de evento separadas por comas (vacío = aceptar todas)",
+        "defaultRepo": "Repo predeterminado",
+        "defaultProjectId": "ID de proyecto predeterminado",
+        "optional": "opcional",
+        "creating": "Creando…",
+        "createSource": "Crear la fuente"
+      }
+    }
+  },
+  "repos": {
+    "title": "Repos",
+    "description": "Copias de trabajo con nombre sobre las que el orquestador ejecuta los agentes. El repo de una tarea se resuelve a la carpeta de la copia de trabajo cuando se abre su sesión. Las rutas pueden usar <home>~</home> para tu directorio personal. Define <ownerRepo>owner/repo</ownerRepo> para habilitar la conexión con webhooks de GitHub.",
+    "nameAndPathRequired": "Hacen falta tanto un nombre como una ruta.",
+    "empty": "Todavía no hay repos: añade uno abajo.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyLabel": "Copiar {label}",
+    "errors": {
+      "generic": "Algo ha ido mal"
+    },
+    "remove": {
+      "title": "¿Quitar “{name}”?",
+      "description": "Las tareas que lo usen volverán al directorio de trabajo predeterminado."
+    },
+    "fields": {
+      "name": "Nombre",
+      "path": "Ruta",
+      "ownerRepo": "owner/repo de GitHub",
+      "branchPrefix": "Prefijo de rama",
+      "prTemplate": "Plantilla de PR",
+      "optional": "(opcional)"
+    },
+    "placeholders": {
+      "name": "api",
+      "path": "~/Dev/api",
+      "ownerRepo": "owner/repo",
+      "ownerRepoExample": "owner/repo (p. ej. bilo-io/midnite)",
+      "branchPrefixExample": "Prefijo de rama (p. ej. feature/)",
+      "prTemplateOptional": "Plantilla del cuerpo del PR (opcional)",
+      "prTemplate": "## Resumen\n\n## Pruebas",
+      "branchPrefix": "feature/"
+    },
+    "addRepo": "Añadir un repo",
+    "aria": {
+      "name": "Nombre del repo",
+      "path": "Ruta del repo",
+      "ownerRepo": "owner/repo de GitHub",
+      "branchPrefix": "Prefijo de rama",
+      "prTemplate": "Plantilla de PR",
+      "edit": "Editar {name}",
+      "remove": "Quitar {name}"
+    },
+    "prTemplateBadge": "· plantilla de PR",
+    "webhook": {
+      "title": "Webhook de GitHub",
+      "description": "Vincula un flujo de trabajo con disparador de webhook para recibir eventos <code>pull_request</code> de GitHub y revisar los PR automáticamente con Claude.",
+      "setOwnerRepo": "Define <strong>owner/repo</strong> en este repo para habilitar el filtrado de cargas.",
+      "workflow": "Flujo de trabajo",
+      "selectWorkflow": "Seleccionar un flujo de trabajo",
+      "noWorkflows": "No se ha encontrado ningún flujo de trabajo con disparador de webhook. Instala la plantilla <strong>AI Code Review</strong> desde <link>Flujos de trabajo → Plantillas</link>.",
+      "regenerate": "Regenerar",
+      "getUrl": "Obtener la URL",
+      "saveSecret": "Guarda el secreto ahora: no se volverá a mostrar.",
+      "webhookUrl": "URL del webhook",
+      "urlLabel": "URL del webhook",
+      "secret": "Secreto",
+      "secretLabel": "secreto del webhook",
+      "setupInstructions": "Instrucciones de configuración",
+      "yourRepo": "tu repo de GitHub",
+      "steps": {
+        "step1": "Ve a <target></target> → Settings → Webhooks → Add webhook.",
+        "step2": "Pega la URL de arriba en el campo “Payload URL”.",
+        "step3": "Pon <strong>Content type</strong> en <code>application/json</code>.",
+        "step4": "Pega el secreto de arriba en el campo “Secret”.",
+        "step5": "En “Which events…”, elige <selectEvents>Let me select individual events</selectEvents> y marca solo <pullRequests>Pull requests</pullRequests>.",
+        "step6": "Pulsa “Add webhook”."
+      }
+    }
+  },
+  "safety": {
+    "title": "Salvaguardas",
+    "description": "Barreras de protección para agentes autónomos: pausa, políticas, límites y radio de impacto.",
+    "killSwitch": {
+      "title": "Interruptor de emergencia y pausa",
+      "description": "Pausar la planificación (los agentes en marcha terminan) o parada de emergencia (abortar los agentes en vuelo, que se vuelven a encolar)."
+    },
+    "spend": {
+      "title": "Gasto, tasa y radio de impacto",
+      "description": "Lo que bloquea o deniega el trabajo de los agentes: configurado y mostrado en modo solo lectura."
+    },
+    "recentDecisions": {
+      "title": "Decisiones recientes",
+      "description": "Las últimas decisiones de permitir / denegar / escalar en la ruta de acción."
+    }
+  },
+  "screenLock": {
+    "screensaver": "Salvapantallas",
+    "inactivityTimeout": "Tiempo de inactividad",
+    "inactivityTimeoutDescription": "Cuánto tiempo sin ninguna interacción antes de que aparezca el salvapantallas. Cualquier actividad lo despierta.",
+    "inactivityRange": "Predeterminado {default} · rango {min}–{max}.",
+    "cycleDuration": "Duración del ciclo",
+    "cycleDurationDescription": "Cuánto se muestra cada frase antes de que se escriba la siguiente, en el salvapantallas y en la pantalla de inicio.",
+    "cycleRange": "Predeterminado {default} s · rango {min}–{max} s.",
+    "screenLock": "Bloqueo de pantalla",
+    "requirePasscode": "Pedir un código",
+    "requirePasscodeDescription": "Pedir un código de {length} dígitos para despertar el salvapantallas. Se guarda solo en este dispositivo: bórralo cuando quieras si lo olvidas.",
+    "onlyWhenLocked": "Solo cuando esté bloqueado",
+    "onlyWhenLockedDescription": "Omitir el código en el salvapantallas por inactividad: pedirlo solo cuando bloquees a mano con el botón de encendido.",
+    "onlyWhenLockedAriaLabel": "Pedir el código solo cuando esté bloqueado",
+    "passcodeSet": "Código definido",
+    "noPasscodeSet": "Sin código definido",
+    "change": "Cambiar",
+    "setPasscode": "Definir un código",
+    "clear": "Borrar",
+    "secondsShort": "{value} s"
+  },
+  "security": {
+    "modes": {
+      "manual": {
+        "label": "Manual",
+        "description": "Claude pide aprobación antes de cada llamada a una herramienta."
+      },
+      "guarded": {
+        "label": "Vigilado",
+        "description": "Las reglas de aprobación deciden qué herramientas se permiten automáticamente; todo lo demás espera."
+      },
+      "autonomous": {
+        "label": "Autónomo",
+        "description": "Todas las llamadas a herramientas siguen adelante sin aprobación. Úsalo con cuidado."
+      }
+    },
+    "disabled": "desactivado",
+    "prefix": "prefijo: {values}",
+    "glob": "glob: {values}",
+    "deleteRuleAriaLabel": "Eliminar la regla de {toolName}",
+    "newRule": "Nueva regla",
+    "toolNamePlaceholder": "Nombre de la herramienta (p. ej. Bash, Write, *)",
+    "allow": "Permitir",
+    "deny": "Denegar",
+    "notePlaceholder": "Nota (opcional)",
+    "autonomyMode": "Modo de autonomía",
+    "autonomyModeDescription": "Controla cuánto actúa Claude sin esperar tu aprobación explícita.",
+    "approvalRules": "Reglas de aprobación",
+    "approvalRulesDescription": "Las reglas se evalúan en orden; gana la primera que coincide. Activas en el modo vigilado.",
+    "viewDecisionsLog": "Ver el registro de decisiones →",
+    "noRulesYet": "Todavía no hay reglas."
+  },
+  "personalization": {
+    "couldNotSave": "No se ha podido guardar",
+    "aboutYou": "Sobre ti",
+    "aboutYouDescription": "Cuéntale a Midnite quién eres: tu rol, cómo te gusta trabajar, el tipo de cosas que construyes. Los agentes pueden usarlo como contexto.",
+    "aboutPlaceholder": "p. ej. Soy desarrollador de backend y me importan los commits pequeños y bien probados…",
+    "workingDirectory": "Directorio de trabajo",
+    "workingDirectoryDescription": "La carpeta a la que recurren los terminales de sesión cuando una tarea no tiene un directorio de proyecto propio. Déjalo vacío para usar el directorio de la pasarela.",
+    "notSet": "Sin definir: usa el directorio de la pasarela",
+    "browse": "Examinar",
+    "clear": "Borrar",
+    "agentGuidelines": "Directrices para los agentes",
+    "agentGuidelinesDescription": "Indicaciones que se aplican a todas las sesiones, por encima de las directrices propias de cada proyecto. Van bien para preferencias permanentes: tono, convenciones, cosas que hacer siempre o nunca.",
+    "guidelinesPlaceholder": "p. ej. Prefiere el estilo funcional. Ejecuta siempre el linter antes de terminar. Mantén los PR enfocados…"
+  },
+  "system": {
+    "env": {
+      "title": "Entorno",
+      "description": "Las herramientas locales que necesita Midnite, detectadas en el equipo de la pasarela.",
+      "osAriaLabel": "Sistema operativo",
+      "detectedSystem": "Sistema detectado: {os}.",
+      "notConfigured": "Las herramientas de {os} todavía no están configuradas.",
+      "referenceDetected": "El sistema detectado es {host}: estas herramientas de {tab} se muestran solo como referencia.",
+      "referenceNoDetect": "Se muestran como referencia: no se ha podido detectar el sistema operativo del equipo.",
+      "checking": "comprobando…",
+      "installed": "instalada",
+      "notInstalled": "no instalada",
+      "updateNeeded": "· hay que actualizar",
+      "installedVia": " · instalada mediante {via}",
+      "docs": "Documentación",
+      "verbInstall": "Instalar",
+      "verbUpdate": "Actualizar",
+      "verbUninstall": "Desinstalar",
+      "startingTerminal": "Iniciando el terminal…",
+      "startFailed": "No se ha podido iniciar {action}",
+      "actionTitle": "{verb} {label}",
+      "runHint": "El comando de {action} está escrito abajo: pulsa <kbd>Intro</kbd> para ejecutarlo. Puedes cerrar cuando quieras.",
+      "terminalLabel": "Terminal para {verb} {label}",
+      "preparing": "Preparando {action}…"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "taskUpdates": "Novedades de las tareas",
+      "taskUpdatesDescription": "Recibe una notificación de escritorio cuando una tarea necesite tu respuesta o termine. Funciona en el navegador y en la aplicación de escritorio.",
+      "blockedHint": "Tu navegador está bloqueando las notificaciones: permítelas en los ajustes del sitio para activar esto.",
+      "notifyAria": "Notificar las novedades de las tareas"
+    },
+    "realtime": {
+      "title": "Tiempo real",
+      "bufferSize": "Tamaño del búfer de eventos",
+      "bufferDescription": "Cuántos eventos recientes en directo retiene la pasarela por canal para que un cliente que se desconecte un momento pueda ponerse al día en lugar de perderse las novedades. Más grande = más margen para ponerse al día y más memoria. Se aplica en caliente (solo administración); vuelve al valor configurado al reiniciar.",
+      "eventsCount": "{count, plural, one {# evento} other {# eventos}}",
+      "updateError": "No se ha podido actualizar: solo administración"
+    },
+    "setup": {
+      "title": "Preparación de la instalación",
+      "ready": "Lista",
+      "incomplete": "Configuración incompleta",
+      "description": "Si esta instalación puede ejecutar agentes: proveedor activo, clave secreta, CLI del agente, grupo de agentes y estado de los repos. La misma lista impulsa el aviso del primer arranque.",
+      "loadError": "No se ha podido cargar el estado de la configuración: ¿está la pasarela en marcha?",
+      "checking": "comprobando…",
+      "manage": "Gestionar",
+      "fix": "Arreglar",
+      "recheck": "Volver a comprobar"
+    },
+    "updates": {
+      "title": "Actualizaciones",
+      "releaseChannel": "Canal de versiones",
+      "channelStable": "Estable",
+      "channelBeta": "Beta",
+      "channelDescription": "<strong>Estable</strong> sigue las versiones etiquetadas. <strong>Beta</strong> incluye compilaciones previas para probar las funciones más nuevas antes: espera algún borde sin pulir. Tanto el aviso de actualización como el actualizador automático del escritorio siguen esta elección.",
+      "status": "Estado de la actualización",
+      "statusUpToDate": "Esta compilación está al día.",
+      "statusAvailable": "La versión {version} está disponible.",
+      "statusFailed": "La última comprobación de actualizaciones ha fallado: {error}"
+    }
+  },
+  "team": {
+    "title": "Equipos",
+    "subtitle": "Colabora con otras personas uniéndote a un equipo o creando uno.",
+    "new": "Nuevo equipo",
+    "empty": "Todavía no estás en ningún equipo.",
+    "errors": {
+      "generic": "Algo ha ido mal"
+    },
+    "create": {
+      "heading": "Crear un equipo",
+      "namePlaceholder": "Nombre del equipo",
+      "slugPlaceholder": "slug (apto para URL)",
+      "creating": "Creando…",
+      "submit": "Crear"
+    },
+    "roles": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "member": "Miembro",
+      "viewer": "Observador"
+    },
+    "members": {
+      "heading": "Miembros",
+      "you": "{name} (tú)",
+      "removeAria": "Quitar al miembro"
+    },
+    "invite": {
+      "heading": "Enlace de invitación",
+      "linkLabel": "enlace de invitación",
+      "copyAria": "Copiar {label}",
+      "copied": "Copiado",
+      "copyLink": "Copiar el enlace",
+      "generating": "Generando…",
+      "generate": "Generar un enlace",
+      "roleExpires": "{role} · caduca el {date}",
+      "revokeAria": "Revocar la invitación"
+    },
+    "danger": {
+      "heading": "Zona de peligro",
+      "delete": "Eliminar el equipo",
+      "confirm": "Esto eliminará <strong>{name}</strong> de forma permanente y quitará a todos sus miembros. ¿Seguro?",
+      "deleting": "Eliminando…",
+      "confirmDelete": "Sí, eliminar"
+    }
+  },
+  "heartbeat": {
+    "presets": {
+      "h1": "Cada hora",
+      "h4": "Cada 4 horas",
+      "h8": "Cada 8 horas",
+      "h12": "Cada 12 horas",
+      "h24": "Una vez al día",
+      "h168": "Una vez a la semana",
+      "h720": "Una vez al mes"
+    },
+    "everyHours": "Cada {count} h",
+    "everyDays": "Cada {count} d"
+  }
+}

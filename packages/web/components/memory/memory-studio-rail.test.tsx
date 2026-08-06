@@ -76,16 +76,16 @@ describe('MemoryStudioRail', () => {
   });
 
   // Phase 82 D — an artifact's body is generated copy, so the active locale has to
-  // reach the gateway. es-ES's UI catalog is only a stub (labels below fall back to
-  // en-GB), and it must still be sent unclamped. (es-ES is the stub locale since de-DE
-  // was authored — see messages/meta/.)
-  it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
+  // reach the gateway. Originally this pinned "even when the UI catalog is a stub", aimed
+  // at whichever locale was untranslated; all four are authored now, so what it pins is
+  // that a **non-default** locale is sent unchanged rather than normalised to en-GB.
+  it('sends the active locale unchanged for a non-default locale (Phase 82 D)', async () => {
     api.getMemoryArtifacts.mockResolvedValue([]);
     api.generateMemoryArtifact.mockResolvedValue(artifact({ status: 'pending', content: '' }));
     render(<MemoryStudioRail memoryId="m1" />, { locale: 'es-ES' });
     await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByLabelText('Generate Executive brief'));
+    fireEvent.click(screen.getByLabelText('Generar Resumen ejecutivo'));
     await waitFor(() =>
       expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief', 'es-ES'),
     );

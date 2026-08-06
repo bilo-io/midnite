@@ -1,0 +1,172 @@
+{
+  "board": {
+    "label": "Recorrido por el tablero",
+    "steps": {
+      "board": {
+        "title": "Tu tablero",
+        "body": "Las tareas fluyen de izquierda → derecha por las columnas. Arrastra una tarjeta para moverla entre estados."
+      },
+      "board-column-todo": {
+        "title": "Trabajo listo",
+        "body": "El planificador coge primero lo que está arriba en **Por hacer**: por prioridad y después por antigüedad. Las tareas bloqueadas esperan aquí hasta que terminen sus bloqueantes."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir esta guía (o chatea con tu tablero, o pregúntale al agente) desde aquí cuando te apetezca."
+      }
+    }
+  },
+  "workflow": {
+    "label": "Recorrido por el creador de flujos de trabajo",
+    "steps": {
+      "workflow-canvas": {
+        "title": "El lienzo",
+        "body": "Crea una automatización conectando nodos aquí: un disparador y después los pasos en los que se ramifica."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Este recorrido vive en el menú del asistente: vuelve a abrirlo desde aquí cuando necesites un repaso."
+      }
+    }
+  },
+  "sessions": {
+    "label": "Recorrido por las sesiones",
+    "steps": {
+      "sessions-list": {
+        "title": "Sesiones activas",
+        "body": "Todas las sesiones de agente aparecen aquí. Abre una para ver su cabina: transcripción, terminal y la tarea que está impulsando."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "memory": {
+    "label": "Recorrido por el espacio de memoria",
+    "steps": {
+      "memory-workspace": {
+        "title": "Base de conocimiento",
+        "body": "Reúne fuentes, chatea con tu conocimiento y genera artefactos desde un solo espacio de trabajo."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "dashboard": {
+    "label": "Recorrido por el panel",
+    "steps": {
+      "dashboard": {
+        "title": "Tu base de operaciones",
+        "body": "El panel resume tu backlog, tus proyectos y la actividad reciente: una instantánea de toda la flota de un vistazo."
+      },
+      "dashboard-composer": {
+        "title": "Redacta tareas rápido",
+        "body": "Escribe aquí una lista de funcionalidades —**una tarea por línea**— y luego mándala al backlog o a “Por hacer” cuando estés listo."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir cualquier guía desde aquí. Consejo: pulsa **⌘K** (Ctrl+K) en cualquier sitio para buscar y ejecutar comandos con el teclado."
+      }
+    }
+  },
+  "office": {
+    "label": "Recorrido por la oficina",
+    "steps": {
+      "office": {
+        "title": "La planta de la oficina",
+        "body": "Mira a tus agentes trabajar en una escena viva: acércate a un escritorio para llamar o escribir al agente que trabaja allí."
+      },
+      "office-view-toggle": {
+        "title": "2D o 3D",
+        "body": "Alterna entre la planta en **2D** vista desde arriba y un recorrido en **3D** en primera persona. Se recuerda tu elección."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "projects": {
+    "label": "Recorrido por los proyectos",
+    "steps": {
+      "projects": {
+        "title": "Tus proyectos",
+        "body": "Agrupa el trabajo relacionado en proyectos: cada uno reúne sus tareas, un plan estructurado y una base de conocimiento."
+      },
+      "projects-new": {
+        "title": "Crea uno",
+        "body": "Levanta un proyecto desde cero o desde una plantilla. A partir de un objetivo, Midnite puede incluso redactar todo el desglose de tareas."
+      },
+      "project-detail": {
+        "title": "La cabina",
+        "body": "Abre un proyecto para ver su cabina: **Detalles, Documentos, Tareas y Hoja de ruta**, todo en un sitio."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "digests": {
+    "label": "Recorrido por los resúmenes",
+    "steps": {
+      "digests": {
+        "title": "Resúmenes de la flota",
+        "body": "La recopilación periódica de lo que tu flota ha **entregado, fallado y señalado**, generada por la canalización de Fable."
+      },
+      "digests-content": {
+        "title": "Lee la historia",
+        "body": "Elige un resumen para leer su informe estructurado, con enlaces directos a las tareas que hay detrás de cada línea."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "search": {
+    "label": "Recorrido por la búsqueda",
+    "steps": {
+      "search": {
+        "title": "Busca en todo",
+        "body": "Una sola búsqueda de texto completo en tareas, proyectos, memoria, notas, consejos y flujos de trabajo."
+      },
+      "search-input": {
+        "title": "Pruébalo",
+        "body": "Escribe una consulta aquí para buscar en todos los tipos a la vez. **Haz clic en el cuadro** para continuar."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "settings": {
+    "label": "Recorrido por los ajustes",
+    "steps": {
+      "settings": {
+        "title": "Hazlo tuyo",
+        "body": "Ajusta cómo se ve Midnite, cómo se bloquea y cómo ejecuta tus agentes: apariencia, salvaguardas, integraciones y más."
+      },
+      "settings-nav": {
+        "title": "Explora las categorías",
+        "body": "Salta entre las categorías de ajustes aquí. En “Apariencia” están los temas, la densidad y el comportamiento de las guías del producto."
+      },
+      "assistant": {
+        "title": "Repítelo cuando quieras",
+        "body": "Vuelve a abrir este recorrido desde el menú del asistente cuando quieras."
+      }
+    }
+  },
+  "chrome": {
+    "noGuide": "Todavía no hay ningún recorrido guiado para esta página.",
+    "stepCount": "{current} de {total}",
+    "skip": "Omitir",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "done": "Hecho"
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "page": {
+    "title": "Sesiones",
+    "description": "Una sesión por tarea: su estado sigue al de la tarea (en curso, esperando una respuesta, completada o inactiva)."
+  },
+  "status": {
+    "running": "En marcha",
+    "waiting": "En espera",
+    "completed": "Completada",
+    "idle": "Inactiva",
+    "endedPill": "terminada"
+  },
+  "filters": {
+    "awaitingInput": "Esperando una respuesta",
+    "allStatuses": "Todos los estados",
+    "archived": "Archivadas",
+    "active": "Activas"
+  },
+  "list": {
+    "listView": "Vista de lista",
+    "gridView": "Vista de cuadrícula",
+    "tableView": "Vista de tabla",
+    "search": "Buscar sesiones",
+    "emptyTitle": "Todavía no hay sesiones",
+    "emptyDescription": "Crea una tarea y su sesión de agente aparecerá aquí.",
+    "noMatch": "Ninguna sesión coincide con este filtro",
+    "sectionEmpty": "Vacío",
+    "sectionNothing": "Aquí no hay nada",
+    "sessionCount": "{count, plural, one {# sesión} other {# sesiones}}",
+    "projectCount": "{count, plural, one {# proyecto} other {# proyectos}}",
+    "sectionSummary": "{sessions} · {projects}"
+  },
+  "card": {
+    "openPage": "Abrir la página de la sesión"
+  },
+  "bulk": {
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "delete": "Eliminar",
+    "archiveConfirmTitle": "¿Archivar esta sesión?",
+    "archiveConfirmDescription": "Sale del tablero activo. Puedes desarchivarla más adelante.",
+    "deleteConfirmTitle": "{count, plural, one {¿Eliminar # sesión?} other {¿Eliminar # sesiones?}}",
+    "deleteConfirmDescription": "Esto elimina la transcripción de forma permanente. No se puede deshacer."
+  },
+  "detail": {
+    "loading": "Cargando…",
+    "allSessions": "Todas las sesiones",
+    "viewTask": "Ver la tarea",
+    "approvalsRail": "Aprobaciones y contexto",
+    "infoRail": "Información de la sesión"
+  },
+  "left": {
+    "agentWaiting": "El agente te está esperando",
+    "pendingApprovals": "Aprobaciones pendientes",
+    "nothingPending": "Nada esperando una decisión.",
+    "allow": "Permitir",
+    "allowSession": "Permitir la sesión",
+    "deny": "Denegar",
+    "decisionHistory": "Historial de decisiones",
+    "noDecisions": "Todavía no se ha registrado ninguna decisión.",
+    "task": "Tarea",
+    "status": "Estado",
+    "priority": "Prioridad",
+    "retries": "Reintentos",
+    "created": "Creada",
+    "viewRetro": "Ver la retrospectiva",
+    "project": "Proyecto"
+  },
+  "info": {
+    "status": "Estado",
+    "provider": "Proveedor",
+    "agentCli": "CLI del agente",
+    "ranFor": "Ha durado",
+    "uptime": "Tiempo activa",
+    "lastActivity": "Última actividad",
+    "workingDir": "Dir. de trabajo",
+    "retries": "Reintentos",
+    "archived": "Archivada",
+    "context": "Contexto",
+    "estBadge": "est.",
+    "estTitle": "Aproximado: derivado de un hash, no es un recuento medido de tokens",
+    "startedTitle": "Iniciada {when}",
+    "contextValue": "{tokens} / {limit}",
+    "contextValueEstimate": "{tokens} / {limit} (est.)",
+    "tokens": {
+      "millions": "{value} M",
+      "thousands": "{value} k"
+    },
+    "duration": {
+      "seconds": "{value} s",
+      "minutes": "{value} min",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "daysHours": "{days} d {hours} h"
+    }
+  },
+  "cost": {
+    "label": "Coste",
+    "noValue": "—",
+    "unpriced": "sin precio",
+    "unpricedTitle": "El modelo no está en la tabla de precios: el coste no se cuenta",
+    "measured": " (medido)",
+    "measuredEstimated": " (medido + est.)",
+    "breakdownTitle": "medido {measured} · estimado {estimated}"
+  },
+  "pane": {
+    "transcriptFailed": "No se ha podido cargar la transcripción",
+    "loadingSession": "Cargando la sesión…",
+    "noSessionTitle": "Todavía no hay sesión",
+    "noSessionHint": "Esta tarea no ha iniciado ninguna sesión. Inicíala para crear un agente.",
+    "loadingTranscript": "Cargando la transcripción…"
+  },
+  "terminal": {
+    "label": "Terminal",
+    "ariaLabel": "Terminal de la sesión",
+    "starting": "Iniciando el terminal…",
+    "loadingTranscript": "Cargando la transcripción…",
+    "noTranscript": "No hay ninguna transcripción disponible.",
+    "noMessages": "No hay mensajes en esta sesión.",
+    "taskEvents": "Eventos de la tarea ({count})",
+    "noText": "(sin texto)",
+    "connecting": "Conectando…",
+    "disconnected": "Desconectado",
+    "connectionError": "Error de conexión",
+    "sessionEnded": "Sesión terminada",
+    "readOnly": "Solo lectura",
+    "approvalNeeded": "Se necesita aprobación",
+    "accept": "Aceptar",
+    "acceptForSession": "Aceptar para la sesión",
+    "live": "En directo",
+    "deny": "Denegar",
+    "endedBadge": "terminada · solo lectura",
+    "liveBadge": "en directo"
+  },
+  "widget": {
+    "title": "Sesiones activas",
+    "refresh": "Actualizar las sesiones",
+    "loadFailed": "No se han podido cargar las sesiones.",
+    "empty": "No hay sesiones activas."
+  },
+  "launch": {
+    "failedToStart": "No se ha podido iniciar la sesión",
+    "dialogTitle": "Sesión de {cli}",
+    "blurb": "Un terminal de {cli} en directo. Ciérralo cuando quieras: seguirá en marcha hasta que quede inactivo.",
+    "terminalAria": "Terminal de la sesión de {cli}",
+    "starting": "Iniciando {cli}…"
+  },
+  "newButton": {
+    "label": "Nueva sesión",
+    "codingAgent": "Agente de código"
+  },
+  "reply": {
+    "placeholder": "Responder al agente…",
+    "noLiveSession": "No hay ninguna sesión en directo: esta tarea necesita una resolución, no una respuesta.",
+    "sendFailed": "No se ha podido enviar la respuesta.",
+    "ariaLabel": "Responder al agente",
+    "sendAria": "Enviar la respuesta",
+    "send": "Enviar"
+  },
+  "composer": {
+    "placeholder": "Añade tareas, una por línea · ⌘/Ctrl + ⏎",
+    "attachImage": "Adjuntar una imagen",
+    "startDictation": "Empezar a dictar",
+    "stopDictation": "Detener el dictado",
+    "taskCount": "{count, plural, one {# tarea} other {# tareas}}",
+    "pingAria": "Hacer ping a la IA",
+    "pingTitle": "Comprobar que la IA está accesible",
+    "ping": "Ping",
+    "pinging": "Haciendo ping…",
+    "pingFailed": "El ping ha fallado",
+    "addCount": "Añadir {count}",
+    "requestFailed": "La petición ha fallado",
+    "expandDetails": "Expandir los detalles",
+    "collapseDetails": "Contraer los detalles",
+    "dockInput": "Anclar la entrada",
+    "expandFullscreen": "Expandir la entrada a pantalla completa",
+    "fullScreen": "Pantalla completa"
+  },
+  "chatBar": {
+    "title": "Chat al tablero",
+    "pressEnterToPreview": "Pulsa <kbd>Intro</kbd> para previsualizar",
+    "quotedCommand": "“{command}”",
+    "examplesIntro": "Escribe un comando en lenguaje natural. Ejemplos:",
+    "exampleItem": "› {example}",
+    "working": "Trabajando…",
+    "appliesTo": "{count, plural, one {Se aplica a # tarea} other {Se aplica a # tareas}} (de tu último resultado).",
+    "enterToConfirm": "Intro para confirmar",
+    "undo": "Deshacer",
+    "lowConfidence": "Poca confianza: revísalo.",
+    "inferencePath": {
+      "deterministic": "analizado en local, sin usar IA",
+      "local": "con un modelo local",
+      "provider": "con el proveedor"
+    }
+  }
+}

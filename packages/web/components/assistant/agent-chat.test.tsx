@@ -62,19 +62,21 @@ describe('AgentChat', () => {
     expect(assistantQuery).toHaveBeenCalledWith('what is blocked?', 'en-GB', expect.anything());
   });
 
-  // Phase 82 D — the answer's prose is generated copy, so the active locale rides on
-  // the request and the gateway tells the model which language to write in. That must
-  // hold for a locale whose *UI* catalog is still a stub: es-ES renders English chrome
-  // (fallback) but the user is typing Spanish, so the model is still asked for Spanish.
-  // No clamping to a "complete" locale. (es-ES is the stub locale since de-DE was
-  // authored — see messages/meta/.)
-  it('sends the active locale even when its UI catalog is a stub (Phase 82 D)', async () => {
+  // Phase 82 D — the answer's prose is generated copy, so the active locale rides on the
+  // request and the gateway tells the model which language to write in.
+  //
+  // This started life as "…even when its UI catalog is a stub", pointed at whichever
+  // locale was still untranslated (de-DE, then es-ES). All four locales are authored now,
+  // so that premise is gone: what remains worth pinning is that a **non-default** locale
+  // reaches the gateway unchanged, rather than being normalised to en-GB somewhere in the
+  // request path. The labels are Spanish because es-ES is now translated.
+  it('sends the active locale unchanged for a non-default locale (Phase 82 D)', async () => {
     answer({ blocks: [{ kind: 'markdown', text: 'ok' }], inferencePath: 'provider' });
     render(withQueryClient(<AgentChat />), { locale: 'es-ES' });
-    fireEvent.change(screen.getByLabelText(/ask the fleet assistant/i), {
+    fireEvent.change(screen.getByLabelText(/preguntar al asistente de la flota/i), {
       target: { value: '¿qué está bloqueado?' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /ask/i }));
+    fireEvent.click(screen.getByRole('button', { name: /preguntar/i }));
 
     await waitFor(() =>
       expect(assistantQuery).toHaveBeenCalledWith(

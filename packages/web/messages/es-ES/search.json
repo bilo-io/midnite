@@ -1,0 +1,75 @@
+{
+  "typeAtLeast": "Escribe al menos {count, plural, one {# carácter} other {# caracteres}} para buscar.",
+  "typeMeta": {
+    "task": "Tareas",
+    "project": "Proyectos",
+    "memory": "Memoria",
+    "note": "Notas",
+    "council": "Consejos",
+    "workflow": "Flujos de trabajo",
+    "milestone": "Hitos",
+    "digest": "Resúmenes"
+  },
+  "palette": {
+    "ariaLabel": "Paleta de comandos",
+    "placeholder": "Ir a, buscar o ejecutar un comando…",
+    "chatPlaceholder": "Dile al tablero qué hacer…",
+    "inputAriaLabel": "Buscar comandos y contenido",
+    "chatInputAriaLabel": "Chatear con el tablero",
+    "searchingAriaLabel": "Buscando",
+    "shortcutsButtonTitle": "Atajos de teclado (?)",
+    "resultsAriaLabel": "Resultados",
+    "noMatches": "Sin coincidencias.",
+    "seeAllIn": "+{count} más en {label}: verlo todo en la búsqueda",
+    "sections": {
+      "recent": "Recientes",
+      "commands": "Comandos",
+      "navigation": "Navegación"
+    },
+    "always": {
+      "agents": "Agentes",
+      "personalization": "Personalización",
+      "settings": "Ajustes"
+    }
+  },
+  "page": {
+    "title": "Búsqueda",
+    "description": "Búsqueda de texto completo en tareas, proyectos, memoria, notas, consejos y flujos de trabajo.",
+    "placeholder": "Buscar en todo",
+    "clearAriaLabel": "Borrar la búsqueda"
+  },
+  "results": {
+    "emptyPrompt": "Busca en tareas, proyectos, memoria, notas, consejos y flujos de trabajo.",
+    "searching": "Buscando…",
+    "failed": "La búsqueda ha fallado: inténtalo de nuevo.",
+    "noResultsFor": "Sin resultados para “{query}”.",
+    "resultCountFor": "{count, plural, one {# resultado} other {# resultados}} para",
+    "allTypes": "Todos los tipos"
+  },
+  "shortcuts": {
+    "ariaLabel": "Atajos de teclado",
+    "title": "Atajos de teclado",
+    "then": "después",
+    "closeHint": "Pulsa Esc para cerrar",
+    "groups": {
+      "general": "General",
+      "navigation": "Navegación",
+      "board": "Tablero"
+    },
+    "items": {
+      "openPalette": "Abrir la paleta de comandos",
+      "shortcutsHelp": "Atajos de teclado",
+      "newTask": "Nueva tarea (fuera de un campo de texto)",
+      "closeModal": "Cerrar el diálogo o el panel",
+      "goHome": "Ir al inicio",
+      "goBoard": "Ir al tablero",
+      "goOffice": "Ir a la oficina",
+      "goSettings": "Ir a los ajustes",
+      "moveFocusCards": "Mover el foco entre tarjetas",
+      "moveFocusColumns": "Mover el foco entre columnas",
+      "openCard": "Abrir la tarjeta enfocada",
+      "markDone": "Marcar como hecha la tarjeta enfocada",
+      "abandonCard": "Abandonar la tarjeta enfocada"
+    }
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "title": "Consejos",
+  "description": "Paneles de miembros con IA que responden a un prompt desde roles fijos; después un sintetizador los destila en cualquier formato: lluvia de ideas, debate, análisis y más.",
+  "new": "Nuevo consejo",
+  "searchPlaceholder": "Buscar consejos",
+  "archived": "Archivado",
+  "views": {
+    "list": "Vista de lista",
+    "grid": "Vista de cuadrícula",
+    "table": "Vista de tabla"
+  },
+  "empty": {
+    "title": "Todavía no hay consejos",
+    "description": "Crea uno, añade miembros con roles bien diferenciados y plantéales un prompt.",
+    "noMatch": "Ningún consejo coincide con “{query}”"
+  },
+  "bulk": {
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "deleteTitle": "¿Eliminar {count, plural, one {# consejo} other {# consejos}}?",
+    "deleteDescription": "Esto no se puede deshacer."
+  },
+  "table": {
+    "name": "Nombre",
+    "description": "Descripción",
+    "providers": "Proveedores",
+    "activity": "Actividad",
+    "none": "—"
+  },
+  "stats": {
+    "members": "{count, plural, one {# miembro} other {# miembros}}",
+    "consultations": "{count, plural, one {# consulta} other {# consultas}}"
+  },
+  "widget": {
+    "title": "Consejos",
+    "refresh": "Actualizar los consejos",
+    "error": "No se han podido cargar los consejos.",
+    "empty": "Todavía no hay consejos.",
+    "noMembers": "Sin miembros"
+  },
+  "create": {
+    "title": "Nuevo consejo",
+    "name": "Nombre",
+    "namePlaceholder": "p. ej. Comité de revisión de arquitectura",
+    "description": "Descripción",
+    "optional": "(opcional)",
+    "descriptionPlaceholder": "Sobre qué opina este consejo",
+    "submit": "Crear el consejo",
+    "creating": "Creando…",
+    "failed": "No se ha podido crear el consejo"
+  },
+  "custom": {
+    "title": "Prompt de síntesis personalizado",
+    "blurb": "Este prompt se usa como tarea de síntesis siempre que el formato de una ejecución sea “Personalizado”.",
+    "promptFor": "Prompt de {name}"
+  },
+  "detail": {
+    "thread": "Hilo",
+    "members": "Miembros",
+    "noRun": "Envía un prompt abajo y cada miembro responderá desde su rol en su propio terminal. Después las respuestas pasan al sintetizador y se destilan en el formato que elijas.",
+    "liveHint": "Hay una ejecución en marcha: espera la síntesis.",
+    "noMembersHint": "Añade al menos 1 miembro en el panel para empezar."
+  },
+  "thread": {
+    "title": "Hilo",
+    "empty": "Todavía no hay ejecuciones: envía abajo el primer prompt.",
+    "justNow": "ahora mismo",
+    "minutesAgo": "hace {count} min",
+    "hoursAgo": "hace {count} h",
+    "daysAgo": "hace {count} d"
+  },
+  "runStatus": {
+    "running": "En marcha",
+    "synthesizing": "Sintetizando",
+    "completed": "Completada",
+    "failed": "Fallida"
+  },
+  "composer": {
+    "label": "Prompt para el consejo",
+    "placeholder": "Pregúntale al consejo lo que quieras · ⌘/Ctrl + ⏎",
+    "formatLabel": "Formato de síntesis",
+    "dictate": "Dictar el prompt",
+    "stopDictation": "Detener el dictado",
+    "editCustom": "Editar el prompt de síntesis personalizado",
+    "editCustomTitle": "Editar el prompt de síntesis personalizado",
+    "start": "Iniciar"
+  },
+  "members": {
+    "title": "Miembros",
+    "saveFailed": "No se ha podido guardar",
+    "synthesizeWith": "Sintetizar con",
+    "synthProvider": "Proveedor del sintetizador",
+    "defaultFormat": "Formato predeterminado",
+    "defaultFormatLabel": "Formato de síntesis predeterminado",
+    "editCustomPrompt": "Editar el prompt personalizado",
+    "synthBlurb": "Destila las respuestas agrupadas. El formato viene preseleccionado para las nuevas ejecuciones, se puede cambiar en cada una y se puede volver a ejecutar sobre las mismas respuestas.",
+    "empty": "Añade al menos 1 miembro: cada uno responde al prompt desde su propio rol.",
+    "fallbackName": "Miembro {index}",
+    "reorder": "Reordenar {name}",
+    "remove": "Quitar {name}",
+    "collapse": "Contraer {name}",
+    "expand": "Expandir {name}",
+    "nameField": "Nombre de {name}",
+    "providerField": "Proveedor de {name}",
+    "roleField": "Rol de {name}",
+    "rolePlaceholder": "Rol desde el que responder, p. ej. “Defiende la postura contraria.”"
+  },
+  "run": {
+    "tablist": "Ejecución del consejo",
+    "prompt": "Prompt:",
+    "synthesis": "Síntesis",
+    "memberStatus": {
+      "running": "En marcha",
+      "succeeded": "Terminado",
+      "failed": "Fallido",
+      "timeout": "Tiempo agotado",
+      "skipped": "Omitido"
+    },
+    "skipMember": "Omitir al miembro",
+    "skip": "Omitir",
+    "skipTitle": "Dejar de esperar a este miembro: la síntesis continúa sin él",
+    "rerun": "Volver a ejecutar",
+    "rerunTitle": "Volver a ejecutar este miembro y después sintetizar de nuevo",
+    "noOutput": "No se ha capturado ninguna salida.",
+    "memberTerminal": "Terminal de {name}",
+    "waiting": "Esperando a {count, plural, one {# miembro} other {# miembros}}…",
+    "synthesizing": "Sintetizando ({format}): {provider} está destilando las respuestas…",
+    "synthesizerFallback": "El sintetizador",
+    "synthesisTerminalLabel": "Síntesis · {provider}",
+    "synthesisTerminal": "Terminal de la síntesis",
+    "reSynthesize": "Sintetizar de nuevo",
+    "reSynthesizeBlurb": "Vuelve a ejecutar solo la síntesis sobre las respuestas capturadas: cambia de formato con libertad, los miembros no se ejecutan otra vez.",
+    "failed": "La ejecución ha fallado.",
+    "noSynthesis": "No se ha registrado ninguna síntesis.",
+    "memberLabel": "Miembro {label}"
+  },
+  "errors": {
+    "poll": "No se ha podido consultar la ejecución",
+    "start": "No se ha podido iniciar la ejecución",
+    "resynthesize": "No se ha podido sintetizar de nuevo"
+  },
+  "formats": {
+    "brainstorm": {
+      "label": "Lluvia de ideas",
+      "description": "Generar ideas y después agruparlas y seleccionar las más sólidas."
+    },
+    "debate": {
+      "label": "Debate",
+      "description": "Ponderar posturas anonimizadas hasta llegar a un único veredicto."
+    },
+    "analyse": {
+      "label": "Analizar",
+      "description": "Análisis neutral de temas, coincidencias y tensiones."
+    },
+    "critique": {
+      "label": "Criticar",
+      "description": "Poner a prueba cada postura con imparcialidad: fortalezas y riesgos."
+    },
+    "motivate": {
+      "label": "Motivar",
+      "description": "Construir el argumento optimista más sólido y un camino a seguir."
+    },
+    "demotivate": {
+      "label": "Desmotivar",
+      "description": "Un análisis previo escéptico: sacar a la luz todas las razones por las que falla."
+    },
+    "custom": {
+      "label": "Personalizado",
+      "description": "Escribe tu propio prompt de síntesis."
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Medios"
+  },
+  "types": {
+    "all": "Todos",
+    "image": "Imagen",
+    "video": "Vídeo",
+    "audio": "Audio"
+  },
+  "sidebar": {
+    "heading": "Medios",
+    "expand": "Expandir la barra lateral de medios",
+    "collapse": "Contraer la barra lateral de medios",
+    "project": "Proyecto",
+    "allProjects": "Todos los proyectos",
+    "generationModels": "Modelos de generación",
+    "providerAria": "Proveedor de {type}",
+    "modelAria": "Modelo de {type}"
+  },
+  "list": {
+    "listView": "Vista de lista",
+    "gridView": "Vista de cuadrícula",
+    "tableView": "Vista de tabla",
+    "search": "Buscar medios",
+    "columns": {
+      "title": "Título",
+      "type": "Tipo",
+      "project": "Proyecto",
+      "size": "Tamaño"
+    },
+    "sections": {
+      "images": "Imágenes",
+      "video": "Vídeo",
+      "audio": "Audio"
+    }
+  },
+  "empty": {
+    "allTitle": "Todavía no hay medios",
+    "typedTitle": "Todavía no hay elementos de tipo {type}",
+    "description": "Genera o sube medios para ir formando tu biblioteca."
+  },
+  "newButton": {
+    "label": "Nuevo medio"
+  },
+  "typePicker": {
+    "dialogAria": "Elegir el tipo de medio",
+    "title": "¿Qué tipo de medio?",
+    "image": "Generar o subir una imagen fija",
+    "video": "Generar o subir un clip de vídeo",
+    "audio": "Generar o subir un archivo de audio"
+  },
+  "detail": {
+    "newTitle": "Nuevo: {type}",
+    "fallbackTitle": "Medio",
+    "propertiesRail": "Propiedades",
+    "promptRail": "Prompt / generar",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Sin título",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción opcional",
+    "projectLabel": "Proyecto",
+    "noProject": "Sin proyecto",
+    "tagsLabel": "Etiquetas",
+    "tagsPlaceholder": "etiqueta1, etiqueta2",
+    "type": "Tipo",
+    "size": "Tamaño",
+    "dimensions": "Dimensiones",
+    "duration": "Duración",
+    "mime": "MIME",
+    "noValue": "—",
+    "unknownDimension": "?",
+    "dimensionsValue": "{width} × {height}",
+    "createHintLine1": "Rellena los detalles y añade un prompt;",
+    "createHintLine2": "después pulsa “Generar” o guarda un marcador de posición.",
+    "saving": "Guardando…",
+    "savePlaceholder": "Guardar un marcador de posición",
+    "providerLabel": "Proveedor",
+    "modelLabel": "Modelo",
+    "promptLabel": "Prompt",
+    "promptPlaceholder": "Describe qué hay que generar…",
+    "generationUnavailable": "La generación todavía no está disponible.",
+    "noGenerationHistory": "Sin historial de generación.",
+    "openLightbox": "Abrir la imagen en la lightbox",
+    "generate": "Generar"
+  },
+  "size": {
+    "bytes": "{value} B",
+    "kilobytes": "{value} KB",
+    "megabytes": "{value} MB"
+  },
+  "player": {
+    "play": "Reproducir",
+    "pause": "Pausar"
+  }
+}

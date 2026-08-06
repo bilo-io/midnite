@@ -1,0 +1,209 @@
+{
+  "tabs": {
+    "details": "Detalles",
+    "session": "Sesión",
+    "review": "Revisión",
+    "retro": "Retro",
+    "sectionsAria": "Secciones del detalle de la tarea"
+  },
+  "openPage": "Abrir la página",
+  "allTasks": "Todas las tareas",
+  "title": {
+    "editAria": "Editar el título de la tarea",
+    "editHint": "Haz clic para editar",
+    "saveFailed": "No se ha podido actualizar el título"
+  },
+  "waiting": {
+    "banner": "El agente te está esperando",
+    "reply": "Responder",
+    "replyToAgent": "Responder al agente",
+    "cancelReply": "Cancelar la respuesta"
+  },
+  "tags": {
+    "title": "Etiquetas",
+    "addPlaceholder": "Añadir una etiqueta…",
+    "addAria": "Añadir una etiqueta",
+    "remove": "Quitar la etiqueta {tag}"
+  },
+  "description": {
+    "title": "Descripción",
+    "placeholder": "Añade una descripción…",
+    "saveFailed": "No se ha podido actualizar la descripción"
+  },
+  "priority": {
+    "saveFailed": "No se ha podido actualizar la prioridad"
+  },
+  "status": {
+    "saveFailed": "No se ha podido actualizar el estado"
+  },
+  "milestone": {
+    "title": "Hito",
+    "none": "Sin hito",
+    "pickerAria": "Hito de la tarea",
+    "needsProject": "Asigna esta tarea a un proyecto para usar hitos.",
+    "noMilestones": "Este proyecto todavía no tiene hitos.",
+    "assignFailed": "No se ha podido asignar el hito"
+  },
+  "dependencies": {
+    "title": "Dependencias",
+    "blockedBy": "Bloqueada por",
+    "blocks": "Bloquea a",
+    "none": "Sin bloqueantes.",
+    "unknown": "(desconocida)",
+    "done": "hecha",
+    "pending": "pendiente",
+    "removeBlocker": "Quitar el bloqueante {title}",
+    "searchLabel": "Buscar tareas de las que depender",
+    "searchPlaceholder": "Añadir una tarea bloqueante…",
+    "addFailed": "No se ha podido añadir la dependencia",
+    "removeFailed": "No se ha podido quitar la dependencia"
+  },
+  "picker": {
+    "searchAria": "Buscar tareas",
+    "searchPlaceholder": "Buscar tareas…"
+  },
+  "project": {
+    "changeFailed": "No se ha podido cambiar el proyecto"
+  },
+  "links": {
+    "title": "Revisión y enlaces",
+    "none": "Todavía no hay enlaces.",
+    "add": "Añadir un enlace",
+    "remove": "Quitar el enlace",
+    "removeTitle": "¿Quitar este enlace?",
+    "removeDescription": "Se desvinculará de esta tarea.",
+    "removeConfirm": "Quitar",
+    "placeholder": "Pega un enlace de un PR de GitHub, Figma, Google Docs o Notion",
+    "urlError": "Introduce una URL completa, incluido https://",
+    "addFailed": "No se ha podido añadir el enlace",
+    "removeFailed": "No se ha podido quitar el enlace"
+  },
+  "prompt": {
+    "title": "Prompt"
+  },
+  "attachments": {
+    "title": "Adjuntos"
+  },
+  "pr": {
+    "title": "Pull request",
+    "refresh": "Actualizar el estado del PR",
+    "statusUnknown": "Estado desconocido",
+    "viewDiff": "Ver el diff",
+    "reviewPage": "Página de revisión",
+    "open": "Abrir el PR",
+    "review": "Revisar",
+    "chip": "PR #{number} — {state}",
+    "chipChecks": " · CI {checks}",
+    "states": {
+      "open": "Abierto",
+      "draft": "Borrador",
+      "merged": "Fusionado",
+      "closed": "Cerrado"
+    },
+    "checks": {
+      "passing": "correctas",
+      "failing": "fallando",
+      "pending": "pendientes"
+    }
+  },
+  "aiReview": {
+    "title": "Revisión con IA",
+    "lgtm": "LGTM",
+    "changesRequested": "Cambios solicitados",
+    "reviewed": "Revisado"
+  },
+  "runs": {
+    "title": "Ejecuciones del agente"
+  },
+  "activity": {
+    "title": "Actividad",
+    "none": "Todavía no se ha registrado ninguna actividad.",
+    "answer": "Responder"
+  },
+  "events": {
+    "agentStarted": "Agente iniciado",
+    "agentWaiting": "El agente espera una respuesta",
+    "agentResumed": "Reanudado por una respuesta o aprobación",
+    "agentEscalated": "Escalado: necesita atención",
+    "agentRequeued": "Vuelto a encolar",
+    "agentRetried": "Reintentado",
+    "agentDone": "Agente terminado",
+    "taskReopened": "Reabierta",
+    "taskReplanned": "Replanificada"
+  },
+  "actions": {
+    "start": "Iniciar",
+    "edit": "Editar",
+    "reopen": "Reabrir",
+    "session": "Sesión",
+    "markDone": "Marcar como hecha",
+    "abandon": "Abandonar",
+    "delete": "Eliminar",
+    "abandonTitle": "¿Abandonar esta tarea?",
+    "abandonDescription": "Se archivará y su sesión se detendrá. Después podrás eliminarla de forma permanente.",
+    "abandonConfirm": "Abandonar",
+    "markDoneTitle": "¿Marcar esta tarea como hecha?",
+    "markDoneDescription": "Pasará directamente a “Hecho”, saltándose cualquier agente que todavía esté trabajando en ella.",
+    "markDoneConfirm": "Marcar como hecha",
+    "deleteTitle": "¿Eliminar esta tarea?",
+    "deleteDescription": "Esto es permanente y no se puede deshacer.",
+    "deleteConfirm": "Eliminar",
+    "startFailed": "No se ha podido iniciar la tarea",
+    "abandonFailed": "No se ha podido abandonar la tarea",
+    "markDoneFailed": "No se ha podido marcar la tarea como hecha",
+    "reopenFailed": "No se ha podido reabrir la tarea",
+    "deleteFailed": "No se ha podido eliminar la tarea"
+  },
+  "failures": {
+    "title": "Historial de fallos ({count})",
+    "attempt": "intento {index}",
+    "exit": "· salida {code}",
+    "classes": {
+      "crash": "Se ha caído",
+      "timeout": "Tiempo agotado",
+      "no-pr": "No se ha abierto ningún PR",
+      "gate-failed": "La verificación ha fallado",
+      "tool-denied": "Herramienta denegada",
+      "inactivity": "Se ha quedado en silencio",
+      "retries-exhausted": "Reintentos agotados",
+      "unknown": "Desconocido"
+    }
+  },
+  "health": {
+    "title": "Salud de las tareas",
+    "empty": "Nada atascado: sin fallos ni tareas encalladas.",
+    "needsAttention": "Necesita atención",
+    "waitingTooLong": "Esperando demasiado",
+    "stuckWip": "Encallada (en silencio) en curso",
+    "agedTodo": "Pendiente desde hace mucho",
+    "recentFailures": "Fallos recientes por clase ({count})",
+    "none": "ninguno"
+  },
+  "retro": {
+    "empty": "Todavía no hay retrospectiva: se crea cuando la tarea termina.",
+    "aiSummary": "Resumen con IA",
+    "outcome": {
+      "done": "Entregada",
+      "abandoned": "Abandonada",
+      "needs-attention": "Necesita atención"
+    },
+    "timing": "Tiempos",
+    "wait": "Espera",
+    "work": "Trabajo",
+    "total": "Total",
+    "summary": "Resumen",
+    "whatTrippedItInline": "Qué la hizo tropezar: ",
+    "whatTrippedIt": "Qué la hizo tropezar",
+    "aiReview": "Revisión con IA",
+    "checks": "Comprobaciones",
+    "checksTally": " · {passed} correctas · {failed} fallidas",
+    "pullRequest": "Pull request",
+    "attempts": "Intentos",
+    "noAttempts": "No se ha registrado ninguna ejecución del agente.",
+    "firstAttempt": "Intento 1",
+    "retryN": "Reintento {index}",
+    "unresolved": "sin resolver",
+    "timeline": "Cronología",
+    "noActivity": "No se ha registrado ninguna actividad."
+  }
+}

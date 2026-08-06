@@ -1,0 +1,245 @@
+{
+  "page": {
+    "title": "Operaciones",
+    "description": "Salud de la flota: uso de espacios en directo, rendimiento de ejecuciones, distribución de duraciones, tasas de reintento y abandono, y gasto en LLM."
+  },
+  "tabsAria": "Secciones de operaciones",
+  "tabs": {
+    "metrics": "Métricas",
+    "decisions": "Decisiones",
+    "digest": "Resumen"
+  },
+  "noData": "Todavía no hay datos",
+  "windowAria": "Periodo de tiempo",
+  "windowDays": "{days} d",
+  "picker": {
+    "add": "Añadir un widget de operaciones",
+    "search": "Buscar widgets de operaciones",
+    "added": "Ya está en este tablero"
+  },
+  "categories": {
+    "fleet": "Flota",
+    "runs": "Ejecuciones y rendimiento",
+    "cost": "Coste y gasto",
+    "health": "Salud y auditoría"
+  },
+  "catalog": {
+    "gauges": {
+      "label": "Estado de la flota en directo",
+      "description": "Uso de espacios, longitud de la cola y latencia del ciclo del planificador"
+    },
+    "throughput": {
+      "label": "Rendimiento",
+      "description": "Ejecuciones completadas por día registradas en el servidor"
+    },
+    "outcomes": {
+      "label": "Resultados de las ejecuciones",
+      "description": "Desglose de hechas / abandonadas / fallidas / canceladas"
+    },
+    "duration": {
+      "label": "Duración de las ejecuciones",
+      "description": "Distribución de las duraciones de ejecución por tramos"
+    },
+    "spend": {
+      "label": "Gasto en LLM",
+      "description": "Gasto estimado en LLM de los últimos 30 días"
+    },
+    "cost-trend": {
+      "label": "Coste a lo largo del tiempo",
+      "description": "Tendencia del gasto de las sesiones de agente (medido/estimado/LLM) en el periodo"
+    },
+    "cost-breakdown": {
+      "label": "Coste por dimensión",
+      "description": "Desglose del gasto por repo, proyecto o proveedor"
+    },
+    "cycle-time": {
+      "label": "Tiempo de ciclo",
+      "description": "Percentiles de espera frente a trabajo en las tareas completadas"
+    },
+    "fleet-trend": {
+      "label": "Tendencias de la flota",
+      "description": "Longitud de la cola, uso de espacios y latencia del ciclo a lo largo del tiempo"
+    },
+    "run-timeline": {
+      "label": "Cronología de ejecuciones",
+      "description": "Examina la franja de ejecuciones de agente de una sola tarea por su ID"
+    },
+    "task-health": {
+      "label": "Salud de las tareas",
+      "description": "Qué está atascado: tareas encalladas, envejecidas, en espera y con fallos recientes"
+    },
+    "runtime-health": {
+      "label": "Salud del entorno de ejecución",
+      "description": "Comprobaciones previas de la pasarela y tiempo activa"
+    },
+    "decisions": {
+      "label": "Decisiones",
+      "description": "Registro de auditoría de aprobaciones: herramienta, resultado y quién decidió"
+    }
+  },
+  "cards": {
+    "gauges": {
+      "title": "Estado de la flota en directo"
+    },
+    "throughput": {
+      "title": "Rendimiento (registrado en el servidor)"
+    },
+    "outcomes": {
+      "title": "Resultados de las ejecuciones"
+    },
+    "duration": {
+      "title": "Distribución de la duración de las ejecuciones"
+    },
+    "spend": {
+      "title": "Gasto en LLM (últimos 30 d)"
+    },
+    "cost-trend": {
+      "title": "Coste a lo largo del tiempo"
+    },
+    "cost-breakdown": {
+      "title": "Coste por dimensión"
+    },
+    "cycle-time": {
+      "title": "Tiempo de ciclo (espera frente a trabajo)"
+    },
+    "fleet-trend": {
+      "title": "Tendencias de la flota"
+    },
+    "run-timeline": {
+      "title": "Cronología de ejecuciones"
+    },
+    "task-health": {
+      "title": "Salud de las tareas"
+    },
+    "runtime-health": {
+      "title": "Salud del entorno de ejecución"
+    },
+    "decisions": {
+      "title": "Decisiones"
+    }
+  },
+  "gauges": {
+    "slotUtilization": "Uso de espacios",
+    "slotsUsedAria": "{used} de {total} espacios en uso",
+    "running": "En marcha",
+    "ofSlots": "de {total, plural, one {# espacio} other {# espacios}}",
+    "queuedTodo": "Pendientes en cola",
+    "queueDepth": "Longitud de la cola",
+    "fromGauges": "según las medidas",
+    "lastTick": "Último ciclo",
+    "tickMs": "{ms} ms",
+    "schedulerLatency": "latencia del planificador"
+  },
+  "throughput": {
+    "runsInWindow": "ejecuciones en el periodo",
+    "chartAria": "Gráfico de barras del rendimiento",
+    "barTooltip": "{day}: {count}"
+  },
+  "duration": {
+    "barTooltip": "{bucket}: {count}",
+    "buckets": {
+      "lt1s": "<1 s",
+      "lt5s": "<5 s",
+      "lt30s": "<30 s",
+      "lt2m": "<2 min",
+      "gte2m": "≥2 min"
+    }
+  },
+  "outcomes": {
+    "done": "Hechas",
+    "abandoned": "Abandonadas",
+    "failed": "Fallidas",
+    "cancelled": "Canceladas",
+    "barAria": "{outcome}: {count}"
+  },
+  "spend": {
+    "total": "total",
+    "chartAria": "Gráfico de barras del gasto en LLM",
+    "barTooltip": "{day}: {cost}"
+  },
+  "cost": {
+    "windowAria": "Periodo de tiempo del coste",
+    "groupByAria": "Agrupar el coste por",
+    "groupBy": {
+      "repo": "Por repo",
+      "project": "Por proyecto",
+      "provider": "Por proveedor"
+    },
+    "totalInWindow": "<strong>{total}</strong> en el periodo",
+    "trendChartAria": "Gráfico del coste a lo largo del tiempo",
+    "breakdownChartAria": "Gráfico del coste por dimensión",
+    "series": {
+      "llm": "LLM de la pasarela",
+      "measured": "Sesión (medido)",
+      "estimated": "Sesión (estimado)"
+    },
+    "split": {
+      "measured": "Medido",
+      "estimated": "Estimado"
+    },
+    "unpriced": "<strong>{count}</strong> {count, plural, one {sesión sin precio} other {sesiones sin precio}} (coste desconocido)"
+  },
+  "cycleTime": {
+    "completedInWindow": "<strong>{count}</strong> {count, plural, one {tarea completada} other {tareas completadas}} en el periodo",
+    "retryOverhead": "Sobrecoste por reintentos: <strong>{duration}</strong> en {count, plural, one {# tarea} other {# tareas}}"
+  },
+  "fleetTrend": {
+    "truncated": "se muestran las muestras recientes",
+    "queueDepth": "Longitud de la cola",
+    "slotsUsedTotal": "Espacios usados / total",
+    "tickLatency": "Latencia del ciclo (ms)"
+  },
+  "runTimeline": {
+    "placeholder": "Introduce el ID de una tarea para inspeccionar sus ejecuciones de agente",
+    "taskIdAria": "ID de la tarea",
+    "show": "Mostrar",
+    "empty": "Introduce arriba el ID de una tarea para ver su franja de ejecuciones de agente.",
+    "error": "No se han podido cargar las ejecuciones de agente.",
+    "noRuns": "Todavía no se ha registrado ninguna ejecución de agente.",
+    "chartAria": "Gráfico de la cronología de ejecuciones",
+    "running": "En marcha",
+    "unknownOutcome": "Desconocido",
+    "tooltipMeta": "{duration} · iniciada {time}",
+    "runCount": "<strong>{count}</strong> {count, plural, one {ejecución} other {ejecuciones}}"
+  },
+  "runtimeHealth": {
+    "ready": "Lista",
+    "notReady": "No lista",
+    "unreachable": "Pasarela inaccesible: no se puede leer el estado.",
+    "uptime": "Tiempo activa",
+    "spawner": "Generador",
+    "noPreflight": "El informe de comprobaciones previas no está disponible.",
+    "status": {
+      "ok": "Correcto",
+      "warn": "Aviso",
+      "fail": "Fallo"
+    }
+  },
+  "decisions": {
+    "columns": {
+      "tool": "Herramienta / resumen",
+      "resolution": "Resultado",
+      "decidedBy": "Decidido por",
+      "when": "Cuándo"
+    },
+    "range": "{from}–{to} de {total}",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "resolution": {
+      "allow": "Permitida",
+      "allow-session": "Permitida (sesión)",
+      "deny": "Denegada",
+      "ask": "Preguntada",
+      "timeout": "Tiempo agotado",
+      "expired": "Caducada",
+      "auto-allow": "Permitida automáticamente",
+      "auto-deny": "Denegada automáticamente"
+    },
+    "decidedBy": {
+      "user": "Usuario",
+      "policy": "Política",
+      "timeout": "Tiempo agotado",
+      "system": "Sistema"
+    }
+  }
+}

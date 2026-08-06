@@ -7,7 +7,9 @@ import { LocaleProvider, type LocaleMessages } from './locale-provider';
 // A minimal three-locale catalog set: en-GB canonical, fr-FR fully translated,
 // de-DE intentionally empty here (must fall back to en-GB). The empty entry is a
 // *fixture* for the fallback mechanism, not a claim about the app's real catalogs —
-// `web`'s de-DE is authored to full parity; es-ES is the shipping stub.
+// all four of `web`'s locales are authored to full parity, so no shipping locale is a
+// stub. The mechanism still matters for whatever locale is declared next, which is
+// exactly why it is tested from a fixture rather than from whatever happens to ship.
 const CATALOGS: Record<string, LocaleMessages> = {
   'en-GB': { common: { save: 'Save', cancel: 'Cancel' } },
   'fr-FR': { common: { save: 'Enregistrer', cancel: 'Annuler' } },

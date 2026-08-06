@@ -1,0 +1,186 @@
+{
+  "title": "Tablero de tareas",
+  "nothingHere": "Aquí no hay nada",
+  "addTask": "Añadir una tarea a {column}",
+  "dragTask": "Arrastrar {title} a otro estado",
+  "collapseColumn": "Contraer la columna {column}",
+  "expandColumn": "Expandir la columna {column}",
+  "columns": {
+    "backlog": "Backlog",
+    "todo": "Por hacer",
+    "wip": "En curso",
+    "waiting": "En espera",
+    "done": "Hecho",
+    "abandoned": "Abandonado"
+  },
+  "kinds": {
+    "bug": "Corrección",
+    "feature": "Funcionalidad",
+    "question": "Pregunta",
+    "chore": "Mantenimiento",
+    "unknown": "Tarea"
+  },
+  "priority": {
+    "low": "Baja",
+    "normal": "Normal",
+    "high": "Alta",
+    "urgent": "Urgente"
+  },
+  "waitReasons": {
+    "needs-input": "Necesita tu respuesta",
+    "no-pr": "No se ha abierto ningún PR",
+    "agent-failed": "El agente ha fallado",
+    "timed-out": "Tiempo agotado",
+    "gate-failed": "La verificación ha fallado",
+    "retries-exhausted": "Reintentos agotados"
+  },
+  "heldReasons": {
+    "over-budget": "fuera de presupuesto",
+    "rate-limited": "limitado por tasa"
+  },
+  "aiReview": {
+    "approved": "IA: LGTM",
+    "commented": "IA: revisado",
+    "changes-requested": "IA: cambios"
+  },
+  "card": {
+    "answered": "Respondida",
+    "checksFailing": "Comprobaciones fallando",
+    "held": "Retenida: {reason}",
+    "heldTitle": "Retenida: el planificador no iniciará un agente hasta que se libere el límite",
+    "needsAttentionTitle": "Necesita atención: un fallo ha aparcado esta tarea; vuelve a encolarla, replanifícala o abandónala",
+    "blocked": "Bloqueada",
+    "blockedBy": "Bloqueada por {count, plural, one {# tarea} other {# tareas}}",
+    "start": "Iniciar",
+    "startTask": "Iniciar la tarea",
+    "stop": "Detener",
+    "stopTask": "Detener la tarea",
+    "reopen": "Reabrir",
+    "reopenTask": "Reabrir la tarea",
+    "moveTo": "Mover a…",
+    "moveToColumn": "Mover a la columna",
+    "taskOptions": "Opciones de la tarea"
+  },
+  "confirm": {
+    "reopenTitle": "¿Reabrir esta tarea?",
+    "reopenDescription": "Vuelve a “Por hacer”, se limpia su sesión de agente y se vuelven a bloquear las tareas que dependen de ella.",
+    "reopenConfirm": "Reabrir",
+    "doneAgainTitle": "¿Marcar esta tarea como hecha otra vez?",
+    "doneAgainDescription": "Ya está en “Hecho”.",
+    "doneAgainConfirm": "Marcar como hecha",
+    "abandonTitle": "¿Abandonar esta tarea?",
+    "abandonDescription": "Pasa a “Abandonado” y su sesión (si la hay) se archiva.",
+    "abandonConfirm": "Abandonar",
+    "startBlockedTitle": "¿Iniciar una tarea bloqueada?",
+    "startBlockedDescription": "{count, plural, one {# bloqueante todavía no está} other {# bloqueantes todavía no están}} terminado. El planificador omite las tareas bloqueadas; iniciarla a mano la ejecuta igualmente.",
+    "startBlockedConfirm": "Iniciar de todos modos",
+    "deleteTasksTitle": "¿Eliminar {count, plural, one {# tarea} other {# tareas}}?",
+    "deleteTasksDescription": "Esto no se puede deshacer.",
+    "deleteTasksConfirm": "Eliminar"
+  },
+  "bulk": {
+    "abandon": "Abandonar",
+    "restore": "Restaurar",
+    "delete": "Eliminar",
+    "markDone": "Marcar como hecha",
+    "moveTo": "Mover a"
+  },
+  "toolbar": {
+    "newTask": "Nueva tarea",
+    "searchPlaceholder": "Buscar tareas",
+    "graph": "Grafo",
+    "allStatuses": "Todos los estados",
+    "allTags": "Todas las etiquetas",
+    "views": {
+      "list": "Vista de lista",
+      "board": "Vista de tablero",
+      "table": "Vista de tabla",
+      "graph": "Vista de grafo"
+    },
+    "boardStyles": {
+      "unified": "Todo en uno",
+      "project": "Por proyecto"
+    }
+  },
+  "sections": {
+    "empty": "Vacío",
+    "summary": "{tasks, plural, one {# tarea} other {# tareas}} · {projects, plural, one {# proyecto} other {# proyectos}}"
+  },
+  "unassigned": "Sin asignar",
+  "newTask": {
+    "title": "Nueva tarea",
+    "addModeAria": "Modo de añadido",
+    "single": "Individual",
+    "bulk": "Pegado múltiple",
+    "titleLabel": "Título",
+    "titlePlaceholder": "¿Qué hay que hacer?",
+    "descriptionLabel": "Descripción",
+    "optional": "(opcional)",
+    "descriptionPlaceholder": "Añade detalles, contexto o criterios de aceptación: se incluyen en el prompt del agente.",
+    "tasksLabel": "Tareas",
+    "bulkPlaceholder": "Una tarea por línea…\nSe ignoran las líneas vacías, los comentarios con # y los guiones de lista.",
+    "bulkEmptyHint": "Pega una lista para crear una tarea por línea.",
+    "bulkDetected": "{count, plural, one {# tarea detectada} other {# tareas detectadas}}.",
+    "bulkOverLimit": "{count, plural, one {# tarea detectada} other {# tareas detectadas}}: por encima del límite de {limit} líneas.",
+    "projectLabel": "Proyecto",
+    "noProject": "Sin proyecto",
+    "repoLabel": "Repo",
+    "statusLabel": "Estado",
+    "priorityLabel": "Prioridad",
+    "blockedByLabel": "Bloqueada por",
+    "createFailed": "No se ha podido crear la tarea",
+    "createBulkFailed": "No se han podido crear las tareas",
+    "createdCount": "{count} creadas",
+    "skippedCount": "{count} omitidas",
+    "failedCount": "{count} fallidas",
+    "createTask": "Crear la tarea",
+    "createTasks": "Crear las tareas",
+    "createN": "Crear {count, plural, one {# tarea} other {# tareas}}",
+    "done": "Hecho"
+  },
+  "toasts": {
+    "taskCreated": "Tarea creada",
+    "tasksCreated": "{count, plural, one {# tarea creada} other {# tareas creadas}}",
+    "moveFailed": "No se ha podido mover la tarea",
+    "movesFailed": "No se han podido mover las tareas",
+    "reorderFailed": "No se han podido reordenar las tareas",
+    "reopenFailed": "No se ha podido reabrir la tarea",
+    "deleteFailed": "No se han podido eliminar las tareas"
+  },
+  "roadmapGraph": {
+    "loading": "Cargando la hoja de ruta…",
+    "noMilestones": "Todavía no hay hitos: añade uno en el tablero para verlo aquí.",
+    "noTasks": "Todavía no hay tareas",
+    "renameAria": "Renombrar {name}",
+    "removeTaskAria": "Quitar {task} de {name}",
+    "addTaskPlaceholder": "+ Añadir tarea…",
+    "addTaskAria": "Añadir una tarea a {name}",
+    "toasts": {
+      "renameFailed": "No se ha podido renombrar el hito",
+      "removeTaskFailed": "No se ha podido quitar la tarea",
+      "addTaskFailed": "No se ha podido añadir la tarea"
+    }
+  },
+  "graph": {
+    "ready": "Lista",
+    "otherProject": "Otro proyecto",
+    "blockedBy": "Bloqueada por {count}",
+    "filterByProject": "Filtrar el grafo por proyecto",
+    "summary": "{tasks, plural, one {# tarea} other {# tareas}} · {dependencies, plural, one {# dependencia} other {# dependencias}}",
+    "milestoneFilter": "Filtro de hitos",
+    "clearMilestoneFilter": "Quitar el filtro de hitos",
+    "truncated": "Se muestran las primeras {shown} de {total} tareas. Elige un proyecto arriba para acotar el grafo.",
+    "empty": "Todavía no hay tareas que representar.",
+    "emptyScoped": "Todavía no hay tareas que representar en este ámbito.",
+    "toasts": {
+      "addDependencyFailed": "No se ha podido añadir la dependencia",
+      "removeDependencyFailed": "No se ha podido quitar la dependencia"
+    },
+    "pageTitle": "Grafo de dependencias",
+    "pageDescription": "Qué bloquea a qué: las tareas se disponen de izquierda a derecha por orden de finalización. Arrastra entre dos tareas para añadir un bloqueante, o selecciona una arista y pulsa Supr para quitarlo."
+  },
+  "page": {
+    "title": "Tareas",
+    "description": "Tareas agrupadas por estado. Alterna entre lista, tablero y grafo, y filtra por estado o proyecto."
+  }
+}
