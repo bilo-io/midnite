@@ -1,6 +1,6 @@
 {
   "name": "@midnite/desktop",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "description": "Midnite desktop app (Electron) — bundles the gateway + web UI to run locally",
   "main": "dist/main/index.js",
