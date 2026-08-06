@@ -14,6 +14,51 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.11.0] - 2026-08-06
+
+_Minor release — every package moves in lockstep to 0.11.0._
+
+### Added
+
+- **The app is now called "Midnite".** Every user-visible surface capitalises the
+  display name — the desktop app (bundle name, macOS menu bar and Dock, Windows
+  Start menu), the marketing site, the docs site, the web app (titles, PWA
+  manifest, in-app copy), the admin console and the CLI banner. Identifiers are
+  deliberately unchanged: the `midnite` command, `midnite.json`, `~/.midnite` and
+  the download filenames all stay lowercase, so existing installs, scripts and
+  download links keep working.
+- **A new wordmark face.** The Midnite wordmark now renders in **Rooster** across
+  the web app, admin, site and docs, and defaults to title case so the mark reads
+  "Midnite". Lower/upper casing and the size setting stay selectable in
+  Settings → Appearance → Logo.
+- **The app speaks German and Spanish.** `de-DE` and `es-ES` join `fr-FR` as
+  fully authored locales — all 26 namespaces and 3,794 keys each, with every
+  message checked through a real ICU parser and every placeholder and rich-text
+  tag diffed against English. All four shipping locales are now enforced at the
+  same parity bar; none is a machine-seeded stub. Translations are
+  model-authored and flagged for native review. Switch language in
+  Settings → Appearance.
+- **The last English-only surfaces are translated.** The localisation sweep
+  finished the job across the ops board, the dashboard widgets, the session,
+  media and digest views, projects and PR review, the council and assistant, the
+  composer, editors and pickers, the setup and routines flows, the plan and
+  work-item cluster, the report-issue dialog and the shared app chrome. Notably,
+  Settings → Appearance's motion and effects options — which had been silently
+  shipping English on an otherwise translated page — now translate too. Reported
+  GitHub issues are still filed in English on purpose, so public triage stays
+  readable.
+
+### Fixed
+
+- **The macOS installer works again.** `install.sh` verified its staged copy by
+  deriving the executable name from a temporary directory it had just renamed, so
+  the safety check could never pass and every install aborted with "staged copy is
+  incomplete — /Applications left untouched". A perfectly good download can now
+  install; the verification reads the real bundle name instead.
+- **Titleless sessions no longer render an empty heading.** The work-item modal
+  fell back only on `null`, but an untitled task or session arrives as an empty
+  string — leaving a blank heading and an empty accessible label.
+
 ## [0.10.0] - 2026-08-03
 
 _Minor release — every package moves in lockstep to 0.10.0._
@@ -605,6 +650,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.11.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.11.0
 [0.10.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.10.0
 [0.9.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.1
 [0.9.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.9.0
