@@ -22,6 +22,8 @@ the same packages built for **two different ABIs**:
 - The desktop packaging flow (`packages/desktop/scripts/stage-gateway.mjs`)
   stages a separate tree under `packages/desktop/build-staging/gateway/` with
   `pnpm deploy`, then `electron-rebuild`s **only that tree** for Electron's ABI.
+  "Only that tree" is not free — it takes both defences in §4 below. Passing
+  electron-rebuild `-m <staged tree>` does **not** achieve it.
 
 ## Why it used to break anyway (July 2026 post-mortem)
 
@@ -33,6 +35,30 @@ file only `@electron/rebuild` writes, sitting inside a *node* cache entry). A
 poisoned entry re-infected **every checkout and worktree on the machine** on
 each fresh `pnpm install`, so `pnpm rebuild` only ever fixed it until the next
 desktop package run.
+
+## Why it broke anyway, again (August 2026 post-mortem)
+
+The `.npmrc` fix closed the *store* channel, but a second one stayed open for
+months — visible on every desktop build as an `ERR_DLOPEN_FAILED` stack trace and
+a `⚠ native module ABI mismatch` banner that the `ensure-native` guard then
+self-healed. Two compounding causes, both in `@electron/rebuild`'s module walk:
+
+1. **`-m` does not scope anything.** It sets where the walk *starts*; the bound is
+   `projectRootPath`, which the **CLI** derives by climbing to the nearest lockfile
+   (`cli.js`: `getProjectRootPath(process.cwd())`) — i.e. the **repo root**. The walk
+   therefore collected every `node_modules` between the staged tree and the repo
+   root, recursed into pnpm's hidden `.pnpm/node_modules` hoist dir, found the
+   workspace `better-sqlite3`/`node-pty`, and rebuilt them for ABI 130. The CLI has
+   no flag for `projectRootPath`; only the programmatic API can set it.
+2. **A bound is not enough on its own.** The walk resolves realpaths and recurses
+   into `<realpath>/node_modules`, so a single symlink out of the staged tree leads
+   it straight back to the workspace. `pnpm deploy` leaves exactly one:
+   `.pnpm/node_modules/@midnite/gateway` → the source package.
+
+Tells: `.forge-meta` in the workspace store entry (as in the 2026-07 post-mortem),
+and `electron-rebuild` reporting **four** modules (`better-sqlite3, node-pty,
+better-sqlite3, node-pty`) where the staged tree only has two — it was rebuilding
+each module twice, once in staging and once in the workspace.
 
 ## The defences (all must stay in place)
 
@@ -49,6 +75,22 @@ desktop package run.
    workspace right after its `electron-rebuild` step, so any new contamination
    channel fails the desktop stage immediately instead of crashing an unrelated
    gateway session days later.
+4. **A bounded, closed-graph rebuild** (`packages/desktop/scripts/rebuild-native.mjs`)
+   — the two halves of the August 2026 fix, and they only work together:
+   - `rebuild()` is called through the **programmatic API** with
+     `projectRootPath: <staged tree>`, so the ancestor walk stops at the staged tree
+     instead of climbing to the repo root. **Never** go back to
+     `pnpm exec electron-rebuild` here: the CLI cannot set this, and `-o/--only`
+     is not a substitute (the walker matches by module *basename*, which is
+     identical for the workspace and staged copies).
+   - `pruneEscapingSymlinks()` deletes any symlink under the staged tree whose
+     realpath falls outside it, so the walk cannot be led back out. These links are
+     dead weight in a shipped app anyway — they point into the build machine's home
+     directory.
+
+   It also asserts (via the `module-found` lifecycle event) that both modules were
+   actually found: bounding the walk turns "rebuilt the wrong tree" into the quieter
+   failure "rebuilt nothing", which would silently ship Node-ABI binaries.
 
 ## Manual fix (if you ever see the crash anyway)
 

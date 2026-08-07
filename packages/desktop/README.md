@@ -115,10 +115,15 @@ moon run desktop:build             # desktop/dist (main + preload)
 Dev needs **no** `electron-rebuild`: `desktop:start` spawns the gateway child under
 plain **Node** (see `src/main/gateway-process.ts`), so it uses the workspace's shared
 `better-sqlite3`/`node-pty` at their Node ABI (127) — the same copy `gateway:dev` and
-the tests use. `moon run desktop:rebuild` is a **packaging-only** step: it is scoped to
-the staged prod tree (`build-staging/gateway`, produced by `desktop:stage`) and
-electron-rebuilds *that* isolated copy for Electron's ABI — it never touches the shared
-hoisted binaries.
+the tests use. `moon run desktop:rebuild-native` is a **packaging-only** step: it
+electron-rebuilds the staged prod tree (`build-staging/gateway`, produced by
+`desktop:stage`) for Electron's ABI without touching the shared hoisted binaries.
+
+That isolation comes from `scripts/rebuild-native.mjs` — `projectRootPath` plus a prune
+of symlinks escaping the staged tree — **not** from electron-rebuild's `-m` flag, which
+only sets where the module walk starts. The older `electron-rebuild -m build-staging/
+gateway ...` form did climb out and rebuild the workspace copies for ABI 130 on every
+run. See [`docs/NATIVE-MODULES.md`](../../docs/NATIVE-MODULES.md).
 
 ## Dev run (against the Next dev server)
 
