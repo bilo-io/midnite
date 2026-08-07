@@ -19,13 +19,14 @@ test.describe('Project detail page', () => {
     await page.goto(`/projects/view?id=${project.id}`);
 
     await expect(page.getByRole('heading', { name: project.name })).toBeVisible();
-    // Center tabs.
-    for (const label of ['Details', 'Plan', 'Tasks']) {
+    // Center tabs. "Plan" became "Docs" (the view keeps a `?tab=plan → docs`
+    // back-compat shim, but the control itself is gone), and "Roadmap" is new.
+    for (const label of ['Details', 'Docs', 'Tasks', 'Roadmap']) {
       await expect(page.getByRole('tab', { name: label })).toBeVisible();
     }
-    // Both rails.
+    // Both rails — the right one is "Knowledge & activity" now.
     await expect(page.getByText('Stats & actions')).toBeVisible();
-    await expect(page.getByText('Sources & activity')).toBeVisible();
+    await expect(page.getByText('Knowledge & activity')).toBeVisible();
 
     // ?tab= drives the center panel and survives a reload.
     await page.getByRole('tab', { name: 'Tasks' }).click();
@@ -42,15 +43,19 @@ test.describe('Project detail page', () => {
     await expect(page.getByRole('button', { name: 'Collapse Stats & actions' })).toBeVisible();
   });
 
-  test('back affordance returns to the projects list', async ({ page }) => {
-    await page.goto(`/projects/view?id=${project.id}`);
-    await page.getByRole('link', { name: 'Projects', exact: true }).click();
-    await expect(page).toHaveURL(/\/projects\/?$/);
-  });
+  // A loaded detail page deliberately has no back affordance any more: per
+  // `page-header.tsx`, the desktop title bar owns history nav and the browser's
+  // own back button covers the web case (Phase 81 follow-up). The `BackLink`
+  // survives only in the loading / not-found branches, which have no header —
+  // so it's asserted there, below, rather than on the loaded page.
 
-  test('an unknown id shows an inline not-found, not a crash', async ({ page }) => {
+  test('an unknown id shows an inline not-found and a way back, not a crash', async ({ page }) => {
     await page.goto('/projects/view?id=does-not-exist');
-    await expect(page.getByText('Project not found.')).toBeVisible();
+    // `ResourceNotFound`'s <h1> is the ICU message `{noun} not found` — no
+    // trailing period, leading capital from `first-letter:uppercase` CSS.
+    await expect(page.getByRole('heading', { name: 'project not found' })).toBeVisible();
+    await page.getByRole('link', { name: 'All projects' }).click();
+    await expect(page).toHaveURL(/\/projects\/?$/);
   });
 
   test('a projects-list card navigates to the detail page (not a modal)', async ({ page }) => {

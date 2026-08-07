@@ -8,7 +8,13 @@ import { expect, test } from './helpers/harness';
 test.describe('Slides', () => {
   test.beforeEach(async ({ page }) => {
     // Start from an initialized-but-empty deck store (no first-run seed).
-    await page.addInitScript(() => {
+    //
+    // Deliberately NOT an `addInitScript`: those re-run on *every* navigation,
+    // so emptying the store there wiped the deck the test had just created the
+    // moment it navigated to `/slides` to look for it. Seed once, on a blank
+    // same-origin page, before the spec drives the app.
+    await page.goto('/slides');
+    await page.evaluate(() => {
       try {
         localStorage.setItem('midnite.slides.decks', '[]');
       } catch {

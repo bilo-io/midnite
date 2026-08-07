@@ -20,9 +20,11 @@ test.describe('Ops run-timeline drill-down', () => {
   test('renders a task’s run strip (empty state when no runs are recorded)', async ({ page }) => {
     await page.goto('/ops');
 
-    // Scope to the drill-down card by its heading.
+    // Scope to the drill-down card by its heading. Anchored on the widget
+    // wrapper rather than the card's own utility classes — `SectionCard` went
+    // `bg-card` → `surface-glass`, which silently emptied the old selector.
     const card = page
-      .locator('div.rounded-xl.border.bg-card')
+      .locator('.dashboard-panel')
       .filter({ has: page.getByRole('heading', { name: 'Run timeline' }) });
     await expect(card).toBeVisible();
 

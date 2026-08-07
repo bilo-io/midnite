@@ -33,7 +33,12 @@ async function setup(page: Page, settings: Record<string, unknown>, passcode?: s
 // the footer cluster (presence · connection) re-renders under it.
 async function lock(page: Page): Promise<void> {
   await expect(page.locator('aside nav').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Lock screen' }).dispatchEvent('click');
+  // The rail footer's control is `nav.footer.lock` — "Lock". It was
+  // `aria-label="Lock screen"` before the i18n sweep, and since accessible-name
+  // matching is substring-based, "Lock screen" stopped matching "Lock" entirely
+  // (the only surviving "Lock screen" is the command-palette entry, in a dialog
+  // that isn't open here).
+  await page.getByRole('button', { name: 'Lock', exact: true }).dispatchEvent('click');
 }
 
 test('lock with no passcode shows a dismissible screensaver', async ({ page }) => {

@@ -20,6 +20,14 @@
  * It POSTs the callbacks directly (echoing the inherited plaintext secret in the
  * `x-midnite-hook-secret` header) rather than shelling out to the real hook
  * scripts — same wire contract, fewer moving parts. Dependency-free CJS.
+ *
+ * It also answers the **one-shot** form (`claude -p <prompt>`, see the gateway's
+ * `oneshotCommand`) — print a response and exit. Managed runs spawn that way and
+ * capture stdout until exit, so without this branch the stub idled forever and
+ * every such run hung in `running`: the project plan-overview draft (Stage 1 of
+ * the breakdown flow) could never settle, which put the whole breakdown flow out
+ * of reach of the harness. The interactive session path is unaffected — it never
+ * carries `-p`.
  */
 'use strict';
 
@@ -27,9 +35,22 @@ const sessionId = process.env.MIDNITE_SESSION_ID;
 const secret = process.env.MIDNITE_HOOK_SECRET;
 const gatewayUrl = process.env.MIDNITE_GATEWAY_URL;
 
-// Not a wired agent session (no hook env) — nothing to drive; idle until killed
-// so we never masquerade as a live session we can't authenticate for.
-if (!sessionId || !secret || !gatewayUrl) {
+const promptFlag = process.argv.indexOf('-p');
+
+if (promptFlag !== -1) {
+  // One-shot: deterministic markdown, then exit 0 so the runner captures it and
+  // marks the run `done`. Content is generic on purpose — specs assert that a
+  // run settles and its output renders, never what a model would have said.
+  process.stdout.write(
+    '# Execution overview\n\n' +
+      'Stubbed overview from the e2e harness — no model was called.\n\n' +
+      '1. Set up the groundwork\n2. Build the feature\n3. Verify and ship\n',
+  );
+  process.exit(0);
+} else if (!sessionId || !secret || !gatewayUrl) {
+  // Not a wired agent session (no hook env) and not a one-shot — nothing to
+  // drive; idle until killed so we never masquerade as a live session we can't
+  // authenticate for.
   process.stdin.resume();
 } else {
   const base = gatewayUrl.replace(/\/$/, '');

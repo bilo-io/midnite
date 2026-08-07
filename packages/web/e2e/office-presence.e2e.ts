@@ -147,7 +147,7 @@ test.describe('Office presence (two contexts)', () => {
 
   test('solo: the office presence HUD mounts and shows only you', async ({ page }) => {
     await page.goto('/office');
-    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('main').locator('canvas')).toBeVisible({ timeout: 15_000 });
     // The roster renders you alone — no peers on a fresh, solo session.
     await expect(page.getByText(/In the office · 1/)).toBeVisible();
     await expect(page.getByText('You', { exact: true })).toBeVisible();

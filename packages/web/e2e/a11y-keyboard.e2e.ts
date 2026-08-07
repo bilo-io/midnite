@@ -87,11 +87,18 @@ test.describe('a11y — guide overlay keyboard nav', () => {
     await expect(overlay).toBeVisible();
     await expect(overlay).toHaveAttribute('aria-modal', 'true');
 
-    // ArrowRight advances to the next step (the closing "Replay anytime" step).
+    // ArrowRight advances a step at a time. The board tour is three steps —
+    // "Your board" → "Ready work" → the closing "Replay anytime" — and the
+    // middle anchor (`data-tour="board-column-todo"`) is unconditionally
+    // rendered, so the overlay's missing-anchor auto-skip never collapses it.
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('dialog', { name: 'Ready work' })).toBeVisible();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('dialog', { name: 'Replay anytime' })).toBeVisible();
 
     // ArrowLeft steps back.
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('dialog', { name: 'Ready work' })).toBeVisible();
     await page.keyboard.press('ArrowLeft');
     await expect(page.getByRole('dialog', { name: 'Your board' })).toBeVisible();
 

@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 import { expect, test } from './helpers/harness';
 
 /**
@@ -7,6 +9,24 @@ import { expect, test } from './helpers/harness';
  * need deterministic Phaser physics control and are left to a follow-up — they're
  * covered at the component level by the office-HUD stories (Phase 10 C2).
  */
+/**
+ * Both the 2D and the 3D controls hint end in "… E to interact", so a bare
+ * `/to interact/i` matches whichever engine is mounted — and both at once
+ * mid-swap. Match each engine's distinctive prefix instead.
+ */
+const HINT_2D = /arrows to move/i;
+const HINT_3D = /click to look around/i;
+
+/**
+ * The office engine's canvas, scoped to the page body.
+ *
+ * A bare `page.locator('canvas')` also matches `<AppBackdrop>`'s decorative
+ * canvas — mounted behind *every* `(main)` page whenever the appearance pattern
+ * has a canvas twin (`starfield`, the `dynamic` patterns). That's one Settings →
+ * Appearance click away at any time, so scope rather than rely on the default.
+ */
+const stageCanvas = (page: Page) => page.getByRole('main').locator('canvas');
+
 test.describe('Office', () => {
   test('mounts the Phaser canvas and HUD against the live gateway', async ({ page }) => {
     await page.goto('/office');
@@ -15,7 +35,7 @@ test.describe('Office', () => {
 
     // HUD overlay (React) renders regardless of the canvas; its controls hint is
     // always present.
-    await expect(page.getByText(/to interact/i)).toBeVisible();
+    await expect(page.getByText(HINT_2D)).toBeVisible();
 
     // The online count comes from the live-data hook reading the gateway's
     // sessions. No agents are seeded, so the office is empty.
@@ -23,7 +43,7 @@ test.describe('Office', () => {
 
     // The Phaser game mounts a <canvas> into the stage (creation is deferred a
     // tick to dodge StrictMode double-mount, hence the generous timeout).
-    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+    await expect(stageCanvas(page)).toBeVisible({ timeout: 15_000 });
   });
 
   // Phase 63 Theme A — the 3D office behind the ?view=3d escape hatch. The r3f
@@ -33,9 +53,9 @@ test.describe('Office', () => {
     await page.goto('/office?view=3d');
 
     await expect(page.getByRole('heading', { name: 'Office', exact: true })).toBeVisible();
-    // The pointer-lock hint is the 3D view's tell (the 2D HUD says "to interact").
-    await expect(page.getByText(/click to look around/i)).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+    // The pointer-lock hint is the 3D view's tell (the 2D HUD says "arrows to move").
+    await expect(page.getByText(HINT_3D)).toBeVisible({ timeout: 15_000 });
+    await expect(stageCanvas(page)).toBeVisible({ timeout: 15_000 });
   });
 
   // Phase 63 Theme G — flipping the 2D/3D tab strip must fully swap engines
@@ -47,19 +67,19 @@ test.describe('Office', () => {
     page.on('pageerror', (e) => errors.push(String(e)));
 
     await page.goto('/office');
-    await expect(page.getByText(/to interact/i)).toBeVisible();
-    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(HINT_2D)).toBeVisible();
+    await expect(stageCanvas(page)).toBeVisible({ timeout: 15_000 });
 
     // → 3D
     await page.getByRole('tab', { name: '3D' }).click();
-    await expect(page.getByText(/click to look around/i)).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('canvas')).toBeVisible();
+    await expect(page.getByText(HINT_3D)).toBeVisible({ timeout: 15_000 });
+    await expect(stageCanvas(page)).toBeVisible();
 
     // → back to 2D
     await page.getByRole('tab', { name: '2D' }).click();
-    await expect(page.getByText(/to interact/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(HINT_2D)).toBeVisible({ timeout: 15_000 });
     // The 3D-only pointer-lock hint is gone (its engine was torn down).
-    await expect(page.getByText(/click to look around/i)).toHaveCount(0);
+    await expect(page.getByText(HINT_3D)).toHaveCount(0);
 
     expect(errors).toEqual([]);
   });
