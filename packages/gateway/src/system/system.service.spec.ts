@@ -16,8 +16,14 @@ describe('SystemService', () => {
     expect(stats.cpu.usagePct).toBeLessThanOrEqual(100);
 
     expect(stats.memory.totalBytes).toBeGreaterThan(0);
-    // used = total - free, so the two partition the total exactly.
+    // `freeBytes` is *available* memory (reclaimable cache included), so it and
+    // `usedBytes` still partition the total exactly.
     expect(stats.memory.usedBytes + stats.memory.freeBytes).toBe(stats.memory.totalBytes);
+    // The partition above is true by construction and so proves nothing about
+    // accuracy. This is the real guard: a host running the test suite is never
+    // ~fully committed. Reading `os.freemem()` (truly-free pages only) put this
+    // at 99.4% on an idle 16 GiB Mac — bilo-io/midnite-app#3.
+    expect(stats.memory.usagePct).toBeLessThan(98);
 
     expect(Array.isArray(stats.disks)).toBe(true);
     for (const disk of stats.disks) {

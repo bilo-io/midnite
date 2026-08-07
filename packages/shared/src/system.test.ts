@@ -29,6 +29,12 @@ describe('SystemStatsSchema', () => {
     expect(() => SystemStatsSchema.parse(trimmed)).not.toThrow();
   });
 
+  it('allows loadAvg1 to be absent — Windows has no load average to report', () => {
+    const { loadAvg1: _omitted, ...cpu } = valid.cpu;
+    const parsed = SystemStatsSchema.parse({ ...valid, cpu });
+    expect(parsed.cpu.loadAvg1).toBeUndefined();
+  });
+
   it('rejects a percentage above 100', () => {
     const bad = { ...valid, cpu: { ...valid.cpu, usagePct: 140 } };
     expect(() => SystemStatsSchema.parse(bad)).toThrow();
