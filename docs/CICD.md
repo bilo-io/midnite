@@ -10,7 +10,7 @@
 | Surface | Trigger | Gated by |
 |---------|---------|----------|
 | **GitHub Actions — `ci` (`moon ci`)** | push to `main`, every PR | **PR:** only when a package is affected (`changes.outputs.code`); **`main`:** always, and always the full suite |
-| **GitHub Actions — `e2e` + visual** | push to `main`, every PR | runs only when `web`/`ui`/`shared`/`shell` affected (`webVisual`) |
+| **GitHub Actions — `e2e` + capture** | push to `main`, every PR | runs only when `web`/`ui`/`shared`/`shell` affected (`webVisual`); surfaced by the always-run `e2e-gate` |
 | **GitHub Actions — `coverage`** | push to `main`, every PR | `webVisual` or `gateway` affected |
 | **GitHub Actions — `gallery` + Storybook preview** | PR + `main` | `webVisual` affected |
 | **Vercel — `web`** | production branch (`main`) only | web subtree (`web`+`shared`+`ui`+`shell`) changed |
@@ -103,9 +103,20 @@ So a docs-only PR skips `moon ci`, `ci-gate` goes green, and the PR is mergeable
 
 ### Repoint branch protection (one-time)
 
-Make `ci-gate` the **only** required status check. The non-blocking jobs (`e2e`,
-`coverage`, `gallery`, `storybook`) must **not** be required — they're
-`continue-on-error` and gated, so requiring one would let a skip wedge a merge.
+Require **`ci-gate` and `e2e-gate`** — the two always-run aggregation jobs. The
+underlying jobs (`ci`, `e2e`) must **not** be required: they're affected-gated, so
+requiring one would let a legitimate skip wedge a merge.
+
+`e2e-gate` ([`e2e.yml`](../.github/workflows/e2e.yml)) mirrors `ci-gate` exactly:
+it passes when `e2e` succeeded **or** was skipped, and fails on a real failure.
+It exists because `e2e` previously carried a *job-level* `continue-on-error`,
+which made GitHub report the workflow **run** as `success` while the job was
+`failure` — so the suite was red on every `main` push for weeks behind a green
+badge. `continue-on-error` now sits on the screenshot-capture step alone, so a
+capture problem still can't block a merge but a flow regression can.
+
+The remaining non-blocking jobs (`coverage`, `gallery`, `storybook`) stay
+unrequired.
 
 > First check what's there: `gh api repos/{owner}/{repo}/branches/main/protection/required_status_checks`.
 > If it returns **`Branch not protected` (404)**, there's no protection yet — you're
@@ -117,11 +128,12 @@ Make `ci-gate` the **only** required status check. The non-blocking jobs (`e2e`,
 2. **Add classic branch protection rule** (or a ruleset).
 3. **Branch name pattern:** `main`.
 4. Tick **Require status checks to pass before merging**.
-5. Search for **`ci-gate`** and select it. *(Only checks that have run before appear —
-   `ci-gate` shows up once CI has run at least once on a PR.)*
+5. Search for **`ci-gate`** and **`e2e-gate`** and select both. *(Only checks that
+   have run before appear — they show up once each workflow has run at least once
+   on a PR.)*
 6. **Leave "Require branches to be up to date before merging" UNticked** — ticking it
    forces a rebase on every PR before merge, which fights the parallel-loop workflow.
-7. Add **only** `ci-gate`. Save.
+7. Add **only** `ci-gate` and `e2e-gate`. Save.
 
 **Option B — `gh` CLI.** When no protection exists yet this is a full `PUT`
 (not a `PATCH`):
@@ -129,7 +141,10 @@ Make `ci-gate` the **only** required status check. The non-blocking jobs (`e2e`,
 ```bash
 gh api -X PUT repos/{owner}/{repo}/branches/main/protection --input - <<'JSON'
 {
-  "required_status_checks": { "strict": false, "checks": [{ "context": "ci-gate" }] },
+  "required_status_checks": {
+    "strict": false,
+    "checks": [{ "context": "ci-gate" }, { "context": "e2e-gate" }]
+  },
   "enforce_admins": false,
   "required_pull_request_reviews": null,
   "restrictions": null
@@ -146,13 +161,13 @@ JSON
 
 ```bash
 gh api repos/{owner}/{repo}/branches/main/protection/required_status_checks \
-  --jq '.checks[].context'   # → ci-gate
+  --jq '.checks[].context'   # → ci-gate, e2e-gate
 ```
 
 **Two things to know once it's on:**
 
-- A **skipped `ci` now reads green through `ci-gate`** — a docs-only PR won't hang.
-  That's the whole point of requiring `ci-gate` rather than `ci`.
+- A **skipped `ci`/`e2e` now reads green through its gate** — a docs-only PR won't
+  hang. That's the whole point of requiring the gates rather than the jobs.
 - **CI must actually run** for `ci-gate` to report, so if GitHub Actions is ever
   billing-blocked, PRs won't be mergeable until it's restored (previously, with no
   required check, you could merge on local-green).

@@ -25,7 +25,8 @@ pnpm exec playwright test --headed                 # watch it drive a browser
 
 First time only, install the browser: `pnpm exec playwright install chromium`.
 
-> Run from the **primary checkout**, not a `.git/worktrees` worktree — Vite/Next
+> Worktrees live in the repo-root `.worktrees/` dir (outside `.git/`), so this
+> runs fine inside one. The old `.git/worktrees/<n>` layout did not — Vite/Next
 > tooling can't collect files under `.git/**`.
 
 ## How it works
@@ -37,7 +38,11 @@ First time only, install the browser: `pnpm exec playwright install chromium`.
   with its agent pool disabled and no LLM credentials
   ([`e2e/fixtures/midnite.e2e.json`](fixtures/midnite.e2e.json)) — it serves real
   REST/WS but never spawns an agent or makes an external call.
-- **Next dev** on **:3311**, pointed at that gateway via `NEXT_PUBLIC_GATEWAY_URL`.
+- **The app** on **:3311**, pointed at that gateway via `NEXT_PUBLIC_GATEWAY_URL`.
+  In CI (and locally with `E2E_BUILD=1`) that's a real `next build` +
+  `next start`; otherwise it's `next dev`, whose per-route on-demand compile is
+  fast to boot but lands *inside* the 60s test budget. Use `E2E_BUILD=1` for a
+  full-suite run so it matches CI; leave it off for a single-spec loop.
 
 Dedicated ports (see [`config.ts`](config.ts)) keep a run from colliding with your
 dev `:3000`/`:7777`. Specs seed data over the gateway REST API
@@ -96,8 +101,10 @@ key page (board, dashboard, workflows, councils, office) in **light and dark** t
 
 These are **preview artifacts, not `toHaveScreenshot` baselines** — there's no
 pixel assertion, so the task never fails on a rendering delta and never commits
-OS-specific images. The committed visual baseline + diff (Theme E2) and the CI
-artifact upload + gallery (Theme E3) build on top of this capture.
+OS-specific images. (There briefly were baselines; they were macOS-generated
+while CI runs on `ubuntu-latest`, so they could never have passed there, and the
+step that would have run them was skipped on every run anyway.) The CI artifact
+upload + gallery (Theme E3) build on top of this capture.
 
 ## Docs feature screenshots
 
@@ -117,5 +124,7 @@ CAPTURE_DOCS=1 pnpm exec playwright test --project=screenshots docs-features.sho
 ## Not in `moon ci`
 
 `web:e2e` and `web:screenshots` are heavier and spawn servers, so they're kept
-out of the default `:test` gate and out of `moon ci` (`runInCI: false`). A
-dedicated CI job + screenshot artifacts are Phase 10 Themes F / E3.
+out of the default `:test` gate and out of `moon ci` (`runInCI: false`). They run
+in their own workflow, [`e2e.yml`](../../../.github/workflows/e2e.yml), whose
+result is surfaced by the always-run **`e2e-gate`** job — that's the check branch
+protection requires, not `e2e` itself (a gated skip must not wedge a merge).

@@ -99,17 +99,11 @@ The `web:test` task runs two Vitest projects:
 > fully green cold. Because `optimizeDeps` is not a moon `test` input, cold-verify a
 > change with `rm -rf packages/{web,ui}/node_modules/.vite && moon run <pkg>:test --force`.
 >
-> **Remaining web storybook failures are unrelated & pre-existing.** A few `web`
-> stories (`components/auth/auth-hero`, `components/auth/sso-buttons`,
-> `components/guardrails-control`) fail their `play` assertions deterministically —
-> stale assertions that drifted from shipped behaviour (e.g. sso-buttons expects the
-> non-configured provider hidden, contradicting the "SSO buttons always visible"
-> decision). These were masked by the collection flake above and are **not** a flake;
-> they are tracked separately. The required gate stands on
-> **typecheck + lint + unit tests + build** (+ the story render smoke coverage that
-> passes); the web storybook `play` suite is not yet fully green.
+> The three drifted `play` assertions this note used to list (`auth-hero`,
+> `sso-buttons`, `guardrails-control`) were realigned with shipped behaviour and
+> the web storybook suite is green — `moon ci` passes on `main`.
 
-**Accessibility:** `@storybook/addon-a11y` runs axe-core against every story. Currently set to `parameters.a11y.test: 'todo'` (warnings only). Violations are tracked in [phase-10-test-suite-hardening.md](../todo/phase-10-test-suite-hardening.md) Theme C3.
+**Accessibility:** `@storybook/addon-a11y` runs axe-core against every story, at `parameters.a11y.test: 'error'` in both [`web`](../packages/web/.storybook/preview.tsx) and [`ui`](../packages/ui/.storybook/preview.tsx) — a violation of an enabled rule fails the story. `ui` disables `color-contrast` on purpose: tokens are audited more precisely by `scripts/contrast-audit.mjs`.
 
 **Adding a story:**
 1. Create `packages/web/stories/<ComponentName>.stories.tsx`.
@@ -158,23 +152,7 @@ node packages/web/scripts/generate-gallery.mjs
 # writes packages/web/e2e/__shots__/gallery.html + SCREENSHOTS.md
 ```
 
-**Visual regression baselines** (Phase 10 E2): `pages.shots.ts` also includes `toHaveScreenshot` assertions against committed baselines in `packages/web/e2e/__screenshots__/`. To update baselines after an intentional UI change:
-
-```bash
-# macOS (local):
-pnpm exec playwright test --project=screenshots --update-snapshots
-
-# Linux-compatible (for CI on ubuntu-latest):
-docker run --rm \
-  -v "$(pwd)":/work -w /work \
-  mcr.microsoft.com/playwright:v1.50.0-jammy \
-  bash -c "pnpm install --frozen-lockfile && pnpm exec playwright install chromium && \
-    pnpm exec playwright test --project=screenshots --update-snapshots"
-```
-
-Commit the updated PNGs — they are the new baselines.
-
-> Current baselines are macOS. The CI `e2e` job runs on `ubuntu-latest`; Linux baselines are needed for the `toHaveScreenshot` assertions to pass in CI (see [phase-10-test-suite-hardening.md](../todo/phase-10-test-suite-hardening.md) E2 ⚠️ TODO).
+**Capture only — there are no `toHaveScreenshot` baselines.** There used to be: OS-pinned PNGs in `packages/web/e2e/__screenshots__/`, generated on macOS while the CI job runs on `ubuntu-latest`, so the assertion could not have passed there. It never got the chance to try — the visual step sat behind a flow step that failed on every run and was `skipped` every time. Rather than carry images only a Docker round-trip can regenerate, the shots are preview artifacts for human review and the flow specs own the behavioural assertions.
 
 ---
 
@@ -183,7 +161,7 @@ Commit the updated PNGs — they are the new baselines.
 | Workflow | Trigger | What runs |
 |----------|---------|-----------|
 | `ci.yml` | push to main · PR | `moon ci` — typecheck + test + build + lint (affected-aware). Includes Storybook stories via `web:test`. |
-| `e2e.yml` | push to main · PR | Playwright flow tests (`web:e2e`) + visual regression (`web:screenshots` + `toHaveScreenshot`). `continue-on-error: true`. Also runs coverage for gateway + web. |
+| `e2e.yml` | push to main · PR | Playwright flow tests + screenshot capture, gated on the web-visual affected set. The **flow** step blocks (surfaced by the always-run `e2e-gate` job — require that, not `e2e`); the **capture** step is `continue-on-error` and never blocks. Also runs coverage for gateway + web. |
 | `preview.yml` | push to main · PR | Captures `__shots__/` + generates gallery, uploads as artifact. Builds Storybook + deploys to GitHub Pages (`/pr-<N>/` or `/main/`). |
 
 ---
