@@ -72,6 +72,12 @@ test.describe('a11y — guide overlay keyboard nav', () => {
 
   test('overlay is a focused modal dialog driven by arrows/Enter/Escape', async ({ page }) => {
     await page.goto('/tasks');
+    // Wait for the board itself before launching its tour. The overlay's
+    // missing-anchor handling *advances* rather than stranding the user on an
+    // invisible step (`guide-overlay.tsx` `measure()`), so starting the tour
+    // before the client-side board has painted silently skips both
+    // board-anchored steps and lands on the closing one.
+    await expect(page.getByRole('heading', { name: 'Todo', exact: true })).toBeVisible();
 
     // Open the assistant → all-guides index → the board tour.
     await page.getByRole('button', { name: 'Open assistant' }).click();

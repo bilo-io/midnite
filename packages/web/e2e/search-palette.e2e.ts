@@ -29,10 +29,11 @@ test.describe('Command palette search', () => {
     // as the title, once in the match snippet — which is a strict-mode violation.
     await expect(palette.getByRole('option', { name: title })).toBeVisible();
 
-    // Enter routes to the entity and closes the palette.
+    // Enter routes to the entity and closes the palette. A task result lands on
+    // the board with its own modal open (`?task=<id>`), not on a bare `/tasks`.
     await page.keyboard.press('Enter');
     await expect(palette).toBeHidden();
-    await expect(page).toHaveURL(/\/tasks\/?$/);
+    await expect(page).toHaveURL(/\/tasks\/?\?task=/);
   });
 
   test('skips the network and prompts for a longer query below the minimum', async ({ page }) => {

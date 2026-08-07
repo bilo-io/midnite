@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { expect, mergeSettings, test } from './helpers/harness';
+import { expect, mergeSettings, pressGlobalKey, test } from './helpers/harness';
 
 /**
  * Screen lock (Phase 73 Theme C) — the idle/lock screensaver now renders on the
@@ -49,9 +49,11 @@ test('lock with no passcode shows a dismissible screensaver', async ({ page }) =
   const dialog = page.getByRole('dialog', { name: /screensaver/i });
   await expect(dialog).toBeVisible();
 
-  // Any key wakes it (no passcode → dismissible).
-  await page.keyboard.press('Space');
-  await expect(dialog).toBeHidden();
+  // Any key wakes it (no passcode → dismissible). Retried, because `LockScreen`
+  // registers its `keydown` listener in an effect that runs after the portal
+  // paints — so the dialog is already visible for a beat before a keypress can
+  // land, and a single un-retried press is simply lost.
+  await pressGlobalKey(page, 'Space', () => expect(dialog).toBeHidden({ timeout: 2_000 }));
 });
 
 test('lock with a passcode keeps the screen locked through a wake gesture', async ({ page }) => {

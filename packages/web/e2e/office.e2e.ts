@@ -38,8 +38,11 @@ test.describe('Office', () => {
     await expect(page.getByText(HINT_2D)).toBeVisible();
 
     // The online count comes from the live-data hook reading the gateway's
-    // sessions. No agents are seeded, so the office is empty.
-    await expect(page.getByText('0 agents online')).toBeVisible();
+    // sessions. Not pinned to zero: the suite shares one gateway for the whole
+    // run, and by the time this spec runs, earlier specs (reply-resume, the
+    // breakdown overview) have started real stub-agent sessions. What matters
+    // here is that the HUD is reading live gateway data at all.
+    await expect(page.getByText(/\d+ agents? online/)).toBeVisible();
 
     // The Phaser game mounts a <canvas> into the stage (creation is deferred a
     // tick to dodge StrictMode double-mount, hence the generous timeout).

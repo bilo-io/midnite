@@ -23,8 +23,11 @@ test.describe('Memory workspace page', () => {
     // a memory whose title merely contains "Studio" would resolve to two headings.
     await expect(page.getByRole('heading', { name: 'Sources', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Studio', exact: true })).toBeVisible();
-    // The centre is the chat thread; its composer scaffold is present.
-    await expect(page.getByLabel('Ask this memory a question')).toBeDisabled();
+    // The centre is the chat thread. Its composer is present and live — it used
+    // to render disabled here; the "no reachable model" degrade is now a hint
+    // shown in place of the input, which the Chat spec below covers on both
+    // branches.
+    await expect(page.getByLabel('Ask this memory a question')).toBeVisible();
   });
 
   // The doc editor moved out of the centre column into a metadata modal behind
