@@ -132,12 +132,35 @@ Every one of these is a spec that stopped describing the product:
       has specified this for a while and it has never existed
       (`…/branches/main/protection` → 404, `…/rulesets` → `[]`).
 
+## Follow-ups the newly-visible capture step revealed
+
+The capture step had been `skipped` on every run ever recorded, so nobody had seen its
+state. On its first real run: **29 failed · 1 flaky · 93 passed**. Two distinct findings,
+neither caused by Phase 85, and neither fixed here:
+
+- [ ] **A real responsive bug.** `mobile-audit.shots.ts` is an assertion, not a capture,
+      and it fails at every phone width:
+      `Horizontal body scroll at 320px on: tasks (+96px), media (+187px), workflows (+32px), task-detail (+325px)`
+      — same at 375 / 390 / 768 / landscape, plus `mobile-layout.shots.ts` at 390. Needs a
+      layout decision, not a test edit.
+- [ ] **The harness gap, one layer out.** `helpers/screenshots.ts` dismisses the setup
+      *nudge* but not the *wizard* or the screensaver, and `helpers/harness.ts` covers
+      only `*.e2e.ts` — so the `.shots.ts` specs still fight the overlay this phase
+      removed everywhere else (e.g. `accent-surfaces` times out clicking a "Customise"
+      button the wizard backdrop swallows). ~20 of the 29. Mechanical: extend the harness
+      to the other glob.
+
 ## Verification
 
 ```bash
 cd packages/web
 E2E_BUILD=1 pnpm exec playwright test --project=chromium --reporter=list
+# local:  85 passed (3.3m)
+# CI:     84 passed · 1 flaky · 0 failed (5.6m) — was 31 failed · 8 flaky · 46 passed (34.7m)
 ```
+
+The CI flake is `reconnect-resume.e2e.ts:106` (passed on retry) — the spec whose
+count-badge locator this phase repointed; worth watching.
 
 Done means the `e2e` **job** (not just the run) reports `success` in
 `gh run view <id> --json jobs`, the capture step no longer reports `skipped`, and
