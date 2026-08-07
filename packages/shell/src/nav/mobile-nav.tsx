@@ -22,6 +22,26 @@ import { isActivePath, type NavItem, type NavLinkComponent } from '../app-frame'
 const DEFAULT_MAX_TABS = 4;
 
 /**
+ * The tab bar's height — 4rem of controls plus the iPhone home-indicator inset —
+ * appears as a Tailwind arbitrary value at three sites, because Tailwind's JIT
+ * only emits class literals it can see in the source: the bar's own `h-`, the
+ * `More` sheet's bottom clearance below, and `AppFrame`'s `<main>` padding. Keep
+ * the three in step; the sheet's copy drifting out of step with its own transform
+ * is what hid the bar (bilo-io/midnite-app#5).
+ */
+
+/**
+ * Stacking order for the three fixed layers, lowest first. The invariant the
+ * whole file exists to hold: **the tab bar is the topmost layer**, so no state of
+ * the `More` sheet can ever paint over it — the bug in #5 was an opaque sheet at
+ * `z-50` covering a bar at `z-40`. The backdrop stays above page content
+ * (composers and docked bars sit at `z-30`) but below the sheet it dims for.
+ */
+const BACKDROP_Z = 'z-[36]';
+const SHEET_Z = 'z-[38]';
+const NAV_Z = 'z-40';
+
+/**
  * Injected copy for the mobile nav's own strings (Phase 82 E). Shell stays
  * catalog-free — the host passes t()-derived values; every field falls back to
  * the English default, so omitting the prop is non-breaking.
@@ -116,21 +136,29 @@ export function AppMobileNav({
 
   return (
     <>
-      {/* Backdrop — sits below the nav bar (z-[39]) so it covers page content but
-          leaves the tab bar visible. */}
+      {/* Backdrop — above page content, below the sheet and the tab bar, so it
+          dims the page while both stay crisp. */}
       <button
         type="button"
         aria-label={copy.closeMenu}
         onClick={() => setOpen(false)}
         className={cn(
-          'fixed inset-0 z-[39] bg-background/70 backdrop-blur-sm md:hidden',
+          'fixed inset-0 bg-background/70 backdrop-blur-sm md:hidden',
+          BACKDROP_Z,
           'transition-opacity duration-300 motion-reduce:transition-none',
           open ? 'opacity-100' : 'opacity-0 pointer-events-none',
         )}
       />
 
-      {/* Drawer — separate from backdrop so it can sit above the nav bar (z-50)
-          while the backdrop stays below it. Slides up/down via translateY. */}
+      {/* Drawer — anchored to the viewport floor, NOT to the top of the tab bar,
+          because `translate-y-full` shifts an element by its own height and
+          nothing more: anchored at `bottom: 4rem` the closed sheet came to rest
+          with its top edge exactly on the bar and, being opaque, hid it
+          completely (bilo-io/midnite-app#5). At `bottom-0` the same transform
+          genuinely clears the viewport, and the bar's height is reserved as
+          padding instead so the content still stops above it. Rendered *below*
+          the bar so no state of this sheet — and no bloom of its shadow — can
+          reach it. Slides up/down via translateY. */}
       <div
         id="mobile-nav-more"
         role="dialog"
@@ -138,7 +166,16 @@ export function AppMobileNav({
         aria-label={copy.menu}
         aria-hidden={!open}
         className={cn(
-          'fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-50 max-h-[60dvh] overflow-y-auto rounded-t-2xl border-t border-border/60 bg-card p-3 shadow-2xl md:hidden',
+          'fixed inset-x-0 bottom-0 overflow-y-auto rounded-t-2xl border-t border-border/60 bg-card px-3 pt-3 md:hidden',
+          // The bar's height, reserved so the tiles/theme/lock row land above it.
+          'pb-[calc(0.75rem+4rem+env(safe-area-inset-bottom))]',
+          SHEET_Z,
+          // The content budget is unchanged (60dvh) — the reserved bar height is
+          // added on top of it rather than eaten out of it.
+          'max-h-[calc(60dvh+4rem+env(safe-area-inset-bottom))]',
+          // Top-biased shadow: an all-round `shadow-2xl` bloomed downward across
+          // the tab bar, which is the odd dark seam in the issue's second shot.
+          'shadow-[0_-12px_32px_-16px_rgb(0_0_0/0.35)]',
           'transition-transform duration-300 ease-out motion-reduce:transition-none',
           open ? 'translate-y-0' : 'translate-y-full pointer-events-none',
         )}
@@ -189,7 +226,12 @@ export function AppMobileNav({
           home indicator on iPhone. */}
       <nav
         aria-label={copy.navLabel}
-        className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border/60 bg-background/95 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
+        className={cn(
+          'fixed inset-x-0 bottom-0 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border/60 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur md:hidden',
+          NAV_Z,
+          // Opaque enough to read cleanly with the sheet sliding up behind it.
+          'bg-background/95 supports-[backdrop-filter]:bg-background/80',
+        )}
       >
         {tabs.map((item) => (
           <TabLink
