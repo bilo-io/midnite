@@ -151,6 +151,20 @@ Post, terse:
 
 **This skill does not merge.** Stop here and let the human review. Do not run `gh pr merge`, and do not tear down the worktree — the branch is still live.
 
+**Before you stop, arm a merge watcher.** A worktree is ~5 GB; four of them is 20 GB of disk sitting idle because nobody remembered to sweep after a merge. So the last thing you do at Stage 11 is start a background wait that fires when the PR reaches a terminal state — one notification, no polling by you:
+
+```bash
+until s=$(gh pr view <n> --json state --jq .state 2>/dev/null); \
+      [ "$s" = "MERGED" ] || [ "$s" = "CLOSED" ]; do sleep 120; done; echo "PR #<n>: $s"
+```
+
+Launch it with `run_in_background: true`. When it fires:
+
+- **MERGED** → do Stage 12's *post-merge* half (issue comment + close, CHANGELOG if user-facing, teardown). You do **not** need to ask again: the human merging *is* the go-ahead for the follow-through. Only the `gh pr merge` call itself needs their say-so.
+- **CLOSED** without merging → the work was rejected. Say so, leave the worktree, and don't comment on the public issue.
+
+If the session ends before it fires, nothing is lost — Stage 13's sweep catches it next run.
+
 ## 12 · Only if the user says merge
 - `gh pr merge <n> --squash --delete-branch` (always squash).
 - **Close the loop on the public issue by hand** — nothing else will:
@@ -163,12 +177,62 @@ Post, terse:
 - Teardown, and report the reclaimed space:
   ```bash
   freed=$(du -sk .worktrees/issue-<N>-<slug> 2>/dev/null | cut -f1)
-  git worktree remove .worktrees/issue-<N>-<slug>     # --force if it balks over untracked noise
+  git worktree remove .worktrees/issue-<N>-<slug>
   git branch -D fix/issue-<N>-<slug>                  # -D: a squash leaves it "unmerged"
   git worktree prune && git worktree list
   echo "freed ~$(( freed / 1024 )) MB"
   ```
+
+  **Never pass `--force`.** `git worktree remove` refuses when the tree has
+  modified or untracked files, and that refusal is a safety feature, not noise to
+  override. midnite runs agents in parallel: a "stale" worktree can have a *live*
+  session editing it, and a clean survey goes stale in minutes — this has been
+  observed going from `dirty-entries=0` to two modified files inside the same
+  cleanup pass. If a removal balks, leave that worktree alone, name it, and say
+  why. The only case for `--force` is one you have personally inspected and can
+  name the throwaway files in.
 - Wrap-up: `# 🎉 Fixed: <issue title>` (both links) · what landed · `🧹 Reclaimed ~<N> MB` · `## ⏭️ Next up` (the runner-up from Stage 3).
+
+## 13 · Sweep landed worktrees
+
+Run this at the **start** of every `/exec-issue`, before Stage 1 — it's cheap, and
+it reclaims disk from runs whose merge landed after their session ended (the
+common case, since Stage 11's watcher dies with its session).
+
+A worktree is safe to remove only when **all three** hold:
+
+1. its PR is `MERGED` (a squash-merge means the branch is *not* an ancestor of
+   `main`, so PR state is the oracle — never `git branch --merged`);
+2. `git rev-list --count origin/main..<branch>` is `0`, i.e. it holds no commit
+   that isn't in `main`;
+3. `git status --porcelain` in that worktree is **empty right now** — re-check at
+   the moment of removal, not from a survey taken minutes earlier.
+
+```bash
+git fetch origin -q
+git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch /{print w"\t"$2}' \
+  | grep '\.worktrees/' | while IFS=$'\t' read -r dir ref; do
+      b=${ref#refs/heads/}
+      ahead=$(git rev-list --count "origin/main..$b" 2>/dev/null)
+      dirty=$(git -C "$dir" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+      state=$(gh pr list --state all --head "$b" --json state --jq '.[0].state' 2>/dev/null)
+      printf '%-46s ahead=%-4s dirty=%-4s pr=%s\n' "$b" "$ahead" "$dirty" "${state:-none}"
+    done
+```
+
+Report the table, then remove only the rows that qualify, per-worktree, with the
+Stage 12 commands. Two rows to leave and call out explicitly rather than tidy away:
+
+- **dirty > 0** — unlanded work, possibly a live parallel session. Leave it.
+- **`pr=none` with `ahead=0` and clean** — an empty worktree that never produced a
+  commit. Nothing to lose, so removing it is safe, but say that's what it was
+  rather than implying you reclaimed real work.
+
+Sum the freed space and report one `🧹 Reclaimed ~<N> GB` line.
 
 ---
 Autonomous through Stages 7–11 once the human has chosen (Stage 3) and answered the plan questions (Stage 6). Stop for: an unlocatable root cause (Stage 5), an unresolved design question, a destructive/irreversible step, CI you can't fix — and always at Stage 11.
+
+Stage 13's sweep is autonomous (it only removes worktrees that pass all three
+checks). Stage 12 is autonomous **after** the human merges — the merge is the
+go-ahead; only `gh pr merge` itself needs asking.
