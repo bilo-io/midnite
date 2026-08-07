@@ -286,9 +286,9 @@ describe('appearanceInitScript', () => {
     expect(html.getAttribute('data-accent-preset')).toBe('brand');
     expect(html.hasAttribute('data-accent-gradient')).toBe(true);
     expect(html.style.getPropertyValue('--accent-gradient')).toContain('linear-gradient');
-    // Motion defaults to system; bg defaults to the neuro-cloud starfield; no uiFont override.
+    // Motion defaults to system; bg defaults to the subtle `none` wash; no uiFont override.
     expect(html.getAttribute('data-motion')).toBe('system');
-    expect(html.getAttribute('data-bg')).toBe('starfield');
+    expect(html.getAttribute('data-bg')).toBe('none');
     expect(html.hasAttribute('data-ui-font')).toBe(false);
   });
 

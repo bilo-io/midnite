@@ -21,7 +21,7 @@ describe('UserPreferencesSchema', () => {
       theme: 'system',
       locale: 'en-GB',
       navMode: 'auto',
-      backgroundPattern: 'starfield',
+      backgroundPattern: 'none',
       bgIntensity: 'balanced',
       bgDynamic: true,
       accent: BRAND_ACCENT,
@@ -158,8 +158,14 @@ describe('coerceBackgroundPattern', () => {
     expect(coerceBackgroundPattern(42)).toBe(BACKGROUND_PATTERN_DEFAULT);
   });
 
-  it('defaults to the starfield', () => {
-    expect(BACKGROUND_PATTERN_DEFAULT).toBe('starfield');
+  it('migrates the removed `diagonal-lines` to the default', () => {
+    // Anyone who had the diagonal stripes selected when it was dropped hydrates
+    // onto `none` rather than an unpaintable `data-bg`.
+    expect(coerceBackgroundPattern('diagonal-lines')).toBe('none');
+  });
+
+  it('defaults to the subtle gradient', () => {
+    expect(BACKGROUND_PATTERN_DEFAULT).toBe('none');
   });
 });
 
