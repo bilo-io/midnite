@@ -113,7 +113,10 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
   // width-capped exactly like the dashboard composer. Content above scrolls
   // behind the theme fade.
   const composerBar = (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 transition-[padding] duration-200 md:[padding-left:var(--nav-offset)]">
+    // Below `md`, reserve the mobile tab bar's height — it sits above this at
+    // z-40, so without the padding the composer's lower rows render behind it
+    // (bilo-io/midnite-app#5).
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 pb-[calc(4rem+env(safe-area-inset-bottom))] transition-[padding] duration-200 md:pb-0 md:[padding-left:var(--nav-offset)]">
       {/* Tall theme fade so the thread washes out behind the composer. */}
       <div className="bg-gradient-to-t from-background from-45% via-background/85 to-transparent pb-6 pt-20">
         <div className="container">
