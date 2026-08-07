@@ -21,21 +21,21 @@ import { isActivePath, type NavItem, type NavLinkComponent } from '../app-frame'
 /** How many flattened nav items get a dedicated bottom tab before the rest spill into `More`. */
 const DEFAULT_MAX_TABS = 4;
 
-/**
- * The tab bar's height — 4rem of controls plus the iPhone home-indicator inset —
- * appears as a Tailwind arbitrary value at three sites, because Tailwind's JIT
- * only emits class literals it can see in the source: the bar's own `h-`, the
- * `More` sheet's bottom clearance below, and `AppFrame`'s `<main>` padding. Keep
- * the three in step; the sheet's copy drifting out of step with its own transform
- * is what hid the bar (bilo-io/midnite-app#5).
- */
+// The bar's height (4rem of controls plus the iPhone home-indicator inset) is
+// spelled out as a Tailwind arbitrary value everywhere something has to clear it
+// — the bar's own `h-`, the `More` sheet's bottom padding below, and each docked
+// composer in `web` — because Tailwind's JIT only emits class literals it can
+// read in the source, so a shared constant would generate nothing. Keep them in
+// step: the sheet's copy drifting out of step with its own transform is exactly
+// what hid the bar (bilo-io/midnite-app#5). `AppFrame`'s `<main>` deliberately
+// pads slightly more (4.5rem) to leave a gap above the bar.
 
 /**
- * Stacking order for the three fixed layers, lowest first. The invariant the
- * whole file exists to hold: **the tab bar is the topmost layer**, so no state of
- * the `More` sheet can ever paint over it — the bug in #5 was an opaque sheet at
- * `z-50` covering a bar at `z-40`. The backdrop stays above page content
- * (composers and docked bars sit at `z-30`) but below the sheet it dims for.
+ * Stacking order for the three fixed layers, lowest first. The invariant this
+ * file exists to hold: **the tab bar is the topmost layer**, so no state of the
+ * `More` sheet can ever paint over it — the bug in #5 was an opaque sheet at
+ * `z-50` covering a bar at `z-40`. The backdrop stays above page content (docked
+ * composers and bars sit at `z-30`) but below the sheet it dims for.
  */
 const BACKDROP_Z = 'z-[36]';
 const SHEET_Z = 'z-[38]';
