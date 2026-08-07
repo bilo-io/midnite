@@ -94,6 +94,15 @@ type Shockwave = { x: number; y: number; born: number; kick: number; speed: numb
 type Vortex = { x: number; y: number; dx: number; dy: number; born: number; hold: number };
 
 // ── Tuning ────────────────────────────────────────────────────────────────────
+/**
+ * Simulation rate for the ambient cloud. Deliberately below the display's
+ * refresh rate: this is a slow-drifting decorative backdrop, so 30fps is
+ * visually indistinguishable from 120 while costing a quarter as much. Left
+ * uncapped it ran at whatever the panel offered, which made the app burn more
+ * CPU on better hardware (bilo-io/midnite-app#4).
+ */
+const TARGET_FPS = 30;
+const FRAME_MS = 1000 / TARGET_FPS;
 const WELL_RADIUS = 280; // px — reach of the cursor gravity well
 const HOVER_PULL = 320; // subtle passive well: radial attraction (px/s²)
 const HOVER_SWIRL = 260; // …and its tangential (orbit) acceleration
@@ -753,12 +762,21 @@ export function NeuroCloudBackground({
 
     let last = performance.now();
     let raf = 0;
+    let lastFrame = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      if (document.hidden || w === 0 || h === 0) {
+      if (w === 0 || h === 0) {
         last = performance.now();
         return;
       }
+      // Cap the simulation rate. Without this the loop ran at whatever the
+      // display offers, so a 120Hz ProMotion Mac paid exactly double a 60Hz one
+      // for an ambient backdrop nobody is watching frame-by-frame — the app got
+      // hotter on better hardware (bilo-io/midnite-app#4). The drift is slow
+      // enough that TARGET_FPS is indistinguishable from 60+.
+      const nowMs = performance.now();
+      if (nowMs - lastFrame < FRAME_MS) return;
+      lastFrame = nowMs;
       const t = now();
       const dt = Math.min(0.05, (performance.now() - last) / 1000);
       last = performance.now();
@@ -824,10 +842,28 @@ export function NeuroCloudBackground({
         nextConstellationAt = t + 7 + Math.random() * 7;
       }
     };
-    raf = requestAnimationFrame(loop);
+    // Park properly while the document is hidden rather than re-arming a frame
+    // that immediately bails: `raf === 0` means genuinely stopped, and the
+    // visibility listener restarts it. `last`/`lastFrame` reset on resume so the
+    // first frame back doesn't integrate the whole hidden period.
+    const start = () => {
+      if (raf) return;
+      last = performance.now();
+      lastFrame = 0;
+      raf = requestAnimationFrame(loop);
+    };
+    const stop = () => {
+      if (!raf) return;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    const onVisibility = () => (document.hidden ? stop() : start());
+    document.addEventListener('visibilitychange', onVisibility);
+    if (!document.hidden) start();
 
     return () => {
-      cancelAnimationFrame(raf);
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
