@@ -58,7 +58,7 @@ const IP_HIT = {
 
 describe('WeatherService.locate', () => {
   it('geo-locates the supplied public client IP', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify(IP_HIT), { status: 200 }));
+    const fetchMock = vi.fn(async (_url: string | URL) => new Response(JSON.stringify(IP_HIT), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     const service = new WeatherService();
@@ -72,7 +72,7 @@ describe('WeatherService.locate', () => {
   // asked to locate the caller — which is the gateway's own egress IP, i.e. the
   // user's network.
   it('falls back to the gateway egress IP when no client IP is routable', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify(IP_HIT), { status: 200 }));
+    const fetchMock = vi.fn(async (_url: string | URL) => new Response(JSON.stringify(IP_HIT), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     const service = new WeatherService();
