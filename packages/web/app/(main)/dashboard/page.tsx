@@ -57,7 +57,11 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 transition-[padding] duration-200 md:[padding-left:var(--nav-offset)]">
+      {/* Below `md` the mobile tab bar owns the bottom 4rem (plus the home
+          indicator) and sits above this at z-40, so reserve its height — without
+          it the composer's lower rows, `Add` button included, render behind the
+          bar (bilo-io/midnite-app#5). */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 pb-[calc(4rem+env(safe-area-inset-bottom))] transition-[padding] duration-200 md:pb-0 md:[padding-left:var(--nav-offset)]">
         <div className="bg-background/0 pb-6 pt-2">
           <div className="container">
             <div className="pointer-events-auto mx-auto w-full max-w-3xl" data-tour="dashboard-composer">
