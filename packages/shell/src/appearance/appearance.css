@@ -428,30 +428,48 @@
 /*
  * Phase 68 E — opt-in animated gradient accent. When a gradient's `animate` flag
  * is set, the applier builds it with `var(--accent-angle)` and sets
- * `data-accent-animate`; this spins the angle. Registered `@property` makes the
- * custom-property animation smooth, and (inherits: true) propagates the value to
- * every element painting `var(--accent-gradient)`. Gated exactly like
- * `.bg-animated-gradient`: off under `data-motion='reduced'`, and off under the OS
- * `prefers-reduced-motion` unless the user opted into `full`.
+ * `data-accent-animate`; this spins the angle. A registered `@property` is what
+ * makes the custom-property animation interpolate smoothly instead of stepping.
+ * Gated exactly like `.bg-animated-gradient`: off under `data-motion='reduced'`,
+ * and off under the OS `prefers-reduced-motion` unless the user opted into `full`.
+ *
+ * `inherits: false` is load-bearing, not a detail. This property was originally
+ * inheriting and animated on `<html>`. An *inheriting* custom property animated
+ * on the root pushes a new value onto every element in the document each frame,
+ * so Chromium invalidates paint for the whole tree — not just the dozen rules
+ * that actually paint `var(--accent-gradient)`. Measured at ~53 percentage
+ * points of one core, sustained, at display refresh rate (worse on 120Hz
+ * ProMotion), on every page, for every user: bilo-io/midnite-app#4.
+ *
+ * With it non-inheriting, the value can't propagate, so the spin is attached to
+ * the painting elements themselves (below, and in the app's own stylesheet) and
+ * each repaints only itself.
+ *
+ * Consequence to respect when adding a new gradient surface: because a
+ * *registered* property always resolves to its `initial-value` rather than
+ * falling through `var()`, a painter that is NOT listed as an animation target
+ * silently renders at 0deg instead of the configured angle. Add new painters to
+ * the selector lists below (and to `--accent-painters` in the app's globals.css).
  */
 @property --accent-angle {
   syntax: '<angle>';
   initial-value: 0deg;
-  inherits: true;
+  inherits: false;
 }
 @keyframes accent-angle-spin {
   to {
     --accent-angle: 360deg;
   }
 }
-html[data-accent-animate] {
+html[data-accent-animate] :is(.accent-gradient-surface, .bg-primary, [data-accent-surface]) {
   animation: accent-angle-spin 8s linear infinite;
 }
-html[data-accent-animate][data-motion='reduced'] {
+html[data-accent-animate][data-motion='reduced'] :is(.accent-gradient-surface, .bg-primary, [data-accent-surface]) {
   animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  html[data-accent-animate]:not([data-motion='full']) {
+  html[data-accent-animate]:not([data-motion='full'])
+    :is(.accent-gradient-surface, .bg-primary, [data-accent-surface]) {
     animation: none;
   }
 }

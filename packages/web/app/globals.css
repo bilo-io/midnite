@@ -429,6 +429,99 @@
   }
 }
 
+/*
+ * bilo-io/midnite-app#4 — drive the animated accent angle per painter.
+ *
+ * `--accent-angle` is a NON-inheriting registered property (declared in
+ * @midnite/shell's appearance.css, which explains why). It used to inherit and
+ * be animated on `<html>`, which repainted the entire document every frame —
+ * ~53 percentage points of one core, sustained, on every page. Now each element
+ * that paints `var(--accent-gradient)` runs its own copy of the spin, so only
+ * that element repaints.
+ *
+ * EVERY painter in this file must appear below. A registered property resolves
+ * to its `initial-value` rather than falling through `var()`, so a painter left
+ * out here renders frozen at 0deg instead of the user's configured angle — a
+ * silent visual bug, not an obvious one. Pseudo-elements need their own entry:
+ * a non-inheriting property does not reach `::after` from its originating
+ * element. `accent-angle-spin` is defined alongside the property in the shell.
+ */
+html[data-accent-animate] :is(.text-accent-gradient, .auth-hero-caret, .accent-gradient-border),
+html[data-accent-animate] .accent-gradient-border--lit::after {
+  animation: accent-angle-spin 8s linear infinite;
+}
+/* Painters that already animate keep their own and append the spin — a bare
+   `animation:` here would silently drop the effect they were built for. */
+html[data-accent-animate] .update-banner-surface {
+  animation:
+    update-banner-flow 9s ease-in-out infinite alternate,
+    accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate] .auth-hero-title {
+  animation:
+    auth-hero-sheen 7s ease-in-out infinite alternate,
+    accent-angle-spin 8s linear infinite;
+}
+/* Split, not `:is()` — a pseudo-element is not a valid `:is()` argument, and
+   including one there invalidates the whole selector list silently. */
+html[data-accent-animate] .auth-hero-wordmark-glow {
+  animation:
+    auth-hero-glow-pulse 4s ease-in-out infinite,
+    accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate] .auth-hero-logo-glow::after {
+  animation:
+    auth-hero-glow-pulse 4s ease-in-out infinite,
+    accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate] .accent-gradient-border--spin {
+  animation:
+    accent-gradient-sweep 3s ease-in-out infinite,
+    accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate] .accent-gradient-border--spin::after {
+  animation:
+    accent-gradient-sweep 3s ease-in-out infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite,
+    accent-angle-spin 8s linear infinite;
+}
+/* Reduced motion stops the spin. Listed explicitly rather than via a `*` sweep:
+   a universal selector here would also silence unrelated animations that the
+   existing per-effect gating deliberately leaves alone. Declared after the rules
+   above so it wins on equal specificity, mirroring this file's convention. */
+html[data-accent-animate][data-motion='reduced']
+  :is(
+    .text-accent-gradient,
+    .auth-hero-caret,
+    .accent-gradient-border,
+    .update-banner-surface,
+    .auth-hero-title,
+    .auth-hero-wordmark-glow,
+    .accent-gradient-border--spin
+  ),
+html[data-accent-animate][data-motion='reduced'] .accent-gradient-border--lit::after,
+html[data-accent-animate][data-motion='reduced'] .auth-hero-logo-glow::after,
+html[data-accent-animate][data-motion='reduced'] .accent-gradient-border--spin::after {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-accent-animate]:not([data-motion='full'])
+    :is(
+      .text-accent-gradient,
+      .auth-hero-caret,
+      .accent-gradient-border,
+      .update-banner-surface,
+      .auth-hero-title,
+      .auth-hero-wordmark-glow,
+      .accent-gradient-border--spin
+    ),
+  html[data-accent-animate]:not([data-motion='full']) .accent-gradient-border--lit::after,
+  html[data-accent-animate]:not([data-motion='full']) .auth-hero-logo-glow::after,
+  html[data-accent-animate]:not([data-motion='full']) .accent-gradient-border--spin::after {
+    animation: none;
+  }
+}
+
 /* An *executing* task (`wip` — an agent is actively running it) wears the app's
  * signature rotating + pulsating gradient, so a live task reads the same on the
  * board, in the list/table rows, and on the dependency graph. Applied as a
