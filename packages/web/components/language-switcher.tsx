@@ -107,7 +107,7 @@ export function LanguageSwitcher({ expanded, locale, onSelect }: LanguageSwitche
 
 /**
  * The option rows — native label, then check, with the locale code far right.
- * Exported so the mobile `More`-sheet tile (`<LocaleTile>`) presents the same
+ * Exported so the mobile `More`-sheet picker (`<LocalePicker>`) presents the same
  * list from a different trigger, rather than restating it.
  */
 export function LocaleOptions({ locale, onChoose }: { locale: Locale; onChoose: (locale: Locale) => void }) {

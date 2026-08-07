@@ -86,8 +86,8 @@ export type AppFrameProps = {
   mobileMaxTabs?: number;
   /** Extra content in the mobile `More` sheet, above the theme/lock row. */
   mobileSheet?: ReactNode;
-  /** Extra tiles appended to the mobile `More` sheet's grid (e.g. a locale picker). */
-  mobileTiles?: ReactNode;
+  /** Host control at the right end of the mobile Settings row, above the lock (e.g. a locale picker). */
+  mobileSettingsAction?: ReactNode;
   /** Unread badge count on the mobile `More` button (dot when > 0). */
   mobileUnread?: number;
   /** Mobile `More`-sheet Lock button handler. */
@@ -205,7 +205,7 @@ export function AppFrame({
   onToggleSection,
   mobileMaxTabs,
   mobileSheet,
-  mobileTiles,
+  mobileSettingsAction,
   mobileUnread,
   onLock,
   settings,
@@ -405,7 +405,7 @@ export function AppFrame({
         maxTabs={mobileMaxTabs}
         settings={settings}
         sheet={mobileSheet}
-        tiles={mobileTiles}
+        settingsAction={mobileSettingsAction}
         unread={mobileUnread}
         onLock={onLock}
         labels={mobileLabels}

@@ -4,6 +4,7 @@ import { ThemeProvider } from '@midnite/ui/theme';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppFrame, isActivePath, type NavConfig, type NavLinkComponent } from './app-frame';
+import { MOBILE_MENU_EVENT, type MobileMenuEventDetail } from './nav/mobile-nav';
 
 /** The mobile nav mounts `<ThemeToggle>`, which needs a `ThemeProvider` in scope. */
 const render = (ui: ReactElement) => rtlRender(<ThemeProvider>{ui}</ThemeProvider>);
@@ -224,22 +225,59 @@ describe('AppFrame', () => {
       expect(grid?.contains(settings)).toBe(false);
     });
 
-    it('appends host-provided tiles to the More sheet grid', () => {
+    it('puts the host settings action beside Settings, directly above the Lock button', () => {
       render(
         <AppFrame
           nav={SIX}
           activePath="/"
           settings={{ href: '/settings', label: 'Settings' }}
-          mobileTiles={<button type="button">Language</button>}
+          onLock={vi.fn()}
+          mobileSettingsAction={<button type="button">Language</button>}
         >
           <p>content</p>
         </AppFrame>,
       );
       fireEvent.click(mobile().getByRole('button', { name: 'Menu' }));
       const dialog = screen.getByRole('dialog', { name: 'Menu' });
-      const tile = within(dialog).getByRole('button', { name: 'Language' });
-      // In the grid, where Settings used to be.
-      expect(dialog.querySelector('.grid')?.contains(tile)).toBe(true);
+      const action = within(dialog).getByRole('button', { name: 'Language' });
+      const settings = within(dialog).getByRole('link', { name: 'Settings' });
+      const lock = within(dialog).getByRole('button', { name: /Lock/ });
+
+      // Same row as Settings (it used to be a tile in the grid above), and above
+      // the lock — so the sheet's right-hand column reads language → lock.
+      expect(dialog.querySelector('.grid')?.contains(action)).toBe(false);
+      expect(action.parentElement).toBe(settings.parentElement);
+      expect(action.compareDocumentPosition(lock) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('broadcasts the More sheet state so host floating affordances can step aside', () => {
+      const seen: boolean[] = [];
+      const onMenu = (e: Event) => seen.push((e as CustomEvent<MobileMenuEventDetail>).detail.open);
+      window.addEventListener(MOBILE_MENU_EVENT, onMenu);
+      try {
+        const { unmount } = render(
+          <AppFrame nav={SIX} activePath="/">
+            <p>content</p>
+          </AppFrame>,
+        );
+        // Mount announces the closed sheet, so a late listener still knows.
+        expect(seen).toEqual([false]);
+
+        fireEvent.click(mobile().getByRole('button', { name: 'Menu' }));
+        expect(seen.at(-1)).toBe(true);
+
+        fireEvent.click(mobile().getByRole('button', { name: 'Menu' }));
+        expect(seen.at(-1)).toBe(false);
+
+        // Reopen, then drop the frame: the retraction on unmount is what stops an
+        // open sheet from leaving the FAB hidden for good.
+        fireEvent.click(mobile().getByRole('button', { name: 'Menu' }));
+        expect(seen.at(-1)).toBe(true);
+        unmount();
+        expect(seen.at(-1)).toBe(false);
+      } finally {
+        window.removeEventListener(MOBILE_MENU_EVENT, onMenu);
+      }
     });
 
     it('shows an unread dot on the More button when mobileUnread > 0', () => {

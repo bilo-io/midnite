@@ -9,10 +9,11 @@ import { isActivePath, type NavItem, type NavLinkComponent } from '../app-frame'
 /**
  * The phone-width counterpart to the desktop rail (`AppFrame`'s `<aside>`). Below
  * `md` the rail is hidden and this fixed bottom-tab bar takes over: the first few
- * flattened nav items get a one-tap tab, and a `More` sheet holds the overflow
- * plus an optional Settings tile, a host slot (e.g. a notification centre), the
- * theme toggle and a Lock button. `More` is always present so those stay reachable
- * even when every tab slot is taken (mirrors `web`'s `mobile-nav.tsx`).
+ * flattened nav items get a one-tap tab, and a `More` sheet holds the overflow as
+ * a destination grid, then a host slot, then two two-column rows — Settings beside
+ * a host action, and the theme toggle beside a Lock button. `More` is always
+ * present so those stay reachable even when every tab slot is taken (mirrors
+ * `web`'s `mobile-nav.tsx`).
  *
  * Router-agnostic like the frame: the active route arrives as `activePath` and
  * links render through the injected `linkComponent`.
@@ -40,6 +41,25 @@ const DEFAULT_MAX_TABS = 4;
 const BACKDROP_Z = 'z-[36]';
 const SHEET_Z = 'z-[38]';
 const NAV_Z = 'z-40';
+
+/**
+ * Broadcast on every `More`-sheet open/close so app-owned floating affordances
+ * (`web`'s assistant FAB, fixed bottom-right) can get out of the way while the
+ * sheet is up. Deliberately an event and not a z-index tweak: the stacking order
+ * above is the invariant this file exists to hold (#5), and the FAB is a sibling
+ * of the frame inside the host app — shell can neither reach it nor should learn
+ * what it is. Same shape as `LOCALE_CHANGE_EVENT`: a `CustomEvent` on `window`.
+ */
+export const MOBILE_MENU_EVENT = 'midnite:mobile-menu';
+
+/** `detail` of {@link MOBILE_MENU_EVENT}. */
+export type MobileMenuEventDetail = { open: boolean };
+
+function emitMenuState(open: boolean) {
+  window.dispatchEvent(
+    new CustomEvent<MobileMenuEventDetail>(MOBILE_MENU_EVENT, { detail: { open } }),
+  );
+}
 
 /**
  * Injected copy for the mobile nav's own strings (Phase 82 E). Shell stays
@@ -82,12 +102,11 @@ export type AppMobileNavProps = {
    */
   settings?: NavItem;
   /**
-   * Extra tiles appended to the overflow grid, for a control the host owns that
-   * belongs with the destinations rather than the rows below them (`web` puts its
-   * locale picker here). Shell stays app-agnostic: it reserves the cell, the host
-   * decides what goes in it.
+   * A host-owned control at the **right end of the Settings row**, i.e. directly
+   * above the Lock button (`web` puts its locale picker here). Shell stays
+   * app-agnostic: it reserves the slot, the host decides what goes in it.
    */
-  tiles?: ReactNode;
+  settingsAction?: ReactNode;
   /** Extra content in the `More` sheet, above the theme/lock row (e.g. a notification centre). */
   sheet?: ReactNode;
   /** Unread badge count on the `More` button (renders a dot when > 0). */
@@ -111,7 +130,7 @@ export function AppMobileNav({
   linkComponent: Link,
   maxTabs = DEFAULT_MAX_TABS,
   settings,
-  tiles,
+  settingsAction,
   sheet,
   unread = 0,
   onLock,
@@ -126,6 +145,11 @@ export function AppMobileNav({
 
   // Close on navigation; the route change is the implicit confirmation a tap worked.
   useEffect(() => setOpen(false), [activePath]);
+
+  // Publish sheet state for the host's floating affordances, and retract it on
+  // unmount so a frame that goes away while open can't leave anything hidden.
+  useEffect(() => emitMenuState(open), [open]);
+  useEffect(() => () => emitMenuState(false), []);
 
   // Escape closes the sheet and returns focus to the trigger.
   useEffect(() => {
@@ -193,7 +217,7 @@ export function AppMobileNav({
         )}
       >
         <div aria-hidden className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
-        {overflow.length > 0 || tiles ? (
+        {overflow.length > 0 ? (
           <div className="grid grid-cols-3 gap-2">
             {overflow.map((item) => (
               <DrawerTile
@@ -203,32 +227,42 @@ export function AppMobileNav({
                 Link={Link}
               />
             ))}
-            {tiles}
           </div>
         ) : null}
         {/* Everything below the destinations: the host slot, then Settings, then
             the theme/lock row — one rule above the group when it has content. */}
-        {sheet || settings ? <div className="my-3 h-px bg-border/60" /> : null}
+        {sheet || settings || settingsAction ? <div className="my-3 h-px bg-border/60" /> : null}
         {sheet}
-        {settings ? (
-          <Link
-            href={settings.href}
-            aria-label={settings.label}
-            aria-current={isActivePath(activePath, settings.href) ? 'page' : undefined}
-            className={cn(
-              'flex h-9 w-full items-center gap-3 rounded-md px-2.5 text-sm font-medium transition-colors',
-              isActivePath(activePath, settings.href)
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+        {settings || settingsAction ? (
+          // The Settings row and the theme/lock row below it share a two-column
+          // shape, so the host action lands in the right-hand column directly
+          // above the Lock button — the desktop rail's footer order read
+          // vertically (language, then Settings, then the lock).
+          <div className="flex items-center gap-2">
+            {settings ? (
+              <Link
+                href={settings.href}
+                aria-label={settings.label}
+                aria-current={isActivePath(activePath, settings.href) ? 'page' : undefined}
+                className={cn(
+                  'flex h-9 min-w-0 flex-1 items-center gap-3 rounded-md px-2.5 text-sm font-medium transition-colors',
+                  isActivePath(activePath, settings.href)
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                )}
+              >
+                {settings.icon ? (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center [&>svg]:h-4 [&>svg]:w-4">
+                    {settings.icon}
+                  </span>
+                ) : null}
+                <span className="min-w-0 truncate">{settings.label}</span>
+              </Link>
+            ) : (
+              <span aria-hidden className="flex-1" />
             )}
-          >
-            {settings.icon ? (
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center [&>svg]:h-4 [&>svg]:w-4">
-                {settings.icon}
-              </span>
-            ) : null}
-            <span className="min-w-0 truncate">{settings.label}</span>
-          </Link>
+            {settingsAction}
+          </div>
         ) : null}
         <div className="flex items-center justify-between gap-2">
           <ThemeToggle expanded labels={copy.themeToggle} />

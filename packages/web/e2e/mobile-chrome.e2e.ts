@@ -99,6 +99,73 @@ test.describe('mobile chrome at phone width', () => {
     await expect(sheet).toBeHidden();
   });
 
+  test('the assistant FAB steps aside while the More sheet is open', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    await expect(page.getByRole('button', { name: 'Open assistant' })).toBeVisible();
+    const fabBox = await box(page, 'button[data-tour="assistant"]');
+    const centre = { x: fabBox.x + fabBox.width / 2, y: fabBox.y + fabBox.height / 2 };
+    /** What a tap at the FAB's centre would actually land on. */
+    const hit = () =>
+      page.evaluate(
+        (p) => document.elementFromPoint(p.x, p.y)?.closest('[data-tour="assistant"]') !== null,
+        centre,
+      );
+
+    /** The glow wrapper that carries the fade — the FAB's own fixed layer. */
+    const wrapper = () =>
+      page.evaluate(() => {
+        const el = document.querySelector('[data-tour="assistant"]')?.parentElement as HTMLElement;
+        const style = getComputedStyle(el);
+        return { opacity: style.opacity, zIndex: style.zIndex };
+      });
+
+    expect(await hit(), 'the FAB owns its own pixels at rest').toBe(true);
+
+    await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('button', { name: 'Menu' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Menu' });
+    await expect(sheet).toBeVisible();
+
+    // The FAB is fixed bottom-right, right over the sheet's theme/lock row — it
+    // has to disappear while the sheet is up. Faded out (and out of the a11y
+    // tree), NOT restacked: the bar stays the topmost fixed layer (#5).
+    await expect.poll(async () => (await wrapper()).opacity).toBe('0');
+    expect((await wrapper()).zIndex, 'the FAB keeps its own layer').toBe('40');
+    // It's gone from the accessibility tree too, so the sheet is the only surface
+    // a screen reader or the keyboard can reach.
+    await expect(page.getByRole('button', { name: 'Open assistant' })).toHaveCount(0);
+    // `elementFromPoint` skips `pointer-events: none`, so this proves a tap over
+    // the faded FAB reaches the sheet instead of the assistant.
+    expect(await hit(), 'a tap over the hidden FAB must reach the sheet').toBe(false);
+
+    await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('button', { name: 'Menu' }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Open assistant' })).toBeVisible();
+    expect((await wrapper()).opacity, 'closing the sheet gives the FAB back').toBe('1');
+    expect(await hit()).toBe(true);
+  });
+
+  test('the More sheet puts the locale picker directly above the Lock button', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('button', { name: 'Menu' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Menu' });
+    await expect(sheet).toBeVisible();
+
+    // Notifications live in the header-actions bell, not in this sheet.
+    await expect(sheet.getByRole('button', { name: /notification/i })).toHaveCount(0);
+
+    const language = await sheet.getByRole('button', { name: /^Language:/ }).boundingBox();
+    const lock = await sheet.getByRole('button', { name: 'Lock' }).boundingBox();
+    if (!language || !lock) throw new Error('no bounding box for the language / lock control');
+
+    // Right-hand column, one row up: same right edge (within a hair), no vertical
+    // overlap, and language above.
+    expect(Math.abs(language.x + language.width - (lock.x + lock.width))).toBeLessThanOrEqual(2);
+    expect(verticalOverlap(language, lock)).toBe(0);
+    expect(language.y).toBeLessThan(lock.y);
+  });
+
   test('the dashboard prompt composer clears the bottom tab bar', async ({ page }) => {
     await page.goto('/dashboard');
 
