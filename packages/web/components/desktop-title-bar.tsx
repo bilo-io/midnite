@@ -102,7 +102,7 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
             onClick={() => router.back()}
             disabled={!canGoBack}
             aria-label={tNav('titleBar.back')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -111,12 +111,16 @@ export function DesktopTitleBar({ windowChrome }: { windowChrome: WindowChromeBr
             onClick={() => router.forward()}
             disabled={!canGoForward}
             aria-label={tNav('titleBar.forward')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
-          <ReloadButton />
-          <span className="ml-1 max-w-[12rem] truncate text-sm font-medium text-foreground/90">
+          <ReloadButton className="shrink-0" />
+          {/* The one element in this slot allowed to give way: on a narrow window
+              the slot yields width to the centred search pill (see <TitleBar>),
+              and the squeeze lands here as truncation rather than on the
+              fixed-size controls. */}
+          <span className="ml-1 min-w-0 max-w-[12rem] truncate text-sm font-medium text-foreground/90">
             {title}
           </span>
         </>

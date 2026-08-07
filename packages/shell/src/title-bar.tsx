@@ -106,21 +106,30 @@ export function TitleBar({
       )}
     >
       {left ? (
-        <div style={NO_DRAG_STYLE} className="flex min-w-0 shrink-0 items-center gap-1">
+        // Yields width below `md` (see the `center` note) so the page title
+        // truncates instead of running under the search pill; immovable from
+        // `md` up, where there is room for all three slots.
+        <div style={NO_DRAG_STYLE} className="flex min-w-0 items-center gap-1 md:shrink-0">
           {left}
         </div>
       ) : null}
       {center ? (
-        // Centered on the FULL bar width (not the space left over between the
-        // left/right slots) via absolute positioning, so a growing right slot
-        // (e.g. the connection pill revealing its label) never shifts or
-        // shrinks this box — it used to, back when this was a `flex-1`
-        // spacer shared with `right`. Fixed width (not flex-1) per the same
-        // reasoning: a stable, narrower box reads as a search *trigger*, not a
-        // search field competing for the bar's width.
+        // From `md` up: centered on the FULL bar width (not the space left over
+        // between the left/right slots) via absolute positioning, so a growing
+        // right slot (e.g. the connection pill revealing its label) never shifts
+        // or shrinks this box — it used to, back when this was a `flex-1` spacer
+        // shared with `right`. Fixed width (not flex-1) per the same reasoning: a
+        // stable, narrower box reads as a search *trigger*, not a search field
+        // competing for the bar's width.
+        //
+        // Below `md` that absolute box was wider than the room actually left over
+        // — a narrow window put it straight on top of the left slot's page title
+        // (bilo-io/midnite-app#5). There it goes back in flow as a flex child, so
+        // the three slots share the row and the title truncates; the pill keeps an
+        // 8rem floor so it stays a legible trigger rather than collapsing.
         <div
           style={NO_DRAG_STYLE}
-          className="absolute inset-y-0 left-1/2 flex w-[30%] min-w-[14rem] max-w-sm -translate-x-1/2 items-center justify-center"
+          className="flex min-w-[8rem] flex-1 items-center justify-center md:absolute md:inset-y-0 md:left-1/2 md:w-[30%] md:min-w-[14rem] md:max-w-sm md:flex-none md:-translate-x-1/2"
         >
           {center}
         </div>
