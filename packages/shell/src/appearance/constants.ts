@@ -50,10 +50,10 @@ export const MONO_HUE_SHIFT = 14;
 
 /** Selectable background patterns (the settings picker order). */
 export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: string }[] = [
+  { value: 'none', label: 'None' },
   { value: 'starfield', label: 'Starfield' },
   { value: 'grid', label: 'Grid' },
   { value: 'dots', label: 'Dots' },
-  { value: 'diagonal-lines', label: 'Diagonal' },
   { value: 'plus-cross', label: 'Plus' },
   { value: 'topographic', label: 'Topographic' },
   { value: 'waves', label: 'Waves' },

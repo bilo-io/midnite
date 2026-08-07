@@ -140,6 +140,18 @@
     );
   }
 
+  /* "None" — the quiet default. Not a literal absence: a barely-there gradient
+     wash built entirely from theme tokens, so it re-tints with the light/dark
+     theme and the active accent instead of leaving a flat slab of --background.
+     Deliberately un-masked (unlike the motif patterns below): a vignette on a
+     wash this soft reads as a smudge, and the gradients already fade out. */
+  .bg-none {
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% 0%, hsl(var(--primary) / 0.07), transparent 60%),
+      radial-gradient(ellipse 100% 70% at 50% 100%, hsl(var(--primary) / 0.05), transparent 65%),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.025), transparent 45%);
+  }
+
   .bg-grid {
     background-image:
       linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
@@ -164,18 +176,6 @@
   .bg-dots {
     background-image: radial-gradient(circle, hsl(var(--foreground) / 0.25) 1px, transparent 1px);
     background-size: 20px 20px;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-  }
-
-  /* 45° repeating diagonal stripes. */
-  .bg-diagonal-lines {
-    background-image: repeating-linear-gradient(
-      45deg,
-      hsl(var(--border) / 0.7) 0,
-      hsl(var(--border) / 0.7) 1px,
-      transparent 0,
-      transparent 12px
-    );
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 
@@ -296,6 +296,13 @@
      first paint; any element with data-bg-target picks up the pattern here without
      waiting for React hydration. After hydration the .bg-* class on the same element
      is equivalent; both rules apply harmlessly. */
+  html[data-bg='none'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% 0%, hsl(var(--primary) / 0.07), transparent 60%),
+      radial-gradient(ellipse 100% 70% at 50% 100%, hsl(var(--primary) / 0.05), transparent 65%),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.025), transparent 45%);
+  }
+
   html[data-bg='grid'] [data-bg-target] {
     background-image:
       linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
@@ -316,17 +323,6 @@
   html[data-bg='dots'] [data-bg-target] {
     background-image: radial-gradient(circle, hsl(var(--foreground) / 0.25) 1px, transparent 1px);
     background-size: 20px 20px;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-  }
-
-  html[data-bg='diagonal-lines'] [data-bg-target] {
-    background-image: repeating-linear-gradient(
-      45deg,
-      hsl(var(--border) / 0.7) 0,
-      hsl(var(--border) / 0.7) 1px,
-      transparent 0,
-      transparent 12px
-    );
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 

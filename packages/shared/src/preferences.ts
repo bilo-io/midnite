@@ -32,16 +32,18 @@ export type NavMode = z.infer<typeof NavModeSchema>;
 /**
  * Decorative backdrop pattern, drawn app-wide (every page), on the dashboard
  * header, the landing/login/screensaver, and the marketing + docs sites.
- * `starfield` (the neuro-cloud galaxy) is the signature default and leads the
- * list. Legacy values no longer in this enum (e.g. the removed `honeycomb`) are
- * coerced back to the default on read — see `coerceBackgroundPattern`.
+ * `none` — a subtle theme-matching gradient wash rather than a literal absence —
+ * is the quiet default and leads the list; `starfield` (the neuro-cloud galaxy)
+ * remains the signature look, one click away. Legacy values no longer in this
+ * enum (e.g. the removed `honeycomb` and `diagonal-lines`) are coerced back to
+ * the default on read — see `coerceBackgroundPattern`.
  */
 export const BackgroundPatternSchema = z.enum([
+  'none',
   'starfield',
   'grid',
   'gradient',
   'dots',
-  'diagonal-lines',
   'topographic',
   'aurora',
   'plus-cross',
@@ -52,13 +54,14 @@ export const BackgroundPatternSchema = z.enum([
 ]);
 export type BackgroundPattern = z.infer<typeof BackgroundPatternSchema>;
 
-/** The signature default backdrop for fresh installs (single source of truth). */
-export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'starfield';
+/** The default backdrop for fresh installs (single source of truth). */
+export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'none';
 
 /**
  * Coerce a stored/legacy background-pattern value to a known one. A value that
- * dropped out of the enum (e.g. `honeycomb`, removed in the starfield revamp)
- * would otherwise hydrate as an unpaintable `data-bg`; fall back to the default.
+ * dropped out of the enum (`honeycomb`, removed in the starfield revamp;
+ * `diagonal-lines`, replaced by `none`) would otherwise hydrate as an
+ * unpaintable `data-bg`; fall back to the default.
  */
 export function coerceBackgroundPattern(value: unknown): BackgroundPattern {
   const parsed = BackgroundPatternSchema.safeParse(value);

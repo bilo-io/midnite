@@ -14,11 +14,11 @@ import { cn } from '../lib/cn';
  * boundary" — the same pattern the site uses for favicons).
  */
 export type BackgroundPattern =
+  | 'none'
   | 'starfield'
   | 'grid'
   | 'gradient'
   | 'dots'
-  | 'diagonal-lines'
   | 'topographic'
   | 'aurora'
   | 'plus-cross'
@@ -33,7 +33,7 @@ export type BackgroundPattern =
  * here that (a) idles with a subtle ambient animation and (b) reacts to the
  * pointer within an influence radius (~32rem):
  *
- * - dots / grid / diagonal: points and lines are *repulsed* away from the cursor
+ * - dots / grid: points and lines are *repulsed* away from the cursor
  * - plus-cross / blueprint: a tracking-ruler crosshair follows the cursor
  * - waves: amplitude ripples up around the cursor
  * - topographic: contours bend away, like a peak pushing through the map
@@ -246,42 +246,6 @@ function drawGrid(f: Frame): void {
     }
     ctx.fillStyle = cursorGradient(f, f.tk.fg, 0.9, 0.8);
     ctx.fill(nodes);
-  }
-}
-
-/**
- * Honeycomb (48×18 offset rows): a swell-ring pulse radiates from a slowly
- * wandering epicentre, each bubble breathes on its own beat, and cells swell
- * hard around the cursor with distance decay.
- */
-/** Diagonal lines (12px, 45°): lines scroll slowly and bow around the cursor. */
-function drawDiagonal(f: Frame): void {
-  const sp = 12;
-  const step = 14;
-  const { ctx } = f;
-  const off = (f.t * 2.5) % sp;
-  const path = new Path2D();
-  // Lines of constant x + y = c (45°), c sweeping the whole canvas. Each line
-  // sways perpendicular to itself on its own phase, like harp strings.
-  for (let c = -sp + off; c <= f.w + f.h + sp; c += sp) {
-    const x0 = Math.max(-step, c - f.h - step);
-    const x1 = Math.min(f.w + step, c + step);
-    const sway = Math.sin(f.t * 0.5 + c * 0.045) * 1.6;
-    let first = true;
-    for (let x = x0; x <= x1; x += step) {
-      const [px, py] = repulse(x + sway * 0.7, c - x + sway * 0.7, f, 12);
-      if (first) path.moveTo(px, py);
-      else path.lineTo(px, py);
-      first = false;
-    }
-  }
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = `hsl(${f.tk.fg} / 0.14)`;
-  ctx.stroke(path);
-  if (f.s > 0.01) {
-    // Plucked strings: the bowed lines relight around the cursor.
-    ctx.strokeStyle = cursorGradient(f, f.tk.fg, 0.55);
-    ctx.stroke(path);
   }
 }
 
@@ -708,10 +672,11 @@ function drawMeshGradient(f: Frame, st: EngineState): void {
 
 // `starfield` has no canvas renderer here — it's drawn by `NeuroCloudBackground`
 // (the AppBackdrop routes it there), so it's absent from this map by design.
+// `none` is absent for the same reason: it's a static CSS wash with nothing to
+// animate, and the AppBackdrop never mounts this canvas for it.
 const RENDERERS: Partial<Record<BackgroundPattern, (f: Frame, st: EngineState) => void>> = {
   dots: drawDots,
   grid: drawGrid,
-  'diagonal-lines': drawDiagonal,
   'plus-cross': drawPlusCross,
   blueprint: drawBlueprint,
   topographic: drawTopographic,

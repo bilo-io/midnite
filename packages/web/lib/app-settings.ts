@@ -151,7 +151,9 @@ export const NAV_W_EXPANDED = '16rem';
  * The decorative backdrop drawn app-wide (every page), on the dashboard header,
  * and on the landing/login/screensaver. `starfield` renders the neuro-cloud
  * canvas (`NeuroCloudBackground`); every other pattern maps to a self-contained
- * utility class in globals.css. Default lives in `@midnite/shared`.
+ * utility class in globals.css. `none` — the default — is one of those classes:
+ * a subtle theme-matching gradient, not an empty backdrop. Default value lives
+ * in `@midnite/shared`.
  */
 export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = SHARED_BACKGROUND_PATTERN_DEFAULT;
 
@@ -159,11 +161,11 @@ export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = SHARED_BACKGROUND_P
  *  lightweight CSS twin (for the settings swatch + the pre-hydration frame); the
  *  live surface swaps in the `NeuroCloudBackground` canvas. */
 export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
+  none: 'bg-none',
   starfield: 'bg-starfield',
   grid: 'bg-grid',
   gradient: 'bg-animated-gradient',
   dots: 'bg-dots',
-  'diagonal-lines': 'bg-diagonal-lines',
   topographic: 'bg-topographic',
   aurora: 'bg-aurora',
   'plus-cross': 'bg-plus-cross',
