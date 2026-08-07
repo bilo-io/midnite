@@ -116,6 +116,15 @@ mac:
       arch:
         - arm64
   icon: resources/icon.icns
+  # macOS refuses a location fix (and can terminate the app for asking) unless the
+  # bundle declares why it wants one. Needed for the dashboard weather widget to
+  # reach real coordinates instead of falling back to an IP guess —
+  # bilo-io/midnite-app#2. Pairs with the location entitlement and the renderer
+  # permission handler in src/main/permissions.ts; all three are required.
+  extendInfo:
+    NSLocationWhenInUseUsageDescription: >-
+      Midnite uses your location to show local weather on your dashboard. It is
+      sent only to the weather service and never stored.
   # Required for notarization; harmless while unsigned.
   hardenedRuntime: true
   gatekeeperAssess: false

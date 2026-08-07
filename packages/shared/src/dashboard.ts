@@ -63,6 +63,47 @@ export const WeatherQuerySchema = z.object({
 export type WeatherResponse = z.infer<typeof WeatherResponseSchema>;
 export type WeatherQuery = z.infer<typeof WeatherQuerySchema>;
 
+// ── Weather location resolution ──────────────────────────────
+// `navigator.geolocation` is unavailable in more places than it looks: the
+// packaged desktop app runs under Electron (whose network location provider
+// needs a Google API key it doesn't ship with), and `midnite serve` reached over
+// a LAN IP is an insecure context where the API is missing outright. Both left
+// the user typing raw coordinates. These two endpoints are the way out —
+// `/weather/locate` guesses a coarse location from the caller's IP with no user
+// input at all, and `/weather/geocode` turns a typed place name into
+// coordinates so the manual path is a city search rather than a lat/lon form.
+
+/** A coarse, IP-derived location. `label` is the best place name the provider gave. */
+export const WeatherLocateResponseSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  label: z.string().nullable(),
+});
+
+export const WeatherGeocodeQuerySchema = z.object({
+  q: z.string().trim().min(1).max(120),
+});
+
+export const WeatherGeocodeResultSchema = z.object({
+  /** Stable key for React lists — the provider's own id, stringified. */
+  id: z.string(),
+  /** Place name alone, e.g. "Berlin". */
+  name: z.string(),
+  /** Disambiguated display label, e.g. "Berlin, Berlin, Germany". */
+  label: z.string(),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+});
+
+export const WeatherGeocodeResponseSchema = z.object({
+  results: z.array(WeatherGeocodeResultSchema),
+});
+
+export type WeatherLocateResponse = z.infer<typeof WeatherLocateResponseSchema>;
+export type WeatherGeocodeQuery = z.infer<typeof WeatherGeocodeQuerySchema>;
+export type WeatherGeocodeResult = z.infer<typeof WeatherGeocodeResultSchema>;
+export type WeatherGeocodeResponse = z.infer<typeof WeatherGeocodeResponseSchema>;
+
 // ── Link metadata ────────────────────────────────────────────
 // Backed by a gateway proxy that fetches a URL's OpenGraph/title + favicon
 // (browsers can't fetch arbitrary cross-origin HTML). Used by the dashboard

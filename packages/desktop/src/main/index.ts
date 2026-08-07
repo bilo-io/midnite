@@ -13,6 +13,7 @@ import { ensureGatewaySecrets } from './gateway-secrets';
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
+import { registerPermissionHandlers } from './permissions';
 import { ensureLoginShellPath } from './shell-path';
 import { registerUpdater, startUpdateCheck } from './updater';
 import { attachWindowChrome, registerWindowChrome, windowFrameless } from './window-chrome';
@@ -99,6 +100,10 @@ async function boot(): Promise<void> {
   // the history arrows; y=14 puts their observed centre on the bar midline).
   // Non-mac keeps the stock frame.
   const frameless = windowFrameless();
+  // The renderer's origin — packaged, the gateway serves the web export at `/`;
+  // in dev it's the Next dev server. Single-sourced so the permission handler
+  // below and the loadURL further down can never disagree about who "the app" is.
+  const rendererUrl = serveWeb ? `${gatewayUrl}/` : (process.env['MIDNITE_WEB_URL'] ?? 'http://localhost:3000');
   win = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -125,6 +130,13 @@ async function boot(): Promise<void> {
   });
   win.once('ready-to-show', () => win?.show());
   attachWindowChrome(win);
+
+  // Without a handler Electron grants every permission request; with one it must
+  // answer for all of them. Geolocation is the reason this exists — the dashboard
+  // weather widget can't reach `navigator.geolocation` otherwise
+  // (bilo-io/midnite-app#2) — and the same handler closes everything the app
+  // doesn't use. Scoped to this window's session so it can't outlive the window.
+  registerPermissionHandlers(win.webContents.session, rendererUrl);
 
   // Phase 74 Theme D — external links open in the system browser, not a bare
   // in-app window. The web app only uses `window.open(_blank)` for external
@@ -157,11 +169,7 @@ async function boot(): Promise<void> {
 
   // Renderer: dev → the Next dev server; prod → the gateway itself, which serves the
   // web export at `/` (single origin with the API + the SSO callback page).
-  if (!serveWeb) {
-    await win.loadURL(process.env['MIDNITE_WEB_URL'] ?? 'http://localhost:3000');
-  } else {
-    await win.loadURL(`${gatewayUrl}/`);
-  }
+  await win.loadURL(rendererUrl);
 
   // First update check once the window is up (no auto-download; user-timed).
   // No-op in dev/unpackaged. The renderer re-checks on focus/navigation.

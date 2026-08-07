@@ -64,3 +64,66 @@ export const Error: Story = {
     await expect(await canvas.findByText('Couldn’t load weather.')).toBeInTheDocument();
   },
 };
+
+/**
+ * Replace `navigator.geolocation` with one that always fails, the way the
+ * packaged desktop app behaves (Electron ships no geolocation API key). Returns
+ * a teardown so a story can't leak the stub into its neighbours.
+ */
+function stubFailingGeolocation(code: number): () => void {
+  const original = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
+  Object.defineProperty(navigator, 'geolocation', {
+    value: { getCurrentPosition: (_ok: unknown, fail: (e: { code: number }) => void) => fail({ code }) },
+    configurable: true,
+  });
+  return () => {
+    if (original) Object.defineProperty(navigator, 'geolocation', original);
+  };
+}
+
+const NO_LOCATION = { units: 'c', location: null } as const;
+
+/**
+ * The reported case (bilo-io/midnite-app#2): the browser can't give coordinates,
+ * so the widget resolves a coarse location from the caller's IP and shows real
+ * weather — no input from the user at all.
+ */
+export const IpFallback: Story = {
+  args: { config: { ...NO_LOCATION }, onConfigChange: fn() },
+  beforeEach: () => {
+    const restoreGeo = stubFailingGeolocation(2 /* POSITION_UNAVAILABLE */);
+    const restoreFetch = installMockFetch([
+      { match: '/weather/locate', json: { lat: 52.52, lon: 13.405, label: 'Berlin, Germany' } },
+      { match: '/weather', json: WEATHER },
+    ]);
+    return () => {
+      restoreFetch();
+      restoreGeo();
+    };
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('18°C')).toBeInTheDocument();
+  },
+};
+
+/** Both automatic paths are out — a place search, not a latitude/longitude form. */
+export const PlaceSearch: Story = {
+  args: { config: { ...NO_LOCATION }, onConfigChange: fn() },
+  beforeEach: () => {
+    const restoreGeo = stubFailingGeolocation(1 /* PERMISSION_DENIED */);
+    const restoreFetch = installMockFetch([
+      { match: '/weather/locate', status: 500 },
+      { match: '/weather', json: WEATHER },
+    ]);
+    return () => {
+      restoreFetch();
+      restoreGeo();
+    };
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole('searchbox')).toBeInTheDocument();
+    await expect(canvas.getByText(/permission denied/i)).toBeInTheDocument();
+  },
+};

@@ -15,5 +15,11 @@
   <true/>
   <key>com.apple.security.cs.disable-library-validation</key>
   <true/>
+  <!-- Location Services, for the dashboard weather widget (bilo-io/midnite-app#2).
+       Without it Chromium never gets a fix from CoreLocation and
+       getCurrentPosition dead-ends, leaving the widget on its IP fallback. Pairs
+       with NSLocationWhenInUseUsageDescription in electron-builder.yml. -->
+  <key>com.apple.security.personal-information.location</key>
+  <true/>
 </dict>
 </plist>
