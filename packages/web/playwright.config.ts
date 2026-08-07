@@ -32,6 +32,33 @@ const e2eDbPath = path.join(os.tmpdir(), 'midnite-e2e.db');
 const isCI = !!process.env['CI'];
 
 /**
+ * Serve the app from a real `next build` instead of `next dev`.
+ *
+ * Under `next dev` every first visit to a route pays an on-demand compile, and
+ * that compile happens *inside* the 60s test budget — which is where the suite's
+ * bare "Test timeout exceeded" failures came from, and most of its wall clock.
+ * A prebuilt server removes the whole class. On by default in CI; locally it's
+ * opt-in (`E2E_BUILD=1`) so a single-spec iteration loop keeps `next dev`'s
+ * ~5s boot rather than paying a full build each time. Run a full-suite check
+ * with `E2E_BUILD=1` so it matches what CI actually exercises.
+ */
+const useBuiltServer = isCI || process.env['E2E_BUILD'] === '1';
+
+/**
+ * `webServer` is global, not per-project, so a bare `--project=chromium` run
+ * used to boot Storybook (~2 minutes) for nothing. Only the `stories` project
+ * needs it; boot it when that project is selected, or when no `--project`
+ * filter narrows the run at all.
+ */
+const selectedProjects: string[] = [];
+for (let i = 0; i < process.argv.length; i++) {
+  const arg = process.argv[i];
+  if (arg === '--project' && process.argv[i + 1]) selectedProjects.push(process.argv[i + 1]!);
+  else if (arg?.startsWith('--project=')) selectedProjects.push(arg.slice('--project='.length));
+}
+const needsStorybook = selectedProjects.length === 0 || selectedProjects.includes('stories');
+
+/**
  * Free a TCP port before the run by killing whatever holds it (best-effort,
  * POSIX). `reuseExistingServer: false` only makes Playwright poll the health
  * URL — it does NOT vacate the port — so a server orphaned by a previous run
@@ -180,25 +207,46 @@ export default defineConfig({
       },
     },
     {
-      command: `pnpm exec next dev -p ${E2E_WEB_PORT}`,
+      // See `useBuiltServer`. `MIDNITE_WEB_TARGET=server` drops the static export
+      // (next.config.mjs) and routes the build into its own `.next-server`
+      // distDir, so this never races or clobbers a `web:build` artifact; both
+      // `build` and `start` need it set for the dirs to agree.
+      //
+      // `next build` rewrites the *tracked* `next-env.d.ts` to reference its
+      // distDir, so a server-target build would leave the tree dirty and point
+      // the default (static) typecheck at a `.next-server` that a plain
+      // `web:build` never produces. Put it back — Next regenerates it on every
+      // build, so there is nothing to lose, and `next start` doesn't read it.
+      command: useBuiltServer
+        ? `pnpm exec next build && git checkout -- next-env.d.ts && pnpm exec next start -p ${E2E_WEB_PORT}`
+        : `pnpm exec next dev -p ${E2E_WEB_PORT}`,
       url: WEB_ORIGIN,
       reuseExistingServer: !isCI,
-      timeout: 120_000,
+      // A cold `next build` is minutes, not seconds — the dev boot's 120s is far
+      // too tight for it.
+      timeout: useBuiltServer ? 600_000 : 120_000,
       env: {
         NEXT_PUBLIC_GATEWAY_URL: GATEWAY_ORIGIN,
+        ...(useBuiltServer ? { MIDNITE_WEB_TARGET: 'server' } : {}),
       },
     },
-    {
-      // Storybook dev server for per-story screenshot capture (Theme E1).
-      // Port 6007 avoids colliding with the default `web:storybook` port (6006).
-      // `reuseExistingServer: !isCI` lets a dev reuse a running Storybook, but CI
-      // always starts fresh. Health-check against `/index.json` (Storybook 7+).
-      command: `pnpm exec storybook dev -p ${STORYBOOK_PORT} --quiet`,
-      url: `${STORYBOOK_ORIGIN}/index.json`,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
-    },
+    // Storybook only serves the `stories` project, and `webServer` is global —
+    // see `needsStorybook`. Skipping it saves ~2 minutes on every `web:e2e`.
+    ...(needsStorybook
+      ? [
+          {
+            // Storybook dev server for per-story screenshot capture (Theme E1).
+            // Port 6007 avoids colliding with the default `web:storybook` port (6006).
+            // `reuseExistingServer: !isCI` lets a dev reuse a running Storybook, but CI
+            // always starts fresh. Health-check against `/index.json` (Storybook 7+).
+            command: `pnpm exec storybook dev -p ${STORYBOOK_PORT} --quiet`,
+            url: `${STORYBOOK_ORIGIN}/index.json`,
+            reuseExistingServer: !isCI,
+            timeout: 120_000,
+            stdout: 'pipe' as const,
+            stderr: 'pipe' as const,
+          },
+        ]
+      : []),
   ],
 });
