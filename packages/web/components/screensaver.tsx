@@ -386,7 +386,7 @@ export function Screensaver({
   const requireCode = hydrated ? passcodeApplies : true;
 
   // Corner widgets: live clock plus real host telemetry (gateway /system/stats).
-  const { cpu, ram, cpuNow, ramNow, available: telemetryAvailable } = useSystemTelemetry();
+  const { cpu, ram, gpu, cpuNow, ramNow, gpuNow, available: telemetryAvailable } = useSystemTelemetry();
   // Real host disk (primary volume) for the bottom-right storage ring.
   const { stats: systemStats } = useSystemStats();
   const disk = systemStats?.disks[0] ?? null;
@@ -504,14 +504,23 @@ export function Screensaver({
             </div>
           </div>
 
-          {/* ── Bottom-left: CPU & RAM (only when the gateway reports host metrics) ── */}
+          {/* ── Bottom-left: CPU, RAM & GPU (only when the gateway reports host
+               metrics; the GPU line and its dot appear only on hosts that can
+               measure one — see `useSystemTelemetry`) ── */}
           {telemetryAvailable && (
             <div className="absolute bottom-8 left-8 z-10 text-left">
               <div className="mb-2 flex items-center gap-4 text-xs">
                 <LegendDot hueVar="--status-wip" label="CPU" value={cpuNow} />
                 <LegendDot hueVar="--status-todo" label="RAM" value={ramNow} />
+                {gpuNow !== null && <LegendDot hueVar="--status-done" label="GPU" value={gpuNow} />}
               </div>
-              <AreaChart cpu={cpu} ram={ram} />
+              <AreaChart
+                series={[
+                  { data: cpu, hueVar: '--status-wip' },
+                  { data: ram, hueVar: '--status-todo' },
+                  ...(gpu ? [{ data: gpu, hueVar: '--status-done' }] : []),
+                ]}
+              />
             </div>
           )}
 

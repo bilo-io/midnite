@@ -198,7 +198,11 @@
   "systemMonitor": {
     "cpu": "Proc.",
     "ram": "RAM",
-    "unavailable": "Les métriques de l’hôte sont indisponibles."
+    "unavailable": "Les métriques de l’hôte sont indisponibles.",
+    "gpu": "GPU",
+    "gpuUnavailable": "Cet hôte ne rapporte pas l’utilisation du GPU.",
+    "cores": "{count} cœurs",
+    "memoryOf": "{used} sur {total}"
   },
   "memories": {
     "refresh": "Actualiser les mémoires",
@@ -584,7 +588,7 @@
     },
     "system-monitor": {
       "label": "Moniteur système",
-      "description": "Utilisation CPU et mémoire en direct"
+      "description": "Utilisation CPU, mémoire et GPU en direct sur un seul graphique"
     },
     "disk": {
       "label": "Disque",
@@ -633,6 +637,30 @@
     "market-watchlist": {
       "label": "Liste de suivi",
       "description": "Quelques actions ou cryptos avec prix et gain/perte"
+    },
+    "cpu-monitor": {
+      "label": "Processeur",
+      "description": "Utilisation du processeur en direct, en graphique glissant"
+    },
+    "ram-monitor": {
+      "label": "Mémoire",
+      "description": "Utilisation de la mémoire en direct, en graphique glissant"
+    },
+    "gpu-monitor": {
+      "label": "GPU",
+      "description": "Utilisation du GPU en direct, en graphique glissant, si l’hôte la rapporte"
+    },
+    "cpu-dial": {
+      "label": "Cadran processeur",
+      "description": "Utilisation actuelle du processeur en cadran de pourcentage"
+    },
+    "ram-dial": {
+      "label": "Cadran mémoire",
+      "description": "Utilisation actuelle de la mémoire en cadran de pourcentage"
+    },
+    "gpu-dial": {
+      "label": "Cadran GPU",
+      "description": "Utilisation actuelle du GPU en cadran de pourcentage, si l’hôte la rapporte"
     }
   }
 }

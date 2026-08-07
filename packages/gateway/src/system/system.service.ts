@@ -2,16 +2,17 @@ import { statfs } from 'node:fs/promises';
 import os from 'node:os';
 
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import type { DiskStats, SystemStats } from '@midnite/shared';
+import type { DiskStats, GpuStats, SystemStats } from '@midnite/shared';
 
 import { aggregateCpuTimes, cpuUsagePct, type CpuTimes } from './lib/cpu';
+import { createGpuProbe, type GpuProbe } from './lib/gpu';
 import { type MemorySample, readMemory } from './lib/memory';
 
 // How often the background sampler runs. `os.cpus()` gives cumulative counters,
 // so we hold the previous sample and diff against it — a single reading can't
-// yield an instantaneous percentage. Memory rides the same tick because probing
-// it spawns `vm_stat`: one subprocess a second, regardless of how many clients
-// are polling `GET /system/stats`.
+// yield an instantaneous percentage. Memory and GPU ride the same tick because
+// probing them spawns `vm_stat` / `ioreg`: a fixed couple of subprocesses a
+// second, regardless of how many clients are polling `GET /system/stats`.
 const SAMPLE_INTERVAL_MS = 1_000;
 
 const round = (n: number, dp = 1): number => {
@@ -20,12 +21,13 @@ const round = (n: number, dp = 1): number => {
 };
 
 /**
- * Real host telemetry from `node:os`, `vm_stat`/`/proc/meminfo` and
- * `node:fs.statfs` (the gateway runs on the host, so it can read them). A
- * background interval keeps rolling CPU-usage and memory figures; disk is read
- * on demand. All values are best-effort — a memory probe that fails degrades to
- * `os.freemem()`, and disk reads that fail (permissions, exotic FS) degrade to
- * an empty list rather than failing the whole response.
+ * Real host telemetry from `node:os`, `vm_stat`/`/proc/meminfo`, the platform's
+ * GPU interface and `node:fs.statfs` (the gateway runs on the host, so it can
+ * read them). A background interval keeps rolling CPU, memory and GPU figures;
+ * disk is read on demand. All values are best-effort — a memory probe that fails
+ * degrades to `os.freemem()`, disk reads that fail (permissions, exotic FS)
+ * degrade to an empty list, and a GPU we can't read is simply *omitted* rather
+ * than reported as idle — all without failing the whole response.
  */
 @Injectable()
 export class SystemService implements OnModuleInit, OnModuleDestroy {
@@ -34,17 +36,24 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
   private cpuUsage = 0;
   private memory: MemorySample | null = null;
   private memoryInFlight: Promise<MemorySample> | null = null;
+  private gpu: GpuStats | null = null;
+  private gpuInFlight: Promise<GpuStats | null> | null = null;
+  private readonly gpuProbe: GpuProbe = createGpuProbe((err) =>
+    this.logger.debug({ err }, 'GPU telemetry unavailable on this host'),
+  );
   private timer: NodeJS.Timeout | null = null;
 
   onModuleInit(): void {
     this.timer = setInterval(() => {
       this.sampleCpu();
       void this.sampleMemory();
+      void this.sampleGpu();
     }, SAMPLE_INTERVAL_MS);
     // Don't keep the event loop alive on shutdown.
     this.timer.unref?.();
-    // Prime the cache so the first request isn't a cold read.
+    // Prime the caches so the first request isn't a cold read.
     void this.sampleMemory();
+    void this.sampleGpu();
   }
 
   onModuleDestroy(): void {
@@ -78,12 +87,34 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Refresh the cached GPU sample, collapsing concurrent callers onto a single
+   * probe the same way memory does. A `null` result is cached as `null` — an
+   * unreadable GPU must clear a stale reading, not freeze the last good one.
+   */
+  private sampleGpu(): Promise<GpuStats | null> {
+    this.gpuInFlight ??= this.probeGpu();
+    return this.gpuInFlight;
+  }
+
+  private async probeGpu(): Promise<GpuStats | null> {
+    try {
+      this.gpu = await this.gpuProbe.read();
+      return this.gpu;
+    } finally {
+      this.gpuInFlight = null;
+    }
+  }
+
   async getStats(): Promise<SystemStats> {
     const cpus = os.cpus();
-    // Under Nest the sampler has primed this; a bare service (specs, scripts)
-    // takes the probe on its first call.
-    const [memory, disks] = await Promise.all([
+    // Under Nest the sampler has primed these; a bare service (specs, scripts)
+    // takes the probe on its first call. The GPU is re-probed only while the
+    // probe still reports itself supported — once it has latched off, `gpu`
+    // stays null and we stop paying for a subprocess that can't succeed.
+    const [memory, gpu, disks] = await Promise.all([
       this.memory ?? this.sampleMemory(),
+      this.gpu ?? (this.gpuProbe.supported ? this.sampleGpu() : null),
       this.readDisks(),
     ]);
     return {
@@ -102,6 +133,8 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
         freeBytes: memory.availableBytes,
         usagePct: memory.usagePct,
       },
+      // Omitted entirely when unreadable — see `SystemStatsSchema.gpu`.
+      ...(gpu ? { gpu } : {}),
       disks,
       platform: os.platform(),
       hostname: os.hostname() || undefined,

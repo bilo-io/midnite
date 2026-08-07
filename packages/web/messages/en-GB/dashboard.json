@@ -198,7 +198,11 @@
   "systemMonitor": {
     "cpu": "CPU",
     "ram": "RAM",
-    "unavailable": "Host metrics are unavailable."
+    "unavailable": "Host metrics are unavailable.",
+    "gpu": "GPU",
+    "gpuUnavailable": "This host does not report GPU usage.",
+    "cores": "{count} cores",
+    "memoryOf": "{used} of {total}"
   },
   "memories": {
     "refresh": "Refresh memories",
@@ -584,7 +588,7 @@
     },
     "system-monitor": {
       "label": "System monitor",
-      "description": "Live CPU and memory usage"
+      "description": "Live CPU, memory and GPU usage on one chart"
     },
     "disk": {
       "label": "Disk",
@@ -633,6 +637,30 @@
     "market-watchlist": {
       "label": "Watchlist",
       "description": "A handful of stocks or coins with price and gain/loss"
+    },
+    "cpu-monitor": {
+      "label": "CPU",
+      "description": "Live CPU usage as a rolling chart"
+    },
+    "ram-monitor": {
+      "label": "Memory",
+      "description": "Live memory usage as a rolling chart"
+    },
+    "gpu-monitor": {
+      "label": "GPU",
+      "description": "Live GPU usage as a rolling chart, where the host reports it"
+    },
+    "cpu-dial": {
+      "label": "CPU dial",
+      "description": "Current CPU usage as a percentage dial"
+    },
+    "ram-dial": {
+      "label": "Memory dial",
+      "description": "Current memory usage as a percentage dial"
+    },
+    "gpu-dial": {
+      "label": "GPU dial",
+      "description": "Current GPU usage as a percentage dial, where the host reports it"
     }
   }
 }

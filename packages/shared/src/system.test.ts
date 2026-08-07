@@ -44,4 +44,53 @@ describe('SystemStatsSchema', () => {
     const bad = { ...valid, cpu: { ...valid.cpu, cores: 0 } };
     expect(() => SystemStatsSchema.parse(bad)).toThrow();
   });
+
+  describe('gpu — optional by contract', () => {
+    it('parses a host with no GPU field at all', () => {
+      // Absence is the normal case on hosts with no unprivileged GPU interface,
+      // and it must not fail the whole stats response.
+      const parsed = SystemStatsSchema.parse(valid);
+      expect(parsed.gpu).toBeUndefined();
+    });
+
+    it('accepts a unified-memory reading with used bytes but no total', () => {
+      const parsed = SystemStatsSchema.parse({
+        ...valid,
+        gpu: { usagePct: 74, name: 'Apple M2 Pro', memoryUsedBytes: 853_360_640, source: 'ioreg' },
+      });
+      expect(parsed.gpu?.usagePct).toBe(74);
+      expect(parsed.gpu?.memoryTotalBytes).toBeUndefined();
+    });
+
+    it('accepts a discrete adapter reporting both memory figures', () => {
+      const parsed = SystemStatsSchema.parse({
+        ...valid,
+        gpu: {
+          usagePct: 37,
+          name: 'NVIDIA GeForce RTX 4090',
+          memoryUsedBytes: 2_147_483_648,
+          memoryTotalBytes: 25_757_220_864,
+          source: 'nvidia-smi',
+        },
+      });
+      expect(parsed.gpu?.memoryTotalBytes).toBe(25_757_220_864);
+    });
+
+    it('accepts a bare sysfs busy-percent with no name or memory', () => {
+      const parsed = SystemStatsSchema.parse({ ...valid, gpu: { usagePct: 42, source: 'sysfs' } });
+      expect(parsed.gpu).toEqual({ usagePct: 42, source: 'sysfs' });
+    });
+
+    it('rejects an out-of-range GPU percentage', () => {
+      expect(() =>
+        SystemStatsSchema.parse({ ...valid, gpu: { usagePct: 140, source: 'ioreg' } }),
+      ).toThrow();
+    });
+
+    it('rejects an unknown source — the provenance set is closed', () => {
+      expect(() =>
+        SystemStatsSchema.parse({ ...valid, gpu: { usagePct: 10, source: 'powermetrics' } }),
+      ).toThrow();
+    });
+  });
 });
