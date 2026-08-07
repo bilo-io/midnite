@@ -197,7 +197,7 @@ describe('AppFrame', () => {
       expect(sheet.getByRole('link', { name: 'Echo' })).toBeInTheDocument();
     });
 
-    it('renders a Settings tile and Lock button in the More sheet', () => {
+    it('renders Settings directly above the Lock button in the More sheet', () => {
       const onLock = vi.fn();
       render(
         <AppFrame
@@ -211,8 +211,35 @@ describe('AppFrame', () => {
       );
       fireEvent.click(mobile().getByRole('button', { name: 'Menu' }));
       const sheet = within(screen.getByRole('dialog', { name: 'Menu' }));
-      expect(sheet.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
-      expect(sheet.getByRole('button', { name: /Lock/ })).toBeInTheDocument();
+      const settings = sheet.getByRole('link', { name: 'Settings' });
+      const lock = sheet.getByRole('button', { name: /Lock/ });
+      expect(settings).toBeInTheDocument();
+      expect(lock).toBeInTheDocument();
+
+      // Settings sits below the destination grid and above the theme/lock row —
+      // it used to be a tile *in* the grid. DOCUMENT_POSITION_FOLLOWING means
+      // `lock` comes after `settings` in document order.
+      expect(settings.compareDocumentPosition(lock) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const grid = screen.getByRole('dialog', { name: 'Menu' }).querySelector('.grid');
+      expect(grid?.contains(settings)).toBe(false);
+    });
+
+    it('appends host-provided tiles to the More sheet grid', () => {
+      render(
+        <AppFrame
+          nav={SIX}
+          activePath="/"
+          settings={{ href: '/settings', label: 'Settings' }}
+          mobileTiles={<button type="button">Language</button>}
+        >
+          <p>content</p>
+        </AppFrame>,
+      );
+      fireEvent.click(mobile().getByRole('button', { name: 'Menu' }));
+      const dialog = screen.getByRole('dialog', { name: 'Menu' });
+      const tile = within(dialog).getByRole('button', { name: 'Language' });
+      // In the grid, where Settings used to be.
+      expect(dialog.querySelector('.grid')?.contains(tile)).toBe(true);
     });
 
     it('shows an unread dot on the More button when mobileUnread > 0', () => {

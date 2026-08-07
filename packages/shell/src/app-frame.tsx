@@ -86,11 +86,13 @@ export type AppFrameProps = {
   mobileMaxTabs?: number;
   /** Extra content in the mobile `More` sheet, above the theme/lock row. */
   mobileSheet?: ReactNode;
+  /** Extra tiles appended to the mobile `More` sheet's grid (e.g. a locale picker). */
+  mobileTiles?: ReactNode;
   /** Unread badge count on the mobile `More` button (dot when > 0). */
   mobileUnread?: number;
   /** Mobile `More`-sheet Lock button handler. */
   onLock?: () => void;
-  /** Settings link rendered as a mobile-sheet tile (the rail's Settings lives in `nav.footer`). */
+  /** Settings link — a mobile-sheet row above the lock (the rail's lives in `nav.footer`). */
   settings?: NavItem;
   /** Right-aligned header content (status, notifications, avatar) — rendered only when provided. */
   headerActions?: ReactNode;
@@ -203,6 +205,7 @@ export function AppFrame({
   onToggleSection,
   mobileMaxTabs,
   mobileSheet,
+  mobileTiles,
   mobileUnread,
   onLock,
   settings,
@@ -402,6 +405,7 @@ export function AppFrame({
         maxTabs={mobileMaxTabs}
         settings={settings}
         sheet={mobileSheet}
+        tiles={mobileTiles}
         unread={mobileUnread}
         onLock={onLock}
         labels={mobileLabels}
