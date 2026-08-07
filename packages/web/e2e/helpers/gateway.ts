@@ -10,6 +10,20 @@ import { GATEWAY_ORIGIN } from '../config';
  * `prompt` IS the resulting task title, which makes board assertions deterministic.
  */
 
+/**
+ * Stamp a fixture label so it can't collide with an earlier attempt's.
+ *
+ * The suite runs `workers: 1` against a single long-lived gateway on one SQLite
+ * file, and CI sets `retries: 1` — so a `beforeAll` that seeds a fixed string
+ * runs *again* on retry and leaves two rows with the same title. Every
+ * `getByText(fixture.title)` then fails strict mode, and a first-attempt failure
+ * mutates into a different, more confusing one on retry. Stamp anything a spec
+ * later locates by its visible text.
+ */
+export function uniqueLabel(base: string): string {
+  return `${base} ${Date.now()}`;
+}
+
 /** A task created over the gateway REST API. */
 export type SeededTask = { id: string; title: string; status: Status };
 

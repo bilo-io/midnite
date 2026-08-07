@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, mergeSettings, openPalette, test } from './helpers/harness';
 
 /**
  * Phase 60 Theme I — keyboard/ARIA probe for the fixes this slice applied. The
@@ -11,9 +11,6 @@ test.describe('a11y — command palette combobox', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // best effort
@@ -24,9 +21,7 @@ test.describe('a11y — command palette combobox', () => {
   test('input is a combobox wired to a listbox; arrows move aria-activedescendant', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     const input = palette.getByRole('combobox', { name: 'Search commands and content' });
     await expect(input).toHaveAttribute('aria-controls', 'command-palette-listbox');
@@ -64,11 +59,10 @@ test.describe('a11y — command palette combobox', () => {
  */
 test.describe('a11y — guide overlay keyboard nav', () => {
   test.beforeEach(async ({ page }) => {
+    // The tour must be launched deliberately below, not auto-shown on arrival.
+    await mergeSettings(page, { autoShowGuides: false });
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400, autoShowGuides: false }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // best effort

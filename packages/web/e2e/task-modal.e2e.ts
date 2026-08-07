@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { column, pinUnifiedBoard } from './helpers/board';
 import { seedTask, type SeededTask } from './helpers/gateway';
@@ -17,14 +17,11 @@ test.beforeAll(async () => {
 
 test.describe('Task detail modal (?task=)', () => {
   test.beforeEach(async ({ page }) => {
-    // Keep the setup wizard + the inactivity screensaver out of the way so they
-    // don't intercept clicks mid-flow.
-    await pinUnifiedBoard(page);
+  // Wizard/screensaver suppression lives in the shared harness now; this pins the
+  // board layout the spec asserts against.
+  await pinUnifiedBoard(page);
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // best effort

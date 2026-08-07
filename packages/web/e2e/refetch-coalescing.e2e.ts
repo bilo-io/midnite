@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
-import { seedTask } from './helpers/gateway';
+import { seedTask, uniqueLabel } from './helpers/gateway';
 
 /**
  * Phase 57 E — refetch/cache tuning. The board must not reload once per event.
@@ -35,7 +35,7 @@ test.describe('Refetch coalescing (Phase 57 E)', () => {
 
     // Warm-up: prove the live WS pipeline actually reaches this board (a created
     // task shows up without a manual reload) before we measure coalescing.
-    const warmup = await seedTask('E2E coalesce — warmup', 'todo');
+    const warmup = await seedTask(uniqueLabel('E2E coalesce — warmup'), 'todo');
     await expect(page.getByText(warmup.title)).toBeVisible();
     await page.waitForLoadState('networkidle');
 
@@ -46,7 +46,7 @@ test.describe('Refetch coalescing (Phase 57 E)', () => {
     // debounce window. Seeded server-side (node fetch), so these POSTs are not
     // browser requests and never inflate the GET counter.
     await Promise.all(
-      Array.from({ length: BURST }, (_, i) => seedTask(`E2E coalesce — burst ${i}`, 'todo')),
+      Array.from({ length: BURST }, (_, i) => seedTask(uniqueLabel(`E2E coalesce — burst ${i}`), 'todo')),
     );
 
     // Let the debounce window close (300ms) and any coalesced refetch settle.

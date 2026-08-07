@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, openPalette, pressGlobalKey, test } from './helpers/harness';
 
 /**
  * Command palette + global keyboard shortcuts (Phase 41 Themes A–C). The
@@ -10,15 +10,9 @@ import { expect, test } from '@playwright/test';
  */
 test.describe('Command palette & global shortcuts', () => {
   test.beforeEach(async ({ page }) => {
-    // A fresh e2e gateway auto-opens the setup wizard (a `[role="dialog"]` that
-    // legitimately suppresses board shortcuts and would sit atop the new-task
-    // modal); the idle screensaver would also steal focus. Dismiss both, and pin
-    // the theme to dark so the toggle assertion has a known starting point.
+    // Pin the theme to dark so the toggle assertion has a known starting point.
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // web storage may be unavailable — best effort.
@@ -29,9 +23,7 @@ test.describe('Command palette & global shortcuts', () => {
   test('⌘K shows the always-on sections and a Settings nav entry routes', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     // Commands + Navigation sections render before any query is typed.
     await expect(palette.getByText('Commands', { exact: true })).toBeVisible();
@@ -48,9 +40,7 @@ test.describe('Command palette & global shortcuts', () => {
     const html = page.locator('html');
     await expect(html).toHaveClass(/dark/);
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     // Filter to the static global command and run it.
     await palette.getByRole('combobox', { name: 'Search commands and content' }).fill('theme');
@@ -63,9 +53,8 @@ test.describe('Command palette & global shortcuts', () => {
   test('? opens the shortcuts help overlay grouped by section; Esc closes it', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('?');
     const help = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
-    await expect(help).toBeVisible();
+    await pressGlobalKey(page, '?', () => expect(help).toBeVisible({ timeout: 2_000 }));
 
     // All three groups are present.
     await expect(help.getByText('General', { exact: true })).toBeVisible();
@@ -80,17 +69,20 @@ test.describe('Command palette & global shortcuts', () => {
     await page.goto('/dashboard');
 
     // The global keymap attaches on hydration, which the Next dev server does
-    // asynchronously — the first chord can land before the listener exists, so
-    // retry the whole chord (a plain URL retry never re-sends the keys).
-    await expect(async () => {
-      await page.keyboard.press('g');
-      await page.keyboard.press('o');
-      await expect(page).toHaveURL(/\/office\/?$/, { timeout: 1_000 });
-    }).toPass({ timeout: 10_000 });
+    // asynchronously — a chord can land before the listener exists, so retry the
+    // whole chord (a plain URL retry never re-sends the keys). Both chords need
+    // it: the second navigates to a route the dev server compiles on demand, so
+    // it can lose its keypress to the same window as the first.
+    const chord = async (second: string, url: RegExp) => {
+      await expect(async () => {
+        await page.keyboard.press('g');
+        await page.keyboard.press(second);
+        await expect(page).toHaveURL(url, { timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
+    };
 
-    await page.keyboard.press('g');
-    await page.keyboard.press('s');
-    await expect(page).toHaveURL(/\/settings\/?$/);
+    await chord('o', /\/office\/?$/);
+    await chord('s', /\/settings\/?$/);
   });
 
   test('N opens the new-task form when no input is focused', async ({ page }) => {
@@ -110,9 +102,7 @@ test.describe('Command palette & global shortcuts', () => {
   test('chat mode: ">" runs a deterministic command through confirm → result → undo', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     // A leading ">" switches to chat mode; the search box becomes the command input.
     const input = palette.getByRole('textbox', { name: 'Chat with the board' });

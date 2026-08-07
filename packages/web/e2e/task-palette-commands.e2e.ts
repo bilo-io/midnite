@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, openPalette, test } from './helpers/harness';
 
 import { SCREENSHOTS_DIR } from './config';
 import { seedTask } from './helpers/gateway';
@@ -18,9 +18,6 @@ test.describe('Contextual task palette commands', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // best effort
@@ -35,9 +32,7 @@ test.describe('Contextual task palette commands', () => {
     await expect(page.getByRole('heading', { name: 'Contextual command target' })).toBeVisible();
 
     // Commands show in ⌘K while the detail surface is mounted.
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
     await expect(palette.getByText('Mark done', { exact: true })).toBeVisible();
     await expect(palette.getByText('Move to waiting', { exact: true })).toBeVisible();
     await page.screenshot({ path: join(OUT, 'task-palette-commands.png') });
@@ -49,18 +44,14 @@ test.describe('Contextual task palette commands', () => {
 
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Contextual command target' })).toBeVisible();
-    await page.keyboard.press('ControlOrMeta+k');
-    const reopened = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(reopened).toBeVisible();
+    const reopened = await openPalette(page);
     await expect(reopened.getByText('Mark done', { exact: true })).toHaveCount(0);
     await expect(reopened.getByText('Move to waiting', { exact: true })).toBeVisible();
   });
 
   test('vanish when no task is open', async ({ page }) => {
     await page.goto('/dashboard');
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
     await expect(palette.getByText('Mark done', { exact: true })).toHaveCount(0);
   });
 });

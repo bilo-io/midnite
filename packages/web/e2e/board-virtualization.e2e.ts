@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { pinUnifiedBoard } from './helpers/board';
 import { seedTask } from './helpers/gateway';
@@ -11,15 +11,10 @@ import { seedTask } from './helpers/gateway';
 const SEEDED = 60;
 
 test.beforeEach(async ({ page }) => {
+  // The shared harness (helpers/harness) already suppresses the setup wizard and
+  // the idle screensaver for every spec. `pinUnifiedBoard` is separate and still
+  // needed here: it pins the board layout this spec asserts against.
   await pinUnifiedBoard(page);
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-    } catch {
-      /* best effort */
-    }
-  });
 });
 
 test('board grows with its content and scrolls the page (un-windowed)', async ({ page }) => {

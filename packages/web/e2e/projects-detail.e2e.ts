@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
-import { seedProject, type SeededProject } from './helpers/gateway';
+import { seedProject, uniqueLabel, type SeededProject } from './helpers/gateway';
 
 // Phase 55 A/C/D — the shareable `/projects/view?id=` detail page. Direct
 // navigation / refresh must render the full cockpit (output: 'export' can't
@@ -10,20 +10,9 @@ import { seedProject, type SeededProject } from './helpers/gateway';
 let project: SeededProject;
 
 test.beforeAll(async () => {
-  project = await seedProject('E2E project detail — cockpit', 'Ship the project detail page');
+  project = await seedProject(uniqueLabel('E2E project detail — cockpit'), 'Ship the project detail page');
 });
 
-// The first-run setup wizard renders a modal overlay that would intercept clicks.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-    } catch {
-      /* best effort */
-    }
-  });
-});
 
 test.describe('Project detail page', () => {
   test('direct link renders the cockpit: tabs + both rails', async ({ page }) => {

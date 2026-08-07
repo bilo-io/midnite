@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 /**
  * Dashboard smoke flow. Its widgets proxy external data (Hacker News, weather,

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, openPalette, test } from './helpers/harness';
 
 import { seedTask } from './helpers/gateway';
 
@@ -19,9 +19,7 @@ test.describe('Command palette search', () => {
     await page.goto('/dashboard');
 
     // Open the palette with the global shortcut and search for the unique token.
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     await palette.getByRole('combobox', { name: 'Search commands and content' }).fill(token);
 
@@ -38,9 +36,7 @@ test.describe('Command palette search', () => {
   test('skips the network and prompts for a longer query below the minimum', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     await palette.getByRole('combobox', { name: 'Search commands and content' }).fill('a');
     await expect(palette.getByText(/Type at least 2 characters/)).toBeVisible();

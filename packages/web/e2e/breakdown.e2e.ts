@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, test } from './helpers/harness';
 
 import { column, pinUnifiedBoard } from './helpers/board';
 import { seedProject } from './helpers/gateway';
@@ -20,19 +22,10 @@ function planDialog(page: Page, projectName: string) {
 
 test.describe('Breakdown flow', () => {
   test.beforeEach(async ({ page }) => {
-    // On a fresh e2e gateway the setup wizard auto-opens (provider not "ready")
-    // and would intercept clicks; the idle screensaver (30s default) would also
-    // float over the page during a slow step. Suppress both.
+    // The shared harness already suppresses the setup wizard and the idle
+    // screensaver for every spec; `pinUnifiedBoard` is separate and still needed —
+    // it pins the board layout this spec asserts against.
     await pinUnifiedBoard(page);
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
-      } catch {
-        // web storage may be unavailable — best effort.
-      }
-    });
   });
 
   test('generates a breakdown and creates a dependency-sequenced board', async ({ page }) => {

@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
-import { seedDependency, seedProject, seedTask, type SeededTask } from './helpers/gateway';
+import { seedDependency, seedProject, seedTask, uniqueLabel, type SeededTask } from './helpers/gateway';
 
 // Phase 58 B — the dependency DAG. Seed a blocker edge (dependent → blocker) so
 // the graph has both nodes + an edge, then assert the view renders and a node
@@ -12,16 +12,16 @@ let graphProjectId: string;
 
 test.beforeAll(async () => {
   [blocker, dependent] = await Promise.all([
-    seedTask('E2E graph — blocker task', 'todo'),
-    seedTask('E2E graph — dependent task', 'todo'),
+    seedTask(uniqueLabel('E2E graph — blocker task'), 'todo'),
+    seedTask(uniqueLabel('E2E graph — dependent task'), 'todo'),
   ]);
   await seedDependency(dependent.id, blocker.id);
 
-  const project = await seedProject('E2E graph project', 'Graph completion');
+  const project = await seedProject(uniqueLabel('E2E graph project'), 'Graph completion');
   graphProjectId = project.id;
   await Promise.all([
-    seedTask('E2E graph — project done', 'done', { projectId: graphProjectId }),
-    seedTask('E2E graph — project todo', 'todo', { projectId: graphProjectId }),
+    seedTask(uniqueLabel('E2E graph — project done'), 'done', { projectId: graphProjectId }),
+    seedTask(uniqueLabel('E2E graph — project todo'), 'todo', { projectId: graphProjectId }),
   ]);
 });
 

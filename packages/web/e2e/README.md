@@ -48,6 +48,36 @@ roles/text — never pixels or test IDs.
 > a second concurrent run on the same box would free the first run's ports and
 > wipe its DB. Fine for CI (isolated) and normal local use; don't run two at once.
 
+## The shared harness — import `test` from `helpers/harness`
+
+**Every spec must `import { expect, test } from './helpers/harness'`, not from
+`@playwright/test`.** The harness's `test` boots each page past two first-run
+modal gates that are permanently on in this environment and swallow every click,
+drag and keypress:
+
+- **The setup wizard** auto-opens whenever the gateway reports `ready === false`.
+  The config deliberately blanks the LLM keys (so task titles stay deterministic),
+  which means the e2e gateway is *never* ready and the wizard *always* opens.
+- **The idle screensaver**, `inactivityTimeoutS` (30s by default). Any spec that
+  stalls for half a minute picks up a second overlay on top of the first.
+
+This used to be an `addInitScript` block copy-pasted into each spec — so a new
+spec was born broken and seven older ones never had it at all. Importing from the
+harness is now the whole opt-in. Related helpers:
+
+| Helper | Use it for |
+| --- | --- |
+| `mergeSettings(target, partial)` | Setting anything in `midnite.settings`. **Never** `setItem('midnite.settings', …)` directly — init scripts stack and re-run on every navigation, so a wholesale assignment clobbers the harness's `inactivityTimeoutS` and hands your spec a screensaver mid-test. |
+| `suppressFirstRunGates(target)` | Contexts you build yourself with `browser.newContext()` — the `page` fixture can't reach those. |
+| `pressGlobalKey(page, key, expectation)` | ⌘K, `?`, and the `G _` nav chords. Their listeners attach in effects inside `<AuthGate>`, which renders `null` until the session resolves, so a single un-retried keypress right after `goto()` lands on nothing. |
+| `uniqueLabel(base)` from `helpers/gateway` | Any fixture a spec later locates by its visible text. `workers: 1` + `retries: 1` + one shared gateway DB means a `beforeAll` re-runs on retry and leaves two rows with the same title, turning your failure into a confusing strict-mode violation. |
+
+The gateway fixture ([`fixtures/midnite.e2e.json`](fixtures/midnite.e2e.json))
+carries `agent.pool: 4` for the same reason: `poolEnabled: false` only stops the
+autonomous scheduler, and `POST /tasks/:id/start` bypasses it by design — with a
+single slot, a retry that seeds a fresh task hits `409 no free agent slot`
+because the first attempt's stub agent still holds the only one.
+
 ## Screenshot capture (Theme E1)
 
 [`screenshots/pages.shots.ts`](screenshots/pages.shots.ts) saves a PNG of every

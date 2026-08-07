@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 /**
  * App-update banner flow (Phase 71 Themes B/C). The running build's version is

@@ -1,4 +1,6 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
+
+import { expect, suppressFirstRunGates, test } from './helpers/harness';
 
 import { GATEWAY_ORIGIN, WEB_ORIGIN } from './config';
 
@@ -27,15 +29,8 @@ type Hello = { name: string; ghost?: boolean };
 
 /** Load `/office` in a fresh context (wizard + screensaver suppressed). */
 async function openOffice(context: BrowserContext): Promise<Page> {
-  await context.addInitScript(() => {
-    try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-      localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
-    } catch {
-      // web storage may be unavailable — best effort.
-    }
-  });
+  // A hand-rolled context doesn't get the `page` fixture's gate suppression.
+  await suppressFirstRunGates(context);
   const page = await context.newPage();
   await page.goto('/office');
   await expect(page.getByRole('heading', { name: 'Office', exact: true })).toBeVisible();
@@ -151,14 +146,6 @@ test.describe('Office presence (two contexts)', () => {
   });
 
   test('solo: the office presence HUD mounts and shows only you', async ({ page }) => {
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-      } catch {
-        // best effort
-      }
-    });
     await page.goto('/office');
     await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
     // The roster renders you alone — no peers on a fresh, solo session.

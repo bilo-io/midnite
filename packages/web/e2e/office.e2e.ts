@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 /**
  * The office is a Phaser canvas with a React HUD overlay, loaded client-only.

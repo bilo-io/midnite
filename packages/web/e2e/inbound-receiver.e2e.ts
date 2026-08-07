@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { GATEWAY_ORIGIN } from './config';
 

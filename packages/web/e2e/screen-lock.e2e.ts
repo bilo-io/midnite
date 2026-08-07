@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, mergeSettings, test } from './helpers/harness';
 
 /**
  * Screen lock (Phase 73 Theme C) — the idle/lock screensaver now renders on the
@@ -11,19 +13,17 @@ import { expect, test, type Page } from '@playwright/test';
  * so no idle wait is needed. No gateway seed — session counts fall back to idle.
  */
 async function setup(page: Page, settings: Record<string, unknown>, passcode?: string): Promise<void> {
+  await mergeSettings(page, settings);
   await page.addInitScript(
-    ({ settings, passcode }) => {
+    ({ passcode }) => {
       try {
         localStorage.setItem('midnite.theme', 'dark');
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify(settings));
         if (passcode) localStorage.setItem('midnite.passcode', JSON.stringify(passcode));
       } catch {
         /* best effort */
       }
     },
-    { settings, passcode },
+    { passcode },
   );
 }
 

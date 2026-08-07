@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 import type { Browser, Page } from '@playwright/test';
 
 import { seedTask } from './helpers/gateway';

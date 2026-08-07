@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, test } from './helpers/harness';
 
 /**
  * Mobile chrome stacking — the regression suite for bilo-io/midnite-app#5
@@ -45,7 +47,6 @@ test.describe('mobile chrome at phone width', () => {
     // deterministic (mirrors dashboard.e2e.ts).
     await page.route(/\/(news|weather|market)\b/, (route) => route.abort());
     await page.addInitScript(() => {
-      window.localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
     });
     await page.setViewportSize(PHONE);
     await page.emulateMedia({ reducedMotion: 'reduce' });

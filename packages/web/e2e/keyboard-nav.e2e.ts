@@ -1,7 +1,9 @@
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, test } from './helpers/harness';
 
 import { SCREENSHOTS_DIR } from './config';
 import { column, pinUnifiedBoard } from './helpers/board';
@@ -41,19 +43,10 @@ async function focusFirstCard(page: Page): Promise<void> {
 
 test.describe('Board keyboard navigation', () => {
   test.beforeEach(async ({ page }) => {
-    // On a fresh e2e gateway the setup wizard auto-opens (provider not "ready").
-    // It's a `[role="dialog"]` that legitimately suppresses board shortcuts, so
-    // dismiss it (and the idle screensaver) before driving the keyboard.
+    // The shared harness already suppresses the setup wizard and the idle
+    // screensaver for every spec; `pinUnifiedBoard` is separate and still needed —
+    // it pins the board layout this spec asserts against.
     await pinUnifiedBoard(page);
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
-      } catch {
-        // web storage may be unavailable — best effort.
-      }
-    });
   });
 
   test('arrow keys show a focus ring and Enter opens the focused card', async ({ page }) => {

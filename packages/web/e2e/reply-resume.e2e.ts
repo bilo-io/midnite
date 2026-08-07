@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { GATEWAY_ORIGIN } from './config';
 import { column, pinUnifiedBoard } from './helpers/board';
@@ -43,15 +43,9 @@ test('reply to a waiting agent from the board card → resumes to In progress (n
   await startRun(task.id);
   await waitForStatus(task.id, 'waiting');
 
+  // Wizard/screensaver suppression lives in the shared harness now; this pins the
+  // board layout the spec asserts against.
   await pinUnifiedBoard(page);
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-    } catch {
-      // storage unavailable — harmless
-    }
-  });
   await page.goto('/tasks');
 
   // The card sits in Waiting with the live-wait quick-reply affordance.

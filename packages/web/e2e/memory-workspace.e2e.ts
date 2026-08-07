@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
-import { seedMemory, type SeededMemory } from './helpers/gateway';
+import { seedMemory, uniqueLabel, type SeededMemory } from './helpers/gateway';
 
 // Phase 65 A — the shareable `/memory/view?id=` workspace. Direct navigation /
 // refresh must render the 3-panel layout (output: 'export' can't prerender ids,
@@ -9,20 +9,9 @@ import { seedMemory, type SeededMemory } from './helpers/gateway';
 let memory: SeededMemory;
 
 test.beforeAll(async () => {
-  memory = await seedMemory('E2E memory — workspace', '# Notes\nRemember the conventions.');
+  memory = await seedMemory(uniqueLabel('E2E memory — workspace'), '# Notes\nRemember the conventions.');
 });
 
-// The first-run setup wizard renders a modal overlay that would intercept clicks.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-    } catch {
-      /* best effort */
-    }
-  });
-});
 
 test.describe('Memory workspace page', () => {
   test('direct link renders the 3-panel workspace: doc, sources, Studio', async ({ page }) => {
@@ -67,7 +56,7 @@ test.describe('Memory workspace page', () => {
   // leaves its idle state and the status chip resolves — asserting the endpoint,
   // the client poll, and status surfacing end-to-end without depending on a key.
   test('Studio: generating an artifact leaves idle and settles to a status', async ({ page }) => {
-    const fresh = await seedMemory('E2E studio target', '# Topic\nSome grounding content to summarise.');
+    const fresh = await seedMemory(uniqueLabel('E2E studio target'), '# Topic\nSome grounding content to summarise.');
     await page.goto(`/memory/view?id=${fresh.id}`);
 
     await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
@@ -82,7 +71,7 @@ test.describe('Memory workspace page', () => {
   // rail (no "Soon" placeholders). With no TTS/ffmpeg provider they degrade rather
   // than hard-fail; here we assert both rows are present and generatable.
   test('Studio: audio + video overviews are offered', async ({ page }) => {
-    const fresh = await seedMemory('E2E studio media', '# Topic\nGrounding content for media.');
+    const fresh = await seedMemory(uniqueLabel('E2E studio media'), '# Topic\nGrounding content for media.');
     await page.goto(`/memory/view?id=${fresh.id}`);
     await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
     await expect(page.getByText('Audio overview')).toBeVisible();
@@ -93,7 +82,7 @@ test.describe('Memory workspace page', () => {
   // Phase 65 B — upload a text file as a source; it ingests (no network needed)
   // and the per-source status resolves to "read" via the panel's poll.
   test('uploads a file source and it ingests to ready', async ({ page }) => {
-    const fresh = await seedMemory('E2E upload target', '');
+    const fresh = await seedMemory(uniqueLabel('E2E upload target'), '');
     await page.goto(`/memory/view?id=${fresh.id}`);
 
     await page.locator('input[type="file"]').setInputFiles({
@@ -111,7 +100,7 @@ test.describe('Memory workspace page', () => {
   // an honest disabled hint instead of the input (never a crash). Either branch
   // proves the panel is wired end-to-end.
   test('Chat: a question persists to the thread, or the composer degrades honestly', async ({ page }) => {
-    const fresh = await seedMemory('E2E chat target', '# Rockets\nRockets fly because of Newton’s third law.');
+    const fresh = await seedMemory(uniqueLabel('E2E chat target'), '# Rockets\nRockets fly because of Newton’s third law.');
     await page.goto(`/memory/view?id=${fresh.id}`);
 
     const providerHint = page.getByText('Add an AI provider in Settings to chat with this memory.');

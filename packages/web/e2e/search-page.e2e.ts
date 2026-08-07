@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 import { seedTask } from './helpers/gateway';
 
 test.describe('Dedicated /search page', () => {

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 /**
  * A happy-path "view" flow: the route loads and renders the gateway-backed empty
