@@ -148,7 +148,13 @@ export default function UsagePage() {
           ) : !series || series.labels.length === 0 ? (
             <EmptyState>No usage recorded in this window.</EmptyState>
           ) : (
-            <AreaChart cpu={series.cost} ram={series.tokens} className="h-40 w-full" />
+            <AreaChart
+              series={[
+                { data: series.cost, hueVar: '--status-wip' },
+                { data: series.tokens, hueVar: '--status-todo' },
+              ]}
+              className="h-40 w-full"
+            />
           )}
         </Card>
 

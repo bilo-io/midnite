@@ -34,6 +34,7 @@ export {
   type PasscodePadLabels,
 } from './components/passcode-pad';
 export { RadialGauge, type RadialGaugeLabels } from './components/radial-gauge';
+export { MetricDial } from './components/metric-dial';
 // The shared reading face (Phase 80 A) — consumed by `docs` and the site's legal pages.
 export {
   ReadingLayout,
@@ -54,7 +55,7 @@ export {
   type TocEntry,
   type SlugRegistry,
 } from './components/reading';
-export { AreaChart, LegendDot, CHART_W, CHART_H } from './components/system-chart';
+export { AreaChart, LegendDot, CHART_W, CHART_H, type ChartSeries } from './components/system-chart';
 export {
   RailShell,
   RailFloatingToggle,

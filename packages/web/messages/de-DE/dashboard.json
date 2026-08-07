@@ -198,7 +198,11 @@
   "systemMonitor": {
     "cpu": "CPU",
     "ram": "RAM",
-    "unavailable": "Host-Metriken sind nicht verfügbar."
+    "unavailable": "Host-Metriken sind nicht verfügbar.",
+    "gpu": "GPU",
+    "gpuUnavailable": "Dieser Host meldet keine GPU-Auslastung.",
+    "cores": "{count} Kerne",
+    "memoryOf": "{used} von {total}"
   },
   "memories": {
     "refresh": "Erinnerungen aktualisieren",
@@ -584,7 +588,7 @@
     },
     "system-monitor": {
       "label": "Systemmonitor",
-      "description": "Live-Auslastung von CPU und Speicher"
+      "description": "Live-Auslastung von CPU, Speicher und GPU in einem Diagramm"
     },
     "disk": {
       "label": "Festplatte",
@@ -633,6 +637,30 @@
     "market-watchlist": {
       "label": "Beobachtungsliste",
       "description": "Eine Handvoll Aktien oder Coins mit Kurs und Gewinn/Verlust"
+    },
+    "cpu-monitor": {
+      "label": "CPU",
+      "description": "Live-CPU-Auslastung als laufendes Diagramm"
+    },
+    "ram-monitor": {
+      "label": "Speicher",
+      "description": "Live-Speicherauslastung als laufendes Diagramm"
+    },
+    "gpu-monitor": {
+      "label": "GPU",
+      "description": "Live-GPU-Auslastung als laufendes Diagramm, sofern der Host sie meldet"
+    },
+    "cpu-dial": {
+      "label": "CPU-Anzeige",
+      "description": "Aktuelle CPU-Auslastung als Prozentanzeige"
+    },
+    "ram-dial": {
+      "label": "Speicheranzeige",
+      "description": "Aktuelle Speicherauslastung als Prozentanzeige"
+    },
+    "gpu-dial": {
+      "label": "GPU-Anzeige",
+      "description": "Aktuelle GPU-Auslastung als Prozentanzeige, sofern der Host sie meldet"
     }
   }
 }

@@ -15,6 +15,7 @@ import {
   FolderGit2,
   FolderKanban,
   Globe,
+  Gauge,
   HardDrive,
   HeartPulse,
   Inbox,
@@ -23,6 +24,7 @@ import {
   Link as LinkIcon,
   ListTodo,
   Loader,
+  MemoryStick,
   Newspaper,
   NotebookPen,
   PlusCircle,
@@ -76,6 +78,12 @@ export type WidgetType =
   | 'shipped'
   | 'who-in-office'
   | 'system-monitor'
+  | 'cpu-monitor'
+  | 'ram-monitor'
+  | 'gpu-monitor'
+  | 'cpu-dial'
+  | 'ram-dial'
+  | 'gpu-dial'
   | 'disk'
   | 'storage'
   // at-a-glance extras
@@ -235,6 +243,20 @@ const mediumSizes: Record<Breakpoint, WidgetSize> = {
   sm: { w: 4, h: 5, minW: 2, minH: 3 },
 };
 
+/** The rolling host-metric charts (combined + per-metric) — wide enough for the series. */
+const chartMetricSizes: Record<Breakpoint, WidgetSize> = {
+  lg: { w: 4, h: 4, minW: 2, minH: 3 },
+  md: { w: 4, h: 4, minW: 2, minH: 3 },
+  sm: { w: 4, h: 4, minW: 2, minH: 3 },
+};
+
+/** The host-metric dials — same footprint as Disk/App-cache, which they sit beside. */
+const dialMetricSizes: Record<Breakpoint, WidgetSize> = {
+  lg: { w: 3, h: 5, minW: 2, minH: 4 },
+  md: { w: 3, h: 5, minW: 2, minH: 4 },
+  sm: { w: 2, h: 5, minW: 2, minH: 4 },
+};
+
 export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
   'tile-backlog': { label: 'Backlog', description: 'Count of parked or ambiguous tasks', icon: Inbox, category: 'tasks', sizes: tileSizes },
   'tile-todo': { label: 'Todo', description: 'Count of queued, ready-to-start tasks', icon: ListTodo, category: 'tasks', sizes: tileSizes },
@@ -374,10 +396,52 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
   },
   'system-monitor': {
     label: 'System monitor',
-    description: 'Live CPU and memory usage',
+    description: 'Live CPU, memory and GPU usage on one chart',
     icon: Cpu,
     category: 'system',
-    sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
+    sizes: chartMetricSizes,
+  },
+  'cpu-monitor': {
+    label: 'CPU',
+    description: 'Live CPU usage as a rolling chart',
+    icon: Cpu,
+    category: 'system',
+    sizes: chartMetricSizes,
+  },
+  'ram-monitor': {
+    label: 'Memory',
+    description: 'Live memory usage as a rolling chart',
+    icon: MemoryStick,
+    category: 'system',
+    sizes: chartMetricSizes,
+  },
+  'gpu-monitor': {
+    label: 'GPU',
+    description: 'Live GPU usage as a rolling chart, where the host reports it',
+    icon: Gauge,
+    category: 'system',
+    sizes: chartMetricSizes,
+  },
+  'cpu-dial': {
+    label: 'CPU dial',
+    description: 'Current CPU usage as a percentage dial',
+    icon: Cpu,
+    category: 'system',
+    sizes: dialMetricSizes,
+  },
+  'ram-dial': {
+    label: 'Memory dial',
+    description: 'Current memory usage as a percentage dial',
+    icon: MemoryStick,
+    category: 'system',
+    sizes: dialMetricSizes,
+  },
+  'gpu-dial': {
+    label: 'GPU dial',
+    description: 'Current GPU usage as a percentage dial, where the host reports it',
+    icon: Gauge,
+    category: 'system',
+    sizes: dialMetricSizes,
   },
   disk: {
     label: 'Disk',

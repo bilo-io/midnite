@@ -51,6 +51,8 @@ import { ShippedWidget } from './shipped-widget';
 import { QuickCaptureWidget } from './quick-capture-widget';
 import { StorageWidget } from './storage-widget';
 import { DiskWidget } from './disk-widget';
+import { SystemMetricDialWidget } from './system-metric-dial-widget';
+import { SystemMetricWidget } from './system-metric-widget';
 import { SystemMonitorWidget } from './system-monitor-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
 import { PresenceOfficeWidget } from './presence-office-widget';
@@ -493,6 +495,18 @@ export function DashboardGrid({
         return { node: <QuickCaptureWidget /> };
       case 'system-monitor':
         return { node: <SystemMonitorWidget /> };
+      case 'cpu-monitor':
+        return { node: <SystemMetricWidget metric="cpu" widget="cpu-monitor" /> };
+      case 'ram-monitor':
+        return { node: <SystemMetricWidget metric="ram" widget="ram-monitor" /> };
+      case 'gpu-monitor':
+        return { node: <SystemMetricWidget metric="gpu" widget="gpu-monitor" /> };
+      case 'cpu-dial':
+        return { node: <SystemMetricDialWidget metric="cpu" widget="cpu-dial" /> };
+      case 'ram-dial':
+        return { node: <SystemMetricDialWidget metric="ram" widget="ram-dial" /> };
+      case 'gpu-dial':
+        return { node: <SystemMetricDialWidget metric="gpu" widget="gpu-dial" /> };
       case 'disk':
         return { node: <DiskWidget /> };
       case 'storage':

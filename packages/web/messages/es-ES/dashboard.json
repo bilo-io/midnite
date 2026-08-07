@@ -198,7 +198,11 @@
   "systemMonitor": {
     "cpu": "CPU",
     "ram": "RAM",
-    "unavailable": "Las métricas del equipo no están disponibles."
+    "unavailable": "Las métricas del equipo no están disponibles.",
+    "gpu": "GPU",
+    "gpuUnavailable": "Este equipo no informa del uso de la GPU.",
+    "cores": "{count} núcleos",
+    "memoryOf": "{used} de {total}"
   },
   "memories": {
     "refresh": "Actualizar los recuerdos",
@@ -584,7 +588,7 @@
     },
     "system-monitor": {
       "label": "Monitor del sistema",
-      "description": "Uso de CPU y memoria en directo"
+      "description": "Uso de CPU, memoria y GPU en directo en un solo gráfico"
     },
     "disk": {
       "label": "Disco",
@@ -633,6 +637,30 @@
     "market-watchlist": {
       "label": "Lista de seguimiento",
       "description": "Un puñado de acciones o monedas con su precio y su ganancia/pérdida"
+    },
+    "cpu-monitor": {
+      "label": "CPU",
+      "description": "Uso de CPU en directo como gráfico continuo"
+    },
+    "ram-monitor": {
+      "label": "Memoria",
+      "description": "Uso de memoria en directo como gráfico continuo"
+    },
+    "gpu-monitor": {
+      "label": "GPU",
+      "description": "Uso de GPU en directo como gráfico continuo, si el equipo lo informa"
+    },
+    "cpu-dial": {
+      "label": "Dial de CPU",
+      "description": "Uso actual de CPU como dial de porcentaje"
+    },
+    "ram-dial": {
+      "label": "Dial de memoria",
+      "description": "Uso actual de memoria como dial de porcentaje"
+    },
+    "gpu-dial": {
+      "label": "Dial de GPU",
+      "description": "Uso actual de GPU como dial de porcentaje, si el equipo lo informa"
     }
   }
 }
