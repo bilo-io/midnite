@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CloudSun, Droplets, MapPin } from 'lucide-react';
-import type { WeatherResponse } from '@midnite/shared';
-import { getWeather } from '@/lib/api';
+import { CloudSun, Droplets, MapPin, Search } from 'lucide-react';
+import type { WeatherGeocodeResult, WeatherResponse } from '@midnite/shared';
+import { geocodePlace, getWeather, locateByIp } from '@/lib/api';
 import { useWidgetLabels } from '@/lib/dashboard-widget-labels';
 import type { WeatherLocation, WeatherUnits, WidgetConfig } from '@/lib/dashboard-widgets';
 import { usePolling } from '@/lib/use-polling';
@@ -21,29 +21,69 @@ type WeatherWidgetProps = {
   onConfigChange: (config: WidgetConfig['weather']) => void;
 };
 
+/**
+ * Why auto-detection failed, so the fallback UI can say something better than
+ * "location unavailable". `denied` is the user's own choice and worth naming;
+ * `unavailable` covers the environments where the browser API simply can't
+ * answer — the packaged desktop app (Electron ships no geolocation API key) and
+ * any insecure-context origin, where `navigator.geolocation` is missing.
+ */
+type LocationFailure = 'denied' | 'unavailable';
+
+/** Browser geolocation as a promise. Resolves null rather than throwing on denial. */
+function askBrowser(): Promise<{ coords: WeatherLocation | null; denied: boolean }> {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    return Promise.resolve({ coords: null, denied: false });
+  }
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ coords: { lat: pos.coords.latitude, lon: pos.coords.longitude }, denied: false }),
+      // code 1 is PERMISSION_DENIED; 2/3 are "couldn't work it out" / timeout.
+      (err) => resolve({ coords: null, denied: err.code === 1 }),
+      { timeout: 8000 },
+    );
+  });
+}
+
 export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
   const t = useTranslations('dashboard');
   const widgetLabels = useWidgetLabels();
   const { units, location } = config;
   const [coords, setCoords] = useState<WeatherLocation | null>(location);
-  const [needsManual, setNeedsManual] = useState(false);
+  const [failure, setFailure] = useState<LocationFailure | null>(null);
 
-  // Resolve location: a saved manual location wins; otherwise ask the browser.
+  // Resolve a location without asking the user for anything: a saved place wins,
+  // then the browser, then a coarse IP lookup through the gateway. Only when all
+  // three come up empty does the widget fall back to a place search.
   useEffect(() => {
     if (location) {
       setCoords(location);
-      setNeedsManual(false);
+      setFailure(null);
       return;
     }
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setNeedsManual(true);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      () => setNeedsManual(true),
-      { timeout: 8000 },
-    );
+
+    let cancelled = false;
+    setFailure(null);
+    void (async () => {
+      const { coords: browserCoords, denied } = await askBrowser();
+      if (cancelled) return;
+      if (browserCoords) {
+        setCoords(browserCoords);
+        return;
+      }
+      try {
+        const ipLocation = await locateByIp();
+        if (cancelled) return;
+        setCoords({ lat: ipLocation.lat, lon: ipLocation.lon, ...(ipLocation.label ? { label: ipLocation.label } : {}) });
+      } catch {
+        // Both automatic paths are out — hand over to the place search.
+        if (!cancelled) setFailure(denied ? 'denied' : 'unavailable');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location]);
 
   const { data, error } = usePolling<WeatherResponse | null>(
@@ -89,8 +129,8 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
       }
     >
       <div ref={bodyRef} className="h-full">
-        {needsManual && !coords ? (
-          <ManualLocationForm onSave={(loc) => onConfigChange({ ...config, location: loc })} />
+        {failure && !coords ? (
+          <PlaceSearch reason={failure} onPick={(loc) => onConfigChange({ ...config, location: loc })} />
         ) : error && !data ? (
           <p className="px-4 py-6 text-center text-sm text-destructive">{t('weather.error')}</p>
         ) : !data ? (
@@ -161,55 +201,87 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
   );
 }
 
-function ManualLocationForm({ onSave }: { onSave: (loc: WeatherLocation) => void }) {
-  const t = useTranslations('dashboard');
-  const [lat, setLat] = useState('');
-  const [lon, setLon] = useState('');
-  const [label, setLabel] = useState('');
+const SEARCH_DEBOUNCE_MS = 300;
 
-  const submit = () => {
-    const latN = Number(lat);
-    const lonN = Number(lon);
-    if (Number.isFinite(latN) && Number.isFinite(lonN) && latN >= -90 && latN <= 90 && lonN >= -180 && lonN <= 180) {
-      onSave({ lat: latN, lon: lonN, label: label.trim() || undefined });
+/**
+ * Last resort when neither the browser nor the IP lookup could place the user.
+ * Asks for a place name rather than coordinates — nobody knows their latitude,
+ * which is exactly the tedium reported in bilo-io/midnite-app#2.
+ */
+function PlaceSearch({ reason, onPick }: { reason: LocationFailure; onPick: (loc: WeatherLocation) => void }) {
+  const t = useTranslations('dashboard');
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<WeatherGeocodeResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  const trimmed = query.trim();
+  useEffect(() => {
+    if (!trimmed) {
+      setResults(null);
+      return;
     }
-  };
+    let cancelled = false;
+    setSearching(true);
+    const timer = setTimeout(() => {
+      void geocodePlace(trimmed)
+        .then((hits) => {
+          if (!cancelled) setResults(hits);
+        })
+        .catch(() => {
+          if (!cancelled) setResults([]);
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [trimmed]);
 
   return (
-    <div className="flex h-full flex-col justify-center gap-2 p-4">
+    <div className="flex h-full flex-col gap-2 p-4">
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <MapPin className="h-3.5 w-3.5" />
-        {t('weather.locationUnavailable')}
+        <MapPin className="h-3.5 w-3.5 shrink-0" />
+        {reason === 'denied' ? t('weather.locationDenied') : t('weather.locationUnavailable')}
       </p>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-1.5 rounded-md border border-border/60 px-2 focus-within:ring-1 focus-within:ring-ring">
+        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <input
-          value={lat}
-          onChange={(e) => setLat(e.target.value)}
-          placeholder={t('weather.latitude')}
-          inputMode="decimal"
-          className="min-w-0 flex-1 rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        />
-        <input
-          value={lon}
-          onChange={(e) => setLon(e.target.value)}
-          placeholder={t('weather.longitude')}
-          inputMode="decimal"
-          className="min-w-0 flex-1 rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('weather.searchPlaceholder')}
+          aria-label={t('weather.searchLabel')}
+          className="min-w-0 flex-1 bg-transparent py-1 text-xs focus-visible:outline-none"
         />
       </div>
-      <input
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        placeholder={t('weather.labelOptional')}
-        className="rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      />
-      <button
-        type="button"
-        onClick={submit}
-        className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        {t('weather.saveLocation')}
-      </button>
+      {trimmed &&
+        (results === null || searching ? (
+          <p className="px-1 text-[11px] text-muted-foreground">{t('weather.searching')}</p>
+        ) : results.length === 0 ? (
+          <p className="px-1 text-[11px] text-muted-foreground">{t('weather.noMatches')}</p>
+        ) : (
+          <div
+            role="listbox"
+            aria-label={t('weather.searchResults')}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            {results.map((hit) => (
+              <button
+                key={hit.id}
+                type="button"
+                role="option"
+                aria-selected={false}
+                onClick={() => onPick({ lat: hit.lat, lon: hit.lon, label: hit.label })}
+                className="block w-full rounded px-1 py-1 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                {hit.label}
+              </button>
+            ))}
+          </div>
+        ))}
     </div>
   );
 }

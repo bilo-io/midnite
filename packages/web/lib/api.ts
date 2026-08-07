@@ -3,6 +3,10 @@ import {
   NoteResponseSchema,
   NewsResponseSchema,
   WeatherResponseSchema,
+  WeatherLocateResponseSchema,
+  WeatherGeocodeResponseSchema,
+  type WeatherLocateResponse,
+  type WeatherGeocodeResult,
   LinkMetadataResponseSchema,
   AssetSearchResponseSchema,
   SearchResponseSchema,
@@ -2608,6 +2612,27 @@ export async function getNews(count: number): Promise<HackerNewsStory[]> {
 export async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
   const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
   return fetchJson(`/weather?${params.toString()}`, undefined, WeatherResponseSchema);
+}
+
+/**
+ * Coarse, IP-derived location — the fallback for when `navigator.geolocation`
+ * can't answer (Electron ships no geolocation API key; an insecure context has
+ * no API at all). The gateway does the lookup so the browser never talks to a
+ * third-party IP service directly.
+ */
+export async function locateByIp(): Promise<WeatherLocateResponse> {
+  return fetchJson('/weather/locate', undefined, WeatherLocateResponseSchema);
+}
+
+/** Place name → coordinates, so the manual path is a city search, not a lat/lon form. */
+export async function geocodePlace(query: string): Promise<WeatherGeocodeResult[]> {
+  const params = new URLSearchParams({ q: query });
+  const { results } = await fetchJson(
+    `/weather/geocode?${params.toString()}`,
+    undefined,
+    WeatherGeocodeResponseSchema,
+  );
+  return results;
 }
 
 export async function getLinkMetadata(url: string): Promise<LinkMetadataResponse> {
