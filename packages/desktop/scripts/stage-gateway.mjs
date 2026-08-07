@@ -1,9 +1,15 @@
 // Stage everything electron-builder's extraResources expect into build-staging/
 // INSIDE packages/desktop (electron-builder 25.x rejects `from:` paths outside the
 // app dir — see electron-builder.yml):
-//   • build-staging/gateway — a flat, symlink-free production node_modules for the
+//   • build-staging/gateway — a self-contained production node_modules for the
 //     gateway (pnpm deploy) with native deps (better-sqlite3, node-pty) rebuilt
 //     against Electron's ABI, plus its dist/ + drizzle/.
+//
+//     NB this tree is NOT "flat, symlink-free" as this comment long claimed: pnpm
+//     deploy builds an isolated `.pnpm` virtual store here and symlinks into it, and
+//     it leaves one link pointing back OUT at the workspace
+//     (`.pnpm/node_modules/@midnite/gateway`). Step 2 prunes any such escapee, which
+//     is what actually makes the tree self-contained — see scripts/rebuild-native.mjs.
 //   • build-staging/web     — the Next.js static export (packages/web/out).
 //
 //   node packages/desktop/scripts/stage-gateway.mjs
@@ -13,12 +19,15 @@
 // needs the Electron binary installed. Run from the repo root (or anywhere — paths
 // are resolved relative to this file).
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { rmSync, existsSync, cpSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
+import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import * as esbuild from 'esbuild';
+
+import { rebuildStagedNatives } from './rebuild-native.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const desktopDir = resolve(here, '..');
@@ -44,19 +53,68 @@ function run(cmd, args, cwd) {
   execFileSync(cmd, args, { cwd, stdio: 'inherit', shell: isWin });
 }
 
-// 1. Fresh, flat prod deps for the gateway (pnpm deploy resolves the closure
-//    into a real directory with no symlinks).
-if (existsSync(staging)) rmSync(staging, { recursive: true, force: true });
-run('pnpm', ['--filter', '@midnite/gateway', 'deploy', '--prod', staging], repoRoot);
+// The one warning we deliberately swallow: pnpm 9.15's deploy runs its bin-linking pass
+// against a path it mis-resolved (see step 1a), so it reports ENOENT for every
+// devDependency bin — browserslist, webpack, esbuild, vite, terser, jiti, yaml,
+// playwright — that `--prod` correctly did not install. Eight lines of pure noise per
+// stage describing work that was never supposed to happen. pnpm writes them to stdout.
+const PNPM_PHANTOM_BIN_WARNING = /WARN\s+Failed to create bin at .*\bENOENT\b/;
 
-// 2. Rebuild the native deps in the staged tree for Electron's ABI.
-for (const mod of ['better-sqlite3', 'node-pty']) {
-  run(
-    'pnpm',
-    ['exec', 'electron-rebuild', '-m', staging, '-f', '-w', mod, '--version', electronVersion],
-    desktopDir,
-  );
+// `pnpm deploy` with stdout filtered line-by-line. Everything that isn't the phantom-bin
+// warning is passed through verbatim and in real time — this must never become a blanket
+// silence, or a genuine pnpm failure would vanish with it.
+async function runDeploy() {
+  const args = ['--filter', '@midnite/gateway', 'deploy', '--prod', staging];
+  console.log(`$ pnpm ${args.join(' ')}`);
+
+  const child = spawn('pnpm', args, {
+    cwd: repoRoot,
+    shell: isWin,
+    stdio: ['inherit', 'pipe', 'inherit'],
+  });
+  const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
+  let suppressed = 0;
+  lines.on('line', (line) => {
+    if (PNPM_PHANTOM_BIN_WARNING.test(line)) suppressed += 1;
+    else console.log(line);
+  });
+
+  const code = await new Promise((res, rej) => {
+    child.on('error', rej);
+    child.on('close', res);
+  });
+  if (code !== 0) throw new Error(`pnpm deploy exited ${code}`);
+  if (suppressed > 0) {
+    console.log(`  (suppressed ${suppressed} phantom pnpm bin-link warnings — see step 1a)`);
+  }
 }
+
+// 1. Fresh prod deps for the gateway (pnpm deploy resolves the closure into a
+//    self-contained directory).
+if (existsSync(staging)) rmSync(staging, { recursive: true, force: true });
+await runDeploy();
+
+// 1a. pnpm 9.15's deploy mis-resolves its bin-link target: it re-joins the absolute
+//     deploy path onto the FILTERED PROJECT dir, so alongside the correct
+//     build-staging/gateway/node_modules/.bin it also writes a duplicate at
+//       packages/gateway/packages/desktop/build-staging/gateway/node_modules/.bin
+//     The staged tree is unaffected (verified: same 10 bins, correct targets), but the
+//     stray copy is real, and because `pnpm deploy` copies the whole source package dir
+//     the NEXT stage would drag it into the shipped payload. Remove it here.
+//     Guarded on existence, so this becomes a no-op the day pnpm fixes the bug.
+const deployBinLeak = join(repoRoot, 'packages', 'gateway', relative(repoRoot, staging));
+if (existsSync(deployBinLeak)) {
+  rmSync(join(repoRoot, 'packages', 'gateway', relative(repoRoot, staging).split(sep)[0]), {
+    recursive: true,
+    force: true,
+  });
+}
+
+// 2. Rebuild the native deps in the staged tree for Electron's ABI. See
+//    scripts/rebuild-native.mjs for why this is the API and not the electron-rebuild
+//    CLI (short version: only the API can bound the walk to the staged tree, and the
+//    CLI form silently rebuilt the WORKSPACE copies for Electron's ABI every run).
+await rebuildStagedNatives({ staging, electronVersion });
 
 // 2a. Guard: the Electron rebuild above must only ever touch the staged tree.
 //     Historically its artifacts leaked into the WORKSPACE node_modules through
