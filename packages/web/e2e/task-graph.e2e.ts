@@ -43,7 +43,7 @@ test.describe('Dependency graph', () => {
     await page.getByText(dependent.title).click();
 
     // The `?task=` modal opens over the graph (still on /tasks/graph).
-    await expect(page).toHaveURL(/\/tasks\/graph\?.*task=/);
+    await expect(page).toHaveURL(/\/tasks\/graph\/?\?.*task=/);
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 

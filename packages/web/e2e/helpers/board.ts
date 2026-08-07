@@ -37,15 +37,30 @@ export function column(page: Page, label: string): Locator {
  * of the target column.
  */
 export async function dragCardTo(page: Page, source: Locator, target: Locator): Promise<void> {
+  // Scroll the card into view first. `boundingBox()` is viewport-relative and the
+  // board is an un-windowed, page-scrolling list, so by the time the whole suite
+  // has seeded its fixtures into one shared gateway the card can sit well below
+  // the fold — and `page.mouse` would then press on empty space. (This is exactly
+  // why the drag passed in isolation but failed in a full run.)
+  await source.scrollIntoViewIfNeeded();
+
   const src = await source.boundingBox();
   const dst = await target.boundingBox();
   if (!src || !dst) throw new Error('drag source/target has no bounding box');
 
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error('no viewport size');
+
   const startX = src.x + src.width / 2;
   const startY = src.y + src.height / 2;
   const endX = dst.x + dst.width / 2;
-  // Aim near the top of the column (its header), well inside the droppable rect.
-  const endY = dst.y + Math.min(dst.height / 2, 64);
+  // Aim near the top of the column (its header), well inside the droppable rect —
+  // then clamp into the viewport, since a tall column's own top may be scrolled
+  // off and dropping outside it cancels the drag rather than moving the card.
+  const endY = Math.min(
+    Math.max(dst.y + Math.min(dst.height / 2, 64), 8),
+    Math.min(dst.y + dst.height - 8, viewport.height - 8),
+  );
 
   await page.mouse.move(startX, startY);
   await page.mouse.down();

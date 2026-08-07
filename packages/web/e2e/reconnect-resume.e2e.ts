@@ -1,6 +1,8 @@
-import { expect, test } from './helpers/harness';
 import type { Browser, Page } from '@playwright/test';
 
+import { WEB_ORIGIN } from './config';
+import { expect, suppressFirstRunGates, test } from './helpers/harness';
+import { column } from './helpers/board';
 import { seedTask } from './helpers/gateway';
 
 /**
@@ -76,17 +78,24 @@ const unblock = (page: Page) =>
     (window as unknown as { __ws: { block: boolean } }).__ws.block = false;
   });
 
-/** The desktop Todo column's live count badge (its `<h2>`'s following sibling). */
+/**
+ * The desktop Todo column's live count badge.
+ *
+ * Located by walking up to the column header rather than by `following-sibling`
+ * off the `<h2>`: the count pill moved into its own flex container alongside the
+ * add-task button, so the old XPath silently matched nothing and every read hung
+ * until the test timed out.
+ */
 async function todoCount(page: Page): Promise<number> {
-  const badge = page
-    .getByRole('heading', { name: 'Todo', exact: true })
-    .locator('xpath=following-sibling::span[1]');
+  const badge = column(page, 'Todo').locator('span.tabular-nums').first();
   return Number.parseInt(((await badge.textContent()) ?? '').trim(), 10);
 }
 
 /** A second board in its own context — a real subscriber that keeps the ring warm. */
 async function openKeeper(browser: Browser): Promise<() => Promise<void>> {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ baseURL: WEB_ORIGIN });
+  // A hand-rolled context doesn't get the `page` fixture's gate suppression.
+  await suppressFirstRunGates(ctx);
   const keeper = await ctx.newPage();
   await keeper.goto('/tasks');
   await keeper.getByRole('heading', { name: 'Todo', exact: true }).waitFor();
