@@ -105,9 +105,14 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
 
   const setUnits = (u: WeatherUnits) => onConfigChange({ ...config, units: u });
 
+  // A saved place names itself; otherwise show whatever the IP lookup resolved,
+  // so the user can see *which* city the reading is for — and spot it being
+  // wrong — rather than a bare "Weather".
+  const title = location?.label ?? coords?.label ?? widgetLabels.label('weather');
+
   return (
     <WidgetCard
-      title={location?.label ?? widgetLabels.label('weather')}
+      title={title}
       icon={CloudSun}
       actions={
         <div className="flex items-center rounded-md border border-border/60 p-0.5 text-[10px]">

@@ -79,6 +79,15 @@ describe('WeatherWidget location resolution', () => {
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
   });
 
+  it('names the city the IP lookup resolved, so a wrong guess is visible', async () => {
+    stubNavigator(failingGeolocation(2));
+    locateByIp.mockResolvedValue({ lat: 52.52, lon: 13.405, label: 'Berlin, Germany' });
+
+    renderWidget();
+
+    expect(await screen.findByText('Berlin, Germany')).toBeInTheDocument();
+  });
+
   it('falls back to the IP lookup when the browser has no geolocation API at all', async () => {
     stubNavigator(); // insecure context — `navigator.geolocation` is absent
     locateByIp.mockResolvedValue({ lat: 52.52, lon: 13.405, label: 'Berlin, Germany' });
