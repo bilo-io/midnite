@@ -13,21 +13,21 @@ import { LocaleFlag } from '@/components/locale-flag';
 const LIST_ID = 'mobile-locale-options';
 
 /**
- * The locale picker as a **tile**, for the mobile `More` sheet's destination grid
- * — the cell Settings used to hold before it moved down to sit above the Lock
- * button (mirroring the desktop rail's footer order: language, Settings, lock).
+ * The locale picker for the mobile `More` sheet, at the right end of the Settings
+ * row — i.e. directly above the Lock button, so the sheet's right-hand column
+ * reads language → lock, the desktop rail's footer order laid out vertically.
  *
- * A tile, not the rail's `<LanguageSwitcher>`: that one is a left-aligned
- * full-width row with a flyout anchored to the right of the icon rail, which has
- * nowhere to go from a cell in a three-column grid. The option list itself is
+ * Its own trigger rather than the rail's `<LanguageSwitcher>`: that one is a
+ * left-aligned full-width row whose flyout anchors to the right of the icon rail,
+ * with nowhere to go from the end of a row on a phone. The option list itself is
  * shared (`<LocaleOptions>`) so the two triggers can't drift apart.
  *
  * The list is portalled to the body with fixed positioning — the sheet is an
  * `overflow-y-auto` scroll container, so an in-flow drop-up would be clipped at
- * its edge — and anchored above the tab bar rather than to the tile, so it never
- * lands off-screen from the third column.
+ * its edge — and anchored above the tab bar rather than to the trigger, so it
+ * never lands off-screen from the right edge.
  */
-export function LocaleTile({
+export function LocalePicker({
   locale,
   onSelect,
 }: {
@@ -52,15 +52,16 @@ export function LocaleTile({
         aria-expanded={open}
         aria-controls={LIST_ID}
         aria-label={`${label}: ${native}`}
+        // Shaped like the Lock button it sits above, so the two read as one column.
         className={cn(
-          'flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-xs font-medium transition-colors',
+          'flex h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors',
           open
-            ? 'border-transparent bg-accent text-accent-foreground'
-            : 'border-border/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+            ? 'bg-accent text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
         )}
       >
-        <LocaleFlag locale={locale} className="h-5 w-5" />
-        <span className="max-w-full truncate">{label}</span>
+        <LocaleFlag locale={locale} className="h-4 w-4" />
+        <span className="truncate">{label}</span>
       </button>
       {open ? (
         <LocaleSheet

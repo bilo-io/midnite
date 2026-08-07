@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
+import { MOBILE_MENU_EVENT, type MobileMenuEventDetail } from '@midnite/shell';
 import { GradientGlow } from '@midnite/ui';
 
 import { useChatCommand } from '@/hooks/use-chat-command';
@@ -50,6 +51,9 @@ export function AssistantFab() {
   const [open, setOpen] = useState(false);
   const [render, setRender] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  // The mobile `More` sheet is up, so the FAB (fixed bottom-right, over the
+  // sheet's lock row) gets out of its way.
+  const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState<AssistantView>('menu');
   const chat = useChatCommand();
   const isMobile = useIsMobile();
@@ -65,6 +69,11 @@ export function AssistantFab() {
   // guide has been seen; never auto-opens. The "All guides" index is where they
   // get replayed.
   const showGuideNudge = !open && hasAnyUnseen;
+
+  // Faded out, unclickable and out of the tab order while the mobile menu is up.
+  // Scoped to mobile so a viewport that grows past `md` with the sheet's state
+  // still open (the sheet itself is `md:hidden`) doesn't strand the FAB.
+  const hidden = menuOpen && isMobile;
 
   useEffect(() => setMounted(true), []);
 
@@ -124,6 +133,23 @@ export function AssistantFab() {
     return () => window.removeEventListener('midnite:open-chat', onChat);
   }, [openPanel]);
 
+  // Step aside while the mobile nav's `More` sheet is open: the FAB sits exactly
+  // over the sheet's theme/lock row. Driven by shell's event rather than a
+  // z-index — the tab bar has to stay the topmost fixed layer
+  // (bilo-io/midnite-app#5), so reordering the layers is not on the table. An
+  // open panel closes too; the sheet is the surface the user just chose.
+  useEffect(() => {
+    const onMenu = (e: Event) => {
+      setMenuOpen((e as CustomEvent<MobileMenuEventDetail>).detail?.open === true);
+    };
+    window.addEventListener(MOBILE_MENU_EVENT, onMenu);
+    return () => window.removeEventListener(MOBILE_MENU_EVENT, onMenu);
+  }, []);
+
+  useEffect(() => {
+    if (menuOpen && render) close();
+  }, [menuOpen, render, close]);
+
   // Escape + outside-click close (mirrors the web portaled-menu convention).
   useEffect(() => {
     if (!open) return undefined;
@@ -171,14 +197,18 @@ export function AssistantFab() {
     <>
       <GradientGlow
         trigger="hover"
+        aria-hidden={hidden || undefined}
         className={cn(
           'fixed right-4 z-40 rounded-full',
           'bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-5',
+          'transition-opacity duration-200 motion-reduce:transition-none',
+          hidden && 'pointer-events-none opacity-0',
         )}
       >
         <button
           ref={fabRef}
           type="button"
+          tabIndex={hidden ? -1 : undefined}
           data-tour="assistant"
           onClick={() => (open ? close() : openPanel())}
           aria-label={t('open')}

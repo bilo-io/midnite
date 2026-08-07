@@ -22,7 +22,7 @@ import { type Locale, type WindowChromeBridge } from '@midnite/shared';
 import { ReleaseNotesPopover } from '@/components/update/release-notes-popover';
 import { featuresToNav } from '@/lib/nav-config';
 import { LanguageSwitcher } from '@/components/language-switcher';
-import { LocaleTile } from '@/components/locale-tile';
+import { LocalePicker } from '@/components/locale-picker';
 import { setLocalePreference } from '@/lib/locale-preference';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -39,8 +39,6 @@ import { Wordmark } from '@/components/wordmark';
 import { ConnectionToaster } from '@/components/connection-status';
 import { DesktopTitleBar } from '@/components/desktop-title-bar';
 import { HeaderActions } from '@/components/header/header-actions';
-import { NotificationCenter } from '@/components/notification-center';
-import { useNotifications } from '@/components/notifications-provider';
 import { getWindowChromeBridge } from '@/lib/desktop-bridge';
 
 // Route Next's client-side `<Link>` through the shell's injected link seam so the
@@ -67,7 +65,6 @@ export function AppShellClient({ children }: { children: ReactNode }) {
   const [settingUp, setSettingUp] = useState(false);
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const [passcode, setPasscode] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
-  const { unread } = useNotifications();
 
   // The Electron window-chrome bridge (Phase 81) — read after mount (the static
   // export SSRs this component, where `window` is absent). When the window is
@@ -256,13 +253,14 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         onToggleSection={toggleSection}
         onLock={lock}
         settings={{ href: '/settings', label: tNav('footer.settings'), icon: <Settings aria-hidden /> }}
-        mobileSheet={<NotificationCenter expanded />}
-        mobileTiles={
-          // The grid cell Settings vacated when it moved above the Lock button —
-          // same order as the rail footer above (language, Settings, lock).
-          <LocaleTile locale={locale} onSelect={(next) => setLocalePreference(setSettings, next)} />
+        mobileSettingsAction={
+          // Right end of the Settings row, so the sheet's right-hand column reads
+          // language → lock, like the rail footer above. Notifications used to
+          // take the slot above this row; they're reachable from the bell in the
+          // header-actions cluster on every surface, so the sheet no longer
+          // duplicates them.
+          <LocalePicker locale={locale} onSelect={(next) => setLocalePreference(setSettings, next)} />
         }
-        mobileUnread={unread}
         titleBar={titleBarSlot}
         navLabel={tNav('rail.label')}
         sectionToggleLabel={(label) => tNav('rail.sectionToggle', { label })}

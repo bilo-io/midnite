@@ -19,7 +19,15 @@ export {
 } from './app-frame';
 
 // Mobile bottom-tab nav — rendered internally by `AppFrame`, exported for typing.
-export { AppMobileNav, type AppMobileNavProps, type AppMobileNavLabels } from './nav/mobile-nav';
+// `MOBILE_MENU_EVENT` lets the host's floating affordances step aside while the
+// `More` sheet is open (see the FAB in `web`).
+export {
+  AppMobileNav,
+  MOBILE_MENU_EVENT,
+  type AppMobileNavProps,
+  type AppMobileNavLabels,
+  type MobileMenuEventDetail,
+} from './nav/mobile-nav';
 
 // Desktop title bar (Phase 81) — app-drawn chrome for the frameless Electron
 // window; slots are the host's, behaviours (drag/clearance/dim) live here.

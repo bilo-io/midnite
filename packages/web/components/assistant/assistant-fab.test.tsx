@@ -13,7 +13,30 @@ vi.mock('next/image', () => ({
   default: (props: any) => <img {...props} />,
 }));
 
+import { MOBILE_MENU_EVENT } from '@midnite/shell';
+
 import { AssistantFab } from './assistant-fab';
+
+/** Make every `max-width` query match, i.e. put `useIsMobile()` at phone width. */
+function stubMobileViewport() {
+  vi.stubGlobal(
+    'matchMedia',
+    (query: string) =>
+      ({
+        matches: query.includes('max-width'),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as unknown as MediaQueryList,
+  );
+}
+
+const menuState = (open: boolean) =>
+  fireEvent(window, new CustomEvent(MOBILE_MENU_EVENT, { detail: { open } }));
 
 describe('AssistantFab', () => {
   beforeEach(() => {
@@ -155,6 +178,40 @@ describe('AssistantFab', () => {
     const wrapper = screen.getByRole('dialog').parentElement as HTMLElement;
     expect(wrapper).toHaveClass('animate-panel-in');
     expect(wrapper).toHaveClass('origin-bottom-right');
+  });
+
+  it('steps aside while the mobile nav’s More sheet is open, without moving layer', async () => {
+    stubMobileViewport();
+    render(<AssistantFab />);
+    const fab = screen.getByRole('button', { name: 'Open assistant' });
+    const wrapper = fab.parentElement as HTMLElement;
+    expect(wrapper).not.toHaveClass('opacity-0');
+
+    fireEvent.click(fab);
+    expect(screen.getByRole('dialog', { name: 'Assistant' })).toBeInTheDocument();
+
+    menuState(true);
+    expect(wrapper).toHaveClass('opacity-0');
+    expect(wrapper).toHaveClass('pointer-events-none');
+    expect(fab).toHaveAttribute('tabindex', '-1');
+    // Faded out, NOT restacked: the tab bar has to stay the topmost fixed layer
+    // (bilo-io/midnite-app#5), so the FAB keeps its own z-index.
+    expect(wrapper).toHaveClass('z-40');
+    // An open panel gives way too — the sheet is what the user just chose.
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    menuState(false);
+    expect(wrapper).not.toHaveClass('opacity-0');
+    expect(fab).not.toHaveAttribute('tabindex');
+  });
+
+  it('stays put while the More sheet is open on a desktop viewport', () => {
+    render(<AssistantFab />);
+    const wrapper = screen.getByRole('button', { name: 'Open assistant' }).parentElement as HTMLElement;
+    // The sheet is `md:hidden`, so a stale open state from a narrower viewport
+    // must not strand the FAB.
+    menuState(true);
+    expect(wrapper).not.toHaveClass('opacity-0');
   });
 
   it('closes on Escape (kept mounted through the shrink-out, then unmounts)', async () => {
