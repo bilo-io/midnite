@@ -22,6 +22,7 @@ import { type Locale, type WindowChromeBridge } from '@midnite/shared';
 import { ReleaseNotesPopover } from '@/components/update/release-notes-popover';
 import { featuresToNav } from '@/lib/nav-config';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { LocaleTile } from '@/components/locale-tile';
 import { setLocalePreference } from '@/lib/locale-preference';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -256,6 +257,11 @@ export function AppShellClient({ children }: { children: ReactNode }) {
         onLock={lock}
         settings={{ href: '/settings', label: tNav('footer.settings'), icon: <Settings aria-hidden /> }}
         mobileSheet={<NotificationCenter expanded />}
+        mobileTiles={
+          // The grid cell Settings vacated when it moved above the Lock button —
+          // same order as the rail footer above (language, Settings, lock).
+          <LocaleTile locale={locale} onSelect={(next) => setLocalePreference(setSettings, next)} />
+        }
         mobileUnread={unread}
         titleBar={titleBarSlot}
         navLabel={tNav('rail.label')}

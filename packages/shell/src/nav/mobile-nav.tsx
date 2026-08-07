@@ -75,8 +75,19 @@ export type AppMobileNavProps = {
   linkComponent: NavLinkComponent;
   /** How many items get a dedicated tab before the rest spill into `More` (default 4). */
   maxTabs?: number;
-  /** Settings link rendered as a sheet tile (kept reachable even when tabs are full). */
+  /**
+   * Settings link, kept reachable even when every tab slot is taken. Rendered as
+   * a full-width row directly above the theme/lock row — the same order the
+   * desktop rail's footer uses (language, then Settings, then the lock).
+   */
   settings?: NavItem;
+  /**
+   * Extra tiles appended to the overflow grid, for a control the host owns that
+   * belongs with the destinations rather than the rows below them (`web` puts its
+   * locale picker here). Shell stays app-agnostic: it reserves the cell, the host
+   * decides what goes in it.
+   */
+  tiles?: ReactNode;
   /** Extra content in the `More` sheet, above the theme/lock row (e.g. a notification centre). */
   sheet?: ReactNode;
   /** Unread badge count on the `More` button (renders a dot when > 0). */
@@ -100,6 +111,7 @@ export function AppMobileNav({
   linkComponent: Link,
   maxTabs = DEFAULT_MAX_TABS,
   settings,
+  tiles,
   sheet,
   unread = 0,
   onLock,
@@ -181,28 +193,42 @@ export function AppMobileNav({
         )}
       >
         <div aria-hidden className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
-        <div className="grid grid-cols-3 gap-2">
-          {overflow.map((item) => (
-            <DrawerTile
-              key={item.href}
-              item={item}
-              active={isActivePath(activePath, item.href)}
-              Link={Link}
-            />
-          ))}
-          {settings ? (
-            <DrawerTile
-              item={settings}
-              active={isActivePath(activePath, settings.href)}
-              Link={Link}
-            />
-          ) : null}
-        </div>
-        {sheet ? (
-          <>
-            <div className="my-3 h-px bg-border/60" />
-            {sheet}
-          </>
+        {overflow.length > 0 || tiles ? (
+          <div className="grid grid-cols-3 gap-2">
+            {overflow.map((item) => (
+              <DrawerTile
+                key={item.href}
+                item={item}
+                active={isActivePath(activePath, item.href)}
+                Link={Link}
+              />
+            ))}
+            {tiles}
+          </div>
+        ) : null}
+        {/* Everything below the destinations: the host slot, then Settings, then
+            the theme/lock row — one rule above the group when it has content. */}
+        {sheet || settings ? <div className="my-3 h-px bg-border/60" /> : null}
+        {sheet}
+        {settings ? (
+          <Link
+            href={settings.href}
+            aria-label={settings.label}
+            aria-current={isActivePath(activePath, settings.href) ? 'page' : undefined}
+            className={cn(
+              'flex h-9 w-full items-center gap-3 rounded-md px-2.5 text-sm font-medium transition-colors',
+              isActivePath(activePath, settings.href)
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+            )}
+          >
+            {settings.icon ? (
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center [&>svg]:h-4 [&>svg]:w-4">
+                {settings.icon}
+              </span>
+            ) : null}
+            <span className="min-w-0 truncate">{settings.label}</span>
+          </Link>
         ) : null}
         <div className="flex items-center justify-between gap-2">
           <ThemeToggle expanded labels={copy.themeToggle} />
