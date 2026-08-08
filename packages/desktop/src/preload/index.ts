@@ -21,6 +21,19 @@ import {
   WINDOW_FULLSCREEN_CHANNEL,
   WINDOW_TOGGLE_MAXIMIZE_CHANNEL,
 } from '../window-chrome/channels';
+import { RECOVERY_OPEN_LOGS_CHANNEL, RECOVERY_RETRY_CHANNEL } from '../main/recovery';
+
+// Recovery bridge for the gateway-failure page. Exposed always (it's cheap) so
+// the failure page never depends on a conditional preload path; the page itself
+// degrades to disabled buttons if this is missing.
+try {
+  contextBridge.exposeInMainWorld('midniteRecovery', {
+    retry: () => ipcRenderer.send(RECOVERY_RETRY_CHANNEL),
+    openLogs: () => ipcRenderer.send(RECOVERY_OPEN_LOGS_CHANNEL),
+  });
+} catch {
+  // contextIsolation disabled or already exposed — ignore.
+}
 
 // The static web bundle bakes NEXT_PUBLIC_* at build time, so the gateway URL
 // (a dynamic loopback port) is injected here instead. gatewayUrl()/gatewayWsUrl()

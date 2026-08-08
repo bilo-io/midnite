@@ -10,10 +10,12 @@ import {
   writeGatewayEndpoint,
 } from './gateway-process';
 import { ensureGatewaySecrets } from './gateway-secrets';
+import { renderFailurePage } from './failure-page';
 import { waitForHealth } from './health-wait';
 import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
 import { registerPermissionHandlers } from './permissions';
+import { registerRecovery } from './recovery';
 import { ensureLoginShellPath } from './shell-path';
 import { registerUpdater, startUpdateCheck } from './updater';
 import { attachWindowChrome, registerWindowChrome, windowFrameless } from './window-chrome';
@@ -157,13 +159,16 @@ async function boot(): Promise<void> {
   });
 
   if (!healthy) {
-    // With the native title bar hidden the window is only draggable through an
-    // app-drawn drag region, so the failure page carries its own strip.
-    const dragStrip = frameless
-      ? '<div style="position:fixed;top:0;left:0;right:0;height:48px;-webkit-app-region:drag"></div>'
-      : '';
-    const html = `${dragStrip}<h1>Midnite failed to start</h1><p>The local gateway did not become healthy. Check the logs.</p>`;
-    await win.loadURL(`data:text/html,${encodeURIComponent(html)}`);
+    // The gateway never came up. Show an actionable recovery page (log path,
+    // restart, open-logs, report) rather than the old bare "check the logs"
+    // string — see failure-page.ts. `ready-to-show` above handles showing it.
+    registerRecovery(paths.logsDir);
+    const html = renderFailurePage({
+      logsDir: paths.logsDir,
+      port: gatewayPort,
+      frameless,
+    });
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
     return;
   }
 
