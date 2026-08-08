@@ -1,0 +1,1 @@
+import{G as a,M as s,C as o}from"./memory-stick-BEWUf0U9.js";const e={cpu:{id:"cpu",hueVar:"--status-wip",icon:o,labelKey:"systemMonitor.cpu"},ram:{id:"ram",hueVar:"--status-todo",icon:s,labelKey:"systemMonitor.ram"},gpu:{id:"gpu",hueVar:"--status-done",icon:a,labelKey:"systemMonitor.gpu"}},u=["cpu","ram","gpu"];export{e as S,u as a};
