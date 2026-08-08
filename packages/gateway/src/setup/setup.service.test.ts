@@ -8,6 +8,7 @@ import type { CryptoService } from '../crypto/crypto.service';
 import type { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
 import type { AgentPoolService } from '../pool/agent-pool.service';
 import type { ProvidersService } from '../providers/providers.service';
+import type { ReposService } from '../repos/repos.service';
 import { SetupService } from './setup.service';
 
 type Opts = {
@@ -109,6 +110,24 @@ describe('SetupService.getStatus', () => {
   it('marks repo ok once at least one is registered', async () => {
     expect(await stateOf(makeService({ repos: 0 }), 'repo')).toBe('warn');
     expect(await stateOf(makeService({ repos: 2 }), 'repo')).toBe('ok');
+  });
+
+  it('counts the DB registry, not the config seed', async () => {
+    // A repo added via the wizard or Settings → Repos is written to the
+    // registry; `config.repos` only seeds it on first boot. Reading the seed
+    // left the checklist saying "No repos registered yet" straight after the
+    // user registered one.
+    const withRegistry = new SetupService(
+      ...makeDeps({ repos: 0 }),
+      undefined,
+      undefined,
+      { list: () => [{ name: 'from-ui' }] } as unknown as ReposService,
+    );
+    expect(await stateOf(withRegistry, 'repo')).toBe('ok');
+  });
+
+  it('falls back to the config seed when the registry is unavailable', async () => {
+    expect(await stateOf(makeService({ repos: 1 }), 'repo')).toBe('ok');
   });
 
   it('echoes the live pool settings so clients bind to the server, not localStorage', async () => {

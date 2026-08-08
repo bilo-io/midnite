@@ -20,12 +20,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslations } from 'next-intl';
-import { ChevronsLeft, ChevronsRight, Play, Plus, RotateCcw, Square } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, LayoutGrid, Play, Plus, RotateCcw, Square } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { useConfirm } from '@/components/confirm-dialog';
+import { EmptyState } from '@/components/empty-state';
 import { OverflowMenu } from '@/components/overflow-menu';
 import { ProjectNameLink } from '@/components/project-name-link';
 import { ProjectTag } from '@/components/project-tag';
@@ -370,6 +371,24 @@ function UnifiedBoard({
   }, []);
 
   const clearFocus = useCallback(() => setFocusedId(null), []);
+
+  // A brand-new install lands here straight from the setup wizard's "Start
+  // building", and used to be met with six empty columns each showing `0` —
+  // the least guided screen in the app, at the moment the user most needs a
+  // next step. Six empty columns teach nothing, so replace the whole grid
+  // (not per-column placeholders) until the first task exists.
+  if (tasks.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col pt-2" data-tour="board">
+        <EmptyState
+          Icon={LayoutGrid}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          {...(onAddTask ? { actionLabel: t('empty.action'), onAction: () => onAddTask('todo') } : {})}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">

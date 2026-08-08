@@ -6,6 +6,7 @@ import { parseConfig, type MidniteConfig, type PreflightCheck } from '@midnite/s
 import type { DbFactory } from '../db/db.module';
 import type { AgentPoolService } from '../pool/agent-pool.service';
 import type { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
+import type { ReposService } from '../repos/repos.service';
 
 // Deterministic env probes — each test dials the presence of claude/gh/tmux etc.
 vi.mock('./lib/probes', () => ({
@@ -62,8 +63,16 @@ function svc(
   cfg: MidniteConfig,
   sqlite: unknown = okSqlite,
   scheduler?: Partial<AgentPoolScheduler>,
+  repos?: { name: string; path: string }[],
 ) {
-  return new HealthService(cfg, dbFactory(sqlite), pool, scheduler as AgentPoolScheduler | undefined);
+  return new HealthService(
+    cfg,
+    dbFactory(sqlite),
+    pool,
+    scheduler as AgentPoolScheduler | undefined,
+    // The DB registry stand-in. Passing undefined exercises the config fallback.
+    repos ? ({ list: () => repos } as unknown as ReposService) : undefined,
+  );
 }
 
 beforeEach(() => {
@@ -166,6 +175,33 @@ describe('HealthService.bootChecks', () => {
     const check = byName(await svc(config({ repos: [{ name: 'app', path: '/nope' }] })).bootChecks(), 'repo-paths');
     expect(check.status).toBe('warn');
     expect(check.detail).toContain('app');
+  });
+
+  it('validates repos from the DB registry, not just the config seed', async () => {
+    // Repos added through Settings → Repos live only in the registry. Checking
+    // `config.repos` alone left them unvalidated, so a typo'd path stayed
+    // invisible here and surfaced later as an agent running in the wrong tree.
+    vi.mocked(mocked.pathExists).mockReturnValue(false);
+    const check = byName(
+      await svc(config({ repos: [] }), okSqlite, undefined, [
+        { name: 'from-ui', path: '/nope' },
+      ]).bootChecks(),
+      'repo-paths',
+    );
+    expect(check.status).toBe('warn');
+    expect(check.detail).toContain('from-ui');
+  });
+
+  it('prefers the registry over the config seed when both are present', async () => {
+    vi.mocked(mocked.pathExists).mockImplementation((p: string) => p === '/real');
+    const check = byName(
+      await svc(config({ repos: [{ name: 'stale', path: '/gone' }] }), okSqlite, undefined, [
+        { name: 'live', path: '/real' },
+      ]).bootChecks(),
+      'repo-paths',
+    );
+    expect(check.status).toBe('ok');
+    expect(check.detail).not.toContain('stale');
   });
 
   it('pty spawner unavailable fails only when the pool is enabled', async () => {

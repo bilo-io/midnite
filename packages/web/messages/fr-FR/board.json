@@ -182,5 +182,10 @@
   "page": {
     "title": "Tâches",
     "description": "Tâches regroupées par statut. Basculez entre la liste, le tableau et le graphe, et filtrez par statut ou par projet."
+  },
+  "empty": {
+    "title": "Votre tableau est vide",
+    "description": "Ajoutez votre première tâche : Midnite la classera, la mettra en file et la confiera à un agent. Les tâches traversent ces colonnes au fil de leur exécution.",
+    "action": "Ajouter votre première tâche"
   }
 }

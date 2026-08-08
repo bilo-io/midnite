@@ -182,5 +182,10 @@
   "page": {
     "title": "Tareas",
     "description": "Tareas agrupadas por estado. Alterna entre lista, tablero y grafo, y filtra por estado o proyecto."
+  },
+  "empty": {
+    "title": "Tu tablero está vacío",
+    "description": "Añade tu primera tarea y Midnite la clasificará, la pondrá en cola y se la pasará a un agente. Las tareas avanzan por estas columnas a medida que se ejecutan.",
+    "action": "Añadir tu primera tarea"
   }
 }

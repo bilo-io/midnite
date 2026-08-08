@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AgentsModule } from '../agents/agents.module';
 import { PoolModule } from '../pool/pool.module';
 import { ProvidersModule } from '../providers/providers.module';
+import { ReposModule } from '../repos/repos.module';
 import { SetupController } from './setup.controller';
 import { SetupService } from './setup.service';
 
@@ -13,7 +14,7 @@ import { SetupService } from './setup.service';
 // longer needs a hand-edited config plus a restart. Plain import, no forwardRef
 // — PoolModule doesn't depend on SetupModule, so there's no cycle to break.
 @Module({
-  imports: [ProvidersModule, AgentsModule, PoolModule],
+  imports: [ProvidersModule, AgentsModule, PoolModule, ReposModule],
   controllers: [SetupController],
   providers: [SetupService],
 })
