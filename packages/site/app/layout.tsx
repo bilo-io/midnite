@@ -5,12 +5,12 @@ import './globals.css';
 import { ThemeProvider } from './theme/theme-context';
 import { themeInitScript } from './theme/theme-script';
 
-// Display font for the "Midnite" wordmark — Rooster, the brand face. Exposed as a
-// CSS var so the `font-brand` Tailwind utility can apply it wherever the brand
-// name shows. Mirrors the app's WORDMARK_LOGO_FONT (web/lib/wordmark-fonts.ts);
+// Display font for the "Midnite" wordmark — Quick Kiss, the brand face. Exposed
+// as a CSS var so the `font-brand` Tailwind utility can apply it wherever the
+// brand name shows. Mirrors the app's WORDMARK_LOGO_FONT (web/lib/wordmark-fonts.ts);
 // keep the two in sync.
 const brand = localFont({
-  src: './fonts/rooster.ttf',
+  src: './fonts/quick-kiss.ttf',
   variable: '--font-brand',
   display: 'swap',
 });

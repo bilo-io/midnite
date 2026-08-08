@@ -6,6 +6,7 @@ import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
 import { LandingClock } from '@/components/landing-clock';
 import { LandingWeather } from '@/components/landing-weather';
+import { LandingSystemMonitor } from '@/components/landing-system-monitor';
 import { SUBGREETINGS, windowForTime } from '@/lib/landing-greetings';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -120,6 +121,7 @@ export default function HomePage() {
     >
       <LandingWeather />
       <LandingClock now={now} />
+      <LandingSystemMonitor />
 
       <div className="mb-10">
         <Spinner />

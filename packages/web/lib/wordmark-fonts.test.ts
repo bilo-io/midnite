@@ -23,7 +23,7 @@ const read = (p: string) => readFileSync(join(REPO_ROOT, p), 'utf8');
 function brandFontFile(): string {
   const layout = read('packages/web/app/layout.tsx');
   const cssVar = wordmarkFontVar(WORDMARK_LOGO_FONT);
-  // e.g. localFont({ src: './fonts/rooster.ttf', variable: '--font-rooster', … })
+  // e.g. localFont({ src: './fonts/quick-kiss.ttf', variable: '--font-quick-kiss', … })
   const decl = new RegExp(`src: '\\./fonts/([^']+)',\\s*variable: '${cssVar}'`).exec(layout);
   if (!decl?.[1]) throw new Error(`no next/font declaration for ${cssVar} in web/app/layout.tsx`);
   return decl[1];

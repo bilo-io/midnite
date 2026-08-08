@@ -18,11 +18,13 @@ import {
 } from '@/lib/wordmark-fonts';
 
 // The "Midnite" wordmark, following the live per-user trial selection made in
-// Settings → Appearance → Logo: the font (`midnite.wordmark-font`, defaulting to
-// Rooster), the letter-casing (`midnite.wordmark-case`, defaulting to title
-// case) and the size (`midnite.wordmark-size`, defaulting to 'm'). All are
-// localStorage-backed and broadcast, so picking any there updates every wordmark
-// instance at once.
+// Settings → Appearance → Logo: the font (`midnite.wordmark-font.v2`, defaulting
+// to Quick Kiss), the letter-casing (`midnite.wordmark-case.v2`, defaulting to
+// title case) and the size (`midnite.wordmark-size.v2`, defaulting to 'xl'). All
+// are localStorage-backed and broadcast, so picking any there updates every
+// wordmark instance at once. That picker is currently commented out, so in
+// practice these read as the constants above — the wiring stays so uncommenting
+// it restores the live trial behaviour.
 //
 // Pass `font` to pin a specific face (e.g. the picker preview cards / the
 // quote-widget's per-widget picker) instead of following the stored selection.
