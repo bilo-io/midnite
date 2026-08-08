@@ -1,0 +1,1 @@
+import{b3 as o,bc as n}from"./iframe-CRXPy4mK.js";function c(){const s=o("projects");return n.useMemo(()=>{const t=(e,r)=>s.has(e)?s(e):r;return{name:e=>t(`templates.${e.id}.name`,e.name),description:e=>t(`templates.${e.id}.description`,e.description)}},[s])}export{c as u};
