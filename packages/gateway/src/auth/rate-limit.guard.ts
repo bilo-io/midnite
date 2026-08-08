@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import { isAuthExemptPath } from './lib/auth-policy';
+import { isRateLimitExemptPath } from './lib/auth-policy';
 
 type IncomingRequest = { url?: string; ip?: string };
 
@@ -17,7 +17,13 @@ type IncomingRequest = { url?: string; ip?: string };
  * a local single-user gateway needs no throttling. When enabled it bounds bursts
  * (incl. brute-forcing the bearer token) per IP. Runs before the auth guard so an
  * unauthenticated flood is throttled too. In-memory: a single-process gateway, so
- * no shared store needed; `/health` is never throttled (probes hit it often).
+ * no shared store needed.
+ *
+ * Exemptions come from {@link isRateLimitExemptPath}, NOT the auth guard's list:
+ * only `/health*` and `/hooks/*` skip the limiter. This guard used to reuse
+ * `isAuthExemptPath`, which meant `/auth/login`, `/auth/register` and
+ * `/auth/refresh` — the endpoints worth brute-forcing — were exempt even with
+ * rate limiting explicitly turned on.
  */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
@@ -35,7 +41,7 @@ export class RateLimitGuard implements CanActivate {
     if (context.getType() !== 'http') return true;
 
     const req = context.switchToHttp().getRequest<IncomingRequest>();
-    if (isAuthExemptPath(req.url ?? '/')) return true;
+    if (isRateLimitExemptPath(req.url ?? '/')) return true;
 
     const ip = req.ip ?? 'unknown';
     const now = Date.now();

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -62,5 +62,24 @@ describe('ensureGatewaySecrets', () => {
     // We don't persist a launch-env value, and we don't generate over it.
     expect(parsed.MIDNITE_JWT_SECRET).toBeUndefined();
     expect(parsed.MIDNITE_SECRET_KEY).toBeTruthy();
+  });
+
+  it('tightens permissions on a pre-existing complete file', () => {
+    // The chmod used to be gated on having just written something, so a .env
+    // that already held every managed secret — hand-made, restored from a
+    // backup, copied between machines — kept its loose mode forever, while
+    // holding the JWT signing secret and the credential encryption key.
+    const envPath = join(home, '.env');
+    writeFileSync(envPath, 'MIDNITE_JWT_SECRET=a\nMIDNITE_SECRET_KEY=b\n');
+    chmodSync(envPath, 0o644);
+
+    ensureGatewaySecrets(home);
+
+    expect(statSync(envPath).mode & 0o777).toBe(0o600);
+  });
+
+  it('still writes owner-only permissions when it generates secrets', () => {
+    ensureGatewaySecrets(home);
+    expect(statSync(join(home, '.env')).mode & 0o777).toBe(0o600);
   });
 });
