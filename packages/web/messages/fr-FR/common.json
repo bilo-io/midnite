@@ -252,5 +252,12 @@
     "copyBody": "Copier le contenu",
     "copied": "Copié",
     "openOnGitHub": "Ouvrir sur GitHub"
+  },
+  "errorBoundary": {
+    "heading": "Une erreur s'est produite",
+    "description": "Cette page a rencontré une erreur inattendue. Réessayer suffit généralement — si cela persiste, merci de le signaler.",
+    "digest": "Référence : {digest}",
+    "retry": "Réessayer",
+    "report": "Signaler"
   }
 }

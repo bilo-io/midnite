@@ -252,5 +252,12 @@
     "copyBody": "Text kopieren",
     "copied": "Kopiert",
     "openOnGitHub": "Auf GitHub öffnen"
+  },
+  "errorBoundary": {
+    "heading": "Etwas ist schiefgelaufen",
+    "description": "Auf dieser Seite ist ein unerwarteter Fehler aufgetreten. Ein erneuter Versuch hilft meist — wenn es weiterhin passiert, melde es bitte.",
+    "digest": "Referenz: {digest}",
+    "retry": "Erneut versuchen",
+    "report": "Fehler melden"
   }
 }

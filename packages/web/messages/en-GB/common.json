@@ -252,5 +252,12 @@
     "copyBody": "Copy body",
     "copied": "Copied",
     "openOnGitHub": "Open on GitHub"
+  },
+  "errorBoundary": {
+    "heading": "Something went wrong",
+    "description": "This page hit an unexpected error. Trying again usually fixes it — if it keeps happening, please report it.",
+    "digest": "Reference: {digest}",
+    "retry": "Try again",
+    "report": "Report this"
   }
 }
