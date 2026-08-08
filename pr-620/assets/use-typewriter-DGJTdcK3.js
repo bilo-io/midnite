@@ -1,1 +1,0 @@
-import{bc as a}from"./iframe-BUTs4p2n.js";function i(e,{duration:n=700,enabled:s=!0}={}){const[l,r]=a.useState("");return a.useEffect(()=>{if(!s||e.length===0){r(e);return}r("");let t=0;const o=Math.max(n/e.length,12),c=setInterval(()=>{t+=1,r(e.slice(0,t)),t>=e.length&&clearInterval(c)},o);return()=>clearInterval(c)},[e,n,s]),{typed:l,done:l.length===e.length}}export{i as u};

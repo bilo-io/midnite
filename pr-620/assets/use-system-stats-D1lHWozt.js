@@ -1,1 +1,0 @@
-import{u as n}from"./useQuery-cR3K73A4.js";import{X as o}from"./api-X8diawYb.js";const e=2e3;function l(){const{data:t,isPending:r,isError:s}=n({queryKey:["system-stats"],queryFn:({signal:a})=>o(a),refetchInterval:e,refetchIntervalInBackground:!1,staleTime:e});return{stats:t??null,loading:r&&!t,error:s&&!t}}export{l as u};
