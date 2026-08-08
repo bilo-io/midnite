@@ -14,6 +14,71 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.12.0] - 2026-08-08
+
+_Minor release — every package moves in lockstep to 0.12.0._
+
+This release is mostly the first round of fixes reported against the public
+build: the desktop app no longer burns a core sitting idle, the RAM and GPU
+widgets now report what Activity Monitor reports, the weather widget stops
+asking you to type coordinates, and the mobile navigation no longer hides
+behind its own menu.
+
+### Added
+
+- **Real GPU telemetry.** The dashboard reads actual GPU utilisation on macOS
+  (via the same `IOAccelerator` counter Activity Monitor's GPU graph draws) — no
+  administrator password, no extra install. Where a GPU can't be read the widget
+  says so rather than showing a plausible-looking zero.
+- **Per-metric chart and dial widgets.** CPU, memory, GPU and the rest can each
+  be placed on the dashboard on their own, as a sparkline chart or a radial
+  dial, instead of only appearing inside one combined system panel.
+- **A quiet "None" background, and it's the new default.** Settings →
+  Appearance → Background leads with `None`: not a flat slab, but a
+  barely-there gradient wash that re-tints with your theme and accent colour, so
+  page content sits on something calm. It replaces the `Diagonal` stripe
+  pattern, which has been removed.
+- **A language picker in the mobile menu.** The `More` sheet now mirrors the
+  desktop rail's footer — Settings sits as a full-width row directly above the
+  theme/lock row, and the cell it vacated holds the locale picker.
+
+### Changed
+
+- **The mobile `More` sheet is tidier.** The assistant button steps aside while
+  the sheet is open (it used to sit on top of the Lock button and stay tappable
+  through it), and the duplicated notification centre is gone — the header bell
+  already offers notifications on every surface.
+- **Dashboard widget-picker and gauge polish** — clearer widget selection, and
+  smoother rendering for the metric dials and radial gauges.
+
+### Fixed
+
+- **The desktop app no longer burns a CPU core at rest.** Idling on a page with
+  nothing touched measured **59% CPU headed**; it now measures **~10%**. Fans
+  and battery drain drop accordingly.
+- **The RAM widget reports true memory usage.** It derived "used" from
+  `os.freemem()`, which on macOS and Linux counts only genuinely free pages —
+  excluding the file cache, the inactive list and the macOS compressor, all of
+  which the OS hands back on demand. That read **99.4% used** on a machine
+  Activity Monitor showed at **84.3%**. Memory is now computed from _available_
+  memory, per platform.
+- **The weather widget resolves your location by itself.** It always called
+  `navigator.geolocation`, but that call can never succeed in the packaged
+  desktop app (or over a LAN IP), and every failure collapsed into the same
+  silent "type your latitude and longitude" form. Location now resolves with no
+  input in the common case, and the card shows the resolved city.
+- **The mobile tab bar is no longer hidden behind its own `More` sheet.** The
+  closed sheet came to rest exactly on top of the bar — 64px of opaque overlay
+  with an invisible-but-clickable menu button, plus a shadow blooming across it.
+  Two neighbours of the same class went with it: the title bar's centre search
+  pill no longer collides with the left slot at narrow widths, and the docked
+  composers (dashboard, council detail, memory chat) now reserve the tab bar's
+  height instead of rendering their lower rows behind it.
+- **Desktop builds stop clobbering the workspace's native modules.** Every
+  desktop build was silently rebuilding `better-sqlite3` and `node-pty` for
+  Electron's ABI and relying on a self-healing guard to undo it — recompiling
+  `node-pty` from source each time. Builds are now faster and quiet.
+
 ## [0.11.1] - 2026-08-06
 
 _Patch release — `midnite` and `@midnite/site` move to 0.11.1; every other package
@@ -667,6 +732,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.12.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.12.0
 [0.11.1]: https://github.com/bilo-io/midnite-app/releases
 [0.11.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.11.0
 [0.10.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.10.0
