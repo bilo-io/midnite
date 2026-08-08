@@ -37,6 +37,7 @@ import {
   getProviders,
   getSetupStatus,
   setActiveProvider,
+  updateAgentPool,
   updateProvider,
 } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -220,10 +221,62 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
 
 // ── step: Pool ─────────────────────────────────────────────────────────────────
 
+/**
+ * Concurrency + autonomy.
+ *
+ * This step writes to the **gateway**, not `localStorage`. It used to do the
+ * latter, which the gateway never reads — so the slider looked like it worked
+ * while `agent.poolEnabled` stayed `false` and the scheduler never started. A
+ * new install could finish this wizard, see "You're all set!", and watch every
+ * task sit in Todo forever with no in-app way to fix it.
+ *
+ * The autonomy toggle is surfaced explicitly (and defaults on) because the whole
+ * step is meaningless without it: sizing a pool that never ticks does nothing.
+ */
 function PoolStep({ onDone }: { onDone: () => void }) {
   const t = useTranslations('setup');
   const [settings, setSettings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
-  const poolSize = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize));
+  const [poolSize, setPoolSize] = useState(
+    Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize)),
+  );
+  const [autonomous, setAutonomous] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Seed the *size* from the gateway so the slider shows the server's real
+  // value rather than a browser-local copy that may never have been applied.
+  //
+  // The autonomy checkbox is deliberately NOT seeded: on a fresh install the
+  // server reports `poolEnabled: false`, and seeding from it would make the
+  // wizard propose leaving autonomy off — re-creating the very trap this step
+  // exists to close. It stays a recommendation the user can decline, and
+  // Settings → Agents is where the live current state is edited.
+  useEffect(() => {
+    getSetupStatus()
+      .then((status) => {
+        if (!status.agentPool) return;
+        setPoolSize(Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, status.agentPool.pool)));
+      })
+      .catch(() => {
+        /* keep the defaults — the save below surfaces any real failure */
+      });
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateAgentPool({ pool: poolSize, poolEnabled: autonomous });
+      // Keep the local mirror in step so other surfaces reading app-settings
+      // don't show a stale number.
+      setSettings((s) => ({ ...s, agentPoolSize: poolSize }));
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('wizard.pool.saveError'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -240,9 +293,7 @@ function PoolStep({ onDone }: { onDone: () => void }) {
             min={AGENT_POOL_MIN}
             max={AGENT_POOL_MAX}
             value={poolSize}
-            onChange={(e) =>
-              setSettings((s) => ({ ...s, agentPoolSize: Number(e.target.value) }))
-            }
+            onChange={(e) => setPoolSize(Number(e.target.value))}
             className="flex-1 accent-primary"
           />
           <span className="w-8 text-center text-sm font-mono font-semibold tabular-nums">{poolSize}</span>
@@ -252,8 +303,24 @@ function PoolStep({ onDone }: { onDone: () => void }) {
         </p>
       </div>
 
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border/60 p-3">
+        <input
+          type="checkbox"
+          checked={autonomous}
+          onChange={(e) => setAutonomous(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+        />
+        <span className="space-y-0.5">
+          <span className="block text-xs font-medium">{t('wizard.pool.autonomyLabel')}</span>
+          <span className="block text-xs text-muted-foreground">{t('wizard.pool.autonomyHint')}</span>
+        </span>
+      </label>
+
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+
       <div className="flex justify-end">
-        <Button onClick={onDone}>
+        <Button onClick={save} disabled={saving}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           {t('wizard.continue')} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

@@ -306,7 +306,11 @@
     "subDescriptionHint": "El prompt de sistema completo de este subagente.",
     "subDescriptionPlaceholder": "Eres un resumidor. Dada una transcripción, produce un resumen breve y fiel…",
     "markdown": "Markdown",
-    "markdownHint": "Modo Markdown: se escribe como el documento de prompt del agente."
+    "markdownHint": "Modo Markdown: se escribe como el documento de prompt del agente.",
+    "autonomy": "Planificación autónoma",
+    "autonomyOnHint": "Los agentes toman por su cuenta las tareas en cola, hasta el límite de arriba.",
+    "autonomyOffHint": "Desactivada: las tareas solo empiezan cuando abres una terminal para ellas.",
+    "poolSaveError": "No se han podido guardar los ajustes del grupo de agentes."
   },
   "apiTokens": {
     "justNow": "ahora mismo",

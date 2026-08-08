@@ -55,7 +55,10 @@
       "description": "Combien de tâches peuvent s'exécuter en parallèle. Commencez bas — vous pourrez toujours augmenter dans les Réglages.",
       "sliderLabel": "Tâches en parallèle",
       "one": "Une tâche à la fois (valeur sûre par défaut).",
-      "many": "Jusqu'à {count} tâches en parallèle."
+      "many": "Jusqu'à {count} tâches en parallèle.",
+      "autonomyLabel": "Exécuter automatiquement les tâches en file",
+      "autonomyHint": "Les agents prennent eux-mêmes les tâches dans À faire, jusqu'à la limite ci-dessus. Si vous laissez cette option désactivée, les tâches ne démarrent que lorsque vous ouvrez un terminal vous-même.",
+      "saveError": "Impossible d'enregistrer les réglages du pool d'agents."
     },
     "repo": {
       "heading": "Dépôt",

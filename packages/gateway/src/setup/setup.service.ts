@@ -1,8 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { isSetupReady, type MidniteConfig, type SetupItem, type SetupStatus } from '@midnite/shared';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import {
+  isSetupReady,
+  type MidniteConfig,
+  type SetupItem,
+  type SetupStatus,
+  type UpdateAgentPoolRequest,
+} from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { AgentsService } from '../agents/agents.service';
 import { CryptoService, SECRET_KEY_ENV } from '../crypto/crypto.service';
+import { persistConfigPatch, resolveConfigWritePath } from '../lib/config-write';
+import { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
+import { AgentPoolService } from '../pool/agent-pool.service';
 import { ProvidersService } from '../providers/providers.service';
 
 // Phase 19 Theme A — the single readiness signal, computed by *composing*
@@ -18,11 +27,19 @@ import { ProvidersService } from '../providers/providers.service';
 // (homebrew/node/proto/moon), none of which gate readiness here.
 @Injectable()
 export class SetupService {
+  private readonly logger = new Logger(SetupService.name);
+
   constructor(
     @Inject(ProvidersService) private readonly providers: ProvidersService,
     @Inject(AgentsService) private readonly agents: AgentsService,
     @Inject(CryptoService) private readonly crypto: CryptoService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    // The runtime half of a pool update. @Optional so the unit specs (which
+    // construct this service directly with fakes) need no edit, and so a config
+    // write still succeeds if the pool graph is absent — it then applies on the
+    // next boot, which is the old behaviour rather than a failure.
+    @Optional() @Inject(AgentPoolService) private readonly pool?: AgentPoolService,
+    @Optional() @Inject(AgentPoolScheduler) private readonly scheduler?: AgentPoolScheduler,
   ) {}
 
   async getStatus(): Promise<SetupStatus> {
@@ -35,7 +52,41 @@ export class SetupService {
       this.agentPoolItem(),
       this.repoItem(),
     ];
-    return { items, ready: isSetupReady(items) };
+    const { pool, poolEnabled } = this.config.agent;
+    return { items, ready: isSetupReady(items), agentPool: { pool, poolEnabled } };
+  }
+
+  /**
+   * Persist the agent-pool settings and apply them to the running gateway.
+   *
+   * Three steps, in this order:
+   *   1. **Write `midnite.json`** so the change survives a restart. On a fresh
+   *      install there is no file yet — {@link resolveConfigWritePath} creates
+   *      one under `~/.midnite`, which is where the desktop app looks.
+   *   2. **Mirror into the in-memory config**, so `/setup/status` and every
+   *      service holding the `MIDNITE_CONFIG` object agree immediately.
+   *   3. **Apply live** — resize the slots and start/stop the tick loop.
+   *
+   * Step 3 is what makes this more than a settings write: `poolEnabled` is read
+   * once at boot, so without it a user could enable autonomy, see it persisted,
+   * and still watch tasks sit in `todo` until they restarted the gateway.
+   */
+  async updateAgentPool(req: UpdateAgentPoolRequest): Promise<SetupStatus> {
+    const path = resolveConfigWritePath();
+    persistConfigPatch(path, { agent: { pool: req.pool, poolEnabled: req.poolEnabled } });
+
+    this.config.agent.pool = req.pool;
+    this.config.agent.poolEnabled = req.poolEnabled;
+
+    const capacity = this.pool?.resize(req.pool);
+    this.scheduler?.applyPoolEnabled(req.poolEnabled);
+
+    this.logger.log(
+      `agent pool updated: pool=${req.pool}${
+        capacity !== undefined && capacity !== req.pool ? ` (live capacity ${capacity}, busy slots retained)` : ''
+      }, poolEnabled=${req.poolEnabled} → ${path}`,
+    );
+    return this.getStatus();
   }
 
   /** A provider has a stored key, or the active adapter resolves (env/keychain). */

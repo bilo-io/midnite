@@ -107,6 +107,7 @@ import {
   type EnvironmentResponse,
   SetupStatusSchema,
   type SetupStatus,
+  type UpdateAgentPoolRequest,
   type EnvToolAction,
   type EnvToolId,
   BrowseDirResponseSchema,
@@ -2007,6 +2008,23 @@ export async function createCliTerminal(
 /** Aggregate first-run readiness: the per-item checklist + derived `ready`. */
 export async function getSetupStatus(): Promise<SetupStatus> {
   return fetchJson('/setup/status', undefined, SetupStatusSchema);
+}
+
+/**
+ * Size the agent pool and toggle autonomous scheduling, returning the refreshed
+ * status.
+ *
+ * This is the only way to reach `agent.poolEnabled` from the UI — the gateway
+ * persists it to `midnite.json` and starts/stops the scheduler live. The wizard
+ * previously kept pool size in `localStorage`, which the gateway never reads, so
+ * a new install could finish setup and never run a task.
+ */
+export async function updateAgentPool(body: UpdateAgentPoolRequest): Promise<SetupStatus> {
+  return fetchJson(
+    '/setup/agent-pool',
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    SetupStatusSchema,
+  );
 }
 
 // --- Environment (system toolchain checker for Settings → System) ---

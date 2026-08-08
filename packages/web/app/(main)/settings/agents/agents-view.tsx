@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity,
   Bot,
@@ -52,7 +52,9 @@ import {
   getAgentsConfig,
   getCliStatuses,
   getProviders,
+  getSetupStatus,
   setActiveProvider as apiSetActiveProvider,
+  updateAgentPool,
   updateAgentCli,
   updatePrimaryAgent,
   updateProvider,
@@ -105,18 +107,66 @@ export function AgentsView() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const confirm = useConfirm();
 
-  // Agent pool size is a client-only preference (localStorage), not part of the
-  // server-held agents config.
-  const [settings, setSettings, settingsHydrated] = useLocalStorage<AppSettings>(
+  // Agent pool size + autonomy are *gateway config* (`agent.pool` /
+  // `agent.poolEnabled` in midnite.json), not a client preference. They were
+  // localStorage-only, which the gateway never reads: the slider moved, nothing
+  // changed, and `poolEnabled` had no UI at all — so a fresh install could never
+  // turn on autonomous scheduling without hand-editing a file. The localStorage
+  // copy is kept in sync purely as a display mirror for other surfaces.
+  // Only the writer is used now — the displayed value comes from the gateway.
+  const [, setSettings, settingsHydrated] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
   );
-  const poolSize = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize));
-  const setPoolSize = (n: number) =>
-    setSettings((prev) => ({
-      ...prev,
-      agentPoolSize: Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, n)),
-    }));
+  const [poolSize, setPoolSizeState] = useState(
+    Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, DEFAULT_SETTINGS.agentPoolSize)),
+  );
+  const [poolEnabled, setPoolEnabled] = useState(false);
+  const [poolLoaded, setPoolLoaded] = useState(false);
+  const [poolError, setPoolError] = useState<string | null>(null);
+  const poolTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    getSetupStatus()
+      .then((status) => {
+        if (status.agentPool) {
+          setPoolSizeState(
+            Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, status.agentPool.pool)),
+          );
+          setPoolEnabled(status.agentPool.poolEnabled);
+        }
+        setPoolLoaded(true);
+      })
+      .catch(() => setPoolLoaded(true));
+  }, []);
+
+  const persistPool = useCallback(
+    async (next: { pool: number; poolEnabled: boolean }) => {
+      setPoolError(null);
+      try {
+        await updateAgentPool(next);
+        setSettings((prev) => ({ ...prev, agentPoolSize: next.pool }));
+      } catch (e) {
+        setPoolError(errMsg(e, t('agents.poolSaveError')));
+      }
+    },
+    [setSettings, t],
+  );
+
+  // Debounced so dragging the slider doesn't fire a write per pixel.
+  const setPoolSize = (n: number) => {
+    const clamped = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, n));
+    setPoolSizeState(clamped);
+    if (poolTimer.current) clearTimeout(poolTimer.current);
+    poolTimer.current = setTimeout(() => void persistPool({ pool: clamped, poolEnabled }), 400);
+  };
+
+  const toggleAutonomy = (enabled: boolean) => {
+    setPoolEnabled(enabled);
+    void persistPool({ pool: poolSize, poolEnabled: enabled });
+  };
+
+  useEffect(() => () => { if (poolTimer.current) clearTimeout(poolTimer.current); }, []);
 
   // A ref mirror of the latest config so debounced saves read fresh values.
   const latest = useRef<AgentsConfig | null>(null);
@@ -457,7 +507,7 @@ export function AgentsView() {
             <div
               className={cn(
                 'flex h-9 min-w-[3.5rem] items-center justify-center rounded-md border border-border/60 bg-card/60 px-3 text-lg font-semibold tabular-nums transition-opacity',
-                settingsHydrated ? 'opacity-100' : 'opacity-0',
+                settingsHydrated && poolLoaded ? 'opacity-100' : 'opacity-0',
               )}
             >
               {poolSize}
@@ -487,6 +537,24 @@ export function AgentsView() {
               max: AGENT_POOL_MAX,
             })}
           </p>
+
+          {/* The flag that actually starts the scheduler. Without a surface here
+              it could only be reached by hand-editing midnite.json. */}
+          <div className="flex items-start justify-between gap-6 border-t border-border/40 pt-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{t('agents.autonomy')}</p>
+              <p className="text-xs text-muted-foreground">
+                {poolEnabled ? t('agents.autonomyOnHint') : t('agents.autonomyOffHint')}
+              </p>
+            </div>
+            <Switch
+              checked={poolEnabled}
+              onCheckedChange={toggleAutonomy}
+              aria-label={t('agents.autonomy')}
+            />
+          </div>
+
+          {poolError ? <p className="text-xs text-destructive">{poolError}</p> : null}
         </div>
       </Accordion>
 

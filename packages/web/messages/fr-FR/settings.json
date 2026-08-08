@@ -306,7 +306,11 @@
     "subDescriptionHint": "L'invite système complète pour ce sous-agent.",
     "subDescriptionPlaceholder": "Vous êtes un résumeur. À partir d'une transcription, produisez un résumé concis et fidèle…",
     "markdown": "Markdown",
-    "markdownHint": "Mode Markdown — rédigé comme le document d'invite de l'agent."
+    "markdownHint": "Mode Markdown — rédigé comme le document d'invite de l'agent.",
+    "autonomy": "Planification autonome",
+    "autonomyOnHint": "Les agents prennent d'eux-mêmes les tâches en file, jusqu'à la limite ci-dessus.",
+    "autonomyOffHint": "Désactivée — les tâches ne démarrent que lorsque vous ouvrez un terminal pour elles.",
+    "poolSaveError": "Impossible d'enregistrer les réglages du pool d'agents."
   },
   "apiTokens": {
     "justNow": "à l'instant",

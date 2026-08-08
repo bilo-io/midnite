@@ -110,10 +110,43 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
       this.logger.log('agent pool disabled — scheduler not started');
       return;
     }
+    this.startTicking();
+  }
+
+  /**
+   * Start or stop the tick loop to match `enabled`, for a runtime toggle of
+   * `agent.poolEnabled` (`PUT /setup/agent-pool`).
+   *
+   * Autonomy used to be reachable only by hand-editing `midnite.json` and
+   * restarting, because the flag was read once here in `onModuleInit`. Keeping
+   * the start/stop behind one idempotent method means the settings toggle and
+   * boot take exactly the same path — call it with the *new* flag after the
+   * in-memory config has been updated.
+   */
+  applyPoolEnabled(enabled: boolean): void {
+    if (enabled) this.startTicking();
+    else this.stopTicking();
+  }
+
+  /** Arm the interval. Idempotent — a second call while running is a no-op, so a
+   *  repeated "enable" can't spawn a second tick loop (the invariant that there
+   *  is exactly one scheduler). */
+  private startTicking(): void {
+    if (this.timer) return;
     const tickMs = this.config.agent.schedulerTickMs;
     this.timer = setInterval(() => void this.tick(), tickMs);
     this.timer.unref?.();
     this.logger.log(`agent pool scheduler started (tick=${tickMs}ms, pool=${this.pool.capacity()})`);
+  }
+
+  /** Disarm the interval. In-flight agents are deliberately left running — this
+   *  stops *scheduling new work*, it is not an emergency stop (that's
+   *  `abortInFlight`, on the guardrails event). */
+  private stopTicking(): void {
+    if (!this.timer) return;
+    clearInterval(this.timer);
+    this.timer = undefined;
+    this.logger.log('agent pool disabled — scheduler stopped');
   }
 
   /** Abort every in-flight agent whose task falls in the emergency-stopped scope,

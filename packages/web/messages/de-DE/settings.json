@@ -306,7 +306,11 @@
     "subDescriptionHint": "Der vollständige System-Prompt für diesen Subagenten.",
     "subDescriptionPlaceholder": "Du bist ein Zusammenfasser. Erstelle aus einem Transkript eine knappe, treue Zusammenfassung …",
     "markdown": "Markdown",
-    "markdownHint": "Markdown-Modus — wird als Prompt-Dokument des Agenten geschrieben."
+    "markdownHint": "Markdown-Modus — wird als Prompt-Dokument des Agenten geschrieben.",
+    "autonomy": "Autonome Planung",
+    "autonomyOnHint": "Agenten holen sich Aufgaben aus der Warteschlange eigenständig, bis zum Limit oben.",
+    "autonomyOffHint": "Aus — Aufgaben starten erst, wenn du selbst ein Terminal dafür öffnest.",
+    "poolSaveError": "Die Einstellungen des Agenten-Pools konnten nicht gespeichert werden."
   },
   "apiTokens": {
     "justNow": "gerade eben",
