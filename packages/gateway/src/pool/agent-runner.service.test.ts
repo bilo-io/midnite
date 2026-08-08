@@ -115,6 +115,8 @@ function fakeTerminal(opts?: {
   const discardSession = vi.fn();
   const terminal = {
     spawnAgentSession,
+    // The single cwd resolver — the gate runs where the agent ran.
+    resolveCwd: vi.fn(() => '/resolved/cwd'),
     killManagedRun,
     interruptManagedRun,
     reattachAgentSession,
@@ -674,10 +676,30 @@ describe('AgentRunnerService', () => {
     pool.acquire(t.id);
     const { terminal, killManagedRun, spawnAgentSession } = fakeTerminal();
     const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, repos, undefined, checks);
-    return { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, killManagedRun, spawnAgentSession, recordFailure };
+    return { runner, pool, terminal, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, killManagedRun, spawnAgentSession, recordFailure };
   }
 
   describe('completeWithChecks', () => {
+    it('runs the gate where the AGENT ran, not where task.repo points', async () => {
+      // The divergence this fixes: the agent's cwd comes from pickSessionCwd
+      // (project workDir → repo path → fallback), while the gate derived its own
+      // from `task.repo` alone. With a project workDir set, the agent worked in
+      // one tree and its checks validated another — a green gate for code that
+      // was never examined. Both now come from the one resolver.
+      const t = fakeGateTask('t1', 'myrepo');
+      const checks = fakeChecks(passRun());
+      // The registry says one thing; the session resolver says another.
+      const repos = reposWithPath('myrepo', '/tmp/myrepo');
+      const { runner, terminal } = makeGateRunner(t, checks, repos);
+      vi.mocked(terminal.resolveCwd).mockReturnValue('/projects/actual-workdir');
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(terminal.resolveCwd).toHaveBeenCalledWith('t1');
+      // 3rd arg of ChecksService.run(taskId, resolved, cwd, kind)
+      expect(checks.run).toHaveBeenCalledWith('t1', expect.anything(), '/projects/actual-workdir', 'gate');
+    });
+
     it('passes gate → markDone + slot released + checks.passed event', async () => {
       const t = fakeGateTask('t1', 'myrepo');
       const checks = fakeChecks(passRun());
