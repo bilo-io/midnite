@@ -66,7 +66,7 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
   { key: 'cyberwar', label: 'Cyberwar', cssVar: '--font-brand', scale: 0.75 },
   // FontSpace trial fonts — `scale` is a starting optical nudge; tune per-font in
   // the picker if a face renders noticeably larger/smaller than its neighbours.
-  { key: 'rooster', label: 'Rooster (brand)', cssVar: '--font-rooster', scale: 0.75 },
+  { key: 'rooster', label: 'Rooster', cssVar: '--font-rooster', scale: 0.75 },
   { key: 'cassandra', label: 'Cassandra', cssVar: '--font-cassandra', scale: 0.75 },
   { key: 'lemon-jelly', label: 'Lemon Jelly', cssVar: '--font-lemon-jelly', scale: 0.75 },
   { key: 'radeil-3d', label: 'Radeil 3D', cssVar: '--font-radeil-3d', scale: 0.75 },
@@ -76,7 +76,7 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
   { key: 'mollina-signature', label: 'Mollina Signature', cssVar: '--font-mollina-signature', scale: 0.75 },
   { key: 'campana-script', label: 'Campana Script', cssVar: '--font-campana-script', scale: 0.75 },
   { key: 'majestic', label: 'Majestic', cssVar: '--font-majestic', scale: 0.75 },
-  { key: 'quick-kiss', label: 'Quick Kiss', cssVar: '--font-quick-kiss', scale: 0.75 },
+  { key: 'quick-kiss', label: 'Quick Kiss (brand)', cssVar: '--font-quick-kiss', scale: 0.75 },
   { key: 'danny-brassco', label: 'Danny Brassco', cssVar: '--font-danny-brassco', scale: 0.75 },
   { key: 'fasthin', label: 'Fasthin', cssVar: '--font-fasthin', scale: 0.75 },
   { key: 'consultant', label: 'Consultant', cssVar: '--font-consultant', scale: 0.75 },
@@ -107,23 +107,29 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
 // from `web`.
 export const WORDMARK_TEXT = 'Midnite';
 
-export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font';
+// The three storage keys carry a `.v2` suffix so the brand-face change below
+// actually reaches anyone who trialled a face while the picker was live: a
+// stored `midnite.wordmark-font` would otherwise pin them to the old default
+// forever, and with the Logo picker commented out of Settings → Appearance there
+// is no longer any UI to clear it. Bumping the suffix again is the supported way
+// to re-baseline every user on a new default.
+export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font.v2';
 export const DEFAULT_WORDMARK_FONT: WordmarkFontKey = 'signpainter';
 
-// The font the "Midnite" wordmark logo defaults to app-wide (Rooster is the
+// The font the "Midnite" wordmark logo defaults to app-wide (Quick Kiss is the
 // brand face). The Settings → Appearance → Logo picker persists a per-user
 // override under WORDMARK_FONT_STORAGE_KEY; the Wordmark follows it live,
 // falling back to this face until the user picks another. Keep in step with the
 // sibling apps that hard-code the same face: site/app/layout.tsx,
 // admin/app/layout.tsx and docs/src/styles.css.
-export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'rooster';
+export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'quick-kiss';
 
 // The wordmark's letter-casing is a separate, live-configurable trial dimension
 // (Settings → Appearance → Logo) so the same face can be judged in lower / title
 // / upper case. Only the wordmark string is transformed — nothing else.
 export type WordmarkCase = 'lower' | 'title' | 'upper';
 
-export const WORDMARK_CASE_STORAGE_KEY = 'midnite.wordmark-case';
+export const WORDMARK_CASE_STORAGE_KEY = 'midnite.wordmark-case.v2';
 // Title case is the brand's public spelling ("Midnite"); the other two remain
 // selectable trial options.
 export const DEFAULT_WORDMARK_CASE: WordmarkCase = 'title';
@@ -143,8 +149,8 @@ export const WORDMARK_CASE_OPTIONS: readonly { value: WordmarkCase; label: strin
 // (tailwind-merge keeps the caller's size).
 export type WordmarkSize = 'xs' | 's' | 'm' | 'lg' | 'xl';
 
-export const WORDMARK_SIZE_STORAGE_KEY = 'midnite.wordmark-size';
-export const DEFAULT_WORDMARK_SIZE: WordmarkSize = 'm';
+export const WORDMARK_SIZE_STORAGE_KEY = 'midnite.wordmark-size.v2';
+export const DEFAULT_WORDMARK_SIZE: WordmarkSize = 'xl';
 
 // Ordered for the settings toggle, smallest to largest.
 export const WORDMARK_SIZE_OPTIONS: readonly { value: WordmarkSize; label: string }[] = [
@@ -168,8 +174,8 @@ const WORDMARK_SIZE_LADDER = [
   'text-4xl',
 ] as const;
 
-// Ladder index of each size before the per-font nudge — 'm' is the pre-size
-// default (text-xl).
+// Ladder index of each size before the per-font nudge — 'm' is the mid step
+// (text-xl); 'xl', the default, lands on text-3xl.
 const WORDMARK_SIZE_INDEX: Record<WordmarkSize, number> = { xs: 2, s: 3, m: 4, lg: 5, xl: 6 };
 
 // Tailwind class for a stored size + font, clamped to the ladder. The per-font

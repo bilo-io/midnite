@@ -8,18 +8,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* The "Midnite" wordmark face (Rooster). Vite fingerprints and emits the .ttf
+/* The "Midnite" wordmark face (Quick Kiss). Vite fingerprints and emits the .ttf
  * from this url(), so no public/ copy is needed. Exposed as `--font-brand` to
  * match the site + app, where next/font declares the same var. */
 @font-face {
-  font-family: 'Rooster';
-  src: url('./fonts/rooster.ttf') format('truetype');
+  font-family: 'Quick Kiss';
+  src: url('./fonts/quick-kiss.ttf') format('truetype');
   font-display: swap;
 }
 
 @layer base {
   :root {
-    --font-brand: 'Rooster', sans-serif;
+    --font-brand: 'Quick Kiss', sans-serif;
   }
 
   body {
