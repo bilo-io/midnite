@@ -56,7 +56,15 @@ export function WidgetPickerMenu<TType extends string>({
   const [rect, setRect] = useState<Rect | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Focus the search box the moment it mounts, so the menu opens ready to type.
+   * A callback ref rather than an effect: the panel only renders once `place()`
+   * has measured the trigger into `rect`, so on the commit where `open` flips
+   * true the input isn't in the DOM yet and an `[open]` effect would find
+   * nothing to focus.
+   */
+  const focusOnMount = useCallback((el: HTMLInputElement | null) => el?.focus(), []);
 
   const place = useCallback(() => {
     const el = triggerRef.current;
@@ -86,11 +94,10 @@ export function WidgetPickerMenu<TType extends string>({
     };
   }, [open, place]);
 
-  // Fresh search + focus each time the menu opens.
+  // Fresh search each time the menu opens.
   useEffect(() => {
     if (!open) return;
     onQueryChange('');
-    searchRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on open, not on every onQueryChange identity change
   }, [open]);
 
@@ -127,7 +134,7 @@ export function WidgetPickerMenu<TType extends string>({
                       aria-hidden
                     />
                     <input
-                      ref={searchRef}
+                      ref={focusOnMount}
                       type="text"
                       value={query}
                       onChange={(e) => onQueryChange(e.target.value)}

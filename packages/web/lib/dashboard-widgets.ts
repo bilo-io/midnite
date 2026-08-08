@@ -250,11 +250,12 @@ const chartMetricSizes: Record<Breakpoint, WidgetSize> = {
   sm: { w: 4, h: 4, minW: 2, minH: 3 },
 };
 
-/** The host-metric dials — same footprint as Disk/App-cache, which they sit beside. */
+/** Every ring widget — the host-metric dials plus Disk/App-cache, which sit beside
+ *  them — shares one footprint, sized to the 64px ring plus its caption. */
 const dialMetricSizes: Record<Breakpoint, WidgetSize> = {
-  lg: { w: 3, h: 5, minW: 2, minH: 4 },
-  md: { w: 3, h: 5, minW: 2, minH: 4 },
-  sm: { w: 2, h: 5, minW: 2, minH: 4 },
+  lg: { w: 3, h: 4, minW: 2, minH: 3 },
+  md: { w: 3, h: 4, minW: 2, minH: 3 },
+  sm: { w: 2, h: 4, minW: 2, minH: 3 },
 };
 
 export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
@@ -448,14 +449,14 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     description: 'Real device storage — used vs free on the gateway’s disk',
     icon: HardDrive,
     category: 'system',
-    sizes: { lg: { w: 3, h: 5, minW: 2, minH: 4 }, md: { w: 3, h: 5, minW: 2, minH: 4 }, sm: { w: 2, h: 5, minW: 2, minH: 4 } },
+    sizes: dialMetricSizes,
   },
   storage: {
     label: 'App cache',
     description: 'Browser storage this app has cached (per-origin quota)',
     icon: Database,
     category: 'system',
-    sizes: { lg: { w: 3, h: 5, minW: 2, minH: 4 }, md: { w: 3, h: 5, minW: 2, minH: 4 }, sm: { w: 2, h: 5, minW: 2, minH: 4 } },
+    sizes: dialMetricSizes,
   },
 
   // — at-a-glance extras ————————————————————————————————————————————

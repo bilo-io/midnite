@@ -7,8 +7,10 @@ import { cn } from '../lib/cn';
 // used/total), whereas a CPU/GPU load has no denominator to show and no bytes to
 // format. Sharing the geometry constants keeps the two visually identical.
 
-const SIZE = 128;
-const STROKE = 12;
+// Ring geometry, deliberately matched to the lock screen's telemetry rings
+// (64px / 6px stroke) so a dial reads at the same scale wherever it appears.
+const SIZE = 64;
+const STROKE = 6;
 const RADIUS = (SIZE - STROKE) / 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -47,7 +49,7 @@ export function MetricDial({
   const stroke = `hsl(var(${hueVar}))`;
 
   return (
-    <div className={cn('flex flex-col items-center gap-2', className)}>
+    <div className={cn('flex flex-col items-center gap-1.5', className)}>
       <div className="relative flex items-center justify-center">
         <svg
           width={SIZE}
@@ -80,7 +82,7 @@ export function MetricDial({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-semibold tabular-nums">{rounded}%</span>
+          <span className="text-sm font-semibold tabular-nums">{rounded}%</span>
         </div>
       </div>
       <div className="flex flex-col items-center gap-0.5 text-center">

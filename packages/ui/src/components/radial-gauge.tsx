@@ -1,7 +1,8 @@
 // Radial gauge geometry. `SIZE` is the SVG viewport; the ring is inset by half
-// the stroke so the round caps never clip.
-const SIZE = 128;
-const STROKE = 12;
+// the stroke so the round caps never clip. Matched to the lock screen's
+// telemetry rings (and to `MetricDial`) so every ring reads at the same scale.
+const SIZE = 64;
+const STROKE = 6;
 const RADIUS = (SIZE - STROKE) / 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -91,9 +92,11 @@ export function RadialGauge({
             style={{ stroke: 'hsl(var(--primary))', transition: 'stroke-dashoffset 600ms ease' }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-base font-semibold tabular-nums">{fmtBytes(usedBytes)}</span>
-          <span className="text-[11px] tabular-nums text-muted-foreground">
+        {/* Both centre lines are sized to clear the 52px inner circle at the
+            widest byte figure the formatter emits (e.g. "42.0 GB"). */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center leading-tight">
+          <span className="text-[10px] font-semibold tabular-nums">{fmtBytes(usedBytes)}</span>
+          <span className="text-[8px] tabular-nums text-muted-foreground">
             {labels?.of ? labels.of(fmtBytes(totalBytes)) : `of ${fmtBytes(totalBytes)}`}
           </span>
         </div>

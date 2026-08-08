@@ -95,13 +95,15 @@ type Vortex = { x: number; y: number; dx: number; dy: number; born: number; hold
 
 // ── Tuning ────────────────────────────────────────────────────────────────────
 /**
- * Simulation rate for the ambient cloud. Deliberately below the display's
- * refresh rate: this is a slow-drifting decorative backdrop, so 30fps is
- * visually indistinguishable from 120 while costing a quarter as much. Left
- * uncapped it ran at whatever the panel offered, which made the app burn more
- * CPU on better hardware (bilo-io/midnite-app#4).
+ * Simulation rate for the ambient cloud. Capped so the loop costs the same on
+ * every panel — left uncapped it ran at whatever the display offered, which made
+ * the app burn more CPU on better hardware (bilo-io/midnite-app#4).
+ *
+ * 30 was too low: the cloud drifts slowly but the pointer well and the
+ * shockwaves do not, and at 30fps they judder. 60 is the sweet spot — smooth on
+ * a 60Hz panel, and a 120Hz one still pays half of what it used to.
  */
-const TARGET_FPS = 30;
+const TARGET_FPS = 60;
 const FRAME_MS = 1000 / TARGET_FPS;
 const WELL_RADIUS = 280; // px — reach of the cursor gravity well
 const HOVER_PULL = 320; // subtle passive well: radial attraction (px/s²)
@@ -763,6 +765,9 @@ export function NeuroCloudBackground({
     let last = performance.now();
     let raf = 0;
     let lastFrame = 0;
+    let lastTick = 0;
+    /** Smoothed rAF interval — the display's own cadence, measured not assumed. */
+    let tickMs = FRAME_MS;
     const loop = () => {
       raf = requestAnimationFrame(loop);
       if (w === 0 || h === 0) {
@@ -772,10 +777,19 @@ export function NeuroCloudBackground({
       // Cap the simulation rate. Without this the loop ran at whatever the
       // display offers, so a 120Hz ProMotion Mac paid exactly double a 60Hz one
       // for an ambient backdrop nobody is watching frame-by-frame — the app got
-      // hotter on better hardware (bilo-io/midnite-app#4). The drift is slow
-      // enough that TARGET_FPS is indistinguishable from 60+.
+      // hotter on better hardware (bilo-io/midnite-app#4).
+      //
+      // The gate carries half a display tick of slack, because a cap at the
+      // panel's own rate aliases against it: rAF lands at ~16.67ms ± jitter on
+      // 60Hz, and an exact `>= FRAME_MS` test rejects whichever ticks fall a
+      // hair early — collapsing a 60fps cap to a juddery ~40. Half a tick of
+      // slack accepts every frame on a 60Hz panel and still lets a 120Hz one
+      // through only every other tick, so the cadence stays even either way.
       const nowMs = performance.now();
-      if (nowMs - lastFrame < FRAME_MS) return;
+      const sinceTick = nowMs - lastTick;
+      lastTick = nowMs;
+      if (sinceTick > 0 && sinceTick < 100) tickMs += (sinceTick - tickMs) * 0.1;
+      if (nowMs - lastFrame < FRAME_MS - tickMs / 2) return;
       lastFrame = nowMs;
       const t = now();
       const dt = Math.min(0.05, (performance.now() - last) / 1000);
@@ -850,6 +864,7 @@ export function NeuroCloudBackground({
       if (raf) return;
       last = performance.now();
       lastFrame = 0;
+      lastTick = 0;
       raf = requestAnimationFrame(loop);
     };
     const stop = () => {
