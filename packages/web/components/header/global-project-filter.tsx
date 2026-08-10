@@ -22,12 +22,21 @@ type Rect = { top: number; left: number };
  * the trigger renders each selection as a {@link ProjectTag} pill instead of a
  * plain colour dot, so the active filter reads the same way it does
  * everywhere else a project is shown.
+ *
+ * With **no projects yet** the filter has nothing to filter, so the trigger is
+ * replaced by a bare "New project" button pointing at the same create flow the
+ * open menu's footer offers. Without it a fresh install is a dead end: the
+ * dropdown (and with it the only "New project" affordance) hid itself, and
+ * `/projects` isn't in the nav — so there was no way to make the first project.
  */
 export function GlobalProjectFilter({ className }: { className?: string }) {
   const t = useTranslations('common');
   const tBoard = useTranslations('board');
   const router = useRouter();
-  const { data } = useQuery({ queryKey: ['global-project-filter', 'projects'], queryFn: () => getProjects() });
+  const { data, isPending } = useQuery({
+    queryKey: ['global-project-filter', 'projects'],
+    queryFn: () => getProjects(),
+  });
   const projects = data ?? [];
   const selected = useProjectFilterStore((s) => s.selected);
   const toggle = useProjectFilterStore((s) => s.toggle);
@@ -102,7 +111,23 @@ export function GlobalProjectFilter({ className }: { className?: string }) {
     };
   }, [open, place]);
 
-  if (projects.length === 0) return null;
+  // Nothing to filter yet — offer the create flow instead of vanishing. Held
+  // back until the query settles so the button doesn't flash on every load.
+  if (projects.length === 0) {
+    if (isPending) return null;
+    return (
+      <div className={cn('relative', className)}>
+        <button
+          type="button"
+          onClick={createNewProject}
+          className="inline-flex h-7 items-center gap-1 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground transition-colors hover:bg-accent/50"
+        >
+          <Plus aria-hidden className="h-3.5 w-3.5 shrink-0" />
+          {t('newProject')}
+        </button>
+      </div>
+    );
+  }
 
   const MAX_PILLS = 2;
   const visiblePills = activeOptions.slice(0, MAX_PILLS);
