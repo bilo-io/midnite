@@ -54,7 +54,16 @@ export function ensureGatewaySecrets(home: string): string | null {
       ? '\n'
       : '# Auto-generated machine-local midnite secrets — do not commit or share.\n';
     appendFileSync(envPath, `${header}${additions.join('\n')}\n`);
-    // Best-effort: keep the secrets file owner-only (matches its sensitivity).
+  }
+
+  // Tighten permissions on every run, not only when we just wrote something.
+  // Gated on `additions.length > 0`, a file that already held every managed
+  // secret was never chmod'ed — so a `.env` created by hand, restored from a
+  // backup, or copied between machines with loose modes kept them forever. The
+  // file holds the JWT signing secret and the credential encryption key; its
+  // permissions shouldn't depend on whether this particular launch happened to
+  // add a line.
+  if (existsSync(envPath)) {
     try {
       chmodSync(envPath, 0o600);
     } catch {

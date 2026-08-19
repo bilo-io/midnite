@@ -70,6 +70,38 @@ export function isAuthExemptPath(url: string): boolean {
 }
 
 /**
+ * Routes exempt from **rate limiting** — deliberately *not* the same set as
+ * {@link isAuthExemptPath}.
+ *
+ * The two exemptions answer opposite questions. Auth-exempt means "can't present
+ * a bearer yet", which is exactly why the credential endpoints are on that list.
+ * Rate-limit-exempt means "called often enough by legitimate infrastructure that
+ * a shared per-IP bucket would throttle real traffic".
+ *
+ * Reusing the auth list here inverted the semantics: `/auth/login`,
+ * `/auth/register` and `/auth/refresh` — the endpoints you would actually
+ * brute-force — were the ones skipping the limiter, even when it was explicitly
+ * enabled. Only the high-frequency infrastructure paths belong here:
+ *
+ *  - `/health*` — orchestrators and monitors poll these constantly.
+ *  - `/hooks/*` — in-PTY lifecycle callbacks; a busy agent pool fires many, all
+ *    from loopback (so they share one bucket with everything else), and
+ *    throttling them would corrupt task state rather than merely slow a client.
+ *
+ * `/playground/*` is intentionally absent: it is a demo surface with no
+ * legitimate high-frequency use, so it can take the same limit as any other API.
+ */
+export function isRateLimitExemptPath(url: string): boolean {
+  const path = url.split('?')[0]!.replace(/\/+$/, '') || '/';
+  return (
+    path === '/health' ||
+    path.startsWith('/health/') ||
+    path === '/hooks' ||
+    path.startsWith('/hooks/')
+  );
+}
+
+/**
  * The Phase 46 inbound receiver — `POST /integrations/inbound/:id` — is
  * unauthenticated by session; the provider HMAC signature is the gate. It must be
  * distinguished by **method + shape** from the team-admin management routes that

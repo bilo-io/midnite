@@ -3,6 +3,7 @@ import { parseConfig, type MidniteConfig } from '@midnite/shared';
 import {
   bearerTokenFromHeader,
   isAuthExemptPath,
+  isRateLimitExemptPath,
   isLoopbackHost,
   isPublicInboundReceiver,
   isValidBearer,
@@ -129,5 +130,33 @@ describe('isValidBearer', () => {
     expect(isValidBearer(undefined, 's3cret')).toBe(false);
     expect(isValidBearer('Bearer nope', 's3cret')).toBe(false);
     expect(isValidBearer('Basic s3cret', 's3cret')).toBe(false);
+  });
+});
+
+describe('isRateLimitExemptPath', () => {
+  it('exempts only the high-frequency infrastructure paths', () => {
+    for (const p of ['/health', '/health/live', '/health/ready?x=1', '/hooks/sessions/a/stop', '/hooks/']) {
+      expect(isRateLimitExemptPath(p)).toBe(true);
+    }
+  });
+
+  it('does NOT exempt the credential endpoints — they are the brute-force targets', () => {
+    // The bug this function exists to fix: the rate-limit guard reused
+    // isAuthExemptPath, whose whole purpose is to let pre-auth requests through.
+    // That made /auth/login the one route skipping the limiter.
+    for (const p of ['/auth/login', '/auth/register', '/auth/refresh']) {
+      expect(isAuthExemptPath(p)).toBe(true); // still correct for the auth guard
+      expect(isRateLimitExemptPath(p)).toBe(false); // but never for the limiter
+    }
+  });
+
+  it('does not exempt the playground demo API', () => {
+    expect(isRateLimitExemptPath('/playground/echo')).toBe(false);
+  });
+
+  it('does not exempt ordinary API routes', () => {
+    for (const p of ['/tasks', '/projects', '/auth/me']) {
+      expect(isRateLimitExemptPath(p)).toBe(false);
+    }
   });
 });
