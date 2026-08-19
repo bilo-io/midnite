@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { pinUnifiedBoard } from './helpers/board';
 import { seedTask } from './helpers/gateway';
 
 // Phase 82 — the board is no longer windowed: columns grow to their full content
@@ -10,6 +11,7 @@ import { seedTask } from './helpers/gateway';
 const SEEDED = 60;
 
 test.beforeEach(async ({ page }) => {
+  await pinUnifiedBoard(page);
   await page.addInitScript(() => {
     try {
       localStorage.setItem('midnite.setup-wizard.dismissed', 'true');

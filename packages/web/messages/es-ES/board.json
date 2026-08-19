@@ -97,10 +97,7 @@
       "table": "Vista de tabla",
       "graph": "Vista de grafo"
     },
-    "boardStyles": {
-      "unified": "Todo en uno",
-      "project": "Por proyecto"
-    }
+    "oneBoard": "Tablero único"
   },
   "sections": {
     "empty": "Vacío",
@@ -182,5 +179,15 @@
   "page": {
     "title": "Tareas",
     "description": "Tareas agrupadas por estado. Alterna entre lista, tablero y grafo, y filtra por estado o proyecto."
+  },
+  "runActions": {
+    "build": "Compilar {name}",
+    "launch": "Lanzar {name}",
+    "buildTitle": "Compilación — {name}",
+    "launchTitle": "Lanzamiento — {name}",
+    "buildStarted": "Compilación de {name} iniciada en segundo plano.",
+    "launchStarted": "{name} lanzado en segundo plano.",
+    "buildFailed": "No se pudo iniciar la compilación.",
+    "launchFailed": "No se pudo iniciar el lanzamiento."
   }
 }

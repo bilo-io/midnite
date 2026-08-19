@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 import { SCREENSHOTS_DIR } from './config';
-import { column } from './helpers/board';
+import { column, pinUnifiedBoard } from './helpers/board';
 import { seedTask, type SeededTask } from './helpers/gateway';
 
 // Board keyboard navigation (Phase 41 Theme D). The board filters by the `q`
@@ -44,6 +44,7 @@ test.describe('Board keyboard navigation', () => {
     // On a fresh e2e gateway the setup wizard auto-opens (provider not "ready").
     // It's a `[role="dialog"]` that legitimately suppresses board shortcuts, so
     // dismiss it (and the idle screensaver) before driving the keyboard.
+    await pinUnifiedBoard(page);
     await page.addInitScript(() => {
       try {
         localStorage.setItem('midnite.setup-wizard.dismissed', 'true');

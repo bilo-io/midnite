@@ -138,6 +138,7 @@ import {
   ReposPageSchema,
   RepoStatusResponseSchema,
   type RepoStatusResponse,
+  type RunProjectCommandRequest,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -1420,25 +1421,42 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 /**
- * Preview/Launch action (project detail page): open a live ad-hoc terminal that
- * runs the project's configured `startCommand` in its work directory. The server
- * builds the command from already-persisted config — no body to send.
+ * Preview/Launch action: run the project's configured `startCommand` in its work
+ * directory. Default is a live ad-hoc terminal (spawns when a client attaches);
+ * `background: true` instead runs it eagerly as a gateway child process — no
+ * terminal needed, and killing midnite kills the run. The server builds the
+ * command from already-persisted config; the body only picks how it runs.
  */
-export async function previewProject(id: string): Promise<{ terminalId: string }> {
+export async function previewProject(
+  id: string,
+  opts?: RunProjectCommandRequest,
+): Promise<{ terminalId: string }> {
   return fetchJson(
     `/projects/${encodeURIComponent(id)}/preview`,
-    { method: 'POST' },
+    runCommandInit(opts),
     InstallTerminalResponseSchema,
   );
 }
 
 /** Build action: same shape as {@link previewProject}, running `buildCommand`. */
-export async function buildProject(id: string): Promise<{ terminalId: string }> {
+export async function buildProject(
+  id: string,
+  opts?: RunProjectCommandRequest,
+): Promise<{ terminalId: string }> {
   return fetchJson(
     `/projects/${encodeURIComponent(id)}/build`,
-    { method: 'POST' },
+    runCommandInit(opts),
     InstallTerminalResponseSchema,
   );
+}
+
+function runCommandInit(opts?: RunProjectCommandRequest): RequestInit {
+  if (!opts?.background) return { method: 'POST' };
+  return {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(opts),
+  };
 }
 
 // --- Repos (the DB-backed repo registry) ---

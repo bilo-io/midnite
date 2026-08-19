@@ -845,6 +845,15 @@
       "blockedHint": "Les notifications sont bloquées dans votre navigateur — autorisez-les dans les paramètres du site pour activer cette option.",
       "notifyAria": "Notifier les mises à jour des tâches"
     },
+    "runActions": {
+      "title": "Actions d’exécution",
+      "mode": "Compilation et lancement du projet",
+      "modeAria": "Mode d’exécution",
+      "terminal": "Terminal",
+      "background": "Arrière-plan",
+      "terminalHint": "Compiler et Lancer ouvrent une fenêtre de terminal diffusant la commande en direct.",
+      "backgroundHint": "Compiler et Lancer s’exécutent en arrière-plan sous le contrôle de Midnite — quitter Midnite les arrête."
+    },
     "realtime": {
       "title": "Temps réel",
       "bufferSize": "Taille du tampon d'événements",

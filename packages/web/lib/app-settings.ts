@@ -353,7 +353,16 @@ export type AppSettings = Omit<UserPreferences, 'theme' | 'features'> & {
    * disables autosave — the Save button is then the only way to persist.
    */
   editorAutosaveSeconds: number;
+  /**
+   * How the board's per-project Build/Launch actions run the configured command:
+   * `terminal` opens a terminal modal streaming it live; `background` runs it as
+   * a gateway child process (no terminal — killing midnite kills the run).
+   */
+  projectRunMode: ProjectRunMode;
 };
+
+/** How a project's Build/Launch action executes — see `AppSettings.projectRunMode`. */
+export type ProjectRunMode = 'terminal' | 'background';
 
 // The synced-field defaults come from the shared contract (single source of
 // truth); `theme` is dropped (it lives in the theme-context store) and `features`
@@ -368,6 +377,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   passcodeOnlyWhenLocked: false,
   notifyTaskUpdates: false,
   editorAutosaveSeconds: 30,
+  projectRunMode: 'terminal',
 };
 
 /** Selectable autosave intervals (seconds) for the editor settings. `0` = off. */

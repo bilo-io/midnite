@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { column } from './helpers/board';
+import { column, pinUnifiedBoard } from './helpers/board';
 import { seedTask, type SeededTask } from './helpers/gateway';
 
 // Phase 42 Theme B — the in-app task modal, URL-driven under static export.
@@ -19,6 +19,7 @@ test.describe('Task detail modal (?task=)', () => {
   test.beforeEach(async ({ page }) => {
     // Keep the setup wizard + the inactivity screensaver out of the way so they
     // don't intercept clicks mid-flow.
+    await pinUnifiedBoard(page);
     await page.addInitScript(() => {
       try {
         localStorage.setItem('midnite.setup-wizard.dismissed', 'true');

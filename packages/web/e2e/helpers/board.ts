@@ -1,6 +1,23 @@
 import { type Locator, type Page } from '@playwright/test';
 
 /**
+ * Pin the tasks board to its **unified** layout ("One board" on) before the app
+ * boots. The board defaults to *per-project* accordions, which nest a set of
+ * status columns per project — so `column()` would match one section per project
+ * group. Every spec asserting flat, page-level status columns depends on the
+ * unified layout, and says so by calling this in a `beforeEach`.
+ */
+export async function pinUnifiedBoard(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('midnite.tasks.boardStyle', 'unified');
+    } catch {
+      /* best effort */
+    }
+  });
+}
+
+/**
  * The board renders one `<section>` per status, each with a heading carrying the
  * column label. Scope card lookups to a column so the same task title can be
  * asserted "in Backlog" vs "in Todo".

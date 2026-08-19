@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { test } from '@playwright/test';
 
 import { SCREENSHOTS_DIR } from './config';
+import { pinUnifiedBoard } from './helpers/board';
 
 /**
  * Phase 82 Theme B — the board + new-task dialog rendered under fr-FR, proving
@@ -14,6 +15,7 @@ import { SCREENSHOTS_DIR } from './config';
 const OUT = resolve(process.cwd(), SCREENSHOTS_DIR);
 
 test('board + new-task dialog — fr-FR', async ({ page }) => {
+  await pinUnifiedBoard(page);
   await page.addInitScript(() => {
     try {
       localStorage.setItem('midnite.theme', 'dark');

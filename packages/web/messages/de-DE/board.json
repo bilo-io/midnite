@@ -97,10 +97,7 @@
       "table": "Tabellenansicht",
       "graph": "Graph-Ansicht"
     },
-    "boardStyles": {
-      "unified": "Alles in einem",
-      "project": "Pro Projekt"
-    }
+    "oneBoard": "Ein Board"
   },
   "sections": {
     "empty": "Leer",
@@ -182,5 +179,15 @@
   "page": {
     "title": "Aufgaben",
     "description": "Aufgaben nach Status gruppiert. Wechsle zwischen Liste, Board und Graph und filtere nach Status oder Projekt."
+  },
+  "runActions": {
+    "build": "{name} bauen",
+    "launch": "{name} starten",
+    "buildTitle": "Build — {name}",
+    "launchTitle": "Start — {name}",
+    "buildStarted": "Build für {name} im Hintergrund gestartet.",
+    "launchStarted": "{name} im Hintergrund gestartet.",
+    "buildFailed": "Build konnte nicht gestartet werden.",
+    "launchFailed": "Start fehlgeschlagen."
   }
 }

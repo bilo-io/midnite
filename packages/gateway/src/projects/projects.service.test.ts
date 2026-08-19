@@ -90,7 +90,12 @@ const disabledLlm = { enabled: false } as unknown as LlmService;
 
 function makeTerminalStub() {
   const createAdHocTerminal = vi.fn((initCommand: string) => `adhoc-${initCommand.length}`);
-  return { service: { createAdHocTerminal } as unknown as TerminalService, createAdHocTerminal };
+  const spawnManagedRun = vi.fn(() => ({ ok: true as const, pid: 123 }));
+  return {
+    service: { createAdHocTerminal, spawnManagedRun } as unknown as TerminalService,
+    createAdHocTerminal,
+    spawnManagedRun,
+  };
 }
 
 function makeTasksStub() {
@@ -231,7 +236,7 @@ describe('ProjectsService', () => {
     }) {
       const repo = new InMemoryProjectsRepo();
       const { service: tasks } = makeTasksStub();
-      const { service: terminal, createAdHocTerminal } = makeTerminalStub();
+      const { service: terminal, createAdHocTerminal, spawnManagedRun } = makeTerminalStub();
       const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub, terminal);
       const project = await service.createProject({
         name: 'Atlas',
@@ -241,7 +246,7 @@ describe('ProjectsService', () => {
         startCommand: overrides.startCommand,
         buildCommand: overrides.buildCommand,
       });
-      return { service, project, createAdHocTerminal };
+      return { service, project, createAdHocTerminal, spawnManagedRun };
     }
 
     it('previewProject creates an ad-hoc terminal that cds into workDir and runs startCommand', async () => {
@@ -269,6 +274,39 @@ describe('ProjectsService', () => {
       expect(result).toEqual({ terminalId: expect.stringMatching(/^adhoc-/) });
       expect(createAdHocTerminal).toHaveBeenCalledWith(
         `cd '/Users/bilo/dev/atlas' && clear && pnpm build\r`,
+      );
+    });
+
+    it('previewProject with background runs an eager managed run instead of an ad-hoc terminal', async () => {
+      const { service, project, createAdHocTerminal, spawnManagedRun } =
+        await makeProjectWithCommands({
+          workDir: '/Users/bilo/dev/atlas',
+          startCommand: 'pnpm dev',
+        });
+
+      const result = service.previewProject(project.id, { background: true });
+
+      expect(result).toEqual({ terminalId: expect.stringMatching(/^project-run-/) });
+      expect(createAdHocTerminal).not.toHaveBeenCalled();
+      expect(spawnManagedRun).toHaveBeenCalledWith(
+        expect.stringMatching(/^project-run-/),
+        expect.objectContaining({ args: ['-lc', 'pnpm dev'], cwd: '/Users/bilo/dev/atlas' }),
+        expect.objectContaining({ onData: expect.any(Function), onExit: expect.any(Function) }),
+      );
+    });
+
+    it('buildProject with background 400s when the managed run fails to spawn', async () => {
+      const { service, project, spawnManagedRun } = await makeProjectWithCommands({
+        workDir: '/Users/bilo/dev/atlas',
+        buildCommand: 'pnpm build',
+      });
+      spawnManagedRun.mockReturnValueOnce({
+        ok: false,
+        error: 'terminal session limit reached (10)',
+      } as never);
+
+      expect(() => service.buildProject(project.id, { background: true })).toThrow(
+        BadRequestException,
       );
     });
 

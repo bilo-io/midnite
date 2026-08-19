@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { column, dragCardTo } from './helpers/board';
+import { column, dragCardTo, pinUnifiedBoard } from './helpers/board';
 import { seedTask, type SeededTask } from './helpers/gateway';
 
 // Seed distinct, spec-scoped tasks. The e2e gateway runs with the LLM off so the
@@ -22,6 +22,11 @@ test.beforeAll(async () => {
 });
 
 test.describe('Tasks board', () => {
+  // These specs assert flat, page-level status columns — the unified board.
+  test.beforeEach(async ({ page }) => {
+    await pinUnifiedBoard(page);
+  });
+
   test('shows seeded tasks grouped into their status columns', async ({ page }) => {
     await page.goto('/tasks');
 

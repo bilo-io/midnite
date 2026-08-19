@@ -27,6 +27,7 @@ import { useProjectFilterStore } from '@/lib/project-filter-store';
 import { StickyToolbar } from '@/components/sticky-toolbar';
 import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
@@ -229,7 +230,8 @@ export function TasksView({
   }, [view, onViewChange]);
 
   // Board layout style (unified vs. per-project accordions), persisted locally.
-  const [boardStyle, setBoardStyleState] = useState<BoardStyle>('unified');
+  // Per-project is the default — the "One board" switch opts into unified.
+  const [boardStyle, setBoardStyleState] = useState<BoardStyle>('project');
   useEffect(() => {
     const stored = localStorage.getItem(BOARD_STYLE_STORAGE_KEY);
     if (stored && (BOARD_STYLES as readonly string[]).includes(stored)) {
@@ -552,27 +554,18 @@ export function TasksView({
           {tagFilters.length > 0 && (
             <FilterPills options={tagFilters} paramKey="tags" allLabel={t('toolbar.allTags')} />
           )}
-          {/* Board layout style — a shared board, or one collapsible board per
+          {/* Board layout style — "One board" merges every project into one
+              shared board; off (the default) shows one collapsible board per
               project. Only meaningful in board view (list/table are flat). */}
           {view === 'board' ? (
-            <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-              {BOARD_STYLES.map((value) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-pressed={boardStyle === value}
-                  onClick={() => setBoardStyle(value)}
-                  className={cn(
-                    'h-7 px-2.5 text-xs',
-                    boardStyle === value && 'bg-accent text-accent-foreground',
-                  )}
-                >
-                  {t(`toolbar.boardStyles.${value}`)}
-                </Button>
-              ))}
-            </div>
+            <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/40 px-2.5">
+              <Switch
+                checked={boardStyle === 'unified'}
+                onCheckedChange={(on) => setBoardStyle(on ? 'unified' : 'project')}
+                aria-label={t('toolbar.oneBoard')}
+              />
+              <span className="select-none text-xs">{t('toolbar.oneBoard')}</span>
+            </label>
           ) : null}
           {/* A single project filter doubles as the graph view's scope — its
               completion reads here instead of a second bar inside the canvas. */}

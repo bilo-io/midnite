@@ -1,11 +1,18 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+import { Bell, Rocket } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Accordion } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/lib/use-local-storage';
-import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  type AppSettings,
+  type ProjectRunMode,
+} from '@/lib/app-settings';
 import { EnvironmentAccordion } from './environment-accordion';
 import { RealtimeAccordion } from './realtime-accordion';
 import { UpdatesAccordion } from './updates-accordion';
@@ -63,6 +70,45 @@ export function SystemSection() {
               disabled={notifyDenied}
               aria-label={t('system.notifications.notifyAria')}
             />
+          </div>
+        </div>
+      </Accordion>
+
+      <Accordion title={t('system.runActions.title')} icon={<Rocket className="h-3.5 w-3.5" />}>
+        <div className="space-y-4 p-5">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{t('system.runActions.mode')}</p>
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  settings.projectRunMode === 'background'
+                    ? 'system.runActions.backgroundHint'
+                    : 'system.runActions.terminalHint',
+                )}
+              </p>
+            </div>
+            <div
+              role="group"
+              aria-label={t('system.runActions.modeAria')}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5"
+            >
+              {(['terminal', 'background'] as const).map((mode: ProjectRunMode) => (
+                <Button
+                  key={mode}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-pressed={settings.projectRunMode === mode}
+                  onClick={() => setSettings((prev) => ({ ...prev, projectRunMode: mode }))}
+                  className={cn(
+                    'h-7 px-2.5 text-xs',
+                    settings.projectRunMode === mode && 'bg-accent text-accent-foreground',
+                  )}
+                >
+                  {t(`system.runActions.${mode}`)}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </Accordion>
