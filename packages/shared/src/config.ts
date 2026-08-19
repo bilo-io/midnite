@@ -326,6 +326,29 @@ export const GatewayConfigSchema = z.object({
   uploadsDir: z.string().default('./.midnite/uploads'),
   dbPath: z.string().default('./.midnite/midnite.db'),
   /**
+   * Filesystem-picker policy. `GET/POST /fs/dirs` back the web folder picker, and
+   * because sessions spawn on the *gateway host* the picker has to navigate that
+   * machine's real filesystem — so by default it can list any directory and
+   * `mkdir -p` at any writable path.
+   *
+   * That is the correct default for the local-first single-user case (the caller
+   * is the person who owns the machine, and `/checks` already runs shell commands
+   * for them), but it is the widest filesystem surface in the API and a gateway
+   * shared with other people shouldn't hand it out. `allowedRoots` makes the
+   * boundary an explicit deployment decision instead of an accident.
+   *
+   * Empty (the default) ⇒ unrestricted, exactly as before. Non-empty ⇒ browse and
+   * create are confined to those roots (and their descendants); anything else is
+   * refused with a 403. Entries may use `~`. Because the picker opens on the home
+   * directory by default, a configured jail also moves that landing directory to
+   * the first root, so the picker never opens on a folder it may not read.
+   */
+  fs: z
+    .object({
+      allowedRoots: z.array(z.string()).default([]),
+    })
+    .default({}),
+  /**
    * Boot preflight strictness (Phase 54 A). Off by default (behaviour-preserving:
    * soft gaps only warn and the gateway still boots). When true, any `warn` from
    * the boot preflight is escalated to a hard failure — the process logs the

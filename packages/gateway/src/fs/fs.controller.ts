@@ -1,6 +1,26 @@
-import { BadRequestException, Body, Controller, Get, Inject, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { type BrowseDirResponse, CreateDirRequestSchema } from '@midnite/shared';
 import { FsService } from './fs.service';
+import { PathNotAllowedError } from './path-jail';
+
+/**
+ * A path refused by `gateway.fs.allowedRoots` is a 403, not the 400 every other
+ * failure here maps to: the request was well-formed and the client can't fix it
+ * by editing the path into something the policy would accept.
+ */
+function toHttp(err: unknown, fallback: string): Error {
+  if (err instanceof PathNotAllowedError) return new ForbiddenException(err.message);
+  return new BadRequestException(err instanceof Error ? err.message : fallback);
+}
 
 @Controller('fs')
 export class FsController {
@@ -13,7 +33,7 @@ export class FsController {
     try {
       return await this.service.browseDir(path);
     } catch (err) {
-      throw new BadRequestException(err instanceof Error ? err.message : 'cannot read directory');
+      throw toHttp(err, 'cannot read directory');
     }
   }
 
@@ -27,7 +47,7 @@ export class FsController {
     try {
       return await this.service.createDir(parsed.data.path);
     } catch (err) {
-      throw new BadRequestException(err instanceof Error ? err.message : 'cannot create directory');
+      throw toHttp(err, 'cannot create directory');
     }
   }
 }
