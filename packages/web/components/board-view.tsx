@@ -620,7 +620,9 @@ function ProjectBoardsView({
   });
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    // Carries the same `board` tour anchor as the unified board — only one layout
+    // renders at a time, so the tasks guide finds its target in either mode.
+    <div className="flex flex-1 flex-col gap-4" data-tour="board">
       {groups.length === 0 ? (
         <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('nothingHere')}</p>
       ) : (
