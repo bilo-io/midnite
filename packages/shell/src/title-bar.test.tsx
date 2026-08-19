@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { WindowChromeBridge } from '@midnite/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -94,6 +94,45 @@ describe('TitleBar', () => {
     expect(bar().className).toContain('pl-[5.25rem]');
   });
 
+  it('zooms the window on a double-click of the drag surface', () => {
+    const toggleMaximize = vi.fn();
+    const { bridge } = fakeBridge({ toggleMaximize });
+    render(<TitleBar windowChrome={bridge} center={<input aria-label="Search" />} />);
+
+    fireEvent.doubleClick(bar());
+    expect(toggleMaximize).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a double-click that lands on an interactive slot child', () => {
+    const toggleMaximize = vi.fn();
+    const { bridge } = fakeBridge({ toggleMaximize });
+    render(
+      <TitleBar
+        windowChrome={bridge}
+        left={<button type="button">Back</button>}
+        center={<input aria-label="Search" />}
+        right={<button type="button">Account</button>}
+      />,
+    );
+
+    // Native bars don't zoom when you double-click a control sitting in them.
+    for (const el of [
+      screen.getByRole('button', { name: 'Back' }),
+      screen.getByRole('textbox', { name: 'Search' }),
+      screen.getByRole('button', { name: 'Account' }),
+    ]) {
+      fireEvent.doubleClick(el);
+    }
+    expect(toggleMaximize).not.toHaveBeenCalled();
+  });
+
+  it('survives a double-click when the preload is too old to expose toggleMaximize', () => {
+    const { bridge } = fakeBridge();
+    render(<TitleBar windowChrome={bridge} />);
+    // `toggleMaximize` is optional on the bridge — an older shell just doesn't zoom.
+    expect(() => fireEvent.doubleClick(bar())).not.toThrow();
+  });
+
   it('dims while the window is blurred and restores on focus', () => {
     const { bridge, setFocused } = fakeBridge();
     render(<TitleBar windowChrome={bridge} />);
@@ -119,5 +158,14 @@ describe('TitleBarDragStrip', () => {
 
     rerender(<TitleBarDragStrip windowChrome={null} />);
     expect(container.firstElementChild).toBeNull();
+  });
+
+  it('zooms the window on a double-click — the whole strip is drag surface', () => {
+    const toggleMaximize = vi.fn();
+    const { bridge } = fakeBridge({ toggleMaximize });
+    const { container } = render(<TitleBarDragStrip windowChrome={bridge} />);
+
+    fireEvent.doubleClick(container.firstElementChild as HTMLElement);
+    expect(toggleMaximize).toHaveBeenCalledTimes(1);
   });
 });

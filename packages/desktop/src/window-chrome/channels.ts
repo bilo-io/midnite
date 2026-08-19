@@ -9,6 +9,8 @@ export const WINDOW_FULLSCREEN_CHANNEL = 'midnite:window:fullscreen';
 export const WINDOW_FOCUS_CHANNEL = 'midnite:window:focus';
 /** renderer → main: `#rrggbb` string for `win.setBackgroundColor`. */
 export const WINDOW_BACKGROUND_CHANNEL = 'midnite:window:set-background';
+/** renderer → main: no payload; zoom the window, or restore it if already zoomed. */
+export const WINDOW_TOGGLE_MAXIMIZE_CHANNEL = 'midnite:window:toggle-maximize';
 
 /**
  * CLI switch the main process passes to the preload (like `--gateway-url`) so

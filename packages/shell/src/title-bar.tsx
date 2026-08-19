@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import type { WindowChromeBridge } from '@midnite/shared';
 import { cn } from '@midnite/ui';
 
@@ -21,6 +21,9 @@ import { cn } from '@midnite/ui';
  *   `env(titlebar-area-*)` is not populated on mac, the bridge event is the
  *   source of truth
  * - dims while the window is blurred (`onFocusChange`), like a native bar
+ * - double-click-to-zoom on the drag region (`toggleMaximize`) — macOS applies
+ *   the gesture to *native* title bars only, so a frameless window has to drive
+ *   it itself; clicks landing on a `no-drag` slot are ignored, matching native
  * - publishes its height as `--titlebar-h` on the root element so the fixed nav
  *   rail and the in-flow app column offset below it (mirrors `--update-banner-h`)
  */
@@ -53,6 +56,15 @@ export const TITLE_BAR_HEIGHT = '3rem';
 // `-webkit-app-region` isn't in React's CSSProperties; the casts keep strict TS.
 const DRAG_STYLE = { WebkitAppRegion: 'drag' } as CSSProperties;
 const NO_DRAG_STYLE = { WebkitAppRegion: 'no-drag' } as CSSProperties;
+
+/**
+ * Marks the `no-drag` slot wrappers. `onDoubleClick` bubbles up from whatever the
+ * user actually hit, so the zoom guard uses this to ignore double-clicks on the
+ * bar's interactive children (a double-click on the search pill must not zoom the
+ * window) — the same split `-webkit-app-region` already draws for dragging.
+ */
+const NO_DRAG_MARKER = 'data-titlebar-no-drag';
+const NO_DRAG_SLOT_PROPS = { [NO_DRAG_MARKER]: '', style: NO_DRAG_STYLE } as const;
 
 export function TitleBar({
   windowChrome,
@@ -88,6 +100,18 @@ export function TitleBar({
     };
   }, [frameless]);
 
+  // Double-click-to-zoom. Only fires for clicks that landed on the drag surface
+  // itself — a double-click inside a `no-drag` slot (the search pill, a header
+  // action) is the child's, exactly as with a native bar.
+  const onDoubleClick = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(`[${NO_DRAG_MARKER}]`)) return;
+      windowChrome?.toggleMaximize?.();
+    },
+    [windowChrome],
+  );
+
   if (!frameless) return null;
 
   const clearTrafficLights = windowChrome.platform === 'darwin' && !fullscreen;
@@ -96,6 +120,7 @@ export function TitleBar({
     <header
       aria-label={label}
       data-window-focused={focused ? 'true' : 'false'}
+      onDoubleClick={onDoubleClick}
       style={DRAG_STYLE}
       className={cn(
         'fixed inset-x-0 top-0 z-[60] flex h-12 items-center justify-between gap-3 border-b border-border/60 bg-background pr-3 transition-[padding-left,opacity] duration-200',
@@ -109,7 +134,7 @@ export function TitleBar({
         // Yields width below `md` (see the `center` note) so the page title
         // truncates instead of running under the search pill; immovable from
         // `md` up, where there is room for all three slots.
-        <div style={NO_DRAG_STYLE} className="flex min-w-0 items-center gap-1 md:shrink-0">
+        <div {...NO_DRAG_SLOT_PROPS} className="flex min-w-0 items-center gap-1 md:shrink-0">
           {left}
         </div>
       ) : null}
@@ -128,14 +153,14 @@ export function TitleBar({
         // the three slots share the row and the title truncates; the pill keeps an
         // 8rem floor so it stays a legible trigger rather than collapsing.
         <div
-          style={NO_DRAG_STYLE}
+          {...NO_DRAG_SLOT_PROPS}
           className="flex min-w-[8rem] flex-1 items-center justify-center md:absolute md:inset-y-0 md:left-1/2 md:w-[30%] md:min-w-[14rem] md:max-w-sm md:flex-none md:-translate-x-1/2"
         >
           {center}
         </div>
       ) : null}
       {right ? (
-        <div style={NO_DRAG_STYLE} className="flex min-w-0 shrink-0 items-center gap-1.5">
+        <div {...NO_DRAG_SLOT_PROPS} className="flex min-w-0 shrink-0 items-center gap-1.5">
           {right}
         </div>
       ) : null}
@@ -147,6 +172,9 @@ export function TitleBar({
  * A bare top drag strip for full-viewport overlays and chrome-less pages (the
  * lock screen, the auth split-screen) — keeps the frameless window draggable
  * where the <TitleBar> itself doesn't mount. Renders nothing when framed.
+ *
+ * It has no children, so double-click-to-zoom needs no `no-drag` guard here: the
+ * whole strip is drag surface.
  */
 export function TitleBarDragStrip({
   windowChrome,
@@ -157,6 +185,11 @@ export function TitleBarDragStrip({
 }) {
   if (windowChrome?.frameless !== true) return null;
   return (
-    <div aria-hidden style={DRAG_STYLE} className={cn('fixed inset-x-0 top-0 z-[70] h-12', className)} />
+    <div
+      aria-hidden
+      onDoubleClick={() => windowChrome.toggleMaximize?.()}
+      style={DRAG_STYLE}
+      className={cn('fixed inset-x-0 top-0 z-[70] h-12', className)}
+    />
   );
 }

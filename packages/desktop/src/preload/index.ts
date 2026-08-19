@@ -15,6 +15,7 @@ import {
   WINDOW_FOCUS_CHANNEL,
   WINDOW_FRAMELESS_ARG,
   WINDOW_FULLSCREEN_CHANNEL,
+  WINDOW_TOGGLE_MAXIMIZE_CHANNEL,
 } from '../window-chrome/channels';
 
 // The static web bundle bakes NEXT_PUBLIC_* at build time, so the gateway URL
@@ -73,6 +74,9 @@ try {
         onBooleanChannel(WINDOW_FOCUS_CHANNEL, handler),
       setBackgroundColor: (color: string) => {
         ipcRenderer.send(WINDOW_BACKGROUND_CHANNEL, color);
+      },
+      toggleMaximize: () => {
+        ipcRenderer.send(WINDOW_TOGGLE_MAXIMIZE_CHANNEL);
       },
     },
   });
