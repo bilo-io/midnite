@@ -95,6 +95,17 @@ describe('SessionDetailView', () => {
     expect(screen.getByRole('link', { name: 'Fix login flow' })).toHaveAttribute('href', '/tasks/view?id=t1');
   });
 
+  it('names the linked task in the center band and drops the connection pip', () => {
+    const named = { ...task, title: 'Add speed ramp, obstacles and combo scoring to Snake' } as Task;
+    renderView(<SessionDetailView session={session} task={named} project={project} />);
+    // The band between the rail toggles carries the task title (single line, truncated).
+    const title = screen.getByTitle(named.title);
+    expect(title).toHaveTextContent(named.title);
+    expect(title).toHaveClass('truncate');
+    // The terminal already shows connection state — the toolbar pip is gone.
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('collapses and re-expands a rail via the content-layer toggle (persisted state)', () => {
     renderView(<SessionDetailView session={session} task={task} project={project} />);
     // The toggle is a content-layer control (not inside the rail); collapsing
