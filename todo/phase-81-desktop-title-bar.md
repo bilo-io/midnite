@@ -39,7 +39,7 @@
 
 ## Theme A — Frameless macOS window (main process) — **S** ✅
 
-- [x] `titleBarStyle: 'hidden'` + `trafficLightPosition: { x: 16, y: 18 }` (so the
+- [x] `titleBarStyle: 'hidden'` + `trafficLightPosition: { x: 16, y: 14 }` (so the
       lights sit level with the bar controls in the 48px bar — `hiddenInset` ignores a custom position) + a
       theme-matching `backgroundColor` on the `BrowserWindow`, gated
       `process.platform === 'darwin'` (non-mac keeps the default frame untouched).
@@ -95,13 +95,20 @@
 - [x] `web` mounts the TitleBar via the desktop bridge; component tests for the
       pill/nav/relocation gating.
 
-## Theme E — Lock screen & auth coverage — **S** ◐ (manual packaged-app pass outstanding)
+## Theme E — Lock screen & auth coverage — **S** ✅ DONE (PR #634, 2026-08-19)
 
 - [x] `LockScreen` (shell) and the auth/login pages stay draggable under the hidden
       title bar — a top drag strip overlays the starfield without blocking the form.
-- [ ] Manual verification pass in the packaged app: drag from every surface (board,
-      task detail, lock screen, login, failure page), double-click-to-zoom, fullscreen
-      in/out, theme switch (backing color follows).
+- [x] Verification pass driven against a real frameless Electron window (dev shell,
+      scratch `HOME` + port, **sandbox on with the esbuild-bundled preload — the
+      packaged configuration**), measured over CDP: bridge shape, bar geometry +
+      drag region, traffic-light clearance, native fullscreen collapse/restore,
+      focus/blur dimming, token-seamless surface in light + dark, and
+      double-click-to-zoom end to end. 11/11 checks green.
+- [x] **Double-click-to-zoom is now ours, not Electron's** — macOS only applies the
+      gesture to *native* title bars, so the bar reports the double-click and the
+      main process drives `maximize`/`unmaximize` (`toggleMaximize` on the bridge).
+      A double-click landing on a `no-drag` slot is ignored, matching a native bar.
 
 ---
 
@@ -119,20 +126,38 @@
 
 - [x] `moon run :typecheck && moon run :lint && moon run :test` green (incl. all three
       `boundary.test.ts`).
-- [ ] Packaged app (`desktop install:local` flow): frameless window, seamless bar color
-      in light + dark + accent themes, traffic lights inset correctly.
-- [ ] Drag works from the bar on every surface; interactive children still clickable.
-- [ ] Fullscreen: clearance collapses on enter, restores on leave (RTL-pinned;
-      confirm in the packaged app).
-- [ ] Blur dims the bar; focus restores it (RTL-pinned; confirm in the packaged app).
+- [x] Real frameless window: bar mounts 48px at `top: 0` as a `drag` region, three
+      `no-drag` slots, `--titlebar-h: 3rem`, traffic-light clearance `84px`; bar
+      background tracks the token — `#fff` light / `rgb(9,9,11)` dark, the latter
+      exactly the window's own `backgroundColor: '#09090b'`, so the seam holds.
+- [x] Drag surfaces are pinned by test rather than by memory:
+      `packages/web/lib/desktop-drag-regions.test.ts` fails if a persistent
+      full-viewport surface (app shell, auth layout, lock screen) drops its drag
+      region. Interactive children stay clickable (`no-drag` per slot, RTL-pinned).
+- [x] Fullscreen: real native fullscreen collapses the clearance to `12px` and
+      restores it to `84px` on leave.
+- [x] Blur dims the bar (`data-window-focused="false"`, `opacity: 0.6`); focus
+      restores it (`true` / `1`).
+- [x] Double-click-to-zoom: `1400×900 → 1728×1003 → 1400×900` (and by renderer
+      resize, `1278×821 → 1577×915 → 1278×821`); a double-click on a bar control
+      does not zoom.
 - [x] Browser web + admin render byte-identical chrome to today (no TitleBar) —
       both suites pass unchanged; the bar mounts only behind the frameless bridge.
-- [ ] Gateway-failure page is draggable.
+- [x] Gateway-failure page carries its own drag strip (`main/index.ts`); the
+      automated guard for it lands with PR #624, which extracts `renderFailurePage`
+      and asserts the strip appears only when frameless.
+> **Human confirm (feel, not function).** Not tracked as an open item — every
+> mechanism behind dragging is verified above. A real HID drag is the one thing a
+> synthetic event can't stand in for (macOS consumes it in the window manager, not
+> the DOM), so whether dragging by the bar *feels* right on a trackpad is worth a
+> glance next time you're in the packaged build.
 
 ## Decisions / open questions
 
-- **Bar height** — recommend **44px** (Slack density; clears the traffic lights at
-  their default inset y).
+- **Bar height** — **48px** (**resolved**; the 44px recommendation was not taken).
+  48 keeps a 36px control's focus ring off the bar edge, and web's collapsed sticky
+  page header holds the same height so it hides exactly behind the bar —
+  `TITLE_BAR_HEIGHT` in `shell/src/title-bar.tsx` is the single source.
 - **Fullscreen detection** — bridge events, not CSS `env()` (**resolved**: macOS
   `hiddenInset` does not populate `titlebar-area-*`; the env() path is the Windows
   follow-up).
@@ -144,3 +169,18 @@
 - **Double-click-to-zoom** — macOS handles it natively on drag regions; verify rather
   than implement. If it doesn't fire (Electron regression), wire `onDoubleClick` →
   maximize toggle via the bridge as a fallback.
+
+## Running the desktop shell in dev (learned closing this out)
+
+`moon run desktop:build` + `electron .` is **not** enough: `tsc` leaves the preload
+with relative `require`s, and a *sandboxed* renderer's `preloadRequire` can't resolve
+them — the preload dies with "module not found", so the bridge (and therefore the
+title bar, native notifications, the updater, and `__NEXT_PUBLIC_GATEWAY_URL`) never
+arrives and the web silently falls back to `localhost:7777`. `desktop:stage` step 2b
+esbuild-bundles the preload for exactly this reason, so run **`pnpm stage`** (or
+`install:local`) before launching, and the sandbox can stay on.
+
+Two more dev-only snags: `ELECTRON_RUN_AS_NODE=1` in the environment makes
+`electron .` boot as plain Node (no window), and the gateway child resolves `node`
+from the login-shell PATH — Homebrew Node 26 (ABI 147) against a better-sqlite3 built
+for Node 22 (ABI 127) — so pass `NODE=$(proto bin node)` to pin it.

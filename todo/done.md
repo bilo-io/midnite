@@ -4,6 +4,85 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-19 — feat: Phase 81 Theme E — desktop title bar closed out 🟢
+
+Closed the last theme of Phase 81. The outstanding items were all "verify it by
+hand in the packaged app", so the slice split three ways: **verify what a machine
+can**, **pin the parts that were only ever verified by eye**, and **stop relying on
+an Electron implementation detail** for double-click-to-zoom.
+
+**Zoom is ours now.** macOS applies the zoom gesture to *native* title bars, so a
+frameless window never got it — the phase doc had it as "verify rather than
+implement, with a bridge fallback if it doesn't fire". It doesn't fire, so the
+fallback is now the implementation: `toggleMaximize` on `WindowChromeBridge` →
+preload → `ipcMain` → `maximize`/`unmaximize`, with fullscreen left alone (zoom is
+meaningless there). The bar guards on a `data-titlebar-no-drag` marker so a
+double-click on the search pill doesn't zoom the window, matching a native bar.
+
+**The verification pass ran against a real frameless window**, not a mock: dev
+Electron on a scratch `HOME` + port (so it couldn't touch `~/.midnite` or a parallel
+loop's gateway), driven over CDP — and critically **with the sandbox on and the
+preload esbuild-bundled**, which is the packaged configuration. 11/11 green: bridge
+shape, bar geometry + drag region, `84px` clearance, native fullscreen collapse to
+`12px` and back, blur dimming (`opacity: 0.6`) and focus restore, the token seam
+(`#fff` light / `rgb(9,9,11)` dark — exactly the window's own `#09090b` backing),
+and zoom end to end (`1400×900 → 1728×1003 → 1400×900`).
+
+**Self-review caught a user-facing bug the verification pass couldn't.** React events
+bubble the *React* tree, not the DOM one, so a slot child rendered through
+`createPortal` reaches the bar's `onDoubleClick` while its DOM ancestors are
+`document.body` — where a `data-titlebar-no-drag` lookup finds nothing. The bar mounts
+two portalled menus (the global project filter, the reload button's context menu), so
+double-clicking a word in the filter's search field zoomed the window mid-interaction.
+The guard now requires the target to be a DOM descendant of the bar. Since the repo
+convention is that web overflow menus *must* portal, every future menu in the bar
+would have inherited this.
+
+Two smaller holes from the same review: the preload's bridge literal was structurally
+unchecked (`exposeInMainWorld` types its API `any`, and `toggleMaximize` is optional on
+the contract — so a misspelt key kept typecheck and every spec green while zoom was
+dead in the packaged app; it's annotated now), and two of the three new drag-region
+assertions were vacuous, grepping the whole file so `windowChrome={null}` on a strip
+passed. Each fix is negative-tested.
+
+**`main/window-chrome.ts` had no spec at all** — the package's vitest config assumed
+a module that value-imports `ipcMain` was out of reach. Faking `electron` covers
+exactly what the manual pass was checking by hand, including the payload validation
+that drops anything not a plain `#rrggbb`.
+
+**One invariant is now a test rather than a habit.** "Drag works from every surface"
+fails silently: a persistent full-viewport surface that forgets its drag strip leaves
+the window immovable, and that is invisible in a browser and in that component's own
+unit test. `desktop-drag-regions.test.ts` pins the three surfaces that own the whole
+viewport (app shell, auth layout, lock screen) and deliberately exempts the ~46
+transient modals, which cover a native title bar too.
+
+**Two dev-only traps worth remembering**, both recorded in the phase doc: `tsc` +
+`electron .` is not enough (an unbundled preload dies under the sandbox with "module
+not found", taking the bridge, notifications, the updater and the injected gateway
+URL with it — run `pnpm stage`), and the gateway child picks `node` off the login
+shell (Homebrew 26, ABI 147) against a better-sqlite3 built for Node 22 (ABI 127).
+
+- [x] `toggleMaximize` on `WindowChromeBridge` (`shared`) + channel + preload + a
+      main-process handler that skips fullscreen and no-ops on a dead window
+- [x] `TitleBar`/`TitleBarDragStrip` drive zoom from their own `onDoubleClick`,
+      guarded so `no-drag` slot children are ignored
+- [x] `main/window-chrome.test.ts` (new, 11 tests) — fullscreen/focus forwarding,
+      destroyed-window guard, `#rrggbb` validation, zoom toggle
+- [x] `desktop-drag-regions.test.ts` (new) — persistent full-viewport surfaces must
+      mount a drag region; negative-tested so the guard actually bites
+- [x] Verification pass against a real frameless window in the packaged config
+      (11/11), replacing five by-hand checklist items
+- [x] Portalled slot children no longer bypass the zoom guard (React-tree vs
+      DOM-tree bubbling) — regression-tested with a `createPortal` child
+- [x] Preload bridge literal annotated `WindowChromeBridge`, so a misspelt key is a
+      compile error instead of a silently dead feature
+- [x] Drag-region assertions anchored to the mount rather than the whole file
+- [x] Doc/code drift fixed: `trafficLightPosition` is `y: 14` (not 18), and the bar
+      is **48px** (the 44px recommendation was not taken)
+- [x] `_INDEX.md`: Phase 81 → ✅ 29/29; Phase 77 recounted 8/12 → 13/17 (its themes
+      were all done, only its Verification block is open)
+
 ## 2026-08-05 — feat: Phase 82 Theme D — setup / routines / infra-chrome residue 🟢
 
 Took Theme D's residue from 49 files to **6** in one XL slice, disjoint by

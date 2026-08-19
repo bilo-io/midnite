@@ -33,4 +33,14 @@ export type WindowChromeBridge = {
    * format and ignores anything that isn't a 6-digit hex color.
    */
   setBackgroundColor: (color: string) => void;
+  /**
+   * Toggle the window between zoomed and restored — the title bar calls this from
+   * its own `onDoubleClick` so double-click-to-zoom works on the app-drawn drag
+   * region. macOS applies the gesture to native title bars, but a frameless
+   * window's drag region is ours, so the behaviour has to be too (rather than
+   * relying on an Electron implementation detail that a version bump can change).
+   * Optional so an older preload without it degrades gracefully — the bar simply
+   * doesn't zoom.
+   */
+  toggleMaximize?: () => void;
 };

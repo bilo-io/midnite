@@ -5,6 +5,7 @@ import {
   WINDOW_BACKGROUND_HEX_RE,
   WINDOW_FOCUS_CHANNEL,
   WINDOW_FULLSCREEN_CHANNEL,
+  WINDOW_TOGGLE_MAXIMIZE_CHANNEL,
 } from '../window-chrome/channels';
 
 /**
@@ -46,5 +47,16 @@ export function registerWindowChrome(getWindow: () => BrowserWindow | null): voi
     const win = getWindow();
     if (!win || win.isDestroyed()) return;
     win.setBackgroundColor(color);
+  });
+
+  // Double-click-to-zoom on the app-drawn drag region (Phase 81 Theme E). A
+  // frameless window has no native title bar for macOS to apply the gesture to,
+  // so the title bar reports the double-click and we drive the zoom here.
+  // Fullscreen is left alone — zoom is meaningless there and macOS ignores it.
+  ipcMain.on(WINDOW_TOGGLE_MAXIMIZE_CHANNEL, () => {
+    const win = getWindow();
+    if (!win || win.isDestroyed() || win.isFullScreen()) return;
+    if (win.isMaximized()) win.unmaximize();
+    else win.maximize();
   });
 }

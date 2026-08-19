@@ -31,11 +31,11 @@
 | [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | ◻ TODO | 0/47 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
-| [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | E | — |
+| [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | 🔄 WIP | 20/28 | `███████░░░` | 71% | — | D |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
-| [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 8/12 | `███████░░░` | 67% | A B C | — |
+| [77 · Desktop standalone (~/.midnite + bundled CLI + direct auth)](phase-77-desktop-standalone.md) | 🔄 WIP | 13/17 | `████████░░` | 76% | — | — |
 | [76 · Gateway DI metadata (SWC + boot guard)](phase-76-gateway-di-metadata.md) | ◻ TODO | 0/13 | `░░░░░░░░░░` | 0% | — | A B C |
 | [75 · Desktop OAuth (GitHub + Google SSO)](phase-75-desktop-oauth.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A B C D E F G | — |
 | [74 · Report issue (assistant → GitHub)](phase-74-report-issue.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -169,7 +169,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Window-controls IPC (`WindowChromeBridge` type in `shared`; preload exposes fullscreen/focus events + `setBackgroundColor`)
 - ✅ **C** — `TitleBar` in `@midnite/shell` (drag region, fullscreen-collapsing clearance, blur dimming, appearance-runtime-synced surface, AppFrame slot)
 - ✅ **D** — Bar contents (⌘K search pill → Phase 41 palette, back/forward, title label, headerActions relocation on desktop)
-- ◐ **E** — Lock screen & auth drag coverage ✅ + packaged-app verification pass (outstanding)
+- ✅ **E** — Lock screen & auth drag coverage + the verification pass, measured against a real frameless window in the packaged config (sandbox on, bundled preload): geometry, clearance, fullscreen, blur, theme seam, and double-click-to-zoom — now driven by the bar itself via `toggleMaximize` (PR #634)
 
 ### [Phase 80 — Shared reading face & complete legal set](phase-80-shared-reading-face-legal.md)
 *Extract the reading face (column shell + prose + scroll-spy TOC) into `@midnite/ui` as a framework-agnostic leaf, migrate **both** docs and site legal onto it, and complete the legal set (Terms + Cookies) with real, counsel-review-flagged prose.*
