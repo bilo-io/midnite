@@ -964,7 +964,17 @@ export class TerminalService implements OnModuleDestroy {
   //   2. the session's task repo (resolved name→path via the repo registry)
   //   3. the global fallback working directory (set on the profile page)
   //   4. the gateway's working directory
-  private resolveCwd(sessionId?: string): string {
+  /**
+   * The working directory a session runs in — project workDir → repo path →
+   * fallback → gateway cwd ({@link pickSessionCwd}), with `~` expanded.
+   *
+   * Public because the **quality-gate checks must run where the agent ran**.
+   * `AgentRunnerService` used to derive its own cwd from `task.repo` alone,
+   * which diverged whenever a project carried a `workDir`: the agent worked in
+   * the project directory while its checks validated a different tree. Two
+   * resolvers could not be kept in agreement, so there is now one.
+   */
+  resolveCwd(sessionId?: string): string {
     let projectWorkDir: string | undefined;
     let repoPath: string | undefined;
     if (sessionId) {
