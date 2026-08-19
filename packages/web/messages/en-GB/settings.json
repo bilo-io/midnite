@@ -306,7 +306,11 @@
     "subDescriptionHint": "The full system prompt for this subagent.",
     "subDescriptionPlaceholder": "You are a summariser. Given a transcript, produce a tight, faithful summary…",
     "markdown": "Markdown",
-    "markdownHint": "Markdown mode — written as the agent's prompt document."
+    "markdownHint": "Markdown mode — written as the agent's prompt document.",
+    "autonomy": "Autonomous scheduling",
+    "autonomyOnHint": "Agents pick up queued tasks on their own, up to the limit above.",
+    "autonomyOffHint": "Off — tasks only start when you open a terminal for them yourself.",
+    "poolSaveError": "Could not save the agent pool settings."
   },
   "apiTokens": {
     "justNow": "just now",

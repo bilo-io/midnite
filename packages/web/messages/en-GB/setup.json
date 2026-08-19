@@ -55,7 +55,10 @@
       "description": "How many tasks can run in parallel. Start low — you can always increase it in Settings.",
       "sliderLabel": "Tasks in parallel",
       "one": "One task at a time (safe default).",
-      "many": "Up to {count} tasks in parallel."
+      "many": "Up to {count} tasks in parallel.",
+      "autonomyLabel": "Run queued tasks automatically",
+      "autonomyHint": "Agents pick up tasks from Todo on their own, up to the limit above. Leave this off and tasks only start when you open a terminal yourself.",
+      "saveError": "Could not save the agent pool settings."
     },
     "repo": {
       "heading": "Repository",

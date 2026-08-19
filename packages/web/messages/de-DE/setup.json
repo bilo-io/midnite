@@ -55,7 +55,10 @@
       "description": "Wie viele Aufgaben parallel laufen dürfen. Fang niedrig an — du kannst den Wert jederzeit in den Einstellungen erhöhen.",
       "sliderLabel": "Aufgaben parallel",
       "one": "Eine Aufgabe zur Zeit (sicherer Standard).",
-      "many": "Bis zu {count} Aufgaben parallel."
+      "many": "Bis zu {count} Aufgaben parallel.",
+      "autonomyLabel": "Aufgaben in der Warteschlange automatisch ausführen",
+      "autonomyHint": "Agenten holen sich Aufgaben eigenständig aus „Zu erledigen“, bis zum Limit oben. Ohne diese Option starten Aufgaben erst, wenn du selbst ein Terminal öffnest.",
+      "saveError": "Die Einstellungen des Agenten-Pools konnten nicht gespeichert werden."
     },
     "repo": {
       "heading": "Repository",

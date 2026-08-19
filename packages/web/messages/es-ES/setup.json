@@ -55,7 +55,10 @@
       "description": "Cuántas tareas pueden ejecutarse en paralelo. Empieza con pocas: siempre puedes subirlo en los ajustes.",
       "sliderLabel": "Tareas en paralelo",
       "one": "Una tarea a la vez (valor seguro por defecto).",
-      "many": "Hasta {count} tareas en paralelo."
+      "many": "Hasta {count} tareas en paralelo.",
+      "autonomyLabel": "Ejecutar automáticamente las tareas en cola",
+      "autonomyHint": "Los agentes toman tareas de Por hacer por su cuenta, hasta el límite de arriba. Si lo dejas desactivado, las tareas solo empiezan cuando abres una terminal tú mismo.",
+      "saveError": "No se han podido guardar los ajustes del grupo de agentes."
     },
     "repo": {
       "heading": "Repositorio",

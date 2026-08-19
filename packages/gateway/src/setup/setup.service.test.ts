@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SETUP_ITEM_IDS, type MidniteConfig, type SetupItemId, type SetupItemState } from '@midnite/shared';
 import type { AgentsService } from '../agents/agents.service';
 import type { CryptoService } from '../crypto/crypto.service';
+import type { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
+import type { AgentPoolService } from '../pool/agent-pool.service';
 import type { ProvidersService } from '../providers/providers.service';
+import type { ReposService } from '../repos/repos.service';
 import { SetupService } from './setup.service';
 
 type Opts = {
@@ -15,7 +21,9 @@ type Opts = {
   repos?: number;
 };
 
-function makeService(o: Opts = {}): SetupService {
+/** The four required constructor deps, as fakes. Split out from
+ *  {@link makeService} so the pool-update specs can append their own spies. */
+function makeDeps(o: Opts = {}): [ProvidersService, AgentsService, CryptoService, MidniteConfig] {
   const providers = {
     list: () => ({
       providers: [
@@ -39,7 +47,11 @@ function makeService(o: Opts = {}): SetupService {
     agent: { pool: o.pool ?? 4, poolEnabled: o.poolEnabled ?? false },
     repos: Array.from({ length: o.repos ?? 0 }, (_, i) => ({ name: `r${i}`, path: `/r${i}` })),
   } as unknown as MidniteConfig;
-  return new SetupService(providers, agents, crypto, config);
+  return [providers, agents, crypto, config];
+}
+
+function makeService(o: Opts = {}): SetupService {
+  return new SetupService(...makeDeps(o));
 }
 
 /** Pull a single item's state out of a status, by id. */
@@ -98,5 +110,106 @@ describe('SetupService.getStatus', () => {
   it('marks repo ok once at least one is registered', async () => {
     expect(await stateOf(makeService({ repos: 0 }), 'repo')).toBe('warn');
     expect(await stateOf(makeService({ repos: 2 }), 'repo')).toBe('ok');
+  });
+
+  it('counts the DB registry, not the config seed', async () => {
+    // A repo added via the wizard or Settings → Repos is written to the
+    // registry; `config.repos` only seeds it on first boot. Reading the seed
+    // left the checklist saying "No repos registered yet" straight after the
+    // user registered one.
+    const withRegistry = new SetupService(
+      ...makeDeps({ repos: 0 }),
+      undefined,
+      undefined,
+      { list: () => [{ name: 'from-ui' }] } as unknown as ReposService,
+    );
+    expect(await stateOf(withRegistry, 'repo')).toBe('ok');
+  });
+
+  it('falls back to the config seed when the registry is unavailable', async () => {
+    expect(await stateOf(makeService({ repos: 1 }), 'repo')).toBe('ok');
+  });
+
+  it('echoes the live pool settings so clients bind to the server, not localStorage', async () => {
+    const status = await makeService({ pool: 6, poolEnabled: true }).getStatus();
+    expect(status.agentPool).toEqual({ pool: 6, poolEnabled: true });
+  });
+});
+
+describe('SetupService.updateAgentPool', () => {
+  let dir: string;
+  const ORIGINAL_ENV = process.env['MIDNITE_CONFIG_PATH'];
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'midnite-setup-pool-'));
+    // Pin the write target so the suite never touches the developer's real
+    // ~/.midnite/midnite.json or the repo's own config.
+    process.env['MIDNITE_CONFIG_PATH'] = join(dir, 'midnite.json');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    if (ORIGINAL_ENV === undefined) delete process.env['MIDNITE_CONFIG_PATH'];
+    else process.env['MIDNITE_CONFIG_PATH'] = ORIGINAL_ENV;
+  });
+
+  /** A service wired to spies standing in for the live pool + scheduler. */
+  function withPool(o: Opts = {}) {
+    const pool = { resize: vi.fn((n: number) => n) };
+    const scheduler = { applyPoolEnabled: vi.fn() };
+    const svc = new SetupService(
+      ...makeDeps(o),
+      pool as unknown as AgentPoolService,
+      scheduler as unknown as AgentPoolScheduler,
+    );
+    return { svc, pool, scheduler };
+  }
+
+  it('persists the settings to midnite.json', async () => {
+    const { svc } = withPool();
+    await svc.updateAgentPool({ pool: 8, poolEnabled: true });
+
+    const written = JSON.parse(readFileSync(join(dir, 'midnite.json'), 'utf8'));
+    expect(written.agent).toMatchObject({ pool: 8, poolEnabled: true });
+  });
+
+  it('creates midnite.json on a fresh install where none exists', async () => {
+    // The whole point of the fix: a downloaded app has no config file, so the
+    // write has to create one rather than fail or no-op.
+    expect(existsSync(join(dir, 'midnite.json'))).toBe(false);
+    const { svc } = withPool();
+    await svc.updateAgentPool({ pool: 2, poolEnabled: true });
+    expect(existsSync(join(dir, 'midnite.json'))).toBe(true);
+  });
+
+  it('mirrors into the in-memory config so status reflects it without a restart', async () => {
+    const { svc } = withPool({ pool: 4, poolEnabled: false });
+    const status = await svc.updateAgentPool({ pool: 3, poolEnabled: true });
+
+    expect(status.agentPool).toEqual({ pool: 3, poolEnabled: true });
+    expect(status.items.find((i) => i.id === 'agent-pool')?.state).toBe('ok');
+  });
+
+  it('applies live: resizes the slots and starts the tick loop', async () => {
+    const { svc, pool, scheduler } = withPool({ poolEnabled: false });
+    await svc.updateAgentPool({ pool: 5, poolEnabled: true });
+
+    expect(pool.resize).toHaveBeenCalledWith(5);
+    // Without this the flag persists but the scheduler stays parked until the
+    // next boot — the exact "I enabled it and nothing happened" trap.
+    expect(scheduler.applyPoolEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('stops the tick loop when autonomy is turned off', async () => {
+    const { svc, scheduler } = withPool({ poolEnabled: true });
+    await svc.updateAgentPool({ pool: 4, poolEnabled: false });
+    expect(scheduler.applyPoolEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it('still persists when the pool graph is absent (config-only fallback)', async () => {
+    // @Optional deps: the write must not depend on the runtime half being wired.
+    const svc = makeService();
+    await expect(svc.updateAgentPool({ pool: 4, poolEnabled: true })).resolves.toBeDefined();
+    expect(JSON.parse(readFileSync(join(dir, 'midnite.json'), 'utf8')).agent.poolEnabled).toBe(true);
   });
 });

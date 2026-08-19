@@ -97,6 +97,10 @@
       "table": "Table view",
       "graph": "Graph view"
     },
+    "boardStyles": {
+      "unified": "All in one",
+      "project": "Per project"
+    },
     "oneBoard": "One board"
   },
   "sections": {
@@ -179,6 +183,11 @@
   "page": {
     "title": "Tasks",
     "description": "Tasks grouped by status. Switch between list, board, and graph, and filter by status or project."
+  },
+  "empty": {
+    "title": "Your board is empty",
+    "description": "Add your first task and Midnite will classify it, queue it, and hand it to an agent. Tasks move across these columns as they run.",
+    "action": "Add your first task"
   },
   "runActions": {
     "build": "Build {name}",

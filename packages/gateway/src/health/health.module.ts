@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { ReposModule } from '../repos/repos.module';
 import { PoolModule } from '../pool/pool.module';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
@@ -15,7 +16,7 @@ import { PreflightService } from './preflight.service';
 @Module({
   // AuthModule provides JwtService so the controller can detect an authenticated
   // caller (Phase 72 C) and include the granular detail only for them.
-  imports: [forwardRef(() => PoolModule), AuthModule],
+  imports: [forwardRef(() => PoolModule), AuthModule, ReposModule],
   controllers: [HealthController],
   providers: [HealthService, PreflightService],
   exports: [HealthService, PreflightService],

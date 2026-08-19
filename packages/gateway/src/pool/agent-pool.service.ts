@@ -26,6 +26,9 @@ interface PoolSlot {
 @Injectable()
 export class AgentPoolService {
   private readonly slots: PoolSlot[];
+  /** Next slot-id suffix. Monotonic so {@link resize} can never reissue the id of
+   *  a slot that survived a shrink because it was busy. */
+  private nextSlotId: number;
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -36,6 +39,7 @@ export class AgentPoolService {
       id: `slot-${i}`,
       status: 'idle',
     }));
+    this.nextSlotId = this.slots.length;
   }
 
   private emitSlotGauge(): void {
@@ -44,6 +48,35 @@ export class AgentPoolService {
   }
 
   capacity(): number {
+    return this.slots.length;
+  }
+
+  /**
+   * Resize the slot set to `size` for a runtime change of `agent.pool`
+   * (`PUT /setup/agent-pool`), so a pool-size edit applies without a restart.
+   *
+   * Growing appends idle slots. Shrinking removes **idle slots only** — a busy
+   * slot keeps its running agent, so the pool can land above `size` until those
+   * finish; the surplus is not replaced because `acquire()` only ever reuses
+   * slots already in the array. Returns the resulting capacity so the caller can
+   * report the real number rather than the requested one.
+   */
+  resize(size: number): number {
+    if (size < 0 || size === this.slots.length) return this.slots.length;
+
+    while (this.slots.length < size) {
+      // Ids come from a monotonic counter, not `slots.length`: shrinking past a
+      // *busy* slot leaves the array shorter than the highest id in it, so a
+      // length-derived id would collide with a slot that's still running (and
+      // `slotForTask`/`release` address slots by identity).
+      this.slots.push({ id: `slot-${this.nextSlotId++}`, status: 'idle' });
+    }
+    // Walk from the end so the ids of surviving slots stay stable.
+    for (let i = this.slots.length - 1; i >= 0 && this.slots.length > size; i--) {
+      if (this.slots[i]?.status === 'idle') this.slots.splice(i, 1);
+    }
+
+    this.emitSlotGauge();
     return this.slots.length;
   }
 

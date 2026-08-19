@@ -23,16 +23,37 @@ For a high-level tour of what midnite can do, see [`docs/FEATURES.md`](docs/FEAT
 
 ## Status
 
-**Phase 0 — scaffold.** Empty project skeleton in place; nothing runs end-to-end yet. See [`todo/`](todo/) for the per-phase checklists and `done.md` log, [`CHANGELOG.md`](CHANGELOG.md) for the user-facing release history, and [`docs/RELEASING.md`](docs/RELEASING.md) for the versioning + release process.
+**Shipping — v0.12.0.** The desktop app is published for macOS (Apple Silicon),
+Windows and Linux, and the whole stack runs end-to-end: gateway, agent pool,
+CLI, browser kanban, workflows, and the Electron app.
 
-- **Phase 0 — Monorepo scaffold:** ✅ files in place; verification on a fresh checkout still pending — see [phase-0-scaffold.md](todo/phase-0-scaffold.md).
-- **Phase 1 — Board you drive by hand** (gateway + REST/WS + CLI): ⏳ [phase-1-board.md](todo/phase-1-board.md)
-- **Phase 2 — Agents** (pool, scheduler, pty spawner, Claude Code hooks): ⏳ [phase-2-agents.md](todo/phase-2-agents.md)
-- **Phase 3 — Browser** kanban + embedded terminals: ⏳ [phase-3-browser.md](todo/phase-3-browser.md)
-- **Phase 4 — Inference** (plan/act split, KB injection): ⏳ [phase-4-inference.md](todo/phase-4-inference.md)
-- **Phase 5 — Polish** (priorities, retries, per-repo caps): ⏳ [phase-5-polish.md](todo/phase-5-polish.md) · pluggable spawner + durable `tmux` moved to [phase-17-spawner-tmux.md](todo/phase-17-spawner-tmux.md)
+Track progress in [`todo/_INDEX.md`](todo/_INDEX.md) (the phase roll-up — read
+this, not the individual phase docs), the append-only [`todo/done.md`](todo/done.md)
+log, [`CHANGELOG.md`](CHANGELOG.md) for user-facing release notes, and
+[`docs/RELEASING.md`](docs/RELEASING.md) for the versioning + release process.
 
-## Quick start
+## Install
+
+**If you just want to use midnite**, don't clone this repo — install the app:
+
+```sh
+# macOS + Linux
+curl -fsSL https://midnite-app.vercel.app/install.sh | sh
+
+# Windows (PowerShell)
+irm https://midnite-app.vercel.app/install.ps1 | iex
+```
+
+The installer places the app in `/Applications` (macOS) and re-running it
+updates in place. Builds aren't notarized yet, so prefer the command above over
+a browser download — `curl` doesn't quarantine the app, which keeps Gatekeeper
+out of the way. Releases and the manual-download path (plus its `xattr`
+workaround) live in the public companion repo,
+[bilo-io/midnite-app](https://github.com/bilo-io/midnite-app/releases).
+
+The rest of this README is for **developing midnite itself**.
+
+## Quick start (contributors)
 
 Requires [proto](https://moonrepo.dev/proto) to manage the toolchain versions pinned in [`.prototools`](.prototools) (Node 22.12.0, pnpm 9.15.0).
 

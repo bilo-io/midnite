@@ -9,8 +9,14 @@ order: 1
 Midnite ships as a single desktop app for macOS (Apple Silicon), Windows,
 and Linux. Install it — one command on macOS — open it, and you're running — the app
 bundles everything it needs (the local [gateway](/) and the UI) and runs entirely
-on your machine. There's no server to stand up, no account to create, and no data
-that leaves your device except the agents' own calls to their model provider.
+on your machine. There's no server to stand up and no data that leaves your
+device except the agents' own calls to their model provider.
+
+On first launch the app asks you to create a local sign-in. That account lives
+only in your own `~/.midnite` folder — nothing is sent anywhere, and there's no
+Midnite service to sign up for. It exists because the app generates a real
+encryption key on first run to protect the provider API keys it stores, and a
+lock screen is what keeps that data behind something.
 
 The rest of this page walks you from download to a running agent in a few minutes.
 
@@ -72,18 +78,32 @@ page](https://github.com/bilo-io/midnite-app/releases/latest):
   ./midnite-*.AppImage
   ```
 
-On first run Midnite creates its local data folder (on macOS,
-`~/Library/Application Support/@midnite/desktop`) — that's where your tasks,
-sessions, and settings live, in a local SQLite database. Everything stays on your
-machine, and you can back it up or move it from [Settings →
-Data](/settings/settings).
+### Creating your sign-in
+
+The first screen is a sign-in. Choose **Sign up** and create an account with any
+email and password — it's stored locally in your own `~/.midnite` database, not
+registered with any service, so use whatever you like. You can also sign in with
+GitHub if you'd rather not manage another password.
+
+On first run Midnite creates its data folder at **`~/.midnite`** — one shared
+home per machine, used by the desktop app, the bundled CLI, and `midnite serve`
+alike. Your tasks, sessions, and settings live there in a local SQLite database
+(`~/.midnite/midnite.db`), alongside `midnite.json` (settings) and `.env` (the
+generated secrets). Everything stays on your machine, and you can back it up or
+move it from [Settings → Data](/settings/settings).
+
+If anything doesn't behave, [Troubleshooting](/troubleshooting) covers the
+handful of things that actually go wrong.
 
 ## Set up your workspace
 
-Before you queue any work, spend a minute in [Settings](/settings/settings) so
-agents have what they need:
+The first time you open the app it offers a short setup wizard. You can also do
+these by hand in [Settings](/settings/settings):
 
-1. **Agents** — choose the CLI and provider that will run your tasks.
+1. **Agents** — choose the CLI and provider that will run your tasks, and set how
+   many tasks may run in parallel. Turn on **autonomous scheduling** here if you
+   want Midnite to pick queued tasks up on its own — with it off, a task only
+   starts when you open a terminal for it yourself.
 2. **Repos** — register the git repositories agents are allowed to work in.
 3. **Safety** — pick an autonomy mode and the guardrails that go with it, so you
    decide how much an agent can do on its own.

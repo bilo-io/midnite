@@ -97,6 +97,10 @@
       "table": "Tabellenansicht",
       "graph": "Graph-Ansicht"
     },
+    "boardStyles": {
+      "unified": "Alles in einem",
+      "project": "Pro Projekt"
+    },
     "oneBoard": "Ein Board"
   },
   "sections": {
@@ -179,6 +183,11 @@
   "page": {
     "title": "Aufgaben",
     "description": "Aufgaben nach Status gruppiert. Wechsle zwischen Liste, Board und Graph und filtere nach Status oder Projekt."
+  },
+  "empty": {
+    "title": "Dein Board ist leer",
+    "description": "Füge deine erste Aufgabe hinzu — Midnite klassifiziert sie, stellt sie in die Warteschlange und übergibt sie an einen Agenten. Aufgaben wandern beim Ausführen durch diese Spalten.",
+    "action": "Erste Aufgabe hinzufügen"
   },
   "runActions": {
     "build": "{name} bauen",

@@ -39,11 +39,22 @@ export const SetupItemSchema = z.object({
 });
 export type SetupItem = z.infer<typeof SetupItemSchema>;
 
+/** The live agent-pool settings, echoed so a client can render the *server's*
+ *  values rather than a local guess. Optional so an older gateway still parses. */
+export const AgentPoolSettingsSchema = z.object({
+  pool: z.number().int().nonnegative(),
+  poolEnabled: z.boolean(),
+});
+export type AgentPoolSettings = z.infer<typeof AgentPoolSettingsSchema>;
+
 /** The aggregate readiness signal returned by `GET /setup/status`. */
 export const SetupStatusSchema = z.object({
   items: z.array(SetupItemSchema),
   /** Derived from the items per {@link isSetupReady}. */
   ready: z.boolean(),
+  /** Current pool sizing + autonomy flag, so the wizard/settings sliders bind to
+   *  the gateway's real state instead of a browser-local copy that drifts. */
+  agentPool: AgentPoolSettingsSchema.optional(),
 });
 export type SetupStatus = z.infer<typeof SetupStatusSchema>;
 
@@ -72,10 +83,17 @@ export const AGENT_POOL_SIZE_MAX = 16;
 /**
  * The wizard's concurrency step writes the agent pool (Phase 19 Theme B,
  * Decision §6 — the minimal config-write path). `pool` sizes the slots,
- * `poolEnabled` toggles autonomous scheduling. Persisted to `midnite.json` and
- * mirrored into the in-memory config so `/setup/status` reflects it at once;
- * the scheduler reads these at boot, so enabling takes effect on the next
- * gateway restart.
+ * `poolEnabled` toggles autonomous scheduling.
+ *
+ * `PUT /setup/agent-pool` persists this to `midnite.json`, mirrors it into the
+ * in-memory config so `/setup/status` reflects it at once, **and** starts/stops
+ * the scheduler's tick loop live — so enabling autonomy takes effect
+ * immediately rather than on the next gateway restart.
+ *
+ * Until this route existed the wizard's slider wrote only to `localStorage`,
+ * which the gateway never reads: a new install could complete setup, see "all
+ * set", and never run a task, with no in-app way to fix it. Keep the write path
+ * server-side.
  */
 export const UpdateAgentPoolRequestSchema = z.object({
   pool: z.number().int().min(AGENT_POOL_SIZE_MIN).max(AGENT_POOL_SIZE_MAX),
