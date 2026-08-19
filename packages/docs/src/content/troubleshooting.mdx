@@ -1,0 +1,140 @@
+---
+title: Troubleshooting
+section: Introduction
+order: 2
+---
+
+# Troubleshooting
+
+Midnite runs entirely on your machine, so when something breaks it's almost
+always one of a handful of environmental things — a missing CLI, a port already
+in use, a key that isn't set. This page covers the ones people actually hit.
+
+**Start here:** open **Settings → System**. Midnite runs the same checks the
+gateway runs at boot and shows each one with a status dot and a suggested fix.
+Most of what's below is that panel, explained. From a terminal, `midnite doctor`
+prints the same results.
+
+## Nothing happens when I add a task
+
+The most common one, and it isn't a bug in your setup.
+
+Midnite only picks tasks up on its own when **autonomous scheduling** is on. With
+it off, a task sits in **Todo** until you open a terminal for it yourself — by
+design, but it looks broken if you didn't know.
+
+**Fix:** Settings → Agents → turn on **Autonomous scheduling**, and set how many
+tasks may run in parallel. It takes effect immediately; no restart.
+
+You can also start a single task by hand at any time: drag its card from Todo to
+In progress, or use **Start** on the card's menu. That works whether or not
+autonomous scheduling is on.
+
+## Tasks start, then immediately fail
+
+Usually the agent CLI can't run.
+
+- **`claude` isn't on the PATH.** Settings → System shows this as a red dot on
+  *Agent CLI*. Install Claude Code and make sure `claude` runs in a normal
+  terminal. Note that an app launched from the Dock doesn't always inherit the
+  same PATH your shell has — if `claude` works in a terminal but Midnite can't
+  see it, quit Midnite fully and relaunch it.
+- **The agent CLI has never been run.** The first time Claude Code runs it asks
+  you to sign in and to confirm it trusts the folder. Midnite streams the
+  session, so open the task's terminal and answer the prompts once — after that
+  they don't come back.
+- **A task whose text starts with `-`.** Fixed, but if you're on an old build a
+  leading dash was read as a command-line flag and the agent exited immediately.
+
+## The app opens to "Midnite couldn't start its local service"
+
+The bundled gateway didn't come up. In order of likelihood:
+
+1. **Another copy of Midnite is already running** — quit it and reopen.
+2. **The port is in use.** Midnite defaults to `7777` and falls back to a random
+   free port, but a process holding the default can still confuse a stale
+   config. Check with `lsof -i :7777`.
+3. **A half-finished update.** Reinstalling over the top is safe — your data
+   lives in `~/.midnite`, not inside the app bundle.
+
+The failure screen names your log directory; the newest file in it names the
+actual error, and it's the single most useful thing to attach to a bug report.
+
+## I can't sign in / it asks me to create an account
+
+That's expected on a downloaded build, and the account is local. See
+[Getting started](/getting-started#creating-your-sign-in) — nothing is sent
+anywhere, and there's no Midnite service to sign up for.
+
+If you're stuck at the login screen:
+
+- **Signing in with GitHub does nothing.** The device-flow sign-in needs network
+  access to `github.com`. On a restricted network, use email + password instead.
+- **You forgot the password.** Self-serve reset isn't wired up yet, and the
+  in-app "Forgot password?" page points you at a workspace admin — which a
+  single-user local install doesn't have. Two ways out:
+  1. **Sign in with GitHub instead.** If you can reach `github.com` this is the
+     easy one, and it needs no configuration.
+  2. **Start the account over.** Quit the app, delete `~/.midnite/midnite.db`,
+     and reopen — you'll be asked to create an account again. **This deletes
+     your tasks and sessions**, so export from Settings → Data first if they
+     matter, or just copy the file somewhere before deleting it.
+
+## Agents work in the wrong directory
+
+Midnite picks an agent's working directory in this order: the **project's work
+directory**, then the **repo** on the task, then your fallback directory. So a
+task tagged with repo B, inside a project pointed at repo A, runs in **A**.
+
+**Fix:** either clear the project's work directory, or move the task to a project
+that matches its repo.
+
+Check the paths themselves under Settings → Repos — a typo'd path resolves to
+nothing and the agent falls through to the fallback directory.
+
+## "Provider API keys are fail-closed"
+
+Midnite encrypts stored API keys, and refuses to store them if it has no
+encryption key — rather than silently saving them in plain text.
+
+On the desktop app this key is generated for you on first launch, so you
+shouldn't see this. If you're running the gateway yourself, set
+`MIDNITE_SECRET_KEY` to 32 bytes as hex (64 characters) or base64:
+
+```bash
+openssl rand -hex 32
+```
+
+Put it in `~/.midnite/.env` as `MIDNITE_SECRET_KEY=<value>` and restart. Keep it
+safe — losing it makes already-stored keys unreadable, and you'll need to
+re-enter them.
+
+## The board won't load / everything says "Could not reach the gateway"
+
+The UI is talking to a gateway that isn't there.
+
+- **Desktop app:** this is the startup failure above — restart the app.
+- **Browser + your own gateway:** confirm it's running and note its port. It
+  binds to `127.0.0.1` by default, so it is not reachable from another machine
+  unless you deliberately changed `gateway.host`.
+
+## Where my data lives
+
+Everything is under **`~/.midnite`** — one shared home per machine, used by the
+desktop app and the CLI alike:
+
+| Path | What it is |
+| --- | --- |
+| `~/.midnite/midnite.db` | Tasks, sessions, projects, settings (SQLite) |
+| `~/.midnite/midnite.json` | Your settings file — safe to hand-edit |
+| `~/.midnite/.env` | Generated secrets (encryption key, sign-in secret) |
+
+Back it up by copying that folder, or use Settings → Data for a portable export.
+
+## Still stuck?
+
+Open an issue at
+[bilo-io/midnite-app](https://github.com/bilo-io/midnite-app/issues/new) — or use
+**Report an issue** in the app, which fills in your version, platform and current
+page for you. Attaching the newest log file makes almost every report solvable
+first time.
