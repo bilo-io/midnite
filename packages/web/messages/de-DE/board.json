@@ -188,6 +188,10 @@
     "buildStarted": "Build für {name} im Hintergrund gestartet.",
     "launchStarted": "{name} im Hintergrund gestartet.",
     "buildFailed": "Build konnte nicht gestartet werden.",
-    "launchFailed": "Start fehlgeschlagen."
+    "launchFailed": "Start fehlgeschlagen.",
+    "hint": {
+      "terminal": "öffnet ein Terminal",
+      "background": "läuft im Hintergrund"
+    }
   }
 }

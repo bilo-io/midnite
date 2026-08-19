@@ -188,6 +188,10 @@
     "buildStarted": "Compilation de {name} démarrée en arrière-plan.",
     "launchStarted": "{name} lancé en arrière-plan.",
     "buildFailed": "Échec du démarrage de la compilation.",
-    "launchFailed": "Échec du lancement."
+    "launchFailed": "Échec du lancement.",
+    "hint": {
+      "terminal": "ouvre un terminal",
+      "background": "s’exécute en arrière-plan"
+    }
   }
 }

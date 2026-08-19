@@ -7,6 +7,7 @@ import type { Project } from '@midnite/shared';
 import { RunCommandModal } from '@/components/run-command-modal';
 import { useToast } from '@/components/toast';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { buildProject, previewProject } from '@/lib/api';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -58,24 +59,29 @@ export function ProjectRunActions({ project }: { project: Project }) {
     <>
       {kinds.map((kind) => {
         const Icon = RUN_ICONS[kind];
+        // The tooltip names the action *and* the mode it will use, so the button's
+        // effect (terminal window vs. silent background run) is legible on hover
+        // rather than only discoverable in Settings.
+        const label = t(`runActions.${kind}`, { name: project.name });
+        const hint = t(`runActions.hint.${settings.projectRunMode}`);
         return (
-          <Button
-            key={kind}
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={t(`runActions.${kind}`, { name: project.name })}
-            title={t(`runActions.${kind}`, { name: project.name })}
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              // The buttons sit in an accordion header — don't toggle/drag it.
-              e.stopPropagation();
-              void run(kind);
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <Icon className="h-3.5 w-3.5" />
-          </Button>
+          <Tooltip key={kind} label={`${label} · ${hint}`}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={label}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={(e) => {
+                // The buttons sit in an accordion header — don't toggle/drag it.
+                e.stopPropagation();
+                void run(kind);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </Button>
+          </Tooltip>
         );
       })}
       {openRun ? (
