@@ -31,7 +31,7 @@
 | [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | ◻ TODO | 0/47 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
-| [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | E |
+| [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | E | — |
 | [80 · Shared reading face & legal set](phase-80-shared-reading-face-legal.md) | 🔄 WIP | 20/28 | `███████░░░` | 71% | — | D |
 | [79 · Translations & i18n (next-intl, 4 locales)](phase-79-translations-i18n.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [78 · CI/CD cost-cut (affected-only deploys & checks)](phase-78-cicd-cost-cut.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
