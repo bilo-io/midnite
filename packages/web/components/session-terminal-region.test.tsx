@@ -41,10 +41,13 @@ const transcript: SessionTranscript = {
 } as SessionTranscript;
 
 describe('SessionTerminalRegion', () => {
-  it('renders the interactive terminal + a live badge for a running session', () => {
+  it('renders the interactive terminal with no title bar for a running session', () => {
     render(withQueryClient(<SessionTerminalRegion session={base} />));
     expect(screen.getByTestId('live-terminal')).toBeInTheDocument();
-    expect(screen.getByText('live')).toBeInTheDocument();
+    // The wrapper carries no "Terminal · live" strip any more — the terminal's own
+    // header is the single live indicator.
+    expect(screen.queryByText('Terminal')).toBeNull();
+    expect(screen.queryByText('live')).toBeNull();
     expect(getSessionTranscript).not.toHaveBeenCalled();
   });
 

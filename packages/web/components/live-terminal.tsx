@@ -217,6 +217,12 @@ export function LiveTerminal({
 
   const exited = phase === 'exited';
   const current = pending[0] ?? null;
+  const statusColor =
+    connectionState === 'open'
+      ? 'hsl(142 71% 45%)'
+      : connectionState === 'error'
+        ? 'hsl(0 72% 55%)'
+        : 'hsl(38 92% 50%)';
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -228,17 +234,7 @@ export function LiveTerminal({
           </span>
         )}
         <span className="flex items-center gap-1.5">
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{
-              background:
-                connectionState === 'open'
-                  ? 'hsl(142 71% 45%)'
-                  : connectionState === 'error'
-                    ? 'hsl(0 72% 55%)'
-                    : 'hsl(38 92% 50%)',
-            }}
-          />
+          <StatusPip color={statusColor} />
           {exited ? t('terminal.sessionEnded') : t(STATUS_HINT_KEY[connectionState])}
         </span>
         {isMobile && (
@@ -264,6 +260,27 @@ export function LiveTerminal({
         {current ? <ApprovalOverlay request={current} onAnswer={answer} /> : null}
       </div>
     </div>
+  );
+}
+
+/**
+ * The terminal's status pip: a solid core under a pulsing halo and a soft glow —
+ * the same breathing treatment `<ConnectionStatus>` uses, so this (now the only
+ * live indicator on the session cockpit) still reads as live rather than static.
+ * Colour is dynamic, so the halo is styled inline rather than via a Tailwind class.
+ */
+function StatusPip({ color }: { color: string }) {
+  return (
+    <span aria-hidden className="relative flex h-2 w-2 shrink-0 items-center justify-center">
+      <span
+        className="absolute inline-flex h-full w-full rounded-full opacity-60 motion-safe:animate-ping"
+        style={{ background: color }}
+      />
+      <span
+        className="relative inline-flex h-2 w-2 rounded-full"
+        style={{ background: color, boxShadow: `0 0 7px 1.5px ${color}, 0 0 3px 0 ${color}` }}
+      />
+    </span>
   );
 }
 
