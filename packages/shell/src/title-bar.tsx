@@ -106,6 +106,14 @@ export function TitleBar({
   const onDoubleClick = useCallback(
     (event: MouseEvent<HTMLElement>) => {
       const target = event.target;
+      // React events bubble the *React* tree, not the DOM one, so a slot child
+      // that renders through a portal still reaches this handler while its DOM
+      // ancestors are `document.body`. The `no-drag` lookup below can't see that,
+      // so the containment test comes first: only a real DOM descendant of the bar
+      // is a double-click *on the bar*. Without it, double-clicking a word in the
+      // project filter's search field (a portalled dropdown, as every overflow
+      // menu in web must be) would zoom the window mid-interaction.
+      if (!(target instanceof Node) || !event.currentTarget.contains(target)) return;
       if (target instanceof Element && target.closest(`[${NO_DRAG_MARKER}]`)) return;
       windowChrome?.toggleMaximize?.();
     },

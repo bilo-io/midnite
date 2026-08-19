@@ -1,5 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { DesktopPlatform, Notification as MidniteNotification } from '@midnite/shared';
+import type {
+  DesktopPlatform,
+  Notification as MidniteNotification,
+  WindowChromeBridge,
+} from '@midnite/shared';
 
 import type { UpdateChannel } from '../updates/floor';
 import {
@@ -53,6 +57,30 @@ function onBooleanChannel(channel: string, handler: (value: boolean) => void): (
   };
 }
 
+/**
+ * The window-chrome half of the bridge, annotated against the shared contract.
+ * `contextBridge.exposeInMainWorld` types its API param as `any`, so a literal
+ * inlined below would be structurally unchecked: misspell `toggleMaximize` (which
+ * the contract marks optional, so nothing misses it) and typecheck, the
+ * main-process spec, and the shell specs all stay green while double-click-to-zoom
+ * is silently dead in the packaged app. This is the only file that names both the
+ * bridge property and its channel, so it's the one that has to be typed.
+ */
+const windowChrome: WindowChromeBridge = {
+  platform: process.platform as DesktopPlatform,
+  frameless,
+  onFullscreenChange: (handler: (fullscreen: boolean) => void): (() => void) =>
+    onBooleanChannel(WINDOW_FULLSCREEN_CHANNEL, handler),
+  onFocusChange: (handler: (focused: boolean) => void): (() => void) =>
+    onBooleanChannel(WINDOW_FOCUS_CHANNEL, handler),
+  setBackgroundColor: (color: string) => {
+    ipcRenderer.send(WINDOW_BACKGROUND_CHANNEL, color);
+  },
+  toggleMaximize: () => {
+    ipcRenderer.send(WINDOW_TOGGLE_MAXIMIZE_CHANNEL);
+  },
+};
+
 try {
   contextBridge.exposeInMainWorld('midniteDesktop', {
     notify: (notification: MidniteNotification) => {
@@ -65,20 +93,7 @@ try {
         ipcRenderer.removeListener(NAVIGATE_CHANNEL, listener);
       };
     },
-    windowChrome: {
-      platform: process.platform as DesktopPlatform,
-      frameless,
-      onFullscreenChange: (handler: (fullscreen: boolean) => void): (() => void) =>
-        onBooleanChannel(WINDOW_FULLSCREEN_CHANNEL, handler),
-      onFocusChange: (handler: (focused: boolean) => void): (() => void) =>
-        onBooleanChannel(WINDOW_FOCUS_CHANNEL, handler),
-      setBackgroundColor: (color: string) => {
-        ipcRenderer.send(WINDOW_BACKGROUND_CHANNEL, color);
-      },
-      toggleMaximize: () => {
-        ipcRenderer.send(WINDOW_TOGGLE_MAXIMIZE_CHANNEL);
-      },
-    },
+    windowChrome,
   });
 } catch {
   // contextIsolation disabled or already exposed — ignore.

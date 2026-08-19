@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { createPortal } from 'react-dom';
 import type { WindowChromeBridge } from '@midnite/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -123,6 +124,33 @@ describe('TitleBar', () => {
     ]) {
       fireEvent.doubleClick(el);
     }
+    expect(toggleMaximize).not.toHaveBeenCalled();
+  });
+
+  it('ignores a double-click inside a slot child that renders through a portal', () => {
+    // React events bubble the React tree, so a portalled dropdown's events arrive
+    // here even though its DOM ancestors are `document.body` — outside the bar and
+    // outside any `no-drag` wrapper. Every overflow menu in `web` portals like this
+    // (the bar mounts two of them), so without the containment guard, double-clicking
+    // a word inside such a menu's text field zooms the window.
+    const toggleMaximize = vi.fn();
+    const { bridge } = fakeBridge({ toggleMaximize });
+    render(
+      <TitleBar
+        windowChrome={bridge}
+        right={
+          <>
+            <button type="button">Projects</button>
+            {createPortal(
+              <input aria-label="Search projects" />,
+              document.body,
+            )}
+          </>
+        }
+      />,
+    );
+
+    fireEvent.doubleClick(screen.getByRole('textbox', { name: 'Search projects' }));
     expect(toggleMaximize).not.toHaveBeenCalled();
   });
 

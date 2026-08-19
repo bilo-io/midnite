@@ -41,33 +41,59 @@ const SURFACES = [
   },
 ] as const;
 
-/** Either drag-region export from `@midnite/shell` satisfies the requirement. */
+/**
+ * The drag-region components from `@midnite/shell`. `TitleBar` is listed on its own
+ * because a surface may satisfy the rule with the full bar instead of a bare strip —
+ * matched with a word boundary so it doesn't just substring-hit
+ * `<TitleBarDragStrip`.
+ */
 const DRAG_REGION_COMPONENTS = ['TitleBarDragStrip', 'TitleBar'] as const;
+
+/**
+ * A drag region mounted with `windowChrome={null}` (or `{undefined}`) renders
+ * nothing — the component early-returns unless the bridge reports `frameless`. So the
+ * bridge has to be asserted **on the mount itself**: a file-wide search for
+ * `windowChrome={` passes on any other component's prop and would let exactly that
+ * regression through.
+ */
+const mountWithLiveBridge = (name: string) =>
+  new RegExp(`<${name}\\b[^>]*windowChrome=\\{(?!null|undefined)`);
 
 describe('desktop drag regions', () => {
   for (const { file, why } of SURFACES) {
     describe(file, () => {
-      const source = readFileSync(join(WEB_ROOT, file), 'utf8');
+      // Read inside the test, not the describe body, so a renamed surface fails with
+      // the message below rather than throwing during collection.
+      const read = () => readFileSync(join(WEB_ROOT, file), 'utf8');
 
-      it(`mounts a drag region — ${why}`, () => {
-        const mounted = DRAG_REGION_COMPONENTS.filter((name) => source.includes(`<${name}`));
+      it(`mounts a drag region fed a live bridge — ${why}`, () => {
+        const source = read();
+        const mounted = DRAG_REGION_COMPONENTS.filter((name) =>
+          new RegExp(`<${name}\\b`).test(source),
+        );
         expect(
           mounted,
           `${file} owns the whole viewport but renders no drag region, so the frameless ` +
             'window cannot be moved while it is shown. Mount <TitleBarDragStrip windowChrome={...} />.',
         ).not.toHaveLength(0);
+
+        // ...and the mount must actually receive a bridge, or it renders null.
+        expect(
+          mounted.some((name) => mountWithLiveBridge(name).test(source)),
+          `${file} mounts ${mounted.join('/')} but not with a live windowChrome bridge, ` +
+            'so it renders nothing and the window is immovable while this surface is up.',
+        ).toBe(true);
       });
 
       it('imports its drag region from @midnite/shell, not a local copy', () => {
         // A hand-rolled `-webkit-app-region` div would drift from the bar's height
-        // and z-index; the shell owns both (TITLE_BAR_HEIGHT).
-        expect(source).toMatch(/from '@midnite\/shell'/);
-      });
-
-      it('feeds the drag region a windowChrome bridge', () => {
-        // Without the bridge the component renders null unconditionally, so the
-        // mount above would be decorative.
-        expect(source).toMatch(/windowChrome=\{/);
+        // and z-index; the shell owns both (TITLE_BAR_HEIGHT). Assert the drag-region
+        // symbol is in the import list — the file imports plenty else from `shell`.
+        const source = read();
+        const imported = DRAG_REGION_COMPONENTS.some((name) =>
+          new RegExp(`import\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from '@midnite/shell'`, 's').test(source),
+        );
+        expect(imported, `${file} should import its drag region from '@midnite/shell'`).toBe(true);
       });
     });
   }
