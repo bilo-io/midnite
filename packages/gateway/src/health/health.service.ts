@@ -12,6 +12,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { DbFactory } from '../db/db.module';
 import { secretKeyPresence } from '../crypto/crypto.service';
 import { AgentPoolService } from '../pool/agent-pool.service';
+import { ReposService } from '../repos/repos.service';
 import { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
 import { findConfigPath } from '../lib/load-config';
 import { commandExists, dirWritable, nodePtyLoads, pathExists } from './lib/probes';
@@ -42,6 +43,9 @@ export class HealthService {
     // module load and TDZ-crashes ("Cannot access 'AgentPoolScheduler' before
     // initialization") depending on import order. The thunk defers that access.
     @Optional() @Inject(forwardRef(() => AgentPoolScheduler)) private readonly scheduler?: AgentPoolScheduler,
+    // The DB repo registry — the runtime source of truth `config.repos` seeds.
+    // @Optional so the existing specs construct this service unchanged.
+    @Optional() @Inject(ReposService) private readonly repos?: ReposService,
   ) {}
 
   /** Checks run once at boot (preflight): config, DB, secrets, CLIs, spawner, repos. */
@@ -257,19 +261,31 @@ export class HealthService {
     };
   }
 
+  /**
+   * Every registered repo path resolves on disk.
+   *
+   * Checks the **DB registry** when it's available, falling back to
+   * `config.repos` (the seed) otherwise. Checking only the seed meant repos
+   * added through the UI — the normal way — were never path-validated, so a
+   * typo'd path stayed invisible here and surfaced later as an agent spawning
+   * in the wrong place.
+   */
   private checkRepoPaths(): PreflightCheck {
-    const missing = this.config.repos.filter((r) => !pathExists(r.path));
-    if (this.config.repos.length === 0) {
+    const repos = this.repos
+      ? this.repos.list().map((r) => ({ name: r.name, path: r.path }))
+      : this.config.repos.map((r) => ({ name: r.name, path: r.path }));
+    if (repos.length === 0) {
       return { name: 'repo-paths', status: 'ok', detail: 'no repos configured' };
     }
+    const missing = repos.filter((r) => !pathExists(r.path));
     if (missing.length === 0) {
-      return { name: 'repo-paths', status: 'ok', detail: `all ${this.config.repos.length} configured repo path(s) resolve` };
+      return { name: 'repo-paths', status: 'ok', detail: `all ${repos.length} registered repo path(s) resolve` };
     }
     return {
       name: 'repo-paths',
       status: 'warn',
-      detail: `configured repo path(s) not found: ${missing.map((r) => `${r.name} (${r.path})`).join(', ')}`,
-      remedy: 'fix the path in config.repos[].path, or remove the entry',
+      detail: `registered repo path(s) not found: ${missing.map((r) => `${r.name} (${r.path})`).join(', ')}`,
+      remedy: 'fix the path in Settings → Repos (or config.repos[].path), or remove the entry',
     };
   }
 

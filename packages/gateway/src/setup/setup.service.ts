@@ -13,6 +13,7 @@ import { persistConfigPatch, resolveConfigWritePath } from '../lib/config-write'
 import { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
 import { AgentPoolService } from '../pool/agent-pool.service';
 import { ProvidersService } from '../providers/providers.service';
+import { ReposService } from '../repos/repos.service';
 
 // Phase 19 Theme A — the single readiness signal, computed by *composing*
 // services that already own each fact (no new persistence, no cross-domain
@@ -40,6 +41,9 @@ export class SetupService {
     // next boot, which is the old behaviour rather than a failure.
     @Optional() @Inject(AgentPoolService) private readonly pool?: AgentPoolService,
     @Optional() @Inject(AgentPoolScheduler) private readonly scheduler?: AgentPoolScheduler,
+    // The repo registry (DB) — the runtime source of truth that `config.repos`
+    // merely seeds. @Optional so the unit specs keep their 4-arg construction.
+    @Optional() @Inject(ReposService) private readonly repos?: ReposService,
   ) {}
 
   async getStatus(): Promise<SetupStatus> {
@@ -163,9 +167,18 @@ export class SetupService {
     };
   }
 
-  /** At least one registered repo (forward-compatible; optional, never blocks). */
+  /**
+   * At least one registered repo (optional, never blocks).
+   *
+   * Counts the **DB registry**, not `config.repos`. The registry is the runtime
+   * source of truth (`db/schema.ts`); `config.repos` only *seeds* it on first
+   * boot, one way. Reading the seed meant a user who added a repo through the
+   * wizard or Settings → Repos was still told "No repos registered yet" forever
+   * — the checklist contradicting the thing they had just done. Falls back to
+   * the config count when the registry isn't wired (unit specs).
+   */
   private repoItem(): SetupItem {
-    const count = this.config.repos.length;
+    const count = this.repos ? this.repos.list().length : this.config.repos.length;
     if (count > 0) {
       return {
         id: 'repo',
