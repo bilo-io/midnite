@@ -100,7 +100,8 @@
     "boardStyles": {
       "unified": "Tout-en-un",
       "project": "Par projet"
-    }
+    },
+    "oneBoard": "Tableau unique"
   },
   "sections": {
     "empty": "Vide",
@@ -187,5 +188,19 @@
     "title": "Votre tableau est vide",
     "description": "Ajoutez votre première tâche : Midnite la classera, la mettra en file et la confiera à un agent. Les tâches traversent ces colonnes au fil de leur exécution.",
     "action": "Ajouter votre première tâche"
+  },
+  "runActions": {
+    "build": "Compiler {name}",
+    "launch": "Lancer {name}",
+    "buildTitle": "Compilation — {name}",
+    "launchTitle": "Lancement — {name}",
+    "buildStarted": "Compilation de {name} démarrée en arrière-plan.",
+    "launchStarted": "{name} lancé en arrière-plan.",
+    "buildFailed": "Échec du démarrage de la compilation.",
+    "launchFailed": "Échec du lancement.",
+    "hint": {
+      "terminal": "ouvre un terminal",
+      "background": "s’exécute en arrière-plan"
+    }
   }
 }

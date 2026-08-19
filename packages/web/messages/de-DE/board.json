@@ -100,7 +100,8 @@
     "boardStyles": {
       "unified": "Alles in einem",
       "project": "Pro Projekt"
-    }
+    },
+    "oneBoard": "Ein Board"
   },
   "sections": {
     "empty": "Leer",
@@ -187,5 +188,19 @@
     "title": "Dein Board ist leer",
     "description": "Füge deine erste Aufgabe hinzu — Midnite klassifiziert sie, stellt sie in die Warteschlange und übergibt sie an einen Agenten. Aufgaben wandern beim Ausführen durch diese Spalten.",
     "action": "Erste Aufgabe hinzufügen"
+  },
+  "runActions": {
+    "build": "{name} bauen",
+    "launch": "{name} starten",
+    "buildTitle": "Build — {name}",
+    "launchTitle": "Start — {name}",
+    "buildStarted": "Build für {name} im Hintergrund gestartet.",
+    "launchStarted": "{name} im Hintergrund gestartet.",
+    "buildFailed": "Build konnte nicht gestartet werden.",
+    "launchFailed": "Start fehlgeschlagen.",
+    "hint": {
+      "terminal": "öffnet ein Terminal",
+      "background": "läuft im Hintergrund"
+    }
   }
 }

@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 import { SCREENSHOTS_DIR } from './config';
-import { column } from './helpers/board';
+import { column, pinUnifiedBoard } from './helpers/board';
 import { seedTask } from './helpers/gateway';
 
 /**
@@ -16,6 +16,7 @@ const OUT = resolve(process.cwd(), SCREENSHOTS_DIR);
 test('reopen a done task from the board → returns to Todo', async ({ page }) => {
   const done = await seedTask('E2E reopen — shipped feature', 'done');
 
+  await pinUnifiedBoard(page);
   await page.addInitScript(() => {
     try {
       localStorage.setItem('midnite.setup-wizard.dismissed', 'true');

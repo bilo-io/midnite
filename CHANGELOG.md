@@ -14,6 +14,36 @@ build progress rather than release notes.
 
 _Nothing yet._
 
+## [0.12.1] - 2026-08-10
+
+_Patch release — every package moves to 0.12.1 so the desktop app picks the
+update up._
+
+A dead end for anyone opening midnite for the first time, plus the landing page
+picking up the screensaver's system readout.
+
+### Added
+
+- **A system monitor on the landing page.** The CPU/RAM/GPU readout the
+  screensaver has long shown now also fills the landing page's free bottom-left
+  corner, sharing the same telemetry poll rather than adding another. It stays
+  out of the way where the gateway can't report host metrics, and drops GPU from
+  the chart on hosts that can't measure it instead of drawing a flat zero.
+
+### Changed
+
+- **Quick Kiss at XL is the brand wordmark**, across the app, the marketing
+  site, the docs and admin. The font/size picker in Settings → Appearance is
+  retired for now.
+
+### Fixed
+
+- **A fresh install could not create its first project.** With no projects yet,
+  the header's project filter hid itself — reasonably, since there was nothing
+  to filter, except that dropdown held the app's only "+ New project" button,
+  and the projects page isn't in the navigation. The filter's slot now offers
+  "+ New project" directly whenever the list is empty.
+
 ## [0.12.0] - 2026-08-08
 
 _Minor release — every package moves in lockstep to 0.12.0._
@@ -732,6 +762,7 @@ the initial scaffold.
   one-way package-boundary graph (`shared` is the contract).
 
 [Unreleased]: https://github.com/bilo-io/midnite-app/releases
+[0.12.1]: https://github.com/bilo-io/midnite-app/releases/tag/v0.12.1
 [0.12.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.12.0
 [0.11.1]: https://github.com/bilo-io/midnite-app/releases
 [0.11.0]: https://github.com/bilo-io/midnite-app/releases/tag/v0.11.0

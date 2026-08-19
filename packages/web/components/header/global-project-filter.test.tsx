@@ -40,10 +40,22 @@ beforeEach(() => {
 });
 
 describe('GlobalProjectFilter', () => {
-  it('renders nothing while there are no projects', async () => {
+  it('offers "New project" instead of a filter while there are no projects', async () => {
     getProjects.mockResolvedValue([]);
     renderFilter();
-    await new Promise((r) => setTimeout(r, 0));
+    // No filter trigger (nothing to filter), but the create flow stays reachable —
+    // a fresh install has no other entry point to it.
+    const create = await screen.findByRole('button', { name: /new project/i });
+    expect(screen.queryByRole('button', { name: /filter by project/i })).toBeNull();
+
+    fireEvent.click(create);
+    expect(push).toHaveBeenCalledWith('/projects?new=1');
+  });
+
+  it('renders nothing until the projects query settles', () => {
+    getProjects.mockReturnValue(new Promise(() => {}));
+    renderFilter();
+    expect(screen.queryByRole('button', { name: /new project/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /filter by project/i })).toBeNull();
   });
 

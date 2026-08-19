@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
   forwardRef,
@@ -21,6 +22,7 @@ import {
   type Project,
   type ProjectsPage,
   type RepoStatusResponse,
+  type RunProjectCommandRequest,
   type Task,
   type TeamScope,
   type UpdateProjectRequest,
@@ -37,7 +39,7 @@ import { TasksService } from '../tasks/tasks.service';
 // so this is a genuine constructor cycle — see terminal.service.ts's matching
 // forwardRef on its ProjectsService injection.
 import { TerminalService } from '../terminal/terminal.service';
-import { buildRunInitCommand } from './lib/run-command';
+import { backgroundRunSpec, buildRunInitCommand } from './lib/run-command';
 import { projectReportFilename, projectToMarkdown } from './lib/project-report';
 import { ProjectsRepository } from './projects.repository';
 import {
@@ -72,6 +74,8 @@ const RECORD_PLAN_SCHEMA = {
 
 @Injectable()
 export class ProjectsService {
+  private readonly logger = new Logger(ProjectsService.name);
+
   constructor(
     @Inject(ProjectsRepository) private readonly repo: ProjectsRepository,
     @Inject(LlmService) private readonly llm: LlmService,
@@ -122,20 +126,21 @@ export class ProjectsService {
    * configured `startCommand`. 400s if either isn't set — the client hides/
    * disables the action in that case, but the server is the source of truth.
    */
-  previewProject(id: string): InstallTerminalResponse {
-    return this.runProjectCommand(id, 'startCommand', 'start');
+  previewProject(id: string, opts?: RunProjectCommandRequest): InstallTerminalResponse {
+    return this.runProjectCommand(id, 'startCommand', 'start', opts);
   }
 
   /** Build action (project detail page): same shape as {@link previewProject},
    *  running the project's configured `buildCommand` instead. */
-  buildProject(id: string): InstallTerminalResponse {
-    return this.runProjectCommand(id, 'buildCommand', 'build');
+  buildProject(id: string, opts?: RunProjectCommandRequest): InstallTerminalResponse {
+    return this.runProjectCommand(id, 'buildCommand', 'build', opts);
   }
 
   private runProjectCommand(
     id: string,
     field: 'startCommand' | 'buildCommand',
     label: 'start' | 'build',
+    opts?: RunProjectCommandRequest,
   ): InstallTerminalResponse {
     const project = this.getProject(id); // throws NotFound if unknown
     if (!project.workDir?.trim()) {
@@ -146,8 +151,45 @@ export class ProjectsService {
       throw new BadRequestException(`project ${id} has no ${label} command configured`);
     }
     const cwd = expandTilde(project.workDir, homedir());
+    if (opts?.background) {
+      return { terminalId: this.spawnBackgroundRun(project, label, cwd, command) };
+    }
     const terminalId = this.terminal.createAdHocTerminal(buildRunInitCommand(cwd, command));
     return { terminalId };
+  }
+
+  /**
+   * Background variant of a Preview/Build run: an eagerly-spawned managed-run
+   * PTY (a gateway child process — killing midnite kills it; never idle-reaped,
+   * it lives until the command exits). Unlike the ad-hoc path nothing has to
+   * attach for the command to run, but the returned id is still attachable
+   * through the normal terminal token flow if the user wants to peek at it.
+   */
+  private spawnBackgroundRun(
+    project: Project,
+    label: 'start' | 'build',
+    cwd: string,
+    command: string,
+  ): string {
+    const attachId = `project-run-${randomUUID()}`;
+    const spawned = this.terminal.spawnManagedRun(attachId, backgroundRunSpec(cwd, command), {
+      onData: () => {
+        // Output is retained by the terminal ring buffer for late attachers;
+        // nothing to capture here.
+      },
+      onExit: (exitCode) => {
+        this.logger.log(
+          `background ${label} run for project ${project.id} (${attachId}) exited with code ${exitCode}`,
+        );
+      },
+    });
+    if (!spawned.ok) {
+      throw new BadRequestException(`failed to start background ${label} run: ${spawned.error}`);
+    }
+    this.logger.log(
+      `background ${label} run for project ${project.id} started (${attachId}, pid ${spawned.pid})`,
+    );
+    return attachId;
   }
 
   /**

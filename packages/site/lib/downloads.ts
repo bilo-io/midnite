@@ -17,7 +17,7 @@ export type DownloadTarget = {
 };
 
 /** Desktop version; keep in step with the published GitHub release tag. */
-export const DESKTOP_VERSION = '0.12.0';
+export const DESKTOP_VERSION = '0.12.1';
 
 /**
  * macOS (and Linux — see below) install via a curl one-liner (served from the

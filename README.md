@@ -309,6 +309,14 @@ loopback by default**:
   the terminal WS. Loopback origins (any port) are always allowed; add others
   here. Non-loopback origins are rejected (CORS + a WS `Origin` check) to block
   drive-by pages from driving a terminal.
+- `gateway.fs.allowedRoots` — directories the web folder picker (`/fs/dirs`) may
+  browse and create in. **Empty by default, meaning no restriction**: sessions run
+  on the gateway host, so the picker has to navigate that machine's real
+  filesystem, and on a single-user local install the caller already owns the box.
+  If you share a gateway with other people, list the roots it may touch (`~` is
+  expanded) and anything outside them is refused with a 403 — the picker also
+  stops offering "up one level" once it reaches a root. Note this is a deployment
+  guardrail, not a sandbox: symlinks inside an allowed root are not resolved.
 - `gateway.auth` — **operator-owned; lives outside `midnite.json`** (Phase 72). The
   whole auth subtree (bearer token, JWT, SSO client IDs, allowlist) is deploy-time
   operator policy, so it is **not** kept in the committed, user-facing `midnite.json`.

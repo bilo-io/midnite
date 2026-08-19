@@ -46,6 +46,7 @@ export function RailShell({
   right,
   isMobile,
   children,
+  centerTitle,
   centerActions,
   className,
   stickyRails = false,
@@ -56,6 +57,14 @@ export function RailShell({
   isMobile: boolean;
   /** The center content. */
   children: ReactNode;
+  /**
+   * A title for the center region, laid into the headroom band the floating
+   * corner toggles reserve (desktop) — so the band that would otherwise be empty
+   * space names what the center is showing. Below `lg` (where the toggles and
+   * their headroom don't render) it falls back to a normal in-flow row above the
+   * center content.
+   */
+  centerTitle?: ReactNode;
   /**
    * Extra content-layer controls floated in the center's top-right corner, just
    * left of the right rail toggle (desktop only — pair with a header control for
@@ -117,6 +126,26 @@ export function RailShell({
             )}
           >
             {centerActions}
+          </div>
+        ) : null}
+
+        {/* The center's title, sitting in the headroom the toggles reserve (so it
+            reads as the region's own title bar) and clearing whichever toggles
+            are actually rendered. */}
+        {centerTitle ? (
+          <div
+            className={cn(
+              'mb-2 flex min-w-0 items-center',
+              hasRail &&
+                !hideFloatingToggles &&
+                cn(
+                  'lg:absolute lg:top-2 lg:z-10 lg:mb-0 lg:h-8',
+                  left ? 'lg:left-12' : 'lg:left-2',
+                  right ? 'lg:right-12' : 'lg:right-2',
+                ),
+            )}
+          >
+            {centerTitle}
           </div>
         ) : null}
 

@@ -29,6 +29,7 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { OverflowMenu } from '@/components/overflow-menu';
 import { ProjectNameLink } from '@/components/project-name-link';
+import { ProjectRunActions } from '@/components/project-run-actions';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
@@ -577,6 +578,7 @@ function ProjectBoardsView({
     () => groupTasksByProject(tasks, projects, t('unassigned')),
     [tasks, projects, t],
   );
+  const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p] as const)), [projects]);
   const abandoned = useMemo(() => tasks.filter((x) => x.status === 'abandoned'), [tasks]);
 
   const handleReopen = useCallback(
@@ -594,40 +596,52 @@ function ProjectBoardsView({
     [confirm, onReopen, t],
   );
 
-  const sections: AccordionSection[] = groups.map((g) => ({
-    id: g.key,
-    label: <ProjectNameLink projectId={g.projectId} name={g.name} />,
-    color: g.color,
-    count: g.tasks.length,
-    // The count pill carries the total; a gradient progress bar beside it tracks
-    // completion (done tasks / total), so no duplicate "N tasks" summary text.
-    summary: '',
-    progress: { done: g.tasks.filter((x) => x.status === 'done').length, total: g.tasks.length },
-    // Requirement: the project tag chip lives at the far right of the header.
-    actions: g.tag ? <ProjectTag tag={g.tag} color={g.color ?? '#94a3b8'} /> : undefined,
-    body: (
-      <ProjectBoardBody
-        projectKey={g.projectId}
-        tasks={g.tasks}
-        columns={columns}
-        projectsById={projectsById}
-        onSelect={onSelect}
-        onMove={onMove}
-        onReorder={onReorder}
-        onReopen={onReopen ? handleReopen : undefined}
-        isSelected={isSelected}
-        onToggleSelect={onToggleSelect}
-        blockedCounts={blockedCounts}
-        isMobile={isMobile}
-        collapsedCols={collapsedCols}
-        onToggleCollapse={toggleCollapse}
-        onAddTask={onAddTask}
-      />
-    ),
-  }));
+  const sections: AccordionSection[] = groups.map((g) => {
+    const project = g.projectId ? projectById.get(g.projectId) : undefined;
+    return {
+      id: g.key,
+      label: <ProjectNameLink projectId={g.projectId} name={g.name} />,
+      color: g.color,
+      count: g.tasks.length,
+      // The count pill carries the total; a gradient progress bar beside it tracks
+      // completion (done tasks / total), so no duplicate "N tasks" summary text.
+      summary: '',
+      progress: { done: g.tasks.filter((x) => x.status === 'done').length, total: g.tasks.length },
+      // Far right of the header: the project tag chip, then the Build/Launch
+      // actions (tag just to their left).
+      actions:
+        g.tag || project ? (
+          <>
+            {g.tag ? <ProjectTag tag={g.tag} color={g.color ?? '#94a3b8'} /> : null}
+            {project ? <ProjectRunActions project={project} /> : null}
+          </>
+        ) : undefined,
+      body: (
+        <ProjectBoardBody
+          projectKey={g.projectId}
+          tasks={g.tasks}
+          columns={columns}
+          projectsById={projectsById}
+          onSelect={onSelect}
+          onMove={onMove}
+          onReorder={onReorder}
+          onReopen={onReopen ? handleReopen : undefined}
+          isSelected={isSelected}
+          onToggleSelect={onToggleSelect}
+          blockedCounts={blockedCounts}
+          isMobile={isMobile}
+          collapsedCols={collapsedCols}
+          onToggleCollapse={toggleCollapse}
+          onAddTask={onAddTask}
+        />
+      ),
+    };
+  });
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    // Carries the same `board` tour anchor as the unified board — only one layout
+    // renders at a time, so the tasks guide finds its target in either mode.
+    <div className="flex flex-1 flex-col gap-4" data-tour="board">
       {groups.length === 0 ? (
         <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('nothingHere')}</p>
       ) : (

@@ -849,6 +849,22 @@
       "blockedHint": "Notifications are blocked in your browser — allow them in site settings to enable this.",
       "notifyAria": "Notify on task updates"
     },
+    "runActions": {
+      "title": "Run actions",
+      "mode": "Project build & launch",
+      "modeAria": "Run mode",
+      "terminal": "Terminal",
+      "background": "Background",
+      "terminalHint": "Build & Launch open a terminal window streaming the command live.",
+      "backgroundHint": "Build & Launch run as background processes owned by Midnite — quitting Midnite stops them.",
+      "tmux": {
+        "title": "Background runs outlive Midnite under tmux",
+        "body": "Background runs are child processes of Midnite, so quitting Midnite stops them — but only on the default \"pty\" terminal backend. If your gateway runs with terminal.mode set to \"tmux\", each run becomes a detached tmux session that keeps running after Midnite exits. Stop those yourself:",
+        "listLabel": "List them",
+        "killLabel": "Stop one",
+        "killAllLabel": "Stop all of them"
+      }
+    },
     "realtime": {
       "title": "Realtime",
       "bufferSize": "Event buffer size",

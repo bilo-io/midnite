@@ -15,3 +15,19 @@ import { shellQuote } from '../../terminal/terminal.service';
 export function buildRunInitCommand(cwd: string, command: string): string {
   return `cd ${shellQuote(cwd)} && clear && ${command}\r`;
 }
+
+/**
+ * The spawn spec for a *background* Preview/Build run: the configured command
+ * executed through a login shell (`-lc`, so PATH setup from the user's profile —
+ * nvm, proto, etc. — applies) with the project's work directory as cwd. Fed to
+ * `TerminalService.spawnManagedRun`, so the process is a gateway child: killing
+ * midnite kills it. Same trust boundary as {@link buildRunInitCommand} — the
+ * command is project-owner-authored config, spliced in verbatim.
+ */
+export function backgroundRunSpec(
+  cwd: string,
+  command: string,
+  shell = process.env.SHELL || '/bin/sh',
+): { command: string; args: string[]; cwd: string } {
+  return { command: shell, args: ['-lc', command], cwd };
+}

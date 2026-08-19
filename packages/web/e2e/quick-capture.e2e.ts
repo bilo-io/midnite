@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { column } from './helpers/board';
+import { column, pinUnifiedBoard } from './helpers/board';
 
 /**
  * Quick-capture widget (Phase 7 Theme C). Seed the default dashboard tab with the
@@ -22,6 +22,7 @@ function captureCard(page: Page) {
 
 test.describe('Quick capture widget', () => {
   test.beforeEach(async ({ page }) => {
+    await pinUnifiedBoard(page);
     await page.addInitScript((key) => {
       window.localStorage.setItem(key, JSON.stringify([{ type: 'quick-capture' }]));
     }, WIDGETS_KEY);

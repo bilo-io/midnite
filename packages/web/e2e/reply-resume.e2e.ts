@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { GATEWAY_ORIGIN } from './config';
-import { column } from './helpers/board';
+import { column, pinUnifiedBoard } from './helpers/board';
 import { seedTask } from './helpers/gateway';
 
 /**
@@ -43,6 +43,7 @@ test('reply to a waiting agent from the board card → resumes to In progress (n
   await startRun(task.id);
   await waitForStatus(task.id, 'waiting');
 
+  await pinUnifiedBoard(page);
   await page.addInitScript(() => {
     try {
       localStorage.setItem('midnite.setup-wizard.dismissed', 'true');

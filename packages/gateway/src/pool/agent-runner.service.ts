@@ -8,8 +8,6 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import type { CheckResult, FailureClass, MidniteConfig, Task, WaitReason } from '@midnite/shared';
 import { isNeedsAttention, isRetryableFailure, resolveChecksForRepo } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
@@ -304,10 +302,14 @@ export class AgentRunnerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    // Expand `~` in the repo path so execFile can locate it.
-    const cwd = repo.path.startsWith('~/')
-      ? join(homedir(), repo.path.slice(2))
-      : repo.path;
+    // Run the gate where the AGENT ran, not where `task.repo` points. These
+    // were separate derivations, and they disagreed whenever the task's project
+    // carried a `workDir`: `pickSessionCwd` puts the project directory ahead of
+    // the repo path, so the agent worked in one tree while its checks validated
+    // another — a green gate for code that was never examined. One resolver now
+    // serves both. `repo` is still required above, because it selects *which*
+    // checks run; this only decides where they run.
+    const cwd = this.terminal.resolveCwd(taskId);
 
     this.tasks.recordCheckEvent(taskId, 'checks.started');
     const run = await this.checks.run(taskId, resolved, cwd, 'gate');

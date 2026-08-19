@@ -68,3 +68,50 @@ describe('RateLimitGuard', () => {
     }
   });
 });
+
+describe('RateLimitGuard — credential endpoints', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('throttles repeated login attempts from one IP', () => {
+    // Previously exempt: the guard reused the *auth* exemption list, so the
+    // endpoint you would actually brute-force skipped the limiter entirely,
+    // even with rate limiting explicitly enabled.
+    const guard = new RateLimitGuard(config({ max: 3, windowMs: 60_000 }));
+    const attempt = () => statusOf(() => guard.canActivate(ctx('1.2.3.4', '/auth/login')));
+
+    expect(attempt()).toBeNull();
+    expect(attempt()).toBeNull();
+    expect(attempt()).toBeNull();
+    expect(attempt()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+  });
+
+  it('throttles register and refresh too', () => {
+    const guard = new RateLimitGuard(config({ max: 1, windowMs: 60_000 }));
+    expect(statusOf(() => guard.canActivate(ctx('5.6.7.8', '/auth/register')))).toBeNull();
+    expect(statusOf(() => guard.canActivate(ctx('5.6.7.8', '/auth/refresh')))).toBe(
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  });
+
+  it('still never throttles health probes or hook callbacks', () => {
+    // Monitors poll /health constantly, and a throttled lifecycle hook would
+    // corrupt task state rather than merely slow a client down.
+    const guard = new RateLimitGuard(config({ max: 1, windowMs: 60_000 }));
+    for (let i = 0; i < 20; i++) {
+      expect(statusOf(() => guard.canActivate(ctx('9.9.9.9', '/health')))).toBeNull();
+      expect(statusOf(() => guard.canActivate(ctx('9.9.9.9', '/hooks/sessions/a/stop')))).toBeNull();
+    }
+  });
+
+  it('stays disabled when max is 0 — the local-install default', () => {
+    const guard = new RateLimitGuard(config({ max: 0, windowMs: 60_000 }));
+    for (let i = 0; i < 50; i++) {
+      expect(statusOf(() => guard.canActivate(ctx('1.1.1.1', '/auth/login')))).toBeNull();
+    }
+  });
+});

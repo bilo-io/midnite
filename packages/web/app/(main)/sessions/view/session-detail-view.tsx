@@ -12,7 +12,6 @@ import { HoverExpandButton } from '@/components/hover-expand-button';
 import { TaskActionButtons, useTaskActions } from '@/components/task-actions';
 import { taskPageHref } from '@/lib/task-route';
 import { useToast } from '@/components/toast';
-import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
 import { ResourceNotFound } from '@/components/resource-not-found';
@@ -129,9 +128,9 @@ export function SessionDetailView({
             so start / abandon / reopen / export / delete stay reachable once the
             header tucks behind the desktop title bar, matching the list pages. */}
         <StickyToolbar className="reveal-controls">
-          <div className="flex items-center gap-2">
-            <ConnectionStatus variant="compact" />
-          </div>
+          {/* Left slot intentionally empty — the connection pip lived here, but the
+              terminal's own live indicator already says the same thing. */}
+          <div />
           <div className="flex items-center gap-2">
             {/* Jump to the counterpart task page (session.id === task.id) — mirrors
                 the "Session" deep-link the task page carries. */}
@@ -184,6 +183,16 @@ export function SessionDetailView({
             collapseLabel: tCommon('ui.rail.collapse', { title: infoRail }),
             expandLabel: tCommon('ui.rail.expand', { title: infoRail }),
           }}
+          /* The band between the rail toggles names what the terminal is working
+             on — the linked task — so the cockpit is readable once the page
+             header has scrolled away. One line, truncated. */
+          centerTitle={
+            task ? (
+              <span className="min-w-0 truncate text-sm font-medium text-foreground" title={task.title}>
+                {task.title}
+              </span>
+            ) : undefined
+          }
         >
           {/* Center — the terminal: live WS terminal or ended transcript. */}
           <SessionTerminalRegion session={session} />

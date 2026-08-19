@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { column } from './helpers/board';
+import { column, pinUnifiedBoard } from './helpers/board';
 import { seedProject } from './helpers/gateway';
 
 /**
@@ -23,6 +23,7 @@ test.describe('Breakdown flow', () => {
     // On a fresh e2e gateway the setup wizard auto-opens (provider not "ready")
     // and would intercept clicks; the idle screensaver (30s default) would also
     // float over the page during a slow step. Suppress both.
+    await pinUnifiedBoard(page);
     await page.addInitScript(() => {
       try {
         localStorage.setItem('midnite.setup-wizard.dismissed', 'true');

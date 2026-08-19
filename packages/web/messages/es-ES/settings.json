@@ -849,6 +849,22 @@
       "blockedHint": "Tu navegador está bloqueando las notificaciones: permítelas en los ajustes del sitio para activar esto.",
       "notifyAria": "Notificar las novedades de las tareas"
     },
+    "runActions": {
+      "title": "Acciones de ejecución",
+      "mode": "Compilar y lanzar el proyecto",
+      "modeAria": "Modo de ejecución",
+      "terminal": "Terminal",
+      "background": "Segundo plano",
+      "terminalHint": "Compilar y Lanzar abren una ventana de terminal que transmite el comando en directo.",
+      "backgroundHint": "Compilar y Lanzar se ejecutan como procesos en segundo plano de Midnite — al salir de Midnite se detienen.",
+      "tmux": {
+        "title": "En modo tmux, las ejecuciones en segundo plano sobreviven a Midnite",
+        "body": "Las ejecuciones en segundo plano son procesos hijos de Midnite, así que al salir de Midnite se detienen — pero solo con el backend de terminal «pty» predeterminado. Si tu gateway usa terminal.mode «tmux», cada ejecución pasa a ser una sesión tmux desacoplada que sigue en marcha tras cerrar Midnite. Deténlas tú mismo:",
+        "listLabel": "Listarlas",
+        "killLabel": "Detener una",
+        "killAllLabel": "Detenerlas todas"
+      }
+    },
     "realtime": {
       "title": "Tiempo real",
       "bufferSize": "Tamaño del búfer de eventos",

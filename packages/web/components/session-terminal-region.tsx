@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { History, Radio } from 'lucide-react';
+import { History } from 'lucide-react';
 import type { SessionDetail } from '@midnite/shared';
 import { SessionTerminal } from '@/components/session-terminal';
 import { SessionTranscriptBody } from '@/components/session-transcript-body';
@@ -21,24 +21,17 @@ export function SessionTerminalRegion({ session }: { session: SessionDetail }) {
 
   return (
     <div className="flex min-h-[28rem] flex-col overflow-hidden rounded-lg border border-border/60 bg-card/30 lg:h-[calc(100vh-12.75rem)]">
-      <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">{t('terminal.label')}</span>
-        {ended ? (
+      {/* No title bar for a live session: the terminal's own header already names
+          the agent and carries the (single, pulsing) live indicator — a second
+          "Terminal · live" strip above it just said the same thing twice. An
+          ended session has no such header, so it keeps a slim badge row. */}
+      {ended ? (
+        <div className="flex items-center justify-end border-b border-border/60 px-3 py-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             <History className="h-3 w-3" /> {t('terminal.endedBadge')}
           </span>
-        ) : (
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
-            style={{
-              backgroundColor: 'hsl(var(--status-wip) / 0.15)',
-              color: 'hsl(var(--status-wip))',
-            }}
-          >
-            <Radio className="h-3 w-3" /> {t('terminal.liveBadge')}
-          </span>
-        )}
-      </div>
+        </div>
+      ) : null}
       <div className="min-h-0 flex-1 p-3">
         {ended ? <EndedTranscript session={session} /> : <SessionTerminal session={session} />}
       </div>

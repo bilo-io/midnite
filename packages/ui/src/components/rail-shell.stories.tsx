@@ -9,12 +9,27 @@ import { RailShell } from './rail-shell';
  * Interactive harness: RailShell owns nothing, so the story holds the open state
  * and lets the play function drive the content-layer toggles.
  */
-function Harness({ startLeft = true, startRight = true }: { startLeft?: boolean; startRight?: boolean }) {
+function Harness({
+  startLeft = true,
+  startRight = true,
+  centerTitle,
+}: {
+  startLeft?: boolean;
+  startRight?: boolean;
+  centerTitle?: string;
+}) {
   const [leftOpen, setLeftOpen] = useState(startLeft);
   const [rightOpen, setRightOpen] = useState(startRight);
   return (
     <RailShell
       isMobile={false}
+      centerTitle={
+        centerTitle ? (
+          <span className="min-w-0 truncate text-sm font-medium" title={centerTitle}>
+            {centerTitle}
+          </span>
+        ) : undefined
+      }
       left={{
         title: 'Sources',
         icon: <Brain className="h-4 w-4" />,
@@ -71,5 +86,21 @@ export const Default: Story = {
     // The right rail toggles independently.
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Studio' }));
     await expect(canvas.getByRole('button', { name: 'Expand Studio' })).toBeInTheDocument();
+  },
+};
+
+/**
+ * `centerTitle` fills the headroom the floating toggles reserve, so the band
+ * between them names the center region instead of sitting empty.
+ */
+export const WithCenterTitle: Story = {
+  args: { centerTitle: 'Add speed ramp, obstacles and combo scoring to Snake' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByTitle('Add speed ramp, obstacles and combo scoring to Snake'),
+    ).toBeInTheDocument();
+    // It clears both toggles rather than overlapping them.
+    await expect(canvas.getByRole('button', { name: 'Collapse Sources' })).toBeInTheDocument();
   },
 };

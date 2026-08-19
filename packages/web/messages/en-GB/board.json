@@ -100,7 +100,8 @@
     "boardStyles": {
       "unified": "All in one",
       "project": "Per project"
-    }
+    },
+    "oneBoard": "One board"
   },
   "sections": {
     "empty": "Empty",
@@ -187,5 +188,19 @@
     "title": "Your board is empty",
     "description": "Add your first task and Midnite will classify it, queue it, and hand it to an agent. Tasks move across these columns as they run.",
     "action": "Add your first task"
+  },
+  "runActions": {
+    "build": "Build {name}",
+    "launch": "Launch {name}",
+    "buildTitle": "Build — {name}",
+    "launchTitle": "Launch — {name}",
+    "buildStarted": "Build for {name} started in the background.",
+    "launchStarted": "{name} launched in the background.",
+    "buildFailed": "Build failed to start.",
+    "launchFailed": "Launch failed to start.",
+    "hint": {
+      "terminal": "opens a terminal",
+      "background": "runs in the background"
+    }
   }
 }
