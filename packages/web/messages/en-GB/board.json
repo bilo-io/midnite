@@ -97,10 +97,7 @@
       "table": "Table view",
       "graph": "Graph view"
     },
-    "boardStyles": {
-      "unified": "All in one",
-      "project": "Per project"
-    }
+    "oneBoard": "One board"
   },
   "sections": {
     "empty": "Empty",
@@ -182,5 +179,15 @@
   "page": {
     "title": "Tasks",
     "description": "Tasks grouped by status. Switch between list, board, and graph, and filter by status or project."
+  },
+  "runActions": {
+    "build": "Build {name}",
+    "launch": "Launch {name}",
+    "buildTitle": "Build — {name}",
+    "launchTitle": "Launch — {name}",
+    "buildStarted": "Build for {name} started in the background.",
+    "launchStarted": "{name} launched in the background.",
+    "buildFailed": "Build failed to start.",
+    "launchFailed": "Launch failed to start."
   }
 }

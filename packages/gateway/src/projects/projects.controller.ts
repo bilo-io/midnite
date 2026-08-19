@@ -21,6 +21,7 @@ import {
   EnhanceDescriptionRequestSchema,
   REPORT_CONTENT_TYPE,
   ReportFormatSchema,
+  RunProjectCommandRequestSchema,
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
   PageQuerySchema,
@@ -148,18 +149,23 @@ export class ProjectsController {
     };
   }
 
-  // Preview/Launch action (project detail page): open a live ad-hoc terminal
-  // running the project's configured startCommand. No body — the command comes
-  // entirely from the already-persisted project config, never the client.
+  // Preview/Launch action: open a live ad-hoc terminal running the project's
+  // configured startCommand — or, with `{ background: true }`, run it eagerly as
+  // a gateway child process. The command itself always comes from the persisted
+  // project config, never the client; the body only picks how it runs.
   @Post(':id/preview')
-  preview(@Param('id') id: string): InstallTerminalResponse {
-    return this.service.previewProject(id);
+  preview(@Param('id') id: string, @Body() body: unknown): InstallTerminalResponse {
+    const parsed = RunProjectCommandRequestSchema.safeParse(body ?? {});
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.previewProject(id, parsed.data);
   }
 
   // Build action: same shape as preview, running buildCommand instead.
   @Post(':id/build')
-  build(@Param('id') id: string): InstallTerminalResponse {
-    return this.service.buildProject(id);
+  build(@Param('id') id: string, @Body() body: unknown): InstallTerminalResponse {
+    const parsed = RunProjectCommandRequestSchema.safeParse(body ?? {});
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.buildProject(id, parsed.data);
   }
 
   // Local git status for the project's workDir (Phase: repo status & init — no

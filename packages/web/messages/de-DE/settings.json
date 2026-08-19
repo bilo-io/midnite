@@ -845,6 +845,15 @@
       "blockedHint": "Benachrichtigungen sind in deinem Browser blockiert — erlaube sie in den Website-Einstellungen, um das zu aktivieren.",
       "notifyAria": "Bei Aufgaben-Updates benachrichtigen"
     },
+    "runActions": {
+      "title": "Ausführungsaktionen",
+      "mode": "Projekt bauen & starten",
+      "modeAria": "Ausführungsmodus",
+      "terminal": "Terminal",
+      "background": "Hintergrund",
+      "terminalHint": "Bauen & Starten öffnen ein Terminalfenster, das den Befehl live überträgt.",
+      "backgroundHint": "Bauen & Starten laufen als Hintergrundprozesse von Midnite — beim Beenden von Midnite werden sie gestoppt."
+    },
     "realtime": {
       "title": "Echtzeit",
       "bufferSize": "Größe des Ereignispuffers",

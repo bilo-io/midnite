@@ -97,10 +97,7 @@
       "table": "Vue table",
       "graph": "Vue graphe"
     },
-    "boardStyles": {
-      "unified": "Tout-en-un",
-      "project": "Par projet"
-    }
+    "oneBoard": "Tableau unique"
   },
   "sections": {
     "empty": "Vide",
@@ -182,5 +179,15 @@
   "page": {
     "title": "Tâches",
     "description": "Tâches regroupées par statut. Basculez entre la liste, le tableau et le graphe, et filtrez par statut ou par projet."
+  },
+  "runActions": {
+    "build": "Compiler {name}",
+    "launch": "Lancer {name}",
+    "buildTitle": "Compilation — {name}",
+    "launchTitle": "Lancement — {name}",
+    "buildStarted": "Compilation de {name} démarrée en arrière-plan.",
+    "launchStarted": "{name} lancé en arrière-plan.",
+    "buildFailed": "Échec du démarrage de la compilation.",
+    "launchFailed": "Échec du lancement."
   }
 }

@@ -102,6 +102,17 @@ export const RepoStatusResponseSchema = z.object({
   error: z.string().optional(),
 });
 
+/**
+ * Optional body for `POST /projects/:id/preview` and `/build`. `background: true`
+ * runs the command as a gateway-owned child process (a pinned managed-run PTY —
+ * never idle-reaped, dies with the gateway) instead of a lazy ad-hoc terminal
+ * that only spawns once a client attaches. No body / `{}` keeps the terminal
+ * behaviour, so existing callers are unchanged.
+ */
+export const RunProjectCommandRequestSchema = z.object({
+  background: z.boolean().optional(),
+});
+
 export const UpdatePlanRequestSchema = z.object({
   plan: z.string().max(50000),
 });
@@ -199,6 +210,7 @@ export type EnhanceDescriptionRequest = z.infer<typeof EnhanceDescriptionRequest
 export type EnhanceDescriptionResponse = z.infer<typeof EnhanceDescriptionResponseSchema>;
 export type DraftPlanResponse = z.infer<typeof DraftPlanResponseSchema>;
 export type RepoStatusResponse = z.infer<typeof RepoStatusResponseSchema>;
+export type RunProjectCommandRequest = z.infer<typeof RunProjectCommandRequestSchema>;
 export type UpdatePlanRequest = z.infer<typeof UpdatePlanRequestSchema>;
 export type CreatePlanTasksRequest = z.infer<typeof CreatePlanTasksRequestSchema>;
 export type CreatePlanTasksResponse = z.infer<typeof CreatePlanTasksResponseSchema>;
