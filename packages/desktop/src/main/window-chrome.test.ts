@@ -6,11 +6,16 @@ import {
   WINDOW_FULLSCREEN_CHANNEL,
   WINDOW_TOGGLE_MAXIMIZE_CHANNEL,
 } from '../window-chrome/channels';
+import { attachWindowChrome, registerWindowChrome, windowFrameless } from './window-chrome';
 
 // `window-chrome.ts` value-imports `ipcMain`, so unlike its electron-free
 // siblings (permissions.ts, which imports only a type) it needs the module
 // faked to run in the plain node environment this package tests in.
-const ipcHandlers = new Map<string, (event: unknown, ...args: unknown[]) => void>();
+// `vi.hoisted` because `vi.mock` is lifted above the imports — a plain `const`
+// here would still be in its TDZ when the factory closes over it.
+const { ipcHandlers } = vi.hoisted(() => ({
+  ipcHandlers: new Map<string, (event: unknown, ...args: unknown[]) => void>(),
+}));
 vi.mock('electron', () => ({
   ipcMain: {
     on: (channel: string, handler: (event: unknown, ...args: unknown[]) => void) => {
@@ -18,8 +23,6 @@ vi.mock('electron', () => ({
     },
   },
 }));
-
-const { attachWindowChrome, registerWindowChrome, windowFrameless } = await import('./window-chrome');
 
 /** A fake BrowserWindow: records `webContents.send` and captures `win.on` wiring. */
 function fakeWindow(overrides: Record<string, unknown> = {}) {
