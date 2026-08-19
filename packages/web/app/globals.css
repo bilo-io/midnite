@@ -429,6 +429,68 @@
   }
 }
 
+/* The product guide's spotlight ring (components/guide/guide-overlay.tsx) — the
+ * frame around the element a step is highlighting, wearing the same living
+ * accent gradient as the step card's `.accent-gradient-border--spin` so the two
+ * read as one treatment.
+ *
+ * The centre must stay *fully* transparent (the spotlit component shows through
+ * the overlay's knockout hole underneath), so the gradient is painted on a
+ * masked band — `.task-running`'s technique — rather than the padding-box /
+ * border-box fill the bordered surfaces use. The overlay positions this from the
+ * measured hole rect, hence `position: absolute` and a radius passed inline
+ * (kept in sync with the SVG hole's `rx` by one constant in the component). */
+.guide-spotlight-ring {
+  position: absolute;
+  pointer-events: none;
+}
+.guide-spotlight-ring::before,
+.guide-spotlight-ring::after {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  background: var(--accent-gradient, var(--brand-gradient));
+  background-size: 260% 260%;
+  /* `mask` shorthand resets `mask-composite`, so the composite comes after. */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* The frame: a 2px band hugging the hole's edge. */
+.guide-spotlight-ring::before {
+  inset: 0;
+  padding: 2px;
+  animation: accent-gradient-sweep 3s ease-in-out infinite;
+}
+/* The bloom: a blurred copy bleeding outward. `mask` applies after `filter`, so
+ * excluding the content box keeps the blur spreading away from the component
+ * instead of washing over the thing the step is pointing at. */
+.guide-spotlight-ring::after {
+  inset: -16px;
+  padding: 16px;
+  filter: blur(16px);
+  opacity: 0.55;
+  animation:
+    accent-gradient-sweep 3s ease-in-out infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite;
+}
+html[data-motion='reduced'] .guide-spotlight-ring::before,
+html[data-motion='reduced'] .guide-spotlight-ring::after {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .guide-spotlight-ring::before,
+  html:not([data-motion='full']) .guide-spotlight-ring::after {
+    animation: none;
+  }
+}
+
 /*
  * bilo-io/midnite-app#4 — drive the animated accent angle per painter.
  *
@@ -485,6 +547,17 @@ html[data-accent-animate] .accent-gradient-border--spin::after {
     gradient-border-glow-pulse 2.6s ease-in-out infinite,
     accent-angle-spin 8s linear infinite;
 }
+html[data-accent-animate] .guide-spotlight-ring::before {
+  animation:
+    accent-gradient-sweep 3s ease-in-out infinite,
+    accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate] .guide-spotlight-ring::after {
+  animation:
+    accent-gradient-sweep 3s ease-in-out infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite,
+    accent-angle-spin 8s linear infinite;
+}
 /* Reduced motion stops the spin. Listed explicitly rather than via a `*` sweep:
    a universal selector here would also silence unrelated animations that the
    existing per-effect gating deliberately leaves alone. Declared after the rules
@@ -501,7 +574,9 @@ html[data-accent-animate][data-motion='reduced']
   ),
 html[data-accent-animate][data-motion='reduced'] .accent-gradient-border--lit::after,
 html[data-accent-animate][data-motion='reduced'] .auth-hero-logo-glow::after,
-html[data-accent-animate][data-motion='reduced'] .accent-gradient-border--spin::after {
+html[data-accent-animate][data-motion='reduced'] .accent-gradient-border--spin::after,
+html[data-accent-animate][data-motion='reduced'] .guide-spotlight-ring::before,
+html[data-accent-animate][data-motion='reduced'] .guide-spotlight-ring::after {
   animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -517,7 +592,9 @@ html[data-accent-animate][data-motion='reduced'] .accent-gradient-border--spin::
     ),
   html[data-accent-animate]:not([data-motion='full']) .accent-gradient-border--lit::after,
   html[data-accent-animate]:not([data-motion='full']) .auth-hero-logo-glow::after,
-  html[data-accent-animate]:not([data-motion='full']) .accent-gradient-border--spin::after {
+  html[data-accent-animate]:not([data-motion='full']) .accent-gradient-border--spin::after,
+  html[data-accent-animate]:not([data-motion='full']) .guide-spotlight-ring::before,
+  html[data-accent-animate]:not([data-motion='full']) .guide-spotlight-ring::after {
     animation: none;
   }
 }

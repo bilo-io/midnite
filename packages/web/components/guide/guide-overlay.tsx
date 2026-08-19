@@ -9,11 +9,13 @@ import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { guideStepKey } from '@/lib/guide/steps';
 import { useGuide } from '@/lib/guide/use-guide';
 import { useSeenGuides } from '@/lib/guide/use-seen-guides';
-import { cn } from '@/lib/utils';
 
 /** Padding around the spotlit element, and gap between it and the step card (px). */
 const HOLE_PAD = 8;
 const CARD_GAP = 12;
+/** Corner radius of the spotlight hole — shared by the SVG knockout and the
+ *  `.guide-spotlight-ring` frame drawn over it, so the two stay concentric. */
+const HOLE_RADIUS = 10;
 
 type Rect = { top: number; left: number; width: number; height: number };
 
@@ -157,7 +159,9 @@ export function GuideOverlay() {
         <defs>
           <mask id="guide-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
-            {hole && <rect x={hole.x} y={hole.y} width={hole.w} height={hole.h} rx="10" fill="black" />}
+            {hole && (
+              <rect x={hole.x} y={hole.y} width={hole.w} height={hole.h} rx={HOLE_RADIUS} fill="black" />
+            )}
           </mask>
         </defs>
         <rect
@@ -168,18 +172,6 @@ export function GuideOverlay() {
           fill="rgb(0 0 0 / 0.6)"
           mask="url(#guide-spotlight-mask)"
         />
-        {hole && (
-          <rect
-            x={hole.x}
-            y={hole.y}
-            width={hole.w}
-            height={hole.h}
-            rx="10"
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="2"
-          />
-        )}
       </svg>
 
       {/* Transparent click-catchers. Clicking the dimmed area ends the tour; the
@@ -187,6 +179,26 @@ export function GuideOverlay() {
           reach the anchored element. With no measured hole, one full-screen
           catcher covers everything. */}
       <SpotlightCatchers hole={hole} onStop={stop} />
+
+      {/* The spotlight frame: the app's rotating accent gradient as a masked ring
+          + outward bloom around the hole (see `.guide-spotlight-ring`), so the
+          highlighted component wears the same treatment as the step card instead
+          of a flat primary outline. Rendered *after* the catchers so the first
+          aria-hidden div in the portal is still a curtain, and pointer-transparent
+          so it never intercepts a click meant for the anchored element. */}
+      {hole && (
+        <div
+          aria-hidden
+          className="guide-spotlight-ring"
+          style={{
+            top: hole.y,
+            left: hole.x,
+            width: hole.w,
+            height: hole.h,
+            borderRadius: HOLE_RADIUS,
+          }}
+        />
+      )}
 
       <StepCard
         ref={cardRef}
@@ -264,44 +276,56 @@ const StepCard = forwardRef<HTMLDivElement, StepCardProps>(function StepCard(
       ref={ref}
       tabIndex={-1}
       style={style}
-      className={cn(
-        'absolute z-[61] w-[min(20rem,calc(100vw-2rem))] rounded-xl bg-card p-4 shadow-2xl outline-none ring-1 ring-border',
-      )}
+      // The animated accent-gradient frame + halo, matching the command palette
+      // and the spotlight ring. A plain string, not `cn()`: `twMerge` groups any
+      // two classes sharing the `-border` suffix, so merging would silently drop
+      // the frame — and `--spin` is self-sufficient (see globals.css), so it is
+      // deliberately NOT combined with the base `.accent-gradient-border`.
+      //
+      // No `absolute` utility here: `.accent-gradient-border--spin` declares
+      // `position: relative` from *unlayered* CSS, which outranks Tailwind's
+      // layered `.absolute` and would drop the card out of its anchored position.
+      // `cardPosition()` therefore sets `position` inline, where it wins.
+      className="z-[61] w-[min(20rem,calc(100vw-2rem))] rounded-xl accent-gradient-border--spin shadow-2xl outline-none"
     >
-      <h2 id={titleId} className="mb-1 text-sm font-semibold">
-        {title}
-      </h2>
-      <div className="text-sm text-muted-foreground">
-        <MarkdownPreview content={body} />
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {t('chrome.stepCount', { current: index + 1, total })}
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onStop}
-            className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            {t('chrome.skip')}
-          </button>
-          {index > 0 && (
+      {/* Inner surface clips content to the rounded corners while the frame and
+          its bloom stay on the wrapper, so the halo isn't clipped away. */}
+      <div className="overflow-hidden rounded-xl bg-card p-4">
+        <h2 id={titleId} className="mb-1 text-sm font-semibold">
+          {title}
+        </h2>
+        <div className="text-sm text-muted-foreground">
+          <MarkdownPreview content={body} />
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {t('chrome.stepCount', { current: index + 1, total })}
+          </span>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onPrev}
-              className="rounded-md border border-input px-2.5 py-1 text-xs font-medium hover:bg-accent/60"
+              onClick={onStop}
+              className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              {t('chrome.back')}
+              {t('chrome.skip')}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onNext}
-            className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
-          >
-            {isLast ? t('chrome.done') : t('chrome.next')}
-          </button>
+            {index > 0 && (
+              <button
+                type="button"
+                onClick={onPrev}
+                className="rounded-md border border-input px-2.5 py-1 text-xs font-medium hover:bg-accent/60"
+              >
+                {t('chrome.back')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onNext}
+              className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+            >
+              {isLast ? t('chrome.done') : t('chrome.next')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -317,13 +341,17 @@ const CARD_H = 220;
  * clamp so the **entire** card stays on-screen (a tall/wide anchor must not push
  * the card — and its controls — off the viewport). No CSS transforms, so the
  * clamped coordinate is the real rendered box.
+ *
+ * `position` is part of the returned style rather than a Tailwind class: the
+ * card's gradient-frame class sets `position: relative` from unlayered CSS, which
+ * a `.absolute` utility can't override (see the call site).
  */
 function cardPosition(
   hole: { x: number; y: number; w: number; h: number } | null,
   placement: 'top' | 'bottom' | 'left' | 'right',
 ): React.CSSProperties {
   if (!hole || (hole.w === 0 && hole.h === 0)) {
-    return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    return { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
   }
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1024;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 768;
@@ -352,5 +380,5 @@ function cardPosition(
   // Clamp the whole box into the viewport (with an 8px margin).
   left = Math.min(Math.max(8, left), Math.max(8, vw - CARD_W - 8));
   top = Math.min(Math.max(8, top), Math.max(8, vh - CARD_H - 8));
-  return { top, left };
+  return { position: 'absolute', top, left };
 }
