@@ -188,6 +188,10 @@
     "buildStarted": "Build for {name} started in the background.",
     "launchStarted": "{name} launched in the background.",
     "buildFailed": "Build failed to start.",
-    "launchFailed": "Launch failed to start."
+    "launchFailed": "Launch failed to start.",
+    "hint": {
+      "terminal": "opens a terminal",
+      "background": "runs in the background"
+    }
   }
 }

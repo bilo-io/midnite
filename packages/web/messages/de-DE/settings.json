@@ -852,7 +852,14 @@
       "terminal": "Terminal",
       "background": "Hintergrund",
       "terminalHint": "Bauen & Starten öffnen ein Terminalfenster, das den Befehl live überträgt.",
-      "backgroundHint": "Bauen & Starten laufen als Hintergrundprozesse von Midnite — beim Beenden von Midnite werden sie gestoppt."
+      "backgroundHint": "Bauen & Starten laufen als Hintergrundprozesse von Midnite — beim Beenden von Midnite werden sie gestoppt.",
+      "tmux": {
+        "title": "Im tmux-Modus überleben Hintergrundläufe Midnite",
+        "body": "Hintergrundläufe sind Kindprozesse von Midnite — das Beenden von Midnite stoppt sie, aber nur beim Standard-Terminal-Backend „pty“. Läuft dein Gateway mit terminal.mode „tmux“, wird jeder Lauf zu einer abgetrennten tmux-Sitzung, die nach dem Beenden von Midnite weiterläuft. Diese musst du selbst stoppen:",
+        "listLabel": "Auflisten",
+        "killLabel": "Eine stoppen",
+        "killAllLabel": "Alle stoppen"
+      }
     },
     "realtime": {
       "title": "Echtzeit",

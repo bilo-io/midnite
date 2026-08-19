@@ -188,6 +188,10 @@
     "buildStarted": "Compilación de {name} iniciada en segundo plano.",
     "launchStarted": "{name} lanzado en segundo plano.",
     "buildFailed": "No se pudo iniciar la compilación.",
-    "launchFailed": "No se pudo iniciar el lanzamiento."
+    "launchFailed": "No se pudo iniciar el lanzamiento.",
+    "hint": {
+      "terminal": "abre un terminal",
+      "background": "se ejecuta en segundo plano"
+    }
   }
 }

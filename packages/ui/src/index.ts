@@ -68,3 +68,4 @@ export { Switch } from './components/switch';
 export { Tabs, type TabOption } from './components/tabs';
 export { ThemeToggle, type ThemeToggleLabels } from './components/theme-toggle';
 export { Textarea, type TextareaProps } from './components/textarea';
+export { Tooltip } from './components/tooltip';
