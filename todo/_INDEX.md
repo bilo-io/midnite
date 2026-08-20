@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 3/55 | `█░░░░░░░░░` | 5% | C | A B E F G ³ |
+| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 3/55 | `█░░░░░░░░░` | 5% | B C | A E F G ³ |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
