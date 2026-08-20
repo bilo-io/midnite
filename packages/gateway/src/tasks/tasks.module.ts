@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
 import { AuthModule } from '../auth/auth.module';
 import { ChecksModule } from '../checks/checks.module';
+import { CwdModule } from '../cwd/cwd.module';
 import { ReposModule } from '../repos/repos.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { WorkflowCredentialsModule } from '../workflows/credentials/workflow-credentials.module';
@@ -23,6 +24,9 @@ import { TasksGateway } from './tasks.gateway';
     AgentModule,
     AuthModule,
     ChecksModule,
+    // Phase 84 D — the shared cwd resolver, so a manual quality-gate run lands
+    // in the same directory the agent worked in.
+    CwdModule,
     ReposModule,
     WorkflowsModule,
     WorkflowCredentialsModule,

@@ -49,6 +49,7 @@ import { PlannerService } from '../agent/planner.service';
 import { AuditService } from '../audit/audit.service';
 import { ChecksService } from '../checks/checks.service';
 import { MIDNITE_CONFIG } from '../config.token';
+import { CwdResolverService } from '../cwd/cwd-resolver.service';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
 import { ReposService } from '../repos/repos.service';
 import { HeldTasksRegistry } from './held-tasks.registry';
@@ -128,6 +129,11 @@ export class TasksService implements OnModuleDestroy {
     // Optional so unit specs that construct the service by hand keep working; a
     // held task's derived `heldReason` is attached on read (never persisted).
     @Optional() @Inject(HeldTasksRegistry) private readonly heldTasks?: HeldTasksRegistry,
+    // Phase 84 D — the shared cwd resolver, so a manual check runs where the
+    // agent ran. Optional for the same reason as the deps above (unit specs
+    // construct this service by hand); the real app always wires it via
+    // TasksModule, and `runManualCheck` documents the degraded fallback.
+    @Optional() @Inject(CwdResolverService) private readonly cwd?: CwdResolverService,
   ) {}
 
   onModuleDestroy(): void {
@@ -1479,7 +1485,15 @@ export class TasksService implements OnModuleDestroy {
       };
     }
 
-    const cwd = repo.path.startsWith('~/') ? join(homedir(), repo.path.slice(2)) : repo.path;
+    // Phase 84 D — run the gate where the AGENT ran. This used to expand
+    // `repo.path` on its own, ignoring the task's project entirely, so a manual
+    // check could validate a tree the agent had never worked in. `repo` is still
+    // required above because it selects *which* checks run; this only decides
+    // where. The `??` tail covers unit specs that construct TasksService without
+    // the resolver — the real app always injects it.
+    const cwd =
+      this.cwd?.resolveForTask(task) ??
+      (repo.path.startsWith('~/') ? join(homedir(), repo.path.slice(2)) : repo.path);
 
     this.recordCheckEvent(taskId, 'checks.started');
     const run = await this.checks.run(taskId, resolved, cwd, 'manual');

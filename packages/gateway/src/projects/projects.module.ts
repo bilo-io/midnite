@@ -1,11 +1,11 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
 import { MemoriesModule } from '../memories/memories.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { TerminalModule } from '../terminal/terminal.module';
 import { ProjectSourcesMigrationService } from './project-sources-migration.service';
+import { ProjectsCoreModule } from './projects-core.module';
 import { ProjectsController } from './projects.controller';
-import { ProjectsRepository } from './projects.repository';
 import { ProjectsService } from './projects.service';
 
 @Module({
@@ -13,12 +13,15 @@ import { ProjectsService } from './projects.service';
     AgentModule,
     TasksModule,
     MemoriesModule,
-    // forwardRef: TerminalModule imports ProjectsModule back (cwd resolution for
-    // session PTYs) — see terminal.module.ts's matching forwardRef.
-    forwardRef(() => TerminalModule),
+    ProjectsCoreModule,
+    // Phase 84 D retired the forwardRef here: TerminalModule no longer imports
+    // ProjectsModule (cwd resolution moved to CwdModule, which reaches the
+    // stored workDir through ProjectsCoreModule), so this edge is one-way again
+    // — ProjectsService → TerminalService for Preview/Build ad-hoc terminals.
+    TerminalModule,
   ],
   controllers: [ProjectsController],
-  providers: [ProjectsService, ProjectsRepository, ProjectSourcesMigrationService],
+  providers: [ProjectsService, ProjectSourcesMigrationService],
   exports: [ProjectsService],
 })
 export class ProjectsModule {}

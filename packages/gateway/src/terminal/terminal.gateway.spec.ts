@@ -3,8 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
-import type { ProjectsService } from '../projects/projects.service';
-import type { ReposService } from '../repos/repos.service';
+import type { CwdResolverService } from '../cwd/cwd-resolver.service';
 import type { AgentsService } from '../agents/agents.service';
 import type { ConnectionRegistry } from '../ws/connection-registry';
 import { TerminalGateway } from './terminal.gateway';
@@ -16,8 +15,7 @@ import type { ApprovalService } from './approval.service';
 // pin the message protocol: zod validation, token auth, and message dispatch.
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
-const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
-const noRepos = { findByName: () => undefined } as unknown as ReposService;
+const noCwd = { resolveForTask: () => process.cwd() } as unknown as CwdResolverService;
 const noAgents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined } as unknown as AgentsService;
 
 const noRegistry = { register: () => {}, deregister: () => {} } as unknown as ConnectionRegistry;
@@ -107,7 +105,7 @@ describe('TerminalGateway', () => {
     gateway: TerminalGateway;
   } {
     const config = makeConfig(terminal);
-    service = new TerminalService(config, noTasks, noProjects, noRepos, noAgents, noApprovals);
+    service = new TerminalService(config, noTasks, noCwd, noAgents, noApprovals);
     return { service, gateway: new TerminalGateway(service, noApprovals, config, noRegistry) };
   }
 
@@ -118,7 +116,7 @@ describe('TerminalGateway', () => {
 
   it('closes with 4001 when JWT auth is on and no token is supplied', () => {
     const config = makeConfig({ command: 'cat' });
-    service = new TerminalService(config, noTasks, noProjects, noRepos, noAgents, noApprovals);
+    service = new TerminalService(config, noTasks, noCwd, noAgents, noApprovals);
     const jwtEnabled = { enabled: true, verifyAccessToken: () => ({ sub: 'u' }) } as never;
     const gateway = new TerminalGateway(service, noApprovals, config, noRegistry, jwtEnabled);
 

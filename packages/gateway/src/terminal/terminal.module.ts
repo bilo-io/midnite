@@ -4,8 +4,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { AgentsModule } from '../agents/agents.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
 import { AuthModule } from '../auth/auth.module';
-import { ProjectsModule } from '../projects/projects.module';
-import { ReposModule } from '../repos/repos.module';
+import { CwdModule } from '../cwd/cwd.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { ApprovalController } from './approval.controller';
 import { ApprovalEventBus } from './approval-event-bus';
@@ -22,11 +21,11 @@ import { SPAWNER, type Spawner } from './spawner/spawner';
 @Module({
   imports: [
     TasksModule,
-    // forwardRef: ProjectsModule now imports TerminalModule back (Preview/Build
-    // ad-hoc terminals), same cycle shape as the ApprovalsModule one below.
-    forwardRef(() => ProjectsModule),
+    // Phase 84 D: cwd resolution moved to CwdModule, which retired the
+    // TerminalModule ↔ ProjectsModule forwardRef (ProjectsModule still imports
+    // this one for Preview/Build ad-hoc terminals — now a one-way edge).
+    CwdModule,
     AgentsModule,
-    ReposModule,
     forwardRef(() => ApprovalsModule),
     AuthModule,
   ],

@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
-import type { ProjectsService } from '../projects/projects.service';
+import { CwdResolverService } from '../cwd/cwd-resolver.service';
+import type { ProjectsRepository } from '../projects/projects.repository';
 import type { ReposService } from '../repos/repos.service';
 import type { AgentsService } from '../agents/agents.service';
 import {
@@ -35,7 +36,8 @@ afterEach(() => {
 });
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
-const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
+const noCwd = { resolveForTask: () => process.cwd() } as unknown as CwdResolverService;
+const noProjectRows = { getProject: () => undefined } as unknown as ProjectsRepository;
 const noRepos = { findByName: () => undefined } as unknown as ReposService;
 const noAgents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined } as unknown as AgentsService;
 
@@ -53,8 +55,7 @@ function makeService(terminal: Record<string, unknown>): TerminalService {
   return new TerminalService(
     makeConfig(terminal),
     noTasks,
-    noProjects,
-    noRepos,
+    noCwd,
     noAgents,
     noApprovals,
   );
@@ -157,8 +158,7 @@ describe('TerminalService', () => {
     service = new TerminalService(
       makeConfig({}),
       noTasks,
-      noProjects,
-      noRepos,
+      noCwd,
       noAgents,
       noApprovals,
       fakeSpawner,
@@ -198,8 +198,9 @@ describe('TerminalService', () => {
     service = new TerminalService(
       makeConfig({}),
       noTasks,
-      noProjects,
-      noRepos,
+      // The real resolver — the profile fallback lives there since Phase 84 D,
+      // so stubbing it would make this assertion tautological.
+      new CwdResolverService(noProjectRows, noRepos, agents),
       agents,
       noApprovals,
       fakeSpawner,
@@ -229,8 +230,7 @@ describe('TerminalService', () => {
     service = new TerminalService(
       makeConfig({}),
       noTasks,
-      noProjects,
-      noRepos,
+      noCwd,
       noAgents, // getDefaultWorkDir() → undefined
       noApprovals,
       fakeSpawner,
@@ -598,5 +598,42 @@ describe('managed runs', () => {
       { onData: () => {}, onExit: () => {} },
     );
     expect(second.ok).toBe(false);
+  });
+});
+
+// Phase 84 Theme D — `resolveCwd` is the terminal's half of the one shared
+// resolver. It must only look the task up and hand it over; any directory logic
+// living here again is the divergence this closed.
+describe('resolveCwd delegates to the shared resolver (Phase 84 D)', () => {
+  const task = { id: 't1', projectId: 'p1', repo: 'gateway' };
+
+  function makeWithResolver() {
+    const resolveForTask = vi.fn(() => '/resolved/by/the/resolver');
+    const service = new TerminalService(
+      makeConfig({}),
+      { listTasks: () => [task] } as unknown as TasksService,
+      { resolveForTask } as unknown as CwdResolverService,
+      noAgents,
+      noApprovals,
+    );
+    return { service, resolveForTask };
+  }
+
+  it('passes the session’s task through and returns what the resolver says', () => {
+    const { service, resolveForTask } = makeWithResolver();
+    expect(service.resolveCwd('t1')).toBe('/resolved/by/the/resolver');
+    expect(resolveForTask).toHaveBeenCalledWith(task);
+  });
+
+  it('resolves an unknown / ad-hoc session id with no task', () => {
+    const { service, resolveForTask } = makeWithResolver();
+    expect(service.resolveCwd('adhoc-123')).toBe('/resolved/by/the/resolver');
+    expect(resolveForTask).toHaveBeenCalledWith(undefined);
+  });
+
+  it('resolves with no session id at all', () => {
+    const { service, resolveForTask } = makeWithResolver();
+    service.resolveCwd();
+    expect(resolveForTask).toHaveBeenCalledWith(undefined);
   });
 });
