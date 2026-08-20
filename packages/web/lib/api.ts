@@ -137,6 +137,12 @@ import {
   ProjectsPageSchema,
   RepoResponseSchema,
   ReposPageSchema,
+  GithubConnectionResponseSchema,
+  GithubReposResponseSchema,
+  ImportGithubRepoResponseSchema,
+  type GithubConnection,
+  type GithubReposResponse,
+  type ImportGithubRepoRequest,
   RepoStatusResponseSchema,
   type RepoStatusResponse,
   type RunProjectCommandRequest,
@@ -1491,6 +1497,41 @@ export async function updateRepo(id: string, body: UpdateRepoRequest): Promise<R
 
 export async function deleteRepo(id: string): Promise<void> {
   await fetchJson(`/repos/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// --- Connected GitHub (Phase 84 Theme B: repo discovery & checkout matching) ---
+
+/** GitHub connection state. Always resolves — `connected: false` is an answer, not an error. */
+export async function getGithubConnection(signal?: AbortSignal): Promise<GithubConnection> {
+  const { connection } = await fetchJson(
+    '/github/connection',
+    { signal },
+    GithubConnectionResponseSchema,
+  );
+  return connection;
+}
+
+/**
+ * The signed-in user's GitHub repositories, annotated with whether each is already a
+ * midnite repo, sitting on disk, or not checked out. Throws an {@link ApiError} with
+ * status 409 when nothing is connected — callers branch on that to prompt a connection.
+ */
+export async function getGithubRepos(opts?: {
+  refresh?: boolean;
+  signal?: AbortSignal;
+}): Promise<GithubReposResponse> {
+  const query = opts?.refresh ? '?refresh=1' : '';
+  return fetchJson(`/github/repos${query}`, { signal: opts?.signal }, GithubReposResponseSchema);
+}
+
+/** Import a browsed GitHub repo into the registry. */
+export async function importGithubRepo(body: ImportGithubRepoRequest): Promise<Repo> {
+  const { repo } = await fetchJson(
+    '/github/repos/import',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ImportGithubRepoResponseSchema,
+  );
+  return repo;
 }
 
 // --- Memories (markdown knowledge entries, global or project-scoped) ---

@@ -699,6 +699,34 @@
       "branchPrefix": "feature/"
     },
     "addRepo": "Repo hinzufügen",
+    "browse": {
+      "action": "Meine GitHub-Repositorys durchsuchen",
+      "title": "Ihre GitHub-Repositorys",
+      "refresh": "Von GitHub aktualisieren",
+      "searchLabel": "Repositorys suchen",
+      "searchPlaceholder": "Nach Name oder Beschreibung filtern",
+      "ownerLabel": "Nach Eigentümer filtern",
+      "allOwners": "Alle Eigentümer",
+      "noMatches": "Keine Repositorys entsprechen Ihren Filtern.",
+      "private": "Privates Repository",
+      "archived": "Archiviert",
+      "scannedRoots": "Nach lokalen Kopien gesucht in {roots}",
+      "noScanRoots": "Keine Ordner zum Durchsuchen — setzen Sie github.checkoutRoots in midnite.json, oder registrieren Sie ein Repo, damit dessen übergeordneter Ordner durchsucht wird.",
+      "notConnected": {
+        "title": "GitHub ist nicht verbunden",
+        "description": "Verbinden Sie ein GitHub-Konto (oder konfigurieren Sie ein GitHub-Token), um Ihre Repositorys hier zu durchsuchen."
+      },
+      "states": {
+        "registered": "Bereits registriert",
+        "onDisk": "Auf der Festplatte unter {path}",
+        "notCheckedOut": "Lokal nicht ausgecheckt"
+      },
+      "actions": {
+        "import": "Importieren",
+        "added": "Hinzugefügt",
+        "addManually": "Manuell hinzufügen"
+      }
+    },
     "aria": {
       "name": "Repo-Name",
       "path": "Repo-Pfad",

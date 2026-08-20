@@ -699,6 +699,34 @@
       "branchPrefix": "feature/"
     },
     "addRepo": "Add repo",
+    "browse": {
+      "action": "Browse my GitHub repos",
+      "title": "Your GitHub repositories",
+      "refresh": "Refresh from GitHub",
+      "searchLabel": "Search repositories",
+      "searchPlaceholder": "Filter by name or description",
+      "ownerLabel": "Filter by owner",
+      "allOwners": "All owners",
+      "noMatches": "No repositories match your filters.",
+      "private": "Private repository",
+      "archived": "Archived",
+      "scannedRoots": "Scanned for checkouts in {roots}",
+      "noScanRoots": "No checkout folders to scan — set github.checkoutRoots in midnite.json, or register a repo so its parent folder is scanned.",
+      "notConnected": {
+        "title": "GitHub is not connected",
+        "description": "Connect a GitHub account (or configure a GitHub token) to browse your repositories from here."
+      },
+      "states": {
+        "registered": "Already registered",
+        "onDisk": "On disk at {path}",
+        "notCheckedOut": "Not checked out locally"
+      },
+      "actions": {
+        "import": "Import",
+        "added": "Added",
+        "addManually": "Add manually"
+      }
+    },
     "aria": {
       "name": "Repo name",
       "path": "Repo path",
