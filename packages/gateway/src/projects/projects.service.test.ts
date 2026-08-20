@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Task, TaskStatusCounts } from '@midnite/shared';
+import type { ProjectRepo, Task, TaskStatusCounts } from '@midnite/shared';
 import type { ProjectInsert, ProjectRow } from '../db/schema';
 import type { BreakdownService } from '../agent/breakdown.service';
 import type { LlmService } from '../agent/llm/llm.service';
@@ -20,6 +20,14 @@ const breakdownStub = {
 
 // Scoped memories are empty in these tests; plan generation reads them for sources.
 const memoriesStub = { listScoped: () => [] } as unknown as MemoriesService;
+// Phase 84 C — ProjectsService validates a repo id on attach. These specs never
+// attach, so an empty registry (every `get` throws, like the real service) is
+// enough and keeps the repo-edge paths honest if one ever does.
+const reposStub = {
+  get: (id: string) => {
+    throw new Error(`repo ${id} not found`);
+  },
+} as unknown as import('../repos/repos.service').ReposService;
 
 class InMemoryProjectsRepo extends ProjectsRepository {
   readonly projects = new Map<string, ProjectRow>();
@@ -53,6 +61,30 @@ class InMemoryProjectsRepo extends ProjectsRepository {
 
   override getProject(id: string): ProjectRow | undefined {
     return this.projects.get(id);
+  }
+
+  // Phase 84 C — these specs cover no repo edges, so the fake models an install
+  // where nothing is attached: no repos, and the effective directory is just the
+  // stored workDir. The edge behaviour itself is covered against a real
+  // `:memory:` SQLite in `project-repos.spec.ts`.
+  override listReposForProject(): ProjectRepo[] {
+    return [];
+  }
+
+  override reposForProjectIds(): Map<string, ProjectRepo[]> {
+    return new Map();
+  }
+
+  override effectiveWorkDirFor(id: string): string | undefined {
+    return this.projects.get(id)?.workDir ?? undefined;
+  }
+
+  override listProjectsWithoutRepos(): ProjectRow[] {
+    return [...this.projects.values()];
+  }
+
+  override listAllRepos(): Array<{ id: string; path: string }> {
+    return [];
   }
 
   override listProjects(): ProjectRow[] {
@@ -132,6 +164,7 @@ describe('ProjectsService', () => {
       memoriesStub,
       breakdownStub,
       makeTerminalStub().service,
+      reposStub,
     );
     const project = await service.createProject({
       name: 'Atlas',
@@ -155,6 +188,7 @@ describe('ProjectsService', () => {
       memoriesStub,
       breakdownStub,
       makeTerminalStub().service,
+      reposStub,
     );
     const out = await service.enhanceDescription({ description: '  rough notes  ' });
     expect(out).toBe('rough notes');
@@ -171,6 +205,7 @@ describe('ProjectsService', () => {
       memoriesStub,
       breakdownStub,
       makeTerminalStub().service,
+      reposStub,
     );
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
@@ -190,6 +225,7 @@ describe('ProjectsService', () => {
       memoriesStub,
       breakdownStub,
       makeTerminalStub().service,
+      reposStub,
     );
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
@@ -212,6 +248,7 @@ describe('ProjectsService', () => {
       memoriesStub,
       breakdownStub,
       makeTerminalStub().service,
+      reposStub,
       undefined,
       audit,
     );
@@ -237,7 +274,15 @@ describe('ProjectsService', () => {
       const repo = new InMemoryProjectsRepo();
       const { service: tasks } = makeTasksStub();
       const { service: terminal, createAdHocTerminal, spawnManagedRun } = makeTerminalStub();
-      const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub, terminal);
+      const service = new ProjectsService(
+        repo,
+        disabledLlm,
+        tasks,
+        memoriesStub,
+        breakdownStub,
+        terminal,
+        reposStub,
+      );
       const project = await service.createProject({
         name: 'Atlas',
         tag: 'atlas',
@@ -335,6 +380,7 @@ describe('ProjectsService', () => {
         memoriesStub,
         breakdownStub,
         makeTerminalStub().service,
+        reposStub,
       );
       expect(() => service.previewProject('nope')).toThrow(NotFoundException);
     });
@@ -362,6 +408,7 @@ describe('ProjectsService.getRepoStatus / initRepo (local git status — no remo
       memoriesStub,
       breakdownStub,
       makeTerminalStub().service,
+      reposStub,
     );
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
     if (workDir !== null) repo.updateProject(project.id, { workDir });

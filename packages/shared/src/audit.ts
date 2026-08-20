@@ -53,6 +53,12 @@ export const AuditActionSchema = z.enum([
   'project.created',
   'project.updated',
   'project.deleted',
+  // Phase 84 Theme C — project ↔ repo edges. `project.repo_primary_changed` is
+  // audited separately from attach/detach because it moves the project's
+  // effective working directory, i.e. where its agents will run.
+  'project.repo_attached',
+  'project.repo_detached',
+  'project.repo_primary_changed',
   // Phase 59 F — chat-to-board: who ran what NL command + what it changed, and undos.
   'chat.command',
   'chat.undo',

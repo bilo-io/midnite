@@ -384,6 +384,33 @@ export const repos = sqliteTable(
   }),
 );
 
+// Project ↔ repo edges (Phase 84 Theme C): a project spans many repos and a repo
+// can serve many projects. Plain intra-domain id refs, no cross-domain FKs. The
+// project's `repos` array is DERIVED from these rows, never stored on the project
+// (mirroring how Phase 27 derives a task's `dependsOn`).
+//
+// Exactly one edge per project carries `is_primary`, maintained by the service —
+// attaching to an empty set promotes, and detaching the primary promotes the
+// oldest survivor — so the "effective working directory" lookup never has to
+// choose between two candidates or cope with none.
+export const projectRepos = sqliteTable(
+  'project_repos',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    repoId: text('repo_id').notNull(),
+    isPrimary: integer('is_primary', { mode: 'boolean' }).notNull().default(false),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    // One edge per pair; indexed both ways because both directions are queried
+    // (a project's repos on every project read, a repo's projects on delete).
+    pairIdx: uniqueIndex('project_repos_pair_idx').on(t.projectId, t.repoId),
+    projectIdx: index('project_repos_project_idx').on(t.projectId),
+    repoIdx: index('project_repos_repo_idx').on(t.repoId),
+  }),
+);
+
 // Memories: markdown knowledge entries injected into agent prompts. project_id
 // null = global (applies to every project); otherwise scoped to that project.
 export const memories = sqliteTable(
@@ -851,6 +878,7 @@ export type PrStatusRow = typeof prStatus.$inferSelect;
 export type PrStatusInsert = typeof prStatus.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
+export type ProjectRepoRow = typeof projectRepos.$inferSelect;
 export type RepoRow = typeof repos.$inferSelect;
 export type RepoInsert = typeof repos.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;
