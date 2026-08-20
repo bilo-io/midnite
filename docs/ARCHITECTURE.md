@@ -312,9 +312,14 @@ subscribe to the same session — they all receive the same broadcast.
 ### Lifecycle: spawn, bind, reap
 
 - **Spawn on demand.** Attaching to a session with no live PTY spawns one. The
-  working directory is resolved (`resolveCwd`) from the task's project workDir →
-  configured repo path → gateway cwd, and the launch command is the agent CLI
-  for the current global preference (e.g. `cd <cwd> && clear && claude`).
+  working directory comes from the one shared resolver (`CwdResolverService`,
+  Phase 84 D): the task's **repo path** → project `workDir` → the profile
+  fallback → the gateway cwd. The repo only outranks the project when it
+  resolves at or under the project's `workDir`; a repo pointing elsewhere defers
+  to the project and logs a mismatch warning. The same resolver serves the
+  quality gate and the manual check trigger, so an agent and its checks can
+  never disagree about the directory. The launch command is the agent CLI for
+  the current global preference (e.g. `cd <cwd> && clear && claude`).
 - **Env wiring.** The PTY inherits `process.env` (optionally scrubbing secrets
   unless `terminal.inheritSecrets`), and sets `TERM=xterm-256color` plus
   `MIDNITE_SESSION_ID`, `MIDNITE_HOOK_SECRET`, `MIDNITE_GATEWAY_URL` — the wiring

@@ -1489,11 +1489,22 @@ export class TasksService implements OnModuleDestroy {
     // `repo.path` on its own, ignoring the task's project entirely, so a manual
     // check could validate a tree the agent had never worked in. `repo` is still
     // required above because it selects *which* checks run; this only decides
-    // where. The `??` tail covers unit specs that construct TasksService without
-    // the resolver — the real app always injects it.
-    const cwd =
-      this.cwd?.resolveForTask(task) ??
-      (repo.path.startsWith('~/') ? join(homedir(), repo.path.slice(2)) : repo.path);
+    // where.
+    //
+    // The fallback exists for unit specs that build this service by hand. In the
+    // real app the resolver is always wired, so reaching it means DI failed — and
+    // a silent revert to the old, wrong directory is exactly the fail-open shape
+    // `di-explicit-inject.test.ts` was written about. Make it loud.
+    let cwd: string;
+    if (this.cwd) {
+      cwd = this.cwd.resolveForTask(task);
+    } else {
+      this.logger.error(
+        'CwdResolverService is not wired — manual checks are falling back to the raw repo path ' +
+          'and may run somewhere the agent never did (check TasksModule imports CwdModule)',
+      );
+      cwd = repo.path.startsWith('~/') ? join(homedir(), repo.path.slice(2)) : repo.path;
+    }
 
     this.recordCheckEvent(taskId, 'checks.started');
     const run = await this.checks.run(taskId, resolved, cwd, 'manual');

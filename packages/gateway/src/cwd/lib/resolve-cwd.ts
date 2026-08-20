@@ -1,4 +1,5 @@
-import { isAbsolute, relative, resolve } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 import { expandTilde } from '../../fs/path-tilde';
 
@@ -29,9 +30,20 @@ import { expandTilde } from '../../fs/path-tilde';
  * prevented at the source instead of merely detected.
  *
  * Each candidate is used only when non-empty, so a missing earlier candidate
- * cleanly defers to the next. Paths are compared in expanded, absolute form but
+ * cleanly defers to the next. Paths are compared in **canonical** form but
  * returned exactly as supplied (still `~`-form when the caller stored them that
  * way) — expansion of the winner stays the caller's job, as before.
+ *
+ * "Canonical" means `realpath`, not merely `resolve`, because two of the three
+ * things that break a naive string comparison are everyday on this project's
+ * primary platform: macOS's default APFS volume is **case-insensitive**, so
+ * `~/Dev/Midnite` and `~/Dev/midnite` are one directory that `relative()` reports
+ * as unrelated; and a **symlinked** checkout (this repo's own `.worktrees/`
+ * convention invites them) resolves to a path outside the project it plainly
+ * lives in. Both would silently demote a correct repo *and* fire the mismatch
+ * warning at a user who has nothing to fix. `realpath` needs the path to exist,
+ * so a candidate that doesn't yet falls back to `resolve` — the pure comparison,
+ * which is also what the injectable {@link canonicalise} seam lets tests use.
  */
 export type CwdChoice = {
   /** The directory the session should run in, as supplied (possibly `~`-form). */
@@ -53,12 +65,17 @@ export function pickSessionCwd(opts: {
   gatewayCwd: string;
   /** Injectable home directory for `~` expansion during containment checks. */
   home?: string;
+  /**
+   * Injectable path canonicaliser, for tests that want the comparison to stay
+   * pure. Defaults to {@link canonicalPath} (realpath, falling back to resolve).
+   */
+  canonicalise?: (path: string) => string;
 }): CwdChoice {
   const projectWorkDir = nonEmpty(opts.projectWorkDir);
   const repoPath = nonEmpty(opts.repoPath);
 
   if (repoPath && projectWorkDir) {
-    return isWithin(repoPath, projectWorkDir, opts.home)
+    return isWithin(repoPath, projectWorkDir, opts.home, opts.canonicalise)
       ? { cwd: repoPath, source: 'repo' }
       : { cwd: projectWorkDir, source: 'project', repoOutsideProject: true };
   }
@@ -71,13 +88,34 @@ export function pickSessionCwd(opts: {
 }
 
 /** Is `child` the same directory as `parent`, or nested inside it? */
-function isWithin(child: string, parent: string, home?: string): boolean {
-  const rel = relative(absolute(parent, home), absolute(child, home));
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+function isWithin(
+  child: string,
+  parent: string,
+  home?: string,
+  canonicalise: (path: string) => string = canonicalPath,
+): boolean {
+  const rel = relative(
+    canonicalise(expandTilde(parent, home)),
+    canonicalise(expandTilde(child, home)),
+  );
+  // `rel === ''` is the same directory. Otherwise it escapes iff it *is* `..` or
+  // starts with `../` — testing `startsWith('..')` alone would wrongly reject a
+  // legitimate child named e.g. `..cache`.
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 }
 
-function absolute(path: string, home?: string): string {
-  return resolve(home === undefined ? expandTilde(path) : expandTilde(path, home));
+/**
+ * A path in comparable form: `realpath` when it exists (canonicalises case on a
+ * case-insensitive volume and follows symlinks), else a plain `resolve`.
+ */
+function canonicalPath(path: string): string {
+  const absolute = resolve(path);
+  try {
+    return realpathSync.native(absolute);
+  } catch {
+    // Doesn't exist (yet) — a lexical comparison is the best available.
+    return absolute;
+  }
 }
 
 function nonEmpty(value: string | null | undefined): string | undefined {

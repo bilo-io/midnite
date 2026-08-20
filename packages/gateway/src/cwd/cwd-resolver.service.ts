@@ -1,6 +1,7 @@
 import { homedir } from 'node:os';
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
+
 import type { Task } from '@midnite/shared';
 
 import { AgentsService } from '../agents/agents.service';
@@ -57,9 +58,10 @@ export class CwdResolverService {
       gatewayCwd: process.cwd(),
     });
 
-    // Both branches only fire when the task carried a repo *and* a project, i.e.
-    // exactly the case whose resolution Phase 84 D changed — so the log is a
-    // record of the new behaviour, not noise on every spawn.
+    // Both branches are narrow to the case whose resolution Phase 84 D changed —
+    // a task carrying a repo *and* a project. Note this resolves per call, not
+    // once per task (spawn, every session open/reattach, and every gate run), so
+    // a long-lived task with both set will repeat its line.
     if (choice.source === 'repo' && projectWorkDir) {
       this.logger.log(
         `task ${task?.id}: running in repo ${choice.cwd} (inside project workDir ${projectWorkDir})`,
