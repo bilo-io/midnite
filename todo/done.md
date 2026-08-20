@@ -4,6 +4,54 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-20 — fix: Phase 84 Theme D — a task's repo now decides its working directory ◐
+
+Closed a bug that was live on `main`: an agent could be spawned in the wrong tree,
+and its checks validated in a third one. Three call sites each derived a task's
+working directory for themselves.
+
+**The precedence was backwards.** `pickSessionCwd()` put `project.workDir` ahead of
+`task.repo`, so a task naming `packages/gateway` inside a monorepo project spawned
+the agent at the monorepo root. The repo is the more specific signal and now wins —
+but **containment-gated** (user decision, over the doc's unconditional inversion):
+the repo only wins when it resolves at or under the project's `workDir`. A repo
+pointing somewhere else entirely still defers to the project, because quietly
+relocating an agent to an unrelated checkout is worse than the bug being fixed.
+That surviving mismatch is logged as a `warn` naming both paths, so it's greppable
+until Theme C's `project_repos` join can prevent it at the source.
+
+**The doc's "second resolution path" was already fixed — the real one was
+elsewhere.** `AgentRunnerService.completeWithChecks` already went through
+`TerminalService.resolveCwd`. `TasksService.runManualCheck` did not: it expanded
+`repo.path` itself and ignored the project entirely, so the manual "run checks"
+button could report green on a tree the agent had never touched. Found by reading
+the code rather than the plan.
+
+**One resolver, and a forwardRef gone.** `CwdResolverService` depends on
+`ProjectsRepository` (via a new `ProjectsCoreModule`) rather than `ProjectsService`
+— which is what lets `TasksModule` reach it without closing a cycle back through
+`ProjectsModule → TasksModule`, and as a side effect retires the
+`TerminalModule ↔ ProjectsModule` forwardRef entirely, since cwd resolution was the
+only reason that edge was mutual. Verified by booting the real gateway on a scratch
+port + DB, not just by unit tests.
+
+**Two bullets deferred to Theme C**, which owns the `project_repos` join they need:
+scoping the resolver's repo lookup to the project, and scoping the task repo picker.
+Theme D therefore lands `◐ PARTIAL`.
+
+- [x] Containment-gated precedence in `pickSessionCwd()`, returning a `CwdChoice`
+      (`cwd` + winning `source` + `repoOutsideProject`) so the caller can log why
+- [x] `CwdResolverService` + `CwdModule` + `ProjectsCoreModule`; terminal spawn,
+      quality gate and manual checks all delegate to it
+- [x] `TerminalModule ↔ ProjectsModule` forwardRef retired
+- [x] Info log when the repo supersedes the project dir; warn (naming both paths)
+      when it resolves outside and the project wins anyway
+- [x] Table-driven matrix on the pure helper *and* the resolver service, plus
+      call-through assertions pinning all three paths to the shared resolver
+- [x] `resolve-cwd.ts` docblock records Phase 84 D as superseding Phase 13 §4
+
+---
+
 ## 2026-08-19 — feat: Phase 81 Theme E — desktop title bar closed out 🟢
 
 Closed the last theme of Phase 81. The outstanding items were all "verify it by
