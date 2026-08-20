@@ -304,11 +304,11 @@ export class AgentRunnerService implements OnModuleInit, OnModuleDestroy {
 
     // Run the gate where the AGENT ran, not where `task.repo` points. These
     // were separate derivations, and they disagreed whenever the task's project
-    // carried a `workDir`: `pickSessionCwd` puts the project directory ahead of
-    // the repo path, so the agent worked in one tree while its checks validated
-    // another — a green gate for code that was never examined. One resolver now
-    // serves both. `repo` is still required above, because it selects *which*
-    // checks run; this only decides where they run.
+    // carried a `workDir`, so the agent worked in one tree while its checks
+    // validated another — a green gate for code that was never examined. One
+    // resolver now serves both (and since Phase 84 D the manual-check trigger
+    // too). `repo` is still required above, because it selects *which* checks
+    // run; this only decides where they run.
     const cwd = this.terminal.resolveCwd(taskId);
 
     this.tasks.recordCheckEvent(taskId, 'checks.started');

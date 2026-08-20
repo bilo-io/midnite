@@ -681,11 +681,11 @@ describe('AgentRunnerService', () => {
 
   describe('completeWithChecks', () => {
     it('runs the gate where the AGENT ran, not where task.repo points', async () => {
-      // The divergence this fixes: the agent's cwd comes from pickSessionCwd
-      // (project workDir → repo path → fallback), while the gate derived its own
-      // from `task.repo` alone. With a project workDir set, the agent worked in
-      // one tree and its checks validated another — a green gate for code that
-      // was never examined. Both now come from the one resolver.
+      // The divergence this fixes: the agent's cwd comes from the shared
+      // resolver, while the gate derived its own from `task.repo` alone. With a
+      // project workDir set, the agent worked in one tree and its checks
+      // validated another — a green gate for code that was never examined.
+      // Both now come from the one resolver.
       const t = fakeGateTask('t1', 'myrepo');
       const checks = fakeChecks(passRun());
       // The registry says one thing; the session resolver says another.

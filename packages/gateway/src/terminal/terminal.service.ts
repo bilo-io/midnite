@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger, forwardRef, type OnModuleDestroy } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { AGENT_CLI_COMMAND, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 
@@ -9,12 +8,9 @@ import { gatewaySecretEnvNames, scrubGatewaySecrets } from '../config/gateway-se
 import { MIDNITE_CONFIG } from '../config.token';
 import { safeEqual } from '../auth/lib/auth-policy';
 import { AgentsService } from '../agents/agents.service';
-import { expandTilde } from '../fs/path-tilde';
-import { ProjectsService } from '../projects/projects.service';
-import { ReposService } from '../repos/repos.service';
+import { CwdResolverService } from '../cwd/cwd-resolver.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
-import { pickSessionCwd } from './lib/resolve-cwd';
 import { PtySpawner } from './spawner/pty-spawner';
 import {
   SPAWNER,
@@ -175,10 +171,10 @@ export class TerminalService implements OnModuleDestroy {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
-    // forwardRef: ProjectsService now injects TerminalService back (Preview/Build
-    // ad-hoc terminals), making this a genuine constructor cycle.
-    @Inject(forwardRef(() => ProjectsService)) private readonly projects: ProjectsService,
-    @Inject(ReposService) private readonly repos: ReposService,
+    // Phase 84 D — the one cwd resolver, shared with the manual-checks path.
+    // Replaced the ProjectsService (forwardRef) + ReposService pair this service
+    // used to consult itself, which is what made the cycle genuine.
+    @Inject(CwdResolverService) private readonly cwd: CwdResolverService,
     @Inject(AgentsService) private readonly agents: AgentsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
     @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
@@ -959,38 +955,23 @@ export class TerminalService implements OnModuleDestroy {
     return this.handles.get(sessionId)?.subscribers.size ?? 0;
   }
 
-  // cwd resolution for a session's PTY, in priority order:
-  //   1. the work directory configured on the session's project (expanded from ~)
-  //   2. the session's task repo (resolved name→path via the repo registry)
-  //   3. the global fallback working directory (set on the profile page)
-  //   4. the gateway's working directory
   /**
-   * The working directory a session runs in — project workDir → repo path →
-   * fallback → gateway cwd ({@link pickSessionCwd}), with `~` expanded.
+   * The working directory a session's PTY runs in, delegated to the one
+   * resolver ({@link CwdResolverService}) — repo (when it sits inside the
+   * project) → project workDir → profile fallback → gateway cwd, `~` expanded.
    *
    * Public because the **quality-gate checks must run where the agent ran**.
    * `AgentRunnerService` used to derive its own cwd from `task.repo` alone,
    * which diverged whenever a project carried a `workDir`: the agent worked in
    * the project directory while its checks validated a different tree. Two
-   * resolvers could not be kept in agreement, so there is now one.
+   * resolvers could not be kept in agreement, so there is now one — and since
+   * Phase 84 D it is shared with the manual-checks trigger too.
+   *
+   * An unknown / ad-hoc session id finds no task and resolves to the fallback.
    */
   resolveCwd(sessionId?: string): string {
-    let projectWorkDir: string | undefined;
-    let repoPath: string | undefined;
-    if (sessionId) {
-      const task = this.tasks.listTasks().find((t) => t.id === sessionId);
-      if (task?.projectId) projectWorkDir = this.projects.workDirFor(task.projectId);
-      if (task?.repo) repoPath = this.repos.findByName(task.repo)?.path;
-    }
-    const chosen = pickSessionCwd({
-      projectWorkDir,
-      repoPath,
-      fallback: this.agents.getDefaultWorkDir(),
-      gatewayCwd: process.cwd(),
-    });
-    // expandTilde is a no-op on the already-absolute gateway cwd, so applying it
-    // uniformly to whichever candidate won preserves the prior per-branch calls.
-    return expandTilde(chosen, homedir());
+    const task = sessionId ? this.tasks.listTasks().find((t) => t.id === sessionId) : undefined;
+    return this.cwd.resolveForTask(task);
   }
 
   /** Build a sequenced output frame from a raw PTY chunk (allocates the next

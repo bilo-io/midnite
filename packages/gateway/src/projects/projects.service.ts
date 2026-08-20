@@ -5,7 +5,6 @@ import {
   Logger,
   NotFoundException,
   Optional,
-  forwardRef,
 } from '@nestjs/common';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -35,9 +34,11 @@ import { MemoriesService } from '../memories/memories.service';
 import { projectToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
-// forwardRef: TerminalService injects ProjectsService (session cwd resolution),
-// so this is a genuine constructor cycle — see terminal.service.ts's matching
-// forwardRef on its ProjectsService injection.
+// Phase 84 D retired the forwardRef here: TerminalService's only reason to inject
+// ProjectsService was session cwd resolution, which now lives in
+// CwdResolverService (reaching the stored workDir via ProjectsCoreModule). The
+// edge is one-way again — ProjectsService → TerminalService, for the
+// Preview/Build ad-hoc terminals below.
 import { TerminalService } from '../terminal/terminal.service';
 import { backgroundRunSpec, buildRunInitCommand } from './lib/run-command';
 import { projectReportFilename, projectToMarkdown } from './lib/project-report';
@@ -82,7 +83,7 @@ export class ProjectsService {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
-    @Inject(forwardRef(() => TerminalService)) private readonly terminal: TerminalService,
+    @Inject(TerminalService) private readonly terminal: TerminalService,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
     // Phase 50 D — audit project mutations. Optional so unit specs are unaffected.

@@ -8,8 +8,7 @@ import {
   type ServerTerminalMessage,
 } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
-import type { ProjectsService } from '../projects/projects.service';
-import type { ReposService } from '../repos/repos.service';
+import type { CwdResolverService } from '../cwd/cwd-resolver.service';
 import type { AgentsService } from '../agents/agents.service';
 import type { ConnectionRegistry } from '../ws/connection-registry';
 import { TerminalGateway } from './terminal.gateway';
@@ -29,8 +28,7 @@ const config: MidniteConfig = parseConfig({
   gateway: {},
 });
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
-const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
-const noRepos = { findByName: () => undefined } as unknown as ReposService;
+const noCwd = { resolveForTask: () => process.cwd() } as unknown as CwdResolverService;
 const noAgents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined } as unknown as AgentsService;
 
 const noApprovals = {
@@ -51,7 +49,7 @@ describe('TerminalGateway (real WS transport)', () => {
   let url: string;
 
   beforeAll(async () => {
-    service = new TerminalService(config, noTasks, noProjects, noRepos, noAgents, noApprovals);
+    service = new TerminalService(config, noTasks, noCwd, noAgents, noApprovals);
     const gateway = new TerminalGateway(service, noApprovals, config, noRegistry);
     httpServer = createServer();
     wss = new WebSocketServer({ server: httpServer, path: TERMINAL_WS_PATH });
