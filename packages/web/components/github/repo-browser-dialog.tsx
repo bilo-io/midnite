@@ -58,19 +58,28 @@ export function RepoBrowserDialog({ open, onClose, onImported, onPrefill }: Repo
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
 
+  // Monotonic request id. A double-clicked Refresh (or a close-then-reopen) has two
+  // fetches in flight; without this the slower one can land last and overwrite the newer
+  // list, and the spinner would stop while a request was still running.
+  const requestId = React.useRef(0);
+
   const load = React.useCallback(
     async (refresh: boolean) => {
+      const id = (requestId.current += 1);
       setLoading(true);
       setError(null);
       setNotConnected(false);
       try {
-        setData(await getGithubRepos({ refresh }));
+        const next = await getGithubRepos({ refresh });
+        if (requestId.current !== id) return;
+        setData(next);
       } catch (e) {
+        if (requestId.current !== id) return;
         // 409 is the gateway's "no GitHub token resolvable" — a prompt, not a failure.
         if (e instanceof ApiError && e.status === 409) setNotConnected(true);
         else setError(e instanceof Error ? e.message : t('repos.errors.generic'));
       } finally {
-        setLoading(false);
+        if (requestId.current === id) setLoading(false);
       }
     },
     [t],

@@ -73,16 +73,19 @@ function renderDialog(over: Partial<Parameters<typeof RepoBrowserDialog>[0]> = {
   const onClose = vi.fn();
   const onImported = vi.fn();
   const onPrefill = vi.fn();
-  render(
+  const element = (open: boolean) => (
     <RepoBrowserDialog
-      open
+      open={open}
       onClose={onClose}
       onImported={onImported}
       onPrefill={onPrefill}
       {...over}
-    />,
+    />
   );
-  return { onClose, onImported, onPrefill };
+  const { rerender } = render(element(over.open ?? true));
+  // `setOpen` keeps the component instance (and therefore its request-sequence ref)
+  // alive across a close/reopen, which is the cycle the stale-response guard is for.
+  return { onClose, onImported, onPrefill, setOpen: (open: boolean) => rerender(element(open)) };
 }
 
 describe('RepoBrowserDialog', () => {
@@ -197,6 +200,30 @@ describe('RepoBrowserDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh from GitHub' }));
     await waitFor(() => expect(getGithubRepos).toHaveBeenCalledWith({ refresh: true }));
+  });
+
+  it('ignores a stale response when a newer request is in flight', async () => {
+    // Close-then-reopen leaves two fetches running against one component instance;
+    // without a sequence guard the slower (older) one lands last and overwrites the
+    // newer list.
+    let releaseFirst: (v: GithubReposResponse) => void = () => {};
+    getGithubRepos
+      .mockImplementationOnce(
+        () => new Promise<GithubReposResponse>((resolve) => (releaseFirst = resolve)),
+      )
+      .mockResolvedValue(response([ghRepo({ id: 2, ownerRepo: 'bilo-io/fresh' })]));
+
+    const { setOpen } = renderDialog();
+    await waitFor(() => expect(getGithubRepos).toHaveBeenCalledTimes(1));
+    setOpen(false);
+    setOpen(true);
+    expect(await screen.findByText('bilo-io/fresh')).toBeTruthy();
+
+    // The first request finally resolves — with the list that is now out of date.
+    releaseFirst(response([ghRepo({ id: 1, ownerRepo: 'bilo-io/stale' })]));
+
+    await waitFor(() => expect(screen.getByText('bilo-io/fresh')).toBeTruthy());
+    expect(screen.queryByText('bilo-io/stale')).toBeNull();
   });
 
   it('explains an empty match set by naming the folders it scanned', async () => {

@@ -113,6 +113,20 @@ describe('matchCheckouts', () => {
     expect(await readCheckoutSlug(worktree)).toBe('bilo-io/midnite');
   });
 
+  it('resolves a worktree whose own path contains a `worktrees` segment', async () => {
+    // midnite's convention is `<repo>/.worktrees/<branch>`, so the pointer string holds
+    // two `/worktrees/` segments. Truncating at the first one (`indexOf`) yields a config
+    // path that doesn't exist, and the worktree is silently reported "not checked out".
+    const primary = await makeCheckout('midnite', 'git@github.com:bilo-io/midnite.git');
+    const worktree = join(primary, '.worktrees', 'feature-x');
+    await mkdir(worktree, { recursive: true });
+    const adminDir = join(primary, '.git', 'worktrees', 'feature-x');
+    await mkdir(adminDir, { recursive: true });
+    await writeFile(join(worktree, '.git'), `gitdir: ${adminDir}\n`);
+
+    expect(await readCheckoutSlug(worktree)).toBe('bilo-io/midnite');
+  });
+
   it('is best-effort over a missing root rather than throwing', async () => {
     await expect(matchCheckouts([join(root, 'does-not-exist')])).resolves.toEqual(new Map());
   });

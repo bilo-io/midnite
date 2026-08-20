@@ -128,7 +128,10 @@ async function resolveGitConfigPath(dir: string): Promise<string | null> {
   const gitdir = /^gitdir:\s*(.+)$/m.exec(pointer)?.[1]?.trim();
   if (!gitdir) return null;
   const absolute = gitdir.startsWith('/') ? gitdir : join(dir, gitdir);
-  const worktrees = absolute.indexOf('/worktrees/');
+  // `lastIndexOf`, not `indexOf`: a checkout that itself lives under a directory called
+  // `worktrees` (midnite's own `.worktrees/<branch>` layout, for one) would otherwise
+  // truncate at the *outer* segment and point at a config path that doesn't exist.
+  const worktrees = absolute.lastIndexOf('/worktrees/');
   const commonDir = worktrees === -1 ? absolute : absolute.slice(0, worktrees);
   return join(commonDir, 'config');
 }

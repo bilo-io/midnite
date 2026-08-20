@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { GITHUB_NOT_CONNECTED_CODE, type Repo } from '@midnite/shared';
 
+import { REQUIRE_ROLE_KEY } from '../auth/decorators/require-role.decorator';
+
 import { GithubController } from './github.controller';
+import { GithubApiError } from './lib/github-rest';
 import {
   GithubNotConnectedError,
   GithubRepoNotCheckedOutError,
@@ -56,8 +59,9 @@ describe('GithubController', () => {
     await c.repos('1', { userId: 'u1' } as never);
     await c.repos(undefined, { userId: 'u1' } as never);
 
-    expect(listRepos).toHaveBeenNthCalledWith(1, 'u1', { refresh: true });
-    expect(listRepos).toHaveBeenNthCalledWith(2, 'u1', { refresh: false });
+    const scope = { userId: 'u1', teamId: undefined };
+    expect(listRepos).toHaveBeenNthCalledWith(1, scope, { refresh: true });
+    expect(listRepos).toHaveBeenNthCalledWith(2, scope, { refresh: false });
   });
 
   it('rejects an import body that is not an owner/repo slug', async () => {
@@ -85,6 +89,17 @@ describe('GithubController', () => {
     );
   });
 
+  it('gates every route at `member`, reads included', () => {
+    // These routes answer from an install-wide credential (a shared PAT, or the gateway
+    // host's `gh` auth), so an ungated read would hand a viewer the operator's private
+    // repo names and host paths. `GET /repos` is ungated because it returns rows the
+    // caller already owns; this is deliberately stricter.
+    for (const route of ['connection', 'repos', 'import'] as const) {
+      const handler = GithubController.prototype[route] as unknown as object;
+      expect(Reflect.getMetadata(REQUIRE_ROLE_KEY, handler)).toBe('member');
+    }
+  });
+
   it('answers the connection route with 200 even when disconnected', async () => {
     const c = controller({});
     await expect(c.connection(null)).resolves.toEqual({
@@ -92,10 +107,20 @@ describe('GithubController', () => {
     });
   });
 
+  it('maps an upstream GitHub failure to 502, not 500', async () => {
+    // A rate limit or an outage is not our bug; 500 would claim it was.
+    const c = controller({
+      listRepos: vi.fn(async () => {
+        throw new GithubApiError('GitHub API rate limit exceeded', 403);
+      }),
+    });
+    await expect(c.repos(undefined, null)).rejects.toMatchObject({ status: 502 });
+  });
+
   it('does not mask an unexpected failure as a GitHub-specific status', async () => {
     const c = controller({
       listRepos: vi.fn(async () => {
-        throw new Error('GitHub API rate limit exceeded');
+        throw new Error('something else entirely');
       }),
     });
     const err = await c.repos(undefined, null).catch((e: unknown) => e);

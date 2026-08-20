@@ -82,11 +82,18 @@ function fakeTokens(token: string | null): GithubTokenService {
   } as unknown as GithubTokenService;
 }
 
-function fakeRepos(rows: Repo[]): ReposService & { created: CreateRepoRequest[] } {
+function fakeRepos(
+  rows: Repo[],
+): ReposService & { created: CreateRepoRequest[]; scopes: unknown[] } {
   const created: CreateRepoRequest[] = [];
+  const scopes: unknown[] = [];
   const svc = {
     created,
-    list: vi.fn(() => rows),
+    scopes,
+    list: vi.fn((scope?: unknown) => {
+      scopes.push(scope);
+      return rows;
+    }),
     create: vi.fn((req: CreateRepoRequest) => {
       created.push(req);
       const row: Repo = {
@@ -101,8 +108,11 @@ function fakeRepos(rows: Repo[]): ReposService & { created: CreateRepoRequest[] 
       return row;
     }),
   };
-  return svc as unknown as ReposService & { created: CreateRepoRequest[] };
+  return svc as unknown as ReposService & { created: CreateRepoRequest[]; scopes: unknown[] };
 }
+
+const SCOPE = { userId: 'user-1', teamId: 'team-1' };
+const OTHER_SCOPE = { userId: 'user-2', teamId: 'team-2' };
 
 function config(checkoutRoots: string[] = []): MidniteConfig {
   return { github: { checkoutRoots } } as MidniteConfig;
@@ -136,7 +146,7 @@ describe('GithubService.listRepos', () => {
       home,
     );
 
-    const { items } = await service.listRepos('user-1');
+    const { items } = await service.listRepos(SCOPE);
 
     expect(items.map((r) => [r.ownerRepo, r.checkoutState])).toEqual([
       ['bilo-io/midnite', 'registered'],
@@ -208,14 +218,14 @@ describe('GithubService.listRepos', () => {
       home,
     );
 
-    const first = await service.listRepos('user-1');
-    const second = await service.listRepos('user-1');
+    const first = await service.listRepos(SCOPE);
+    const second = await service.listRepos(SCOPE);
     expect(first.cached).toBe(false);
     expect(second.cached).toBe(true);
     expect(second.fetchedAt).toBe(first.fetchedAt);
     expect(repoCalls(fetchImpl)).toBe(1);
 
-    const refreshed = await service.listRepos('user-1', { refresh: true });
+    const refreshed = await service.listRepos(SCOPE, { refresh: true });
     expect(refreshed.cached).toBe(false);
     expect(repoCalls(fetchImpl)).toBe(2);
   });
@@ -232,9 +242,9 @@ describe('GithubService.listRepos', () => {
       home,
     );
 
-    expect((await service.listRepos('u')).items[0]!.checkoutState).toBe('not-checked-out');
+    expect((await service.listRepos(SCOPE)).items[0]!.checkoutState).toBe('not-checked-out');
     await makeCheckout('app', 'bilo-io/app');
-    const second = await service.listRepos('u');
+    const second = await service.listRepos(SCOPE);
 
     expect(second.cached).toBe(true);
     expect(second.items[0]!.checkoutState).toBe('on-disk');
@@ -252,11 +262,11 @@ describe('GithubService.listRepos', () => {
       home,
     );
 
-    await service.listRepos('u');
+    await service.listRepos(SCOPE);
     vi.advanceTimersByTime(4 * 60 * 1000);
-    expect((await service.listRepos('u')).cached).toBe(true);
+    expect((await service.listRepos(SCOPE)).cached).toBe(true);
     vi.advanceTimersByTime(2 * 60 * 1000);
-    expect((await service.listRepos('u')).cached).toBe(false);
+    expect((await service.listRepos(SCOPE)).cached).toBe(false);
     expect(repoCalls(fetchImpl)).toBe(2);
   });
 
@@ -269,8 +279,8 @@ describe('GithubService.listRepos', () => {
       { fetchImpl },
       home,
     );
-    await service.listRepos('user-1');
-    expect((await service.listRepos('user-2')).cached).toBe(false);
+    await service.listRepos(SCOPE);
+    expect((await service.listRepos(OTHER_SCOPE)).cached).toBe(false);
     expect(repoCalls(fetchImpl)).toBe(2);
   });
 
@@ -304,7 +314,65 @@ describe('GithubService.listRepos', () => {
 
   it('throws GithubNotConnectedError when no token resolves', async () => {
     const service = new GithubService(fakeTokens(null), fakeRepos([]), config(), {}, home);
-    await expect(service.listRepos('user-1')).rejects.toBeInstanceOf(GithubNotConnectedError);
+    await expect(service.listRepos(SCOPE)).rejects.toBeInstanceOf(GithubNotConnectedError);
+  });
+
+  it('reads the registry through the caller\'s team scope', async () => {
+    // Annotating against rows the caller can't see would disable the import button for a
+    // repo they could legitimately register, and leak another user's checkout paths.
+    const repos = fakeRepos([]);
+    const service = new GithubService(
+      fakeTokens('t'),
+      repos,
+      config([devRoot]),
+      { fetchImpl: fakeFetch([[restRepo({ id: 1, full_name: 'bilo-io/app' })]]) },
+      home,
+    );
+
+    await service.listRepos(SCOPE);
+
+    expect(repos.scopes.length).toBeGreaterThan(0);
+    expect(repos.scopes.every((s) => s === SCOPE)).toBe(true);
+  });
+
+  it('re-casts a rejected token as not-connected rather than letting a 500 escape', async () => {
+    // A revoked PAT resolves fine and then 401s. `getConnection` already calls that
+    // `connected: false`; the list route must tell the same story, not show a red error.
+    const rejecting = vi.fn(
+      async () => new Response(JSON.stringify({ message: 'Bad credentials' }), { status: 401 }),
+    ) as unknown as typeof fetch;
+    const service = new GithubService(
+      fakeTokens('revoked'),
+      fakeRepos([]),
+      config([devRoot]),
+      { fetchImpl: rejecting },
+      home,
+    );
+
+    await expect(service.listRepos(SCOPE)).rejects.toBeInstanceOf(GithubNotConnectedError);
+  });
+
+  it('lets a non-auth GitHub failure through as an upstream error', async () => {
+    // A rate limit is not "reconnect" — the controller maps it to 502, and conflating it
+    // with not-connected would send the user to a connect prompt that changes nothing.
+    const limited = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ message: 'rate limited' }), {
+          status: 403,
+          headers: { 'x-ratelimit-remaining': '0' },
+        }),
+    ) as unknown as typeof fetch;
+    const service = new GithubService(
+      fakeTokens('t'),
+      fakeRepos([]),
+      config([devRoot]),
+      { fetchImpl: limited },
+      home,
+    );
+
+    const err = await service.listRepos(SCOPE).catch((e: unknown) => e);
+    expect(err).not.toBeInstanceOf(GithubNotConnectedError);
+    expect((err as Error).message).toContain('rate limit');
   });
 });
 
@@ -364,7 +432,7 @@ describe('GithubService.importRepo', () => {
     const repos = fakeRepos([]);
     const service = new GithubService(fakeTokens('t'), repos, config([devRoot]), {}, home);
 
-    const created = await service.importRepo({ ownerRepo: 'bilo-io/midnite' }, 'user-1');
+    const created = await service.importRepo({ ownerRepo: 'bilo-io/midnite' }, SCOPE);
 
     expect(created.name).toBe('midnite');
     expect(repos.created).toEqual([
@@ -379,7 +447,7 @@ describe('GithubService.importRepo', () => {
 
     await service.importRepo(
       { ownerRepo: 'bilo-io/midnite', name: 'mn', path: '~/elsewhere/mn' },
-      'user-1',
+      SCOPE,
     );
 
     expect(repos.created).toEqual([

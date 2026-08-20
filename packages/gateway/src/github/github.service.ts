@@ -7,6 +7,7 @@ import {
   type ImportGithubRepoRequest,
   type MidniteConfig,
   type Repo,
+  type TeamScope,
 } from '@midnite/shared';
 
 import { MIDNITE_CONFIG } from '../config.token';
@@ -18,6 +19,7 @@ import { ownerRepoKey } from './lib/github-remote';
 import {
   fetchAuthenticatedUser,
   fetchUserRepos,
+  GithubApiError,
   type GithubFetchOptions,
   type GithubRestRepo,
 } from './lib/github-rest';
@@ -102,23 +104,33 @@ export class GithubService {
     }
   }
 
-  /** The annotated repo list. Throws {@link GithubNotConnectedError} with no token. */
-  async listRepos(userId?: string, opts?: { refresh?: boolean }): Promise<GithubReposResponse> {
-    const resolved = await this.tokens.resolve(userId);
+  /**
+   * The annotated repo list. Throws {@link GithubNotConnectedError} when no token
+   * resolves **or** when the one that did is rejected by GitHub — a revoked PAT is
+   * "not connected" from the user's point of view, and their next action (reconnect)
+   * is the same, so it must not surface as a 500. `getConnection` already reports that
+   * state as `connected: false`; this keeps the two routes telling the same story.
+   */
+  async listRepos(scope?: TeamScope, opts?: { refresh?: boolean }): Promise<GithubReposResponse> {
+    const resolved = await this.tokens.resolve(scope?.userId);
     if (!resolved) throw new GithubNotConnectedError();
 
-    const cacheKey = userId ?? ANONYMOUS_CACHE_KEY;
+    const cacheKey = scope?.userId ?? ANONYMOUS_CACHE_KEY;
     const cached = opts?.refresh ? undefined : this.readCache(cacheKey);
     const raw = cached ?? {
-      items: await fetchUserRepos(resolved.token, this.fetchOptions),
+      items: await this.fetchRepos(resolved.token),
       fetchedAt: new Date().toISOString(),
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
     if (!cached) this.cache.set(cacheKey, raw);
 
-    const roots = this.resolveScanRoots();
+    // The registry is read through the caller's team scope, exactly as `GET /repos` is:
+    // annotating against rows the user can't see would disable the import button for a
+    // repo they *could* register, and leak another user's checkout paths back to them.
+    const registryRows = this.repos.list(scope);
+    const roots = this.resolveScanRoots(registryRows);
     const checkouts = await matchCheckouts(roots);
-    const registered = this.registryByOwnerRepo();
+    const registered = byOwnerRepo(registryRows);
 
     return {
       items: raw.items.map((r) => this.annotate(r, checkouts, registered)),
@@ -128,22 +140,37 @@ export class GithubService {
     };
   }
 
+  /** `/user/repos`, with a 401 re-cast as "not connected" (see {@link listRepos}). */
+  private async fetchRepos(token: string): Promise<GithubRestRepo[]> {
+    try {
+      return await fetchUserRepos(token, this.fetchOptions);
+    } catch (err) {
+      if (err instanceof GithubApiError && err.status === 401) {
+        this.logger.warn('GitHub rejected the resolved token — reporting as not connected');
+        throw new GithubNotConnectedError();
+      }
+      throw err;
+    }
+  }
+
   /**
    * Create a registry row from a browsed repo. `name` defaults to the bare repo name
    * and `path` to the matched checkout, which is what makes importing an on-disk repo
    * typing-free; a repo with neither a supplied nor a matched path is rejected here
    * rather than landing a half-configured row the board would then fail to spawn in.
    */
-  async importRepo(req: ImportGithubRepoRequest, userId?: string): Promise<Repo> {
+  async importRepo(req: ImportGithubRepoRequest, scope?: TeamScope): Promise<Repo> {
     const matched = req.path
       ? undefined
-      : (await matchCheckouts(this.resolveScanRoots())).get(ownerRepoKey(req.ownerRepo));
+      : (await matchCheckouts(this.resolveScanRoots(this.repos.list(scope)))).get(
+          ownerRepoKey(req.ownerRepo),
+        );
     const path = req.path ?? (matched ? collapseTilde(matched.path, this.home) : undefined);
     if (!path) {
       throw new GithubRepoNotCheckedOutError(req.ownerRepo);
     }
     const name = req.name ?? req.ownerRepo.split('/')[1]!;
-    return this.repos.create({ name, path, ownerRepo: req.ownerRepo }, userId);
+    return this.repos.create({ name, path, ownerRepo: req.ownerRepo }, scope?.userId);
   }
 
   /**
@@ -152,26 +179,10 @@ export class GithubService {
    * configuration. Returned absolute (`~` expanded); the response reports them back in
    * `~`-form so an empty match set is explicable to the user.
    */
-  private resolveScanRoots(): string[] {
+  private resolveScanRoots(registryRows: readonly Repo[]): string[] {
     const configured = this.config.github?.checkoutRoots ?? [];
     if (configured.length > 0) return configured.map((r) => expandTilde(r, this.home));
-    const registeredPaths = this.repos.list().map((r) => expandTilde(r.path, this.home));
-    return deriveCheckoutRoots(registeredPaths);
-  }
-
-  /**
-   * Registry rows keyed by case-folded `owner/repo`. Only rows that carry an
-   * `ownerRepo` can be matched — a hand-typed row without one is invisible here, which
-   * is honest: nothing links it to a GitHub repository.
-   */
-  private registryByOwnerRepo(): Map<string, Repo> {
-    const byOwnerRepo = new Map<string, Repo>();
-    for (const repo of this.repos.list()) {
-      if (!repo.ownerRepo) continue;
-      const key = ownerRepoKey(repo.ownerRepo);
-      if (!byOwnerRepo.has(key)) byOwnerRepo.set(key, repo);
-    }
-    return byOwnerRepo;
+    return deriveCheckoutRoots(registryRows.map((r) => expandTilde(r.path, this.home)));
   }
 
   private annotate(
@@ -213,6 +224,21 @@ export class GithubService {
     }
     return entry;
   }
+}
+
+/**
+ * Registry rows keyed by case-folded `owner/repo`. Only rows carrying an `ownerRepo`
+ * can be matched — a hand-typed row without one is invisible here, which is honest:
+ * nothing links it to a GitHub repository.
+ */
+function byOwnerRepo(rows: readonly Repo[]): Map<string, Repo> {
+  const index = new Map<string, Repo>();
+  for (const repo of rows) {
+    if (!repo.ownerRepo) continue;
+    const key = ownerRepoKey(repo.ownerRepo);
+    if (!index.has(key)) index.set(key, repo);
+  }
+  return index;
 }
 
 function message(err: unknown): string {
