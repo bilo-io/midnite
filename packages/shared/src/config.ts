@@ -631,6 +631,19 @@ export const RetroConfigSchema = z.object({
 });
 export type RetroConfig = z.infer<typeof RetroConfigSchema>;
 
+// Connected GitHub (Phase 84). **User** config, not operator config — `checkoutRoots`
+// is a path preference, not a secret, and the tokens live in the encrypted credential
+// vault rather than here.
+export const GithubConfigSchema = z.object({
+  // Directories scanned **one level deep** for existing checkouts, so a browsed repo
+  // can be matched to a clone you already have (Decision §2 — we match, never clone).
+  // Empty (the default) means "derive it": the gateway falls back to the parent
+  // directories of the paths already in the repo registry, so a populated install
+  // needs no configuration at all. `~`-form paths are expanded.
+  checkoutRoots: z.array(z.string()).default([]),
+});
+export type GithubConfig = z.infer<typeof GithubConfigSchema>;
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -675,6 +688,9 @@ export const MidniteConfigSchema = z.object({
   // Task retrospectives (Phase 62). Optional (defaulted) so existing midnite.json
   // files keep validating; auto-skeleton on by default.
   retro: RetroConfigSchema.default({}),
+  // Connected GitHub: checkout-scan roots for repo discovery (Phase 84 B). Optional
+  // (defaulted) so existing midnite.json files keep validating.
+  github: GithubConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
