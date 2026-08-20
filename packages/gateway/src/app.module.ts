@@ -36,6 +36,7 @@ import { ProjectDocsModule } from './project-docs/project-docs.module';
 import { MilestonesModule } from './milestones/milestones.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
+import { GithubModule } from './github/github.module';
 import { RetroModule } from './retro/retro.module';
 import { RetroAccessorModule } from './retro/retro-accessor.module';
 import { DigestsModule } from './digests/digests.module';
@@ -111,6 +112,7 @@ import { ProjectPlanRunsModule } from './project-plan-runs/project-plan-runs.mod
     MilestonesModule,
     ProvidersModule,
     ReposModule,
+    GithubModule,
     MetricsModule,
     SystemModule,
     SessionsModule,

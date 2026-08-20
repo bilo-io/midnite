@@ -699,6 +699,34 @@
       "branchPrefix": "feature/"
     },
     "addRepo": "Ajouter un dépôt",
+    "browse": {
+      "action": "Parcourir mes dépôts GitHub",
+      "title": "Vos dépôts GitHub",
+      "refresh": "Actualiser depuis GitHub",
+      "searchLabel": "Rechercher des dépôts",
+      "searchPlaceholder": "Filtrer par nom ou description",
+      "ownerLabel": "Filtrer par propriétaire",
+      "allOwners": "Tous les propriétaires",
+      "noMatches": "Aucun dépôt ne correspond à vos filtres.",
+      "private": "Dépôt privé",
+      "archived": "Archivé",
+      "scannedRoots": "Recherche de copies locales dans {roots}",
+      "noScanRoots": "Aucun dossier à analyser — définissez github.checkoutRoots dans midnite.json, ou enregistrez un dépôt pour que son dossier parent soit analysé.",
+      "notConnected": {
+        "title": "GitHub n'est pas connecté",
+        "description": "Connectez un compte GitHub (ou configurez un jeton GitHub) pour parcourir vos dépôts ici."
+      },
+      "states": {
+        "registered": "Déjà enregistré",
+        "onDisk": "Sur le disque à {path}",
+        "notCheckedOut": "Pas de copie locale"
+      },
+      "actions": {
+        "import": "Importer",
+        "added": "Ajouté",
+        "addManually": "Ajouter manuellement"
+      }
+    },
     "aria": {
       "name": "Nom du dépôt",
       "path": "Chemin du dépôt",

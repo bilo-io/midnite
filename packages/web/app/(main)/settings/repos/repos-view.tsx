@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Check,
   ChevronDown,
@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/components/confirm-dialog';
+import { GithubMark } from '@/components/github/github-mark';
+import { RepoBrowserDialog } from '@/components/github/repo-browser-dialog';
 import {
   createRepo,
   deleteRepo,
@@ -275,6 +277,9 @@ export function ReposView() {
   const [editPrTemplate, setEditPrTemplate] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
+  const [browsing, setBrowsing] = useState(false);
+  const pathInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     getRepos()
       .then(setRepos)
@@ -310,6 +315,17 @@ export function ReposView() {
     } finally {
       setAdding(false);
     }
+  };
+
+  // A browsed repo with no local checkout has no path to infer, so it lands in the
+  // create form below with what we *do* know filled in — the user supplies the path.
+  const onPrefillFromGithub = (draft: { name: string; ownerRepo: string }) => {
+    setError(null);
+    setName(draft.name);
+    setOwnerRepo(draft.ownerRepo);
+    setPath('');
+    // Focus the one field still needing input rather than making them hunt for it.
+    requestAnimationFrame(() => pathInputRef.current?.focus());
   };
 
   const startEdit = (repo: Repo) => {
@@ -376,6 +392,10 @@ export function ReposView() {
               ownerRepo: (chunks) => <code>{chunks}</code>,
             })}
           </p>
+
+          <Button variant="outline" size="sm" onClick={() => setBrowsing(true)}>
+            <GithubMark /> {t('repos.browse.action')}
+          </Button>
 
           {error ? (
             <p role="alert" className="text-sm text-destructive">
@@ -511,6 +531,7 @@ export function ReposView() {
                 </label>
                 <Input
                   id="repo-path"
+                  ref={pathInputRef}
                   value={path}
                   onChange={(e) => setPath(e.target.value)}
                   placeholder={t('repos.placeholders.path')}
@@ -563,6 +584,13 @@ export function ReposView() {
           </div>
         </div>
       </Accordion>
+
+      <RepoBrowserDialog
+        open={browsing}
+        onClose={() => setBrowsing(false)}
+        onImported={(repo) => setRepos((prev) => [...(prev ?? []), repo].sort(byName))}
+        onPrefill={onPrefillFromGithub}
+      />
     </div>
   );
 }

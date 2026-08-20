@@ -32,6 +32,7 @@ export * from './system.js';
 export * from './project.js';
 export * from './project-doc.js';
 export * from './repo.js';
+export * from './github.js';
 export * from './memory.js';
 export * from './memory-artifact.js';
 export * from './memory-studio.js';

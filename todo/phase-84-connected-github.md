@@ -41,13 +41,35 @@ An explicit "Connect GitHub" that yields a **per-user** OAuth token, built on th
 - [ ] **Refresh + disconnect** — extend `resolve()`'s lazy near-expiry refresh to `github-oauth` (GitHub OAuth tokens may be non-expiring; treat a missing `expiresAt` as "no refresh needed" rather than an error). Disconnect deletes the row **and** calls GitHub's token-revocation endpoint, so revoking in midnite actually revokes.
 - [ ] **Fix `githubToken()`'s first-match-wins** in [`pr-review.service.ts`](../packages/gateway/src/tasks/pr-review.service.ts) — resolve in a defined order (the acting user's `github-oauth` → a shared `github` PAT → `gh` CLI → anonymous), with a regression spec pinning that a PAT-only install behaves exactly as today.
 
-## Theme B — Repo discovery & checkout matching — **M**
+## Theme B — Repo discovery & checkout matching — **M** — ✅ DONE (PR #636, 2026-08-20)
 
-- [ ] **New `github/` gateway module** — `github.controller.ts` / `github.service.ts` / `lib/github-rest.ts`. `GET /github/repos` proxies `/user/repos` with pagination follow-through, returns the shared contract (name, `ownerRepo`, private, default branch, pushedAt, description), and short-TTL caches per user. 409 with a clear "not connected" code when the user has no `github-oauth` credential.
-- [ ] **Shared contracts** — `GithubRepoSchema`, `GithubConnectionSchema` (`{ connected, login, avatarUrl, scopes, connectedAt }`), and the import request/response shapes in [`packages/shared/src`](../packages/shared/src).
-- [ ] **Checkout matching** — a `lib/match-checkouts.ts` helper that walks configured roots one level deep, reads each `.git` remote URL, normalises it to `owner/repo` (ssh + https + `.git` suffix forms), and returns a map. New `github.checkoutRoots` config key (§6), defaulting to the parent of any already-registered `repos.path`. No cloning (§2).
-- [ ] **`GET /github/repos` annotates each repo** with `localPath` (matched checkout), `registeredRepoId` (already in the registry), or neither — so the picker can show *on disk at ~/Dev/x* · *already registered* · *not checked out*.
-- [ ] **Repo browser UI** in [`repos-view.tsx`](../packages/web/app/(main)/settings/repos/repos-view.tsx) — a "Browse my GitHub repos" action opening a searchable, org-filterable list with those three states; selecting a matched repo one-click-creates the registry row with `name`, `ownerRepo` and `path` prefilled. Unmatched repos are selectable but land with an empty path and an explicit "not checked out" affordance. i18n'd from the start (new `.tsx` files are born i18n-enforced).
+Shipped **ahead of Theme A** (user decision): the per-user `github-oauth` connection
+is not in yet, so discovery resolves whatever token the install already has, behind a
+ladder built for A to slot into — `GithubTokenService`: (Theme A rung) → shared vault
+`github` PAT → `gh auth token`. The connection reports which rung answered, so a
+shared PAT never reads as *your* GitHub. Theme A adds its rung at the top and
+repoints `pr-review.service.ts`'s first-match-wins `githubToken()` here.
+
+- [x] **New `github/` gateway module** — `github.controller.ts` / `github.service.ts` / `lib/github-rest.ts`. `GET /github/repos` proxies `/user/repos` with pagination follow-through, returns the shared contract (name, `ownerRepo`, private, default branch, pushedAt, description), and short-TTL caches per user. 409 with a clear "not connected" code when the user has no `github-oauth` credential.
+- [x] **Shared contracts** — `GithubRepoSchema`, `GithubConnectionSchema` (`{ connected, login, avatarUrl, scopes, connectedAt }`), and the import request/response shapes in [`packages/shared/src`](../packages/shared/src).
+- [x] **Checkout matching** — a `lib/match-checkouts.ts` helper that walks configured roots one level deep, reads each `.git` remote URL, normalises it to `owner/repo` (ssh + https + `.git` suffix forms), and returns a map. New `github.checkoutRoots` config key (§6), defaulting to the parent of any already-registered `repos.path`. No cloning (§2).
+- [x] **`GET /github/repos` annotates each repo** with `localPath` (matched checkout), `registeredRepoId` (already in the registry), or neither — so the picker can show *on disk at ~/Dev/x* · *already registered* · *not checked out*.
+- [x] **Repo browser UI** in [`repos-view.tsx`](../packages/web/app/(main)/settings/repos/repos-view.tsx) — a "Browse my GitHub repos" action opening a searchable, org-filterable list with those three states; selecting a matched repo one-click-creates the registry row with `name`, `ownerRepo` and `path` prefilled. Unmatched repos are selectable but land with an empty path and an explicit "not checked out" affordance. i18n'd from the start (new `.tsx` files are born i18n-enforced).
+
+**As built (decisions + review findings).** `.git/config` is **parsed** rather than
+`git remote get-url` shelled out — one cheap read per candidate over a root that may
+hold dozens of checkouts — and a `.git` **file** is followed through its `gitdir:`
+pointer, so midnite's own `.worktrees/<branch>` layout resolves (`lastIndexOf`, not
+`indexOf`: a path containing an outer `worktrees` segment otherwise truncates to a
+config that doesn't exist). The **GitHub list is cached per user (5 min, `?refresh=1`
+bypass); the checkout scan and registry lookup deliberately are not** — those are
+exactly what changes while someone is on the page. An **un-cloned repo does not
+import**: it prefills the create form and focuses the path field, rather than landing a
+pathless row the board would fail to spawn in. The registry is read through the
+caller's `TeamScope` (an unscoped read let one user's row disable another's import
+button), **all three routes are gated at `member`** — reads included, because they
+answer from an install-wide credential — and a rejected token re-casts to the
+not-connected 409 while a genuine upstream failure maps to **502**, not 500.
 
 ## Theme C — Projects ↔ repos, many-to-many — **M**
 

@@ -4,6 +4,65 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-20 — feat: Phase 84 Theme B — browse your GitHub repos instead of typing them ✅
+
+Settings → Repos made you hand-type a **name**, a **filesystem path** and an
+**`owner/repo` slug** for every checkout — three fields midnite could already know. A
+"Browse my GitHub repos" dialog now lists your real repositories, labelled by how each
+relates to this machine, and imports the matched ones with one click and no typing.
+
+**Shipped ahead of Theme A, deliberately.** The per-user `github-oauth` connection
+isn't in yet, so discovery resolves whatever token the install already has — but behind
+a ladder built for A to slot into: `GithubTokenService` resolves (Theme A rung) →
+shared vault `github` PAT → `gh auth token`, and reports **which rung answered**, so a
+shared PAT never reads as *your* GitHub. Theme A adds its rung at the top and repoints
+`pr-review.service.ts`'s first-match-wins `githubToken()` here rather than growing a
+second ladder.
+
+**`.git/config` is parsed, not `git remote get-url` shelled out** — one cheap read per
+candidate instead of a process, over a root that may hold dozens of checkouts. A `.git`
+**file** is followed through its `gitdir:` pointer, so midnite's own `.worktrees/<branch>`
+layout resolves; that needed `lastIndexOf('/worktrees/')`, because a path containing an
+outer `worktrees` segment truncates to a config that doesn't exist and the worktree is
+then silently reported "not checked out".
+
+**The GitHub list is cached per user; the local scan deliberately is not.** The list
+costs several sequential paginated calls and barely changes. The scan and the registry
+lookup are exactly what changes *while someone is on the page* — they clone a repo, they
+import one — so caching those would have been the bug the cache introduced. Pinned by a
+spec that clones a repo between two calls and asserts the annotation moves while the
+list stays cached.
+
+**An un-cloned repo does not import.** It has no path to infer, so it prefills the
+create form and focuses the path field. Landing a pathless registry row would only defer
+the failure to the first spawn.
+
+Self-review caught five real defects, all fixed with regression specs: the registry was
+read **unscoped** (one user's row disabled another's import button and leaked their
+checkout paths); both GET routes were **ungated** despite answering from an install-wide
+credential, so a `viewer` could enumerate the operator's private repo names and host
+paths (now `member`, pinned by a metadata spec); the `indexOf`/`lastIndexOf` worktree
+bug above; a **revoked token escaped as a 500** where `getConnection` already called the
+same state `connected: false` (401 → the 409 connect prompt; genuine upstream failures →
+502); and the dialog's loader had **no sequence guard**, so a close-then-reopen could let
+the older response land last.
+
+- [x] **New `github/` gateway module** — `GET /github/repos` (paginated `/user/repos`, short-TTL per-user cache), `GET /github/connection`, `POST /github/repos/import`; 409 `github_not_connected` with a machine-readable code
+- [x] **Shared contracts** — `GithubRepoSchema` (three checkout states + `localPath`/`registeredRepoId`), `GithubConnectionSchema` with the token `source`, import request/response
+- [x] **Checkout matching** — `lib/match-checkouts.ts` walks roots one level deep, parses `.git/config`, normalises ssh/https/scp/worktree remotes to `owner/repo`; new `github.checkoutRoots` config key defaulting to the derived parents of registered repo paths. No cloning
+- [x] **`GET /github/repos` annotates each repo** with `localPath` / `registeredRepoId` / neither
+- [x] **Repo browser UI** — portalled dialog on Settings → Repos: search + owner filter, one-click import for on-disk repos, prefilled create form for un-cloned, connect prompt on 409; all four locales
+
+86 gateway tests + 16 web RTL (remote-normalisation matrix, temp-dir checkout scans incl.
+worktrees, ladder order, pagination/cache/annotation, role-gate metadata, controller
+status mapping, the three UI states and the stale-response guard) + a Playwright shots
+spec. `moon run :typecheck` / `:lint` / `:test` green. **No migration** — nothing
+persistent is added, so §7's numbering can't collide with the parallel Theme C branch.
+The login flow is unedited; `sso-buttons.tsx` changes only by extracting its inline
+octocat SVG into a shared `GithubMark` (lucide v1 dropped brand icons). (PR #636)
+
+---
+
 ## 2026-08-20 — fix: Phase 84 Theme D — a task's repo now decides its working directory ◐
 
 Closed a bug that was live on `main`: an agent could be spawned in the wrong tree,

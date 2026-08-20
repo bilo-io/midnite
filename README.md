@@ -227,6 +227,24 @@ error leaves the last-known status untouched and never breaks the board. The
 resolved status rides on a task's `prStatus`; `POST /tasks/:id/pr/refresh` forces
 an on-demand refresh. Set `prStatus.enabled` to `false` to turn polling off.
 
+`config.github.checkoutRoots` (Phase 84 — repo discovery) lists the directories
+**Settings → Repos → Browse my GitHub repos** scans, one level deep, to match your
+GitHub repositories against checkouts you already have. Each candidate's
+`.git/config` is read and its remote normalised to an `owner/repo` slug (ssh,
+https and worktree layouts all resolve), so a browsed repo is labelled *already
+registered* · *on disk at ~/Dev/x* · *not checked out*, and importing an on-disk
+one fills in the name, path and `owner/repo` with no typing. **Leave it empty and
+it derives itself** — the parent directory of every path already in the repo
+registry — so a populated install needs no configuration. Nothing is ever cloned;
+a repo with no local checkout hands off to the manual add form instead.
+
+The browser needs a GitHub token, resolved through one ladder: the workflow
+vault's shared `github` credential, then `gh auth token` on the gateway host.
+With neither, `GET /github/repos` answers `409 github_not_connected` and the
+dialog shows a connect prompt rather than an error. (A per-user OAuth connection
+is Theme A's job; the ladder already has the slot for it, and the connection
+reports which rung answered so a shared PAT never reads as *your* GitHub.)
+
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
 
