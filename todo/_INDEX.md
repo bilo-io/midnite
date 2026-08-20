@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | ◻ TODO | 0/47 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
+| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 0/47 | `░░░░░░░░░░` | 0% | D | A B C E F G |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
@@ -142,7 +142,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **A** — Per-user GitHub connection (`github-oauth` credential variant, `user_id`/`team_id` on `workflow_credentials`, provider strategy table replacing the google/slack `if`-branches, `repo project read:org`, refresh + real revoke, fix `githubToken()`'s first-match-wins)
 - ◻ **B** — Repo discovery & checkout matching (new `github/` module, `GET /github/repos` with pagination + per-user cache, git-remote → `owner/repo` matching over `github.checkoutRoots`, picker showing *on disk* / *registered* / *not checked out*, one-click import)
 - ◻ **C** — Projects ↔ repos many-to-many (`project_repos` join + primary flag, derived `project.repos`, attach/detach endpoints, `workDir` backfill, project-detail Repos panel with per-repo git status)
-- ◻ **D** — cwd resolution correctness (invert `pickSessionCwd()` so `task.repo` beats `project.workDir` — a bug on `main` today; route spawn **and** `resolveChecksForRepo()` through one resolver; scope the task repo picker to the project)
+- 🔄 **D** — cwd resolution correctness (invert `pickSessionCwd()` so `task.repo` beats `project.workDir` — a bug on `main` today; route spawn **and** `resolveChecksForRepo()` through one resolver; scope the task repo picker to the project)
 - ◻ **E** — GitHub Projects v2 link (first GraphQL client in the repo, project/field discovery, `github_project_items` satellite table à la `pr_status`, link/unlink, status → single-select mapping, task-detail card)
 - ◻ **F** — Event-driven push & read-back (`TaskEventBus` subscriber, idempotency + loop suppression, `lastError` + backoff instead of throwing into the event path, display-only read-back poller, per-task sync log)
 - ◻ **G** — Connect UI, tests & docs (Integrations connection card, auto-prompt banner on Repos after a GitHub sign-in, gateway + web specs, `docs/GITHUB.md`, `operator.example.json` + `midnite doctor` check)
