@@ -86,7 +86,12 @@ const CASES: Case[] = [
 
 function build(c: Pick<Case, 'projectWorkDir' | 'repoPath' | 'defaultWorkDir'>) {
   const projects = {
-    getProject: vi.fn(() => (c.projectWorkDir ? { workDir: c.projectWorkDir } : undefined)),
+    // Phase 84 C — the resolver asks for the *effective* directory (primary repo
+    // path, else the stored workDir) and scopes the repo lookup to the project's
+    // own set. These fakes model a project with no repo edges attached, which is
+    // the state every one of these cases describes.
+    effectiveWorkDirFor: vi.fn(() => c.projectWorkDir),
+    listReposForProject: vi.fn(() => []),
   } as unknown as ProjectsRepository;
   const repos = {
     findByName: vi.fn(() => (c.repoPath ? { path: c.repoPath } : undefined)),
@@ -111,7 +116,10 @@ describe('CwdResolverService', () => {
   it('never consults the repo registry for a task with no repo', () => {
     const repos = { findByName: vi.fn() } as unknown as ReposService;
     const service = new CwdResolverService(
-      { getProject: vi.fn(() => undefined) } as unknown as ProjectsRepository,
+      {
+        effectiveWorkDirFor: vi.fn(() => undefined),
+        listReposForProject: vi.fn(() => []),
+      } as unknown as ProjectsRepository,
       repos,
       { getDefaultWorkDir: vi.fn(() => undefined) } as unknown as AgentsService,
     );

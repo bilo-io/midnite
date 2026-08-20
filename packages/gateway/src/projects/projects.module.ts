@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
 import { MemoriesModule } from '../memories/memories.module';
+import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { TerminalModule } from '../terminal/terminal.module';
 import { ProjectSourcesMigrationService } from './project-sources-migration.service';
@@ -14,6 +15,8 @@ import { ProjectsService } from './projects.service';
     TasksModule,
     MemoriesModule,
     ProjectsCoreModule,
+    // Phase 84 C — repo-id validation on attach + the boot backfill.
+    ReposModule,
     // Phase 84 D retired the forwardRef here: TerminalModule no longer imports
     // ProjectsModule (cwd resolution moved to CwdModule, which reaches the
     // stored workDir through ProjectsCoreModule), so this edge is one-way again

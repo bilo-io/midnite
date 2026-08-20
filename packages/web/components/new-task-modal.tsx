@@ -68,6 +68,13 @@ export function NewTaskModal({
   const [selectedBlockerIds, setSelectedBlockerIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase 84 C — scope the repo picker to the selected project's repos, with the
+  // rest of the registry as an escape hatch. Empty when the project has none
+  // attached (or none is selected), which falls back to the flat list below.
+  const projectRepos = projects.find((p) => p.id === projectId)?.repos ?? [];
+  const projectRepoNames = new Set(projectRepos.map((r) => r.name));
+  const otherRepos = repos.filter((r) => !projectRepoNames.has(r.name));
   const [result, setResult] = useState<BulkCreateTaskResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -302,9 +309,30 @@ export function NewTaskModal({
                     className={SELECT_CLASS}
                   >
                     <option value="">{tBoard('unassigned')}</option>
-                    {repos.map((r) => (
-                      <option key={r.id} value={r.name}>{r.name}</option>
-                    ))}
+                    {/* Phase 84 C — a repo the selected project actually spans is
+                        the likely intent, so those come first under their own
+                        heading. The rest stay reachable (a task may name any
+                        registered repo) but are visibly the exception. */}
+                    {projectRepos.length > 0 ? (
+                      <>
+                        <optgroup label={t('repoGroupProject')}>
+                          {projectRepos.map((r) => (
+                            <option key={r.repoId} value={r.name}>{r.name}</option>
+                          ))}
+                        </optgroup>
+                        {otherRepos.length > 0 ? (
+                          <optgroup label={t('repoGroupOther')}>
+                            {otherRepos.map((r) => (
+                              <option key={r.id} value={r.name}>{r.name}</option>
+                            ))}
+                          </optgroup>
+                        ) : null}
+                      </>
+                    ) : (
+                      repos.map((r) => (
+                        <option key={r.id} value={r.name}>{r.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               )}

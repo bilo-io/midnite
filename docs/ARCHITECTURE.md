@@ -313,8 +313,10 @@ subscribe to the same session — they all receive the same broadcast.
 
 - **Spawn on demand.** Attaching to a session with no live PTY spawns one. The
   working directory comes from the one shared resolver (`CwdResolverService`,
-  Phase 84 D): the task's **repo path** → project `workDir` → the profile
-  fallback → the gateway cwd. The repo only outranks the project when it
+  Phase 84 D): the task's **repo path** → the project's **effective** directory
+  → the profile fallback → the gateway cwd. A project's effective directory is
+  its **primary repo's** path (Phase 84 C's `project_repos` edges), falling back
+  to the stored `workDir` when no repos are attached. The repo only outranks the project when it
   resolves at or under the project's `workDir`; a repo pointing elsewhere defers
   to the project and logs a mismatch warning. The same resolver serves the
   quality gate and the manual check trigger, so an agent and its checks can

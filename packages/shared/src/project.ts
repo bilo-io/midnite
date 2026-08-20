@@ -25,6 +25,27 @@ export const TaskStatusCountsSchema = z.record(StatusSchema, z.number().int().no
 // (the gateway collapses the home prefix); empty/omitted means "no fixed dir".
 const WorkDirSchema = z.string().trim().max(1024);
 
+/**
+ * One repo attached to a project (Phase 84 Theme C). Derived from the
+ * `project_repos` edges and denormalised with the repo's own `name`/`path` so a
+ * consumer never needs a second lookup — mirroring how Phase 27 derives a task's
+ * `dependsOn` rather than storing it on the row.
+ *
+ * Exactly one edge per project carries `isPrimary`, and the primary repo's path
+ * is the project's **effective working directory** — `project.workDir` remains
+ * the stored column and the fallback for a project with no repos attached.
+ */
+export const ProjectRepoSchema = z.object({
+  repoId: z.string(),
+  name: z.string(),
+  /** Repo path in `~`-form, as stored in the registry. */
+  path: z.string(),
+  isPrimary: z.boolean(),
+  /** GitHub `owner/repo` slug, when the registry knows one. */
+  ownerRepo: z.string().optional(),
+  attachedAt: z.string(),
+});
+
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -49,6 +70,15 @@ export const ProjectSchema = z.object({
   taskStatusCounts: TaskStatusCountsSchema.optional(),
   /** Phase 38: team this project belongs to; null for personal projects. */
   teamId: z.string().optional(),
+  /**
+   * Phase 84 Theme C: the repos attached to this project, derived from the
+   * `project_repos` edges (never stored on the row). The gateway hydrates it on
+   * both the list and detail reads via one batched query, so in practice it is
+   * always populated; `optional` rather than defaulted to match how Phase 27
+   * derives a task's `dependsOn` — and so the ~14 existing `Project` fixtures
+   * across web/admin don't all have to declare an empty array.
+   */
+  repos: z.array(ProjectRepoSchema).optional(),
 });
 
 export const CreateProjectRequestSchema = z.object({
@@ -72,6 +102,26 @@ export const UpdateProjectRequestSchema = z.object({
   startCommand: z.string().trim().max(2000).optional(),
   buildCommand: z.string().trim().max(2000).optional(),
   archived: z.boolean().optional(),
+});
+
+/** Attach a registered repo to a project (`POST /projects/:id/repos`). */
+export const AttachProjectRepoRequestSchema = z.object({
+  repoId: z.string().min(1, 'repoId is required'),
+  /**
+   * Make this the project's primary repo. Omitted/false still promotes it when
+   * the project has no repos yet — a project with repos always has exactly one
+   * primary, maintained server-side.
+   */
+  primary: z.boolean().optional(),
+});
+
+/**
+ * Promote a repo to primary (`PATCH /projects/:id/repos/:repoId`). Only `true`
+ * is meaningful: demoting without naming a successor would leave the project
+ * with no primary, so the service rejects `false` — promote another repo instead.
+ */
+export const SetProjectRepoPrimaryRequestSchema = z.object({
+  isPrimary: z.boolean(),
 });
 
 export const EnhanceDescriptionRequestSchema = z.object({
@@ -197,7 +247,25 @@ export function projectCompletion(
   return { done, total, pct };
 }
 
+/**
+ * A project's **effective working directory** (Phase 84 Theme C): the primary
+ * repo's path when repos are attached, otherwise the stored `workDir`.
+ *
+ * The primary repo wins because attaching repos is the more specific, more
+ * recent statement of where a project lives; `workDir` remains the fallback so a
+ * project with no repos behaves exactly as it always has. The boot backfill
+ * seeds each existing project's `workDir` as its primary repo, so nothing moves
+ * for an install that already worked.
+ */
+export function effectiveWorkDir(
+  project: Pick<Project, 'workDir' | 'repos'>,
+): string | undefined {
+  const primary = project.repos?.find((r) => r.isPrimary);
+  return primary?.path ?? (project.workDir?.trim() ? project.workDir : undefined);
+}
+
 export type TaskStatusCounts = z.infer<typeof TaskStatusCountsSchema>;
+export type ProjectRepo = z.infer<typeof ProjectRepoSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 
 /** A page of projects (Phase 57 C follow-up): `{ items, total }`. Keeps the full
@@ -210,6 +278,8 @@ export type EnhanceDescriptionRequest = z.infer<typeof EnhanceDescriptionRequest
 export type EnhanceDescriptionResponse = z.infer<typeof EnhanceDescriptionResponseSchema>;
 export type DraftPlanResponse = z.infer<typeof DraftPlanResponseSchema>;
 export type RepoStatusResponse = z.infer<typeof RepoStatusResponseSchema>;
+export type AttachProjectRepoRequest = z.infer<typeof AttachProjectRepoRequestSchema>;
+export type SetProjectRepoPrimaryRequest = z.infer<typeof SetProjectRepoPrimaryRequestSchema>;
 export type RunProjectCommandRequest = z.infer<typeof RunProjectCommandRequestSchema>;
 export type UpdatePlanRequest = z.infer<typeof UpdatePlanRequestSchema>;
 export type CreatePlanTasksRequest = z.infer<typeof CreatePlanTasksRequestSchema>;

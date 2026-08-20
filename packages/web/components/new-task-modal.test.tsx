@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIntl as render } from '@/vitest.render-intl';
-import type { BulkCreateTaskResponse, Repo } from '@midnite/shared';
+import type { BulkCreateTaskResponse, Project, Repo } from '@midnite/shared';
 
 const createBulk = vi.fn();
 const createTask = vi.fn();
@@ -139,6 +139,81 @@ describe('NewTaskModal — repo picker (Phase 13 B1)', () => {
     expect(options).toEqual(['Unassigned', 'web', 'gateway']);
     // Unassigned is the empty value (sent as no repo).
     expect(select.value).toBe('');
+  });
+
+  // Phase 84 C — the selected project's own repos are the likely intent, so they
+  // lead under their own heading; the rest of the registry stays reachable.
+  describe('repo picker scoped to the project (Phase 84 C)', () => {
+    const projectWithRepos = [
+      {
+        id: 'p1',
+        name: 'Acme',
+        tag: 'ACM',
+        color: '#6366f1',
+        createdAt: '',
+        updatedAt: '',
+        repos: [
+          {
+            repoId: 'r2',
+            name: 'gateway',
+            path: '~/Dev/gateway',
+            isPrimary: true,
+            attachedAt: '',
+          },
+        ],
+      },
+    ] as unknown as Project[];
+
+    function renderScoped(projects: Project[], defaultProjectId?: string) {
+      render(
+        <NewTaskModal
+          projects={projects}
+          repos={REPOS}
+          defaultProjectId={defaultProjectId}
+          onCreated={vi.fn()}
+          onBulkCreated={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+      return screen.getByLabelText('Repo') as HTMLSelectElement;
+    }
+
+    it('groups the project’s repos first, the rest under "Other repositories"', () => {
+      const select = renderScoped(projectWithRepos, 'p1');
+      const groups = Array.from(select.querySelectorAll('optgroup'));
+      expect(groups.map((g) => g.getAttribute('label'))).toEqual([
+        'This project',
+        'Other repositories',
+      ]);
+      expect(Array.from(groups[0]!.querySelectorAll('option')).map((o) => o.textContent)).toEqual([
+        'gateway',
+      ]);
+      expect(Array.from(groups[1]!.querySelectorAll('option')).map((o) => o.textContent)).toEqual([
+        'web',
+      ]);
+    });
+
+    it('keeps every registered repo selectable — scoping is an ordering, not a filter', () => {
+      const select = renderScoped(projectWithRepos, 'p1');
+      const options = Array.from(select.options).map((o) => o.textContent);
+      expect(options).toEqual(['Unassigned', 'gateway', 'web']);
+    });
+
+    it('falls back to a flat list when the project has no repos attached', () => {
+      const bare = [{ id: 'p1', name: 'Acme', repos: [] }] as unknown as Project[];
+      const select = renderScoped(bare, 'p1');
+      expect(select.querySelectorAll('optgroup')).toHaveLength(0);
+      expect(Array.from(select.options).map((o) => o.textContent)).toEqual([
+        'Unassigned',
+        'web',
+        'gateway',
+      ]);
+    });
+
+    it('falls back to a flat list when no project is selected', () => {
+      const select = renderScoped(projectWithRepos);
+      expect(select.querySelectorAll('optgroup')).toHaveLength(0);
+    });
   });
 
   it('sends the chosen repo name on a single create', async () => {

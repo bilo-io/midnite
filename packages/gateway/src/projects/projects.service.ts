@@ -1,24 +1,30 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
   NotFoundException,
+  type OnModuleInit,
   Optional,
 } from '@nestjs/common';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { realpathSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import {
+  effectiveWorkDir,
+  type AttachProjectRepoRequest,
   type Breakdown,
   type BreakdownPreviewResponse,
   type CreateProjectRequest,
   type EnhanceDescriptionRequest,
   type InstallTerminalResponse,
   type Project,
+  type ProjectRepo,
   type ProjectsPage,
   type RepoStatusResponse,
   type RunProjectCommandRequest,
@@ -33,6 +39,7 @@ import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { MemoriesService } from '../memories/memories.service';
 import { projectToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
+import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 // Phase 84 D retired the forwardRef here: TerminalService's only reason to inject
 // ProjectsService was session cwd resolution, which now lives in
@@ -74,7 +81,7 @@ const RECORD_PLAN_SCHEMA = {
 };
 
 @Injectable()
-export class ProjectsService {
+export class ProjectsService implements OnModuleInit {
   private readonly logger = new Logger(ProjectsService.name);
 
   constructor(
@@ -84,11 +91,144 @@ export class ProjectsService {
     @Inject(MemoriesService) private readonly memories: MemoriesService,
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
+    // Phase 84 C — validates the repo id on attach and backs the boot backfill.
+    @Inject(ReposService) private readonly repos: ReposService,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
     // Phase 50 D — audit project mutations. Optional so unit specs are unaffected.
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
+
+  /**
+   * Phase 84 C — seed a `project_repos` edge for every pre-existing project
+   * whose `workDir` names a registered repo, so an install that already worked
+   * comes out of the migration with the repo it effectively had (and its
+   * effective work directory is unchanged).
+   *
+   * Runs here rather than in the migration because matching needs `realpath`:
+   * macOS's default volume is case-insensitive and checkouts are often
+   * symlinked, both of which a SQL string compare gets wrong (Phase 84 D found
+   * this the hard way). Only ever touches projects with **no** edges, so it is
+   * idempotent and never disturbs a set an operator has curated.
+   */
+  onModuleInit(): void {
+    const candidates = this.repo.listProjectsWithoutRepos().filter((p) => p.workDir?.trim());
+    if (candidates.length === 0) return;
+
+    const registry = this.repo.listAllRepos().map((r) => ({ id: r.id, key: canonicalKey(r.path) }));
+    if (registry.length === 0) return;
+
+    const now = new Date().toISOString();
+    let seeded = 0;
+    for (const project of candidates) {
+      const key = canonicalKey(project.workDir!);
+      const match = registry.find((r) => r.key === key);
+      if (!match) continue;
+      this.repo.attachRepo(project.id, match.id, true, now);
+      seeded += 1;
+    }
+    if (seeded > 0) {
+      this.logger.log(`backfilled ${seeded} project→repo edge(s) from workDir (Phase 84 C)`);
+    }
+  }
+
+  // ── Project ↔ repo edges (Phase 84 Theme C) ──────────────────────────────
+
+  /** The repos attached to a project, primary first. 404s on an unknown project. */
+  listProjectRepos(id: string, scope?: TeamScope): ProjectRepo[] {
+    this.getProject(id, scope); // throws NotFound if unknown
+    return this.repo.listReposForProject(id);
+  }
+
+  /**
+   * Attach a registered repo. 404 on an unknown project or repo, 409 when the
+   * pair is already linked. The one-primary invariant is maintained in the
+   * repository's transaction — a project's first repo is always primary.
+   */
+  attachRepo(id: string, req: AttachProjectRepoRequest, scope?: TeamScope): ProjectRepo[] {
+    this.getProject(id, scope);
+    try {
+      this.repos.get(req.repoId, scope);
+    } catch {
+      // RepoDoesNotExistError (or an out-of-scope repo) — either way the caller
+      // can't attach it, and the 404 must not leak which of the two it was.
+      throw new NotFoundException(`repo ${req.repoId} not found`);
+    }
+    if (this.repo.findEdge(id, req.repoId)) {
+      throw new ConflictException(`repo ${req.repoId} is already attached to project ${id}`);
+    }
+    this.repo.attachRepo(id, req.repoId, req.primary ?? false, new Date().toISOString());
+    this.audit?.record({
+      entityType: 'project',
+      entityId: id,
+      action: 'project.repo_attached',
+      payload: { repoId: req.repoId, primary: req.primary ?? false },
+    });
+    return this.repo.listReposForProject(id);
+  }
+
+  /**
+   * Detach a repo. 404 when the pair isn't linked. Detaching the primary
+   * promotes the oldest survivor, so a project with repos always has one — and
+   * detaching the *last* repo falls the project back to its stored `workDir`.
+   */
+  detachRepo(id: string, repoId: string, scope?: TeamScope): ProjectRepo[] {
+    this.getProject(id, scope);
+    if (!this.repo.findEdge(id, repoId)) {
+      throw new NotFoundException(`repo ${repoId} is not attached to project ${id}`);
+    }
+    this.repo.detachRepo(id, repoId);
+    this.audit?.record({
+      entityType: 'project',
+      entityId: id,
+      action: 'project.repo_detached',
+      payload: { repoId },
+    });
+    return this.repo.listReposForProject(id);
+  }
+
+  /**
+   * Promote a repo to primary — which also moves the project's effective work
+   * directory. Demoting isn't expressible: a project with repos must have a
+   * primary, so promote the intended successor instead.
+   */
+  setPrimaryRepo(id: string, repoId: string, isPrimary: boolean, scope?: TeamScope): ProjectRepo[] {
+    this.getProject(id, scope);
+    if (!this.repo.findEdge(id, repoId)) {
+      throw new NotFoundException(`repo ${repoId} is not attached to project ${id}`);
+    }
+    if (!isPrimary) {
+      throw new BadRequestException(
+        'cannot un-set the primary repo — promote another repo instead',
+      );
+    }
+    this.repo.setPrimaryRepo(id, repoId);
+    this.audit?.record({
+      entityType: 'project',
+      entityId: id,
+      action: 'project.repo_primary_changed',
+      payload: { repoId },
+    });
+    return this.repo.listReposForProject(id);
+  }
+
+  /**
+   * Local git status for one attached repo (Phase 84 C). Same fail-soft contract
+   * as {@link getRepoStatus} — a git failure lands in `error`, never a 500.
+   */
+  async getRepoStatusFor(id: string, repoId: string, scope?: TeamScope): Promise<RepoStatusResponse> {
+    this.getProject(id, scope);
+    const edge = this.repo.listReposForProject(id).find((r) => r.repoId === repoId);
+    if (!edge) throw new NotFoundException(`repo ${repoId} is not attached to project ${id}`);
+
+    const absoluteDir = expandTilde(edge.path);
+    try {
+      if (!(await stat(absoluteDir)).isDirectory()) return { exists: false, isRepo: false };
+    } catch {
+      return { exists: false, isRepo: false };
+    }
+    return this.readRepoStatus(absoluteDir);
+  }
 
   /** Backward-compatible array list (search/portability/chat callers). */
   listProjects(scope?: TeamScope): Project[] {
@@ -103,7 +243,12 @@ export class ProjectsService {
     const { rows, total } = this.repo.listProjectPage(scope, opts);
     // One batched grouped query for the whole page (Phase 58 C) — no per-project N+1.
     const counts = this.repo.statusCountsForProjects(rows.map((r) => r.id));
-    const items = rows.map((r) => this.repo.hydrate(r, counts.get(r.id) ?? {}));
+    // Phase 84 C — one batched join for the whole page's repo edges, same shape
+    // as the counts query above, so `repos` is always populated without an N+1.
+    const repoEdges = this.repo.reposForProjectIds(rows.map((r) => r.id));
+    const items = rows.map((r) =>
+      this.repo.hydrate(r, counts.get(r.id) ?? {}, repoEdges.get(r.id) ?? []),
+    );
     return { items, total };
   }
 
@@ -114,11 +259,12 @@ export class ProjectsService {
   }
 
   /**
-   * The configured work directory for a project, in `~`-form, or undefined if
-   * the project has none (or doesn't exist). Used to resolve a session's cwd.
+   * The project's **effective** work directory in `~`-form (Phase 84 C): its
+   * primary repo's path, or the stored `workDir` when no repos are attached.
+   * Undefined when the project has neither (or doesn't exist).
    */
   workDirFor(projectId: string): string | undefined {
-    return this.repo.getProject(projectId)?.workDir ?? undefined;
+    return this.repo.effectiveWorkDirFor(projectId);
   }
 
   /**
@@ -144,14 +290,15 @@ export class ProjectsService {
     opts?: RunProjectCommandRequest,
   ): InstallTerminalResponse {
     const project = this.getProject(id); // throws NotFound if unknown
-    if (!project.workDir?.trim()) {
+    const workDir = effectiveWorkDir(project);
+    if (!workDir) {
       throw new BadRequestException(`project ${id} has no work directory configured`);
     }
     const command = project[field]?.trim();
     if (!command) {
       throw new BadRequestException(`project ${id} has no ${label} command configured`);
     }
-    const cwd = expandTilde(project.workDir, homedir());
+    const cwd = expandTilde(workDir, homedir());
     if (opts?.background) {
       return { terminalId: this.spawnBackgroundRun(project, label, cwd, command) };
     }
@@ -201,8 +348,9 @@ export class ProjectsService {
    */
   async getRepoStatus(id: string): Promise<RepoStatusResponse> {
     const project = this.getProject(id); // throws NotFound if unknown
-    if (!project.workDir) return { exists: false, isRepo: false };
-    const absoluteDir = expandTilde(project.workDir);
+    const workDir = effectiveWorkDir(project);
+    if (!workDir) return { exists: false, isRepo: false };
+    const absoluteDir = expandTilde(workDir);
 
     let dirExists = false;
     try {
@@ -222,10 +370,11 @@ export class ProjectsService {
    */
   async initRepo(id: string): Promise<RepoStatusResponse> {
     const project = this.getProject(id); // throws NotFound if unknown
-    if (!project.workDir) {
+    const workDir = effectiveWorkDir(project);
+    if (!workDir) {
       throw new BadRequestException('project has no work directory set');
     }
-    const absoluteDir = expandTilde(project.workDir);
+    const absoluteDir = expandTilde(workDir);
 
     let dirExists = false;
     try {
@@ -234,7 +383,7 @@ export class ProjectsService {
       dirExists = false;
     }
     if (!dirExists) {
-      throw new BadRequestException(`work directory does not exist: ${project.workDir}`);
+      throw new BadRequestException(`work directory does not exist: ${workDir}`);
     }
 
     const current = await this.readRepoStatus(absoluteDir);
@@ -540,3 +689,26 @@ function normalizeWorkDir(input?: string): string | null {
   if (!trimmed) return null;
   return collapseTilde(resolve(expandTilde(trimmed)));
 }
+
+/**
+ * A path reduced to a form two spellings of the same directory share, for the
+ * Phase 84 C backfill's `workDir` → `repos.path` matching.
+ *
+ * `realpath` rather than `resolve` because both discrepancies it papers over are
+ * everyday here: macOS's default APFS volume is case-insensitive (`~/Dev/Midnite`
+ * and `~/Dev/midnite` are one directory), and checkouts are frequently symlinked.
+ * Phase 84 D hit exactly this in the cwd containment check. A path that doesn't
+ * exist can't be realpath'd, so it falls back to the lexical form — a project
+ * pointing at a deleted directory simply won't match, which is correct.
+ */
+function canonicalKey(path: string): string {
+  const absolute = resolve(expandTilde(path));
+  try {
+    return realpathSync.native(absolute);
+  } catch {
+    return absolute;
+  }
+}
+
+/** Exported for the backfill's path-matching spec — not part of the service API. */
+export const canonicalKeyForTest = canonicalKey;

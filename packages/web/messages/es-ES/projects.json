@@ -79,7 +79,8 @@
       "details": "Detalles",
       "docs": "Documentos",
       "tasks": "Tareas",
-      "roadmap": "Hoja de ruta"
+      "roadmap": "Hoja de ruta",
+      "repos": "Repos"
     },
     "sectionsAria": "Secciones del proyecto",
     "statsRail": "Estadísticas y acciones",
@@ -255,5 +256,22 @@
       "expand": "Expandir {name}",
       "deleteTemplate": "Eliminar {name}"
     }
+  },
+  "repos": {
+    "addLabel": "Repositorio a adjuntar",
+    "allAttached": "Todos los repositorios adjuntos",
+    "attach": "Adjuntar",
+    "choosePlaceholder": "Elegir un repositorio…",
+    "description": "Las copias de trabajo que abarca este proyecto. El repositorio principal determina dónde se ejecutan sus agentes, dónde corren los comandos de vista previa y compilación, y sobre qué informa el estado de git de arriba.",
+    "detachAria": "Desvincular {name}",
+    "detachConfirm": "Desvincular",
+    "detachMessage": "¿Quitar {name} de este proyecto? El repositorio en sí permanece en el registro.",
+    "detachPrimaryMessage": "{name} es el repositorio principal, por lo que el directorio de trabajo de este proyecto pasará al siguiente repositorio promovido. El repositorio en sí permanece en el registro.",
+    "detachTitle": "¿Desvincular el repositorio?",
+    "empty": "Aún no hay repositorios adjuntos. Adjunta uno para definir dónde se ejecutan los agentes de este proyecto.",
+    "emptyWithWorkDir": "No hay repositorios adjuntos: se recurre a la carpeta {workDir}.",
+    "makePrimary": "Marcar como principal",
+    "primary": "Principal",
+    "title": "Repositorios"
   }
 }

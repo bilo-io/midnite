@@ -79,7 +79,8 @@
       "details": "Details",
       "docs": "Dokumente",
       "tasks": "Aufgaben",
-      "roadmap": "Roadmap"
+      "roadmap": "Roadmap",
+      "repos": "Repos"
     },
     "sectionsAria": "Projektabschnitte",
     "statsRail": "Kennzahlen & Aktionen",
@@ -255,5 +256,22 @@
       "expand": "{name} ausklappen",
       "deleteTemplate": "{name} löschen"
     }
+  },
+  "repos": {
+    "addLabel": "Anzuhängendes Repository",
+    "allAttached": "Alle Repositorys angehängt",
+    "attach": "Anhängen",
+    "choosePlaceholder": "Repository auswählen…",
+    "description": "Die Arbeitskopien, die dieses Projekt umfasst. Das primäre Repository bestimmt, wo seine Agenten laufen, wo Vorschau- und Build-Befehle ausgeführt werden und worauf sich der obige Git-Status bezieht.",
+    "detachAria": "{name} lösen",
+    "detachConfirm": "Lösen",
+    "detachMessage": "{name} aus diesem Projekt entfernen? Das Repository selbst bleibt in der Registry.",
+    "detachPrimaryMessage": "{name} ist das primäre Repository — das Arbeitsverzeichnis dieses Projekts wechselt daher zum nächsten beförderten Repository. Das Repository selbst bleibt in der Registry.",
+    "detachTitle": "Repository lösen?",
+    "empty": "Noch keine Repositorys angehängt. Hängen Sie eines an, um festzulegen, wo die Agenten dieses Projekts laufen.",
+    "emptyWithWorkDir": "Keine Repositorys angehängt — Rückfall auf den Ordner {workDir}.",
+    "makePrimary": "Als primär festlegen",
+    "primary": "Primär",
+    "title": "Repositorys"
   }
 }

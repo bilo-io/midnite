@@ -10,6 +10,7 @@ import type {
   UpdateRepoRequest,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
+import { ProjectsRepository } from '../projects/projects.repository';
 import { MIDNITE_CONFIG } from '../config.token';
 import type { RepoInsert, RepoRow } from '../db/schema';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
@@ -30,6 +31,10 @@ export class ReposService implements OnModuleInit {
     // Phase 50 D — audit repo mutations. Optional so unit specs constructing the
     // service by hand (and installs without the audit module) are unaffected.
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
+    // Phase 84 C — deleting a repo must not strand `project_repos` edges pointing
+    // at it. Optional for the same reason as `audit` above; the real app always
+    // wires it via ReposModule → ProjectsCoreModule.
+    @Optional() @Inject(ProjectsRepository) private readonly projects?: ProjectsRepository,
   ) {}
 
   // Seed the registry from `config.repos` on boot, insert-if-absent by name.
@@ -137,6 +142,10 @@ export class ReposService implements OnModuleInit {
   delete(id: string, actor: string | null = null): void {
     const existing = this.repo.getById(id);
     if (!existing) throw new RepoDoesNotExistError(`repo ${id} not found`);
+    // Drop the project edges first: `clearEdgesForRepo` promotes a successor in
+    // any project that loses its primary, so no project is left with repos but
+    // no primary (and none silently keeps pointing at a deleted checkout).
+    this.projects?.clearEdgesForRepo(id);
     this.repo.delete(id);
     this.audit?.record({
       entityType: 'repo',

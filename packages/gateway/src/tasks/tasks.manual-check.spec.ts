@@ -149,7 +149,11 @@ describe('spawn and manual checks land in the same directory (Phase 84 D)', () =
     const agents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined };
     const resolver = new CwdResolverService(
       {
-        getProject: () => (opts.projectWorkDir ? { workDir: opts.projectWorkDir } : undefined),
+        // Phase 84 C — the resolver reads the project's *effective* directory and
+        // scopes the repo lookup to its attached set. No edges here, so the repo
+        // resolves through the global registry below, as it did before.
+        effectiveWorkDirFor: () => opts.projectWorkDir,
+        listReposForProject: () => [],
       } as unknown as ProjectsRepository,
       { findByName: () => ({ name: 'gateway', path: opts.repoPath }) } as unknown as ReposService,
       agents as unknown as AgentsService,

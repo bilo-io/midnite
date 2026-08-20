@@ -14,6 +14,7 @@ import {
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply } from 'fastify';
 import {
+  AttachProjectRepoRequestSchema,
   CreateFromBreakdownRequestSchema,
   CreatePlanTasksRequestSchema,
   CreateProjectRequestSchema,
@@ -22,6 +23,7 @@ import {
   REPORT_CONTENT_TYPE,
   ReportFormatSchema,
   RunProjectCommandRequestSchema,
+  SetProjectRepoPrimaryRequestSchema,
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
   PageQuerySchema,
@@ -33,6 +35,7 @@ import {
   type EnhanceDescriptionResponse,
   type InstallTerminalResponse,
   type Project,
+  type ProjectRepo,
   type ProjectResponse,
   type ProjectsPage,
   type RepoStatusResponse,
@@ -168,8 +171,65 @@ export class ProjectsController {
     return this.service.buildProject(id, parsed.data);
   }
 
-  // Local git status for the project's workDir (Phase: repo status & init — no
-  // remote/clone support). Thin — all fs/child_process work lives in the service.
+  // ── Project ↔ repo edges (Phase 84 Theme C) ──────────────────────────────
+  //
+  // Thin as ever: integrity (unknown repo → 404, duplicate → 409, the
+  // one-primary invariant) lives in the service.
+
+  @Get(':id/repos')
+  listRepos(
+    @Param('id') id: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ProjectRepo[] {
+    return this.service.listProjectRepos(id, scopeOf(user));
+  }
+
+  @Post(':id/repos')
+  attachRepo(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ProjectRepo[] {
+    const parsed = AttachProjectRepoRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.attachRepo(id, parsed.data, scopeOf(user));
+  }
+
+  @Patch(':id/repos/:repoId')
+  setPrimaryRepo(
+    @Param('id') id: string,
+    @Param('repoId') repoId: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ProjectRepo[] {
+    const parsed = SetProjectRepoPrimaryRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.setPrimaryRepo(id, repoId, parsed.data.isPrimary, scopeOf(user));
+  }
+
+  @Delete(':id/repos/:repoId')
+  detachRepo(
+    @Param('id') id: string,
+    @Param('repoId') repoId: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ProjectRepo[] {
+    return this.service.detachRepo(id, repoId, scopeOf(user));
+  }
+
+  /** Git status for one attached repo — the per-row probe the Repos panel uses. */
+  @Get(':id/repos/:repoId/status')
+  repoStatusFor(
+    @Param('id') id: string,
+    @Param('repoId') repoId: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): Promise<RepoStatusResponse> {
+    return this.service.getRepoStatusFor(id, repoId, scopeOf(user));
+  }
+
+  // Local git status for the project's **effective** work directory — its primary
+  // repo since Phase 84 C, else the stored `workDir`. Kept alongside the per-repo
+  // route above so existing callers are unaffected. Thin: all fs/child_process
+  // work lives in the service.
   @Get(':id/repo-status')
   repoStatus(@Param('id') id: string): Promise<RepoStatusResponse> {
     return this.service.getRepoStatus(id);
@@ -201,4 +261,9 @@ export class ProjectsController {
       .header('content-disposition', `attachment; filename="${filename}"`)
       .send(markdown);
   }
+}
+
+/** The team scope carried by an authenticated request, or undefined when auth is off. */
+function scopeOf(user?: CurrentUserPayload | null) {
+  return user ? { userId: user.userId, teamId: user.teamId } : undefined;
 }

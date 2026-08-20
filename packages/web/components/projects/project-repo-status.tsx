@@ -5,13 +5,21 @@ import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import type { RepoStatusResponse } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
-import { getRepoStatus, initRepo } from '@/lib/api';
+import { getProjectRepoStatus, getRepoStatus, initRepo } from '@/lib/api';
 
 type Props = {
   projectId: string;
-  /** The project's (possibly unsaved) work directory draft — `undefined`/empty
-   *  skips the network call entirely and renders "No folder set". */
+  /** The directory being reported on — the project's (possibly unsaved) work
+   *  directory draft, or an attached repo's path. `undefined`/empty skips the
+   *  network call entirely and renders "No folder set". */
   workDir: string | undefined;
+  /**
+   * Phase 84 C — report on one **attached repo** instead of the project's
+   * effective work directory. `git init` is hidden in this mode: the init route
+   * targets the project's directory, and a registered repo that isn't a git repo
+   * is a registry problem, not something to silently fix from here.
+   */
+  repoId?: string;
 };
 
 /**
@@ -21,7 +29,7 @@ type Props = {
  * state so "No folder set" never needs a round-trip, and a re-fetch fires
  * whenever the saved directory changes.
  */
-export function ProjectRepoStatus({ projectId, workDir }: Props) {
+export function ProjectRepoStatus({ projectId, workDir, repoId }: Props) {
   const t = useTranslations('projects');
   const tCommon = useTranslations('common');
   const [status, setStatus] = useState<RepoStatusResponse | null>(null);
@@ -42,13 +50,13 @@ export function ProjectRepoStatus({ projectId, workDir }: Props) {
     setLoading(true);
     setError(null);
     try {
-      setStatus(await getRepoStatus(projectId));
+      setStatus(repoId ? await getProjectRepoStatus(projectId, repoId) : await getRepoStatus(projectId));
     } catch (e) {
       setError(errMsg(e));
     } finally {
       setLoading(false);
     }
-  }, [projectId, workDir, errMsg]);
+  }, [projectId, repoId, workDir, errMsg]);
 
   useEffect(() => {
     void refresh();
@@ -89,6 +97,9 @@ export function ProjectRepoStatus({ projectId, workDir }: Props) {
   }
 
   if (!status.isRepo) {
+    if (repoId) {
+      return <span className="text-xs text-muted-foreground">{t('repoStatus.notARepo')}</span>;
+    }
     return (
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground">{t('repoStatus.notARepo')}</span>
