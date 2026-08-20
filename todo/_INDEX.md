@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 16/55 | `███░░░░░░░` | 29% | A | E F G |
+| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 16/55 | `███░░░░░░░` | 29% | A G⁴ | E F |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
@@ -131,6 +131,10 @@ preference-sync plan took the next free number, 43.)
 shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C**
 (they needed the `/tasks/:id` route Phase 42 adds).
 
+⁴ Phase 84 — Theme **G** is claimed but **blocked on Theme A**: its connect UI (device-code
+card, re-consent) drives endpoints A introduces. Claimed rather than left open so a third
+loop doesn't start it; it unblocks the moment A merges.
+
 ## Theme key (all phases — status per theme)
 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
@@ -145,7 +149,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — cwd resolution correctness (`task.repo` beats `project.workDir`, containment-gated; the real second resolver turned out to be `TasksService.runManualCheck`; all three paths now share `CwdResolverService`, which also retired the `TerminalModule ↔ ProjectsModule` forwardRef; its two scoping bullets landed with Theme C) (PR #635 + #637)
 - ◻ **E** — GitHub Projects v2 link (first GraphQL client in the repo, project/field discovery, `github_project_items` satellite table à la `pr_status`, link/unlink, status → single-select mapping, task-detail card)
 - ◻ **F** — Event-driven push & read-back (`TaskEventBus` subscriber, idempotency + loop suppression, `lastError` + backoff instead of throwing into the event path, display-only read-back poller, per-task sync log)
-- ◻ **G** — Connect UI, tests & docs (Integrations connection card, auto-prompt banner on Repos after a GitHub sign-in, gateway + web specs, `docs/GITHUB.md`, `operator.example.json` + `midnite doctor` check)
+- 🔄 **G** — Connect UI, tests & docs (Integrations connection card, auto-prompt banner on Repos after a GitHub sign-in, gateway + web specs, `docs/GITHUB.md`, `operator.example.json` + `midnite doctor` check)
 
 ### [Phase 83 — Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md)
 *Makes the login allowlist (today boot-time immutable file config) a runtime-editable store — a DB table layered under the file entries (`file ∪ db`, config entries as a read-only floor), operator-gated CRUD endpoints, and an admin "Access" page — so who's allowed in can change without a redeploy. The `operators` list itself stays file-only/deploy-time (out of scope).*
