@@ -79,7 +79,8 @@
       "details": "Détails",
       "docs": "Documents",
       "tasks": "Tâches",
-      "roadmap": "Feuille de route"
+      "roadmap": "Feuille de route",
+      "repos": "Dépôts"
     },
     "sectionsAria": "Sections du projet",
     "statsRail": "Statistiques et actions",
@@ -255,5 +256,22 @@
       "expand": "Déplier {name}",
       "deleteTemplate": "Supprimer {name}"
     }
+  },
+  "repos": {
+    "addLabel": "Dépôt à rattacher",
+    "allAttached": "Tous les dépôts sont rattachés",
+    "attach": "Rattacher",
+    "choosePlaceholder": "Choisir un dépôt…",
+    "description": "Les copies de travail couvertes par ce projet. Le dépôt principal détermine où s’exécutent ses agents, où tournent les commandes d’aperçu et de compilation, et sur quoi porte l’état git ci-dessus.",
+    "detachAria": "Détacher {name}",
+    "detachConfirm": "Détacher",
+    "detachMessage": "Retirer {name} de ce projet ? Le dépôt lui-même reste dans le registre.",
+    "detachPrimaryMessage": "{name} est le dépôt principal : le répertoire de travail de ce projet basculera donc vers le prochain dépôt promu. Le dépôt lui-même reste dans le registre.",
+    "detachTitle": "Détacher le dépôt ?",
+    "empty": "Aucun dépôt rattaché pour l’instant. Rattachez-en un pour définir où s’exécutent les agents de ce projet.",
+    "emptyWithWorkDir": "Aucun dépôt rattaché — repli sur le dossier {workDir}.",
+    "makePrimary": "Définir comme principal",
+    "primary": "Principal",
+    "title": "Dépôts"
   }
 }

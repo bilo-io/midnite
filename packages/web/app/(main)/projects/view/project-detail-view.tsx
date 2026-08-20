@@ -12,6 +12,7 @@ import { RailShell, RailFloatingToggle, RailHeaderToggle, Tabs, type TabOption }
 import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
 import { ProjectDocsPanel } from '@/components/projects/panels/project-docs-panel';
+import { ProjectReposPanel } from '@/components/projects/panels/project-repos-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
 import { ProjectRoadmapPanel } from '@/components/projects/panels/project-roadmap-panel';
 import { ProjectStatsPanel } from '@/components/projects/project-stats-panel';
@@ -24,8 +25,8 @@ import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 
-type Tab = 'details' | 'docs' | 'tasks' | 'roadmap';
-const TAB_VALUES: readonly Tab[] = ['details', 'docs', 'tasks', 'roadmap'];
+type Tab = 'details' | 'repos' | 'docs' | 'tasks' | 'roadmap';
+const TAB_VALUES: readonly Tab[] = ['details', 'repos', 'docs', 'tasks', 'roadmap'];
 const TAB_VALUE_SET = new Set<string>(TAB_VALUES);
 
 /**
@@ -210,6 +211,10 @@ export function ProjectDetailView({
             <div className="rounded-lg border border-border/60 bg-card/40 p-4">
               {tab === 'details' ? (
                 <ProjectDetailsPanel project={project} memories={memories} onSaved={reload} />
+              ) : tab === 'repos' ? (
+                // Reload on change: the primary repo IS the project's effective
+                // working directory, so the details/stats rails go stale otherwise.
+                <ProjectReposPanel project={project} onChanged={reload} />
               ) : tab === 'docs' ? (
                 <ProjectDocsPanel project={project} />
               ) : tab === 'tasks' ? (

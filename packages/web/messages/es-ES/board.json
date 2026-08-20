@@ -137,7 +137,9 @@
     "createTask": "Crear la tarea",
     "createTasks": "Crear las tareas",
     "createN": "Crear {count, plural, one {# tarea} other {# tareas}}",
-    "done": "Hecho"
+    "done": "Hecho",
+    "repoGroupProject": "Este proyecto",
+    "repoGroupOther": "Otros repositorios"
   },
   "toasts": {
     "taskCreated": "Tarea creada",

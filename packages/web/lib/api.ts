@@ -133,6 +133,7 @@ import {
   PostMemoryChatResponseSchema,
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
+  ProjectRepoSchema,
   ProjectSchema,
   ProjectsPageSchema,
   RepoResponseSchema,
@@ -144,6 +145,8 @@ import {
   type GithubReposResponse,
   type ImportGithubRepoRequest,
   RepoStatusResponseSchema,
+  type AttachProjectRepoRequest,
+  type ProjectRepo,
   type RepoStatusResponse,
   type RunProjectCommandRequest,
   RunResponseSchema,
@@ -1796,6 +1799,65 @@ export async function initRepo(id: string): Promise<RepoStatusResponse> {
   return fetchJson(
     `/projects/${encodeURIComponent(id)}/repo-init`,
     { method: 'POST' },
+    RepoStatusResponseSchema,
+  );
+}
+
+// ── Project ↔ repo edges (Phase 84 Theme C) ────────────────────────────────
+// Every mutation returns the project's full, re-ordered repo list, so a caller
+// never has to re-derive the primary flag or refetch to stay in step.
+
+const ProjectReposSchema = z.array(ProjectRepoSchema);
+
+export async function listProjectRepos(projectId: string): Promise<ProjectRepo[]> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/repos`,
+    undefined,
+    ProjectReposSchema,
+  );
+}
+
+export async function attachProjectRepo(
+  projectId: string,
+  body: AttachProjectRepoRequest,
+): Promise<ProjectRepo[]> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/repos`,
+    { method: 'POST', body: JSON.stringify(body) },
+    ProjectReposSchema,
+  );
+}
+
+export async function detachProjectRepo(
+  projectId: string,
+  repoId: string,
+): Promise<ProjectRepo[]> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/repos/${encodeURIComponent(repoId)}`,
+    { method: 'DELETE' },
+    ProjectReposSchema,
+  );
+}
+
+export async function setProjectRepoPrimary(
+  projectId: string,
+  repoId: string,
+): Promise<ProjectRepo[]> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/repos/${encodeURIComponent(repoId)}`,
+    { method: 'PATCH', body: JSON.stringify({ isPrimary: true }) },
+    ProjectReposSchema,
+  );
+}
+
+/** Git status for one attached repo — the per-row probe in the Repos panel. */
+export async function getProjectRepoStatus(
+  projectId: string,
+  repoId: string,
+): Promise<RepoStatusResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/repos/${encodeURIComponent(repoId)}/status`,
+    undefined,
     RepoStatusResponseSchema,
   );
 }

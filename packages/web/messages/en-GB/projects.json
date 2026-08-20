@@ -79,7 +79,8 @@
       "details": "Details",
       "docs": "Docs",
       "tasks": "Tasks",
-      "roadmap": "Roadmap"
+      "roadmap": "Roadmap",
+      "repos": "Repos"
     },
     "sectionsAria": "Project sections",
     "statsRail": "Stats & actions",
@@ -255,5 +256,22 @@
       "expand": "Expand {name}",
       "deleteTemplate": "Delete {name}"
     }
+  },
+  "repos": {
+    "addLabel": "Repository to attach",
+    "allAttached": "All repositories attached",
+    "attach": "Attach",
+    "choosePlaceholder": "Choose a repository…",
+    "description": "The checkouts this project spans. The primary repo is where its agents run, where preview and build commands execute, and what the git status above reports on.",
+    "detachAria": "Detach {name}",
+    "detachConfirm": "Detach",
+    "detachMessage": "Remove {name} from this project? The repository itself stays in the registry.",
+    "detachPrimaryMessage": "{name} is the primary repository, so this project’s working directory will move to whichever repository is promoted next. The repository itself stays in the registry.",
+    "detachTitle": "Detach repository?",
+    "empty": "No repositories attached yet. Attach one to set where this project’s agents run.",
+    "emptyWithWorkDir": "No repositories attached — falling back to the folder {workDir}.",
+    "makePrimary": "Make primary",
+    "primary": "Primary",
+    "title": "Repositories"
   }
 }

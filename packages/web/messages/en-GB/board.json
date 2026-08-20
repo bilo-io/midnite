@@ -137,7 +137,9 @@
     "createTask": "Create task",
     "createTasks": "Create tasks",
     "createN": "Create {count, plural, one {# task} other {# tasks}}",
-    "done": "Done"
+    "done": "Done",
+    "repoGroupProject": "This project",
+    "repoGroupOther": "Other repositories"
   },
   "toasts": {
     "taskCreated": "Task created",
