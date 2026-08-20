@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 8/55 | `█░░░░░░░░░` | 15% | C | A E F G ³ |
+| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 16/55 | `███░░░░░░░` | 29% | — | A E F G |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
@@ -126,12 +126,6 @@ parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
 
-³ Phase 84 — Theme **D** is `◐ PARTIAL` (PR #635): the precedence fix + the single
-`CwdResolverService` landed, but its two *scoping* bullets (resolve `task.repo` against
-the project's repo set; scope the task repo picker) need Theme **C**'s `project_repos`
-join and were folded into C. D is therefore listed in neither column — its remainder
-isn't free to pick until C lands.
-
 ² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The
 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form
 shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C**
@@ -147,8 +141,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Makes GitHub a **connected account** rather than four unconnected touchpoints: a per-user OAuth token from a separate vault-style connect flow (login SSO untouched — Phase 75 owns that callback), a repo browser that matches your real repos to checkouts already on disk, a `project_repos` join so a project can span several repos, and a GitHub Projects v2 item kept in step with the task. Out: cloning, login-scope escalation, a GitHub App, full two-way sync, a `repoId` migration.*
 - ◻ **A** — Per-user GitHub connection (`github-oauth` credential variant, `user_id`/`team_id` on `workflow_credentials`, provider strategy table replacing the google/slack `if`-branches, `repo project read:org`, refresh + real revoke, fix `githubToken()`'s first-match-wins)
 - ✅ **B** — Repo discovery & checkout matching (new `github/` module, `GET /github/repos` with pagination + per-user cache, git-remote → `owner/repo` matching over `github.checkoutRoots` — `.git/config` parsed, worktrees resolved — picker showing *on disk* / *registered* / *not checked out*, one-click import; **landed ahead of A** against a token ladder built for A to slot into, all routes `member`-gated) (PR #636)
-- 🔄 **C** — Projects ↔ repos many-to-many (`project_repos` join + primary flag, derived `project.repos`, attach/detach endpoints, `workDir` backfill, project-detail Repos panel with per-repo git status)
-- ◐ **D** — cwd resolution correctness — **precedence + one resolver landed** (PR #635): `task.repo` now beats `project.workDir`, containment-gated (repo wins only when it resolves at or under the project's `workDir`; outside → project wins + a `warn` naming both paths). The real second resolver turned out to be `TasksService.runManualCheck`, not the gate — all three paths now go through `CwdResolverService`, which also retired the `TerminalModule ↔ ProjectsModule` forwardRef. **2 items deferred into Theme C** (scope the resolver + the repo picker to the project's repo set — both need the `project_repos` join)
+- ✅ **C** — Projects ↔ repos many-to-many (`project_repos` join + migration 0097, one-primary invariant maintained in-transaction, derived `project.repos` batched onto the list read, **the primary repo's path is the project's effective working directory**, realpath-matched boot backfill, attach/detach/set-primary endpoints, project-detail Repos panel) (PR #636)
+- ✅ **D** — cwd resolution correctness (`task.repo` beats `project.workDir`, containment-gated; the real second resolver turned out to be `TasksService.runManualCheck`; all three paths now share `CwdResolverService`, which also retired the `TerminalModule ↔ ProjectsModule` forwardRef; its two scoping bullets landed with Theme C) (PR #635 + #636)
 - ◻ **E** — GitHub Projects v2 link (first GraphQL client in the repo, project/field discovery, `github_project_items` satellite table à la `pr_status`, link/unlink, status → single-select mapping, task-detail card)
 - ◻ **F** — Event-driven push & read-back (`TaskEventBus` subscriber, idempotency + loop suppression, `lastError` + backoff instead of throwing into the event path, display-only read-back poller, per-task sync log)
 - ◻ **G** — Connect UI, tests & docs (Integrations connection card, auto-prompt banner on Repos after a GitHub sign-in, gateway + web specs, `docs/GITHUB.md`, `operator.example.json` + `midnite doctor` check)

@@ -4,6 +4,51 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-20 — feat: Phase 84 Theme C — a project spans many repos, and the primary one is where it lives ✅
+
+A project could name exactly one directory (`workDir`), which is wrong for anyone
+whose project spans several checkouts — and it left Theme D with a mismatch it
+could only warn about. This adds the join and then *spends* it.
+
+**The primary repo is the project's effective working directory.** `workDir`
+stays the stored column and the fallback, but a project with repos resolves its
+directory from the primary one — so preview/build, git status and agent cwd all
+move together when you promote a different repo. One definition
+(`effectiveWorkDirFor`), shared by the service and `CwdResolverService`.
+
+**The one-primary invariant is maintained, not asked for.** First attach
+promotes; an explicit attach demotes the incumbent in the same transaction;
+detaching the primary promotes the oldest survivor. A project therefore never
+has repos without a primary, so the directory lookup never has to guess — and
+deleting a repo from the registry clears its edges, promoting successors.
+
+**The backfill runs at boot, in TypeScript, not in the migration.** Seeding an
+edge per project whose `workDir` names a registered repo needs `realpath` —
+Theme D found that case-insensitive macOS volumes and symlinked checkouts both
+defeat a string compare, and SQL cannot realpath. Idempotent: only ever touches
+projects with no edges.
+
+**`Project.repos` is `optional`, not defaulted.** The phase doc said "mirroring
+how Phase 27 derives `dependsOn`" — and `dependsOn` is `optional`. Matching it
+kept ~14 unrelated `Project` fixtures across web/admin/gateway out of the diff.
+
+**Theme D is now fully done**: its two deferred bullets needed this join, and
+both landed here — the resolver scopes `task.repo` to the project's own set, and
+the task repo picker groups the project's repos first (an ordering, not a
+filter, so any registered repo stays selectable).
+
+- [x] `project_repos` join + migration `0097`, indexed both ways, unique pair
+- [x] `ProjectRepo` contract + attach/set-primary request shapes in `shared`
+- [x] `GET/POST /projects/:id/repos`, `PATCH`/`DELETE /:repoId`, and an additive
+      `GET /projects/:id/repos/:repoId/status` (the old route still works)
+- [x] Derived `repos` hydrated on list + detail via one batched query
+- [x] Realpath-matched boot backfill; repo deletion clears edges
+- [x] Project-detail **Repos** panel: per-row git status, attach, detach behind a
+      confirm that says the working directory will move, promote to primary
+- [x] Repo picker scoped to the selected project, escape hatch intact
+- [x] 17 integration specs on `:memory:` SQLite + 9 RTL + 4 picker-grouping specs
+- [x] en-GB + fr-FR authored together, de-DE + es-ES to parity; i18n gate green
+
 ## 2026-08-20 — feat: Phase 84 Theme B — browse your GitHub repos instead of typing them ✅
 
 Settings → Repos made you hand-type a **name**, a **filesystem path** and an
