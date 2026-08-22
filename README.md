@@ -238,12 +238,38 @@ it derives itself** — the parent directory of every path already in the repo
 registry — so a populated install needs no configuration. Nothing is ever cloned;
 a repo with no local checkout hands off to the manual add form instead.
 
-The browser needs a GitHub token, resolved through one ladder: the workflow
-vault's shared `github` credential, then `gh auth token` on the gateway host.
-With neither, `GET /github/repos` answers `409 github_not_connected` and the
-dialog shows a connect prompt rather than an error. (A per-user OAuth connection
-is Theme A's job; the ladder already has the slot for it, and the connection
-reports which rung answered so a shared PAT never reads as *your* GitHub.)
+Every GitHub call resolves its token through **one ladder**, in this order: the
+acting user's own connection, then the workflow vault's shared `github`
+credential, then `gh auth token` on the gateway host. With none of them,
+`GET /github/repos` answers `409 github_not_connected` and the UI shows a connect
+prompt rather than an error. The connection reports **which rung answered**, so a
+shared PAT never reads as *your* GitHub.
+
+**Connecting your own GitHub account needs no configuration.** `POST
+/oauth/github/device` starts a **device grant** — you get a short code to type at
+`github.com/login/device`, and midnite polls until you approve it. No client
+secret, no callback URL, no hosted gateway; it authenticates as a built-in OAuth
+app and asks for `repo project read:org` in one consent screen. The resulting
+token is encrypted at rest and owned by *you*, not the install.
+
+An operator running midnite hosted can register their own OAuth app instead and
+set `workflows.oauth.github` (`clientId` + `clientSecretEnv`) in `midnite.json`.
+Configuring **both** switches connect to the redirect grant — fewer clicks, no
+code typing. Setting only a `clientId` deliberately leaves connect on the device
+grant rather than dead-ending on the missing secret.
+
+This is a **second, separate** OAuth app from the login one in
+`.midnite/operator.json` (`gateway.auth.sso.github`), and that separation is
+load-bearing: GitHub OAuth Apps grant scopes app-wide at first authorization, so
+sharing one registration would either force every existing user to re-consent at
+sign-in or leave connect without the scopes it needs. **The login flow is
+untouched by any of this.**
+
+Disconnecting always deletes the local credential. Revoking *at GitHub* needs
+Basic auth with the client secret, which the secretless device install by
+definition doesn't have — so the response says whether it actually revoked, and
+links you to <https://github.com/settings/applications> to finish the job when it
+couldn't.
 
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
