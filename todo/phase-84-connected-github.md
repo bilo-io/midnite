@@ -26,20 +26,57 @@
 
 ---
 
-## Theme A — Per-user GitHub connection — **M**
+## Theme A — Per-user GitHub connection — **M** — ◐ PARTIAL (PR #638, 2026-08-22)
 
 An explicit "Connect GitHub" that yields a **per-user** OAuth token, built on the vault's machinery but deliberately **outside** the login SSO path so it can't collide with in-flight Phase 75 (§1). **The connect flow must work on a bare local install** — device flow first, secretless by default (§11).
 
-- [ ] **Add a `github-oauth` variant** to `WorkflowCredentialDataSchema` in [`workflow-credential.ts`](../packages/shared/src/workflow-credential.ts) — `{ type: 'github-oauth', accessToken, refreshToken?, expiresAt?, scope }` — and `'github'` to `OAUTH_PROVIDERS`. The existing opaque `type: 'github'` PAT variant stays untouched and keeps working.
-- [ ] **Give credentials an owner** — `user_id` + `team_id` columns on `workflow_credentials` (migration, §7), a scoped `listForUser(userId)` / `findForUser(userId, type)` on the repository following [`team-scope.ts`](../packages/gateway/src/db/team-scope.ts), and null-owner rows treated as shared (so today's PAT keeps resolving).
-- [ ] **Refactor the provider branches into a strategy table** — `buildAuthorizationUrl` / `handleCallback` currently `if google … else slack`; replace with a `provider → { authUrl, tokenUrl, scopes, parseToken, grant: 'redirect' | 'device' }` map so GitHub is an entry, not a third branch. Behaviour-preserving for google + slack (their specs run unedited, both stay `redirect`).
-- [ ] **Secretless device-flow connect as the default path (§11)** — the vault's redirect flow is **secret-required**: [`oauth.service.ts`](../packages/gateway/src/workflows/credentials/oauth.service.ts) throws `OAuth client secret env var "…" is not set` before it builds an authorization URL, and it needs a callback GitHub can reach. A bare local install has neither, so GitHub connect gets a **device grant** modelled on [`sso.service.ts`](../packages/gateway/src/auth/sso.service.ts)'s `startDeviceAuth`/poll pair — `POST /oauth/github/device` (returns `user_code` + `verification_uri`, keeps the provider `device_code` server-side behind an opaque handle) and a poll endpoint that lands the `github-oauth` credential. **No client secret, no callback URL, no hosted gateway.**
+- [x] **Add a `github-oauth` variant** to `WorkflowCredentialDataSchema` in [`workflow-credential.ts`](../packages/shared/src/workflow-credential.ts) — `{ type: 'github-oauth', accessToken, refreshToken?, expiresAt?, scope }` — and `'github'` to `OAUTH_PROVIDERS`. The existing opaque `type: 'github'` PAT variant stays untouched and keeps working.
+- [x] **Give credentials an owner** — `user_id` + `team_id` columns on `workflow_credentials` (migration, §7), a scoped `listForUser(userId)` / `findForUser(userId, type)` on the repository following [`team-scope.ts`](../packages/gateway/src/db/team-scope.ts), and null-owner rows treated as shared (so today's PAT keeps resolving).
+- [x] **Refactor the provider branches into a strategy table** — `buildAuthorizationUrl` / `handleCallback` currently `if google … else slack`; replace with a `provider → { authUrl, tokenUrl, scopes, parseToken, grant: 'redirect' | 'device' }` map so GitHub is an entry, not a third branch. Behaviour-preserving for google + slack (their specs run unedited, both stay `redirect`).
+- [x] **Secretless device-flow connect as the default path (§11)** — the vault's redirect flow is **secret-required**: [`oauth.service.ts`](../packages/gateway/src/workflows/credentials/oauth.service.ts) throws `OAuth client secret env var "…" is not set` before it builds an authorization URL, and it needs a callback GitHub can reach. A bare local install has neither, so GitHub connect gets a **device grant** modelled on [`sso.service.ts`](../packages/gateway/src/auth/sso.service.ts)'s `startDeviceAuth`/poll pair — `POST /oauth/github/device` (returns `user_code` + `verification_uri`, keeps the provider `device_code` server-side behind an opaque handle) and a poll endpoint that lands the `github-oauth` credential. **No client secret, no callback URL, no hosted gateway.**
 - [ ] **A second built-in device client id** — `DEFAULT_GITHUB_CONNECT_CLIENT_ID`, a shipped OAuth App with **Enable Device Flow** ticked and `repo project read:org` requested, resolved exactly like the login one (`config.gateway.auth.sso?.github?.clientId ?? DEFAULT_…`) so an operator can substitute their own app without touching code. Distinct from `DEFAULT_GITHUB_DEVICE_CLIENT_ID` — the login app's narrow scopes must not widen (§1).
 - [ ] **Redirect grant stays as the hosted opt-in** — when an operator has configured a connect `clientId` + `clientSecretEnv`, prefer the redirect flow (fewer clicks, no code typing); otherwise fall back to device. One resolution helper, unit-tested both ways, so the choice is data not branching in the controller.
-- [ ] **Connect-flow parity with login on the device path** — reuse the login flow's hardening: opaque handle instead of the provider `device_code`, short-TTL state, `slow_down`/`expired_token`/`access_denied` handled as first-class outcomes, and the poll endpoint authenticated as the acting user (the credential is per-user, §8).
-- [ ] **Request `repo project read:org`** for the connect flow — private repos, org repos, and read/write on Projects v2 in one honest consent screen (§3). Scopes overridable per-operator; the granted `scope` string is persisted so the UI can show what was actually granted. Device and redirect grants request the **same** scope string, so which grant an install uses is invisible downstream.
-- [ ] **Refresh + disconnect** — extend `resolve()`'s lazy near-expiry refresh to `github-oauth` (GitHub OAuth tokens may be non-expiring; treat a missing `expiresAt` as "no refresh needed" rather than an error). Disconnect deletes the row **and** calls GitHub's token-revocation endpoint, so revoking in midnite actually revokes.
-- [ ] **Fix `githubToken()`'s first-match-wins** in [`pr-review.service.ts`](../packages/gateway/src/tasks/pr-review.service.ts) — resolve in a defined order (the acting user's `github-oauth` → a shared `github` PAT → `gh` CLI → anonymous), with a regression spec pinning that a PAT-only install behaves exactly as today.
+- [x] **Connect-flow parity with login on the device path** — reuse the login flow's hardening: opaque handle instead of the provider `device_code`, short-TTL state, `slow_down`/`expired_token`/`access_denied` handled as first-class outcomes, and the poll endpoint authenticated as the acting user (the credential is per-user, §8).
+- [x] **Request `repo project read:org`** for the connect flow — private repos, org repos, and read/write on Projects v2 in one honest consent screen (§3). Scopes overridable per-operator; the granted `scope` string is persisted so the UI can show what was actually granted. Device and redirect grants request the **same** scope string, so which grant an install uses is invisible downstream.
+- [x] **Refresh + disconnect** — extend `resolve()`'s lazy near-expiry refresh to `github-oauth` (GitHub OAuth tokens may be non-expiring; treat a missing `expiresAt` as "no refresh needed" rather than an error). Disconnect deletes the row **and** calls GitHub's token-revocation endpoint, so revoking in midnite actually revokes.
+- [x] **Fix `githubToken()`'s first-match-wins** in [`pr-review.service.ts`](../packages/gateway/src/tasks/pr-review.service.ts) — resolve in a defined order (the acting user's `github-oauth` → a shared `github` PAT → `gh` CLI → anonymous), with a regression spec pinning that a PAT-only install behaves exactly as today.
+
+**Two items are NOT done, and one is blocked on a human.**
+
+- ◻ **A second built-in device client id** — the mechanism, the config key, the scopes
+  and the failure message all ship, but there is **no built-in id**. The doc assumed
+  midnite would register a second OAuth App; nobody has. A first pass invented one and
+  the review caught it — verified live, that id returns `{"error":"Not Found"}` while the
+  login app's returns a real `device_code`, so the "zero-config" path would have 400'd on
+  every install. Connect therefore **requires** `workflows.oauth.github.clientId` and,
+  unset, fails with the registration steps verbatim (incl. **Enable Device Flow** and why
+  it must differ from the login app). **Remaining human step:** register the app with
+  `repo project read:org`, then make its id the default in `oauth.service.ts`. Same shape
+  as Phase 72 Theme E's operator-gated go-live items.
+- ◻ **Redirect grant as the hosted opt-in** — deliberately **not** wired for GitHub. The
+  callback is an unauthenticated browser navigation, so it cannot attribute a *personal*
+  connection to anyone; landing one unowned made a `repo project`-scoped token visible to
+  every member while its owner still read "not connected" (found in review). GitHub
+  connect is device-only, which §11 makes the default anyway. `resolveGrant` exists and is
+  unit-tested both ways, and google/slack keep the redirect grant untouched. Wiring an
+  owner-stamped redirect connect needs an authenticated start that stamps the user into
+  the encrypted state — a later slice.
+
+**As built (decisions + review findings).** The device grant's mechanics — opaque handle,
+throttled forwarding, `slow_down` back-off, terminal `expired_token`/`access_denied` —
+are extracted once into `lib/device-grant.ts` and used by **both** login and connect. It
+is a plain class, not a Nest provider, so each caller owns its own pending-authorization
+namespace (a *connect* handle must never be pollable through a *login* endpoint) and
+`SsoService`'s constructor is untouched: **its 26 specs run unedited**, which is how the
+extraction was verified behaviour-preserving. Credential ownership is `user_id`/`team_id`
+columns where **null means shared with the whole install** — unbackfilled, so today's PAT
+keeps resolving for everyone. Disconnect always deletes locally but revokes at GitHub
+**only when a client secret is configured** (its revocation endpoints need Basic auth with
+one, which a secretless install lacks by definition), and reports which actually happened
+rather than pretending. Review also fixed: re-connect silently keeping the old token, PR
+review never reaching rung 1 of the ladder, any member being able to delete another user's
+connection, anyone holding a `deviceAuthId` consuming the one-shot grant, and leaked
+pending connects.
 
 ## Theme B — Repo discovery & checkout matching — **M** — ✅ DONE (PR #636, 2026-08-20)
 
