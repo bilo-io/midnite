@@ -23,6 +23,16 @@ import { invalidateData } from '@/lib/data-refresh';
 import { CredentialForm } from './credential-form';
 import { CredentialTypeIcon } from './credential-icons';
 
+/**
+ * Types this form can create by hand. `github-oauth` is excluded on purpose: a GitHub
+ * **connection** comes from the connect flow on Settings → Integrations (Phase 84 Theme
+ * A), which is a device grant against a specific app — there is nothing here a user
+ * could usefully type, and offering an "Authorize" button that needs an operator's
+ * client secret would dead-end on every local install. Stored connections still render
+ * in the list below with their own label and icon.
+ */
+const MANUAL_CREDENTIAL_TYPES = WORKFLOW_CREDENTIAL_TYPES.filter((t) => t !== 'github-oauth');
+
 export default function CredentialsPage() {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
@@ -43,6 +53,7 @@ export default function CredentialsPage() {
     github: t('credentials.types.github'),
     'google-oauth': t('credentials.types.googleOauth'),
     'slack-oauth': t('credentials.types.slackOauth'),
+    'github-oauth': t('credentials.types.githubOauth'),
   };
 
   const handleCreate = async (req: CreateWorkflowCredentialRequest) => {
@@ -112,7 +123,7 @@ export default function CredentialsPage() {
 
       {adding ? (
         <CredentialForm
-          types={WORKFLOW_CREDENTIAL_TYPES}
+          types={MANUAL_CREDENTIAL_TYPES}
           typeLabels={TYPE_LABELS}
           onSave={(req) => void handleCreate(req)}
           onCancel={() => setAdding(false)}

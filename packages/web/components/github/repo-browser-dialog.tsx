@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { GithubRepo, GithubReposResponse, Repo } from '@midnite/shared';
+import { GithubIcon } from '@midnite/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { GithubMark } from '@/components/github/github-mark';
 import { ApiError, getGithubRepos, importGithubRepo } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -170,7 +170,7 @@ export function RepoBrowserDialog({ open, onClose, onImported, onPrefill }: Repo
         className="animate-dialog-in relative flex max-h-[80vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
       >
         <header className="flex items-center gap-2 border-b border-border/60 p-4">
-          <GithubMark className="shrink-0 text-muted-foreground" />
+          <GithubIcon className="shrink-0 text-muted-foreground" />
           <h2 className="text-sm font-semibold">{t('repos.browse.title')}</h2>
           <Button
             size="sm"
@@ -189,7 +189,7 @@ export function RepoBrowserDialog({ open, onClose, onImported, onPrefill }: Repo
 
         {notConnected ? (
           <div className="space-y-2 p-6 text-center">
-            <GithubMark size={24} className="mx-auto text-muted-foreground" />
+            <GithubIcon className="mx-auto h-6 w-6 text-muted-foreground" />
             <p className="text-sm font-medium">{t('repos.browse.notConnected.title')}</p>
             <p className="text-xs text-muted-foreground">
               {t('repos.browse.notConnected.description')}

@@ -9,6 +9,7 @@ export function CredentialTypeIcon({ type, className }: { type: WorkflowCredenti
   const cls = cn('h-4 w-4', className);
   switch (type) {
     case 'github':
+    case 'github-oauth':
       return <GithubIcon className={cls} />;
     case 'google-oauth':
       return <GoogleIcon className={cls} />;

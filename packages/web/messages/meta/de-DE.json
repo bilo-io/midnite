@@ -2650,6 +2650,7 @@
     "settings.credentials.toast.saveError",
     "settings.credentials.toast.saved",
     "settings.credentials.types.github",
+    "settings.credentials.types.githubOauth",
     "settings.credentials.types.googleOauth",
     "settings.credentials.types.httpBasic",
     "settings.credentials.types.httpBearer",

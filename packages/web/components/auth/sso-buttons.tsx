@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { type LoginProvider, LOGIN_PROVIDERS } from '@midnite/shared';
-import { GradientGlow } from '@midnite/ui';
+import { GradientGlow, GithubIcon } from '@midnite/ui';
 import { buttonVariants } from '@/components/ui/button';
-import { GithubMark } from '@/components/github/github-mark';
 import { cn } from '@/lib/utils';
 import { fetchSsoProviders, ssoStartUrl, type SsoLoginOptions } from '@/lib/api';
 import { readLastLoginMethod, writeLastLoginMethod } from '@/lib/last-login-method';
@@ -170,5 +169,5 @@ function ProviderIcon({ provider }: { provider: LoginProvider }) {
       </svg>
     );
   }
-  return <GithubMark />;
+  return <GithubIcon className="shrink-0" />;
 }
