@@ -2,14 +2,13 @@ import { resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { BadRequestException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseConfig, type MidniteConfig } from '@midnite/shared';
 import * as schema from '../../db/schema';
 import { CryptoService, SECRET_KEY_ENV } from '../../crypto/crypto.service';
 import { WorkflowCredentialsRepository } from './workflow-credentials.repository';
 import { WorkflowCredentialsService } from './workflow-credentials.service';
-import { DEFAULT_GITHUB_CONNECT_CLIENT_ID, OAuthService } from './oauth.service';
+import { OAuthService } from './oauth.service';
 
 // The GitHub **connect** flow (Phase 84 Theme A), against a real `:memory:` SQLite so the
 // owner columns and the encrypted blob are exercised for real rather than faked.
@@ -34,7 +33,9 @@ function config(githubOauth?: Record<string, unknown>): MidniteConfig {
   });
 }
 
-function build(cfg = config()) {
+const CONNECT_APP = { clientId: 'connect-app', clientSecretEnv: 'TEST_GH_SECRET' };
+
+function build(cfg = config(CONNECT_APP)) {
   const crypto = new CryptoService();
   const repo = new WorkflowCredentialsRepository(makeDb(), crypto);
   const credService = new WorkflowCredentialsService(repo);
@@ -76,30 +77,51 @@ afterEach(() => {
 });
 
 describe('grant selection', () => {
-  it('chooses device on a bare install — the zero-config path', () => {
-    expect(build().oauthService.grantFor('github')).toBe('device');
-  });
-
-  it('chooses device when a clientId is configured but its secret env is unset', () => {
-    // A half-configured redirect app must not silently become the connect path.
-    const cfg = config({ clientId: 'own-app', clientSecretEnv: 'TEST_GH_SECRET' });
-    expect(build(cfg).oauthService.grantFor('github')).toBe('device');
-  });
-
-  it('chooses redirect once the operator has both', () => {
+  it('keeps GitHub connect on the device grant even when a secret is configured', () => {
+    // Device-only this phase: the redirect callback is an unauthenticated browser
+    // navigation, so it cannot attribute a *personal* connection to anyone. A configured
+    // secret still matters — it's what lets `disconnect` actually revoke.
     process.env['TEST_GH_SECRET'] = 'shh';
-    const cfg = config({ clientId: 'own-app', clientSecretEnv: 'TEST_GH_SECRET' });
-    expect(build(cfg).oauthService.grantFor('github')).toBe('redirect');
+    expect(build().oauthService.grantFor('github')).toBe('device');
+    expect(build(config()).oauthService.grantFor('github')).toBe('device');
+  });
+
+  it('refuses to mint a GitHub connection through the redirect callback', async () => {
+    // Landing one unowned would make a personal repo-scoped token visible to every
+    // member while its owner still read "not connected".
+    process.env['TEST_GH_SECRET'] = 'shh';
+    await expect(
+      build().oauthService.handleCallback('github', 'code', 'state', 'http://localhost:7777'),
+    ).rejects.toThrow(/device flow/i);
+  });
+});
+
+describe('configuration', () => {
+  it('fails with an actionable remedy when no connect app is registered', async () => {
+    // There is no built-in connect client id — an unregistered one would surface as
+    // GitHub's opaque "Not Found" on every install instead of an instruction.
+    await expect(
+      build(config()).oauthService.startDeviceConnect('github', 'My GitHub', USER),
+    ).rejects.toThrow(/Enable Device Flow/);
+  });
+
+  it('names midnite.json and warns the app must differ from the login one', async () => {
+    const err = await build(config())
+      .oauthService.startDeviceConnect('github', 'My GitHub', USER)
+      .then(() => null)
+      .catch((e: unknown) => e as Error);
+    expect(err?.message).toContain('workflows.oauth.github.clientId');
+    expect(err?.message).toContain('gateway.auth.sso.github');
   });
 });
 
 describe('startDeviceConnect', () => {
-  it('authenticates as the built-in connect app with the connect scopes', async () => {
+  it('authenticates as the configured connect app with the connect scopes', async () => {
     const impl = stubDevice([]);
     await build().oauthService.startDeviceConnect('github', 'My GitHub', USER);
 
     const body = String(vi.mocked(impl).mock.calls[0]?.[1]?.body);
-    expect(body).toContain(`client_id=${DEFAULT_GITHUB_CONNECT_CLIENT_ID}`);
+    expect(body).toContain('client_id=connect-app');
     expect(body).toContain('scope=repo+project+read%3Aorg');
   });
 
@@ -112,7 +134,7 @@ describe('startDeviceConnect', () => {
     expect(body).not.toContain('Ov23liKqbNR5atXqqRQk');
   });
 
-  it('prefers an operator-supplied client id', async () => {
+  it('uses whichever client id the operator configured', async () => {
     const impl = stubDevice([]);
     const cfg = config({ clientId: 'own-app', clientSecretEnv: 'TEST_GH_SECRET' });
     await build(cfg).oauthService.startDeviceConnect('github', 'My GitHub', USER);
@@ -126,13 +148,6 @@ describe('startDeviceConnect', () => {
     expect(JSON.stringify(started)).not.toContain('provider-secret');
   });
 
-  it('refuses the device path when the install is configured for redirect', async () => {
-    process.env['TEST_GH_SECRET'] = 'shh';
-    const cfg = config({ clientId: 'own-app', clientSecretEnv: 'TEST_GH_SECRET' });
-    await expect(
-      build(cfg).oauthService.startDeviceConnect('github', 'My GitHub', USER),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
 });
 
 describe('pollDeviceConnect', () => {
@@ -141,8 +156,8 @@ describe('pollDeviceConnect', () => {
     const { oauthService, credService, repo } = build();
     const { deviceAuthId } = await oauthService.startDeviceConnect('github', 'My GitHub', USER);
 
-    expect(await oauthService.pollDeviceConnect(deviceAuthId)).toEqual({ status: 'pending' });
-    const done = await oauthService.pollDeviceConnect(deviceAuthId);
+    expect(await oauthService.pollDeviceConnect(deviceAuthId, 'user-1')).toEqual({ status: 'pending' });
+    const done = await oauthService.pollDeviceConnect(deviceAuthId, 'user-1');
     if (done.status !== 'complete') throw new Error(`expected complete, got ${done.status}`);
 
     expect(done.credential.type).toBe('github-oauth');
@@ -158,7 +173,7 @@ describe('pollDeviceConnect', () => {
     stubDevice([{ access_token: 'gho_secret_value' }]);
     const { oauthService, repo } = build();
     const { deviceAuthId } = await oauthService.startDeviceConnect('github', 'My GitHub', USER);
-    const done = await oauthService.pollDeviceConnect(deviceAuthId);
+    const done = await oauthService.pollDeviceConnect(deviceAuthId, 'user-1');
     if (done.status !== 'complete') throw new Error('expected complete');
 
     const raw = repo.get(done.credential.id)!;
@@ -170,8 +185,8 @@ describe('pollDeviceConnect', () => {
     stubDevice([{ access_token: 'gho_user' }]);
     const { oauthService } = build();
     const { deviceAuthId } = await oauthService.startDeviceConnect('github', 'My GitHub', USER);
-    expect((await oauthService.pollDeviceConnect(deviceAuthId)).status).toBe('complete');
-    expect(await oauthService.pollDeviceConnect(deviceAuthId)).toEqual({ status: 'expired' });
+    expect((await oauthService.pollDeviceConnect(deviceAuthId, 'user-1')).status).toBe('complete');
+    expect(await oauthService.pollDeviceConnect(deviceAuthId, 'user-1')).toEqual({ status: 'expired' });
   });
 
   it.each([
@@ -181,22 +196,22 @@ describe('pollDeviceConnect', () => {
     stubDevice([{ error }]);
     const { oauthService, credService } = build();
     const { deviceAuthId } = await oauthService.startDeviceConnect('github', 'My GitHub', USER);
-    expect(await oauthService.pollDeviceConnect(deviceAuthId)).toEqual({ status });
+    expect(await oauthService.pollDeviceConnect(deviceAuthId, 'user-1')).toEqual({ status });
     expect(credService.list()).toEqual([]);
   });
 
   it('treats an unknown handle as expired', async () => {
-    expect(await build().oauthService.pollDeviceConnect('never-existed')).toEqual({ status: 'expired' });
+    expect(await build().oauthService.pollDeviceConnect('never-existed', 'user-1')).toEqual({ status: 'expired' });
   });
 });
 
 describe('disconnect', () => {
   /** Land a real connection for USER and return the ids. */
-  async function connect(cfg = config()) {
+  async function connect(cfg = config(CONNECT_APP)) {
     stubDevice([{ access_token: 'gho_user', scope: 'repo' }]);
     const built = build(cfg);
     const { deviceAuthId } = await built.oauthService.startDeviceConnect('github', 'My GitHub', USER);
-    const done = await built.oauthService.pollDeviceConnect(deviceAuthId);
+    const done = await built.oauthService.pollDeviceConnect(deviceAuthId, 'user-1');
     if (done.status !== 'complete') throw new Error('expected complete');
     return { ...built, credentialId: done.credential.id };
   }
@@ -282,5 +297,55 @@ describe('disconnect', () => {
 
     expect((await oauthService.disconnect('github', 'user-1')).disconnected).toBe(false);
     expect(credService.list()).toHaveLength(1);
+  });
+});
+
+describe('re-connecting', () => {
+  it('replaces the previous connection instead of shadowing it', async () => {
+    // Re-connecting is how a user widens their granted scopes. Leaving the old row behind
+    // made that a silent no-op — the stale token kept resolving — and left a duplicate
+    // `disconnect` would miss.
+    const built = build();
+    stubDevice([{ access_token: 'old-token', scope: 'repo' }]);
+    const first = await built.oauthService.startDeviceConnect('github', 'My GitHub', USER);
+    await built.oauthService.pollDeviceConnect(first.deviceAuthId, 'user-1');
+
+    stubDevice([{ access_token: 'new-token', scope: 'repo project read:org' }]);
+    const second = await built.oauthService.startDeviceConnect('github', 'My GitHub', USER);
+    await built.oauthService.pollDeviceConnect(second.deviceAuthId, 'user-1');
+
+    expect(built.credService.list()).toHaveLength(1);
+    const own = await built.credService.resolveOwnedByType('user-1', 'github-oauth');
+    expect(own?.data).toMatchObject({ accessToken: 'new-token', scope: 'repo project read:org' });
+  });
+
+  it('leaves another user\'s connection alone when one user re-connects', async () => {
+    const built = build();
+    built.credService.create(
+      { name: 'Theirs', data: { type: 'github-oauth', accessToken: 'theirs', scope: 'repo' } },
+      { userId: 'user-2' },
+    );
+    stubDevice([{ access_token: 'mine', scope: 'repo' }]);
+    const started = await built.oauthService.startDeviceConnect('github', 'My GitHub', USER);
+    await built.oauthService.pollDeviceConnect(started.deviceAuthId, 'user-1');
+
+    expect(built.credService.list()).toHaveLength(2);
+    const theirs = await built.credService.resolveOwnedByType('user-2', 'github-oauth');
+    expect(theirs?.data).toMatchObject({ accessToken: 'theirs' });
+  });
+});
+
+describe('poll ownership', () => {
+  it('will not let another user consume a one-shot grant', async () => {
+    // Without this the interloper's poll would complete the connection and the starter's
+    // next poll would read `expired`, dropping it on the floor.
+    stubDevice([{ access_token: 'gho_user' }]);
+    const { oauthService, credService } = build();
+    const { deviceAuthId } = await oauthService.startDeviceConnect('github', 'My GitHub', USER);
+
+    expect(await oauthService.pollDeviceConnect(deviceAuthId, 'user-2')).toEqual({ status: 'expired' });
+    expect(credService.list()).toEqual([]);
+    // The starter can still finish.
+    expect((await oauthService.pollDeviceConnect(deviceAuthId, 'user-1')).status).toBe('complete');
   });
 });

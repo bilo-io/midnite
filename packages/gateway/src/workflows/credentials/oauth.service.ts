@@ -22,17 +22,25 @@ interface OAuthStatePayload {
 }
 
 /**
- * The midnite GitHub **connect** app's client ID — the built-in fallback for the device
- * grant, resolved exactly like the login one so an operator can substitute their own app
- * without touching code.
+ * How to register the GitHub **connect** app. Surfaced verbatim in the error an
+ * unconfigured install gets, because "not configured" without the remedy is a dead end.
  *
- * Deliberately distinct from `DEFAULT_GITHUB_DEVICE_CLIENT_ID` in `auth/sso.service.ts`:
- * GitHub OAuth Apps grant scopes **app-wide at first authorization**, so pointing connect
- * at the login app would either force every existing user to re-consent at sign-in or
- * leave connect without the `repo project` scopes it needs (Decision §1/§4). Client IDs
- * are public identifiers by design — they ride in every authorize URL.
+ * There is deliberately **no built-in client id here**, unlike login's
+ * `DEFAULT_GITHUB_DEVICE_CLIENT_ID`. The phase doc assumed midnite would ship a second
+ * registered OAuth App; registering one is a human step that has not happened, and
+ * shipping an unregistered id would mean every install's connect flow failing with
+ * GitHub's opaque `Not Found` instead of an instruction. When the app exists, its id
+ * becomes the default here and this constant becomes the override path.
+ *
+ * The two apps must stay separate: GitHub OAuth Apps grant scopes **app-wide at first
+ * authorization**, so pointing connect at the login app would either force every existing
+ * user to re-consent at sign-in or leave connect without `repo project` (Decision §1/§4).
  */
-export const DEFAULT_GITHUB_CONNECT_CLIENT_ID = 'Ov23liQ8mTvKcXwPzR4d';
+const GITHUB_CONNECT_SETUP_HINT =
+  'Register a GitHub OAuth App with **Enable Device Flow** ticked, then set ' +
+  'workflows.oauth.github.clientId in midnite.json. It must be a *different* app from ' +
+  'gateway.auth.sso.github (the login app) — GitHub grants scopes app-wide, so sharing ' +
+  'one registration would re-prompt every existing user at sign-in.';
 
 /** Where a user manages (and can revoke) an OAuth app's access to their account. */
 const GITHUB_APP_AUTHORIZATIONS_URL = 'https://github.com/settings/applications';
@@ -42,7 +50,11 @@ interface PendingConnect {
   provider: OAuthProvider;
   credentialName: string;
   owner: CredentialOwner;
+  startedAt: number;
 }
+
+/** Abandoned pending connects are dropped after this — GitHub's own codes expire in ~15m. */
+const PENDING_CONNECT_TTL_MS = 20 * 60 * 1000;
 
 /** Outcome of polling a device connect. `complete` carries the stored credential. */
 export type DeviceConnectPoll =
@@ -78,6 +90,9 @@ export class OAuthService {
    * a configured client id **and** a resolvable secret ⇒ `redirect`.
    */
   grantFor(provider: OAuthProvider): OAuthGrant {
+    // GitHub connect is device-only this phase — see `handleCallback`. A configured
+    // client secret still matters: it's what lets `disconnect` actually revoke.
+    if (provider === 'github') return 'device';
     const cfg = this.config.workflows.oauth[provider];
     return resolveGrant(provider, cfg ? { clientId: cfg.clientId, hasSecret: this.hasSecret(provider) } : undefined);
   }
@@ -109,7 +124,18 @@ export class OAuthService {
     } catch (err) {
       throw asBadRequest(err);
     }
-    this.pendingConnects.set(started.deviceAuthId, { provider, credentialName, owner });
+    // Prune abandoned connects (a user who closed the tab) — the underlying flow bounds
+    // its own map the same way, and without this these leak for the gateway's lifetime.
+    const cutoff = Date.now() - PENDING_CONNECT_TTL_MS;
+    for (const [id, entry] of this.pendingConnects) {
+      if (entry.startedAt < cutoff) this.pendingConnects.delete(id);
+    }
+    this.pendingConnects.set(started.deviceAuthId, {
+      provider,
+      credentialName,
+      owner,
+      startedAt: Date.now(),
+    });
     return started;
   }
 
@@ -120,9 +146,13 @@ export class OAuthService {
    * `expired`/`denied` are outcomes, not errors: the UI offers a retry for each, and a
    * user declining consent is not a fault.
    */
-  async pollDeviceConnect(deviceAuthId: string): Promise<DeviceConnectPoll> {
+  async pollDeviceConnect(deviceAuthId: string, userId: string): Promise<DeviceConnectPoll> {
     const pending = this.pendingConnects.get(deviceAuthId);
-    if (!pending) return { status: 'expired' };
+    // Unknown *and* someone else's both read as expired: the grant is one-shot, so letting
+    // another member consume it would silently hand the starter an `expired` and drop the
+    // connection on the floor. Not distinguishing the two also avoids confirming that a
+    // given handle exists.
+    if (!pending || pending.owner.userId !== userId) return { status: 'expired' };
     let outcome;
     try {
       outcome = await this.deviceFlow.poll(deviceAuthId);
@@ -143,6 +173,13 @@ export class OAuthService {
     if (!parsed.ok) throw new BadRequestException(parsed.error);
     // The granted scope is what GitHub actually gave us, not what we asked for — so the
     // UI can tell the user a re-consent is needed rather than guessing.
+    // Replace, don't accumulate: re-connecting is how a user widens their granted scopes,
+    // and leaving the old row behind would make that a silent no-op (the stale token would
+    // keep resolving) and leave a duplicate for `disconnect` to miss.
+    if (pending.owner.userId) {
+      const existing = await this.credService.resolveOwnedByType(pending.owner.userId, parsed.data.type);
+      if (existing) this.credService.remove(existing.id);
+    }
     const credential = this.credService.create(
       { name: pending.credentialName, data: parsed.data },
       pending.owner,
@@ -187,6 +224,20 @@ export class OAuthService {
     callbackBaseUrl: string,
     owner?: CredentialOwner,
   ): Promise<{ credential: WorkflowCredential; redirectUri: string }> {
+    // The callback is an unauthenticated browser navigation, so there is no acting user
+    // to attribute the credential to. For google/slack that has always been fine — those
+    // are install-wide integrations. A GitHub **connection** is personal by definition, so
+    // landing one unowned would make it visible to every member and usable by any workflow
+    // node, while the owner's own status still read "not connected". Connect therefore
+    // stays on the device grant, which is authenticated (Decision §11 makes it the default
+    // anyway); wiring an owner-stamped redirect connect is deferred with the rest of the
+    // hosted-operator path.
+    if (provider === 'github') {
+      throw new BadRequestException(
+        'GitHub connections are made through the device flow (POST /oauth/github/device), ' +
+          'which is authenticated and can attribute the connection to you.',
+      );
+    }
     const statePayload = this.decryptState(stateParam);
     if (!statePayload || statePayload.provider !== provider) {
       throw new BadRequestException('Invalid or expired OAuth state parameter.');
@@ -369,14 +420,17 @@ export class OAuthService {
 
   // --- helpers ---
 
-  /** The client id the device grant authenticates as (operator override or built-in). */
+  /** The client id the device grant authenticates as. Must be configured — see the hint. */
   private deviceClientId(provider: OAuthProvider): string {
-    if (provider !== 'github') {
-      const cfg = this.config.workflows.oauth[provider];
-      if (!cfg?.clientId) throw new BadRequestException(`OAuth provider "${provider}" is not configured.`);
-      return cfg.clientId;
+    const clientId = this.config.workflows.oauth[provider]?.clientId;
+    if (!clientId) {
+      throw new BadRequestException(
+        provider === 'github'
+          ? `GitHub connect is not configured. ${GITHUB_CONNECT_SETUP_HINT}`
+          : `OAuth provider "${provider}" is not configured.`,
+      );
     }
-    return this.config.workflows.oauth['github']?.clientId ?? DEFAULT_GITHUB_CONNECT_CLIENT_ID;
+    return clientId;
   }
 
   private hasSecret(provider: OAuthProvider): boolean {

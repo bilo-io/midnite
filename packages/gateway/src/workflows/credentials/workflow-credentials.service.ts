@@ -34,11 +34,6 @@ export class WorkflowCredentialsService {
     return this.repo.list().map(toPublicView);
   }
 
-  /** Credentials `userId` may use: their own, plus install-wide (null-owner) rows. */
-  listForUser(userId: string): WorkflowCredential[] {
-    return this.repo.listForUser(userId).map(toPublicView);
-  }
-
   /**
    * The acting user's **own** credential of `type`, decrypted — null-owner rows excluded
    * on purpose (an install-wide PAT is not *your* connection). Returns null when there's
@@ -99,6 +94,24 @@ export class WorkflowCredentialsService {
     if (!this.repo.remove(id)) {
       throw new NotFoundException(`workflow credential ${id} does not exist`);
     }
+  }
+
+  /**
+   * Delete on behalf of `userId`, refusing to touch a credential someone else owns.
+   *
+   * Install-wide (null-owner) rows stay deletable by any member, exactly as before this
+   * phase — they're shared configuration. But per-user rows arrived with Theme A, and
+   * without this check any member could delete a colleague's GitHub connection.
+   */
+  removeForUser(id: string, userId: string | undefined): void {
+    const owner = this.ownerOf(id);
+    if (!owner) throw new NotFoundException(`workflow credential ${id} does not exist`);
+    if (owner.userId && owner.userId !== userId) {
+      // 404 rather than 403: whether another user holds a given credential id is not
+      // something the caller is entitled to learn.
+      throw new NotFoundException(`workflow credential ${id} does not exist`);
+    }
+    this.remove(id);
   }
 
   /**

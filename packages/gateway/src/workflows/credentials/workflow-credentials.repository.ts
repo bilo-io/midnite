@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, eq, isNull, or } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { DB_TOKEN, type MidniteDb } from '../../db/db.module';
 import { CryptoService } from '../../crypto/crypto.service';
 import { workflowCredentials, type WorkflowCredentialRow } from '../../db/schema';
@@ -43,22 +43,6 @@ export class WorkflowCredentialsRepository {
   }
 
   /**
-   * Credentials `userId` may use: their own rows plus **null-owner rows**, which are
-   * shared with the whole install (every row written before the owner migration, so
-   * today's PAT and Slack token stay visible to everyone).
-   *
-   * Mirrors `db/team-scope.ts`'s own-plus-legacy shape, but keyed on `user_id` alone —
-   * `team_id` is stored and not yet resolved (Decision §8).
-   */
-  listForUser(userId: string): WorkflowCredentialRow[] {
-    return this.db
-      .select()
-      .from(workflowCredentials)
-      .where(or(eq(workflowCredentials.userId, userId), isNull(workflowCredentials.userId)))
-      .all();
-  }
-
-  /**
    * The acting user's **own** credential of `type` — null-owner rows deliberately
    * excluded. This backs "is *your* GitHub connected?", where an install-wide PAT is the
    * wrong answer: it would let the UI claim a personal connection the user never made.
@@ -68,6 +52,10 @@ export class WorkflowCredentialsRepository {
       .select()
       .from(workflowCredentials)
       .where(and(eq(workflowCredentials.userId, userId), eq(workflowCredentials.type, type)))
+      // Newest wins. Connect replaces on re-connect so there should only ever be one, but
+      // an unordered `.get()` would silently return whichever row SQLite reached first —
+      // and "silently returns the stale token" is precisely the failure to design out.
+      .orderBy(desc(workflowCredentials.createdAt))
       .get();
   }
 

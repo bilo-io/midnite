@@ -58,7 +58,10 @@ export class GithubTokenService {
    * `userId` is accepted (and currently only used for logging) so Theme A can add the
    * per-user rung without changing a single call site.
    */
-  async resolve(userId?: string): Promise<ResolvedGithubToken | null> {
+  async resolve(
+    userId?: string,
+    opts: { allowGhCli?: boolean } = {},
+  ): Promise<ResolvedGithubToken | null> {
     // Rung 1: the acting user's own connection. Deliberately their *owned* row only —
     // a null-owner PAT is the install's, not theirs, and it's the next rung anyway.
     if (userId) {
@@ -71,8 +74,13 @@ export class GithubTokenService {
     const pat = await this.resolveVaultPat();
     if (pat) return { token: pat, source: 'pat' };
 
-    const cli = await this.resolveGhCliToken();
-    if (cli) return { token: cli, source: 'gh-cli' };
+    // Opt-out (default on). `pr-review` shells out to `gh` *itself* and only wants a
+    // token for its REST fallback: handing it the host CLI's token would turn a genuine
+    // `gh pr merge` refusal into a confusing REST error instead.
+    if (opts.allowGhCli !== false) {
+      const cli = await this.resolveGhCliToken();
+      if (cli) return { token: cli, source: 'gh-cli' };
+    }
 
     this.logger.debug(`no GitHub token resolvable${userId ? ` for user ${userId}` : ''}`);
     return null;

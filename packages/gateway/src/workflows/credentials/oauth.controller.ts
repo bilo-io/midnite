@@ -134,9 +134,11 @@ export class OAuthController {
   async pollDevice(
     @Param('provider') providerRaw: string,
     @Param('deviceAuthId') deviceAuthId: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
   ): Promise<OAuthDevicePollResponse> {
     requireProvider(providerRaw);
-    const result = await this.service.pollDeviceConnect(deviceAuthId);
+    // The grant is one-shot, so only the user who started this connect may consume it.
+    const result = await this.service.pollDeviceConnect(deviceAuthId, requireUserId(user));
     return result.status === 'complete'
       ? { status: 'complete', credential: result.credential }
       : { status: result.status };

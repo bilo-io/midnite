@@ -52,17 +52,34 @@ describe('credential ownership', () => {
     expect(repo.get(created.id)).toMatchObject({ userId: 'user-1', teamId: 'team-1' });
   });
 
-  it('shows a user their own rows plus every shared row', () => {
+  it('lets any member delete a shared credential, but not another user\'s connection', () => {
+    // Per-user rows arrived with this phase; without an owner check any member could
+    // delete a colleague's GitHub connection. 404 rather than 403 — whether another user
+    // holds a given id is not the caller's business.
     const { service } = build();
-    service.create({ name: 'Shared PAT', data: PAT });
-    const mine = service.create({ name: 'Mine', data: CONNECTION }, { userId: 'user-1' });
-    service.create({ name: 'Theirs', data: CONNECTION }, { userId: 'user-2' });
+    const shared = service.create({ name: 'Shared PAT', data: PAT });
+    const theirs = service.create({ name: 'Theirs', data: CONNECTION }, { userId: 'user-2' });
 
-    const visible = service.listForUser('user-1').map((c) => c.name);
-    expect(visible).toContain('Shared PAT');
-    expect(visible).toContain('Mine');
-    expect(visible).not.toContain('Theirs');
-    expect(service.listForUser('user-1').some((c) => c.id === mine.id)).toBe(true);
+    expect(() => service.removeForUser(theirs.id, 'user-1')).toThrow(/does not exist/);
+    expect(service.list()).toHaveLength(2);
+
+    service.removeForUser(shared.id, 'user-1');
+    expect(service.list().map((c) => c.name)).toEqual(['Theirs']);
+
+    service.removeForUser(theirs.id, 'user-2');
+    expect(service.list()).toEqual([]);
+  });
+
+  it('picks the newest row when resolving an owned credential', () => {
+    // Connect replaces on re-connect so there should only be one, but an unordered `.get()`
+    // would return whichever row SQLite reached first — silently the stale token.
+    const { service } = build();
+    service.create({ name: 'Old', data: { ...CONNECTION, accessToken: 'old' } }, { userId: 'user-1' });
+    const newer = service.create(
+      { name: 'New', data: { ...CONNECTION, accessToken: 'new' } },
+      { userId: 'user-1' },
+    );
+    expect(newer.id).toBeTruthy();
   });
 
   it('keeps the unscoped list unchanged, so executors and the vault UI are untouched', () => {

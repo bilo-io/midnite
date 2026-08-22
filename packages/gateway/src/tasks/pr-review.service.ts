@@ -117,7 +117,7 @@ export class PrReviewService {
       const result = await submitGithubReview(
         prUrl,
         { event: submission.event, body: submission.body, comments },
-        { runGh: this.runGh, getToken: () => this.githubToken() },
+        { runGh: this.runGh, getToken: () => this.githubToken(author) },
       );
       this.logger.log(`review (${submission.event}) submitted on ${prUrl}${result.htmlUrl ? ` → ${result.htmlUrl}` : ''}`);
     } catch (err) {
@@ -138,7 +138,10 @@ export class PrReviewService {
   async mergePr(taskId: string, method: PrMergeMethod, actor: string | null): Promise<Task> {
     const prUrl = this.requirePrUrl(taskId);
     try {
-      await mergeGithubPr(prUrl, method, { runGh: this.runGh, getToken: () => this.githubToken() });
+      await mergeGithubPr(prUrl, method, {
+        runGh: this.runGh,
+        getToken: () => this.githubToken(actor),
+      });
       this.logger.log(`merged ${prUrl} (${method})`);
     } catch (err) {
       throw this.toGatewayError('merge PR', err);
@@ -171,8 +174,11 @@ export class PrReviewService {
    * ordering now lives in one place (Phase 84 Theme A); a PAT-only install resolves the
    * same token it always did.
    */
-  private async githubToken(): Promise<string | undefined> {
-    return (await this.githubTokens.resolve())?.token;
+  private async githubToken(actor: string | null): Promise<string | undefined> {
+    // `allowGhCli: false` keeps this behaviour-identical to the vault-only lookup it
+    // replaced — the `gh` CLI is already this service's *primary* path via `runGh`, and
+    // feeding its token to the REST fallback would mask a real `gh` refusal.
+    return (await this.githubTokens.resolve(actor ?? undefined, { allowGhCli: false }))?.token;
   }
 
   /** A failed write is the agent's/user's action hitting GitHub — surface the
