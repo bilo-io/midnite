@@ -431,6 +431,13 @@ export const WorkflowsConfigSchema = z.object({
     .object({
       slack: OAuthClientConfigSchema.optional(),
       google: OAuthClientConfigSchema.optional(),
+      // The GitHub **connect** app (Phase 84 Theme A) — entirely optional. Left unset,
+      // connect uses the secretless device grant against a built-in client id, so a
+      // local install needs no configuration at all (Decision §11). Setting a clientId
+      // *and* its secret env switches connect to the redirect grant, which is the
+      // hosted-operator path. Distinct from `gateway.auth.sso.github`, the *login* app:
+      // OAuth Apps grant scopes app-wide, so the two must not share one registration.
+      github: OAuthClientConfigSchema.optional(),
     })
     .default({}),
 });

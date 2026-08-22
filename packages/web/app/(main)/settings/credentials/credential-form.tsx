@@ -39,6 +39,9 @@ const TYPE_FIELDS: Record<WorkflowCredentialType, FieldDef[]> = {
   // OAuth types have no manual fields — the form renders an "Authorize" button instead.
   'google-oauth': [],
   'slack-oauth': [],
+  // A GitHub *connection* (Phase 84 Theme A) is produced by the connect flow on
+  // Settings → Integrations, not typed in here — see the filter in the page.
+  'github-oauth': [],
 };
 
 export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
@@ -180,6 +183,7 @@ function buildData(type: WorkflowCredentialType, f: Record<string, string>): Cre
 const OAUTH_TYPE_MAP: Partial<Record<WorkflowCredentialType, OAuthProvider>> = {
   'google-oauth': 'google',
   'slack-oauth': 'slack',
+  'github-oauth': 'github',
 };
 
 function isOAuthType(t: WorkflowCredentialType): boolean {

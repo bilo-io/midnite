@@ -436,7 +436,8 @@
       "smtp": "SMTP (E-Mail)",
       "github": "GitHub (PAT)",
       "googleOauth": "Google (OAuth)",
-      "slackOauth": "Slack (OAuth)"
+      "slackOauth": "Slack (OAuth)",
+      "githubOauth": "GitHub-Verbindung"
     },
     "fields": {
       "bearerToken": "Bearer-Token",

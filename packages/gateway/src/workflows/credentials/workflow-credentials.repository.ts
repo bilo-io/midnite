@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { DB_TOKEN, type MidniteDb } from '../../db/db.module';
 import { CryptoService } from '../../crypto/crypto.service';
 import { workflowCredentials, type WorkflowCredentialRow } from '../../db/schema';
@@ -11,6 +11,9 @@ export interface WorkflowCredentialWrite {
   name: string;
   type: string;
   data: string;
+  /** Owning user, or null for a credential shared with the whole install. */
+  userId?: string | null;
+  teamId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,8 +35,28 @@ export class WorkflowCredentialsRepository {
     }
   }
 
+  /** Every credential, unscoped. Existing callers (the vault UI, executors resolving by
+   *  id) keep this behaviour — Phase 84 Theme A adds scope as new methods, not as a
+   *  change to this one. */
   list(): WorkflowCredentialRow[] {
     return this.db.select().from(workflowCredentials).all();
+  }
+
+  /**
+   * The acting user's **own** credential of `type` — null-owner rows deliberately
+   * excluded. This backs "is *your* GitHub connected?", where an install-wide PAT is the
+   * wrong answer: it would let the UI claim a personal connection the user never made.
+   */
+  findOwnedByType(userId: string, type: string): WorkflowCredentialRow | undefined {
+    return this.db
+      .select()
+      .from(workflowCredentials)
+      .where(and(eq(workflowCredentials.userId, userId), eq(workflowCredentials.type, type)))
+      // Newest wins. Connect replaces on re-connect so there should only ever be one, but
+      // an unordered `.get()` would silently return whichever row SQLite reached first —
+      // and "silently returns the stale token" is precisely the failure to design out.
+      .orderBy(desc(workflowCredentials.createdAt))
+      .get();
   }
 
   get(id: string): WorkflowCredentialRow | undefined {
@@ -48,7 +71,12 @@ export class WorkflowCredentialsRepository {
   insert(write: WorkflowCredentialWrite): WorkflowCredentialRow {
     return this.db
       .insert(workflowCredentials)
-      .values({ ...write, data: this.crypto.encrypt(write.data) })
+      .values({
+        ...write,
+        userId: write.userId ?? null,
+        teamId: write.teamId ?? null,
+        data: this.crypto.encrypt(write.data),
+      })
       .returning()
       .get();
   }

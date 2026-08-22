@@ -238,12 +238,39 @@ it derives itself** — the parent directory of every path already in the repo
 registry — so a populated install needs no configuration. Nothing is ever cloned;
 a repo with no local checkout hands off to the manual add form instead.
 
-The browser needs a GitHub token, resolved through one ladder: the workflow
-vault's shared `github` credential, then `gh auth token` on the gateway host.
-With neither, `GET /github/repos` answers `409 github_not_connected` and the
-dialog shows a connect prompt rather than an error. (A per-user OAuth connection
-is Theme A's job; the ladder already has the slot for it, and the connection
-reports which rung answered so a shared PAT never reads as *your* GitHub.)
+Every GitHub call resolves its token through **one ladder**, in this order: the
+acting user's own connection, then the workflow vault's shared `github`
+credential, then `gh auth token` on the gateway host. With none of them,
+`GET /github/repos` answers `409 github_not_connected` and the UI shows a connect
+prompt rather than an error. The connection reports **which rung answered**, so a
+shared PAT never reads as *your* GitHub.
+
+**Connecting your own GitHub account** uses a **device grant**: `POST
+/oauth/github/device` returns a short code you type at `github.com/login/device`,
+and midnite polls until you approve it. No client secret and no callback URL —
+which is what makes it work on a laptop running its own gateway. It asks for
+`repo project read:org` in one consent screen, and the resulting token is
+encrypted at rest and owned by *you*, not the install.
+
+> **This needs one piece of setup, and midnite cannot do it for you.** Register a
+> GitHub OAuth App with **Enable Device Flow** ticked and set
+> `workflows.oauth.github.clientId` in `midnite.json`. It must be a **different
+> app** from the login one in `.midnite/operator.json` (`gateway.auth.sso.github`):
+> GitHub OAuth Apps grant scopes **app-wide at first authorization**, so sharing one
+> registration would either re-prompt every existing user at sign-in or leave
+> connect without the scopes it needs. Until it's configured, connect fails with
+> exactly these instructions rather than a GitHub error. **The login flow is
+> unaffected either way** — it has its own registered app and keeps working with no
+> configuration at all.
+
+Setting `clientSecretEnv` as well is optional and does one thing: it lets
+**disconnect actually revoke**. Disconnecting always deletes the local credential,
+but revoking *at GitHub* needs Basic auth with the client secret, which a
+secretless install by definition doesn't have — so the response says whether it
+really revoked, and links you to <https://github.com/settings/applications> to
+finish the job when it couldn't. Connect itself stays on the device grant either
+way; the redirect grant can't attribute a personal connection to anyone, because
+its callback is an unauthenticated browser navigation.
 
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:

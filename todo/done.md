@@ -4,6 +4,77 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-22 — feat: Phase 84 Theme A — connect your own GitHub account ◐
+
+Signing in with GitHub told midnite who you are and then **threw the access token away**.
+Nothing stored a GitHub token per user, so Theme B's repo browser fell back to whatever
+the install already had. This adds the per-user connection: a device grant, an owned and
+encrypted credential, and one token ladder everything resolves through.
+
+**8 of 10 items landed; two did not, and the phase doc was wrong about one of them.**
+
+The doc specifies a **built-in connect client id**, like login's, so a bare install needs
+no configuration. That assumed midnite would register a *second* GitHub OAuth App — and
+nobody has. A first pass invented an id; self-review caught it and it was verified live:
+the invented id returns `{"error":"Not Found"}` while the login app's returns a real
+`device_code`. Shipping it would have meant the "zero-config" path 400-ing on every
+install behind GitHub's opaque error. So there is **no built-in id**: connect requires
+`workflows.oauth.github.clientId` and, unset, fails with the registration steps verbatim
+(including **Enable Device Flow**, and why the app must differ from the login one).
+**Registering it is the remaining human step** — the same shape as Phase 72 Theme E's
+operator-gated items. **Login is untouched and still needs zero configuration.**
+
+The **redirect grant is deliberately unwired for GitHub**. Its callback is an
+unauthenticated browser navigation, so it cannot attribute a *personal* connection to
+anyone — review found it landing a `repo project`-scoped token as install-wide, visible to
+every member and usable by any workflow node, while its owner still read "not connected".
+Connect is device-only, which §11 makes the default anyway; google/slack keep the redirect
+grant untouched.
+
+**The device grant is now one implementation, used twice.** Login already had the fiddly
+parts — opaque handle, per-interval forwarding, `slow_down` back-off, terminal
+`expired_token`/`access_denied`. `lib/device-grant.ts` is that code once, as a **plain
+class rather than a Nest provider** so each caller owns its own pending-authorization
+namespace (a *connect* handle must never be pollable through a *login* endpoint) and
+`SsoService`'s constructor never changes. **Its 26 specs run unedited** — that is how the
+extraction was verified behaviour-preserving, and it was the phase's hard constraint.
+
+**Ownership is `null = shared with the whole install`, unbackfilled.** Backfilling the
+existing rows to whoever ran the migration would have taken the shared PAT away from every
+other user and broken the executors resolving it.
+
+**Disconnect is honest about what it did.** GitHub's revocation endpoints need Basic auth
+with the client secret, which a secretless install by definition lacks — so it always
+deletes locally, revokes at GitHub only when a secret is configured, and reports which
+happened plus a link to finish the job. The doc's "revoking in midnite actually revokes"
+cannot hold universally, and pretending it did would have been a lie in the UI.
+
+Self-review found **seven** defects, all fixed with regression tests: the invented client
+id; re-connect silently keeping the old token (so widening scopes was a no-op); personal
+tokens landing install-wide; PR review never reaching rung 1 of the ladder *and* newly
+falling through to the host `gh` token in a way that would mask a real `gh pr merge`
+refusal; any member being able to delete another user's connection; anyone holding a
+`deviceAuthId` consuming the one-shot grant; and leaked pending connects.
+
+- [x] **`github-oauth` credential variant** + `'github'` in `OAUTH_PROVIDERS`; the opaque `github` PAT variant untouched
+- [x] **Credential ownership** — `user_id`/`team_id` (migration 0098), owner-scoped lookup, null-owner rows shared
+- [x] **Provider strategy table** replacing the google/slack `if`-branches; both still `redirect`, their specs unedited
+- [x] **Secretless device-flow connect** — `POST /oauth/github/device` + poll, provider `device_code` never leaves the gateway
+- [x] **Connect-flow parity with login** — plus poll-ownership, which login doesn't need
+- [x] **`repo project read:org`** in one consent screen; the *granted* scope persisted
+- [x] **Refresh + disconnect** — missing `expiresAt` means nothing to refresh; revoke secret-gated and reported
+- [x] **`githubToken()`'s first-match-wins fixed at the root** — PR review resolves through the shared ladder
+- [ ] **A second built-in device client id** — blocked on registering the OAuth App (human step)
+- [ ] **Redirect grant as a connect path** — needs an owner-stamped authenticated start
+
+313 gateway spec files green. New coverage: `device-grant` (18), `oauth-strategies` (16),
+`oauth-github-connect` (25, real `:memory:` SQLite — encrypted at rest, one-shot, re-connect
+replaces, poll ownership, revoke both ways), `workflow-credentials.owner` (10). Migration
+**0098** (`0097` went to Theme C). `moon run :typecheck` / `:lint` green; two pre-existing
+full-run-only flakes, neither in the diff. (PR #638)
+
+---
+
 ## 2026-08-20 — feat: Phase 84 Theme C — a project spans many repos, and the primary one is where it lives ✅
 
 A project could name exactly one directory (`workDir`), which is wrong for anyone

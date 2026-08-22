@@ -18,12 +18,12 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Repo, WorkflowSummary } from '@midnite/shared';
+import { GithubIcon } from '@midnite/ui';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/components/confirm-dialog';
-import { GithubMark } from '@/components/github/github-mark';
 import { RepoBrowserDialog } from '@/components/github/repo-browser-dialog';
 import {
   createRepo,
@@ -394,7 +394,7 @@ export function ReposView() {
           </p>
 
           <Button variant="outline" size="sm" onClick={() => setBrowsing(true)}>
-            <GithubMark /> {t('repos.browse.action')}
+            <GithubIcon /> {t('repos.browse.action')}
           </Button>
 
           {error ? (

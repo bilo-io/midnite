@@ -14,6 +14,7 @@ import {
   type WorkflowCredentialResponse,
   type WorkflowCredentialsResponse,
 } from '@midnite/shared';
+import { CurrentUser, type CurrentUserPayload } from '../../auth/decorators/current-user.decorator';
 import { WorkflowCredentialsService } from './workflow-credentials.service';
 
 // REST surface for the workflow credential vault. Thin: parse/encode only. The list
@@ -40,7 +41,9 @@ export class WorkflowCredentialsController {
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string): void {
-    this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): void {
+    // Owner-checked (Phase 84 Theme A): install-wide credentials stay deletable by anyone,
+    // a per-user connection only by the user who made it.
+    this.service.removeForUser(id, user?.userId);
   }
 }

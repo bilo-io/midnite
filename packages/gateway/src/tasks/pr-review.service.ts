@@ -19,6 +19,7 @@ import {
   type Task,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
+import { GithubTokenService } from '../github/github-token.service';
 import { WorkflowCredentialsService } from '../workflows/credentials/workflow-credentials.service';
 import { mergeGithubPr, submitGithubReview, type GhRunner } from './lib/github-review';
 import { PrReviewCommentsRepository, toDraft } from './pr-review-comments.repository';
@@ -41,6 +42,10 @@ export class PrReviewService {
     @Inject(TasksRepository) private readonly repo: TasksRepository,
     @Inject(PrStatusService) private readonly prStatus: PrStatusService,
     @Inject(PrReviewCommentsRepository) private readonly drafts: PrReviewCommentsRepository,
+    // The one GitHub token ladder (Phase 84 Theme A). Required, not `@Optional()`: a
+    // missing ladder here would mean a silently arbitrary token choice, which is exactly
+    // the class of bug this replaces. Ahead of the optional params so it stays required.
+    @Inject(GithubTokenService) private readonly githubTokens: GithubTokenService,
     @Optional() @Inject(WorkflowCredentialsService) private readonly credentials?: WorkflowCredentialsService,
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
@@ -112,7 +117,7 @@ export class PrReviewService {
       const result = await submitGithubReview(
         prUrl,
         { event: submission.event, body: submission.body, comments },
-        { runGh: this.runGh, getToken: () => this.githubToken() },
+        { runGh: this.runGh, getToken: () => this.githubToken(author) },
       );
       this.logger.log(`review (${submission.event}) submitted on ${prUrl}${result.htmlUrl ? ` → ${result.htmlUrl}` : ''}`);
     } catch (err) {
@@ -133,7 +138,10 @@ export class PrReviewService {
   async mergePr(taskId: string, method: PrMergeMethod, actor: string | null): Promise<Task> {
     const prUrl = this.requirePrUrl(taskId);
     try {
-      await mergeGithubPr(prUrl, method, { runGh: this.runGh, getToken: () => this.githubToken() });
+      await mergeGithubPr(prUrl, method, {
+        runGh: this.runGh,
+        getToken: () => this.githubToken(actor),
+      });
       this.logger.log(`merged ${prUrl} (${method})`);
     } catch (err) {
       throw this.toGatewayError('merge PR', err);
@@ -157,13 +165,20 @@ export class PrReviewService {
     return row.prUrl;
   }
 
-  /** The github workflow credential's token, if one is configured (REST fallback). */
-  private async githubToken(): Promise<string | undefined> {
-    if (!this.credentials) return undefined;
-    const cred = this.credentials.list().find((c) => c.type === 'github');
-    if (!cred) return undefined;
-    const data = await this.credentials.resolve(cred.id);
-    return data?.type === 'github' ? data.token : undefined;
+  /**
+   * A GitHub token for the REST fallback, resolved through the shared ladder: the acting
+   * user's own connection → the install-wide `github` PAT → the `gh` CLI.
+   *
+   * This used to be `list().find(c => c.type === 'github')` — fine while exactly one
+   * GitHub credential existed, and silently arbitrary the moment per-user rows do. The
+   * ordering now lives in one place (Phase 84 Theme A); a PAT-only install resolves the
+   * same token it always did.
+   */
+  private async githubToken(actor: string | null): Promise<string | undefined> {
+    // `allowGhCli: false` keeps this behaviour-identical to the vault-only lookup it
+    // replaced — the `gh` CLI is already this service's *primary* path via `runGh`, and
+    // feeding its token to the REST fallback would mask a real `gh` refusal.
+    return (await this.githubTokens.resolve(actor ?? undefined, { allowGhCli: false }))?.token;
   }
 
   /** A failed write is the agent's/user's action hitting GitHub — surface the

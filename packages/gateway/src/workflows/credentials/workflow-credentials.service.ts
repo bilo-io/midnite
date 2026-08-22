@@ -29,19 +29,41 @@ export class WorkflowCredentialsService {
     this.oauthService = svc;
   }
 
-  /** Secret-free list — names + types only, never the encrypted material. */
+  /** Every credential, unscoped — names + types only. */
   list(): WorkflowCredential[] {
     return this.repo.list().map(toPublicView);
   }
 
+  /**
+   * The acting user's **own** credential of `type`, decrypted — null-owner rows excluded
+   * on purpose (an install-wide PAT is not *your* connection). Returns null when there's
+   * no such row, or when it can't be decrypted (fail-closed).
+   */
+  async resolveOwnedByType(
+    userId: string,
+    type: WorkflowCredentialData['type'],
+  ): Promise<{ id: string; name: string; data: WorkflowCredentialData } | null> {
+    const row = this.repo.findOwnedByType(userId, type);
+    if (!row) return null;
+    const data = await this.resolve(row.id);
+    return data ? { id: row.id, name: row.name, data } : null;
+  }
+
   /** Store a new credential. The `type` is taken from the secret payload's discriminant
-   *  so it has a single source of truth. Fail-closed: rejected with 400 when no key. */
-  create(req: CreateWorkflowCredentialRequest): WorkflowCredential {
-    return this.createWithId(randomUUID(), req.name, req.data);
+   *  so it has a single source of truth. Fail-closed: rejected with 400 when no key.
+   *  `owner` is optional — omitted means an install-wide credential, which is what every
+   *  existing caller (and every pre-migration row) is. */
+  create(req: CreateWorkflowCredentialRequest, owner?: CredentialOwner): WorkflowCredential {
+    return this.createWithId(randomUUID(), req.name, req.data, owner);
   }
 
   /** Like `create`, but with an explicit id — used by OAuth refresh to preserve the row id. */
-  createWithId(id: string, name: string, data: WorkflowCredentialData): WorkflowCredential {
+  createWithId(
+    id: string,
+    name: string,
+    data: WorkflowCredentialData,
+    owner?: CredentialOwner,
+  ): WorkflowCredential {
     const now = new Date().toISOString();
     try {
       const row = this.repo.insert({
@@ -49,6 +71,8 @@ export class WorkflowCredentialsService {
         name,
         type: data.type,
         data: JSON.stringify(data),
+        userId: owner?.userId ?? null,
+        teamId: owner?.teamId ?? null,
         createdAt: now,
         updatedAt: now,
       });
@@ -59,10 +83,35 @@ export class WorkflowCredentialsService {
     }
   }
 
+  /** The owner recorded on a row, so a refresh can preserve it. */
+  ownerOf(id: string): CredentialOwner | undefined {
+    const row = this.repo.get(id);
+    if (!row) return undefined;
+    return { userId: row.userId ?? undefined, teamId: row.teamId ?? undefined };
+  }
+
   remove(id: string): void {
     if (!this.repo.remove(id)) {
       throw new NotFoundException(`workflow credential ${id} does not exist`);
     }
+  }
+
+  /**
+   * Delete on behalf of `userId`, refusing to touch a credential someone else owns.
+   *
+   * Install-wide (null-owner) rows stay deletable by any member, exactly as before this
+   * phase — they're shared configuration. But per-user rows arrived with Theme A, and
+   * without this check any member could delete a colleague's GitHub connection.
+   */
+  removeForUser(id: string, userId: string | undefined): void {
+    const owner = this.ownerOf(id);
+    if (!owner) throw new NotFoundException(`workflow credential ${id} does not exist`);
+    if (owner.userId && owner.userId !== userId) {
+      // 404 rather than 403: whether another user holds a given credential id is not
+      // something the caller is entitled to learn.
+      throw new NotFoundException(`workflow credential ${id} does not exist`);
+    }
+    this.remove(id);
   }
 
   /**
@@ -106,9 +155,25 @@ export class WorkflowCredentialsService {
       }
     }
 
+    // GitHub connections (Phase 84 Theme A). GitHub OAuth App tokens do **not** expire
+    // unless the app opts into expiring tokens, so the overwhelmingly common shape is no
+    // `expiresAt` and no `refreshToken` — that's "nothing to refresh", not a broken row,
+    // and treating it as an error would break every normal connection.
+    if (parsed.type === 'github-oauth' && this.oauthService && parsed.refreshToken && parsed.expiresAt) {
+      if (new Date(parsed.expiresAt).getTime() - Date.now() < 60_000) {
+        this.logger.debug({ credentialId: id }, 'github-oauth token near expiry — refreshing');
+        const refreshed = await this.oauthService.refreshGithubToken(id, parsed, row.name);
+        if (refreshed) return refreshed;
+        this.logger.warn({ credentialId: id }, 'github-oauth token refresh failed; using stale token');
+      }
+    }
+
     return parsed;
   }
 }
+
+/** Who a credential belongs to. Both undefined ⇒ shared with the whole install. */
+export type CredentialOwner = { userId?: string; teamId?: string };
 
 /** Project a stored row to the public, secret-free shape returned over the API. */
 function toPublicView(row: WorkflowCredentialRow): WorkflowCredential {

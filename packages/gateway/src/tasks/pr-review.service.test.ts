@@ -2,6 +2,7 @@ import { BadGatewayException, BadRequestException, ForbiddenException, NotFoundE
 import { describe, expect, it, vi } from 'vitest';
 import type { Task } from '@midnite/shared';
 import type { AuditService } from '../audit/audit.service';
+import type { GithubTokenService } from '../github/github-token.service';
 import type { GhRunner } from './lib/github-review';
 import { PrReviewService } from './pr-review.service';
 import type { PrReviewCommentsRepository } from './pr-review-comments.repository';
@@ -32,7 +33,13 @@ function make(prUrl: string | null, gh: GhRunner, draftRows: unknown[] = []) {
     remove: vi.fn(() => true),
   } as unknown as PrReviewCommentsRepository;
   const audit = { record: vi.fn() } as unknown as AuditService;
-  const service = new TestPrReviewService([repo, prStatus, drafts, undefined, audit], gh);
+  // Phase 84 A — PR review resolves its REST-fallback token through the shared ladder
+  // rather than a first-match vault lookup. A PAT-only install is the case that must
+  // behave exactly as before, so that's what the fake reports.
+  const githubTokens = {
+    resolve: vi.fn(async () => ({ token: 'pat-token', source: 'pat' as const })),
+  } as unknown as GithubTokenService;
+  const service = new TestPrReviewService([repo, prStatus, drafts, githubTokens, undefined, audit], gh);
   return { service, repo, prStatus, drafts, audit };
 }
 

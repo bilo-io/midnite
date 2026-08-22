@@ -654,14 +654,28 @@ export const workflowStorage = sqliteTable(
 // Secrets that integration/HTTP nodes reference by id. `data` holds the AES-256-GCM
 // encrypted JSON payload ("v1:..."); the plaintext secret never leaves the gateway.
 // Mirrors the llm_providers at-rest encryption contract (CryptoService, fail-closed).
-export const workflowCredentials = sqliteTable('workflow_credentials', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  type: text('type').notNull(), // WorkflowCredentialType
-  data: text('data').notNull(), // encrypted JSON blob, never returned to a client
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
-});
+export const workflowCredentials = sqliteTable(
+  'workflow_credentials',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    type: text('type').notNull(), // WorkflowCredentialType
+    data: text('data').notNull(), // encrypted JSON blob, never returned to a client
+    // Owner (Phase 84 Theme A). **Null means shared with the whole install** — which is
+    // what every row written before the migration is, and what today's `github` PAT and
+    // Slack token must stay. Connections resolve on `user_id` alone this phase
+    // (Decision §8); `team_id` is stored so team-shared credentials can arrive later
+    // without another migration.
+    userId: text('user_id'),
+    teamId: text('team_id'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    userIdx: index('workflow_credentials_user_idx').on(t.userId),
+    typeIdx: index('workflow_credentials_type_idx').on(t.type),
+  }),
+);
 
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
