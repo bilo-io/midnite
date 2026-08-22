@@ -25,17 +25,16 @@ export type ExecFileFn = (
  *
  * Resolution is a defined **ladder**, not a first match over an unordered list:
  *
- * 1. the acting user's own `github-oauth` credential — **Theme A** adds this rung
+ * 1. the acting user's own `github-oauth` connection (Phase 84 Theme A)
  * 2. the install-wide `github` PAT in the workflow credential vault
  * 3. the `gh` CLI's stored auth on the gateway host
  *
- * The ordering is the point. `pr-review.service.ts`'s `githubToken()` does
- * `list().find(c => c.type === 'github')`, which is fine while there is exactly one
- * GitHub credential and silently arbitrary the moment per-user rows exist — Theme A
- * repoints that call site here rather than growing a second ladder. Until then this
- * service is honest about being a shared-token fallback: `source` distinguishes a real
- * per-user connection from an install-wide PAT, so the UI never claims *your* GitHub
- * is connected when what it found was the operator's.
+ * The ordering is the point. `pr-review.service.ts` used to do
+ * `list().find(c => c.type === 'github')` — fine while exactly one GitHub credential
+ * existed, silently arbitrary the moment per-user rows do. It now resolves through here,
+ * so there is one ordering in one place. `source` distinguishes a real per-user
+ * connection from an install-wide PAT, so the UI never claims *your* GitHub is connected
+ * when what it found was the operator's.
  *
  * `GithubModule` imports `WorkflowCredentialsModule`, so the vault is a required dep
  * rather than an `@Optional()` one — unit specs construct this class directly with a
@@ -60,6 +59,15 @@ export class GithubTokenService {
    * per-user rung without changing a single call site.
    */
   async resolve(userId?: string): Promise<ResolvedGithubToken | null> {
+    // Rung 1: the acting user's own connection. Deliberately their *owned* row only —
+    // a null-owner PAT is the install's, not theirs, and it's the next rung anyway.
+    if (userId) {
+      const owned = await this.credentials.resolveOwnedByType(userId, 'github-oauth');
+      if (owned?.data.type === 'github-oauth') {
+        return { token: owned.data.accessToken, source: 'oauth' };
+      }
+    }
+
     const pat = await this.resolveVaultPat();
     if (pat) return { token: pat, source: 'pat' };
 

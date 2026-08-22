@@ -19,6 +19,7 @@ import {
   type Task,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
+import { GithubTokenService } from '../github/github-token.service';
 import { WorkflowCredentialsService } from '../workflows/credentials/workflow-credentials.service';
 import { mergeGithubPr, submitGithubReview, type GhRunner } from './lib/github-review';
 import { PrReviewCommentsRepository, toDraft } from './pr-review-comments.repository';
@@ -41,6 +42,10 @@ export class PrReviewService {
     @Inject(TasksRepository) private readonly repo: TasksRepository,
     @Inject(PrStatusService) private readonly prStatus: PrStatusService,
     @Inject(PrReviewCommentsRepository) private readonly drafts: PrReviewCommentsRepository,
+    // The one GitHub token ladder (Phase 84 Theme A). Required, not `@Optional()`: a
+    // missing ladder here would mean a silently arbitrary token choice, which is exactly
+    // the class of bug this replaces. Ahead of the optional params so it stays required.
+    @Inject(GithubTokenService) private readonly githubTokens: GithubTokenService,
     @Optional() @Inject(WorkflowCredentialsService) private readonly credentials?: WorkflowCredentialsService,
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
@@ -157,13 +162,17 @@ export class PrReviewService {
     return row.prUrl;
   }
 
-  /** The github workflow credential's token, if one is configured (REST fallback). */
+  /**
+   * A GitHub token for the REST fallback, resolved through the shared ladder: the acting
+   * user's own connection → the install-wide `github` PAT → the `gh` CLI.
+   *
+   * This used to be `list().find(c => c.type === 'github')` — fine while exactly one
+   * GitHub credential existed, and silently arbitrary the moment per-user rows do. The
+   * ordering now lives in one place (Phase 84 Theme A); a PAT-only install resolves the
+   * same token it always did.
+   */
   private async githubToken(): Promise<string | undefined> {
-    if (!this.credentials) return undefined;
-    const cred = this.credentials.list().find((c) => c.type === 'github');
-    if (!cred) return undefined;
-    const data = await this.credentials.resolve(cred.id);
-    return data?.type === 'github' ? data.token : undefined;
+    return (await this.githubTokens.resolve())?.token;
   }
 
   /** A failed write is the agent's/user's action hitting GitHub — surface the

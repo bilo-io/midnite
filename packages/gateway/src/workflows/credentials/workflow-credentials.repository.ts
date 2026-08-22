@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, or } from 'drizzle-orm';
 import { DB_TOKEN, type MidniteDb } from '../../db/db.module';
 import { CryptoService } from '../../crypto/crypto.service';
 import { workflowCredentials, type WorkflowCredentialRow } from '../../db/schema';
@@ -11,6 +11,9 @@ export interface WorkflowCredentialWrite {
   name: string;
   type: string;
   data: string;
+  /** Owning user, or null for a credential shared with the whole install. */
+  userId?: string | null;
+  teamId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,8 +35,40 @@ export class WorkflowCredentialsRepository {
     }
   }
 
+  /** Every credential, unscoped. Existing callers (the vault UI, executors resolving by
+   *  id) keep this behaviour — Phase 84 Theme A adds scope as new methods, not as a
+   *  change to this one. */
   list(): WorkflowCredentialRow[] {
     return this.db.select().from(workflowCredentials).all();
+  }
+
+  /**
+   * Credentials `userId` may use: their own rows plus **null-owner rows**, which are
+   * shared with the whole install (every row written before the owner migration, so
+   * today's PAT and Slack token stay visible to everyone).
+   *
+   * Mirrors `db/team-scope.ts`'s own-plus-legacy shape, but keyed on `user_id` alone —
+   * `team_id` is stored and not yet resolved (Decision §8).
+   */
+  listForUser(userId: string): WorkflowCredentialRow[] {
+    return this.db
+      .select()
+      .from(workflowCredentials)
+      .where(or(eq(workflowCredentials.userId, userId), isNull(workflowCredentials.userId)))
+      .all();
+  }
+
+  /**
+   * The acting user's **own** credential of `type` — null-owner rows deliberately
+   * excluded. This backs "is *your* GitHub connected?", where an install-wide PAT is the
+   * wrong answer: it would let the UI claim a personal connection the user never made.
+   */
+  findOwnedByType(userId: string, type: string): WorkflowCredentialRow | undefined {
+    return this.db
+      .select()
+      .from(workflowCredentials)
+      .where(and(eq(workflowCredentials.userId, userId), eq(workflowCredentials.type, type)))
+      .get();
   }
 
   get(id: string): WorkflowCredentialRow | undefined {
@@ -48,7 +83,12 @@ export class WorkflowCredentialsRepository {
   insert(write: WorkflowCredentialWrite): WorkflowCredentialRow {
     return this.db
       .insert(workflowCredentials)
-      .values({ ...write, data: this.crypto.encrypt(write.data) })
+      .values({
+        ...write,
+        userId: write.userId ?? null,
+        teamId: write.teamId ?? null,
+        data: this.crypto.encrypt(write.data),
+      })
       .returning()
       .get();
   }

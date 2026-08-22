@@ -3,6 +3,7 @@ import { AgentModule } from '../agent/agent.module';
 import { AuthModule } from '../auth/auth.module';
 import { ChecksModule } from '../checks/checks.module';
 import { CwdModule } from '../cwd/cwd.module';
+import { GithubTokenModule } from '../github/github-token.module';
 import { ReposModule } from '../repos/repos.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { WorkflowCredentialsModule } from '../workflows/credentials/workflow-credentials.module';
@@ -28,6 +29,9 @@ import { TasksGateway } from './tasks.gateway';
     // in the same directory the agent worked in.
     CwdModule,
     ReposModule,
+    // Phase 84 A — the one GitHub token ladder, so PR review resolves a token in the
+    // same defined order everything else does. The narrow module, not all of GithubModule.
+    GithubTokenModule,
     WorkflowsModule,
     WorkflowCredentialsModule,
     TaskEventBusModule,
