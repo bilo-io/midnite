@@ -1,4 +1,4 @@
-import { type Locator, type Page } from '@playwright/test';
+import { type BrowserContext, type Locator, type Page } from '@playwright/test';
 
 /**
  * Pin the tasks board to its **unified** layout ("One board" on) before the app
@@ -6,9 +6,14 @@ import { type Locator, type Page } from '@playwright/test';
  * status columns per project — so `column()` would match one section per project
  * group. Every spec asserting flat, page-level status columns depends on the
  * unified layout, and says so by calling this in a `beforeEach`.
+ *
+ * Takes a `BrowserContext` as well as a `Page`, for the specs that build their
+ * own context via `browser.newContext()` (reconnect-resume's keeper client) and
+ * so can't rely on a `page`-fixture override — same reason
+ * `suppressFirstRunGates` is context-capable.
  */
-export async function pinUnifiedBoard(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+export async function pinUnifiedBoard(target: Page | BrowserContext): Promise<void> {
+  await target.addInitScript(() => {
     try {
       localStorage.setItem('midnite.tasks.boardStyle', 'unified');
     } catch {

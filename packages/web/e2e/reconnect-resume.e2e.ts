@@ -2,8 +2,8 @@ import type { Browser, Page } from '@playwright/test';
 
 import { WEB_ORIGIN } from './config';
 import { expect, suppressFirstRunGates, test } from './helpers/harness';
-import { column } from './helpers/board';
-import { seedTask } from './helpers/gateway';
+import { column, pinUnifiedBoard } from './helpers/board';
+import { seedTask, uniqueLabel } from './helpers/gateway';
 
 /**
  * Phase 56 verification — the core guarantee: a board client that briefly drops
@@ -94,8 +94,10 @@ async function todoCount(page: Page): Promise<number> {
 /** A second board in its own context — a real subscriber that keeps the ring warm. */
 async function openKeeper(browser: Browser): Promise<() => Promise<void>> {
   const ctx = await browser.newContext({ baseURL: WEB_ORIGIN });
-  // A hand-rolled context doesn't get the `page` fixture's gate suppression.
+  // A hand-rolled context doesn't get the `page` fixture's gate suppression —
+  // nor the unified-board pin the `Todo` wait below needs.
   await suppressFirstRunGates(ctx);
+  await pinUnifiedBoard(ctx);
   const keeper = await ctx.newPage();
   await keeper.goto('/tasks');
   await keeper.getByRole('heading', { name: 'Todo', exact: true }).waitFor();
@@ -107,6 +109,12 @@ test.describe('WS reliability — reconnect resume (Phase 56)', () => {
     page,
     browser,
   }) => {
+    await pinUnifiedBoard(page);
+    // Both boards below wait on the `Todo` heading, and an empty board renders an
+    // empty state instead of columns (`board-view.tsx`) — so seed an anchor task
+    // first rather than depending on what another spec left in the shared gateway.
+    await seedTask(uniqueLabel('E2E resume — anchor'), 'todo');
+
     const closeKeeper = await openKeeper(browser);
     await installWsControl(page);
 
@@ -146,6 +154,12 @@ test.describe('WS reliability — reconnect resume (Phase 56)', () => {
     page,
     browser,
   }) => {
+    await pinUnifiedBoard(page);
+    // Both boards below wait on the `Todo` heading, and an empty board renders an
+    // empty state instead of columns (`board-view.tsx`) — so seed an anchor task
+    // first rather than depending on what another spec left in the shared gateway.
+    await seedTask(uniqueLabel('E2E resume — anchor'), 'todo');
+
     const closeKeeper = await openKeeper(browser);
     await installWsControl(page);
 

@@ -1,5 +1,8 @@
 import { expect, mergeSettings, openPalette, test } from './helpers/harness';
 
+import { pinUnifiedBoard } from './helpers/board';
+import { seedTask, uniqueLabel } from './helpers/gateway';
+
 /**
  * Phase 60 Theme I — keyboard/ARIA probe for the fixes this slice applied. The
  * command palette is now a proper combobox+listbox: focus stays in the input
@@ -54,13 +57,20 @@ test.describe('a11y — command palette combobox', () => {
 /**
  * Phase 67 B/E — the product-guide overlay is keyboard-operable: it's a modal
  * dialog, focus lands on the step card, ←/→/Enter/Esc drive the tour, and Escape
- * dismisses it. Launched via the assistant → "Guides" index; no seed needed (the
- * board columns render empty).
+ * dismisses it. Launched via the assistant → "Guides" index.
+ *
+ * Needs one seeded task: an empty board replaces the whole column grid with an
+ * empty state (`board-view.tsx`), so with no tasks there is no `Todo` heading
+ * and no `board-column-todo` tour anchor to measure.
  */
 test.describe('a11y — guide overlay keyboard nav', () => {
   test.beforeEach(async ({ page }) => {
     // The tour must be launched deliberately below, not auto-shown on arrival.
     await mergeSettings(page, { autoShowGuides: false });
+    // The board defaults to per-project accordions, which repeat the status
+    // columns once per project — so `Todo` below must resolve to exactly one
+    // heading regardless of what other specs left in the shared gateway.
+    await pinUnifiedBoard(page);
     await page.addInitScript(() => {
       try {
         localStorage.setItem('midnite.theme', 'dark');
@@ -71,6 +81,11 @@ test.describe('a11y — guide overlay keyboard nav', () => {
   });
 
   test('overlay is a focused modal dialog driven by arrows/Enter/Escape', async ({ page }) => {
+    // Seed before navigating: the board paints an empty state instead of columns
+    // until at least one task exists, and this spec must not depend on whatever
+    // another spec happened to leave in the shared gateway.
+    await seedTask(uniqueLabel('E2E guide overlay — board anchor'), 'todo');
+
     await page.goto('/tasks');
     // Wait for the board itself before launching its tour. The overlay's
     // missing-anchor handling *advances* rather than stranding the user on an
@@ -95,8 +110,9 @@ test.describe('a11y — guide overlay keyboard nav', () => {
 
     // ArrowRight advances a step at a time. The board tour is three steps —
     // "Your board" → "Ready work" → the closing "Replay anytime" — and the
-    // middle anchor (`data-tour="board-column-todo"`) is unconditionally
-    // rendered, so the overlay's missing-anchor auto-skip never collapses it.
+    // middle anchor (`data-tour="board-column-todo"`) is rendered because the
+    // board has the seeded task above, so the overlay's missing-anchor auto-skip
+    // never collapses it.
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('dialog', { name: 'Ready work' })).toBeVisible();
     await page.keyboard.press('ArrowRight');
