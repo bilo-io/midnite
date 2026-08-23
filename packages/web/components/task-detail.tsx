@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowUpRight, Check, ExternalLink, GitCompare, Loader2, Plus, RefreshCw, X } from 'lucide-react';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ChecksPanel } from '@/components/checks-panel';
+import { ProjectItemCard } from '@/components/github/project-item-card';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
 import { RunTimeline } from '@/components/run-timeline';
@@ -1100,6 +1101,11 @@ export function TaskDetail({
         <section className={cn('p-3', contentFrame)}>
           <ChecksPanel taskId={task.id} />
         </section>
+
+        {/* Phase 84 E — the task's GitHub Projects v2 link. Fetched on its own rather
+            than folded into the task payload: it's an optional integration most tasks
+            don't use, and a 404 here is a normal "unlinked", not an error. */}
+        <ProjectItemCard taskId={task.id} />
 
         {task.retryCount > 0 || task.waitReason ? (
           // Phase 53 E — structured failure history for a task that has failed.

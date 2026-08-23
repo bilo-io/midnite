@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CheckResult } from '@midnite/shared';
+import { eq } from 'drizzle-orm';
 import { createTestDb } from '../test';
+import { GithubProjectItemsRepository } from '../github/github-project-items.repository';
 import { TasksRepository } from './tasks.repository';
+import * as schema from '../db/schema';
 import type { TaskCheckRunInsert, TaskInsert } from '../db/schema';
 
 function makeRepo() {
@@ -9,9 +12,13 @@ function makeRepo() {
 }
 
 let repo: TasksRepository;
+// Kept alongside `repo` so a test can assert on tables the tasks repository cascades to
+// but doesn't own.
+let db: ReturnType<typeof createTestDb>['db'];
 
 beforeEach(() => {
-  repo = makeRepo();
+  db = createTestDb().db;
+  repo = new TasksRepository(db);
 });
 
 // createdAt drives the tie-break, so vary it per insert.
@@ -291,5 +298,33 @@ describe('TasksRepository — PR status (Phase 22 Theme C)', () => {
     repo.upsertPrStatus({ taskId: 't1', url: url1, number: 1, state: 'open', checks: 'none', fetchedAt: 'z' });
     repo.deleteTask('t1');
     expect(repo.getPrStatusRow('t1')).toBeUndefined();
+  });
+
+  it('clears the GitHub Projects v2 link and its status map when the task is deleted', () => {
+    // Phase 84 E. An orphan here is worse than untidy: it keeps the unique
+    // (project_node_id, item_node_id) index held against a task that no longer exists, so
+    // no other task can ever adopt that GitHub item — and unlink can't clear it either,
+    // because every link route 404s on the missing task first.
+    insert('t1', {});
+    const projectItems = new GithubProjectItemsRepository(db as never);
+    const link = projectItems.insert({
+      taskId: 't1',
+      projectNodeId: 'PVT_1',
+      itemNodeId: 'PVTI_1',
+      projectTitle: 'Roadmap',
+      projectUrl: 'https://github.com/orgs/acme/projects/4',
+      itemUrl: 'https://github.com/orgs/acme/projects/4?pane=item&itemId=1',
+      mappings: [{ status: 'todo', optionId: 'o1', optionName: 'Todo' }],
+    });
+    expect(projectItems.getByTask('t1')).toBeDefined();
+
+    repo.deleteTask('t1');
+
+    expect(projectItems.getByTask('t1')).toBeUndefined();
+    // And the item is free for another task to adopt.
+    expect(projectItems.findByNode('PVT_1', 'PVTI_1')).toBeUndefined();
+    expect(
+      db.select().from(schema.githubProjectStatusMap).where(eq(schema.githubProjectStatusMap.itemId, link.id)).all(),
+    ).toEqual([]);
   });
 });

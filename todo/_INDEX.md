@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 29/55 | `█████░░░░░` | 53% | E | F ⁴ |
+| [84 · Connected GitHub (repos, multi-repo projects & Projects v2)](phase-84-connected-github.md) | 🔄 WIP | 35/55 | `██████░░░░` | 64% | — | F ⁴ |
 | [83 · Runtime-editable access allowlist + admin management UI](phase-83-admin-allowlist-management.md) | ◻ TODO | 0/21 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [82 · Full i18n coverage sweep (en-GB + fr-FR)](phase-82-i18n-full-coverage.md) | ✅ DONE | 40/40 (exempt 0) | `██████████` | 100% | — | — |
 | [81 · Desktop title bar & window chrome](phase-81-desktop-title-bar.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
@@ -148,7 +148,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Repo discovery & checkout matching (new `github/` module, `GET /github/repos` with pagination + per-user cache, git-remote → `owner/repo` matching over `github.checkoutRoots` — `.git/config` parsed, worktrees resolved — picker showing *on disk* / *registered* / *not checked out*, one-click import; **landed ahead of A** against a token ladder built for A to slot into, all routes `member`-gated) (PR #636)
 - ✅ **C** — Projects ↔ repos many-to-many (`project_repos` join + migration 0097, one-primary invariant maintained in-transaction, derived `project.repos` batched onto the list read, **the primary repo's path is the project's effective working directory**, realpath-matched boot backfill, attach/detach/set-primary endpoints, project-detail Repos panel) (PR #637)
 - ✅ **D** — cwd resolution correctness (`task.repo` beats `project.workDir`, containment-gated; the real second resolver turned out to be `TasksService.runManualCheck`; all three paths now share `CwdResolverService`, which also retired the `TerminalModule ↔ ProjectsModule` forwardRef; its two scoping bullets landed with Theme C) (PR #635 + #637)
-- ◻ **E** — GitHub Projects v2 link (first GraphQL client in the repo, project/field discovery, `github_project_items` satellite table à la `pr_status`, link/unlink, status → single-select mapping, task-detail card)
+- ✅ **E** — GitHub Projects v2 link (PR #640): first GraphQL client in the repo — kept **separate** from `github-rest.ts` because GitHub returns HTTP 200 with an `errors[]` array, so `res.ok` reads a denial as success — plus project/field discovery, a `github_project_items` satellite table à la `pr_status` with a normalised status map (migration 0099), link/unlink (draft-item creation by default), fuzzy-defaulted status → single-select mapping, and the task-detail card showing the item's **real** column on GitHub with `lastError` surfaced. Read-back stays display-only (§5)
 - ◻ **F** — Event-driven push & read-back (`TaskEventBus` subscriber, idempotency + loop suppression, `lastError` + backoff instead of throwing into the event path, display-only read-back poller, per-task sync log)
 - ◐ **G** — Connect UI, tests & docs — connection card on Settings → Integrations naming **which token rung the install runs on** (`oauth`/`pat`/`gh-cli`) and offering disconnect only for a personal connection, device-code connect UI, not-connected banner on Settings → Repos, a `github` preflight row, and `docs/GITHUB.md`. ⏳ Deferred: re-consent on a missing scope (no required-scope contract yet) and the strategy-table parity spec (PR #639)
 

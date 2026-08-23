@@ -5,7 +5,11 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ReposModule } from '../repos/repos.module';
 import { WorkflowCredentialsModule } from '../workflows/credentials/workflow-credentials.module';
+import { TasksCoreModule } from '../tasks/tasks-core.module';
 import { GithubController } from './github.controller';
+import { GithubProjectItemsRepository } from './github-project-items.repository';
+import { GithubProjectsController } from './github-projects.controller';
+import { GithubProjectsService } from './github-projects.service';
 import { GithubService } from './github.service';
 import { GithubTokenModule } from './github-token.module';
 import { GITHUB_FETCH_OPTIONS, GITHUB_HOME_DIR } from './github.tokens';
@@ -27,15 +31,17 @@ import { GITHUB_FETCH_OPTIONS, GITHUB_HOME_DIR } from './github.tokens';
  * real container.
  */
 @Module({
-  imports: [AuthModule, ReposModule, WorkflowCredentialsModule, GithubTokenModule],
-  controllers: [GithubController],
+  imports: [AuthModule, ReposModule, WorkflowCredentialsModule, GithubTokenModule, TasksCoreModule],
+  controllers: [GithubController, GithubProjectsController],
   providers: [
     GithubService,
+    GithubProjectsService,
+    GithubProjectItemsRepository,
     // The environment seams, bound to their real values. Explicit providers rather than
     // `@Optional()` params so a wiring mistake fails loudly at boot.
     { provide: GITHUB_FETCH_OPTIONS, useValue: {} },
     { provide: GITHUB_HOME_DIR, useValue: homedir() },
   ],
-  exports: [GithubService, GithubTokenModule],
+  exports: [GithubService, GithubProjectsService, GithubTokenModule],
 })
 export class GithubModule {}

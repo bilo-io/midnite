@@ -22,6 +22,9 @@ import { renderWithIntl } from '@/vitest.render-intl';
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 vi.mock('@/lib/api', () => ({
+  // Phase 84 E — TaskDetail renders the Projects v2 card, which fetches its own link.
+  // A rejection is the ordinary "not linked" case.
+  getTaskProjectItem: () => Promise.reject(new Error('not linked')),
   gatewayUrl: () => 'http://gw',
   // The modal resolves the counterpart task on mount; there is none here.
   getTask: vi.fn().mockRejectedValue(new Error('no task')),

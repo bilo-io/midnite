@@ -21,6 +21,9 @@ const getTask = vi.fn();
 const getProjects = vi.fn();
 const getTasks = vi.fn();
 vi.mock('@/lib/api', () => ({
+  // Phase 84 E — TaskDetail renders the Projects v2 card, which fetches its own link.
+  // A rejection is the ordinary "not linked" case.
+  getTaskProjectItem: () => Promise.reject(new Error('not linked')),
   getTask: (...a: unknown[]) => getTask(...a),
   getProjects: (...a: unknown[]) => getProjects(...a),
   getTasks: (...a: unknown[]) => getTasks(...a),

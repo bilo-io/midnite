@@ -48,6 +48,60 @@ real gateway rather than by the suite; Phase 76 Theme B is the standing fix.
 - [x] Reused the existing octocat from `source-icon` rather than a third copy
 - ⏳ Deferred: re-consent on a missing scope (no required-scope contract yet);
       strategy-table parity spec; registering the connect OAuth App (human-gated)
+## 2026-08-23 — feat: Phase 84 Theme E — link a task to a GitHub Projects v2 item ✅
+
+Projects v2 has **no REST API**, so this brings the repo's first GraphQL client — because
+Projects forced it, not as a migration away from `github-rest.ts`.
+
+**It is a separate client for one specific reason.** GitHub answers a *failed* GraphQL
+query with **HTTP 200** and an `errors[]` array in the body. A client that checks `res.ok`
+— exactly what the REST helper correctly does — treats a permission denial or a malformed
+query as success and hands the caller a `data` full of nulls. Folding the two together
+would have made that the default behaviour. The client also classifies a missing `project`
+scope specifically, because there the remedy is **reconnect**, not retry, and GitHub's own
+wording ("Resource not accessible by personal access token") sends people looking in the
+wrong place.
+
+**The card shows the item's real column on GitHub, and the copy says so.** Read-back is
+display-only this phase, so the UI must never imply midnite owns that value — hence "In
+*X* on GitHub" rather than a bare chip. `lastError` is rendered rather than swallowed: a
+silent stall is the failure mode Theme F warns about, and "the column looks stale" is
+unanswerable without it.
+
+**Linking creates a draft item from the task by default.** The task already exists here,
+so making the item by hand on GitHub is a detour; adopting an existing item stays
+available. A board with **no single-select field links fine** and simply has nothing to
+push to — that is not an error, and neither is an unmapped status.
+
+**The status map is normalised rows**, per the recorded decision (over a JSON column),
+defaulted by fuzzy name match and immediately editable.
+
+Writing its spec caught a real ordering bug: statuses are claimed in `STATUSES` order, so
+letting `backlog` fall back to "Todo" took that column out from under `todo` on **every
+conventional GitHub board**. No status borrows another's names now. Two more were designed
+out rather than discovered: the in-flight token was briefly a **field** on the service,
+which two interleaved requests could have swapped across an `await` and run one user's
+query with another's credentials; and the first cut put the card's fetch in `TaskDetail`,
+which both broke three specs' enumerated api mocks and put the read in the wrong place —
+the card already owns every mutation on the link, so it owns the read too.
+
+**Verified against the real Nest container**, not only units:
+`NestFactory.createApplicationContext(AppModule)` builds with the new module, controller,
+service and repository wired in. That is precisely the check whose absence let Theme A ship
+a `GithubModule` that could not be constructed at all while 2694 tests passed.
+
+- [x] **First GraphQL client** — `lib/github-graphql.ts`: `errors[]` unwrapping, rate-limit surfacing, injectable fetch, missing-scope/not-found classification
+- [x] **Project + field discovery** — `GET /github/projects` (viewer's + orgs'), `GET /github/projects/:id/fields` (single-selects only — the only field type a status can map onto)
+- [x] **`github_project_items` satellite table** — migration 0099, `pr_status`-shaped, one link per task and one task per GitHub item, with a normalised `github_project_status_map` child
+- [x] **Link / unlink** — draft-item creation by default or adopt an existing item; unlink drops the local row only, leaving the GitHub item alone (§9)
+- [x] **Status mapping** — fuzzy-defaulted at link time, editable, unmapped statuses are no-op pushes
+- [x] **Task-detail UI** — self-contained card: link, re-read, unlink, remote column, mapping count, `lastSyncedAt`, `lastError`
+
+317 gateway spec files (2747 tests) green; new coverage: `github-graphql` (16),
+`status-mapping` (12), `github-project-items.repository` (13, real `:memory:` SQLite, one
+migration per file), `github-projects.service` (17, GraphQL faked by operation name).
+`project-item-card` (16 RTL). All four locales authored. Migration **0099** (0098 was
+Theme A, 0097 Theme C). (PR #640)
 
 ---
 

@@ -139,10 +139,18 @@ import {
   RepoResponseSchema,
   ReposPageSchema,
   GithubConnectionResponseSchema,
+  GithubProjectFieldsResponseSchema,
+  GithubProjectItemResponseSchema,
+  GithubProjectsResponseSchema,
   OAuthDevicePollResponseSchema,
   OAuthDeviceStartResponseSchema,
   OAuthDisconnectResponseSchema,
   GithubReposResponseSchema,
+  type GithubProject,
+  type GithubProjectField,
+  type GithubProjectItem,
+  type GithubProjectStatusMapping,
+  type LinkGithubProjectItemRequest,
   ImportGithubRepoResponseSchema,
   type GithubConnection,
   type GithubReposResponse,
@@ -473,6 +481,15 @@ async function fetchJson<T>(
     }
     const text = await res.text().catch(() => '');
     throw new ApiError(errorMessage(res, text), res.status);
+  }
+  // A 204 (and any empty body) has nothing to parse — `res.json()` rejects with a
+  // SyntaxError on one. Every `@HttpCode(204)` DELETE route hit that: the request
+  // succeeded and the caller saw a parse error, so a UI that cleared its state on
+  // success never did. Callers that pass no schema want the side effect, not a value.
+  // `headers?.` because plenty of specs hand-roll a minimal fetch mock with no `headers`
+  // at all — a bare status/json object. Reaching straight for `.get` threw on those.
+  if (res.status === 204 || res.headers?.get('content-length') === '0') {
+    return undefined as T;
   }
   const body = (await res.json()) as unknown;
   return schema ? schema.parse(body) : (body as T);
@@ -1584,6 +1601,86 @@ export async function importGithubRepo(body: ImportGithubRepoRequest): Promise<R
     ImportGithubRepoResponseSchema,
   );
   return repo;
+}
+
+// --- GitHub Projects v2 (Phase 84 Theme E) ---
+
+/** Boards the connected account can see. 409 when nothing is connected; 403 (`code:
+ *  github_project_scope_missing`) when the token can't reach Projects. */
+export async function getGithubProjects(signal?: AbortSignal): Promise<GithubProject[]> {
+  const { projects } = await fetchJson(
+    '/github/projects',
+    { signal },
+    GithubProjectsResponseSchema,
+  );
+  return projects;
+}
+
+/** A board's single-select fields — the only ones a status can map onto. */
+export async function getGithubProjectFields(
+  projectNodeId: string,
+  signal?: AbortSignal,
+): Promise<GithubProjectField[]> {
+  const { fields } = await fetchJson(
+    `/github/projects/${encodeURIComponent(projectNodeId)}/fields`,
+    { signal },
+    GithubProjectFieldsResponseSchema,
+  );
+  return fields;
+}
+
+/** The task's Projects v2 link. Throws an {@link ApiError} with status 404 when unlinked. */
+export async function getTaskProjectItem(
+  taskId: string,
+  signal?: AbortSignal,
+): Promise<GithubProjectItem> {
+  const { item } = await fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/github-project-item`,
+    { signal },
+    GithubProjectItemResponseSchema,
+  );
+  return item;
+}
+
+/** Link the task to a board — creates a draft item from it unless `itemNodeId` is given. */
+export async function linkTaskProjectItem(
+  taskId: string,
+  body: LinkGithubProjectItemRequest,
+): Promise<GithubProjectItem> {
+  const { item } = await fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/github-project-item`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    GithubProjectItemResponseSchema,
+  );
+  return item;
+}
+
+/** Replace the status→column mapping. An empty array clears it. */
+export async function updateTaskProjectMappings(
+  taskId: string,
+  mappings: GithubProjectStatusMapping[],
+): Promise<GithubProjectItem> {
+  const { item } = await fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/github-project-item`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mappings }) },
+    GithubProjectItemResponseSchema,
+  );
+  return item;
+}
+
+/** Re-read the item's real column from GitHub. Display-only — never moves the task. */
+export async function refreshTaskProjectItem(taskId: string): Promise<GithubProjectItem> {
+  const { item } = await fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/github-project-item/refresh`,
+    { method: 'POST' },
+    GithubProjectItemResponseSchema,
+  );
+  return item;
+}
+
+/** Unlink. The GitHub item itself is left alone. */
+export async function unlinkTaskProjectItem(taskId: string): Promise<void> {
+  await fetchJson(`/tasks/${encodeURIComponent(taskId)}/github-project-item`, { method: 'DELETE' });
 }
 
 // --- Memories (markdown knowledge entries, global or project-scoped) ---

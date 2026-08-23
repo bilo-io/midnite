@@ -205,5 +205,33 @@
     "unresolved": "ungelöst",
     "timeline": "Zeitleiste",
     "noActivity": "Keine Aktivität erfasst."
+  },
+  "githubProject": {
+    "title": "GitHub-Projekt",
+    "link": "Verknüpfen",
+    "cancel": "Abbrechen",
+    "linkAction": "Mit einem GitHub-Projekt verknüpfen",
+    "refresh": "Von GitHub neu lesen",
+    "empty": "Diese Aufgabe steht auf keinem GitHub-Projektboard.",
+    "chooseBoard": "Board auswählen",
+    "loadingBoards": "Ihre Boards werden geladen…",
+    "noBoards": "Keine Projects-v2-Boards für Ihr Konto gefunden.",
+    "board": "{title} · {owner}",
+    "closedBoard": "{title} · {owner} (geschlossen)",
+    "createsDraft": "Erstellt aus dieser Aufgabe einen Entwurfseintrag auf dem Board.",
+    "remoteColumn": "In „{column}“ auf GitHub",
+    "noColumn": "Auf GitHub ist noch keine Spalte gesetzt.",
+    "noMapping": "Keine Statuszuordnung — Statusänderungen verschieben den Eintrag nicht.",
+    "mappedCount": "{count} Status dieser Aufgabe sind einer Spalte zugeordnet.",
+    "lastSynced": "Zuletzt gelesen {at}",
+    "lastError": "Letzte Synchronisierung fehlgeschlagen: {error}",
+    "notConnected": "GitHub ist nicht verbunden. Verbinden Sie ein Konto unter Einstellungen → Integrationen.",
+    "scopeMissing": "Das verwendete GitHub-Token kann Projekte nicht lesen. Neu verbinden, um Zugriff zu gewähren.",
+    "genericError": "Etwas ist schiefgelaufen",
+    "unlink": {
+      "action": "Trennen",
+      "title": "Von diesem GitHub-Projekt trennen?",
+      "description": "Der Eintrag bleibt auf dem Board — nur die Verknüpfung in midnite wird entfernt."
+    }
   }
 }
