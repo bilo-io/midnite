@@ -2,9 +2,9 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { repos as reposTable } from '../db/schema';
+import { projectRepos, projects as projectsTable, repos as reposTable } from '../db/schema';
 import { createTestDb, type TestDbHandle } from '../test/db';
 import { ProjectsRepository } from './projects.repository';
 
@@ -41,12 +41,22 @@ describe('project ↔ repo edges', () => {
     return id;
   }
 
-  beforeEach(() => {
+  // One migrated database for the whole file, truncated between tests. `createTestDb`
+  // replays every migration, so doing it per-test made this file the slowest in the
+  // gateway suite and pushed it past the 5s timeout under full-suite load (reported by
+  // a parallel session). The tests only need an empty set of these three tables.
+  beforeAll(() => {
     handle = createTestDb();
     repo = new ProjectsRepository(handle.db);
+  });
+  afterAll(() => handle.close());
+
+  beforeEach(() => {
+    handle.db.delete(projectRepos).run();
+    handle.db.delete(projectsTable).run();
+    handle.db.delete(reposTable).run();
     seq = 0;
   });
-  afterEach(() => handle.close());
 
   it('makes the first attached repo primary without being asked', () => {
     addProject('p1');
