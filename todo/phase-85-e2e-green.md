@@ -132,6 +132,42 @@ Every one of these is a spec that stopped describing the product:
       has specified this for a while and it has never existed
       (`…/branches/main/protection` → 404, `…/rulesets` → `[]`).
 
+## Theme E — the six the rebase exposed ✅
+
+Two weeks of `main` drift landed on this branch at rebase: **81 passed · 6 failed**, in
+files the branch mostly never touched. They looked like six problems. They were two, and
+one of them was an app bug the suite had been unable to report while it was invisible.
+
+- [x] **Four of the six were one silent client bug.** `useReliableSubscription` keeps its
+      socket in a `useRef` shared across effect runs, and `onclose` reset that ref
+      unconditionally. React's dev-mode double-invoke closes the first socket *while it is
+      still CONNECTING*, so its `close` event lands **after** the second run has stored its
+      own socket — and the reset disowned a live connection. The handshake is sent through
+      that ref, so the surviving socket opened and sent nothing; the gateway only registers
+      a client once its `subscribe` frame arrives, so **the board received no events at all
+      for the life of the page**. `onclose` now only disowns the socket when it is still the
+      current one, and the open handshake goes down the socket it belongs to. That alone
+      fixed `refetch-coalescing`, both `reconnect-resume` specs and `reply-resume`.
+      Worth naming: the gateway was blameless throughout — a raw `WebSocket` opened from
+      the same page received its watermark immediately. Two unit tests now pin it, and each
+      fails without either half of the fix.
+- [x] **`office`'s pointer-lock crash was also real.** drei's `<PointerLockControls>` binds
+      click-to-lock to `document` when given no `selector`, so *any* click asked the WebGL
+      canvas for the pointer — including the click on the "2D" tab that unmounts it. The
+      request landed on a detached element and threw an uncaught `WrongDocumentError`,
+      which is precisely what the Phase 63 G engine-swap spec exists to catch. Scoping the
+      handler to the stage wrapper fixes the crash and the UX together: the viewport grabs
+      the pointer, the surrounding chrome no longer does.
+- [x] **The last two were the shared-gateway coupling, one layer deeper.** `a11y-keyboard`
+      and `refetch-coalescing` waited on a `Todo` column heading without seeding anything.
+      An empty board replaces the whole column grid with an empty state, so those waits
+      only ever passed because *another* spec had left a task behind — they broke the
+      moment the suite ran as a subset. Both now seed their own anchor and pin the unified
+      layout (`pinUnifiedBoard` takes a `BrowserContext` too, for `reconnect-resume`'s
+      hand-rolled keeper client).
+
+**Result: 87 passed · 0 failed, 4.7 min** — from 31 failed · 34.7 min on `main`.
+
 ## Follow-ups the newly-visible capture step revealed
 
 The capture step had been `skipped` on every run ever recorded, so nobody had seen its
@@ -153,14 +189,18 @@ neither caused by Phase 85, and neither fixed here:
 ## Verification
 
 ```bash
-cd packages/web
-E2E_BUILD=1 pnpm exec playwright test --project=chromium --reporter=list
-# local:  85 passed (3.3m)
-# CI:     84 passed · 1 flaky · 0 failed (5.6m) — was 31 failed · 8 flaky · 46 passed (34.7m)
+moon run web:e2e
+# local:  87 passed · 0 failed (4.7m) — was 31 failed · 8 flaky · 46 passed (34.7m)
 ```
 
-The CI flake is `reconnect-resume.e2e.ts:106` (passed on retry) — the spec whose
-count-badge locator this phase repointed; worth watching.
+`moon run :typecheck` and `:lint` are green; `moon run :test` passes 2694 gateway + 2398
+web. The one `:test` failure seen under full-suite load,
+`lib/i18n-setup-infra-keys.test.ts`, is the known load-induced 5s-timeout flake in a file
+this branch never touches — it runs in 348ms on its own.
+
+`reconnect-resume.e2e.ts` was the CI flake to watch after Theme C repointed its
+count-badge locator. Theme E found the cause was not the locator: the socket it measures
+was orphaned before it ever subscribed.
 
 Done means the `e2e` **job** (not just the run) reports `success` in
 `gh run view <id> --json jobs`, the capture step no longer reports `skipped`, and
