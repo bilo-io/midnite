@@ -166,7 +166,14 @@ one of them was an app bug the suite had been unable to report while it was invi
       layout (`pinUnifiedBoard` takes a `BrowserContext` too, for `reconnect-resume`'s
       hand-rolled keeper client).
 
-**Result: 87 passed · 0 failed, 4.7 min** — from 31 failed · 34.7 min on `main`.
+- [x] **A seventh, found by rebasing again.** `workflows.e2e.ts` asserted the gateway-wide
+      empty state ("No workflows yet") while `retro-digest-pipeline` installs the
+      `daily-digest` template earlier in the same shared gateway. It passed one full run and
+      failed the next with neither spec changed — the last of this suite's global-state
+      assumptions. It now seeds its own uniquely-named workflow and reads that row back,
+      which is also a stronger contract check than the empty branch.
+
+**Result: 87 passed · 0 failed, 5.1 min** — from 31 failed · 34.7 min on `main`.
 
 ## Follow-ups the newly-visible capture step revealed
 
@@ -190,7 +197,7 @@ neither caused by Phase 85, and neither fixed here:
 
 ```bash
 moon run web:e2e
-# local:  87 passed · 0 failed (4.7m) — was 31 failed · 8 flaky · 46 passed (34.7m)
+# local:  87 passed · 0 failed (5.1m) — was 31 failed · 8 flaky · 46 passed (34.7m)
 ```
 
 `moon run :typecheck` and `:lint` are green; `moon run :test` passes 2694 gateway + 2398
