@@ -40,6 +40,12 @@ type Phase =
  *  - `gh-cli` — the gateway host's own `gh auth` session. Not a midnite
  *    credential at all; it lives and dies with the machine.
  *
+ * `connected: false` covers **two** situations the gateway deliberately folds
+ * together: nothing is configured, and a configured token that GitHub now rejects
+ * (a revoked or expired PAT resolves locally, then 401s). The user's next action is
+ * the same either way, so the copy names both rather than asserting "no account is
+ * connected" at someone whose token was simply revoked.
+ *
  * Only the **device** grant is offered. The redirect grant exists in the gateway
  * but is deliberately unwired for GitHub — its callback can't attribute a
  * connection to a user (Theme A review) — so surfacing it would be offering a

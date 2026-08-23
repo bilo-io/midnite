@@ -986,7 +986,7 @@
     "title": "GitHub account",
     "description": "Connect your GitHub account so midnite can browse your repositories and keep a GitHub Project in step with the board.",
     "connect": "Connect GitHub",
-    "notConnected": "No GitHub account is connected. Connecting takes one code and grants access to your repositories and Projects.",
+    "notConnected": "midnite has no GitHub access. Either no account is connected, or a configured token has been revoked or has expired — connecting takes one code, and grants access to your repositories and Projects.",
     "deviceInstructions": "Enter this code at GitHub to finish connecting. This page updates itself once you do.",
     "copy": "Copy",
     "copied": "Copied",
@@ -1010,7 +1010,7 @@
       "pat": "This is a shared token configured for the whole install, not a personal connection — disconnecting it here would remove it for everyone. Manage it in Settings → Credentials. Connect your own account to act as yourself.",
       "gh-cli": "This comes from the `gh` CLI signed in on the machine running the gateway, not from midnite. Sign out with `gh auth logout` there, or connect your own account to act as yourself."
     },
-    "bannerPrompt": "Connect your GitHub account to browse your repositories instead of typing their names and paths by hand.",
+    "bannerPrompt": "midnite can’t see your GitHub repositories — nothing is connected, or a configured token is no longer valid. Connect an account to browse them instead of typing names and paths by hand.",
     "bannerAction": "Connect GitHub"
   }
 }

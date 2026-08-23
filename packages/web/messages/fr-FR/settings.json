@@ -986,7 +986,7 @@
     "title": "Compte GitHub",
     "description": "Connectez votre compte GitHub pour que midnite puisse parcourir vos dépôts et tenir un projet GitHub à jour avec le tableau.",
     "connect": "Connecter GitHub",
-    "notConnected": "Aucun compte GitHub n’est connecté. La connexion ne demande qu’un code et donne accès à vos dépôts et à vos projets.",
+    "notConnected": "midnite n’a aucun accès à GitHub. Soit aucun compte n’est connecté, soit un jeton configuré a été révoqué ou a expiré — la connexion ne demande qu’un code et donne accès à vos dépôts et à vos projets.",
     "deviceInstructions": "Saisissez ce code sur GitHub pour terminer la connexion. Cette page se met à jour toute seule ensuite.",
     "copy": "Copier",
     "copied": "Copié",
@@ -1010,7 +1010,7 @@
       "pat": "Il s’agit d’un jeton partagé configuré pour toute l’installation, pas d’une connexion personnelle — le déconnecter ici le supprimerait pour tout le monde. Gérez-le dans Paramètres → Identifiants. Connectez votre propre compte pour agir en votre nom.",
       "gh-cli": "Cela provient de la CLI `gh` connectée sur la machine qui exécute la passerelle, pas de midnite. Déconnectez-vous avec `gh auth logout` sur cette machine, ou connectez votre propre compte pour agir en votre nom."
     },
-    "bannerPrompt": "Connectez votre compte GitHub pour parcourir vos dépôts au lieu de saisir leurs noms et chemins à la main.",
+    "bannerPrompt": "midnite ne voit pas vos dépôts GitHub — rien n’est connecté, ou un jeton configuré n’est plus valide. Connectez un compte pour les parcourir au lieu de saisir noms et chemins à la main.",
     "bannerAction": "Connecter GitHub"
   }
 }

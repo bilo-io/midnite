@@ -986,7 +986,7 @@
     "title": "Cuenta de GitHub",
     "description": "Conecta tu cuenta de GitHub para que midnite pueda explorar tus repositorios y mantener un proyecto de GitHub al día con el tablero.",
     "connect": "Conectar GitHub",
-    "notConnected": "No hay ninguna cuenta de GitHub conectada. Conectarla solo requiere un código y da acceso a tus repositorios y proyectos.",
+    "notConnected": "midnite no tiene acceso a GitHub. O no hay ninguna cuenta conectada, o un token configurado se ha revocado o ha caducado: conectar solo requiere un código y da acceso a tus repositorios y proyectos.",
     "deviceInstructions": "Introduce este código en GitHub para terminar de conectar. Esta página se actualizará sola cuando lo hagas.",
     "copy": "Copiar",
     "copied": "Copiado",
@@ -1010,7 +1010,7 @@
       "pat": "Es un token compartido configurado para toda la instalación, no una conexión personal: desconectarlo aquí lo quitaría para todos. Gestiónalo en Ajustes → Credenciales. Conecta tu propia cuenta para actuar en tu nombre.",
       "gh-cli": "Procede de la CLI `gh` con sesión iniciada en la máquina que ejecuta la pasarela, no de midnite. Cierra sesión allí con `gh auth logout`, o conecta tu propia cuenta para actuar en tu nombre."
     },
-    "bannerPrompt": "Conecta tu cuenta de GitHub para explorar tus repositorios en lugar de escribir sus nombres y rutas a mano.",
+    "bannerPrompt": "midnite no ve tus repositorios de GitHub: no hay nada conectado, o un token configurado ya no es válido. Conecta una cuenta para explorarlos en lugar de escribir nombres y rutas a mano.",
     "bannerAction": "Conectar GitHub"
   }
 }
