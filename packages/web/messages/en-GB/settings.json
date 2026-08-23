@@ -981,5 +981,36 @@
     },
     "everyHours": "Every {count}h",
     "everyDays": "Every {count}d"
+  },
+  "github": {
+    "title": "GitHub account",
+    "description": "Connect your GitHub account so midnite can browse your repositories and keep a GitHub Project in step with the board.",
+    "connect": "Connect GitHub",
+    "notConnected": "midnite has no GitHub access. Either no account is connected, or a configured token has been revoked or has expired — connecting takes one code, and grants access to your repositories and Projects.",
+    "deviceInstructions": "Enter this code at GitHub to finish connecting. This page updates itself once you do.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "openGithub": "Open GitHub",
+    "waiting": "Waiting for you to authorise at GitHub…",
+    "expired": "That code expired before it was used. Codes are short-lived — start again to get a fresh one.",
+    "denied": "Authorisation was declined at GitHub. Nothing was connected.",
+    "tryAgain": "Try again",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect GitHub?",
+    "disconnectMessage": "midnite will stop being able to browse your repositories or update GitHub Projects. Your repositories and tasks are untouched, and you can reconnect at any time.",
+    "revokeManually": "The connection was removed from midnite, but the grant could not be revoked at GitHub — that needs a client secret this install does not have. Revoke it yourself at {url}.",
+    "scopes": "Granted scopes:",
+    "unknownUser": "Connected",
+    "source": {
+      "oauth": "Your connected GitHub account",
+      "pat": "A shared personal access token configured for this install",
+      "gh-cli": "The GitHub CLI signed in on the gateway host"
+    },
+    "notYours": {
+      "pat": "This is a shared token configured for the whole install, not a personal connection — disconnecting it here would remove it for everyone. Manage it in Settings → Credentials. Connect your own account to act as yourself.",
+      "gh-cli": "This comes from the `gh` CLI signed in on the machine running the gateway, not from midnite. Sign out with `gh auth logout` there, or connect your own account to act as yourself."
+    },
+    "bannerPrompt": "midnite can’t see your GitHub repositories — nothing is connected, or a configured token is no longer valid. Connect an account to browse them instead of typing names and paths by hand.",
+    "bannerAction": "Connect GitHub"
   }
 }

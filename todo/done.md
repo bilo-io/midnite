@@ -4,6 +4,53 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-08-23 — feat: Phase 84 Theme G — connect a GitHub account, and say which token is in use ◐
+
+Theme A gave the gateway a device grant; this is the surface that makes it usable,
+plus the documentation for the part that is human-gated.
+
+**The card's real job turned out to be honesty about the token.** Three things can
+authenticate a GitHub call and they are not interchangeable: a personal `oauth`
+connection, a shared `pat` configured for the whole install, and the gateway host's
+`gh-cli` session. Calling a shared PAT "your GitHub" would be a lie, and
+disconnecting it from a Settings card would pull the rug from every other user — so
+the card names the source and offers **disconnect only for `oauth`**, pointing the
+other two at where they're actually managed. Disconnect then reports
+`revokedAtProvider` honestly: revoking at GitHub needs a client secret a secretless
+device install doesn't have, and claiming a revoke that never ran would leave a live
+`repo`-scoped grant behind.
+
+**Only the device grant is offered.** Theme A left the redirect grant deliberately
+unwired for GitHub — its callback is an unauthenticated browser navigation and can't
+attribute a connection to a user — so surfacing it would offer a path that produces
+the wrong thing. `docs/GITHUB.md` documents it as unfinished rather than supported.
+
+**The banner asks the user's question, not the schema's.** It triggers on
+`connected: false` rather than "does a `github-oauth` row exist", so it stays quiet
+for someone whose repo browser already works via a PAT or the host CLI, and it stays
+quiet on a failed probe — a failed check isn't evidence that anyone needs to connect.
+
+**Found while screenshotting: `main` could not boot.** #638 had `GithubModule`
+exporting a provider it only imports, which aborts the entire Nest bootstrap — and
+all 2694 gateway tests passed against a container that cannot be constructed. Fixed
+separately on `main` (27cdb129). Third time this class has been caught by booting a
+real gateway rather than by the suite; Phase 76 Theme B is the standing fix.
+
+- [x] Connection card on Settings → Integrations, with the `source` discriminator
+- [x] Device-code UI: copyable code, "Open GitHub", in-place polling at GitHub's
+      interval, `expired`/`denied` as retryable outcomes rather than errors
+- [x] Not-connected banner on Settings → Repos
+- [x] `github` preflight row naming the resolving rung — never fails the exit code,
+      never calls GitHub (preflight is polled)
+- [x] `docs/GITHUB.md`: two-app model, why they can't be shared, the Enable Device
+      Flow trap, token precedence, matching-not-cloning, multi-repo cwd semantics
+- [x] 14 RTL specs + 5 preflight specs; en-GB/fr-FR authored, de-DE/es-ES to parity
+- [x] Reused the existing octocat from `source-icon` rather than a third copy
+- ⏳ Deferred: re-consent on a missing scope (no required-scope contract yet);
+      strategy-table parity spec; registering the connect OAuth App (human-gated)
+
+---
+
 ## 2026-08-22 — feat: Phase 84 Theme A — connect your own GitHub account ◐
 
 Signing in with GitHub told midnite who you are and then **threw the access token away**.
