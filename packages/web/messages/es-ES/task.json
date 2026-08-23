@@ -205,5 +205,33 @@
     "unresolved": "sin resolver",
     "timeline": "Cronología",
     "noActivity": "No se ha registrado ninguna actividad."
+  },
+  "githubProject": {
+    "title": "Proyecto de GitHub",
+    "link": "Vincular",
+    "cancel": "Cancelar",
+    "linkAction": "Vincular a un proyecto de GitHub",
+    "refresh": "Volver a leer desde GitHub",
+    "empty": "Esta tarea no está en ningún tablero de proyecto de GitHub.",
+    "chooseBoard": "Elegir un tablero",
+    "loadingBoards": "Cargando tus tableros…",
+    "noBoards": "No se encontraron tableros de Projects v2 en tu cuenta.",
+    "board": "{title} · {owner}",
+    "closedBoard": "{title} · {owner} (cerrado)",
+    "createsDraft": "Crea un elemento borrador en el tablero a partir de esta tarea.",
+    "remoteColumn": "En «{column}» en GitHub",
+    "noColumn": "Aún no hay columna definida en GitHub.",
+    "noMapping": "Sin asignación de estado: los cambios no moverán el elemento.",
+    "mappedCount": "{count} estados de esta tarea se asignan a una columna.",
+    "lastSynced": "Última lectura {at}",
+    "lastError": "La última sincronización falló: {error}",
+    "notConnected": "GitHub no está conectado. Conecta una cuenta en Ajustes → Integraciones.",
+    "scopeMissing": "El token de GitHub en uso no puede leer proyectos. Vuelve a conectar para conceder acceso.",
+    "genericError": "Algo salió mal",
+    "unlink": {
+      "action": "Desvincular",
+      "title": "¿Desvincular de este proyecto de GitHub?",
+      "description": "El elemento permanece en el tablero: solo se elimina el vínculo de midnite."
+    }
   }
 }

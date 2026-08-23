@@ -205,5 +205,33 @@
     "unresolved": "non résolu",
     "timeline": "Chronologie",
     "noActivity": "Aucune activité enregistrée."
+  },
+  "githubProject": {
+    "title": "Projet GitHub",
+    "link": "Lier",
+    "cancel": "Annuler",
+    "linkAction": "Lier à un projet GitHub",
+    "refresh": "Relire depuis GitHub",
+    "empty": "Cette tâche n'est sur aucun tableau de projet GitHub.",
+    "chooseBoard": "Choisir un tableau",
+    "loadingBoards": "Chargement de vos tableaux…",
+    "noBoards": "Aucun tableau Projects v2 trouvé pour votre compte.",
+    "board": "{title} · {owner}",
+    "closedBoard": "{title} · {owner} (fermé)",
+    "createsDraft": "Crée un élément brouillon sur le tableau à partir de cette tâche.",
+    "remoteColumn": "Dans « {column} » sur GitHub",
+    "noColumn": "Aucune colonne définie sur GitHub.",
+    "noMapping": "Aucune correspondance de statut — les changements ne déplaceront pas l'élément.",
+    "mappedCount": "{count} statuts de cette tâche correspondent à une colonne.",
+    "lastSynced": "Dernière lecture {at}",
+    "lastError": "Échec de la dernière synchronisation : {error}",
+    "notConnected": "GitHub n'est pas connecté. Connectez un compte dans Paramètres → Intégrations.",
+    "scopeMissing": "Le jeton GitHub utilisé ne peut pas lire les projets. Reconnectez-vous pour accorder l'accès.",
+    "genericError": "Une erreur est survenue",
+    "unlink": {
+      "action": "Délier",
+      "title": "Délier de ce projet GitHub ?",
+      "description": "L'élément reste sur le tableau — seul le lien de midnite est supprimé."
+    }
   }
 }

@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowUpRight, Check, ExternalLink, GitCompare, Loader2, Plus, RefreshCw, X } from 'lucide-react';
 import { HoverExpandButton } from '@/components/hover-expand-button';
 import { ChecksPanel } from '@/components/checks-panel';
+import { ProjectItemCard } from '@/components/github/project-item-card';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
 import { RunTimeline } from '@/components/run-timeline';
@@ -20,6 +21,7 @@ import {
   isTerminal,
   parseGithubPr,
   parseGithubRepo,
+  type GithubProjectItem,
   type Project,
   type Status,
   type Task,
@@ -42,6 +44,7 @@ import {
   addTaskDependency,
   addTaskLink,
   gatewayUrl,
+  getTaskProjectItem,
   refreshPrStatus,
   removeTaskDependency,
   removeTaskLink,
@@ -312,6 +315,21 @@ export function TaskDetail({
   const [dependsOn, setDependsOn] = useState<string[]>(task.dependsOn ?? []);
   const [depError, setDepError] = useState<string | null>(null);
   const [prStatus, setPrStatus] = useState(task.prStatus);
+  // 404 = unlinked, which is the common case and not an error worth surfacing.
+  const [projectItem, setProjectItem] = useState<GithubProjectItem | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getTaskProjectItem(task.id)
+      .then((item) => {
+        if (!cancelled) setProjectItem(item);
+      })
+      .catch(() => {
+        if (!cancelled) setProjectItem(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [task.id]);
   const [prRefreshing, setPrRefreshing] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
 
@@ -1100,6 +1118,11 @@ export function TaskDetail({
         <section className={cn('p-3', contentFrame)}>
           <ChecksPanel taskId={task.id} />
         </section>
+
+        {/* Phase 84 E — the task's GitHub Projects v2 link. Fetched on its own rather
+            than folded into the task payload: it's an optional integration most tasks
+            don't use, and a 404 here is a normal "unlinked", not an error. */}
+        <ProjectItemCard taskId={task.id} item={projectItem} onChange={setProjectItem} />
 
         {task.retryCount > 0 || task.waitReason ? (
           // Phase 53 E — structured failure history for a task that has failed.

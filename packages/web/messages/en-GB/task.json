@@ -205,5 +205,33 @@
     "unresolved": "unresolved",
     "timeline": "Timeline",
     "noActivity": "No activity recorded."
+  },
+  "githubProject": {
+    "title": "GitHub Project",
+    "link": "Link",
+    "cancel": "Cancel",
+    "linkAction": "Link to a GitHub Project",
+    "refresh": "Re-read from GitHub",
+    "empty": "This task isn't on a GitHub Project board.",
+    "chooseBoard": "Choose a board",
+    "loadingBoards": "Loading your boards…",
+    "noBoards": "No Projects v2 boards found for your account.",
+    "board": "{title} · {owner}",
+    "closedBoard": "{title} · {owner} (closed)",
+    "createsDraft": "Creates a draft item on the board from this task.",
+    "remoteColumn": "In “{column}” on GitHub",
+    "noColumn": "No column set on GitHub yet.",
+    "noMapping": "No status mapping — status changes won't move the item.",
+    "mappedCount": "{count} of this task's statuses map to a column.",
+    "lastSynced": "Last read {at}",
+    "lastError": "Last sync failed: {error}",
+    "notConnected": "GitHub isn't connected. Connect an account in Settings → Integrations.",
+    "scopeMissing": "The GitHub token in use can't read Projects. Reconnect to grant Projects access.",
+    "genericError": "Something went wrong",
+    "unlink": {
+      "action": "Unlink",
+      "title": "Unlink from this GitHub Project?",
+      "description": "The item stays on the board — only midnite's link is removed."
+    }
   }
 }

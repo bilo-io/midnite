@@ -107,6 +107,66 @@ export const prStatus = sqliteTable(
   }),
 );
 
+/**
+ * A task's link to a GitHub Projects v2 item (Phase 84 Theme E).
+ *
+ * A satellite table in the `pr_status` mould — synced remote state kept off the task row,
+ * and a small table for Theme F's poller to select stale rows from rather than scanning
+ * every task. Unlike `pr_status` it carries its own `id`, because the status mapping is a
+ * child table that needs something to point at.
+ */
+export const githubProjectItems = sqliteTable(
+  'github_project_items',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id').notNull(),
+    teamId: text('team_id'),
+    // Projects v2 ids are opaque GraphQL node ids, never numbers.
+    projectNodeId: text('project_node_id').notNull(),
+    itemNodeId: text('item_node_id').notNull(),
+    projectTitle: text('project_title').notNull(),
+    projectUrl: text('project_url').notNull(),
+    // Null when the board has no single-select field — legal; pushes just no-op.
+    statusFieldNodeId: text('status_field_node_id'),
+    // The item's REAL column on GitHub as of the last read, not what midnite pushed.
+    statusOptionName: text('status_option_name'),
+    itemUrl: text('item_url').notNull(),
+    lastSyncedAt: text('last_synced_at'),
+    lastError: text('last_error'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    // One link per task — two would make "which column is this task in?" unanswerable.
+    taskIdx: uniqueIndex('github_project_items_task_idx').on(t.taskId),
+    // And one task per GitHub item, mirroring `user_identities`' uniqueness shape.
+    nodeIdx: uniqueIndex('github_project_items_node_idx').on(t.projectNodeId, t.itemNodeId),
+  }),
+);
+
+/**
+ * Status → board column, one row per mapped status.
+ *
+ * A status with **no** row is a deliberate no-op on push, not an error: plenty of boards
+ * have no "Waiting" column, and failing would make a normal setup look broken.
+ */
+export const githubProjectStatusMap = sqliteTable(
+  'github_project_status_map',
+  {
+    id: text('id').primaryKey(),
+    itemId: text('item_id').notNull(),
+    status: text('status').notNull(),
+    optionId: text('option_id').notNull(),
+    // Denormalised so the card renders without a GraphQL round-trip.
+    optionName: text('option_name').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    pairIdx: uniqueIndex('github_project_status_map_pair_idx').on(t.itemId, t.status),
+    itemIdx: index('github_project_status_map_item_idx').on(t.itemId),
+  }),
+);
+
 export const taskEvents = sqliteTable(
   'task_events',
   {
@@ -1778,3 +1838,7 @@ export const digests = sqliteTable(
 );
 export type DigestRow = typeof digests.$inferSelect;
 export type DigestInsert = typeof digests.$inferInsert;
+export type GithubProjectItemRow = typeof githubProjectItems.$inferSelect;
+export type GithubProjectItemInsert = typeof githubProjectItems.$inferInsert;
+export type GithubProjectStatusMapRow = typeof githubProjectStatusMap.$inferSelect;
+export type GithubProjectStatusMapInsert = typeof githubProjectStatusMap.$inferInsert;
