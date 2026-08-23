@@ -83,6 +83,28 @@ export async function installTemplateBySlug(slug: string): Promise<string> {
   return workflow.id;
 }
 
+/**
+ * Create a workflow by name (`POST /workflows`) and return its id + name.
+ *
+ * Prefer this over `installTemplateBySlug` when a spec just needs *a* workflow to
+ * exist: templates carry fixed names, so two specs installing the same slug give
+ * the shared gateway two identically-named rows and any `getByText(name)` becomes
+ * a strict-mode violation. A `uniqueLabel()` name is addressable no matter what
+ * else the suite has created.
+ */
+export async function seedWorkflow(name: string): Promise<{ id: string; name: string }> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/workflows`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedWorkflow failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+  const { workflow } = (await res.json()) as { workflow: { id: string; name: string } };
+  return { id: workflow.id, name: workflow.name };
+}
+
 /** Trigger a workflow run (fire-and-forget on the engine); returns the run id. */
 export async function runWorkflow(workflowId: string): Promise<string> {
   const res = await fetch(`${GATEWAY_ORIGIN}/workflows/${workflowId}/run`, {
