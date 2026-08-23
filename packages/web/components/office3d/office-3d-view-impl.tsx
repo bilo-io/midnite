@@ -14,6 +14,7 @@ import { buildOfficePalette } from '@/lib/office/theme';
 import { SelfChatHud } from './self-chat-hud';
 import { useOfficeStore } from '@/lib/office-store';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { OFFICE_3D_STAGE_ATTR } from '@/lib/office3d/constants';
 import { Office3DCanvas } from './office-3d-canvas';
 
 /**
@@ -51,6 +52,10 @@ export function Office3DViewImpl() {
 
   return (
     <div
+      // The pointer-lock rigs scope their click-to-lock handler to this element
+      // (see OFFICE_3D_STAGE_SELECTOR) so clicking the page chrome — the 2D/3D
+      // tab strip above all — never requests a lock on the WebGL canvas.
+      {...{ [OFFICE_3D_STAGE_ATTR]: '' }}
       className="relative w-full overflow-hidden rounded-xl border border-border bg-card"
       style={{ aspectRatio: OFFICE_ASPECT }}
     >

@@ -66,3 +66,20 @@ export function tileToWorld(tileX: number, tileY: number): { x: number; z: numbe
     z: (tileY + 0.5) * TILE_UNIT,
   };
 }
+
+/**
+ * The 3D stage's DOM hook, and the CSS selector the pointer-lock rigs scope
+ * their click-to-lock handler to.
+ *
+ * drei's `<PointerLockControls>` defaults to attaching that handler to
+ * **`document`**, so *any* click in the page requested a pointer lock on the
+ * WebGL canvas — including the click on the "2D" tab that unmounts it. The lock
+ * request then landed on a detached element and threw an uncaught
+ * `WrongDocumentError` ("The root document of this element is not valid for
+ * pointer lock"), which is what the Phase 63 G engine-swap spec catches. Scoping
+ * to the stage fixes the crash and the UX in one go: clicking the viewport grabs
+ * the pointer, clicking the surrounding chrome no longer does. The stage's own
+ * overlays are `pointer-events-none`, so clicks still reach the canvas.
+ */
+export const OFFICE_3D_STAGE_ATTR = 'data-office-3d-stage';
+export const OFFICE_3D_STAGE_SELECTOR = `[${OFFICE_3D_STAGE_ATTR}]`;
