@@ -16,6 +16,9 @@ vi.mock('@/lib/data-refresh', () => ({ invalidateData: vi.fn() }));
 const addTaskDependency = vi.fn();
 const removeTaskDependency = vi.fn();
 vi.mock('@/lib/api', () => ({
+  // Phase 84 E — TaskDetail renders the Projects v2 card, which fetches its own link.
+  // A rejection is the ordinary "not linked" case.
+  getTaskProjectItem: () => Promise.reject(new Error('not linked')),
   gatewayUrl: () => 'http://gw',
   addTaskDependency: (...args: unknown[]) => addTaskDependency(...args),
   removeTaskDependency: (...args: unknown[]) => removeTaskDependency(...args),

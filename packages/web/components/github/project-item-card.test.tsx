@@ -3,6 +3,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { GithubProject, GithubProjectItem } from '@midnite/shared';
 
 const getGithubProjects = vi.fn();
+const getTaskProjectItem = vi.fn();
 const linkTaskProjectItem = vi.fn();
 const refreshTaskProjectItem = vi.fn();
 const unlinkTaskProjectItem = vi.fn();
@@ -24,6 +25,7 @@ vi.mock('@/lib/api', () => {
   return {
     ApiError,
     getGithubProjects: (...a: unknown[]) => getGithubProjects(...a),
+    getTaskProjectItem: (...a: unknown[]) => getTaskProjectItem(...a),
     linkTaskProjectItem: (...a: unknown[]) => linkTaskProjectItem(...a),
     refreshTaskProjectItem: (...a: unknown[]) => refreshTaskProjectItem(...a),
     unlinkTaskProjectItem: (...a: unknown[]) => unlinkTaskProjectItem(...a),
@@ -60,11 +62,27 @@ function linked(over: Partial<GithubProjectItem> = {}): GithubProjectItem {
   };
 }
 
+/** `initialItem` seeds the card so these tests don't depend on its own fetch. */
 function renderCard(item: GithubProjectItem | null) {
-  const onChange = vi.fn();
-  render(<ProjectItemCard taskId="task-1" item={item} onChange={onChange} />);
-  return { onChange };
+  render(<ProjectItemCard taskId="task-1" initialItem={item} />);
 }
+
+describe('ProjectItemCard — fetching its own link', () => {
+  it('fetches the link when no initialItem is given', async () => {
+    // The card owns every mutation on the link, so it owns the read too — that keeps
+    // `TaskDetail` from having to thread this through.
+    getTaskProjectItem.mockResolvedValue(linked());
+    render(<ProjectItemCard taskId="task-1" />);
+    expect(await screen.findByText('In “In Progress” on GitHub')).toBeTruthy();
+  });
+
+  it('treats a 404 as "not linked" rather than an error', async () => {
+    getTaskProjectItem.mockRejectedValue(new ApiError('not linked', 404));
+    render(<ProjectItemCard taskId="task-1" />);
+    expect(await screen.findByText(/isn't on a GitHub Project board/)).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
 
 describe('ProjectItemCard — unlinked', () => {
   it('offers to link and fetches boards only when asked', async () => {
@@ -85,9 +103,8 @@ describe('ProjectItemCard — unlinked', () => {
 
   it('links the chosen board and reports the new item', async () => {
     getGithubProjects.mockResolvedValue(PROJECTS);
-    const created = linked();
-    linkTaskProjectItem.mockResolvedValue(created);
-    const { onChange } = renderCard(null);
+    linkTaskProjectItem.mockResolvedValue(linked());
+    renderCard(null);
 
     fireEvent.click(screen.getByRole('button', { name: 'Link to a GitHub Project' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Link' }));
@@ -95,7 +112,8 @@ describe('ProjectItemCard — unlinked', () => {
     await waitFor(() =>
       expect(linkTaskProjectItem).toHaveBeenCalledWith('task-1', { projectNodeId: 'PVT_1' }),
     );
-    expect(onChange).toHaveBeenCalledWith(created);
+    // The card switches to its linked state off its own returned value.
+    expect(await screen.findByText('In “In Progress” on GitHub')).toBeTruthy();
   });
 
   it('prompts to connect — not an error — on the gateway\'s 409', async () => {
@@ -152,24 +170,24 @@ describe('ProjectItemCard — linked', () => {
   });
 
   it('re-reads from GitHub on demand', async () => {
-    const refreshed = linked({ statusOptionName: 'Done' });
-    refreshTaskProjectItem.mockResolvedValue(refreshed);
-    const { onChange } = renderCard(linked());
+    refreshTaskProjectItem.mockResolvedValue(linked({ statusOptionName: 'Done' }));
+    renderCard(linked());
 
     fireEvent.click(screen.getByRole('button', { name: 'Re-read from GitHub' }));
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith(refreshed));
+    expect(await screen.findByText('In “Done” on GitHub')).toBeTruthy();
   });
 
   it('confirms before unlinking and promises the item survives', async () => {
     unlinkTaskProjectItem.mockResolvedValue(undefined);
-    const { onChange } = renderCard(linked());
+    renderCard(linked());
 
     fireEvent.click(screen.getByRole('button', { name: 'Unlink' }));
     expect(await screen.findByText(/The item stays on the board/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(unlinkTaskProjectItem).toHaveBeenCalledWith('task-1'));
-    expect(onChange).toHaveBeenCalledWith(null);
+    // Back to the empty state, off the card's own state.
+    expect(await screen.findByText(/isn't on a GitHub Project board/)).toBeTruthy();
   });
 
   it('does not unlink when the confirmation is declined', async () => {

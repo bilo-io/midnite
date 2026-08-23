@@ -10,6 +10,7 @@ import { useConfirm } from '@/components/confirm-dialog';
 import {
   ApiError,
   getGithubProjects,
+  getTaskProjectItem,
   linkTaskProjectItem,
   refreshTaskProjectItem,
   unlinkTaskProjectItem,
@@ -27,14 +28,34 @@ import {
  */
 export type ProjectItemCardProps = {
   taskId: string;
-  /** Existing link, or null when unlinked. */
-  item: GithubProjectItem | null;
-  onChange: (item: GithubProjectItem | null) => void;
+  /**
+   * Seed the link instead of fetching it — for stories and for a caller that already
+   * has it. Omitted, the card fetches its own: it owns every mutation on the link, so
+   * owning the read too keeps `TaskDetail` out of it entirely.
+   */
+  initialItem?: GithubProjectItem | null;
 };
 
-export function ProjectItemCard({ taskId, item, onChange }: ProjectItemCardProps) {
+export function ProjectItemCard({ taskId, initialItem }: ProjectItemCardProps) {
   const t = useTranslations('task');
   const confirm = useConfirm();
+  const [item, setItem] = React.useState<GithubProjectItem | null>(initialItem ?? null);
+
+  React.useEffect(() => {
+    if (initialItem !== undefined) return;
+    let cancelled = false;
+    // A 404 is the common case — "not linked" — so it sets null rather than an error.
+    getTaskProjectItem(taskId)
+      .then((fetched) => {
+        if (!cancelled) setItem(fetched);
+      })
+      .catch(() => {
+        if (!cancelled) setItem(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [taskId, initialItem]);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [projects, setProjects] = React.useState<GithubProject[] | null>(null);
@@ -66,7 +87,7 @@ export function ProjectItemCard({ taskId, item, onChange }: ProjectItemCardProps
     setBusy(true);
     setError(null);
     try {
-      onChange(await linkTaskProjectItem(taskId, { projectNodeId: chosen }));
+      setItem(await linkTaskProjectItem(taskId, { projectNodeId: chosen }));
       setPicking(false);
     } catch (e) {
       setError(describe(e));
@@ -79,7 +100,7 @@ export function ProjectItemCard({ taskId, item, onChange }: ProjectItemCardProps
     setBusy(true);
     setError(null);
     try {
-      onChange(await refreshTaskProjectItem(taskId));
+      setItem(await refreshTaskProjectItem(taskId));
     } catch (e) {
       setError(describe(e));
     } finally {
@@ -98,7 +119,7 @@ export function ProjectItemCard({ taskId, item, onChange }: ProjectItemCardProps
     setError(null);
     try {
       await unlinkTaskProjectItem(taskId);
-      onChange(null);
+      setItem(null);
     } catch (e) {
       setError(describe(e));
     } finally {
