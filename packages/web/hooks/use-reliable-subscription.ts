@@ -122,15 +122,23 @@ export function useReliableSubscription<T>(
       ws.onopen = () => {
         attempt = 0;
         setChannelStatus(channel.path, 'live');
+        // Send the handshake down *this* socket rather than through `wsRef`. The
+        // subscribe/resume frame is the one message that must never be dropped —
+        // the gateway only registers a client once it arrives, so a socket that
+        // opens without it receives events forever after (see the `onclose`
+        // guard below for how the ref could go stale underneath us).
+        const sendHere = (msg: unknown) => {
+          if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+        };
         if (resumable) {
           // `subscribe` on a fresh cursor, `resume` (+ cursor) after a drop. The
           // channel's own `type` is owned by the protocol — keep only its extras.
           const base = (channel.subscribe() ?? {}) as Record<string, unknown>;
           const { type: _ignored, ...extra } = base;
-          send(tracker.subscribeMessage(extra));
+          sendHere(tracker.subscribeMessage(extra));
         } else {
           const sub = channel.subscribe();
-          if (sub != null) send(sub);
+          if (sub != null) sendHere(sub);
         }
         handlersRef.current.onOpen?.(send);
       };
@@ -155,7 +163,13 @@ export function useReliableSubscription<T>(
         // watermark / duplicate / ignore → nothing
       };
       ws.onclose = (ev) => {
-        wsRef.current = null;
+        // Only disown the socket if it is still the live one. `wsRef` is shared
+        // across effect runs, and React's dev-mode double-invoke closes the first
+        // socket *while it is still CONNECTING* — that `close` event lands after
+        // the second run has already stored its own socket in the ref, so an
+        // unguarded reset here orphans a perfectly healthy socket and the board
+        // silently never receives another event.
+        if (wsRef.current === ws) wsRef.current = null;
         scheduleReconnect(ev.code);
       };
       ws.onerror = () => {
