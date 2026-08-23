@@ -166,6 +166,29 @@ describe('GithubProjectItemsRepository', () => {
     expect(repo.remove('never-linked')).toBe(false);
   });
 
+  it('does not stamp lastSyncedAt when the link recorded a read failure', () => {
+    // "No column set… Last read just now" is a lie; only a successful read is a sync.
+    reset();
+    const created = repo.insert(write({ statusOptionName: undefined, lastError: 'boom' }));
+    expect(created.lastError).toBe('boom');
+    expect(created.lastSyncedAt).toBeUndefined();
+  });
+
+  it('keeps the existing mapping when a replace is rejected', () => {
+    // Delete-then-insert without a transaction meant a duplicate status tripped the
+    // unique index AFTER the delete had committed — a 500 that also silently wiped the
+    // mapping, turning every push into a no-op.
+    reset();
+    const created = repo.insert(write());
+    expect(() =>
+      repo.replaceMappings(created.id, [
+        { status: 'done', optionId: 'a', optionName: 'Done' },
+        { status: 'done', optionId: 'b', optionName: 'Shipped' },
+      ]),
+    ).toThrow();
+    expect(repo.getByTask('task-1')?.mappings).toEqual(MAPPINGS);
+  });
+
   it('lets the same GitHub item be re-adopted after an unlink', () => {
     reset();
     repo.insert(write());

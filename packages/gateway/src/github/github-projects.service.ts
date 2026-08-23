@@ -46,6 +46,14 @@ export class GithubProjectScopeMissingError extends Error {
   }
 }
 
+/** The id doesn't resolve to a Projects v2 board this token can see. */
+export class GithubProjectDoesNotExistError extends Error {
+  constructor(projectNodeId: string) {
+    super(`${projectNodeId} is not a GitHub Project this account can access`);
+    this.name = 'GithubProjectDoesNotExistError';
+  }
+}
+
 /** The task has no Projects v2 link (or the caller can't see it). */
 export class GithubProjectItemDoesNotExistError extends Error {
   constructor(taskId: string) {
@@ -139,8 +147,13 @@ export class GithubProjectsService {
       { projectId: req.projectNodeId },
       token,
     );
+    // `node(id:)` returns `{}` — truthy — when the id resolves to something that isn't a
+    // ProjectV2, because nothing matches the inline fragment. Checking the fields we
+    // actually need is what distinguishes "wrong kind of node" from a real board.
     const project = summary.data.node;
-    if (!project) throw new GithubProjectItemDoesNotExistError(task.id);
+    if (!project?.title || !project.url) {
+      throw new GithubProjectDoesNotExistError(req.projectNodeId);
+    }
 
     const itemNodeId = req.itemNodeId ?? (await this.createDraftItem(req.projectNodeId, task, token));
 
@@ -164,10 +177,22 @@ export class GithubProjectsService {
     const mappings: GithubProjectStatusMapping[] = field ? defaultStatusMappings(field.options) : [];
 
     // Read the item's *real* column now, so the card is honest from the first render
-    // rather than showing whatever midnite would have pushed.
-    const observed = await this.readItemStatus(itemNodeId, token, field?.nodeId).catch(() => undefined);
+    // rather than showing whatever midnite would have pushed. A failure here costs
+    // freshness, not the link — but it must be *recorded* as a failure: swallowing it
+    // while stamping `lastSyncedAt` would render as "no column, last read just now",
+    // which is the same lie in a different shape.
+    let observed: { optionName?: string; itemUrl?: string } | undefined;
+    let readError: string | undefined;
+    try {
+      observed = await this.readItemStatus(itemNodeId, token, field?.nodeId);
+    } catch (err) {
+      readError = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Projects v2 link read-back failed for task ${task.id}: ${readError}`);
+    }
 
     // Re-linking the same task replaces its link rather than colliding on the unique index.
+    // Deliberately after every validation above, so a rejected link never destroys a
+    // working one.
     this.repo.remove(task.id);
     return this.repo.insert({
       taskId: task.id,
@@ -179,6 +204,7 @@ export class GithubProjectsService {
       statusFieldNodeId: field?.nodeId,
       statusOptionName: observed?.optionName,
       itemUrl: observed?.itemUrl ?? project.url,
+      lastError: readError,
       mappings,
     });
   }
@@ -206,8 +232,17 @@ export class GithubProjectsService {
     const token = await this.requireToken(userId);
     try {
       const observed = await this.readItemStatus(existing.itemNodeId, token, existing.statusFieldNodeId);
+      if (!observed) {
+        // GitHub resolved the id to nothing: the item was deleted, or is no longer
+        // visible to this token. Reporting a clean read would leave the card showing a
+        // stale column for a link that now points at nothing.
+        this.repo.markSynced(existing.id, {
+          lastError: 'the linked GitHub item no longer exists, or is not visible to the token in use',
+        });
+        return this.repo.getByTask(taskId)!;
+      }
       this.repo.markSynced(existing.id, {
-        statusOptionName: observed?.optionName ?? null,
+        statusOptionName: observed.optionName ?? null,
         lastError: null,
       });
     } catch (err) {
@@ -254,11 +289,11 @@ export class GithubProjectsService {
     const node = data.node;
     if (!node) return undefined;
     const values = (node.fieldValues?.nodes ?? []).filter(Boolean);
-    // Prefer the field the link drives; fall back to the first single-select present, so a
-    // board whose field was renamed still shows *something* real.
-    const match =
-      values.find((v) => fieldNodeId && v?.field?.id === fieldNodeId) ??
-      values.find((v) => typeof v?.name === 'string');
+    // ONLY the field the link drives. An earlier version fell back to the first
+    // single-select of any field, which meant a board with a `Priority` field rendered
+    // `In "P1" on GitHub` — precisely the claim this card is documented never to make.
+    // No value for the linked field means no column, which is a real and honest answer.
+    const match = fieldNodeId ? values.find((v) => v?.field?.id === fieldNodeId) : undefined;
     return { optionName: match?.name, itemUrl: node.content?.url };
   }
 

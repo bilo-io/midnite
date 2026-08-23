@@ -220,7 +220,13 @@ export type LinkGithubProjectItemRequest = z.infer<typeof LinkGithubProjectItemR
 
 /** Replace a link's status→column mapping. An empty array clears it (every push a no-op). */
 export const UpdateGithubProjectMappingRequestSchema = z.object({
-  mappings: z.array(GithubProjectStatusMappingSchema),
+  mappings: z
+    .array(GithubProjectStatusMappingSchema)
+    // One column per status. Rejecting here rather than letting the unique index do it
+    // turns a 500 into a 400 that names the problem.
+    .refine((m) => new Set(m.map((x) => x.status)).size === m.length, {
+      message: 'each status may appear at most once',
+    }),
 });
 export type UpdateGithubProjectMappingRequest = z.infer<
   typeof UpdateGithubProjectMappingRequestSchema

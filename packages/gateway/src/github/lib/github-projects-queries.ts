@@ -72,10 +72,15 @@ export const PROJECT_SUMMARY_QUERY = `
   }
 `;
 
-/** Create a draft item on the board from the task, and hand back its node id. */
+/**
+ * Create a draft item on the board from the task, and hand back its node id.
+ *
+ * **No `rateLimit` here.** GitHub exposes that field on `Query` only — including it on a
+ * mutation makes the document fail *validation*, which comes back as a 200 with
+ * `errors[]` and would have made the default link path fail on every install.
+ */
 export const ADD_DRAFT_ITEM_MUTATION = `
   mutation AddDraftItem($projectId: ID!, $title: String!, $body: String!) {
-    ${RATE_LIMIT}
     addProjectV2DraftIssue(input: { projectId: $projectId, title: $title, body: $body }) {
       projectItem { id }
     }

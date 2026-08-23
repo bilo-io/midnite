@@ -22,6 +22,8 @@ import {
 import { teamScopeFilter } from '../db/team-scope';
 import { DB_TOKEN, type DbOrTx, type MidniteDb, type Tx } from '../db/db.module';
 import {
+  githubProjectItems,
+  githubProjectStatusMap,
   prStatus,
   roadmapMilestones,
   taskAttachments,
@@ -429,6 +431,18 @@ export class TasksRepository {
         )
         .run();
       tx.delete(prStatus).where(eq(prStatus.taskId, id)).run();
+      // Phase 84 E — the Projects v2 link and its status map. Leaving them behind would
+      // hold the unique (project_node_id, item_node_id) index against a task that no
+      // longer exists, so no other task could ever adopt that GitHub item.
+      const links = tx
+        .select({ id: githubProjectItems.id })
+        .from(githubProjectItems)
+        .where(eq(githubProjectItems.taskId, id))
+        .all();
+      for (const link of links) {
+        tx.delete(githubProjectStatusMap).where(eq(githubProjectStatusMap.itemId, link.id)).run();
+      }
+      tx.delete(githubProjectItems).where(eq(githubProjectItems.taskId, id)).run();
       tx.delete(tasks).where(eq(tasks.id, id)).run();
     });
   }

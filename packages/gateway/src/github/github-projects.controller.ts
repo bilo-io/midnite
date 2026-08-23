@@ -30,6 +30,7 @@ import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { TasksRepository } from '../tasks/tasks.repository';
 import {
+  GithubProjectDoesNotExistError,
   GithubProjectItemDoesNotExistError,
   GithubProjectItemTakenError,
   GithubProjectScopeMissingError,
@@ -210,6 +211,7 @@ export class GithubProjectsController {
     }
     if (err instanceof GithubProjectItemTakenError) return new ConflictException(err.message);
     if (err instanceof GithubProjectItemDoesNotExistError) return new NotFoundException(err.message);
+    if (err instanceof GithubProjectDoesNotExistError) return new NotFoundException(err.message);
     // An upstream GitHub failure is not our bug; 500 would claim it was.
     if (err instanceof GithubApiError) return new BadGatewayException(err.message);
     return err instanceof Error ? err : new Error(String(err));

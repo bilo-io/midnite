@@ -482,6 +482,15 @@ async function fetchJson<T>(
     const text = await res.text().catch(() => '');
     throw new ApiError(errorMessage(res, text), res.status);
   }
+  // A 204 (and any empty body) has nothing to parse — `res.json()` rejects with a
+  // SyntaxError on one. Every `@HttpCode(204)` DELETE route hit that: the request
+  // succeeded and the caller saw a parse error, so a UI that cleared its state on
+  // success never did. Callers that pass no schema want the side effect, not a value.
+  // `headers?.` because plenty of specs hand-roll a minimal fetch mock with no `headers`
+  // at all — a bare status/json object. Reaching straight for `.get` threw on those.
+  if (res.status === 204 || res.headers?.get('content-length') === '0') {
+    return undefined as T;
+  }
   const body = (await res.json()) as unknown;
   return schema ? schema.parse(body) : (body as T);
 }

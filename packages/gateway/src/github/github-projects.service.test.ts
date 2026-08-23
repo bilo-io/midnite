@@ -8,6 +8,7 @@ import {
   GithubProjectScopeMissingError,
   GithubProjectsService,
 } from './github-projects.service';
+import { ADD_DRAFT_ITEM_MUTATION, VIEWER_PROJECTS_QUERY } from './lib/github-projects-queries';
 import type { GithubProjectItemsRepository } from './github-project-items.repository';
 import type { GithubTokenService } from './github-token.service';
 
@@ -247,12 +248,62 @@ describe('link', () => {
     expect(vi.mocked(repo.remove)).toHaveBeenCalledWith('task-1');
   });
 
-  it('still links when the read-back fails', async () => {
-    // A failed read costs freshness, not the link — losing the link would be worse.
-    const { service } = build({ ...HANDLERS, ItemStatus: { errors: [{ message: 'boom' }] } });
+  it('still links when the read-back fails, but RECORDS the failure', async () => {
+    // A failed read costs freshness, not the link. Swallowing it while stamping
+    // `lastSyncedAt` would render as "no column, last read just now" — the same lie the
+    // card exists to avoid, in a different shape.
+    const { service, repo } = build({ ...HANDLERS, ItemStatus: { errors: [{ message: 'boom' }] } });
     const item = await service.link(TASK, { projectNodeId: 'PVT_org' }, 'u');
     expect(item.itemNodeId).toBe('PVTI_new');
     expect(item.statusOptionName).toBeUndefined();
+    expect(vi.mocked(repo.insert)).toHaveBeenCalledWith(
+      expect.objectContaining({ lastError: expect.stringContaining('boom') }),
+    );
+  });
+
+  it('reports only the LINKED field\'s value, never another field\'s', async () => {
+    // A board with a `Priority` field used to render `In "P1" on GitHub` — exactly the
+    // claim this card is documented never to make.
+    const { service } = build({
+      ...HANDLERS,
+      ItemStatus: {
+        data: {
+          node: {
+            id: 'PVTI_new',
+            project: { id: 'PVT_org', title: 'Roadmap', url: 'u2' },
+            fieldValues: {
+              nodes: [{ name: 'P1', optionId: 'p1', field: { id: 'PVTSSF_other', name: 'Priority' } }],
+            },
+            content: {},
+          },
+        },
+      },
+    });
+    const item = await service.link(TASK, { projectNodeId: 'PVT_org' }, 'u');
+    expect(item.statusOptionName).toBeUndefined();
+  });
+
+  it('rejects an id that is not a ProjectV2, without destroying an existing link', async () => {
+    // `node(id:)` returns `{}` — truthy — when nothing matches the inline fragment. The
+    // old truthiness check let that through to a NOT NULL insert failure, *after* the
+    // previous link had already been removed.
+    const repo = fakeRepo({ taskId: 'task-1' } as GithubProjectItem);
+    const { service } = build({ ...HANDLERS, ProjectSummary: { data: { node: {} } } }, repo);
+
+    await expect(service.link(TASK, { projectNodeId: 'PVT_bogus' }, 'u')).rejects.toThrow(
+      /not a GitHub Project/,
+    );
+    expect(vi.mocked(repo.remove)).not.toHaveBeenCalled();
+  });
+});
+
+describe('document validity', () => {
+  it('never asks for rateLimit on a mutation — GitHub exposes it on Query only', () => {
+    // Including it makes the document fail *validation*, which arrives as a 200 with
+    // `errors[]` — so the DEFAULT link path (create a draft item) could never succeed.
+    expect(ADD_DRAFT_ITEM_MUTATION).not.toContain('rateLimit');
+    // Queries still ask for it, which is where the budget actually comes from.
+    expect(VIEWER_PROJECTS_QUERY).toContain('rateLimit');
   });
 });
 
@@ -272,6 +323,18 @@ describe('refresh', () => {
       statusOptionName: 'Todo',
       lastError: null,
     });
+  });
+
+  it('reports a vanished item as an error, not as a clean read', async () => {
+    // `node: null` means the item was deleted or is no longer visible. Recording a clean
+    // read would leave the card showing a stale column for a link pointing at nothing.
+    const repo = fakeRepo(LINKED);
+    const { service } = build({ ItemStatus: { data: { node: null } } }, repo);
+    await service.refresh('task-1', 'u');
+    expect(vi.mocked(repo.markSynced)).toHaveBeenCalledWith(
+      'link-1',
+      expect.objectContaining({ lastError: expect.stringContaining('no longer exists') }),
+    );
   });
 
   it('records lastError instead of throwing, so a stall is diagnosable', async () => {

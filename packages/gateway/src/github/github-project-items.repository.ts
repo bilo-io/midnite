@@ -24,6 +24,8 @@ export type ProjectItemWrite = {
   statusFieldNodeId?: string;
   statusOptionName?: string;
   itemUrl: string;
+  /** A link-time read-back failure, so the card doesn't claim a fresh successful read. */
+  lastError?: string;
   mappings: readonly GithubProjectStatusMapping[];
 };
 
@@ -92,7 +94,10 @@ export class GithubProjectItemsRepository {
         statusFieldNodeId: write.statusFieldNodeId ?? null,
         statusOptionName: write.statusOptionName ?? null,
         itemUrl: write.itemUrl,
-        lastSyncedAt: now,
+        lastError: write.lastError ?? null,
+        // Only a *successful* read is a sync. Stamping this when the read failed would
+        // render as "no column, last read just now".
+        lastSyncedAt: write.lastError ? null : now,
         createdAt: now,
         updatedAt: now,
       })
@@ -108,22 +113,27 @@ export class GithubProjectItemsRepository {
    * means "clear it" (every push becomes a no-op).
    */
   replaceMappings(itemId: string, mappings: readonly GithubProjectStatusMapping[]): void {
-    this.db.delete(githubProjectStatusMap).where(eq(githubProjectStatusMap.itemId, itemId)).run();
-    if (mappings.length === 0) return;
     const now = new Date().toISOString();
-    this.db
-      .insert(githubProjectStatusMap)
-      .values(
-        mappings.map((m) => ({
-          id: randomUUID(),
-          itemId,
-          status: m.status,
-          optionId: m.optionId,
-          optionName: m.optionName,
-          createdAt: now,
-        })),
-      )
-      .run();
+    // **Transactional.** Delete-then-insert without one meant a rejected insert (a
+    // duplicate status trips the unique `(item_id, status)` index) landed *after* the
+    // delete had already succeeded — so a 500 also silently wiped the existing mapping
+    // and turned every push into a no-op.
+    this.db.transaction((tx) => {
+      tx.delete(githubProjectStatusMap).where(eq(githubProjectStatusMap.itemId, itemId)).run();
+      if (mappings.length === 0) return;
+      tx.insert(githubProjectStatusMap)
+        .values(
+          mappings.map((m) => ({
+            id: randomUUID(),
+            itemId,
+            status: m.status,
+            optionId: m.optionId,
+            optionName: m.optionName,
+            createdAt: now,
+          })),
+        )
+        .run();
+    });
   }
 
   /** Record what a read-back or push observed. Theme F's poller is the main caller. */
