@@ -127,14 +127,46 @@ The join table is inert until spawn honours it. This closes a bug that exists on
 - [x] **Scope the task repo picker** to the selected project's repos, with the rest of the registry still selectable below — an ordering, not a filter, so the escape hatch is intact. (PR #637)
 - [x] **Regression specs** for the matrix: project+repo (inside and outside), project only, repo only, neither — table-driven on both the pure helper and the resolver service, plus call-through assertions pinning the spawn, gate and manual-check paths to the shared resolver. (PR #635)
 
-## Theme E — GitHub Projects v2 link — **L**
+## Theme E — GitHub Projects v2 link — **L** — ✅ DONE (PR #640, 2026-08-23)
 
-- [ ] **First GraphQL client** — `github/lib/github-graphql.ts`: a thin typed `query(document, variables, token)` over `https://api.github.com/graphql` with error-array unwrapping, rate-limit surfacing, and no codegen (hand-written response types in `shared`). Keep it a leaf helper so the three existing `github-*.executor.ts` workflow nodes could later adopt it.
-- [ ] **Project + field discovery** — `GET /github/projects` (the user's + their orgs' Projects v2) and `GET /github/projects/:projectId/fields` (single-select fields and their options), so the UI can offer real column names rather than free text.
-- [ ] **`github_project_items` satellite table** (migration, §7) modelled on `pr_status` — `{ id, task_id, team_id, project_node_id, item_node_id, project_title, status_option_name, item_url, last_synced_at, last_error, created_at, updated_at }`, unique on `(project_node_id, item_node_id)` per `user_identities`' shape, indexed on `task_id`.
-- [ ] **Link / unlink** — `POST /tasks/:id/github-project-item` (link an existing item **or** create a draft item from the task) and `DELETE`. Unlinking removes the local row only; the GitHub item is left alone.
-- [ ] **Status mapping** — a per-link map from midnite status (`todo | wip | waiting | done | abandoned`) to a single-select option id, defaulted by fuzzy name match at link time and editable. Store it with the link row; unmapped statuses are a no-op push, not an error.
-- [ ] **Task-detail UI** — a GitHub Project card on the task page showing the linked project, the item's **real remote column** from the last read-back, `lastSyncedAt`, any `lastError`, and a link out. Link/unlink from the same card.
+- [x] **First GraphQL client** — `github/lib/github-graphql.ts`: a thin typed `query(document, variables, token)` over `https://api.github.com/graphql` with error-array unwrapping, rate-limit surfacing, and no codegen (hand-written response types in `shared`). Keep it a leaf helper so the three existing `github-*.executor.ts` workflow nodes could later adopt it.
+- [x] **Project + field discovery** — `GET /github/projects` (the user's + their orgs' Projects v2) and `GET /github/projects/:projectId/fields` (single-select fields and their options), so the UI can offer real column names rather than free text.
+- [x] **`github_project_items` satellite table** (migration, §7) modelled on `pr_status` — `{ id, task_id, team_id, project_node_id, item_node_id, project_title, status_option_name, item_url, last_synced_at, last_error, created_at, updated_at }`, unique on `(project_node_id, item_node_id)` per `user_identities`' shape, indexed on `task_id`.
+- [x] **Link / unlink** — `POST /tasks/:id/github-project-item` (link an existing item **or** create a draft item from the task) and `DELETE`. Unlinking removes the local row only; the GitHub item is left alone.
+- [x] **Status mapping** — a per-link map from midnite status (`todo | wip | waiting | done | abandoned`) to a single-select option id, defaulted by fuzzy name match at link time and editable. Store it with the link row; unmapped statuses are a no-op push, not an error.
+- [x] **Task-detail UI** — a GitHub Project card on the task page showing the linked project, the item's **real remote column** from the last read-back, `lastSyncedAt`, any `lastError`, and a link out. Link/unlink from the same card.
+
+**As built (decisions + what the tests caught).** The GraphQL client is deliberately
+**separate from `github-rest.ts`**, not folded into it: GitHub answers a *failed* GraphQL
+query with **HTTP 200** and an `errors[]` array, so a client checking `res.ok` — exactly
+what the REST helper correctly does — reads a permission denial as success and returns
+`data` full of nulls. It also classifies a missing `project` scope specifically, because
+there the remedy is "reconnect", not "retry", and GitHub's own wording ("Resource not
+accessible by personal access token") sends people hunting.
+
+The card shows the item's **real column on GitHub**, and says so in the copy ("In X on
+GitHub"). Read-back is display-only (§5), so the UI must never imply midnite owns that
+value; `lastError` is rendered rather than swallowed, because a silent stall is the
+failure mode §F warns about and "the column looks stale" is otherwise unanswerable.
+
+Linking **creates a draft item by default** (the task already exists here, so making the
+item by hand on GitHub is a detour); adopting an existing item stays available. A board
+with **no single-select field links fine** and simply has nothing to push to — not an
+error. The status map is **normalised rows** (user decision, over a JSON column),
+defaulted by fuzzy name match and immediately editable.
+
+Writing the mapping spec caught a real ordering bug: statuses are claimed in `STATUSES`
+order, so letting `backlog` fall back to "Todo" took that column out from under `todo` on
+**every conventional GitHub board**. No status borrows another's names now, and an
+unmapped status stays a no-op push — far better than filing work in a column nobody chose.
+Two more were designed out rather than found: the in-flight token was briefly a field on
+the service, which two interleaved requests could have swapped across an `await`; and
+`TasksCoreModule` (mirroring `ProjectsCoreModule`) keeps `GithubModule` off all of
+`TasksModule`, which already imports `GithubTokenModule`.
+
+**Verified against the real Nest container**, not just units — `NestFactory.createApplicationContext(AppModule)`
+builds with the new module, controller, service and repository wired in. That is the check
+whose absence let Theme A ship a `GithubModule` that could not be constructed.
 
 ## Theme F — Event-driven push & read-back — **M**
 
