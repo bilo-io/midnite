@@ -12,6 +12,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { DbFactory } from '../db/db.module';
 import { secretKeyPresence } from '../crypto/crypto.service';
 import { AgentPoolService } from '../pool/agent-pool.service';
+import { GithubTokenService } from '../github/github-token.service';
 import { ReposService } from '../repos/repos.service';
 import { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
 import { findConfigPath } from '../lib/load-config';
@@ -46,6 +47,9 @@ export class HealthService {
     // The DB repo registry — the runtime source of truth `config.repos` seeds.
     // @Optional so the existing specs construct this service unchanged.
     @Optional() @Inject(ReposService) private readonly repos?: ReposService,
+    // Phase 84 Theme G — which GitHub token rung actually resolves. @Optional so the
+    // existing health specs construct this service unchanged.
+    @Optional() @Inject(GithubTokenService) private readonly githubTokens?: GithubTokenService,
   ) {}
 
   /** Checks run once at boot (preflight): config, DB, secrets, CLIs, spawner, repos. */
@@ -59,6 +63,7 @@ export class HealthService {
       this.checkGhCli(),
       this.checkSpawner(),
       this.checkRepoPaths(),
+      await this.checkGithubConnection(),
     ];
   }
 
@@ -238,6 +243,46 @@ export class HealthService {
           detail: '`gh` is not on PATH — PR status/diff fall back to anonymous REST (public repos only)',
           remedy: 'install the GitHub CLI (`gh`) and authenticate for private-repo PR features',
         };
+  }
+
+  /**
+   * Which GitHub token the install would actually use (Phase 84 Theme G).
+   *
+   * Distinct from `gh-cli` above, which only reports whether the **binary** is on
+   * PATH — that says nothing about whether any token resolves, which is the
+   * question a user debugging an empty repo browser is asking.
+   *
+   * Never worse than `warn`, and never fails the exit code: GitHub is optional, and
+   * a local install that never connects one is a supported configuration. Resolution
+   * is local (a vault lookup and at most a `gh auth token` shell-out) — deliberately
+   * no round-trip to GitHub, because preflight is polled and a network call would put
+   * an unbounded remote dependency on the readiness path.
+   */
+  private async checkGithubConnection(): Promise<PreflightCheck> {
+    if (!this.githubTokens) {
+      return { name: 'github', status: 'ok', detail: 'GitHub token resolution not wired' };
+    }
+    const resolved = await this.githubTokens.resolve();
+    if (!resolved) {
+      return {
+        name: 'github',
+        status: 'warn',
+        detail:
+          'no GitHub token resolves — the repo browser and private-repo PR features are unavailable',
+        remedy:
+          'connect a GitHub account in Settings → Integrations, add a `github` credential, or run `gh auth login` on the gateway host',
+      };
+    }
+    const SOURCES: Record<string, string> = {
+      oauth: 'a connected GitHub account',
+      pat: 'a shared `github` personal access token',
+      'gh-cli': "the host's `gh` CLI session",
+    };
+    return {
+      name: 'github',
+      status: 'ok',
+      detail: `GitHub token resolves from ${SOURCES[resolved.source] ?? resolved.source}`,
+    };
   }
 
   private checkSpawner(): PreflightCheck {

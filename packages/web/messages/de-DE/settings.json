@@ -981,5 +981,36 @@
     },
     "everyHours": "Alle {count} h",
     "everyDays": "Alle {count} T."
+  },
+  "github": {
+    "title": "GitHub-Konto",
+    "description": "Verbinden Sie Ihr GitHub-Konto, damit midnite Ihre Repositorys durchsuchen und ein GitHub-Projekt mit dem Board synchron halten kann.",
+    "connect": "GitHub verbinden",
+    "notConnected": "Es ist kein GitHub-Konto verbunden. Die Verbindung erfordert nur einen Code und gewährt Zugriff auf Ihre Repositorys und Projekte.",
+    "deviceInstructions": "Geben Sie diesen Code bei GitHub ein, um die Verbindung abzuschließen. Diese Seite aktualisiert sich danach von selbst.",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "openGithub": "GitHub öffnen",
+    "waiting": "Warten auf Ihre Autorisierung bei GitHub…",
+    "expired": "Dieser Code ist abgelaufen, bevor er verwendet wurde. Codes sind kurzlebig — starten Sie neu, um einen frischen zu erhalten.",
+    "denied": "Die Autorisierung wurde bei GitHub abgelehnt. Es wurde nichts verbunden.",
+    "tryAgain": "Erneut versuchen",
+    "disconnect": "Trennen",
+    "disconnectTitle": "GitHub trennen?",
+    "disconnectMessage": "midnite kann dann Ihre Repositorys nicht mehr durchsuchen und keine GitHub-Projekte mehr aktualisieren. Ihre Repositorys und Aufgaben bleiben unberührt, und Sie können sich jederzeit wieder verbinden.",
+    "revokeManually": "Die Verbindung wurde aus midnite entfernt, die Berechtigung konnte bei GitHub jedoch nicht widerrufen werden — dafür wird ein Client-Secret benötigt, über das diese Installation nicht verfügt. Widerrufen Sie sie selbst unter {url}.",
+    "scopes": "Gewährte Berechtigungen:",
+    "unknownUser": "Verbunden",
+    "source": {
+      "oauth": "Ihr verbundenes GitHub-Konto",
+      "pat": "Ein gemeinsames Personal Access Token, das für diese Installation konfiguriert ist",
+      "gh-cli": "Die auf dem Gateway-Host angemeldete GitHub-CLI"
+    },
+    "notYours": {
+      "pat": "Dies ist ein gemeinsames Token für die gesamte Installation, keine persönliche Verbindung — es hier zu trennen, würde es für alle entfernen. Verwalten Sie es unter Einstellungen → Anmeldedaten. Verbinden Sie Ihr eigenes Konto, um in Ihrem Namen zu handeln.",
+      "gh-cli": "Dies stammt von der `gh`-CLI, die auf dem Rechner des Gateways angemeldet ist, nicht von midnite. Melden Sie sich dort mit `gh auth logout` ab, oder verbinden Sie Ihr eigenes Konto, um in Ihrem Namen zu handeln."
+    },
+    "bannerPrompt": "Verbinden Sie Ihr GitHub-Konto, um Ihre Repositorys zu durchsuchen, statt Namen und Pfade von Hand einzutippen.",
+    "bannerAction": "GitHub verbinden"
   }
 }

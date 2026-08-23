@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/components/confirm-dialog';
+import { GithubConnectBanner } from '@/components/github/github-connect-banner';
 import { RepoBrowserDialog } from '@/components/github/repo-browser-dialog';
 import {
   createRepo,
@@ -392,6 +393,10 @@ export function ReposView() {
               ownerRepo: (chunks) => <code>{chunks}</code>,
             })}
           </p>
+
+          {/* Sits above the browse button rather than inside the dialog: someone who
+              has never connected won't open a dialog to find out why they should. */}
+          <GithubConnectBanner />
 
           <Button variant="outline" size="sm" onClick={() => setBrowsing(true)}>
             <GithubIcon /> {t('repos.browse.action')}

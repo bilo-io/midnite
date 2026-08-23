@@ -409,6 +409,10 @@ reference; the full **register-apps → local → hosted → troubleshooting** r
 in **[`docs/SSO.md`](docs/SSO.md)**, and a copyable sample is
 [`.midnite/operator.example.json`](.midnite/operator.example.json) (+ [`.env.example`](.env.example)).
 
+> Signing in with GitHub is **separate from connecting a GitHub account** for repo
+> browsing and Projects — different app, different scopes, and the connect one needs
+> registering. See **[`docs/GITHUB.md`](docs/GITHUB.md)**.
+
 **Prerequisites** — SSO issues midnite's own JWTs over an encrypted OAuth state, so both
 must be set:
 

@@ -981,5 +981,36 @@
     },
     "everyHours": "Cada {count} h",
     "everyDays": "Cada {count} d"
+  },
+  "github": {
+    "title": "Cuenta de GitHub",
+    "description": "Conecta tu cuenta de GitHub para que midnite pueda explorar tus repositorios y mantener un proyecto de GitHub al día con el tablero.",
+    "connect": "Conectar GitHub",
+    "notConnected": "No hay ninguna cuenta de GitHub conectada. Conectarla solo requiere un código y da acceso a tus repositorios y proyectos.",
+    "deviceInstructions": "Introduce este código en GitHub para terminar de conectar. Esta página se actualizará sola cuando lo hagas.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "openGithub": "Abrir GitHub",
+    "waiting": "Esperando tu autorización en GitHub…",
+    "expired": "Ese código caducó antes de usarse. Los códigos duran poco: vuelve a empezar para obtener uno nuevo.",
+    "denied": "Se rechazó la autorización en GitHub. No se conectó nada.",
+    "tryAgain": "Intentar de nuevo",
+    "disconnect": "Desconectar",
+    "disconnectTitle": "¿Desconectar GitHub?",
+    "disconnectMessage": "midnite dejará de poder explorar tus repositorios y actualizar proyectos de GitHub. Tus repositorios y tareas no se tocan, y puedes volver a conectarte cuando quieras.",
+    "revokeManually": "La conexión se eliminó de midnite, pero no se pudo revocar la autorización en GitHub: eso requiere un secreto de cliente del que esta instalación no dispone. Revócala tú mismo en {url}.",
+    "scopes": "Permisos concedidos:",
+    "unknownUser": "Conectado",
+    "source": {
+      "oauth": "Tu cuenta de GitHub conectada",
+      "pat": "Un token de acceso personal compartido, configurado para esta instalación",
+      "gh-cli": "La CLI de GitHub con sesión iniciada en el host de la pasarela"
+    },
+    "notYours": {
+      "pat": "Es un token compartido configurado para toda la instalación, no una conexión personal: desconectarlo aquí lo quitaría para todos. Gestiónalo en Ajustes → Credenciales. Conecta tu propia cuenta para actuar en tu nombre.",
+      "gh-cli": "Procede de la CLI `gh` con sesión iniciada en la máquina que ejecuta la pasarela, no de midnite. Cierra sesión allí con `gh auth logout`, o conecta tu propia cuenta para actuar en tu nombre."
+    },
+    "bannerPrompt": "Conecta tu cuenta de GitHub para explorar tus repositorios en lugar de escribir sus nombres y rutas a mano.",
+    "bannerAction": "Conectar GitHub"
   }
 }

@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { GithubConnectionSection } from '@/components/github/github-connection-section';
 import { InboundSourcesSection } from './inbound-sources-section';
 
 function fmtTime(iso: string): string {
@@ -417,6 +418,11 @@ export function IntegrationsView() {
           {t('integrations.addEndpoint')}
         </Button>
       </div>
+
+      {/* The connected-account card leads: a GitHub connection is what makes the repo
+          browser and Projects sync work, and it's account-level, unlike the
+          per-endpoint webhook plumbing below. */}
+      <GithubConnectionSection />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

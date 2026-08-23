@@ -6,6 +6,7 @@ import { parseConfig, type MidniteConfig, type PreflightCheck } from '@midnite/s
 import type { DbFactory } from '../db/db.module';
 import type { AgentPoolService } from '../pool/agent-pool.service';
 import type { AgentPoolScheduler } from '../pool/agent-pool-scheduler.service';
+import type { GithubTokenService } from '../github/github-token.service';
 import type { ReposService } from '../repos/repos.service';
 
 // Deterministic env probes — each test dials the presence of claude/gh/tmux etc.
@@ -64,6 +65,9 @@ function svc(
   sqlite: unknown = okSqlite,
   scheduler?: Partial<AgentPoolScheduler>,
   repos?: { name: string; path: string }[],
+  // Phase 84 G — the GitHub token ladder. `undefined` (the default) exercises the
+  // not-wired branch; pass a source to model a resolving rung, or null for none.
+  githubSource?: 'oauth' | 'pat' | 'gh-cli' | null,
 ) {
   return new HealthService(
     cfg,
@@ -72,6 +76,12 @@ function svc(
     scheduler as AgentPoolScheduler | undefined,
     // The DB registry stand-in. Passing undefined exercises the config fallback.
     repos ? ({ list: () => repos } as unknown as ReposService) : undefined,
+    githubSource === undefined
+      ? undefined
+      : ({
+          resolve: async () =>
+            githubSource === null ? null : { token: 'tok', source: githubSource },
+        } as unknown as GithubTokenService),
   );
 }
 
@@ -100,6 +110,7 @@ describe('HealthService.bootChecks', () => {
       'config',
       'database',
       'gh-cli',
+      'github',
       'repo-paths',
       'secret-key',
       'spawner',
@@ -163,6 +174,36 @@ describe('HealthService.bootChecks', () => {
     vi.mocked(mocked.commandExists).mockImplementation((cmd: string) => cmd !== 'claude');
     expect(byName(await svc(config({ poolEnabled: false })).bootChecks(), 'agent-cli').status).toBe('warn');
     expect(byName(await svc(config({ poolEnabled: true })).bootChecks(), 'agent-cli').status).toBe('fail');
+  });
+
+  // Phase 84 Theme G — distinct from `gh-cli`, which only reports the binary on PATH.
+  // This one answers "would a GitHub call actually authenticate?".
+  describe('github token rung (Phase 84 G)', () => {
+    it('warns with a remedy when no rung resolves', async () => {
+      const check = (await svc(config(), okSqlite, undefined, undefined, null).bootChecks()).find(
+        (c) => c.name === 'github',
+      );
+      expect(check?.status).toBe('warn');
+      expect(check?.remedy).toMatch(/Settings → Integrations|gh auth login/);
+    });
+
+    it.each([
+      ['oauth', /connected GitHub account/],
+      ['pat', /personal access token/],
+      ['gh-cli', /`gh` CLI session/],
+    ] as const)('names the %s rung when it resolves', async (source, detail) => {
+      const check = (await svc(config(), okSqlite, undefined, undefined, source).bootChecks()).find(
+        (c) => c.name === 'github',
+      );
+      expect(check?.status).toBe('ok');
+      expect(check?.detail).toMatch(detail);
+    });
+
+    it('never fails, so an install with no GitHub is still green', async () => {
+      process.env['MIDNITE_SECRET_KEY'] = 'a'.repeat(64);
+      const checks = await svc(config(), okSqlite, undefined, undefined, null).bootChecks();
+      expect(checks.some((c) => c.status === 'fail')).toBe(false);
+    });
   });
 
   it('missing gh only warns', async () => {

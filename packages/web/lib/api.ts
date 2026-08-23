@@ -139,6 +139,9 @@ import {
   RepoResponseSchema,
   ReposPageSchema,
   GithubConnectionResponseSchema,
+  OAuthDevicePollResponseSchema,
+  OAuthDeviceStartResponseSchema,
+  OAuthDisconnectResponseSchema,
   GithubReposResponseSchema,
   ImportGithubRepoResponseSchema,
   type GithubConnection,
@@ -146,6 +149,9 @@ import {
   type ImportGithubRepoRequest,
   RepoStatusResponseSchema,
   type AttachProjectRepoRequest,
+  type OAuthDevicePollResponse,
+  type OAuthDeviceStartResponse,
+  type OAuthDisconnectResponse,
   type ProjectRepo,
   type RepoStatusResponse,
   type RunProjectCommandRequest,
@@ -1503,6 +1509,49 @@ export async function deleteRepo(id: string): Promise<void> {
 }
 
 // --- Connected GitHub (Phase 84 Theme B: repo discovery & checkout matching) ---
+
+// --- Connecting a GitHub account (Phase 84 Theme G, over Theme A's device grant) ---
+//
+// Only the **device** grant is surfaced. The redirect grant exists in the gateway but is
+// deliberately unwired for GitHub: its callback is an unauthenticated browser navigation
+// and so can't attribute a personal connection to a user (Theme A review).
+
+/** Begin a device authorization. Returns the code to show and an opaque poll handle. */
+export async function startGithubDeviceConnect(name: string): Promise<OAuthDeviceStartResponse> {
+  return fetchJson(
+    '/oauth/github/device',
+    { method: 'POST', body: JSON.stringify({ name }) },
+    OAuthDeviceStartResponseSchema,
+  );
+}
+
+/**
+ * Poll a pending authorization. `expired` and `denied` come back as statuses, not
+ * thrown errors — the card offers a retry for each.
+ */
+export async function pollGithubDeviceConnect(
+  deviceAuthId: string,
+  signal?: AbortSignal,
+): Promise<OAuthDevicePollResponse> {
+  return fetchJson(
+    `/oauth/github/device/${encodeURIComponent(deviceAuthId)}`,
+    { method: 'POST', signal },
+    OAuthDevicePollResponseSchema,
+  );
+}
+
+/**
+ * Remove the connection. The local credential is always deleted; `revokedAtProvider`
+ * says whether the grant was also revoked at GitHub, and `manageUrl` is where the user
+ * finishes the job themselves when it wasn't.
+ */
+export async function disconnectGithub(): Promise<OAuthDisconnectResponse> {
+  return fetchJson(
+    '/oauth/github/connection',
+    { method: 'DELETE' },
+    OAuthDisconnectResponseSchema,
+  );
+}
 
 /** GitHub connection state. Always resolves — `connected: false` is an answer, not an error. */
 export async function getGithubConnection(signal?: AbortSignal): Promise<GithubConnection> {

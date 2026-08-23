@@ -981,5 +981,36 @@
     },
     "everyHours": "Toutes les {count} h",
     "everyDays": "Tous les {count} j"
+  },
+  "github": {
+    "title": "Compte GitHub",
+    "description": "Connectez votre compte GitHub pour que midnite puisse parcourir vos dépôts et tenir un projet GitHub à jour avec le tableau.",
+    "connect": "Connecter GitHub",
+    "notConnected": "Aucun compte GitHub n’est connecté. La connexion ne demande qu’un code et donne accès à vos dépôts et à vos projets.",
+    "deviceInstructions": "Saisissez ce code sur GitHub pour terminer la connexion. Cette page se met à jour toute seule ensuite.",
+    "copy": "Copier",
+    "copied": "Copié",
+    "openGithub": "Ouvrir GitHub",
+    "waiting": "En attente de votre autorisation sur GitHub…",
+    "expired": "Ce code a expiré avant d’être utilisé. Les codes sont de courte durée — recommencez pour en obtenir un nouveau.",
+    "denied": "L’autorisation a été refusée sur GitHub. Rien n’a été connecté.",
+    "tryAgain": "Réessayer",
+    "disconnect": "Déconnecter",
+    "disconnectTitle": "Déconnecter GitHub ?",
+    "disconnectMessage": "midnite ne pourra plus parcourir vos dépôts ni mettre à jour les projets GitHub. Vos dépôts et vos tâches ne sont pas touchés, et vous pouvez vous reconnecter à tout moment.",
+    "revokeManually": "La connexion a été retirée de midnite, mais l’autorisation n’a pas pu être révoquée sur GitHub — cela nécessite un secret client dont cette installation ne dispose pas. Révoquez-la vous-même sur {url}.",
+    "scopes": "Portées accordées :",
+    "unknownUser": "Connecté",
+    "source": {
+      "oauth": "Votre compte GitHub connecté",
+      "pat": "Un jeton d’accès personnel partagé, configuré pour cette installation",
+      "gh-cli": "La CLI GitHub connectée sur l’hôte de la passerelle"
+    },
+    "notYours": {
+      "pat": "Il s’agit d’un jeton partagé configuré pour toute l’installation, pas d’une connexion personnelle — le déconnecter ici le supprimerait pour tout le monde. Gérez-le dans Paramètres → Identifiants. Connectez votre propre compte pour agir en votre nom.",
+      "gh-cli": "Cela provient de la CLI `gh` connectée sur la machine qui exécute la passerelle, pas de midnite. Déconnectez-vous avec `gh auth logout` sur cette machine, ou connectez votre propre compte pour agir en votre nom."
+    },
+    "bannerPrompt": "Connectez votre compte GitHub pour parcourir vos dépôts au lieu de saisir leurs noms et chemins à la main.",
+    "bannerAction": "Connecter GitHub"
   }
 }
