@@ -8,7 +8,6 @@ import { WorkflowCredentialsModule } from '../workflows/credentials/workflow-cre
 import { GithubController } from './github.controller';
 import { GithubService } from './github.service';
 import { GithubTokenModule } from './github-token.module';
-import { GithubTokenService } from './github-token.service';
 import { GITHUB_FETCH_OPTIONS, GITHUB_HOME_DIR } from './github.tokens';
 
 /**
@@ -17,8 +16,15 @@ import { GITHUB_FETCH_OPTIONS, GITHUB_HOME_DIR } from './github.tokens';
  *
  * `ConfigModule` is `@Global`, so `MIDNITE_CONFIG` resolves without importing it. The
  * token ladder lives in its own {@link GithubTokenModule} (Theme A) because
- * `TasksModule` resolves through it too; it's re-exported here so a consumer of this
- * module gets both without a second import.
+ * `TasksModule` resolves through it too; the **module** is re-exported here so a
+ * consumer of this one gets both without a second import.
+ *
+ * Re-exporting `GithubTokenModule` rather than `GithubTokenService`: Nest can only
+ * export a provider a module actually declares, so listing the service here — which
+ * this module imports rather than provides — aborts the whole bootstrap with
+ * "cannot export a provider/module that is not a part of the currently processed
+ * module". Nothing in the unit suite catches it, because nothing there builds the
+ * real container.
  */
 @Module({
   imports: [AuthModule, ReposModule, WorkflowCredentialsModule, GithubTokenModule],
@@ -30,6 +36,6 @@ import { GITHUB_FETCH_OPTIONS, GITHUB_HOME_DIR } from './github.tokens';
     { provide: GITHUB_FETCH_OPTIONS, useValue: {} },
     { provide: GITHUB_HOME_DIR, useValue: homedir() },
   ],
-  exports: [GithubService, GithubTokenService],
+  exports: [GithubService, GithubTokenModule],
 })
 export class GithubModule {}
