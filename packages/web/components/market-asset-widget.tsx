@@ -182,7 +182,12 @@ function AssetReadout({
         <span
           className={cn(
             'text-sm font-medium tabular-nums',
-            up ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+            // An unknown move is neither a gain nor a loss — don't paint it green.
+            pct == null
+              ? 'text-muted-foreground'
+              : up
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-destructive',
           )}
         >
           {pct == null ? '—' : fmtPct(pct)}
