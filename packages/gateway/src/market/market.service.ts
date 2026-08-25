@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   type AssetKind,
   type AssetSearchResult,
@@ -115,7 +115,9 @@ export class MarketService {
 
   constructor(
     @Inject(MarketCacheRepository) private readonly cacheRepo: MarketCacheRepository,
-    limiter?: RateLimiter,
+    // Never a registered provider — this is the seam specs inject through, so it
+    // must be optional *and* name its token, or Nest fails the module at boot.
+    @Optional() @Inject(RateLimiter) limiter?: RateLimiter,
   ) {
     this.limiter =
       limiter ??
