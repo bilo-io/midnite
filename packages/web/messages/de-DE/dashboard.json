@@ -79,6 +79,7 @@
     "searchStocks": "Aktien suchen …",
     "stocksNote": "Für Aktien braucht das Gateway einen kostenlosen Twelve-Data-API-Schlüssel.",
     "error": "Marktdaten konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
     "cancel": "Abbrechen",
     "changeAsset": "Wert wechseln",
     "timeframeChart": "Diagramm {timeframe}",

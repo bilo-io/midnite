@@ -11,6 +11,7 @@ import {
 } from '@midnite/shared';
 import { getMarketHistory } from '@/lib/api';
 import type { MarketAsset, MarketWatchlistConfig } from '@/lib/dashboard-widgets';
+import { seriesChange } from '@/lib/market-change';
 import { useGlobalTimeframe } from '@/lib/use-global-timeframe';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
@@ -72,23 +73,33 @@ export function MarketWatchlistWidget({ config, onConfigChange }: Props) {
 }
 
 function WatchRow({ asset, timeframe }: { asset: MarketAsset; timeframe: MarketTimeframe }) {
-  const { data: history } = usePolling<MarketHistoryResponse | null>(
+  const t = useTranslations('dashboard');
+  const { data: history, error, refresh } = usePolling<MarketHistoryResponse | null>(
     async () => getMarketHistory(asset.kind, asset.symbol, timeframe),
     HISTORY_REFRESH_MS,
     [asset.kind, asset.symbol, timeframe],
   );
 
-  const points = history?.points ?? [];
-  const last = points.at(-1)?.c;
-  const first = points[0]?.c;
-  const pct = first && last ? ((last - first) / first) * 100 : null;
+  const change = seriesChange(history?.points);
+  const last = change?.last;
+  const pct = change?.changePct ?? null;
   const up = (pct ?? 0) >= 0;
 
   return (
     <li className="flex items-baseline justify-between gap-2 py-1.5">
       <span className="min-w-0 flex-1 truncate text-sm">{asset.name}</span>
       {last == null ? (
-        <span className="text-xs text-muted-foreground">…</span>
+        error ? (
+          <button
+            type="button"
+            onClick={refresh}
+            className="rounded border border-border/60 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {t('market.retry')}
+          </button>
+        ) : (
+          <span className="text-xs text-muted-foreground">…</span>
+        )
       ) : (
         <span className="flex items-baseline gap-2 tabular-nums">
           <span className="text-sm">{fmtPrice(last)}</span>

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarketService } from './market.service';
 import type { MarketCacheRepository } from './market-cache.repository';
 import type { MarketCacheRow } from '../db/schema';
+import { RateLimiter } from './lib/rate-limiter';
 
 // In-memory stand-in for the DB-backed cache repository (CLAUDE.md: unit-test
 // services with in-memory repository fakes). `store` is exposed for assertions.
@@ -191,5 +192,115 @@ describe('MarketService — persistent 30-min cache', () => {
 
     const result = await new MarketService(repo).quote('crypto', 'bitcoin');
     expect(result).toMatchObject({ symbol: 'bitcoin', price: 42 });
+  });
+});
+
+// ── Provider rate limits (bilo-io/midnite-app#10) ──────────────────────────────
+// The dashboard fans one timeframe switch out into a request per market widget.
+// Measured against the live keyless CoinGecko API, a window answers ~6 requests
+// and then 429s the rest — so the *second* burst of a session was rejected
+// wholesale, which is why only the default 7D timeframe ever rendered.
+
+/** Virtual clock: the limiter's injected `sleep` advances it instead of waiting. */
+function fakeClock() {
+  let t = 0;
+  return {
+    now: () => t,
+    sleep: async (ms: number) => {
+      t += Math.max(0, ms);
+      await Promise.resolve();
+    },
+  };
+}
+
+/** A CoinGecko stand-in that allows `perWindow` calls per rolling window. */
+function throttledCoinGecko(clock: ReturnType<typeof fakeClock>, perWindow = 6, windowMs = 60_000) {
+  let windowStart = clock.now();
+  let used = 0;
+  return vi.fn(async (_url: string) => {
+    if (clock.now() - windowStart >= windowMs) {
+      windowStart = clock.now();
+      used = 0;
+    }
+    used++;
+    if (used > perWindow) return new Response('rate limited', { status: 429 });
+    return json(CG_CHART);
+  });
+}
+
+function pacedService(clock: ReturnType<typeof fakeClock>, repo = fakeRepo()) {
+  return new MarketService(
+    repo,
+    new RateLimiter({
+      minIntervalMs: 1200,
+      maxRetries: 4,
+      backoffBaseMs: 5000,
+      random: () => 1, // deterministic: always the full backoff
+      now: clock.now,
+      sleep: clock.sleep,
+    }),
+  );
+}
+
+describe('MarketService — provider rate limits', () => {
+  it('serves every timeframe when a burst exhausts the provider window', async () => {
+    const clock = fakeClock();
+    vi.stubGlobal('fetch', throttledCoinGecko(clock));
+    const service = pacedService(clock);
+
+    // First burst: page load at the default timeframe spends the whole window.
+    const symbols = ['bitcoin', 'pax-gold', 'tesla', 'spacex', 'ethereum', 'solana'];
+    await Promise.all(symbols.map((s) => service.history('crypto', s, '7D')));
+
+    // Second burst: the user switches timeframe. Every one of these was a 429
+    // with an empty chart before the pacer existed.
+    const switched = await Promise.all(
+      symbols.slice(0, 5).map((s) => service.history('crypto', s, '1M')),
+    );
+
+    expect(switched).toHaveLength(5);
+    for (const res of switched) {
+      expect(res.timeframe).toBe('1M');
+      expect(res.points.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('resolves all five timeframes for one symbol from a single window', async () => {
+    const clock = fakeClock();
+    vi.stubGlobal('fetch', throttledCoinGecko(clock, 2)); // deliberately stingy
+    const service = pacedService(clock);
+
+    const results = await Promise.all(
+      (['24H', '7D', '1M', '3M', '1Y'] as const).map((tf) => service.history('crypto', 'bitcoin', tf)),
+    );
+
+    expect(results.map((r) => r.timeframe)).toEqual(['24H', '7D', '1M', '3M', '1Y']);
+    expect(results.every((r) => r.points.length > 0)).toBe(true);
+  });
+
+  it('coalesces concurrent identical requests into one upstream call', async () => {
+    const clock = fakeClock();
+    const fetchMock = throttledCoinGecko(clock);
+    vi.stubGlobal('fetch', fetchMock);
+    const service = pacedService(clock);
+
+    // Two widgets showing the same symbol and timeframe on the same tick.
+    await Promise.all([
+      service.history('crypto', 'bitcoin', '3M'),
+      service.history('crypto', 'bitcoin', '3M'),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up rather than retrying forever when the provider stays shut', async () => {
+    const clock = fakeClock();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('rate limited', { status: 429 })),
+    );
+    const service = pacedService(clock);
+
+    await expect(service.history('crypto', 'bitcoin', '1Y')).rejects.toThrow('failed to load market');
   });
 });

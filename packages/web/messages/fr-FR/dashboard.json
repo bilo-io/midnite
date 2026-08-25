@@ -79,6 +79,7 @@
     "searchStocks": "Rechercher des actions…",
     "stocksNote": "Les actions nécessitent une clé API Twelve Data gratuite sur la passerelle.",
     "error": "Impossible de charger les données de marché.",
+    "retry": "Réessayer",
     "cancel": "Annuler",
     "changeAsset": "Changer d’actif",
     "timeframeChart": "graphique {timeframe}",

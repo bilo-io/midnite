@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   type AssetKind,
   type AssetSearchResult,
@@ -7,6 +7,7 @@ import {
   type MarketTimeframe,
 } from '@midnite/shared';
 import { MarketCacheRepository } from './market-cache.repository';
+import { RateLimitedError, RateLimiter } from './lib/rate-limiter';
 
 const TWELVE_DATA_BASE = 'https://api.twelvedata.com';
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
@@ -18,6 +19,21 @@ const FETCH_TIMEOUT_MS = 5000;
 const MARKET_CACHE_TTL_MS = 30 * 60_000;
 // Drop cache rows untouched for this long (mostly distinct autocomplete queries).
 const MARKET_CACHE_PRUNE_MS = 7 * 24 * 60 * 60_000;
+
+// How hard we may lean on CoinGecko. The keyless tier is far stingier than its
+// docs suggest — measured against the live API, a fresh window answers ~6
+// requests and then 429s everything for the rest of the minute. A dashboard
+// timeframe switch fans out one request per market widget, so without pacing the
+// second burst of the session is rejected wholesale (bilo-io/midnite-app#10).
+//
+// Spacing alone can't fix that (the ceiling is per-window, not per-second), so
+// the retry budget is the real remedy: full-jitter backoff of up to 5s/10s/20s/40s
+// carries a rejected call across the window boundary instead of failing it. With
+// a demo key the ceiling is ~30/min, so the queue may run much tighter.
+const CG_KEYLESS_SPACING_MS = 1200;
+const CG_KEYED_SPACING_MS = 250;
+const CG_MAX_RETRIES = 4;
+const CG_BACKOFF_BASE_MS = 5000;
 
 /** How each global timeframe maps onto provider request parameters. */
 const TIMEFRAME_PARAMS: Record<
@@ -33,6 +49,9 @@ const TIMEFRAME_PARAMS: Record<
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  // 429 is the one status worth retrying: the request was well-formed and the
+  // same call will succeed once the provider's window rolls over.
+  if (res.status === 429) throw new RateLimitedError(`${res.status} ${res.statusText}`);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return (await res.json()) as T;
 }
@@ -87,12 +106,41 @@ export class MarketService {
   private readonly twelveKey = process.env['TWELVE_DATA_API_KEY']?.trim() || '';
   private readonly coingeckoKey = process.env['COINGECKO_DEMO_KEY']?.trim() || '';
 
-  constructor(@Inject(MarketCacheRepository) private readonly cacheRepo: MarketCacheRepository) {}
+  /**
+   * Paces every CoinGecko call. Injectable so specs can drive the queue on a
+   * virtual clock; production gets the tuned default for whichever tier the
+   * configured key (or its absence) puts us on.
+   */
+  private readonly limiter: RateLimiter;
+
+  constructor(
+    @Inject(MarketCacheRepository) private readonly cacheRepo: MarketCacheRepository,
+    // Never a registered provider — this is the seam specs inject through, so it
+    // must be optional *and* name its token, or Nest fails the module at boot.
+    @Optional() @Inject(RateLimiter) limiter?: RateLimiter,
+  ) {
+    this.limiter =
+      limiter ??
+      new RateLimiter({
+        minIntervalMs: this.coingeckoKey ? CG_KEYED_SPACING_MS : CG_KEYLESS_SPACING_MS,
+        maxRetries: CG_MAX_RETRIES,
+        backoffBaseMs: CG_BACKOFF_BASE_MS,
+      });
+  }
 
   /** Append the CoinGecko demo key when configured (lifts the keyless rate limit). */
   private cg(path: string): string {
     const sep = path.includes('?') ? '&' : '?';
     return this.coingeckoKey ? `${COINGECKO_BASE}${path}${sep}x_cg_demo_api_key=${this.coingeckoKey}` : `${COINGECKO_BASE}${path}`;
+  }
+
+  /**
+   * Every CoinGecko read goes through here so the pacer sees the whole picture.
+   * The queue key is the *path*, not the resolved URL, so it never carries the
+   * demo key around — and so two callers wanting the same data coalesce.
+   */
+  private cgFetch<T>(path: string): Promise<T> {
+    return this.limiter.run(path, () => fetchJson<T>(this.cg(path)));
   }
 
   private requireStockKey(): void {
@@ -151,7 +199,7 @@ export class MarketService {
 
   // ── CoinGecko (crypto, keyless) ──
   private async searchCrypto(query: string): Promise<AssetSearchResult[]> {
-    const raw = await fetchJson<CgSearchResponse>(this.cg(`/search?query=${encodeURIComponent(query)}`));
+    const raw = await this.cgFetch<CgSearchResponse>(`/search?query=${encodeURIComponent(query)}`);
     return (raw.coins ?? []).slice(0, 10).map((c) => ({
       kind: 'crypto' as const,
       symbol: c.id, // CoinGecko coin id round-trips into quote/history
@@ -160,8 +208,8 @@ export class MarketService {
   }
 
   private async quoteCrypto(id: string): Promise<MarketQuote> {
-    const raw = await fetchJson<CgCoinResponse>(
-      this.cg(`/coins/${encodeURIComponent(id)}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false`),
+    const raw = await this.cgFetch<CgCoinResponse>(
+      `/coins/${encodeURIComponent(id)}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false`,
     );
     const md = raw.market_data ?? {};
     const price = num(md.current_price?.usd);
@@ -184,8 +232,8 @@ export class MarketService {
 
   private async historyCrypto(id: string, timeframe: MarketTimeframe): Promise<{ t: number; c: number }[]> {
     const { coingeckoDays } = TIMEFRAME_PARAMS[timeframe];
-    const raw = await fetchJson<CgMarketChartResponse>(
-      this.cg(`/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${coingeckoDays}`),
+    const raw = await this.cgFetch<CgMarketChartResponse>(
+      `/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${coingeckoDays}`,
     );
     return (raw.prices ?? []).map(([t, c]) => ({ t, c }));
   }

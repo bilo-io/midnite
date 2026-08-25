@@ -79,6 +79,7 @@
     "searchStocks": "Search stocks…",
     "stocksNote": "Stocks need a free Twelve Data API key on the gateway.",
     "error": "Couldn’t load market data.",
+    "retry": "Retry",
     "cancel": "Cancel",
     "changeAsset": "Change asset",
     "timeframeChart": "{timeframe} chart",
