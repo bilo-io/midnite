@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import type { AssetKind, MarketHistoryResponse, MarketQuote } from '@midnite/shared';
 import { getMarketHistory, getMarketQuote } from '@/lib/api';
 import type { MarketAssetConfig } from '@/lib/dashboard-widgets';
+import { seriesChange } from '@/lib/market-change';
 import { useGlobalTimeframe } from '@/lib/use-global-timeframe';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
@@ -56,7 +57,7 @@ export function MarketAssetWidget({ config, onConfigChange }: Props) {
     QUOTE_REFRESH_MS,
     [config.kind, config.symbol],
   );
-  const { data: history, error: historyError } = usePolling<MarketHistoryResponse | null>(
+  const { data: history, error: historyError, refresh: refreshHistory } = usePolling<MarketHistoryResponse | null>(
     async () => (configured ? getMarketHistory(config.kind, config.symbol, timeframe) : null),
     HISTORY_REFRESH_MS,
     [config.kind, config.symbol, timeframe],
@@ -100,7 +101,13 @@ export function MarketAssetWidget({ config, onConfigChange }: Props) {
           <WidgetLoader />
         )
       ) : (
-        <AssetReadout quote={quote} history={history} timeframe={timeframe} />
+        <AssetReadout
+          quote={quote}
+          history={history}
+          timeframe={timeframe}
+          historyError={historyError}
+          onRetryHistory={refreshHistory}
+        />
       )}
     </WidgetCard>
   );
@@ -152,13 +159,21 @@ function AssetReadout({
   quote,
   history,
   timeframe,
+  historyError,
+  onRetryHistory,
 }: {
   quote: MarketQuote;
   history: MarketHistoryResponse | null;
   timeframe: string;
+  historyError: string | null;
+  onRetryHistory: () => void;
 }) {
   const t = useTranslations('dashboard');
-  const up = quote.changePct >= 0;
+  // The headline move must describe the window being charted. Only 24H may fall
+  // back to the quote, whose change is a 24-hour figure by definition.
+  const change = seriesChange(history?.points);
+  const pct = change?.changePct ?? (timeframe === '24H' ? quote.changePct : null);
+  const up = (pct ?? 0) >= 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
@@ -170,11 +185,15 @@ function AssetReadout({
             up ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
           )}
         >
-          {fmtPct(quote.changePct)}
+          {pct == null ? '—' : fmtPct(pct)}
         </span>
       </div>
 
-      <PriceChart points={history?.points ?? []} up={up} currency={quote.currency} />
+      {historyError && !history ? (
+        <ChartError onRetry={onRetryHistory} />
+      ) : (
+        <PriceChart points={history?.points ?? []} up={up} currency={quote.currency} />
+      )}
 
       <dl className="grid grid-cols-4 gap-x-2 text-center text-[11px]">
         {(
@@ -192,6 +211,24 @@ function AssetReadout({
         ))}
       </dl>
       <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">{t('market.timeframeChart', { timeframe })}</p>
+    </div>
+  );
+}
+
+/** Stands in for the chart when the series can't be loaded. Without it a failed
+ *  history request left an empty rectangle and no way to ask again. */
+function ChartError({ onRetry }: { onRetry: () => void }) {
+  const t = useTranslations('dashboard');
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-center">
+      <p className="text-xs text-muted-foreground">{t('market.error')}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-md border border-border/60 px-2 py-1 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+      >
+        {t('market.retry')}
+      </button>
     </div>
   );
 }
