@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, mergeSettings, pressGlobalKey, test } from './helpers/harness';
 
 /**
  * Screen lock (Phase 73 Theme C) — the idle/lock screensaver now renders on the
@@ -11,19 +13,17 @@ import { expect, test, type Page } from '@playwright/test';
  * so no idle wait is needed. No gateway seed — session counts fall back to idle.
  */
 async function setup(page: Page, settings: Record<string, unknown>, passcode?: string): Promise<void> {
+  await mergeSettings(page, settings);
   await page.addInitScript(
-    ({ settings, passcode }) => {
+    ({ passcode }) => {
       try {
         localStorage.setItem('midnite.theme', 'dark');
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify(settings));
         if (passcode) localStorage.setItem('midnite.passcode', JSON.stringify(passcode));
       } catch {
         /* best effort */
       }
     },
-    { settings, passcode },
+    { passcode },
   );
 }
 
@@ -33,7 +33,12 @@ async function setup(page: Page, settings: Record<string, unknown>, passcode?: s
 // the footer cluster (presence · connection) re-renders under it.
 async function lock(page: Page): Promise<void> {
   await expect(page.locator('aside nav').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Lock screen' }).dispatchEvent('click');
+  // The rail footer's control is `nav.footer.lock` — "Lock". It was
+  // `aria-label="Lock screen"` before the i18n sweep, and since accessible-name
+  // matching is substring-based, "Lock screen" stopped matching "Lock" entirely
+  // (the only surviving "Lock screen" is the command-palette entry, in a dialog
+  // that isn't open here).
+  await page.getByRole('button', { name: 'Lock', exact: true }).dispatchEvent('click');
 }
 
 test('lock with no passcode shows a dismissible screensaver', async ({ page }) => {
@@ -44,9 +49,11 @@ test('lock with no passcode shows a dismissible screensaver', async ({ page }) =
   const dialog = page.getByRole('dialog', { name: /screensaver/i });
   await expect(dialog).toBeVisible();
 
-  // Any key wakes it (no passcode → dismissible).
-  await page.keyboard.press('Space');
-  await expect(dialog).toBeHidden();
+  // Any key wakes it (no passcode → dismissible). Retried, because `LockScreen`
+  // registers its `keydown` listener in an effect that runs after the portal
+  // paints — so the dialog is already visible for a beat before a keypress can
+  // land, and a single un-retried press is simply lost.
+  await pressGlobalKey(page, 'Space', () => expect(dialog).toBeHidden({ timeout: 2_000 }));
 });
 
 test('lock with a passcode keeps the screen locked through a wake gesture', async ({ page }) => {

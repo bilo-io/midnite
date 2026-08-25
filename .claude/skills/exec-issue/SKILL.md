@@ -138,7 +138,7 @@ Branch prefix: `fix/` for a bug, `feature/` for an enhancement. **Every writing 
   - Embedded before/after screenshots for a visual change. Commit the PNGs on the branch under `docs/screenshots/issue-<N>/` and reference them with **commit-pinned** raw URLs (`https://github.com/bilo-io/midnite/raw/<sha>/docs/screenshots/...`) so they survive a squash-merge + branch delete.
   - The `🤖 Generated with [Claude Code]` trailer.
 - **Self-review your own diff** before marking it ready: fidelity to the agreed plan → `CLAUDE.md` conventions → correctness & coverage → anything the fix could regress elsewhere. Fix what's material, re-run Stage 9, push.
-- **Drive CI green:** `gh pr checks <n> --watch`. On failure `gh run view <id> --log-failed` → fix in the worktree → re-run the local gate → push. The required check is **`ci-gate`**; skipped-but-green jobs on untouched packages are expected. The `e2e` job is red on every branch including `main` — diff your failure set against `main` before treating it as yours. If genuinely stuck (flaky infra, outage, product call), stop and say exactly what's wrong.
+- **Drive CI green:** `gh pr checks <n> --watch`. On failure `gh run view <id> --log-failed` → fix in the worktree → re-run the local gate → push. The required checks are **`ci-gate`** and **`e2e-gate`**; skipped-but-green jobs on untouched packages are expected. `e2e` is green as of Phase 85 (it was red on every branch including `main` for months, hidden behind a job-level `continue-on-error`) — so a red `e2e` is now a real signal about your diff, not background noise. If genuinely stuck (flaky infra, outage, product call), stop and say exactly what's wrong.
 - `gh pr ready <n>` once green.
 
 ## 11 · Report — then STOP

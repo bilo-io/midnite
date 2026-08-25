@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, test } from './helpers/harness';
 
 import { column, pinUnifiedBoard } from './helpers/board';
 import { seedProject } from './helpers/gateway';
@@ -20,19 +22,10 @@ function planDialog(page: Page, projectName: string) {
 
 test.describe('Breakdown flow', () => {
   test.beforeEach(async ({ page }) => {
-    // On a fresh e2e gateway the setup wizard auto-opens (provider not "ready")
-    // and would intercept clicks; the idle screensaver (30s default) would also
-    // float over the page during a slow step. Suppress both.
+    // The shared harness already suppresses the setup wizard and the idle
+    // screensaver for every spec; `pinUnifiedBoard` is separate and still needed —
+    // it pins the board layout this spec asserts against.
     await pinUnifiedBoard(page);
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
-      } catch {
-        // web storage may be unavailable — best effort.
-      }
-    });
   });
 
   test('generates a breakdown and creates a dependency-sequenced board', async ({ page }) => {
@@ -55,8 +48,15 @@ test.describe('Breakdown flow', () => {
     const dialog = planDialog(page, project.name);
     await expect(dialog).toBeVisible();
 
-    // Switch to the Breakdown tab and generate.
+    // Switch to the Breakdown tab. Stage 1 is now the plan-overview step: the
+    // "Generate breakdown" control only appears once an overview is approved.
+    // The harness's stub agent answers the one-shot form the overview run uses
+    // (`claude -p …`), so this settles without a real model.
     await dialog.getByRole('tab', { name: /Breakdown/ }).click();
+    await dialog.getByRole('button', { name: 'Draft overview' }).click();
+    await dialog.getByRole('button', { name: 'Approve' }).click({ timeout: 30_000 });
+
+    // Stage 2 — the breakdown itself.
     await dialog.getByRole('button', { name: /Generate breakdown/ }).click();
 
     // The fallback preview renders the description as an editable task title.

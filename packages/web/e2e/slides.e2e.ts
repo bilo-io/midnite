@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 /**
  * Slides is a fully client-side feature: decks live in localStorage (no gateway).
@@ -7,13 +7,15 @@ import { expect, test } from '@playwright/test';
  */
 test.describe('Slides', () => {
   test.beforeEach(async ({ page }) => {
-    // Suppress the setup wizard + idle screensaver so they don't intercept clicks,
-    // and start from an initialized-but-empty deck store (no first-run seed).
-    await page.addInitScript(() => {
+    // Start from an initialized-but-empty deck store (no first-run seed).
+    //
+    // Deliberately NOT an `addInitScript`: those re-run on *every* navigation,
+    // so emptying the store there wiped the deck the test had just created the
+    // moment it navigated to `/slides` to look for it. Seed once, on a blank
+    // same-origin page, before the spec drives the app.
+    await page.goto('/slides');
+    await page.evaluate(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
         localStorage.setItem('midnite.slides.decks', '[]');
       } catch {
         // best effort

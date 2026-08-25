@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 /**
  * Idle-CPU regression guard — bilo-io/midnite-app#4.

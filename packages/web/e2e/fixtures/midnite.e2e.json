@@ -1,6 +1,6 @@
 {
   "agent": {
-    "pool": 1,
+    "pool": 4,
     "poolEnabled": false,
     "provider": "claude",
     "plan": "opus4.7",

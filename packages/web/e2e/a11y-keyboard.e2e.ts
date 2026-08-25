@@ -1,4 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, mergeSettings, openPalette, test } from './helpers/harness';
+
+import { pinUnifiedBoard } from './helpers/board';
+import { seedTask, uniqueLabel } from './helpers/gateway';
 
 /**
  * Phase 60 Theme I — keyboard/ARIA probe for the fixes this slice applied. The
@@ -11,9 +14,6 @@ test.describe('a11y — command palette combobox', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // best effort
@@ -24,9 +24,7 @@ test.describe('a11y — command palette combobox', () => {
   test('input is a combobox wired to a listbox; arrows move aria-activedescendant', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     const input = palette.getByRole('combobox', { name: 'Search commands and content' });
     await expect(input).toHaveAttribute('aria-controls', 'command-palette-listbox');
@@ -59,16 +57,22 @@ test.describe('a11y — command palette combobox', () => {
 /**
  * Phase 67 B/E — the product-guide overlay is keyboard-operable: it's a modal
  * dialog, focus lands on the step card, ←/→/Enter/Esc drive the tour, and Escape
- * dismisses it. Launched via the assistant → "Guides" index; no seed needed (the
- * board columns render empty).
+ * dismisses it. Launched via the assistant → "Guides" index.
+ *
+ * Needs one seeded task: an empty board replaces the whole column grid with an
+ * empty state (`board-view.tsx`), so with no tasks there is no `Todo` heading
+ * and no `board-column-todo` tour anchor to measure.
  */
 test.describe('a11y — guide overlay keyboard nav', () => {
   test.beforeEach(async ({ page }) => {
+    // The tour must be launched deliberately below, not auto-shown on arrival.
+    await mergeSettings(page, { autoShowGuides: false });
+    // The board defaults to per-project accordions, which repeat the status
+    // columns once per project — so `Todo` below must resolve to exactly one
+    // heading regardless of what other specs left in the shared gateway.
+    await pinUnifiedBoard(page);
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400, autoShowGuides: false }));
         localStorage.setItem('midnite.theme', 'dark');
       } catch {
         // best effort
@@ -77,7 +81,18 @@ test.describe('a11y — guide overlay keyboard nav', () => {
   });
 
   test('overlay is a focused modal dialog driven by arrows/Enter/Escape', async ({ page }) => {
+    // Seed before navigating: the board paints an empty state instead of columns
+    // until at least one task exists, and this spec must not depend on whatever
+    // another spec happened to leave in the shared gateway.
+    await seedTask(uniqueLabel('E2E guide overlay — board anchor'), 'todo');
+
     await page.goto('/tasks');
+    // Wait for the board itself before launching its tour. The overlay's
+    // missing-anchor handling *advances* rather than stranding the user on an
+    // invisible step (`guide-overlay.tsx` `measure()`), so starting the tour
+    // before the client-side board has painted silently skips both
+    // board-anchored steps and lands on the closing one.
+    await expect(page.getByRole('heading', { name: 'Todo', exact: true })).toBeVisible();
 
     // Open the assistant → all-guides index → the board tour.
     await page.getByRole('button', { name: 'Open assistant' }).click();
@@ -93,11 +108,19 @@ test.describe('a11y — guide overlay keyboard nav', () => {
     await expect(overlay).toBeVisible();
     await expect(overlay).toHaveAttribute('aria-modal', 'true');
 
-    // ArrowRight advances to the next step (the closing "Replay anytime" step).
+    // ArrowRight advances a step at a time. The board tour is three steps —
+    // "Your board" → "Ready work" → the closing "Replay anytime" — and the
+    // middle anchor (`data-tour="board-column-todo"`) is rendered because the
+    // board has the seeded task above, so the overlay's missing-anchor auto-skip
+    // never collapses it.
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('dialog', { name: 'Ready work' })).toBeVisible();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('dialog', { name: 'Replay anytime' })).toBeVisible();
 
     // ArrowLeft steps back.
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('dialog', { name: 'Ready work' })).toBeVisible();
     await page.keyboard.press('ArrowLeft');
     await expect(page.getByRole('dialog', { name: 'Your board' })).toBeVisible();
 

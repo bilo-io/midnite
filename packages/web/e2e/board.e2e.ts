@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { column, dragCardTo, pinUnifiedBoard } from './helpers/board';
-import { seedTask, type SeededTask } from './helpers/gateway';
+import { seedTask, uniqueLabel, type SeededTask } from './helpers/gateway';
 
 // Seed distinct, spec-scoped tasks. The e2e gateway runs with the LLM off so the
 // title is the prompt's first line — but we assert against the title the gateway
@@ -14,10 +14,10 @@ let backlogItem: SeededTask;
 
 test.beforeAll(async () => {
   [todoAlpha, todoBravo, doneItem, backlogItem] = await Promise.all([
-    seedTask('E2E board — todo alpha', 'todo'),
-    seedTask('E2E board — todo bravo', 'todo'),
-    seedTask('E2E board — shipped item', 'done'),
-    seedTask('E2E board — parked item', 'backlog'),
+    seedTask(uniqueLabel('E2E board — todo alpha'), 'todo'),
+    seedTask(uniqueLabel('E2E board — todo bravo'), 'todo'),
+    seedTask(uniqueLabel('E2E board — shipped item'), 'done'),
+    seedTask(uniqueLabel('E2E board — parked item'), 'backlog'),
   ]);
 });
 

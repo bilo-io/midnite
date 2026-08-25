@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
-import { seedMemory, type SeededMemory } from './helpers/gateway';
+import { seedMemory, uniqueLabel, type SeededMemory } from './helpers/gateway';
 
 // Phase 65 A — the shareable `/memory/view?id=` workspace. Direct navigation /
 // refresh must render the 3-panel layout (output: 'export' can't prerender ids,
@@ -9,34 +9,36 @@ import { seedMemory, type SeededMemory } from './helpers/gateway';
 let memory: SeededMemory;
 
 test.beforeAll(async () => {
-  memory = await seedMemory('E2E memory — workspace', '# Notes\nRemember the conventions.');
+  memory = await seedMemory(uniqueLabel('E2E memory — workspace'), '# Notes\nRemember the conventions.');
 });
 
-// The first-run setup wizard renders a modal overlay that would intercept clicks.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-    } catch {
-      /* best effort */
-    }
-  });
-});
 
 test.describe('Memory workspace page', () => {
-  test('direct link renders the 3-panel workspace: doc, sources, Studio', async ({ page }) => {
+  test('direct link renders the 3-panel workspace: chat, sources, Studio', async ({ page }) => {
     await page.goto(`/memory/view?id=${memory.id}`);
 
     await expect(page.getByRole('heading', { name: memory.title })).toBeVisible();
-    // Center doc editor (Save/Delete controls; content opens in preview mode).
+    // Left sources rail + right Studio rail. `exact` matters: `PageHeader`'s <h1>
+    // carries `aria-label={title}` and accessible-name matching is substring, so
+    // a memory whose title merely contains "Studio" would resolve to two headings.
+    await expect(page.getByRole('heading', { name: 'Sources', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Studio', exact: true })).toBeVisible();
+    // The centre is the chat thread. Its composer is present and live — it used
+    // to render disabled here; the "no reachable model" degrade is now a hint
+    // shown in place of the input, which the Chat spec below covers on both
+    // branches.
+    await expect(page.getByLabel('Ask this memory a question')).toBeVisible();
+  });
+
+  // The doc editor moved out of the centre column into a metadata modal behind
+  // the pencil affordance (the header title is static, per the resource-page
+  // pattern) — it is no longer on first paint.
+  test('the metadata modal edits the title', async ({ page }) => {
+    await page.goto(`/memory/view?id=${memory.id}`);
+
+    await page.getByRole('button', { name: 'Edit memory metadata' }).first().click();
     await expect(page.getByLabel('Memory title')).toHaveValue(memory.title);
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
-    // Left sources rail + right Studio rail.
-    await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
-    // Chat composer scaffold (disabled).
-    await expect(page.getByLabel('Ask this memory a question')).toBeDisabled();
   });
 
   test('a rail collapses to a slim toggle and re-expands', async ({ page }) => {
@@ -67,10 +69,10 @@ test.describe('Memory workspace page', () => {
   // leaves its idle state and the status chip resolves — asserting the endpoint,
   // the client poll, and status surfacing end-to-end without depending on a key.
   test('Studio: generating an artifact leaves idle and settles to a status', async ({ page }) => {
-    const fresh = await seedMemory('E2E studio target', '# Topic\nSome grounding content to summarise.');
+    const fresh = await seedMemory(uniqueLabel('E2E studio target'), '# Topic\nSome grounding content to summarise.');
     await page.goto(`/memory/view?id=${fresh.id}`);
 
-    await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Studio', exact: true })).toBeVisible();
     await expect(page.getByText('Executive brief')).toBeVisible();
     await page.getByRole('button', { name: 'Generate' }).first().click();
 
@@ -82,9 +84,9 @@ test.describe('Memory workspace page', () => {
   // rail (no "Soon" placeholders). With no TTS/ffmpeg provider they degrade rather
   // than hard-fail; here we assert both rows are present and generatable.
   test('Studio: audio + video overviews are offered', async ({ page }) => {
-    const fresh = await seedMemory('E2E studio media', '# Topic\nGrounding content for media.');
+    const fresh = await seedMemory(uniqueLabel('E2E studio media'), '# Topic\nGrounding content for media.');
     await page.goto(`/memory/view?id=${fresh.id}`);
-    await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Studio', exact: true })).toBeVisible();
     await expect(page.getByText('Audio overview')).toBeVisible();
     await expect(page.getByText('Video', { exact: true })).toBeVisible();
     await expect(page.getByText('Soon')).toHaveCount(0);
@@ -93,9 +95,12 @@ test.describe('Memory workspace page', () => {
   // Phase 65 B — upload a text file as a source; it ingests (no network needed)
   // and the per-source status resolves to "read" via the panel's poll.
   test('uploads a file source and it ingests to ready', async ({ page }) => {
-    const fresh = await seedMemory('E2E upload target', '');
+    const fresh = await seedMemory(uniqueLabel('E2E upload target'), '');
     await page.goto(`/memory/view?id=${fresh.id}`);
 
+    // The file input lives in `AddSourceModal`, not on first paint — the sources
+    // rail opens it from its "Add sources" affordance.
+    await page.getByRole('button', { name: 'Add sources' }).click();
     await page.locator('input[type="file"]').setInputFiles({
       name: 'conventions.md',
       mimeType: 'text/markdown',
@@ -111,7 +116,7 @@ test.describe('Memory workspace page', () => {
   // an honest disabled hint instead of the input (never a crash). Either branch
   // proves the panel is wired end-to-end.
   test('Chat: a question persists to the thread, or the composer degrades honestly', async ({ page }) => {
-    const fresh = await seedMemory('E2E chat target', '# Rockets\nRockets fly because of Newton’s third law.');
+    const fresh = await seedMemory(uniqueLabel('E2E chat target'), '# Rockets\nRockets fly because of Newton’s third law.');
     await page.goto(`/memory/view?id=${fresh.id}`);
 
     const providerHint = page.getByText('Add an AI provider in Settings to chat with this memory.');

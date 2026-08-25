@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { GATEWAY_ORIGIN } from './config';
 import { seedTask } from './helpers/gateway';
@@ -28,6 +28,12 @@ test.describe('Settings → Data restore', () => {
 
     await page.goto('/settings/data');
     await expect(page.getByRole('heading', { name: 'Download a backup' })).toBeVisible();
+
+    // Settings → Data is a Backup|Restore tab pair, defaulting to Backup. Both
+    // panels stay mounted and the inactive one is `hidden`, so without this the
+    // preview below renders correctly into a `display:none` subtree and the
+    // assertion fails on visibility rather than on content.
+    await page.getByRole('tab', { name: 'Restore' }).click();
 
     // Upload → auto preview. The hidden file input is addressable by its label.
     await page.getByLabel('Choose backup archive').setInputFiles(archivePath);

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 import { seedTask } from './helpers/gateway';
 
 test.describe('Dedicated /search page', () => {
@@ -11,7 +11,10 @@ test.describe('Dedicated /search page', () => {
 
     // Grouped under Tasks, with the result + a result-count summary.
     await expect(page.getByRole('heading', { name: /Tasks/ })).toBeVisible();
-    await expect(page.getByText(title)).toBeVisible();
+    // The result row renders the title twice — once as the title, once inside the
+    // match snippet (a task's indexed body *is* its title here) — so assert the
+    // row itself rather than the raw text, which is a strict-mode violation.
+    await expect(page.getByRole('link', { name: title })).toBeVisible();
     await expect(page.getByText(/result(s)? for/i)).toBeVisible();
 
     if (process.env['SEARCH_PAGE_SHOT']) {
@@ -20,7 +23,7 @@ test.describe('Dedicated /search page', () => {
 
     // A result links to its entity.
     await page.getByRole('link', { name: title }).click();
-    await expect(page).toHaveURL(/\/tasks$/);
+    await expect(page).toHaveURL(/\/tasks\/?$/);
   });
 
   test('shows a no-results state for a miss', async ({ page }) => {

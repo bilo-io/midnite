@@ -25,7 +25,8 @@ pnpm exec playwright test --headed                 # watch it drive a browser
 
 First time only, install the browser: `pnpm exec playwright install chromium`.
 
-> Run from the **primary checkout**, not a `.git/worktrees` worktree — Vite/Next
+> Worktrees live in the repo-root `.worktrees/` dir (outside `.git/`), so this
+> runs fine inside one. The old `.git/worktrees/<n>` layout did not — Vite/Next
 > tooling can't collect files under `.git/**`.
 
 ## How it works
@@ -37,7 +38,11 @@ First time only, install the browser: `pnpm exec playwright install chromium`.
   with its agent pool disabled and no LLM credentials
   ([`e2e/fixtures/midnite.e2e.json`](fixtures/midnite.e2e.json)) — it serves real
   REST/WS but never spawns an agent or makes an external call.
-- **Next dev** on **:3311**, pointed at that gateway via `NEXT_PUBLIC_GATEWAY_URL`.
+- **The app** on **:3311**, pointed at that gateway via `NEXT_PUBLIC_GATEWAY_URL`.
+  In CI (and locally with `E2E_BUILD=1`) that's a real `next build` +
+  `next start`; otherwise it's `next dev`, whose per-route on-demand compile is
+  fast to boot but lands *inside* the 60s test budget. Use `E2E_BUILD=1` for a
+  full-suite run so it matches CI; leave it off for a single-spec loop.
 
 Dedicated ports (see [`config.ts`](config.ts)) keep a run from colliding with your
 dev `:3000`/`:7777`. Specs seed data over the gateway REST API
@@ -47,6 +52,36 @@ roles/text — never pixels or test IDs.
 > **One run per machine at a time.** The ports and the temp DB path are fixed, so
 > a second concurrent run on the same box would free the first run's ports and
 > wipe its DB. Fine for CI (isolated) and normal local use; don't run two at once.
+
+## The shared harness — import `test` from `helpers/harness`
+
+**Every spec must `import { expect, test } from './helpers/harness'`, not from
+`@playwright/test`.** The harness's `test` boots each page past two first-run
+modal gates that are permanently on in this environment and swallow every click,
+drag and keypress:
+
+- **The setup wizard** auto-opens whenever the gateway reports `ready === false`.
+  The config deliberately blanks the LLM keys (so task titles stay deterministic),
+  which means the e2e gateway is *never* ready and the wizard *always* opens.
+- **The idle screensaver**, `inactivityTimeoutS` (30s by default). Any spec that
+  stalls for half a minute picks up a second overlay on top of the first.
+
+This used to be an `addInitScript` block copy-pasted into each spec — so a new
+spec was born broken and seven older ones never had it at all. Importing from the
+harness is now the whole opt-in. Related helpers:
+
+| Helper | Use it for |
+| --- | --- |
+| `mergeSettings(target, partial)` | Setting anything in `midnite.settings`. **Never** `setItem('midnite.settings', …)` directly — init scripts stack and re-run on every navigation, so a wholesale assignment clobbers the harness's `inactivityTimeoutS` and hands your spec a screensaver mid-test. |
+| `suppressFirstRunGates(target)` | Contexts you build yourself with `browser.newContext()` — the `page` fixture can't reach those. |
+| `pressGlobalKey(page, key, expectation)` | ⌘K, `?`, and the `G _` nav chords. Their listeners attach in effects inside `<AuthGate>`, which renders `null` until the session resolves, so a single un-retried keypress right after `goto()` lands on nothing. |
+| `uniqueLabel(base)` from `helpers/gateway` | Any fixture a spec later locates by its visible text. `workers: 1` + `retries: 1` + one shared gateway DB means a `beforeAll` re-runs on retry and leaves two rows with the same title, turning your failure into a confusing strict-mode violation. |
+
+The gateway fixture ([`fixtures/midnite.e2e.json`](fixtures/midnite.e2e.json))
+carries `agent.pool: 4` for the same reason: `poolEnabled: false` only stops the
+autonomous scheduler, and `POST /tasks/:id/start` bypasses it by design — with a
+single slot, a retry that seeds a fresh task hits `409 no free agent slot`
+because the first attempt's stub agent still holds the only one.
 
 ## Screenshot capture (Theme E1)
 
@@ -66,8 +101,10 @@ key page (board, dashboard, workflows, councils, office) in **light and dark** t
 
 These are **preview artifacts, not `toHaveScreenshot` baselines** — there's no
 pixel assertion, so the task never fails on a rendering delta and never commits
-OS-specific images. The committed visual baseline + diff (Theme E2) and the CI
-artifact upload + gallery (Theme E3) build on top of this capture.
+OS-specific images. (There briefly were baselines; they were macOS-generated
+while CI runs on `ubuntu-latest`, so they could never have passed there, and the
+step that would have run them was skipped on every run anyway.) The CI artifact
+upload + gallery (Theme E3) build on top of this capture.
 
 ## Docs feature screenshots
 
@@ -87,5 +124,7 @@ CAPTURE_DOCS=1 pnpm exec playwright test --project=screenshots docs-features.sho
 ## Not in `moon ci`
 
 `web:e2e` and `web:screenshots` are heavier and spawn servers, so they're kept
-out of the default `:test` gate and out of `moon ci` (`runInCI: false`). A
-dedicated CI job + screenshot artifacts are Phase 10 Themes F / E3.
+out of the default `:test` gate and out of `moon ci` (`runInCI: false`). They run
+in their own workflow, [`e2e.yml`](../../../.github/workflows/e2e.yml), whose
+result is surfaced by the always-run **`e2e-gate`** job — that's the check branch
+protection requires, not `e2e` itself (a gated skip must not wedge a merge).

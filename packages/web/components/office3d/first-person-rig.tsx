@@ -9,7 +9,12 @@ import { blockedGrid } from '@/lib/office/layout';
 import { useOfficeStore } from '@/lib/office-store';
 import { createHeadBobRoll } from '@/lib/office3d/camera-roll';
 import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
-import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
+import {
+  EYE_HEIGHT,
+  MOVE_SPEED,
+  OFFICE_3D_STAGE_SELECTOR,
+  PLAYER_RADIUS,
+} from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
 import {
   applyInteraction,
@@ -273,6 +278,9 @@ export function FirstPersonRig({
   return (
     <PointerLockControls
       ref={controlsRef}
+      // Without a selector drei binds click-to-lock to `document`, so the click
+      // that swaps engines also asks the dying canvas for the pointer.
+      selector={OFFICE_3D_STAGE_SELECTOR}
       onLock={() => onLockChange?.(true)}
       onUnlock={() => onLockChange?.(false)}
     />

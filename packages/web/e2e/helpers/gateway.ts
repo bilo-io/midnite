@@ -10,6 +10,20 @@ import { GATEWAY_ORIGIN } from '../config';
  * `prompt` IS the resulting task title, which makes board assertions deterministic.
  */
 
+/**
+ * Stamp a fixture label so it can't collide with an earlier attempt's.
+ *
+ * The suite runs `workers: 1` against a single long-lived gateway on one SQLite
+ * file, and CI sets `retries: 1` — so a `beforeAll` that seeds a fixed string
+ * runs *again* on retry and leaves two rows with the same title. Every
+ * `getByText(fixture.title)` then fails strict mode, and a first-attempt failure
+ * mutates into a different, more confusing one on retry. Stamp anything a spec
+ * later locates by its visible text.
+ */
+export function uniqueLabel(base: string): string {
+  return `${base} ${Date.now()}`;
+}
+
 /** A task created over the gateway REST API. */
 export type SeededTask = { id: string; title: string; status: Status };
 
@@ -67,6 +81,28 @@ export async function installTemplateBySlug(slug: string): Promise<string> {
   if (!res.ok) throw new Error(`install ${slug} failed (${res.status}): ${await res.text().catch(() => '')}`);
   const { workflow } = (await res.json()) as { workflow: { id: string } };
   return workflow.id;
+}
+
+/**
+ * Create a workflow by name (`POST /workflows`) and return its id + name.
+ *
+ * Prefer this over `installTemplateBySlug` when a spec just needs *a* workflow to
+ * exist: templates carry fixed names, so two specs installing the same slug give
+ * the shared gateway two identically-named rows and any `getByText(name)` becomes
+ * a strict-mode violation. A `uniqueLabel()` name is addressable no matter what
+ * else the suite has created.
+ */
+export async function seedWorkflow(name: string): Promise<{ id: string; name: string }> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/workflows`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedWorkflow failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+  const { workflow } = (await res.json()) as { workflow: { id: string; name: string } };
+  return { id: workflow.id, name: workflow.name };
 }
 
 /** Trigger a workflow run (fire-and-forget on the engine); returns the run id. */

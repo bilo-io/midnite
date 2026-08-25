@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { GATEWAY_ORIGIN } from './config';
 
@@ -56,10 +56,11 @@ test.describe('inbound receiver', () => {
     expect(okJson.result).toBe('created');
     expect(okJson.taskId).toBeTruthy();
 
-    // The task is on the board with the mapped title (`GET /tasks` is a bare array).
+    // The task is on the board with the mapped title. `GET /tasks` is paginated
+    // (`{ items, total }`), not the bare array this used to destructure.
     const tasksRes = await fetch(`${GATEWAY_ORIGIN}/tasks`);
-    const tasks = (await tasksRes.json()) as Array<{ id: string; title: string }>;
-    expect(tasks.some((t) => t.title === 'Inbound e2e task')).toBe(true);
+    const { items } = (await tasksRes.json()) as { items: Array<{ id: string; title: string }> };
+    expect(items.some((t) => t.title === 'Inbound e2e task')).toBe(true);
 
     // 2) A tampered body (bad signature) → 401, no task.
     const bad = await fetch(url, {

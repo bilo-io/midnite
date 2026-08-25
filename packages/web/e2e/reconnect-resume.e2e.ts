@@ -1,7 +1,9 @@
-import { expect, test } from '@playwright/test';
 import type { Browser, Page } from '@playwright/test';
 
-import { seedTask } from './helpers/gateway';
+import { WEB_ORIGIN } from './config';
+import { expect, suppressFirstRunGates, test } from './helpers/harness';
+import { column, pinUnifiedBoard } from './helpers/board';
+import { seedTask, uniqueLabel } from './helpers/gateway';
 
 /**
  * Phase 56 verification — the core guarantee: a board client that briefly drops
@@ -76,17 +78,26 @@ const unblock = (page: Page) =>
     (window as unknown as { __ws: { block: boolean } }).__ws.block = false;
   });
 
-/** The desktop Todo column's live count badge (its `<h2>`'s following sibling). */
+/**
+ * The desktop Todo column's live count badge.
+ *
+ * Located by walking up to the column header rather than by `following-sibling`
+ * off the `<h2>`: the count pill moved into its own flex container alongside the
+ * add-task button, so the old XPath silently matched nothing and every read hung
+ * until the test timed out.
+ */
 async function todoCount(page: Page): Promise<number> {
-  const badge = page
-    .getByRole('heading', { name: 'Todo', exact: true })
-    .locator('xpath=following-sibling::span[1]');
+  const badge = column(page, 'Todo').locator('span.tabular-nums').first();
   return Number.parseInt(((await badge.textContent()) ?? '').trim(), 10);
 }
 
 /** A second board in its own context — a real subscriber that keeps the ring warm. */
 async function openKeeper(browser: Browser): Promise<() => Promise<void>> {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ baseURL: WEB_ORIGIN });
+  // A hand-rolled context doesn't get the `page` fixture's gate suppression —
+  // nor the unified-board pin the `Todo` wait below needs.
+  await suppressFirstRunGates(ctx);
+  await pinUnifiedBoard(ctx);
   const keeper = await ctx.newPage();
   await keeper.goto('/tasks');
   await keeper.getByRole('heading', { name: 'Todo', exact: true }).waitFor();
@@ -98,6 +109,12 @@ test.describe('WS reliability — reconnect resume (Phase 56)', () => {
     page,
     browser,
   }) => {
+    await pinUnifiedBoard(page);
+    // Both boards below wait on the `Todo` heading, and an empty board renders an
+    // empty state instead of columns (`board-view.tsx`) — so seed an anchor task
+    // first rather than depending on what another spec left in the shared gateway.
+    await seedTask(uniqueLabel('E2E resume — anchor'), 'todo');
+
     const closeKeeper = await openKeeper(browser);
     await installWsControl(page);
 
@@ -137,6 +154,12 @@ test.describe('WS reliability — reconnect resume (Phase 56)', () => {
     page,
     browser,
   }) => {
+    await pinUnifiedBoard(page);
+    // Both boards below wait on the `Todo` heading, and an empty board renders an
+    // empty state instead of columns (`board-view.tsx`) — so seed an anchor task
+    // first rather than depending on what another spec left in the shared gateway.
+    await seedTask(uniqueLabel('E2E resume — anchor'), 'todo');
+
     const closeKeeper = await openKeeper(browser);
     await installWsControl(page);
 

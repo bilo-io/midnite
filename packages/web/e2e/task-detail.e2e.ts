@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { seedTask, type SeededTask } from './helpers/gateway';
 
@@ -28,12 +28,16 @@ test.describe('Task detail page', () => {
 
   test('back affordance returns to the board', async ({ page }) => {
     await page.goto(`/tasks/view?id=${detailTask.id}`);
-    await page.getByRole('button', { name: 'All tasks' }).click();
+    // `BackLink` renders a Next `<Link>`, so this is a link, not a button.
+    await page.getByRole('link', { name: 'All tasks' }).click();
     await expect(page).toHaveURL(/\/tasks\/?$/);
   });
 
   test('an unknown id shows an inline not-found, not a crash', async ({ page }) => {
     await page.goto('/tasks/view?id=does-not-exist');
-    await expect(page.getByText('Task not found.')).toBeVisible();
+    // `ResourceNotFound`'s <h1> is the ICU message `{noun} not found` — no
+    // trailing period, and the leading capital is `first-letter:uppercase` CSS
+    // rather than DOM text (accessible-name matching is case-insensitive).
+    await expect(page.getByRole('heading', { name: 'task not found' })).toBeVisible();
   });
 });

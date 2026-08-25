@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, openPalette, test } from './helpers/harness';
 
 import { seedTask } from './helpers/gateway';
 
@@ -19,28 +19,27 @@ test.describe('Command palette search', () => {
     await page.goto('/dashboard');
 
     // Open the palette with the global shortcut and search for the unique token.
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     await palette.getByRole('combobox', { name: 'Search commands and content' }).fill(token);
 
     // The hit lands in the "Tasks" group (no page jump matches the numeric token).
     await expect(palette.getByText('Tasks')).toBeVisible();
-    await expect(palette.getByText(title)).toBeVisible();
+    // Assert the option, not the raw text: the row renders the title twice — once
+    // as the title, once in the match snippet — which is a strict-mode violation.
+    await expect(palette.getByRole('option', { name: title })).toBeVisible();
 
-    // Enter routes to the entity and closes the palette.
+    // Enter routes to the entity and closes the palette. A task result lands on
+    // the board with its own modal open (`?task=<id>`), not on a bare `/tasks`.
     await page.keyboard.press('Enter');
     await expect(palette).toBeHidden();
-    await expect(page).toHaveURL(/\/tasks$/);
+    await expect(page).toHaveURL(/\/tasks\/?\?task=/);
   });
 
   test('skips the network and prompts for a longer query below the minimum', async ({ page }) => {
     await page.goto('/dashboard');
 
-    await page.keyboard.press('ControlOrMeta+k');
-    const palette = page.getByRole('dialog', { name: 'Command palette' });
-    await expect(palette).toBeVisible();
+    const palette = await openPalette(page);
 
     await palette.getByRole('combobox', { name: 'Search commands and content' }).fill('a');
     await expect(palette.getByText(/Type at least 2 characters/)).toBeVisible();

@@ -16,10 +16,15 @@ jobs:
     # upstream (ui/shared/shell) changed.
     if: needs.changes.outputs.webVisual == 'true'
     runs-on: ubuntu-latest
-    # Keep e2e out of the critical path: a failing visual snapshot never blocks
-    # a merge — the `ci-gate` job owns that gate. This job surfaces regressions
-    # and uploads artifacts for review; treat failures as "needs attention".
-    continue-on-error: true
+    # `continue-on-error` used to sit here, on the *job*. That made GitHub record
+    # the job as `failure` while reporting the whole workflow run as `success` —
+    # so `e2e` failed on every single `main` run for weeks behind a green badge,
+    # and nobody could see it. It also meant the failing flow step halted the job
+    # before the visual step, which therefore never ran at all.
+    #
+    # It now sits on the visual step alone (below): a screenshot problem still
+    # can't block a merge, but a flow regression can. `e2e-gate` surfaces the
+    # result as a check that is safe to require.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +62,13 @@ jobs:
         env:
           CI: 'true'
 
-      - name: Run visual regression (screenshots + baseline diff)
+      # Capture-only (the `toHaveScreenshot` baseline assertions are gone — see
+      # `e2e/screenshots/pages.shots.ts`). `if: always()` so a red flow step
+      # doesn't skip it the way it did for the whole life of this job, and
+      # `continue-on-error` so a capture problem stays off the merge path.
+      - name: Capture screenshots (pages + stories)
+        if: always()
+        continue-on-error: true
         run: pnpm exec playwright test --project=screenshots --project=stories
         working-directory: packages/web
         env:
@@ -81,6 +92,34 @@ jobs:
           name: visual-diffs-${{ github.run_id }}
           path: packages/web/test-results/
           retention-days: 7
+
+  # Mirrors `ci-gate` (ci.yml): passes when `e2e` succeeded OR was skipped
+  # (nothing web-visual changed), fails on a real failure/cancel. Point branch
+  # protection at THIS job, not `e2e` — a gated skip must not wedge a merge.
+  #
+  # Without an aggregator there was nothing to require: the job-level
+  # `continue-on-error` reported the *run* as green while the job was red, so a
+  # permanently-broken suite looked healthy from the outside.
+  e2e-gate:
+    needs: [changes, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate e2e result
+        run: |
+          changes_res="${{ needs.changes.result }}"
+          e2e_res="${{ needs.e2e.result }}"
+          echo "changes: $changes_res · e2e: $e2e_res"
+          if [ "$changes_res" != "success" ]; then
+            echo "::error::affected-detection did not succeed ($changes_res)"
+            exit 1
+          fi
+          if [ "$e2e_res" = "success" ] || [ "$e2e_res" = "skipped" ]; then
+            echo "e2e gate passed (e2e: $e2e_res)."
+            exit 0
+          fi
+          echo "::error::e2e gate failed (e2e: $e2e_res)"
+          exit 1
 
   coverage:
     needs: changes

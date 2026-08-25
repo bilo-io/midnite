@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { seedProject, seedTask } from './helpers/gateway';
 
@@ -13,8 +13,6 @@ const SEEDED = 60; // > the WindowVirtualList threshold (50), so the section win
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     try {
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
       // The tree (accordion) layout lives in the Projects "table" view; the value
       // is stored as a raw string, not JSON.
       localStorage.setItem('midnite.projects.view', 'table');

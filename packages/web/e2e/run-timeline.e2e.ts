@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/harness';
 
 import { seedTask, type SeededTask } from './helpers/gateway';
 
@@ -16,25 +16,15 @@ test.beforeAll(async () => {
 });
 
 test.describe('Ops run-timeline drill-down', () => {
-  test.beforeEach(async ({ page }) => {
-    // Suppress the auto-opening setup wizard + idle screensaver on a fresh gateway.
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86400 }));
-      } catch {
-        // web storage may be unavailable — best effort.
-      }
-    });
-  });
 
   test('renders a task’s run strip (empty state when no runs are recorded)', async ({ page }) => {
     await page.goto('/ops');
 
-    // Scope to the drill-down card by its heading.
+    // Scope to the drill-down card by its heading. Anchored on the widget
+    // wrapper rather than the card's own utility classes — `SectionCard` went
+    // `bg-card` → `surface-glass`, which silently emptied the old selector.
     const card = page
-      .locator('div.rounded-xl.border.bg-card')
+      .locator('.dashboard-panel')
       .filter({ has: page.getByRole('heading', { name: 'Run timeline' }) });
     await expect(card).toBeVisible();
 

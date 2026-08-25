@@ -8,7 +8,12 @@ import { Vector3 } from 'three';
 import type { PresenceScene } from '@midnite/shared';
 import { createHeadBobRoll } from '@/lib/office3d/camera-roll';
 import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
-import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
+import {
+  EYE_HEIGHT,
+  MOVE_SPEED,
+  OFFICE_3D_STAGE_SELECTOR,
+  PLAYER_RADIUS,
+} from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
 import { samplePlayer } from '@/lib/presence-bridge';
 import { facingFromDir, unitToPresencePx } from '@/lib/presence-3d';
@@ -168,6 +173,9 @@ export function SubSceneRig({
   return (
     <PointerLockControls
       ref={controlsRef}
+      // Without a selector drei binds click-to-lock to `document`, so the click
+      // that swaps engines also asks the dying canvas for the pointer.
+      selector={OFFICE_3D_STAGE_SELECTOR}
       onLock={() => onLockChange?.(true)}
       onUnlock={() => onLockChange?.(false)}
     />

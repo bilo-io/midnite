@@ -1,7 +1,9 @@
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+import { expect, mergeSettings, test } from './helpers/harness';
 
 import { SCREENSHOTS_DIR } from './config';
 
@@ -17,17 +19,14 @@ const OUT = resolve(process.cwd(), SCREENSHOTS_DIR);
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 async function setup(page: Page, navMode: 'expanded' | 'auto'): Promise<void> {
-  await page.addInitScript((mode) => {
+  await mergeSettings(page, { navMode });
+  await page.addInitScript(() => {
     try {
       localStorage.setItem('midnite.theme', 'dark');
-      localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-      sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
-      // reconcile() merges this over DEFAULT_SETTINGS, so a single field is safe.
-      localStorage.setItem('midnite.settings', JSON.stringify({ navMode: mode }));
     } catch {
       /* best effort */
     }
-  }, navMode);
+  });
 }
 
 const SECTIONS = ['App', 'Agents', 'Overview'] as const;
