@@ -1,0 +1,1 @@
+import{bg as t}from"./iframe-BgzrFP2X.js";const n=t.createContext({getAll:()=>[],register:()=>{},unregister:()=>{}});function c(e,r){const{register:o,unregister:u}=t.useContext(n),s=t.useRef(r);s.current=r,t.useEffect(()=>(o(e,s.current),()=>u(e)),[e])}function g(){const{getAll:e}=t.useContext(n);return e()}export{c as a,g as u};
